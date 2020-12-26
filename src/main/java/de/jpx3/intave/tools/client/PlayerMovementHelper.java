@@ -18,7 +18,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.material.Directional;
 import org.bukkit.material.MaterialData;
 import org.bukkit.material.Openable;
-import org.bukkit.util.Vector;
 
 import java.util.List;
 
@@ -69,7 +68,6 @@ public final class PlayerMovementHelper {
     }
     return isLiquidPresentInAABB(player, entityBoundingBox.offset(x, y, z));
   }*/
-
   public static boolean isOffsetPositionInLiquid(
     Player player,
     WrappedAxisAlignedBB entityBoundingBox,
@@ -81,10 +79,7 @@ public final class PlayerMovementHelper {
   /**
    * Determines if a liquid is present within the specified AxisAlignedBB.
    */
-  private static boolean isLiquidPresentInAABB(
-    Player player,
-    WrappedAxisAlignedBB boundingBox
-  ) {
+  private static boolean isLiquidPresentInAABB(Player player, WrappedAxisAlignedBB boundingBox) {
     List<WrappedAxisAlignedBB> collisionBoxes = CollisionFactory.getCollisionBoxes(player, boundingBox);
     return collisionBoxes.isEmpty() && !isAnyLiquid(player.getWorld(), boundingBox);
   }
@@ -92,10 +87,7 @@ public final class PlayerMovementHelper {
   /**
    * Returns if any of the blocks within the aabb are liquids. Args: aabb
    */
-  public static boolean isAnyLiquid(
-    World world,
-    WrappedAxisAlignedBB boundingBox
-  ) {
+  public static boolean isAnyLiquid(World world, WrappedAxisAlignedBB boundingBox) {
     int i = WrappedMathHelper.floor(boundingBox.minX);
     int j = WrappedMathHelper.floor(boundingBox.maxX);
     int k = WrappedMathHelper.floor(boundingBox.minY);
@@ -115,49 +107,7 @@ public final class PlayerMovementHelper {
     return false;
   }
 
-/*  public static boolean isInLava(
-    Player player,
-    Checkable checkable
-  ) {
-    Checkable.CheckableMeta.SyncedValues syncedValues = checkable.meta().syncedValues();
-    WrappedAxisAlignedBB entityBoundingBox = syncedValues.physicsEntityBoundingBox;
-    if (entityBoundingBox == null) {
-      return false;
-    }
-    WrappedAxisAlignedBB lavaBoundingBox = entityBoundingBox.expand(
-      -0.10000000149011612D,
-      -0.4000000059604645D,
-      -0.10000000149011612D
-    );
-    return isLavaInBB(player.getWorld(), lavaBoundingBox);
-  }*/
-
-  private static boolean isLavaInBB(
-    World world,
-    WrappedAxisAlignedBB boundingBox
-  ) {
-    int minX = WrappedMathHelper.floor(boundingBox.minX);
-    int minY = WrappedMathHelper.floor(boundingBox.minY);
-    int minZ = WrappedMathHelper.floor(boundingBox.minZ);
-    int maxX = WrappedMathHelper.floor(boundingBox.maxX + 1.0D);
-    int maxY = WrappedMathHelper.floor(boundingBox.maxY + 1.0D);
-    int maxZ = WrappedMathHelper.floor(boundingBox.maxZ + 1.0D);
-    for (int x = minX; x < maxX; ++x) {
-      for (int y = minY; y < maxY; ++y) {
-        for (int z = minZ; z < maxZ; ++z) {
-          if (BlockLiquidHelper.isLiquid(BlockAccessor.blockAccess(world, x, y, z).getType())) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-  public static boolean isOnLadder(
-    User user,
-    double positionX, double positionY, double positionZ
-  ) {
+  public static boolean isOnLadder(User user, double positionX, double positionY, double positionZ) {
     Player player = user.bukkitPlayer();
     UserMetaClientData clientData = user.meta().clientData();
     Block block = BlockAccessor.blockAccess(
@@ -188,13 +138,5 @@ public final class PlayerMovementHelper {
       return downBlock.getType() == Material.LADDER && directional.getFacing() == downBlockDirectional.getFacing();
     }
     return false;
-  }
-
-  public static Vector resolveVectorForRotation(float pitch, float yaw) {
-    float f = WrappedMathHelper.cos(-yaw * 0.017453292F - (float) Math.PI);
-    float f1 = WrappedMathHelper.sin(-yaw * 0.017453292F - (float) Math.PI);
-    float f2 = -WrappedMathHelper.cos(-pitch * 0.017453292F);
-    float f3 = WrappedMathHelper.sin(-pitch * 0.017453292F);
-    return new Vector(f1 * f2, f3, f * f2);
   }
 }

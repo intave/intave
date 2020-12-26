@@ -397,7 +397,7 @@ public final class Physics extends IntaveCheck {
     if (inWater) {
       physicsCalculateWater(user, context, moveForward, moveStrafe, yawSine, yawCosine);
     } else if (elytraFlying) {
-      physicsCalculateElytra(context, rotationPitch, rotationYaw, gravity);
+      physicsCalculateElytra(movementData.lookVector, context, rotationPitch, rotationYaw, gravity);
     } else if (inLava) {
       physicsCalculateLava(context, moveForward, moveStrafe, yawSine, yawCosine);
     } else {
@@ -440,15 +440,14 @@ public final class Physics extends IntaveCheck {
   }
 
   private void physicsCalculateElytra(
-    PhysicsProcessorContext context,
+    Vector lookVector, PhysicsProcessorContext context,
     float rotationPitch, float rotationYaw,
     double gravity
   ) {
-    Vector elytraMoveVector = PlayerMovementHelper.resolveVectorForRotation(rotationPitch, rotationYaw);
     float f = rotationPitch * 0.017453292F;
-    double rotationVectorDistance = Math.sqrt(elytraMoveVector.getX() * elytraMoveVector.getX() + elytraMoveVector.getZ() * elytraMoveVector.getZ());
+    double rotationVectorDistance = Math.sqrt(lookVector.getX() * lookVector.getX() + lookVector.getZ() * lookVector.getZ());
     double dist2 = Math.sqrt(context.predictedX * context.predictedX + context.predictedZ * context.predictedZ);
-    double rotationVectorLength = Math.sqrt(elytraMoveVector.lengthSquared());
+    double rotationVectorLength = Math.sqrt(lookVector.lengthSquared());
     float pitchCosine = WrappedMathHelper.cos(f);
     pitchCosine = (float) ((double) pitchCosine * (double) pitchCosine * Math.min(1.0D, rotationVectorLength / 0.4D));
 //                predictedMotionY += -0.08 + (double) f4 * 0.06D;
@@ -457,8 +456,8 @@ public final class Physics extends IntaveCheck {
     if (context.predictedY < 0.0D && rotationVectorDistance > 0.0D) {
       double d2 = context.predictedY * -0.1D * (double) pitchCosine;
       context.predictedY += d2;
-      context.predictedX += elytraMoveVector.getX() * d2 / rotationVectorDistance;
-      context.predictedZ += elytraMoveVector.getZ() * d2 / rotationVectorDistance;
+      context.predictedX += lookVector.getX() * d2 / rotationVectorDistance;
+      context.predictedZ += lookVector.getZ() * d2 / rotationVectorDistance;
     }
 
     // 1.9
@@ -472,15 +471,15 @@ public final class Physics extends IntaveCheck {
     if (f < 0.0F && rotationVectorDistance > 0.0D) {
       double d9 = dist2 * (double) (-WrappedMathHelper.sin(f)) * 0.04D;
       context.predictedY += d9 * 3.2D;
-      context.predictedX += -elytraMoveVector.getX() * d9 / rotationVectorDistance;
-      context.predictedZ += -elytraMoveVector.getZ() * d9 / rotationVectorDistance;
+      context.predictedX += -lookVector.getX() * d9 / rotationVectorDistance;
+      context.predictedZ += -lookVector.getZ() * d9 / rotationVectorDistance;
 //                  vector3d = vector3d.add(-vector3d1.x * d9 / d1, d9 * 3.2D, -vector3d1.z * d9 / d1);
     }
 
     // 1.9
     if (rotationVectorDistance > 0.0D) {
-      context.predictedX += (elytraMoveVector.getX() / rotationVectorDistance * dist2 - context.predictedX) * 0.1D;
-      context.predictedZ += (elytraMoveVector.getZ() / rotationVectorDistance * dist2 - context.predictedZ) * 0.1D;
+      context.predictedX += (lookVector.getX() / rotationVectorDistance * dist2 - context.predictedX) * 0.1D;
+      context.predictedZ += (lookVector.getZ() / rotationVectorDistance * dist2 - context.predictedZ) * 0.1D;
     }
     // 1.16
 //                if (d6 > 0.0D) {

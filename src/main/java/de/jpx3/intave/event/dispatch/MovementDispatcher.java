@@ -57,21 +57,6 @@ public final class MovementDispatcher implements PacketEventSubscriber, Listener
     movementData.pastPlayerAttackPhysics = 0;
   }
 
-//  @PacketSubscription(
-//    priority = ListenerPriority.HIGH,
-//    packets = {
-//      @PacketDescriptor(sender = Sender.CLIENT, packetName = "FLYING"),
-//    }
-//  )
-//  public void f(PacketEvent event) {
-//    Player player = event.getPlayer();
-//    User user = UserRepository.userOf(player);
-//    player.sendMessage("flying");
-//    if (player.getName().equals("vento")) {
-//      System.out.println("flying - now");
-//    }
-//  }
-
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packets = {
