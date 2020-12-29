@@ -27,9 +27,7 @@ import java.util.Set;
 
 public final class MovementEmulationEngine {
   private final IntavePlugin plugin;
-  private final static boolean DEBUG_EMULATION = false;
-  private final static boolean KIN_KILL = false;
-
+  private final static boolean DEBUG_EMULATION = true;
   public MovementEmulationEngine(IntavePlugin plugin) {
     this.plugin = plugin;
   }
@@ -75,16 +73,21 @@ public final class MovementEmulationEngine {
     futurePosition.setPitch(movementData.rotationPitch);
 
     if ((Math.abs(motion.getX()) < 0.05 && Math.abs(motion.getZ()) < 0.05 && motion.getY() == 0.0) || ticks <= 0) {
+      teleport(player, futurePosition);
+
+      // velocity
+      Vector futureMotion = motionProceed(motion, player, boundingBox);
+      player.setVelocity(futureMotion);
+
       violationLevelData.isInActiveTeleportBundle = false;
       if (DEBUG_EMULATION) {
         player.sendMessage("[E-] (" + ticks + " ticks remaining)");
       }
 
-      teleport(player, futurePosition);
     } else {
       // teleport
       //player.teleport(futurePosition);
-      teleport(player,KIN_KILL ? movementData.verifiedLocation : futurePosition);
+      teleport(player, futurePosition);
 
       if (DEBUG_EMULATION) {
         String s = "[E/] " + MathHelper.formatMotion(motion) + " at " + MathHelper.formatPosition(futurePosition) + " (" + ticks + " ticks remaining)";
@@ -92,16 +95,15 @@ public final class MovementEmulationEngine {
       }
       //   s += " @" + movementData.entityBoundingBox();
 
-
       Vector finalMotion = motion;
       Synchronizer.synchronizeDelayed(() -> {
         proceedEmulationTick(player, finalMotion, ticks - 1);
       }, 1);
-    }
 
-    // velocity
-    Vector futureMotion = motionProceed(motion, player, boundingBox);
-    player.setVelocity(futureMotion);
+      // velocity
+      Vector futureMotion = motionProceed(motion, player, boundingBox);
+      player.setVelocity(futureMotion);
+    }
   }
 
   private Vector motionProceed(Vector lastMotion, Player player, WrappedAxisAlignedBB boundingBox) {

@@ -34,7 +34,7 @@ import static de.jpx3.intave.user.UserMetaClientData.PROTOCOL_VERSION_AQUATIC_UP
 import static de.jpx3.intave.user.UserMetaClientData.PROTOCOL_VERSION_VILLAGE_UPDATE;
 
 public final class Physics extends IntaveCheck {
-  private final static boolean DEBUG_MOVEMENT = false;
+  private final static boolean DEBUG_MOVEMENT = true;
   private final static boolean DEBUG_PERFORMANCE = false; // Disable DEBUG_MOVEMENT
   private final static boolean MOVEMENT_EMULATION = true;
   private final static float STEP_HEIGHT = 0.6f;
@@ -69,7 +69,7 @@ public final class Physics extends IntaveCheck {
       this.aquaticWaterMovement = new AquaticBeeUpdateMovementResolver();
     } else if (minecraftVersion.isAtLeast(ProtocolLibAdapter.VILLAGE_UPDATE)) {
       this.aquaticWaterMovement = new AquaticVillageUpdateMovementResolver();
-    } else if (minecraftVersion.isAtLeast(MinecraftVersion.AQUATIC_UPDATE)) {
+    } else if (minecraftVersion.isAtLeast(ProtocolLibAdapter.AQUATIC_UPDATE)) {
       this.aquaticWaterMovement = new AquaticAquaticUpdateMovementResolver();
     } else {
       this.aquaticWaterMovement = new AquaticUnknownMovementResolver(waterMovementLegacyResolver);

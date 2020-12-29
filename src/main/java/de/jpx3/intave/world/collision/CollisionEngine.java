@@ -16,7 +16,7 @@ public final class CollisionEngine {
     logger.logToFile("[Intave] Generating block collisions");
 
     try {
-      if (version.isAtLeast(MinecraftVersion.BEE_UPDATE)) {
+      if (version.isAtLeast(ProtocolLibAdapter.BEE_UPDATE)) {
         collisionResolver = new CollisionResolverBeeUpdate();
       } else if (version.isAtLeast(AQUATIC_UPDATE)) {
         collisionResolver = new CollisionResolverVoxelShapes();

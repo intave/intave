@@ -114,7 +114,7 @@ public final class MovementDispatcher implements EventProcessor {
     }
 
     if (violationLevelData.isInActiveTeleportBundle) {
-//      event.setCancelled(true);
+      event.setCancelled(true);
       return;
     }
 
@@ -231,6 +231,13 @@ public final class MovementDispatcher implements EventProcessor {
       integers.readSafely(3) / 8000d
     );
     if (packet.getEntityModifier(event).readSafely(0) == player) {
+
+      // ignore setback velocity packet
+      User user1 = UserRepository.userOf(player);
+      if(user1.meta().violationLevelData().isInActiveTeleportBundle) {
+        return;
+      }
+
       plugin.eventService().transactionFeedbackService().requestPong(player, velocity, (player1, velocity1) -> {
         User user = UserRepository.userOf(player1);
         UserMetaMovementData movementData = user.meta().movementData();

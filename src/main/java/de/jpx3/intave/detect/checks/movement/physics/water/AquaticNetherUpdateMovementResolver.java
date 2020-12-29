@@ -35,7 +35,7 @@ public final class AquaticNetherUpdateMovementResolver extends AquaticWaterMovem
   @Override
   public void setup() throws Exception {
     MinecraftVersion minecraftVersion = ProtocolLibAdapter.serverVersion();
-    if (minecraftVersion.isAtLeast(MinecraftVersion.AQUATIC_UPDATE)) {
+    if (minecraftVersion.isAtLeast(ProtocolLibAdapter.AQUATIC_UPDATE)) {
       loadFluidMethodHandle();
       loadFluidTaggedMethodHandle();
       loadFluidTagWater();

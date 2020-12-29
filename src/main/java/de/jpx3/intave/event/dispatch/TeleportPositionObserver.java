@@ -25,7 +25,7 @@ import java.util.Set;
 
 public final class TeleportPositionObserver implements PacketEventSubscriber {
   private final static boolean TELEPORTATION_DEBUG = false;
-  final static boolean NEW_TELEPORTATION = ProtocolLibAdapter.serverVersion().isAtLeast(MinecraftVersion.COMBAT_UPDATE);
+  final static boolean NEW_TELEPORTATION = ProtocolLibAdapter.serverVersion().isAtLeast(ProtocolLibAdapter.COMBAT_UPDATE);
 
   @PacketSubscription(
     priority = ListenerPriority.LOWEST,

@@ -16,7 +16,7 @@ import java.lang.invoke.MethodType;
 import static de.jpx3.intave.user.UserMetaClientData.PROTOCOL_VERSION_AQUATIC_UPDATE;
 
 public final class PlayerMovementLocaleHelper {
-  private final static boolean SERVER_SIDE_GLIDING = ProtocolLibAdapter.serverVersion().isAtLeast(MinecraftVersion.COMBAT_UPDATE);
+  private final static boolean SERVER_SIDE_GLIDING = ProtocolLibAdapter.serverVersion().isAtLeast(ProtocolLibAdapter.COMBAT_UPDATE);
   private final static MethodType GLIDING_METHOD_TYPE = MethodType.methodType(Boolean.TYPE);
   private static MethodHandle methodHandleGliding;
 

@@ -185,7 +185,7 @@ public final class PlayerInventoryEvaluator implements PacketEventSubscriber, Bu
     }
   }
 
-  private final static boolean NEW_ITEM_REQUEST = ProtocolLibAdapter.serverVersion().isAtLeast(MinecraftVersion.BEE_UPDATE);
+  private final static boolean NEW_ITEM_REQUEST = ProtocolLibAdapter.serverVersion().isAtLeast(ProtocolLibAdapter.BEE_UPDATE);
 
   private boolean requestedItemUse(PacketContainer packet) {
     if (NEW_ITEM_REQUEST) {

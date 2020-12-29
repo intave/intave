@@ -92,7 +92,7 @@ public final class PlayerAbilityEvaluator implements PacketEventSubscriber {
     abilityData.allowFlying(allowedFlight);
   }
 
-  private final static boolean BIT_FIELD = ProtocolLibAdapter.serverVersion().isAtLeast(MinecraftVersion.BEE_UPDATE);
+  private final static boolean BIT_FIELD = ProtocolLibAdapter.serverVersion().isAtLeast(ProtocolLibAdapter.BEE_UPDATE);
 
   private boolean requestedFlying(PacketContainer packet) {
     return packet.getBooleans().read(BIT_FIELD ? 0 : 1);

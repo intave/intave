@@ -14,6 +14,8 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 
+import static de.jpx3.intave.adapter.ProtocolLibAdapter.AQUATIC_UPDATE;
+import static de.jpx3.intave.adapter.ProtocolLibAdapter.COMBAT_UPDATE;
 import static de.jpx3.intave.tools.items.BukkitItemResolver.materialByName;
 import static de.jpx3.intave.tools.items.BukkitItemResolver.materialsByName;
 import static de.jpx3.intave.tools.items.PlayerEnchantmentHelper.tridentRiptideEnchanted;
@@ -40,10 +42,10 @@ public final class InventoryUseItemHelper {
   }
 
   private static void loadDefaultUseItems(MinecraftVersion serverVersion) {
-    if (serverVersion.isAtLeast(MinecraftVersion.AQUATIC_UPDATE)) {
+    if (serverVersion.isAtLeast(AQUATIC_UPDATE)) {
       materialUseItemList.add(resolveTrident());
     }
-    if (serverVersion.isAtLeast(MinecraftVersion.COMBAT_UPDATE)) {
+    if (serverVersion.isAtLeast(COMBAT_UPDATE)) {
       materialUseItemList.add(resolveShield());
     } else {
       materialUseItemList.addAll(resolveSwords());

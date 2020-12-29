@@ -1,6 +1,7 @@
 package de.jpx3.intave.detect.checks.movement.physics.collision;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaClientData;
 import de.jpx3.intave.user.UserMetaMovementData;
@@ -19,7 +20,7 @@ final class PhysicsCollisionBed extends PhysicsCollision {
 
   @Override
   public void setup(MinecraftVersion serverVersion) {
-    if (serverVersion.isAtLeast(MinecraftVersion.COLOR_UPDATE)) {
+    if (serverVersion.isAtLeast(ProtocolLibAdapter.COLOR_UPDATE)) {
       materials = resolveBedMaterials();
     } else {
       materials = Collections.singletonList(Material.getMaterial("BED_BLOCK"));

@@ -17,7 +17,7 @@ if (stableVersion) {
 }
 fileName += "-PROD"
 
-def outputDirectory = "directory..."
+def outputDirectory = "C:\\Users\\Richard\\Desktop\\Minecraft Plugins\\bungeecort system\\AAC\\plugins\\"
 
 repositories {
   mavenCentral()
