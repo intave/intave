@@ -6,7 +6,7 @@ import org.bukkit.inventory.ItemStack;
 
 public final class PlayerEnchantmentHelper {
   private final static Enchantment ENCHANTMENT_SOUL_SPEED = Enchantment.getByName("soul_speed");
-  private final static Enchantment ENCHANTMENT_DEPTH_STRIDER = Enchantment.getByName("depth_strider");
+  private final static Enchantment ENCHANTMENT_DEPTH_STRIDER = Enchantment.getByName("DEPTH_STRIDER");
   public final static Enchantment ENCHANTMENT_RIPTIDE = Enchantment.getByName("RIPTIDE");
 
   public static boolean tridentRiptideEnchanted(ItemStack itemStack) {
