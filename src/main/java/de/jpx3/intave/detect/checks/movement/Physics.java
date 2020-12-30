@@ -14,6 +14,7 @@ import de.jpx3.intave.tools.client.PlayerMovementLocaleHelper;
 import de.jpx3.intave.tools.client.SinusCache;
 import de.jpx3.intave.tools.items.InventoryUseItemHelper;
 import de.jpx3.intave.tools.items.PlayerEnchantmentHelper;
+import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.*;
@@ -666,7 +667,7 @@ public final class Physics extends IntaveCheck {
 
       if (violationLevelData.physicsVL > 40 && MOVEMENT_EMULATION) {
         Vector emulationMotion = new Vector(predictedX, predictedY, predictedZ);
-        plugin.eventService().emulationEngine().emulationSetBack(player, emulationMotion, 1);
+        plugin.eventService().emulationEngine().emulationSetBack(player, emulationMotion, 8);
       }
     }
 
@@ -698,12 +699,15 @@ public final class Physics extends IntaveCheck {
 //      debug += "handActive=" + inventoryData.handActive();
 //      debug += inventoryData.heldItem().getType().name();
 //      debug += " flying:" + movementData.pastFlyingPacketAccurate;
-      if (violationLevelIncrease > 0) {
-        debug += " dist=" + formatDouble(distance, 10);
-      }
+//      if (violationLevelIncrease > 0) {
+//      }
+      debug += " dist=" + formatDouble(distance, 10);
 //      debug += " inventoryOpen=" + inventoryData.inventoryOpen();
       debug += " " + (violationLevelData.isInActiveTeleportBundle ? "+" : "-");
-      player.sendMessage(player.getName() + "| " + debug);
+      String finalDebug = debug;
+      Synchronizer.packetSynchronize(() -> {
+        player.sendMessage(player.getName() + "| " + finalDebug);
+      });
 
 //      player.sendMessage(debug + " dist=" + formatDouble(distance, 10));
     }

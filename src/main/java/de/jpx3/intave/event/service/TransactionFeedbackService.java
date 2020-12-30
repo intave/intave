@@ -8,6 +8,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.event.service.transaction.TransactionCallBackData;
 import de.jpx3.intave.event.service.transaction.TransactionFeedbackCallback;
+import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaSynchronizeData;
 import de.jpx3.intave.user.UserRepository;
@@ -87,6 +88,7 @@ public final class TransactionFeedbackService extends PacketAdapter {
     transactionPacket.getIntegers().write(0, 0);
     transactionPacket.getShorts().write(0, id);
     transactionPacket.getBooleans().write(0, false);
+
     try {
       protocolManager.sendServerPacket(receiver, transactionPacket);
     } catch (InvocationTargetException e) {

@@ -93,6 +93,10 @@ public final class PacketSubscriptionLinker {
         packetType == PacketType.Play.Server.TAB_COMPLETE ||
         packetType == PacketType.Play.Client.CHAT;
     }
+
+//    return !(packetType == PacketType.Play.Client.POSITION ||
+//      packetType == PacketType.Play.Client.POSITION_LOOK);
+
     return false;
   }
 

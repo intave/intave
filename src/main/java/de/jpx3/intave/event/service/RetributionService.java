@@ -1,5 +1,6 @@
 package de.jpx3.intave.event.service;
 
+import de.jpx3.intave.tools.sync.Synchronizer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -10,12 +11,14 @@ public final class RetributionService {
   }
 
   private void sendMessageToAdministrators(Player detectedPlayer, int vl, String checkName, String details) {
-    for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-      if (onlinePlayer.isOp()) {
-        String message = resolveFlagMessage(detectedPlayer, vl, checkName, details);
-        onlinePlayer.sendMessage(message);
+    Synchronizer.synchronizeDelayed(() -> {
+      for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+        if (onlinePlayer.isOp()) {
+          String message = resolveFlagMessage(detectedPlayer, vl, checkName, details);
+          onlinePlayer.sendMessage(message);
+        }
       }
-    }
+    }, 0);
   }
 
   private final static String PREFIX = "&8[&c&lIntave&8]&7 ";

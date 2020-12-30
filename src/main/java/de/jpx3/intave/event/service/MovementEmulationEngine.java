@@ -4,6 +4,7 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.reflect.Reflection;
 import de.jpx3.intave.tools.MathHelper;
+import de.jpx3.intave.tools.client.PlayerMovementHelper;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.detect.checks.movement.physics.CollisionHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
@@ -27,7 +28,7 @@ import java.util.Set;
 
 public final class MovementEmulationEngine {
   private final IntavePlugin plugin;
-  private final static boolean DEBUG_EMULATION = true;
+  private final static boolean DEBUG_EMULATION = false;
   public MovementEmulationEngine(IntavePlugin plugin) {
     this.plugin = plugin;
   }
@@ -38,6 +39,11 @@ public final class MovementEmulationEngine {
 
     if(violationLevelData.isInActiveTeleportBundle) {
       return;
+    }
+
+    if (Math.abs(motion.getY() - PlayerMovementHelper.jumpMotionFor(player)) < 0.01) {
+      motion.setX(motion.getX() / 3);
+      motion.setZ(motion.getZ() / 3);
     }
 
     // starting conditions

@@ -51,7 +51,7 @@ public final class MovementDispatcher implements EventProcessor {
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packets = {
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "USE_ENTITY"),
+      @PacketDescriptor(sender = Sender.CLIENT, packetName = "USE_ENTITY")
     }
   )
   public void receiveUseEntity(PacketEvent event) {
@@ -83,7 +83,7 @@ public final class MovementDispatcher implements EventProcessor {
   }
 
   @PacketSubscription(
-    priority = ListenerPriority.HIGH,
+//    priority = ListenerPriority.HIGH,
     packets = {
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION"),
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION_LOOK"),
@@ -130,6 +130,7 @@ public final class MovementDispatcher implements EventProcessor {
     // flag -> remove packet
     if (movementData.invalidMovement) {
       event.setCancelled(true);
+      return;
     }
 
     movementData.invalidMovement = false;

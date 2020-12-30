@@ -14,6 +14,7 @@ import de.jpx3.intave.tools.client.SinusCache;
 import de.jpx3.intave.tools.items.InventoryUseItemHelper;
 import de.jpx3.intave.world.BlockAccessor;
 import de.jpx3.intave.world.collision.CollisionEngine;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class IntavePlugin extends JavaPlugin {
@@ -102,6 +103,7 @@ public final class IntavePlugin extends JavaPlugin {
       logger.error("Unable to boot");
       exception.printStackTrace();
     }
+    logger.info("Intave booted successfully");
   }
 
   @Natify
