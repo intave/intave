@@ -179,6 +179,11 @@ public class WrappedEntity {
     alternativePositions.newPosY = alternativeY;
   }
 
+  public boolean moving(double distance) {
+    EntityPositionContext positions = this.positions;
+    return Math.hypot(positions.newPosX - positions.prevPosX, positions.newPosZ - positions.prevPosZ) >= distance;
+  }
+
   /**
    * Returns the type name of this entity.
    */

@@ -140,9 +140,10 @@ public final class UserMetaMovementData {
     }
     if (hasRotation) {
       StructureModifier<Float> modifier = packet.getFloat();
-      lastRotationYaw = rotationYaw = modifier.read(0);
-      lastRotationPitch = rotationPitch = modifier.read(1);
-
+      lastRotationYaw = rotationYaw;
+      lastRotationPitch = rotationPitch;
+      rotationYaw = modifier.read(0);
+      rotationPitch = modifier.read(1);
       lookVector = PlayerRotationHelper.vectorForRotation(rotationPitch, rotationYaw);
     }
   }

@@ -7,8 +7,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.detect.IntaveMetaCheck;
-import de.jpx3.intave.detect.checks.combat.heuristics.ExampleHeuristic;
 import de.jpx3.intave.detect.checks.combat.heuristics.ReshapedJumpHeuristic;
+import de.jpx3.intave.detect.checks.combat.heuristics.RotationStandardDeviationHeuristic;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
@@ -57,12 +57,13 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
   }
 
   public void setupSubChecks() {
-    appendCheckPart(new ExampleHeuristic(this));
     appendCheckPart(new ReshapedJumpHeuristic(this));
+    appendCheckPart(new RotationStandardDeviationHeuristic(this));
   }
 
   public void saveAnomaly(Player player, Anomaly anomaly) {
     metaOf(player).anomalies.add(anomaly);
+//    player.sendMessage(ChatColor.RED + "[HEUR] [DEB] Save anomaly " + anomaly.confidence.name() + " at pattern " + anomaly.description);
   }
 
   public void evaluateAll() {
@@ -100,7 +101,11 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
   }
 
   private double resolveConfidencePercentage(double confidenceOutput) {
-    return confidenceOutput >= 800 ? 100.0 : (confidenceOutput / 800.0) * 100.0;
+    double percentage = confidenceOutput >= 800 ? 100.0 : confidenceOutput / 800.0 * 100.0;
+    if (percentage < 50) {
+      percentage += 50;
+    }
+    return percentage;
   }
 
   public MiningStrategy findSuitableMiningStrategy(Player player, Confidence overallConfidence) {

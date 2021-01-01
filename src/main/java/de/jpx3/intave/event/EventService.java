@@ -1,10 +1,7 @@
 package de.jpx3.intave.event;
 
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.event.dispatch.MovementDispatcher;
-import de.jpx3.intave.event.dispatch.PlayerAbilityEvaluator;
-import de.jpx3.intave.event.dispatch.PlayerInventoryEvaluator;
-import de.jpx3.intave.event.dispatch.PotionEffectEvaluator;
+import de.jpx3.intave.event.dispatch.*;
 import de.jpx3.intave.event.service.MovementEmulationEngine;
 import de.jpx3.intave.event.service.TransactionFeedbackService;
 import de.jpx3.intave.event.service.entity.ClientSideEntityService;
@@ -23,6 +20,7 @@ public final class EventService {
     this.transactionFeedbackService = new TransactionFeedbackService(plugin);
     this.emulationEngine = new MovementEmulationEngine(plugin);
     new UserRepositoryEventListener(plugin);
+    new AttackDispatcher(plugin);
     new MovementDispatcher(plugin);
     new PotionEffectEvaluator(plugin);
     new PlayerAbilityEvaluator(plugin);

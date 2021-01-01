@@ -78,7 +78,7 @@ public final class User {
       this.inventoryData = new UserMetaInventoryData(player);
       this.synchronizeData = new UserMetaSynchronizeData();
       this.movementData = new UserMetaMovementData(player, user);
-      this.attackData = new UserMetaAttackData();
+      this.attackData = new UserMetaAttackData(player);
     }
 
     public UserMetaViolationLevelData violationLevelData() {

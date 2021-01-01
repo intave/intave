@@ -73,19 +73,6 @@ public final class MovementDispatcher implements EventProcessor {
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packets = {
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "USE_ENTITY")
-    }
-  )
-  public void receiveUseEntity(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
-    UserMetaMovementData movementData = user.meta().movementData();
-    movementData.pastPlayerAttackPhysics = 0;
-  }
-
-  @PacketSubscription(
-    priority = ListenerPriority.HIGH,
-    packets = {
       @PacketDescriptor(sender = Sender.SERVER, packetName = "EXPLOSION"),
     }
   )
@@ -120,6 +107,7 @@ public final class MovementDispatcher implements EventProcessor {
 
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
+    UserMetaAttackData attackData = meta.attackData();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
 
     boolean hasMovement = packet.getBooleans().read(1);
@@ -142,6 +130,7 @@ public final class MovementDispatcher implements EventProcessor {
     movementData.applyGroundInformationToPacket(packet);
 
     if (!movementData.teleport) {
+      attackData.updatePerfectRotation();
       // Check calls
 
       updatePotionEffects(user);
