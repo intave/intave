@@ -4,7 +4,6 @@ version: @VERSION@
 api-version: 1.13
 description: @DESCRIPTION@
 
-load: STARTUP
 main: de.jpx3.intave.IntavePlugin
 database: false
 softdepend: [ProtocolLib, ViaVersion]
