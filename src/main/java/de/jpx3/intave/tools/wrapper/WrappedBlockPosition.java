@@ -1,14 +1,11 @@
 package de.jpx3.intave.tools.wrapper;
 
-import com.comphenix.protocol.wrappers.BlockPosition;
-import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.reflect.Reflection;
 import de.jpx3.intave.reflect.ReflectionFailureException;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 
 import java.lang.reflect.Field;
-import java.sql.Ref;
 
 public final class WrappedBlockPosition extends WrappedVector {
   public static final WrappedBlockPosition ORIGIN = new WrappedBlockPosition(0, 0, 0);

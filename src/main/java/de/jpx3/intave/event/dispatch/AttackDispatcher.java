@@ -1,11 +1,11 @@
 package de.jpx3.intave.event.dispatch;
 
-import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.detect.EventProcessor;
+import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;

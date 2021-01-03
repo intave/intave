@@ -1,12 +1,11 @@
 package de.jpx3.intave.tools.client;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.reflect.ReflectionFailureException;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.UserMetaClientData;
 import de.jpx3.intave.user.UserMetaMovementData;
+import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.Player;
 
 import java.lang.invoke.MethodHandle;

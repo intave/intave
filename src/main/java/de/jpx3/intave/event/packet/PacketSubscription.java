@@ -1,7 +1,5 @@
 package de.jpx3.intave.event.packet;
 
-import com.comphenix.protocol.events.ListenerPriority;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -15,7 +13,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PacketSubscription {
-  ListenerPriority priority() default ListenerPriority.NORMAL;
+  ListenerPriority priority() default ListenerPriority.FIFTH;
   String identifier() default "no identifier assigned";
   PacketDescriptor[] packets();
 }

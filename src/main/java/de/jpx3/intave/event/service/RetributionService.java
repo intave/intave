@@ -8,8 +8,6 @@ import org.bukkit.entity.Player;
 public final class RetributionService {
 
 
-
-
   public void markPlayer(Player detectedPlayer, int vl, String checkName, String details) {
     sendMessageToAdministrators(detectedPlayer, vl, checkName, details);
   }

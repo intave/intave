@@ -1,11 +1,10 @@
 package de.jpx3.intave.detect.checks.combat.heuristics;
 
-import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketEvent;
 import com.google.common.collect.Lists;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.detect.IntaveMetaCheckPart;
 import de.jpx3.intave.detect.checks.combat.Heuristics;
+import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
@@ -64,7 +63,7 @@ public final class RotationStandardDeviationHeuristic extends IntaveMetaCheckPar
     double standardDeviation = RotationMathHelper.calculateStandardDeviationFloat(heuristicMeta.distancesToPerfectYaw);
     if (standardDeviation < 1.0) {
       if (heuristicMeta.rotationBalance++ >= 2) {
-        Heuristics.Anomaly anomaly = new Heuristics.Anomaly("rx", Heuristics.Confidence.PROBABLE, Heuristics.MiningStrategy.EMULATION_MODERATE);
+        Anomaly anomaly = new Anomaly("rx", Confidence.PROBABLE, Anomaly.AnomalyOption.LIMIT_1);
         parentCheck().saveAnomaly(player, anomaly);
         heuristicMeta.rotationBalance--;
       }

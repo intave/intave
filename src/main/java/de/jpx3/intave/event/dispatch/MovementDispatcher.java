@@ -1,6 +1,5 @@
 package de.jpx3.intave.event.dispatch;
 
-import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -9,10 +8,7 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.detect.EventProcessor;
 import de.jpx3.intave.detect.checks.movement.Physics;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
-import de.jpx3.intave.event.packet.PacketDescriptor;
-import de.jpx3.intave.event.packet.PacketSubscription;
-import de.jpx3.intave.event.packet.PacketSubscriptionLinker;
-import de.jpx3.intave.event.packet.Sender;
+import de.jpx3.intave.event.packet.*;
 import de.jpx3.intave.tools.client.PlayerMovementLocaleHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
@@ -92,7 +88,7 @@ public final class MovementDispatcher implements EventProcessor {
   }
 
   @PacketSubscription(
-    priority = ListenerPriority.HIGH,
+    priority = ListenerPriority.LOWEST,
     packets = {
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION"),
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION_LOOK"),
@@ -143,7 +139,7 @@ public final class MovementDispatcher implements EventProcessor {
   }
 
   @PacketSubscription(
-    priority = ListenerPriority.HIGHEST,
+    priority = ListenerPriority.LOW,
     packets = {
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION"),
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION_LOOK"),

@@ -3,16 +3,13 @@ package de.jpx3.intave.event.packet;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.ConnectionSide;
-import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
-import com.google.common.collect.Lists;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.lib.asm.Type;
 import de.jpx3.intave.reflect.irx.IRXFactory;
 
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -20,7 +17,7 @@ import java.util.function.IntFunction;
 
 public final class PacketSubscriptionLinker {
   private final IntavePlugin plugin;
-  private final List<WeakReference<ForwardingPacketAdapter>> packetAdapters = Lists.newArrayList();
+  private final Map<PacketType, SCOWAList<LocalPacketAdapter>> intavePacketListeners = new HashMap<>();
   private final static boolean NO_CHAT_HOOKUP = false;
 
   public PacketSubscriptionLinker(IntavePlugin plugin) {
@@ -33,9 +30,36 @@ public final class PacketSubscriptionLinker {
         linkSubscription(subscriber, method);
       }
     }
+    if(plugin.isEnabled()) {
+      refreshInternalSubscriptions();
+    }
   }
 
   public void removeSubscriptionsOf(PacketEventSubscriber subscriber) {
+    for (SCOWAList<LocalPacketAdapter> value : intavePacketListeners.values()) {
+      value.removeIf(localPacketAdapter -> localPacketAdapter.subscriber() == subscriber);
+    }
+    if(plugin.isEnabled()) {
+      refreshInternalSubscriptions();
+    }
+  }
+
+  public void refreshInternalSubscriptions() {
+    ProtocolLibrary.getProtocolManager().removePacketListeners(plugin);
+    for (PacketType packetType : intavePacketListeners.keySet()) {
+      bakeSubscriptions(packetType, intavePacketListeners.get(packetType));
+    }
+  }
+
+  private void bakeSubscriptions(PacketType type, SCOWAList<LocalPacketAdapter> localPacketAdapters) {
+    linkAdapter(new ForwardingPacketAdapter(plugin, type, localPacketAdapters));
+  }
+
+  private void linkAdapter(PacketAdapter adapter) {
+    ProtocolLibrary.getProtocolManager().addPacketListener(adapter);
+  }
+
+  /*public void removeSubscriptionsOf(PacketEventSubscriber subscriber) {
     for (WeakReference<ForwardingPacketAdapter> packetAdapterWR : packetAdapters) {
       ForwardingPacketAdapter packetAdapter = packetAdapterWR.get();
       if (packetAdapter != null && packetAdapter.subscriber() == subscriber) {
@@ -43,7 +67,7 @@ public final class PacketSubscriptionLinker {
       }
     }
     packetAdapters.removeIf(x -> x.get() == null);
-  }
+  }*/
 
   private boolean methodRequestsSubscription(Method method) {
     return annotatedAsSubscription(method) && validParameters(method) && validModifiers(method);
@@ -174,13 +198,11 @@ public final class PacketSubscriptionLinker {
     if(translatePacketTypes.length == 0) {
       return;
     }
-    ForwardingPacketAdapter adapter = new ForwardingPacketAdapter(plugin, subscriber, priority, translatePacketTypes, methodName, executor);
-    packetAdapters.removeIf(x -> x.get() == null);
-    packetAdapters.add(new WeakReference<>(adapter));
-    linkAdapter(adapter);
-  }
-
-  private void linkAdapter(PacketAdapter adapter) {
-    ProtocolLibrary.getProtocolManager().addPacketListener(adapter);
+    LocalPacketAdapter adapter = new LocalPacketAdapter(plugin, subscriber, priority, translatePacketTypes, methodName, executor);
+    for (PacketType translatePacketType : translatePacketTypes) {
+      SCOWAList<LocalPacketAdapter> packetTypeListeners =
+        intavePacketListeners.computeIfAbsent(translatePacketType, x -> new SCOWAList<>());
+      packetTypeListeners.add(adapter);
+    }
   }
 }

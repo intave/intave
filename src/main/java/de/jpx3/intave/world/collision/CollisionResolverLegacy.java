@@ -1,11 +1,11 @@
 package de.jpx3.intave.world.collision;
 
 import com.google.common.collect.Lists;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.reflect.ReflectionFailureException;
+import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.UserMetaMovementData;
+import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.Player;
 
 import java.lang.invoke.MethodHandle;

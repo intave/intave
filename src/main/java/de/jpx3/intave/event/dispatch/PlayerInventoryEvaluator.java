@@ -1,23 +1,18 @@
 package de.jpx3.intave.event.dispatch;
 
-import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
-import de.jpx3.intave.event.packet.PacketDescriptor;
-import de.jpx3.intave.event.packet.PacketEventSubscriber;
-import de.jpx3.intave.event.packet.PacketSubscription;
-import de.jpx3.intave.event.packet.Sender;
+import de.jpx3.intave.event.packet.*;
 import de.jpx3.intave.tools.items.InventoryUseItemHelper;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.UserMetaInventoryData;
+import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.FoodLevelChangeEvent;

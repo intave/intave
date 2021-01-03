@@ -1,10 +1,9 @@
 package de.jpx3.intave.detect.checks.combat.heuristics;
 
-import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketEvent;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.detect.IntaveCheckPart;
 import de.jpx3.intave.detect.checks.combat.Heuristics;
+import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
@@ -18,7 +17,6 @@ import org.bukkit.util.Vector;
 public final class ReshapedJumpHeuristic extends IntaveCheckPart<Heuristics> {
   public ReshapedJumpHeuristic(Heuristics parentCheck) {
     super(parentCheck);
-    IntavePlugin.singletonInstance().packetSubscriptionLinker().linkSubscriptionsIn(this);
   }
 
   @PacketSubscription(
@@ -51,7 +49,7 @@ public final class ReshapedJumpHeuristic extends IntaveCheckPart<Heuristics> {
       double abs = Math.abs(distance - 0.2);
       if (abs < 1e-5 && heuristicMeta.overallAttacks > 50 && AccessHelper.now() - heuristicMeta.firstAttack > 70_000) {
 //        player.sendMessage("Registered flag! (" + (AccessHelper.now() - heuristicMeta.firstAttack) + ")");
-        Heuristics.Anomaly anomaly = new Heuristics.Anomaly("jump", Heuristics.Confidence.VERY_LIKELY, Heuristics.MiningStrategy.EMULATION_LIGHT);
+        Anomaly anomaly = new Anomaly("jump", Confidence.VERY_LIKELY, Anomaly.AnomalyOption.LIMIT_2);
         parentCheck().saveAnomaly(player, anomaly);
       }
     }

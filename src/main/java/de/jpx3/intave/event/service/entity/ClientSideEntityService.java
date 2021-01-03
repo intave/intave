@@ -1,16 +1,12 @@
 package de.jpx3.intave.event.service.entity;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
-import de.jpx3.intave.event.packet.PacketDescriptor;
-import de.jpx3.intave.event.packet.PacketEventSubscriber;
-import de.jpx3.intave.event.packet.PacketSubscription;
-import de.jpx3.intave.event.packet.Sender;
+import de.jpx3.intave.event.packet.*;
 import de.jpx3.intave.reflect.Reflection;
 import de.jpx3.intave.tools.hitbox.EntityHitBoxResolver;
 import de.jpx3.intave.tools.hitbox.HitBoxBoundaries;

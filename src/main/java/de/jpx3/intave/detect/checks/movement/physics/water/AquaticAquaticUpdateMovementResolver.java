@@ -1,11 +1,11 @@
 package de.jpx3.intave.detect.checks.movement.physics.water;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
-import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
-import de.jpx3.intave.tools.wrapper.WrappedVector;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.reflect.Reflection;
 import de.jpx3.intave.reflect.ReflectionFailureException;
+import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
+import de.jpx3.intave.tools.wrapper.WrappedVector;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaMovementData;
 

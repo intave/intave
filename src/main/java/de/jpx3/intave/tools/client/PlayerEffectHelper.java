@@ -1,8 +1,8 @@
 package de.jpx3.intave.tools.client;
 
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.UserMetaClientData;
+import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;

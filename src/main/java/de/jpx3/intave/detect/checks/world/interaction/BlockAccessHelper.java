@@ -4,7 +4,6 @@ import de.jpx3.intave.access.IntaveException;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.reflect.Reflection;
 import de.jpx3.intave.tools.wrapper.WrappedMovingObjectPosition;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 

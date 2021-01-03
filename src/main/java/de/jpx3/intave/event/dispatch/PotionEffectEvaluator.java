@@ -1,16 +1,12 @@
 package de.jpx3.intave.event.dispatch;
 
-import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.event.packet.PacketDescriptor;
-import de.jpx3.intave.event.packet.PacketEventSubscriber;
-import de.jpx3.intave.event.packet.PacketSubscription;
-import de.jpx3.intave.event.packet.Sender;
+import de.jpx3.intave.event.packet.*;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.UserMetaPotionData;
+import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 

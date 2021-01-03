@@ -11,7 +11,6 @@ import de.jpx3.intave.event.service.transaction.TransactionFeedbackCallback;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaSynchronizeData;
 import de.jpx3.intave.user.UserRepository;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
