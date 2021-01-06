@@ -9,7 +9,7 @@ import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-public final class PatchyLoader {
+public final class PatchyLoadingInjector {
 
   @Natify
   public static <T> Class<T> loadUnloadedClassPatched(ClassLoader classLoader, String className) {
@@ -46,7 +46,7 @@ public final class PatchyLoader {
       System.out.println("Unable to resolve class bytes for class " + className + ". Performing manual load attempt..");
       String path;
       try {
-        path = PatchyLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
+        path = PatchyLoadingInjector.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
       } catch (URISyntaxException e) {
         throw new IllegalStateException(e);
       }

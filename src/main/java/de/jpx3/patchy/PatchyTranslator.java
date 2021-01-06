@@ -212,7 +212,6 @@ final class PatchyTranslator {
     return className.startsWith("net/minecraft/server") || className.startsWith("org/bukkit/craftbukkit");
   }
 
-  @Natify
   private static List<MethodNode> selectedMethodsIn(ClassNode classNode) {
     return classNode.methods.stream()
       .filter(PatchyTranslator::methodSelected)
@@ -240,12 +239,10 @@ final class PatchyTranslator {
     return false;
   }
 
-  @Natify
   private static String className(AnnotationNode annotationNode) {
     return slashify(Type.getType(annotationNode.desc).getClassName());
   }
 
-  @Natify
   private static ClassNode classNodeOf(byte[] inputBytes) {
     ClassReader cr = new ClassReader(inputBytes);
     ClassNode classNode = new ClassNode();
@@ -253,14 +250,12 @@ final class PatchyTranslator {
     return classNode;
   }
 
-  @Natify
   private static byte[] byteArrayOf(ClassNode classNode) {
     ClassWriter classWriter = new ClassWriter(3);
     classNode.accept(classWriter);
     return classWriter.toByteArray();
   }
 
-  @Natify
   private static String slashify(String input) {
     return input.replace('.', '/');
   }

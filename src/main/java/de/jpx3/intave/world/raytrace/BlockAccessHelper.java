@@ -43,7 +43,7 @@ public final class BlockAccessHelper {
     }
   }
 
-  public static Object resolveNativeBlock(final Location location) {
+  public static Object resolveNativeBlock(Location location) {
     double posX = location.getX();
     double posY = location.getY();
     double posZ = location.getZ();
@@ -61,8 +61,8 @@ public final class BlockAccessHelper {
     }
   }
 
-  private static int floor_double(final double value) {
-    final int i = (int)value;
+  private static int floor_double(double value) {
+    int i = (int)value;
     return (value < i) ? (i - 1) : i;
   }
 
