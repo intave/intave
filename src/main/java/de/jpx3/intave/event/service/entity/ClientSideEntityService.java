@@ -56,6 +56,22 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     } else {
       dataWatcherEntityFieldName = "a";
     }
+
+    // search field
+
+    Class<?> entityClass = Reflection.NMS_ENTITY_CLASS;
+    Class<?> dataWatcherClass = Reflection.lookupServerClass("DataWatcher");
+
+    for (Field declaredField : dataWatcherClass.getDeclaredFields()) {
+      if(declaredField.getType() == entityClass) {
+        String fieldName = declaredField.getName();
+        if(!dataWatcherEntityFieldName.equals(fieldName)) {
+          System.out.println("[Intave] Conflicting field name internal for entity-from-datawatcher access: Internals suggest " + dataWatcherEntityFieldName + " but found " + fieldName);
+        }
+        dataWatcherEntityFieldName = fieldName;
+        break;
+      }
+    }
   }
 
   private void reevaluateTracingEntities() {

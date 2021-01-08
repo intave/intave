@@ -1,25 +1,34 @@
 package de.jpx3.intave.world.permission;
 
-import de.jpx3.patchy.PatchyLoadingInjector;
+import de.jpx3.intave.access.BlockBreakPermissionCheck;
 import de.jpx3.intave.access.BlockPlacePermissionCheck;
+import de.jpx3.intave.adapter.ProtocolLibAdapter;
+import de.jpx3.patchy.PatchyLoadingInjector;
 
 public final class InteractionPermissionService {
-
   private BlockPlacePermissionCheck blockPlacePermissionCheck;
+  private BlockBreakPermissionCheck blockBreakPermissionCheck;
 
   public InteractionPermissionService() {
     setup();
   }
 
   public void setup() {
+
+    // placement
     ClassLoader classLoader = InteractionPermissionService.class.getClassLoader();
-
-    // class load
     PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, "de.jpx3.intave.world.permission.CustomCraftBlock");
-    PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, "de.jpx3.intave.world.permission.CraftBukkitPlacePermissionResolver");
+    String className;
+    if (ProtocolLibAdapter.COMBAT_UPDATE.atOrAbove()) {
+      className = "de.jpx3.intave.world.permission.DualHandCBPlacePermissionResolver";
+    } else {
+      className = "de.jpx3.intave.world.permission.LegacyCBPlacePermissionResolver";
+    }
+    PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, className);
+    blockPlacePermissionCheck = instanceOf(className);
 
-    // initialize
-    blockPlacePermissionCheck = instanceOf("de.jpx3.intave.world.permission.CraftBukkitPlacePermissionResolver");
+    // break
+    blockBreakPermissionCheck = new CBBreakPermissionResolver();
   }
 
   private <T> T instanceOf(String className) {
@@ -36,5 +45,13 @@ public final class InteractionPermissionService {
 
   public void setBlockPlacePermissionCheck(BlockPlacePermissionCheck blockPlacePermissionCheck) {
     this.blockPlacePermissionCheck = blockPlacePermissionCheck;
+  }
+
+  public BlockBreakPermissionCheck blockBreakPermissionCheck() {
+    return blockBreakPermissionCheck;
+  }
+
+  public void setBlockBreakPermissionCheck(BlockBreakPermissionCheck blockBreakPermissionCheck) {
+    this.blockBreakPermissionCheck = blockBreakPermissionCheck;
   }
 }

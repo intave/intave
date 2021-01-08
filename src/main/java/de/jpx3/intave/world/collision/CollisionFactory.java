@@ -19,7 +19,17 @@ public final class CollisionFactory {
     WrappedAxisAlignedBB boundingBox
   ) {
     AbstractCollisionDefaultResolver collisionResolver = CollisionEngine.collisionResolver();
-    return collisionResolver.getCollisionBoxes(player, boundingBox);
+    List<WrappedAxisAlignedBB> boundingBoxes = collisionResolver.collidingBoundingBoxes(player, boundingBox);
+
+    // add/remove future boxes
+
+    // add future block-placements
+
+    // remove future block-breaks
+
+
+
+    return boundingBoxes;
   }
 
   public static List<String> blockIntersectionExclusionNames() {

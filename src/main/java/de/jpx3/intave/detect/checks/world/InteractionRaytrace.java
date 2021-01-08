@@ -10,7 +10,6 @@ import com.comphenix.protocol.wrappers.WrappedBlockData;
 import com.google.common.collect.Maps;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.detect.IntaveMetaCheck;
-import de.jpx3.intave.world.raytrace.Raytracer;
 import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
@@ -24,6 +23,8 @@ import de.jpx3.intave.tools.wrapper.WrappedVector;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserCustomCheckMeta;
 import de.jpx3.intave.user.UserMetaMovementData;
+import de.jpx3.intave.world.BlockAccessor;
+import de.jpx3.intave.world.raytrace.Raytracer;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -39,8 +40,6 @@ import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.STOP_DE
 
 public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytrace.InteractionMeta> {
   private final IntavePlugin plugin;
-
-  // TODO: 01/07/21 ADD USE_ITEM Packet (1.9+ !!!)
 
   public InteractionRaytrace(IntavePlugin plugin) {
     super("InteractionRaytrace", "interactionRaytrace", InteractionMeta.class);
@@ -58,8 +57,10 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
 
 
   @PacketSubscription(
+    priority = ListenerPriority.LOW,
     packets = {
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "BLOCK_PLACE")
+      @PacketDescriptor(sender = Sender.CLIENT, packetName = "BLOCK_PLACE"),
+      @PacketDescriptor(sender = Sender.CLIENT, packetName = "USE_ITEM")
     }
   )
   public void receiveInteraction(PacketEvent event) {
@@ -69,16 +70,16 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     if(blockPosition == null) {
       return;
     }
-    int enumDirection = packet.getIntegers().readSafely(0);
+    Integer enumDirection = packet.getIntegers().readSafely(0);
+    if(enumDirection == null) {
+      enumDirection = packet.getDirections().readSafely(0).ordinal();
+    }
     if(enumDirection == 255) {
       return;
     }
 
     User user = userOf(player);
     InteractionMeta interactionMeta = metaOf(user);
-    if(interactionMeta.excludeCurrentPacket) {
-      return;
-    }
     UserMetaMovementData movementData = user.meta().movementData();
     World world = player.getWorld();
     Location targetLocation = blockPosition.toLocation(world);
@@ -93,19 +94,15 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     Material itemTypeInHand = player.getItemInHand().getType();
     boolean isPlacement = itemTypeInHand != Material.AIR && itemTypeInHand.isBlock();
 
-//    player.sendMessage("Test");
-    if(isPlacement) {
-      final int blockX = blockPlacementLocation.getBlockX();
-      final int blockY = blockPlacementLocation.getBlockY();
-      final int blockZ = blockPlacementLocation.getBlockZ();
-
-      boolean cancelled = plugin.interactionPermissionService().blockPlacePermissionCheck().hasPermission(player, world, blockX, blockY, blockZ, itemTypeInHand.getId(), (byte) 0);
-      player.sendMessage("Cancelled: " + cancelled);
-    }
-
     InteractionType type = isPlacement ? InteractionType.PLACE : InteractionType.INTERACT;
     if((raycastResult == null || enumDirection != raycastResult.sideHit.getIndex()) || raycastLocation.distance(targetLocation) > 0) {
       boolean cancel = processViolation(player, type);
+      // cancel if placement impossible
+
+      if(BlockAccessor.blockAccess(raycastLocation).getType() == Material.AIR) {
+        cancel = true;
+      }
+
       interactionMeta.traceReportList.add(
         new TraceReport(
           raycastResult, blockPosition, enumDirection, packet.deepClone(),
@@ -122,6 +119,7 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
   }
 
   @PacketSubscription(
+    priority = ListenerPriority.LOW,
     packets = {
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "BLOCK_DIG")
     }
@@ -145,9 +143,6 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     User user = userOf(player);
     InteractionMeta interactionMeta = metaOf(user);
 
-    if(interactionMeta.excludeCurrentPacket) {
-      return;
-    }
     UserMetaMovementData movementData = user.meta().movementData();
     World world = player.getWorld();
     Location targetLocation = blockPosition.toLocation(world);
@@ -259,7 +254,13 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
         } else if(traceReport.wasCanceled()) {
           PacketContainer packet = traceReport.thePacket();
           BlockPosition blockPosition1 = new BlockPosition(raycastLocation.getBlockX(), raycastLocation.getBlockY(), raycastLocation.getBlockZ());
-          packet.getIntegers().write(0, raycastResult.sideHit.getIndex());
+
+          if(packet.getDirections().size() > 0) {
+            packet.getDirections().write(0, raycastResult.sideHit.toDirection());
+          } else {
+            packet.getIntegers().write(0, raycastResult.sideHit.getIndex());
+          }
+
           packet.getBlockPositionModifier().write(0, blockPosition1);
           refreshBlock(player, targetLocation);
           for (WrappedEnumDirection direction : WrappedEnumDirection.values()) {
@@ -301,10 +302,8 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
 
   private void receiveExcludedPacket(Player player, PacketContainer packet) {
     try {
-      InteractionMeta interactionMeta = metaOf(player);
-      interactionMeta.excludeCurrentPacket = true;
+      userOf(player).ignoreNextPacket();
       ProtocolLibrary.getProtocolManager().recieveClientPacket(player, packet);
-      interactionMeta.excludeCurrentPacket = false;
     } catch (InvocationTargetException | IllegalAccessException exception) {
       exception.printStackTrace();
     }
@@ -340,7 +339,6 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
   public static class InteractionMeta extends UserCustomCheckMeta {
     final List<TraceReport> traceReportList = new ArrayList<>();
     final Map<InteractionType, Integer> violationLevel = Maps.newEnumMap(InteractionType.class);
-    volatile boolean excludeCurrentPacket;
   }
 
   public enum InteractionType {

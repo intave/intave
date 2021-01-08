@@ -38,7 +38,7 @@ public final class CollisionResolverVoxelShapes extends AbstractCollisionDefault
   }
 
   @Override
-  public List<WrappedAxisAlignedBB> getCollisionBoxes(Player player, WrappedAxisAlignedBB boundingBox) {
+  public List<WrappedAxisAlignedBB> collidingBoundingBoxes(Player player, WrappedAxisAlignedBB boundingBox) {
     User user = UserRepository.userOf(player);
     Object nmsEntity = user.playerHandle();
     UserMetaMovementData movementData = user.meta().movementData();

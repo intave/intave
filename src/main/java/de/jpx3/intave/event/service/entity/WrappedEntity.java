@@ -6,9 +6,6 @@ import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.tools.hitbox.HitBoxBoundaries;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 

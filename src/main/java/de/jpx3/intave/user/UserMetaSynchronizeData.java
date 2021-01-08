@@ -4,7 +4,6 @@ import com.google.common.collect.Maps;
 import de.jpx3.intave.event.service.entity.WrappedEntity;
 import de.jpx3.intave.event.service.transaction.TransactionCallBackData;
 
-import java.util.List;
 import java.util.Map;
 
 public final class UserMetaSynchronizeData {

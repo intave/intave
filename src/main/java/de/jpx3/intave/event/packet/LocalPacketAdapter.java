@@ -54,9 +54,9 @@ public final class LocalPacketAdapter implements Comparable<LocalPacketAdapter> 
 //      Timings.packetProcessing.stop();
     } catch (UnsupportedOperationException exception) {
       System.out.println("[Intave] We recommend updating ProtocolLib");
-      processException(exception);
+      processException(event.getPacketType(), exception);
     } catch (RuntimeException exception) {
-      processException(exception);
+      processException(event.getPacketType(), exception);
 
       if(exceptions++ >= 50) {
         System.out.println(subscriber.getClass().getSimpleName()+"."+methodName + " has been deactivated due to too many exceptions");
@@ -86,7 +86,7 @@ public final class LocalPacketAdapter implements Comparable<LocalPacketAdapter> 
       processException(exception);
     } */catch (RuntimeException exception) {
       exception.fillInStackTrace();
-      processException(exception);
+      processException(event.getPacketType(), exception);
       if(exceptions++ >= 50) {
         System.out.println(subscriber.getClass().getSimpleName()+"."+methodName + " has been deactivated due to too many exceptions");
       }
@@ -110,9 +110,9 @@ public final class LocalPacketAdapter implements Comparable<LocalPacketAdapter> 
     return Integer.compare(priority().slot(), other.priority().slot());
   }
 
-  private void processException(RuntimeException exception) {
+  private void processException(PacketType packetType, RuntimeException exception) {
     String simpleName = exception.getClass().getSimpleName();
-    System.out.println("[Intave] " + resolveIndefArticle(simpleName) + " " + simpleName + " occurred while processing a packet ("+subscriber.getClass().getSimpleName()+"."+methodName+")");
+    System.out.println("[Intave] " + resolveIndefArticle(simpleName) + " " + simpleName + " occurred while processing a "+packetType+" packet ("+subscriber.getClass().getSimpleName()+"."+methodName+")");
     exception.printStackTrace();
   }
 

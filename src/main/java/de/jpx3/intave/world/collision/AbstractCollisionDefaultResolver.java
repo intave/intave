@@ -7,5 +7,5 @@ import java.util.List;
 
 public abstract class AbstractCollisionDefaultResolver {
   abstract void setup() throws Exception;
-  public abstract List<WrappedAxisAlignedBB> getCollisionBoxes(Player player, WrappedAxisAlignedBB boundingBox);
+  public abstract List<WrappedAxisAlignedBB> collidingBoundingBoxes(Player player, WrappedAxisAlignedBB boundingBox);
 }

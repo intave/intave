@@ -33,20 +33,18 @@ public final class EntityHitBoxResolver {
     return resolveHitBoxOf(Reflection.resolveEntityNMSHandle(entity));
   }
 
-  public static HitBoxBoundaries resolveHitBoxOf(Object nmsEntity) {
-    return resolveBoundariesFromNMSEntity(nmsEntity);
-  }
-
-  private static HitBoxBoundaries resolveBoundariesFromNMSEntity(Object entity) {
+  public static HitBoxBoundaries resolveHitBoxOf(Object entity) {
     float width;
     float height;
     if (ENTITY_SIZE_CLASS) {
       Object entitySize = resolveEntitySizeOf(entity);
-      width = Reflection.invokeField(entitySize.getClass(), "width", entitySize);
-      height = Reflection.invokeField(entitySize.getClass(), "height", entitySize);
+      Class<?> entitySizeClass = entitySize.getClass();
+      width = Reflection.invokeField(entitySizeClass, "width", entitySize);
+      height = Reflection.invokeField(entitySizeClass, "height", entitySize);
     } else {
-      width = Reflection.invokeField(entity.getClass(), "width", entity);
-      height = Reflection.invokeField(entity.getClass(), "length", entity);
+      Class<?> entityClass = Reflection.NMS_ENTITY_CLASS;
+      width = Reflection.invokeField(entityClass, "width", entity);
+      height = Reflection.invokeField(entityClass, "length", entity);
     }
     return HitBoxBoundaries.from(width, height);
   }

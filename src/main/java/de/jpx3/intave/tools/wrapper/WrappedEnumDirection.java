@@ -1,5 +1,6 @@
 package de.jpx3.intave.tools.wrapper;
 
+import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
@@ -297,6 +298,11 @@ public enum WrappedEnumDirection {
 
   public String getName() {
     return this.name;
+  }
+
+  // not the best solution, but it should be obfuscation-compatible
+  public EnumWrappers.Direction toDirection() {
+    return EnumWrappers.Direction.values()[getIndex()];
   }
 
   public static WrappedEnumDirection func_181076_a(WrappedEnumDirection.AxisDirection p_181076_0_, WrappedEnumDirection.Axis p_181076_1_) {

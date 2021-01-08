@@ -48,7 +48,7 @@ public final class IntaveLogger {
 
   private final static DateTimeFormatter MESSAGE_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH.mm.ss.SSS");
 
-  public synchronized void logToFile(String message) {
+  private synchronized void logToFile(String message) {
     try {
       if (!plugin.getDataFolder().exists()) {
         return;

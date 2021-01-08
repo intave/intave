@@ -51,7 +51,7 @@ public final class WorkspaceCheck extends IntaveMetaCheck<WorkspaceCheck.Workspa
 
     Material itemTypeInHand = player.getItemInHand().getType();
     boolean isPlacement = itemTypeInHand != Material.AIR && itemTypeInHand.isBlock();
-    boolean permission = isPlacement && plugin.interactionPermissionService().blockPlacePermissionCheck().hasPermission(player, world, blockPlacementLocation.getBlockX(), blockPlacementLocation.getBlockY(), blockPlacementLocation.getBlockZ(), itemTypeInHand.getId(), (byte) 0);
+    boolean permission = isPlacement && plugin.interactionPermissionService().blockPlacePermissionCheck().hasPermission(player, world, true, blockPlacementLocation.getBlockX(), blockPlacementLocation.getBlockY(), blockPlacementLocation.getBlockZ(), itemTypeInHand.getId(), (byte) 0);
     player.sendMessage(String.valueOf(permission));
   }
 

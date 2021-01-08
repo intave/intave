@@ -163,7 +163,7 @@ final class PatchyTranslator {
 
 //    System.out.println("Processing method instruction " + original);
 
-    if(original.isMethod()) {
+//    if(original.isMethod()) {
       VersionMethodReference translatedversionMethodReference =
         configuration.resolveCustomMethodDescriptor(original.owner, original.name, original.desc);
 
@@ -203,8 +203,8 @@ final class PatchyTranslator {
       } else {
         return InstructionTarget.from(translatedversionMethodReference);
       }
-    }
-    return original;
+//    }
+//    return original;
   }
 
   @Natify

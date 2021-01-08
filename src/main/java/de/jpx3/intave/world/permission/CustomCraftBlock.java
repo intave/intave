@@ -11,8 +11,8 @@ public final class CustomCraftBlock extends CraftBlock {
 
   @PatchyAutoTranslation
   @PatchyTranslateParameters
-  public CustomCraftBlock(CraftChunk chunk, int x, int y, int z, int typeId, int data) {
-    super(chunk, x, y, z);
+  public CustomCraftBlock(Object chunk, int x, int y, int z, int typeId, int data) {
+    super((CraftChunk) chunk, x, y, z);
     this.typeId = typeId;
     this.data = data;
   }

@@ -3,8 +3,6 @@ package de.jpx3.intave.tools.wrapper;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.reflect.Reflection;
 import de.jpx3.intave.reflect.ReflectionFailureException;
-import org.bukkit.Location;
-import org.bukkit.util.Vector;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;

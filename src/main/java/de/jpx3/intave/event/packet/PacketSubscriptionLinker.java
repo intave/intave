@@ -3,7 +3,6 @@ package de.jpx3.intave.event.packet;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.ConnectionSide;
-import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import de.jpx3.intave.IntavePlugin;
@@ -19,6 +18,7 @@ import java.util.function.IntFunction;
 public final class PacketSubscriptionLinker {
   private final IntavePlugin plugin;
   private final Map<PacketType, SCOWAList<LocalPacketAdapter>> intavePacketListeners = new ConcurrentHashMap<>();
+  private final List<ForwardingPacketAdapter> outboundPacketListener = new ArrayList<>();
   private final static boolean NO_CHAT_HOOKUP = false;
 
   public PacketSubscriptionLinker(IntavePlugin plugin) {
@@ -46,7 +46,13 @@ public final class PacketSubscriptionLinker {
   }
 
   public void reset() {
+    for (ForwardingPacketAdapter packetListener : outboundPacketListener) {
+      unlinkAdapter(packetListener);
+      packetListener.tryRemovePluginReference();
+    }
+    outboundPacketListener.clear();
     ProtocolLibrary.getProtocolManager().removePacketListeners(plugin);
+    intavePacketListeners.values().forEach(SCOWAList::clear);
     intavePacketListeners.clear();
   }
 
@@ -58,11 +64,17 @@ public final class PacketSubscriptionLinker {
   }
 
   private void bakeSubscriptions(PacketType type, SCOWAList<LocalPacketAdapter> localPacketAdapters) {
-    linkAdapter(new ForwardingPacketAdapter(plugin, type, localPacketAdapters));
+    ForwardingPacketAdapter adapter = new ForwardingPacketAdapter(plugin, type, localPacketAdapters);
+    outboundPacketListener.add(adapter);
+    linkAdapter(adapter);
   }
 
-  private void linkAdapter(PacketAdapter adapter) {
+  private void linkAdapter(ForwardingPacketAdapter adapter) {
     ProtocolLibrary.getProtocolManager().addPacketListener(adapter);
+  }
+
+  private void unlinkAdapter(ForwardingPacketAdapter adapter) {
+    ProtocolLibrary.getProtocolManager().removePacketListener(adapter);
   }
 
   /*public void removeSubscriptionsOf(PacketEventSubscriber subscriber) {

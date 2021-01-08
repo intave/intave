@@ -18,6 +18,7 @@ public final class User {
   private final UserMeta userMeta;
   private final PermissionCache permissionCache;
   private final boolean hasPlayer;
+  private boolean ignoreNextPacket;
 
   private User(Player player) {
     this.playerRef = new WeakReference<>(player);
@@ -63,6 +64,18 @@ public final class User {
 
   public PermissionCache permissionCache() {
     return permissionCache;
+  }
+
+  public boolean shouldIgnoreNextPacket() {
+    return ignoreNextPacket;
+  }
+
+  public void ignoreNextPacket() {
+    this.ignoreNextPacket = true;
+  }
+
+  public void receiveNextPacket() {
+    this.ignoreNextPacket = false;
   }
 
   public static User empty() {

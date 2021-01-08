@@ -21,6 +21,7 @@ public final class EventService {
     this.emulationEngine = new MovementEmulationEngine(plugin);
     new UserRepositoryEventListener(plugin);
     new AttackDispatcher(plugin);
+    new BlockActionDispatcher(plugin);
     new MovementDispatcher(plugin);
     new PotionEffectEvaluator(plugin);
     new PlayerAbilityEvaluator(plugin);

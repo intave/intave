@@ -6,13 +6,11 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.detect.IntaveMetaCheck;
-import de.jpx3.intave.detect.checks.world.InteractionRaytrace;
 import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
 import de.jpx3.intave.event.service.entity.WrappedEntity;
-import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.client.PlayerRotationHelper;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
@@ -50,7 +48,7 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
     Player player = event.getPlayer();
     AttackRaytraceMeta attackRaytraceMeta = metaOf(player);
     EnumWrappers.EntityUseAction useAction = packet.getEntityUseActions().readSafely(0);
-    if (useAction == EnumWrappers.EntityUseAction.ATTACK && !attackRaytraceMeta.excludeAttackPacket) {
+    if (useAction == EnumWrappers.EntityUseAction.ATTACK) {
       PacketContainer packetClone = packet.deepClone();
       int entityId =  packet.getIntegers().read(0);
       Attack attack = new Attack(packetClone, entityId);
@@ -120,10 +118,8 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
 
   private void receiveExcludedPacket(Player player, PacketContainer packet) {
     try {
-      AttackRaytraceMeta attackRaytraceMeta = metaOf(player);
-      attackRaytraceMeta.excludeAttackPacket = true;
+      userOf(player).ignoreNextPacket();
       ProtocolLibrary.getProtocolManager().recieveClientPacket(player, packet);
-      attackRaytraceMeta.excludeAttackPacket = false;
     } catch (InvocationTargetException | IllegalAccessException exception) {
       exception.printStackTrace();
     }
@@ -378,7 +374,6 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
   public static class AttackRaytraceMeta extends UserCustomCheckMeta {
     public int lastFlyPacketCounterReach = 0;
     public List<Attack> remainingAttacks = new ArrayList<>();
-    public boolean excludeAttackPacket;
     public long lastTimeAttackedEntity;
     public int confidence;
   }

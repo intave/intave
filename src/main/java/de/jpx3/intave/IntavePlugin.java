@@ -10,7 +10,6 @@ import de.jpx3.intave.event.bukkit.BukkitEventLinker;
 import de.jpx3.intave.event.packet.PacketSubscriptionLinker;
 import de.jpx3.intave.event.service.RetributionService;
 import de.jpx3.intave.logging.IntaveLogger;
-import de.jpx3.intave.permission.PermissionCheck;
 import de.jpx3.intave.tools.annotate.Natify;
 import de.jpx3.intave.tools.client.SinusCache;
 import de.jpx3.intave.tools.items.InventoryUseItemHelper;
@@ -124,6 +123,8 @@ public final class IntavePlugin extends JavaPlugin {
   @Override
   public void onDisable() {
     logger.shutdown();
+    packetSubscriptionLinker.reset();
+    eventLinker.performShutdown();
   }
 
   public IntaveLogger logger() {

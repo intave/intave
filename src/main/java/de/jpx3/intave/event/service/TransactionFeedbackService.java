@@ -3,7 +3,6 @@ package de.jpx3.intave.event.service;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntavePlugin;
@@ -14,7 +13,6 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaSynchronizeData;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
