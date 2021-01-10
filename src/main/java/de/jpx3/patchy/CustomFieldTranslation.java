@@ -1,9 +1,9 @@
 package de.jpx3.patchy;
 
 import com.google.common.collect.ImmutableList;
-import de.jpx3.patchy.annotate.PatchyUnknownVersionPolicy;
 import de.jpx3.intave.lib.asm.tree.AnnotationNode;
 import de.jpx3.intave.tools.annotate.Natify;
+import de.jpx3.patchy.annotate.PatchyUnknownVersionPolicy;
 
 import java.util.ArrayList;
 import java.util.List;

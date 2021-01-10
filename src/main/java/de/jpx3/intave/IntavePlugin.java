@@ -16,7 +16,6 @@ import de.jpx3.intave.tools.items.InventoryUseItemHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.trustfactor.TrustFactorService;
 import de.jpx3.intave.world.BlockAccessor;
-import de.jpx3.intave.world.collision.patches.BoundingBoxPatch;
 import de.jpx3.intave.world.collision.patches.BoundingBoxPatcher;
 import de.jpx3.intave.world.permission.InteractionPermissionService;
 import de.jpx3.intave.world.raytrace.Raytracer;

@@ -139,12 +139,15 @@ public final class UserMetaMovementData {
       }
       updateMovementMetaData();
     }
-    lastRotationYaw = rotationYaw;
-    lastRotationPitch = rotationPitch;
+//    if(hasMovement || hasRotation) {
+      lastRotationYaw = rotationYaw;
+      lastRotationPitch = rotationPitch;
+//    }
     if (hasRotation) {
       StructureModifier<Float> modifier = packet.getFloat();
       rotationYaw = modifier.read(0);
       rotationPitch = modifier.read(1);
+//      player.sendMessage("Received " + rotationYaw + " " + rotationPitch);
       lookVector = PlayerRotationHelper.vectorForRotation(rotationPitch, rotationYaw);
     }
   }

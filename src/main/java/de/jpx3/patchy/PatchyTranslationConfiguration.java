@@ -2,12 +2,12 @@ package de.jpx3.patchy;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import de.jpx3.patchy.annotate.*;
 import de.jpx3.intave.lib.asm.Type;
 import de.jpx3.intave.lib.asm.tree.AnnotationNode;
 import de.jpx3.intave.lib.asm.tree.ClassNode;
 import de.jpx3.intave.lib.asm.tree.MethodNode;
 import de.jpx3.intave.tools.annotate.Natify;
+import de.jpx3.patchy.annotate.*;
 
 import java.util.*;
 

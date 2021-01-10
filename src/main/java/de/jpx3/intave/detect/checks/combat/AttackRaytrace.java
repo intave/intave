@@ -18,6 +18,7 @@ import de.jpx3.intave.tools.wrapper.WrappedMovingObjectPosition;
 import de.jpx3.intave.tools.wrapper.WrappedVector;
 import de.jpx3.intave.user.*;
 import de.jpx3.intave.world.raytrace.Raytracer;
+import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 
@@ -79,6 +80,7 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
 
     List<Attack> remainingAttacks = attackRaytraceMeta.remainingAttacks;
 
+//    player.sendMessage(ChatColor.GRAY + "" + System.nanoTime());
 
     if(!remainingAttacks.isEmpty()) {
 //      int attacks = remainingAttacks.size();

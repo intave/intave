@@ -32,7 +32,7 @@ public final class SCOWAList<T extends Comparable<T>> implements Collection<T>  
     } else {
       List<T> copy = new ArrayList<>();
       T element;
-      for(Iterator<T> var3 = this.list.iterator(); var3.hasNext(); copy.add((T) element)) {
+      for(Iterator<T> var3 = this.list.iterator(); var3.hasNext(); copy.add(element)) {
         element = var3.next();
         if (value != null && value.compareTo(element) < 0) {
           copy.add(value);

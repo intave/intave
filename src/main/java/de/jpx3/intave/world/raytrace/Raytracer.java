@@ -76,11 +76,11 @@ public final class Raytracer {
   private static WrappedVector resolveLookVector(Location location, Location prevLocation, float partialTicks) {
     float rotationYawHead = location.getYaw();
     float rotationPitch = location.getPitch();
-    float prevRotationYawHead = prevLocation.getYaw();
-    float prevRotationPitch = prevLocation.getPitch();
     if (partialTicks == 1.0f) {
       return resolveVectorForRotation(rotationPitch, rotationYawHead);
     }
+    float prevRotationYawHead = prevLocation.getYaw();
+    float prevRotationPitch = prevLocation.getPitch();
     float f = prevRotationPitch + (rotationPitch - prevRotationPitch) * partialTicks;
     float f2 = prevRotationYawHead + (rotationYawHead - prevRotationYawHead) * partialTicks;
     return resolveVectorForRotation(f, f2);

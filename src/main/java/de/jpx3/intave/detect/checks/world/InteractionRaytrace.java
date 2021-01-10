@@ -25,9 +25,7 @@ import de.jpx3.intave.user.UserCustomCheckMeta;
 import de.jpx3.intave.user.UserMetaMovementData;
 import de.jpx3.intave.world.BlockAccessor;
 import de.jpx3.intave.world.raytrace.Raytracer;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
@@ -200,12 +198,30 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     WrappedBlockPosition raycastVector = hitMiss ? WrappedBlockPosition.ORIGIN : raycastResult.getBlockPos();
     Location raycastLocation = raycastVector.toLocation(world);
 
+
+    Location mouseDelayPlayerLocation = playerLocation.clone();
+    mouseDelayPlayerLocation.setYaw(movementData.lastRotationYaw);
+
+    WrappedMovingObjectPosition raycastResult2 = Raytracer.blockRayTrace(player, mouseDelayPlayerLocation);
+    boolean hitMiss2 = raycastResult2 == null || raycastResult2.hitVec == WrappedVector.ZERO;
+    WrappedBlockPosition raycastVector2 = hitMiss2 ? WrappedBlockPosition.ORIGIN : raycastResult2.getBlockPos();
+    Location raycastLocation2 = raycastVector2.toLocation(world);
+
     for (TraceReport traceReport : traceReportList) {
       Location targetLocation = traceReport.targetBlock.toLocation(world);
 
       boolean invalid = hitMiss ||
           raycastLocation.distance(targetLocation) > 0 ||
           traceReport.targetDirection != raycastResult.sideHit.getIndex();
+
+      if(invalid) {
+        // mouse delay fix
+        invalid = hitMiss2 ||
+          raycastLocation2.distance(targetLocation) > 0 ||
+          traceReport.targetDirection != raycastResult2.sideHit.getIndex();
+      }
+
+//      player.sendMessage(ChatColor.GOLD + "SERVER: (yaw: " + movementData.rotationYaw + " / " + movementData.lastRotationYaw + ") (pitch: " + movementData.rotationPitch + " / " + movementData.lastRotationPitch +")");
 
       InteractionType type = traceReport.type();
       boolean flagMessage = !type.bufferAvailable || interactionMeta.violationLevel.get(type) > 3;
@@ -234,6 +250,9 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
           String typeName = player.getItemInHand().getType().name().toLowerCase().replace("_", "").replace("block", "");
 
           plugin.retributionService().markPlayer(player, 0, name(), "tried to placed a " + typeName + " block against a "+typeAgainstName+" block out of sight");
+        } else if(type == InteractionType.INTERACT) {
+          String typeAgainstName = targetLocation.getBlock().getType().name().toLowerCase().replace("_", "").replace("block", "");
+          plugin.retributionService().markPlayer(player, 0, name(), "tried to interact with a " + typeAgainstName + " block out of sight");
         }
       }
 
@@ -285,6 +304,16 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     }
 
     traceReportList.clear();
+  }
+
+  @PacketSubscription(
+    priority = ListenerPriority.MONITOR, // last one to work with position
+    packets = {
+      @PacketDescriptor(sender = Sender.SERVER, packetName = "LOOK")
+    }
+  )
+  public void sentBlockUpdate(PacketEvent event) {
+
   }
 
   private void refreshBlock(Player player, Location location) {
@@ -343,9 +372,9 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
   }
 
   public enum InteractionType {
-    PLACE(ResponseType.RAYTRACE_CAST, true),
+    PLACE(ResponseType.RAYTRACE_CAST, false),
     BREAK(ResponseType.CANCEL, false),
-    INTERACT(ResponseType.RAYTRACE_CAST, true);
+    INTERACT(ResponseType.RAYTRACE_CAST, false);
 
     final ResponseType response;
     final boolean bufferAvailable;

@@ -12,8 +12,9 @@ import java.util.Locale;
 public final class RetributionService {
 
 
-  public void markPlayer(Player detectedPlayer, int vl, String checkName, String details) {
+  public boolean markPlayer(Player detectedPlayer, int vl, String checkName, String details) {
     sendMessageToAdministrators(detectedPlayer, vl, checkName, details);
+    return true;
   }
 
   private void sendMessageToAdministrators(Player detectedPlayer, int vl, String checkName, String details) {

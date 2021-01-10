@@ -1,11 +1,11 @@
 package de.jpx3.patchy;
 
-import de.jpx3.patchy.annotate.PatchyAutoTranslation;
 import de.jpx3.intave.lib.asm.ClassReader;
 import de.jpx3.intave.lib.asm.ClassWriter;
 import de.jpx3.intave.lib.asm.Type;
 import de.jpx3.intave.lib.asm.tree.*;
 import de.jpx3.intave.tools.annotate.Natify;
+import de.jpx3.patchy.annotate.PatchyAutoTranslation;
 import org.bukkit.Bukkit;
 
 import java.util.ArrayList;

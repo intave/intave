@@ -1,1 +1,6 @@
 # Engineering trust factor file
+
+
+timer:
+
+  buffer-size: [16, 8, 6, 4, 4, 4, 4]

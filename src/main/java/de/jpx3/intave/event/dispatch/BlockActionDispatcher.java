@@ -14,15 +14,11 @@ import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
 import de.jpx3.intave.reflect.Reflection;
 import de.jpx3.intave.reflect.ReflectionFailureException;
-import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.tools.wrapper.WrappedEnumDirection;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.world.BlockAccessor;
 import de.jpx3.intave.world.collision.BoundingBoxAccess;
-import net.minecraft.server.v1_8_R3.BlockTrapdoor;
-import net.minecraft.server.v1_8_R3.IBlockData;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -165,9 +161,9 @@ public final class BlockActionDispatcher implements EventProcessor {
           (byte) 0
         );
 
+//      player.sendMessage("Block-placement confirmation for " + MathHelper.formatPosition(blockPlacementLocation));
       if(access) {
         // add to future bounding boxes
-//        player.sendMessage("Block-placement confirmation for " + MathHelper.formatPosition(blockPlacementLocation));
         BoundingBoxAccess boundingBoxAccess = UserRepository.userOf(player).boundingBoxAccess();
         boundingBoxAccess.override(world, blockX, blockY, blockZ, id, shape);
       }
@@ -252,12 +248,14 @@ public final class BlockActionDispatcher implements EventProcessor {
         BlockAccessor.blockAccess(blockBreakLocation)
       );
 
+//    player.sendMessage("Block-placement confirmation for " + MathHelper.formatPosition(blockBreakLocation));
     if(access) {
       int blockX = blockBreakLocation.getBlockX();
       int blockY = blockBreakLocation.getBlockY();
       int blockZ = blockBreakLocation.getBlockZ();
 
       // add to future bounding boxes
+
 
       BoundingBoxAccess boundingBoxAccess = UserRepository.userOf(player).boundingBoxAccess();
       boundingBoxAccess.override(world, blockX, blockY, blockZ, 0, (byte) 0);

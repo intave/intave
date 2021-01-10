@@ -18,6 +18,8 @@ public final class DefaultTrustFactorResolver implements TrustFactorResolver {
        less likely
        -> check spoof
 
+    - proxy socks4/socks5 check
+
    */
 
   @Override
