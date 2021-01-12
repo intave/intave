@@ -12,19 +12,27 @@ import org.bukkit.event.Cancellable;
 public final class AsyncIntaveViolationEvent extends AbstractIntaveExternalEvent implements Cancellable {
   private Player punished;
   private int legacyProtocolVersion;
-  private String modulename;
-  private String category;
+  private String checkName;
   private String message;
-  private int vlBefore;
-  private int vlAfter;
+  private String details;
+  private double vlBefore;
+  private double vlAfter;
   private boolean cancelled;
 
-  private AsyncIntaveViolationEvent(Player punished, int legacyProtocolVersion, String modulename, String category, String message, int vlBefore, int vlAfter) {
+  private AsyncIntaveViolationEvent(
+    Player punished,
+    int legacyProtocolVersion,
+    String checkName,
+    String message,
+    String details,
+    double vlBefore,
+    double vlAfter
+  ) {
     this.punished = punished;
     this.legacyProtocolVersion = legacyProtocolVersion;
-    this.modulename = modulename;
-    this.category = category;
+    this.checkName = checkName;
     this.message = message;
+    this.details = details;
     this.vlBefore = vlBefore;
     this.vlAfter = vlAfter;
   }
@@ -42,26 +50,28 @@ public final class AsyncIntaveViolationEvent extends AbstractIntaveExternalEvent
   }
 
   public String checkName() {
-    return modulename;
+    return checkName;
   }
 
-  public String checkCategory() {
-    return category;
+  public String message(MessageSpecifier messageSpecifier) {
+    switch (messageSpecifier) {
+      case FULL:
+        return message + " " + details.trim();
+      case COMPACT:
+        return message;
+    }
+    return "invalid";
   }
 
-  public String checkMessage() {
-    return message.trim();
-  }
-
-  public int addedViolationPoints() {
+  public double addedViolationPoints() {
     return vlAfter - vlBefore;
   }
 
-  public int violationLevelBeforeViolation() {
+  public double violationLevelBeforeViolation() {
     return vlBefore;
   }
 
-  public int violationLevelAfterViolation() {
+  public double violationLevelAfterViolation() {
     return vlAfter;
   }
 
@@ -76,12 +86,12 @@ public final class AsyncIntaveViolationEvent extends AbstractIntaveExternalEvent
     this.cancelled = cancelled;
   }
 
-  public void __INTERNAL__renew(Player punished, int legacyProtocolVersion, String modulename, String category, String message, int vlBefore, int vlAfter) {
+  public void renew(Player punished, int legacyProtocolVersion, String modulename, String message, String details, double vlBefore, double vlAfter) {
     this.punished = punished;
     this.legacyProtocolVersion = legacyProtocolVersion;
-    this.modulename = modulename;
-    this.category = category;
+    this.checkName = modulename;
     this.message = message;
+    this.details = message;
     this.vlBefore = vlBefore;
     this.vlAfter = vlAfter;
     this.setCancelled(false);
@@ -101,5 +111,10 @@ public final class AsyncIntaveViolationEvent extends AbstractIntaveExternalEvent
       return null;
     }
     return new AsyncIntaveViolationEvent(punished, legacyProtocolVersion, modulename, category, message, vlBefore, vlAfter);
+  }
+
+  public enum MessageSpecifier {
+    FULL,
+    COMPACT
   }
 }

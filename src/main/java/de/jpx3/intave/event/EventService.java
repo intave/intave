@@ -2,6 +2,7 @@ package de.jpx3.intave.event;
 
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.event.dispatch.*;
+import de.jpx3.intave.event.service.ConnectionHealthResolver;
 import de.jpx3.intave.event.service.MovementEmulationEngine;
 import de.jpx3.intave.event.service.TransactionFeedbackService;
 import de.jpx3.intave.event.service.entity.ClientSideEntityService;
@@ -27,6 +28,7 @@ public final class EventService {
     new PlayerAbilityEvaluator(plugin);
     new PlayerInventoryEvaluator(plugin);
     new ClientSideEntityService(plugin);
+    new ConnectionHealthResolver(plugin);
   }
   
   public MovementEmulationEngine emulationEngine() {

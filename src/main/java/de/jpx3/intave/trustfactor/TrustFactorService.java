@@ -1,11 +1,14 @@
 package de.jpx3.intave.trustfactor;
 
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.DefaultForwardingPermissionTrustFactorResolver;
 import de.jpx3.intave.access.TrustFactor;
 import de.jpx3.intave.access.TrustFactorResolver;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.executor.BackgroundExecutor;
+import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Bukkit;
@@ -14,7 +17,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 public final class TrustFactorService implements BukkitEventSubscriber {
-  private final static boolean USE_FILE_MAPPINGS = true;
 
   private final IntavePlugin plugin;
   private TrustFactorResolver trustFactorResolver;
@@ -26,18 +28,23 @@ public final class TrustFactorService implements BukkitEventSubscriber {
   }
 
   public void setup() {
-    TrustFactorLoader trustFactorLoader = USE_FILE_MAPPINGS ? new DefaultTrustFactorLoader() : new DownloadingTrustFactorLoader();
+    TrustFactorLoader trustFactorLoader = IntaveControl.USE_DEBUG_RESOURCES ? new DefaultTrustFactorLoader() : new DownloadingTrustFactorLoader();
     trustFactorConfiguration = trustFactorLoader.fetch();
     trustFactorResolver = new DefaultForwardingPermissionTrustFactorResolver(new DefaultTrustFactorResolver());
 
     plugin.eventLinker().registerEventsIn(this);
-    resolveTrustFactorForAll();
+    Synchronizer.synchronize(() -> BackgroundExecutor.execute(this::resolveTrustFactorForAll));
   }
 
   @BukkitEventSubscription(priority = EventPriority.MONITOR)
   public void on(PlayerJoinEvent join) {
     Player player = join.getPlayer();
-    resolveTrustFactorFor(player);
+    Synchronizer.synchronize(() -> {
+      if(!player.isOnline()) {
+        return;
+      }
+      BackgroundExecutor.execute(() -> resolveTrustFactorFor(player));
+    });
   }
 
   private void resolveTrustFactorForAll() {

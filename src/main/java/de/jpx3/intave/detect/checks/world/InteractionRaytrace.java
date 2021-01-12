@@ -303,44 +303,45 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
 
     double vl = 0;
 
-    String flagMessage;
+
+    String message, details;
     if(type == InteractionType.BREAK) {
-      String typeName = targetLocationBlock.getType().name().toLowerCase().replace("_", "").replace("block", "");
+      String typeName = shortenTypeName(targetLocationBlock.getType());
       String append = "";
       if (hitMiss || (raycastLocation.getBlockX() == 0 && raycastLocation.getBlockY() == 0 && raycastLocation.getBlockZ() == 0)) {
-        append = " looking in air)";
+        append = "looking in air";
         vl = 5;
       } else if(raycastLocation.distance(targetLocation) > 0 && raycastLocationBlock.getType() != Material.AIR) {
-        String blockName = raycastLocationBlock.getType().name().toLowerCase().replace("_", "").replace("block", "");
+        String blockName = shortenTypeName(raycastLocationBlock.getType());
         if(raycastLocationBlock.getType() == targetLocationBlock.getType()) {
           blockName = "a different " + blockName;
         }
-        append = " looking at " + blockName + " block)";
+        append = "looking at " + blockName + " block";
         vl = 5;
       } else if (interaction.targetDirection != raycastResult.sideHit.getIndex()){
-        append = " invalid block face)";
+        append = "invalid block face";
         vl = 15;
       }
-      flagMessage = "invalid break (" + typeName + " block)";// +" -" + append;
+
+      message = "performed invalid break";// +" -" + append;
+      details = typeName + " block, " + append;
     } else if(type == InteractionType.PLACE) {
       String typeAgainstName = shortenTypeName(targetLocationBlock.getType());
       String typeName = shortenTypeName(player.getItemInHand().getType());
-      flagMessage = "invalid placement (" + typeName + " block on " + typeAgainstName + " block)";
+      message = "performed invalid placement";
+      details = typeName + " block on " + typeAgainstName + " block";
       vl = 2.5;
     } else {
-//      String typeAgainstName = shortenTypeName(targetLocationBlock.getType());
-//      flagMessage = "invalid interaction (" + typeAgainstName + " block)";
-      return true;
+      String typeAgainstName = shortenTypeName(targetLocationBlock.getType());
+      message = "invalid interaction";
+      details = typeAgainstName + " block";
+      vl = 0;
+//      return true;
     }
 
-//    flagMessage += " (mdf: "+metaOf(player).estimateMouseDelayFix+")";
-//
-//    if(delayed) {
-//      flagMessage += " (timeout)";
-//    }
+    plugin.retributionService().processViolation(player, vl, name(), message, details);
 
-
-    return plugin.retributionService().processViolation(player, vl, name(), flagMessage);
+    return true;
   }
 
   private String shortenTypeName(Material type) {

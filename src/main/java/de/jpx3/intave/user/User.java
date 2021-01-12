@@ -1,10 +1,12 @@
 package de.jpx3.intave.user;
 
+import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.TrustFactor;
 import de.jpx3.intave.permission.PermissionCache;
 import de.jpx3.intave.reflect.Reflection;
 import de.jpx3.intave.tools.AccessHelper;
+import de.jpx3.intave.tools.placeholder.PlayerContext;
 import de.jpx3.intave.world.collision.BoundingBoxAccess;
 import org.bukkit.entity.Player;
 
@@ -23,6 +25,8 @@ public final class User {
   private final boolean hasPlayer;
 //  public final List<Location> raytracerIgnore = new ArrayList<>();
   private boolean ignoreNextPacket;
+
+  private final PlayerContext playerPlaceholderContext = new PlayerContext(this);
   private TrustFactor trustFactor = TrustFactor.DARK_RED;
 
   private User(Player player) {
@@ -94,6 +98,22 @@ public final class User {
 
   public void setTrustFactor(TrustFactor trustFactor) {
     this.trustFactor = trustFactor;
+    IntavePlugin.singletonInstance().logger().info("Assigned trust factor " + trustFactor + " to " + (hasPlayer ? player().getName() : "null"));
+  }
+
+  // fast & clean access
+  // remove?
+
+  public int latency() {
+    return meta().synchronizeData().latency;
+  }
+
+  public int latencyJitter() {
+    return meta().synchronizeData().latencyJitter;
+  }
+
+  public PlayerContext placeholderContext() {
+    return playerPlaceholderContext;
   }
 
   public static User empty() {

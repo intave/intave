@@ -5,7 +5,7 @@ import com.google.common.io.ByteStreams;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.connect.proxy.protocol.IntavePacket;
 import de.jpx3.intave.connect.proxy.protocol.IntavePacketDeserializer;
-import de.jpx3.intave.executor.UniversalIOExecutor;
+import de.jpx3.intave.executor.BackgroundExecutor;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.messaging.PluginMessageListener;
@@ -37,7 +37,7 @@ public final class IncomingMessageListener implements PluginMessageListener {
     }
     ByteArrayDataInput inputByteBuf = ByteStreams.newDataInput(bytes);
     try {
-      UniversalIOExecutor.execute(() -> {
+      BackgroundExecutor.execute(() -> {
         String subChannel = inputByteBuf.readUTF();
         if (!subChannel.equalsIgnoreCase("IPC_BEGIN")) {
           return;

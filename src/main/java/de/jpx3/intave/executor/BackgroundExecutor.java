@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public final class UniversalIOExecutor {
+public final class BackgroundExecutor {
   private static ExecutorService executorService;
 
   public static void start() {
@@ -19,7 +19,7 @@ public final class UniversalIOExecutor {
     }
     List<Runnable> runnables = executorService.shutdownNow();
     if(!runnables.isEmpty()) {
-      IntavePlugin.singletonInstance().logger().info("Waiting for pending IO tasks to finish");
+      IntavePlugin.singletonInstance().logger().info("Waiting for background tasks to finish");
     }
     for (Runnable runnable : runnables) {
       runnable.run();

@@ -8,7 +8,7 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.connect.proxy.protocol.IntavePacket;
 import de.jpx3.intave.connect.proxy.protocol.IntavePacketSerializer;
 import de.jpx3.intave.connect.proxy.protocol.PacketRegister;
-import de.jpx3.intave.executor.UniversalIOExecutor;
+import de.jpx3.intave.executor.BackgroundExecutor;
 import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import org.bukkit.Bukkit;
@@ -100,7 +100,7 @@ public final class ProxyMessenger {
       return;
     }
 
-    UniversalIOExecutor.execute(() -> {
+    BackgroundExecutor.execute(() -> {
       ByteArrayDataOutput byteOutput = ByteStreams.newDataOutput();
       byteOutput.writeUTF("IPC_BEGIN");
       byteOutput.writeInt(PROTOCOL_VERSION);

@@ -12,7 +12,7 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.connect.sibyl.LabyModChannelHelper;
 import de.jpx3.intave.connect.sibyl.LabymodClientListener;
-import de.jpx3.intave.executor.UniversalIOExecutor;
+import de.jpx3.intave.executor.BackgroundExecutor;
 import de.jpx3.intave.reflect.Reflection;
 import de.jpx3.intave.security.LicenseVerification;
 import de.jpx3.intave.tools.MapReferenceGarbageCollector;
@@ -102,7 +102,7 @@ public final class SibylAuthentication {
   private void verifyAuthKey(String authKey, Consumer<Boolean> callback) {
     String url_path = "https://intave.de/sibyl/verify.php";
 
-    UniversalIOExecutor.execute(() -> {
+    BackgroundExecutor.execute(() -> {
       try {
         URL url = new URL(url_path);
         URLConnection uc = url.openConnection();

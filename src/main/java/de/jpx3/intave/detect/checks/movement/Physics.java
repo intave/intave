@@ -682,18 +682,18 @@ public final class Physics extends IntaveCheck {
       if (movedIntoBlock) {
         movementData.invalidMovement = true;
 
-/*        String boundingBoxOutput;
+        String boundingBoxOutput;
         if(intersectionBoundingBoxesCurrent.size() > 1) {
           boundingBoxOutput = String.valueOf(intersectionBoundingBoxesCurrent);
         } else {
           boundingBoxOutput = String.valueOf(intersectionBoundingBoxesCurrent.get(0));
-        }*/
+        }
 
-        String message = "moved into block";//+"(" + boundingBoxOutput + ")";
-
+        String message = "moved into block";
+        String details = boundingBoxOutput;
         user.boundingBoxAccess().invalidate();
 
-        plugin.retributionService().processViolation(player, 0, "Physics", message);
+        plugin.retributionService().processViolation(player, 0, "Physics", message, details);
         Vector emulationMotion = new Vector(predictedX, predictedY, predictedZ);
         plugin.eventService().emulationEngine().emulationSetBack(player, emulationMotion, 8);
       } else {
@@ -728,9 +728,10 @@ public final class Physics extends IntaveCheck {
       String expected = formatPosition(predictedX, predictedY, predictedZ);
 
       Vector emulationMotion = new Vector(predictedX, predictedY, predictedZ);
-      String message = "moved incorrectly (" + received + " ex: " + expected + ")";
+      String message = "moved incorrectly";
+      String details = received + " e: " + expected;
 
-      plugin.retributionService().processViolation(player, violationLevelIncrease / 10d, "Physics", message);
+      plugin.retributionService().processViolation(player, violationLevelIncrease / 10d, "Physics", message, details);
       if (violationLevelData.physicsVL > 40 && MOVEMENT_EMULATION && emulationMotion != null) {
         plugin.eventService().emulationEngine().emulationSetBack(player, emulationMotion, 8);
       }

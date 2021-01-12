@@ -35,6 +35,9 @@ public enum TrustFactor implements Comparable<TrustFactor> {
   }
 
   public TrustFactor unsafer() {
+    if(this == BYPASS) {
+      return BYPASS;
+    }
     TrustFactor[] values = values();
     return values[MathHelper.minmax(0, ordinal() + 1, values.length)];
   }

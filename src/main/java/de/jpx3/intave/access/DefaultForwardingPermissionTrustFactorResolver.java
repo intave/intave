@@ -1,7 +1,6 @@
 package de.jpx3.intave.access;
 
 import de.jpx3.intave.permission.PermissionCheck;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.Arrays;
@@ -21,8 +20,6 @@ public final class DefaultForwardingPermissionTrustFactorResolver implements Tru
       Arrays.stream(TrustFactor.values())
       .filter(trustFactor -> hasPermissionFor(player, trustFactor))
       .findFirst();
-
-    Bukkit.broadcastMessage(String.valueOf(resolvedTrustFactor));
 
     if(resolvedTrustFactor.isPresent()) {
       callback.accept(resolvedTrustFactor.get());

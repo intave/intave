@@ -12,7 +12,7 @@ import de.jpx3.intave.event.bukkit.BukkitEventLinker;
 import de.jpx3.intave.event.packet.PacketSubscriptionLinker;
 import de.jpx3.intave.event.service.CustomEventService;
 import de.jpx3.intave.event.service.ViolationService;
-import de.jpx3.intave.executor.UniversalIOExecutor;
+import de.jpx3.intave.executor.BackgroundExecutor;
 import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.tools.annotate.Natify;
 import de.jpx3.intave.tools.client.SinusCache;
@@ -23,11 +23,13 @@ import de.jpx3.intave.world.BlockAccessor;
 import de.jpx3.intave.world.collision.patches.BoundingBoxPatcher;
 import de.jpx3.intave.world.permission.InteractionPermissionService;
 import de.jpx3.intave.world.raytrace.Raytracer;
+import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class IntavePlugin extends JavaPlugin {
   private static IntavePlugin singletonInstance;
   private static String version = "UNKNOWN";
+  private static String prefix = "§8[§c§lIntave§8]§7 ";
 
   private IntaveLogger logger;
   private ProxyMessenger proxyMessenger;
@@ -72,6 +74,10 @@ public final class IntavePlugin extends JavaPlugin {
     logger.info("Please stand by..");
     // stage 4
 
+
+    SinusCache.setup();
+    Synchronizer.setup();
+
     componentLoader = new ComponentLoader(this);
     componentLoader.loadComponents();
 
@@ -91,11 +97,9 @@ public final class IntavePlugin extends JavaPlugin {
     ProtocolLibAdapter.checkIfOutdated();
 
     Raytracer.setup();
-    SinusCache.setup();
-    Synchronizer.setup();
     BlockAccessor.setup();
     ViaVersionAdapter.setup();
-    UniversalIOExecutor.start();
+    BackgroundExecutor.start();
     InventoryUseItemHelper.setup();
     BoundingBoxPatcher.setup();
 
@@ -103,6 +107,8 @@ public final class IntavePlugin extends JavaPlugin {
       // stage 7
       configurationService = new ConfigurationService(this);
       String configurationKey = configurationService.configurationKey();
+      logger.info("Using \"" + configurationKey + "\" configuration");
+
 
       // license check call
 
@@ -111,6 +117,9 @@ public final class IntavePlugin extends JavaPlugin {
 
       String requiredConfigurationHash = "server response";
       configurationService.setupConfiguration(requiredConfigurationHash);
+
+      prefix = configurationService.configuration().getString("layout.prefix", prefix);
+      prefix = ChatColor.translateAlternateColorCodes('&', prefix);
 
       customEventService = new CustomEventService(this);
       interactionPermissionService = new InteractionPermissionService();
@@ -136,7 +145,7 @@ public final class IntavePlugin extends JavaPlugin {
   @Natify
   @Override
   public void onDisable() {
-    UniversalIOExecutor.stopBlocking();
+    BackgroundExecutor.stopBlocking();
 
     logger.shutdown();
     packetSubscriptionLinker.reset();
@@ -187,8 +196,14 @@ public final class IntavePlugin extends JavaPlugin {
     return interactionPermissionService;
   }
 
+
+
   public static String version() {
     return version;
+  }
+
+  public static String prefix() {
+    return prefix;
   }
 
   public static IntavePlugin singletonInstance() {

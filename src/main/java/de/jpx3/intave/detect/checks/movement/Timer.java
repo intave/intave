@@ -82,7 +82,7 @@ public final class Timer extends IntaveMetaCheck<Timer.TimerData> {
 
     if(timerData.timerBalance > 10) {
       String balanceAsString = MathHelper.formatDouble(timerData.timerBalance / 10, 2);
-      if (plugin.retributionService().processViolation(player, 0.5, "Timer", "moved too frequently (" + balanceAsString + " packets ahead)")) {
+      if (plugin.retributionService().processViolation(player, 0.5, "Timer", "moved too frequently", balanceAsString + " packets ahead")) {
 //        plugin.eventService().emulationEngine().emulationSetBack(player, new Vector(0,0,0), 6);
         UserMetaMovementData movementData = user.meta().movementData();
         plugin.eventService().emulationEngine().emulationSetBack(player, new Vector(movementData.physicsLastMotionX, movementData.physicsLastMotionY, movementData.physicsLastMotionZ), 6);

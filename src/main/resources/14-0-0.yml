@@ -8,7 +8,7 @@ attackraytrace:
 
   prevention-activation: [100, 50, 15, 10, 5, 5, 5]
 
-interactionRaytrace:
+interactionraytrace:
 
   prevention-activation: [100, 50, 15, 10, 5, 5, 5]
 
