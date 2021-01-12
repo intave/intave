@@ -22,11 +22,11 @@ check:
 
 layout:
 
-  verbose: "{prefix} &c{player}&7/{trust-color}&7 {message} {details} ({check} / +{vladded} -> {vl})"
+  verbose: "{prefix} &c{player}&7/{trust-color}&7 {message} {details} (+{vladded} -> {vl})"
 
   notify: "{prefix} &cWARNING&7: &c{player}&7/{trust-color}&7 {text}"
 
-  prefix: "&8[&c&lIntave&8]&7"
+  prefix: "&8[&c&lIntave&8]&7 "
 
 filter:
 

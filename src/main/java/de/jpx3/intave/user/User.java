@@ -1,9 +1,11 @@
 package de.jpx3.intave.user;
 
+import com.google.common.collect.Maps;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.TrustFactor;
 import de.jpx3.intave.permission.PermissionCache;
+import de.jpx3.intave.permission.PermissionCheck;
 import de.jpx3.intave.reflect.Reflection;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.placeholder.PlayerContext;
@@ -11,6 +13,8 @@ import de.jpx3.intave.world.collision.BoundingBoxAccess;
 import org.bukkit.entity.Player;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -23,7 +27,8 @@ public final class User {
   private final PermissionCache permissionCache;
   private final BoundingBoxAccess boundingBoxAccess;
   private final boolean hasPlayer;
-//  public final List<Location> raytracerIgnore = new ArrayList<>();
+  private final List<UserMessageChannel> receivingUserChannels = new ArrayList<>();
+  private final Map<UserMessageChannel, UserMessageChannelPlayerConstraint> receiveWhitelist = Maps.newEnumMap(UserMessageChannel.class);
   private boolean ignoreNextPacket;
 
   private final PlayerContext playerPlaceholderContext = new PlayerContext(this);
@@ -36,6 +41,9 @@ public final class User {
     this.userMeta = new UserMeta(player, this);
     this.permissionCache = new PermissionCache();
     this.boundingBoxAccess = new BoundingBoxAccess(hasOnlinePlayer() ? player() : null);
+    if(hasPlayer) {
+      this.setDefaultMessagingChannel();
+    }
   }
 
   public UserMeta meta() {
@@ -51,7 +59,6 @@ public final class User {
     if (player == null) {
       throw new IntaveInternalException("Unable to reference player through service repo: Fallback user lacks reference");
     }
-
     return player;
   }
 
@@ -101,8 +108,42 @@ public final class User {
     IntavePlugin.singletonInstance().logger().info("Assigned trust factor " + trustFactor + " to " + (hasPlayer ? player().getName() : "null"));
   }
 
-  // fast & clean access
-  // remove?
+  public void setDefaultMessagingChannel() {
+    for (UserMessageChannel channel : UserMessageChannel.values()) {
+      if(channel.enabledByDefault && PermissionCheck.permissionCheck(player(), channel.permission())) {
+        receivingUserChannels.add(channel);
+      }
+    }
+  }
+
+  public boolean receives(UserMessageChannel channel) {
+    if(!PermissionCheck.permissionCheck(player(), channel.permission())) {
+      receivingUserChannels.remove(channel);
+      return false;
+    }
+    return receivingUserChannels.contains(channel);
+  }
+
+  public void toggleReceive(UserMessageChannel channel) {
+    if(receives(channel)) {
+      receivingUserChannels.remove(channel);
+    } else {
+      receivingUserChannels.add(channel);
+      removeChannelConstraint(channel);
+    }
+  }
+
+  public void setChannelConstraint(UserMessageChannel channel, UserMessageChannelPlayerConstraint constraint) {
+    receiveWhitelist.put(channel, constraint);
+  }
+
+  public boolean hasChannelConstraint(UserMessageChannel channel) {
+    return receiveWhitelist.containsKey(channel);
+  }
+
+  public void removeChannelConstraint(UserMessageChannel channel) {
+    receiveWhitelist.remove(channel);
+  }
 
   public int latency() {
     return meta().synchronizeData().latency;

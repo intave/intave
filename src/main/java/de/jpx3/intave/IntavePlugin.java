@@ -3,6 +3,7 @@ package de.jpx3.intave;
 import de.jpx3.intave.adapter.ComponentLoader;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.adapter.ViaVersionAdapter;
+import de.jpx3.intave.command.CommandProcessor;
 import de.jpx3.intave.config.ConfigurationService;
 import de.jpx3.intave.connect.proxy.ProxyMessenger;
 import de.jpx3.intave.connect.sibyl.SibylIntegrationService;
@@ -30,6 +31,7 @@ public final class IntavePlugin extends JavaPlugin {
   private static IntavePlugin singletonInstance;
   private static String version = "UNKNOWN";
   private static String prefix = "§8[§c§lIntave§8]§7 ";
+  private static String defaultColor = "";
 
   private IntaveLogger logger;
   private ProxyMessenger proxyMessenger;
@@ -74,40 +76,36 @@ public final class IntavePlugin extends JavaPlugin {
     logger.info("Please stand by..");
     // stage 4
 
+    try {
+      SinusCache.setup();
+      Synchronizer.setup();
+      BackgroundExecutor.start();
 
-    SinusCache.setup();
-    Synchronizer.setup();
+      componentLoader = new ComponentLoader(this);
+      componentLoader.loadComponents();
 
-    componentLoader = new ComponentLoader(this);
-    componentLoader.loadComponents();
+      trustFactorService = new TrustFactorService(this);
+      // version mambo jumbo
 
-    trustFactorService = new TrustFactorService(this);
-    trustFactorService.setup();
+      // stage 5
 
-    // version mambo jumbo
+      packetSubscriptionLinker = new PacketSubscriptionLinker(this);
 
-    // stage 5
-
-    packetSubscriptionLinker = new PacketSubscriptionLinker(this);
-
-    // stage 6
+      // stage 6
 
 //    BlockBoxResolver.setup();
 
-    ProtocolLibAdapter.checkIfOutdated();
+      ProtocolLibAdapter.checkIfOutdated();
 
-    Raytracer.setup();
-    BlockAccessor.setup();
-    ViaVersionAdapter.setup();
-    BackgroundExecutor.start();
-    InventoryUseItemHelper.setup();
-    BoundingBoxPatcher.setup();
-
-    try {
+      Raytracer.setup();
+      BlockAccessor.setup();
+      ViaVersionAdapter.setup();
+      InventoryUseItemHelper.setup();
+      BoundingBoxPatcher.setup();
       // stage 7
       configurationService = new ConfigurationService(this);
       String configurationKey = configurationService.configurationKey();
-      logger.info("Using \"" + configurationKey + "\" configuration");
+      logger.info("Using the \"" + configurationKey + "\" configuration");
 
 
       // license check call
@@ -120,6 +118,7 @@ public final class IntavePlugin extends JavaPlugin {
 
       prefix = configurationService.configuration().getString("layout.prefix", prefix);
       prefix = ChatColor.translateAlternateColorCodes('&', prefix);
+      defaultColor = ChatColor.getLastColors(prefix);
 
       customEventService = new CustomEventService(this);
       interactionPermissionService = new InteractionPermissionService();
@@ -129,14 +128,23 @@ public final class IntavePlugin extends JavaPlugin {
       proxyMessenger = new ProxyMessenger(this);
       sibylIntegrationService = new SibylIntegrationService(this);
 
+      getCommand("intave").setExecutor(new CommandProcessor());
+
       // stage 8
 
+      trustFactorService.setup();
       checkService.setup();
       customEventService.setup();
       eventService.setup();
     } catch (Exception exception) {
       logger.error("Unable to boot");
       exception.printStackTrace();
+      getCommand("intave").setExecutor((commandSender, command, s, strings) -> {
+        commandSender.sendMessage(prefix() + ChatColor.RED + "Intave wasn't properly loaded");
+        return false;
+      });
+      performShutdown();
+      return;
     }
     packetSubscriptionLinker.refreshInternalSubscriptions();
     logger.info("Intave booted successfully");
@@ -145,6 +153,11 @@ public final class IntavePlugin extends JavaPlugin {
   @Natify
   @Override
   public void onDisable() {
+    performShutdown();
+  }
+
+  @Natify
+  public void performShutdown() {
     BackgroundExecutor.stopBlocking();
 
     logger.shutdown();
@@ -196,14 +209,16 @@ public final class IntavePlugin extends JavaPlugin {
     return interactionPermissionService;
   }
 
-
-
   public static String version() {
     return version;
   }
 
   public static String prefix() {
     return prefix;
+  }
+
+  public static String defaultColor() {
+    return defaultColor;
   }
 
   public static IntavePlugin singletonInstance() {

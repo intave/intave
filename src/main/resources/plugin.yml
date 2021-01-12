@@ -8,6 +8,13 @@ main: de.jpx3.intave.IntavePlugin
 database: false
 softdepend: [ProtocolLib, ViaVersion]
 
+commands:
+  intave:
+    aliases:
+      - iac
+
+default-permission: false
+
 permissions:
   intave.bypass:
     default: false
@@ -29,3 +36,9 @@ permissions:
 
   intave.trust.darkred:
     default: false
+
+  intave.command.notify:
+    default: op
+
+  intave.command.verbose:
+    default: op

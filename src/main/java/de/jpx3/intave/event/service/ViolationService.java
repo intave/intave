@@ -7,6 +7,7 @@ import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.placeholder.ViolationContext;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserMessageChannel;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -61,8 +62,13 @@ public final class ViolationService {
 
     Synchronizer.synchronize(() -> {
       for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-        if(onlinePlayer.isOp()) {
-          onlinePlayer.sendMessage(compactMessage);
+        User user = UserRepository.userOf(onlinePlayer);
+        if(user.receives(UserMessageChannel.VERBOSE)) {
+          if(user.hasChannelConstraint(UserMessageChannel.VERBOSE)) {
+            onlinePlayer.sendMessage(fullMessage);
+          } else {
+            onlinePlayer.sendMessage(compactMessage);
+          }
         }
       }
     });
@@ -75,5 +81,4 @@ public final class ViolationService {
   private double resolvePreventionActivationThreshold(String checkName, Player player) {
     return plugin.trustFactorService().trustFactorSetting(checkName + ".prevention-activation", player);
   }
-
 }

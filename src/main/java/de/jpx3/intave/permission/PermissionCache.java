@@ -12,7 +12,7 @@ public final class PermissionCache {
 
   public boolean inCache(String permission) {
     PermissionEntry entry;
-    return !(((entry = permissionEntries.get(permission)) == null) || entry.expired());
+    return (entry = permissionEntries.get(permission)) != null && !entry.expired();
   }
 
   public boolean permissionCheck(String permission) {
