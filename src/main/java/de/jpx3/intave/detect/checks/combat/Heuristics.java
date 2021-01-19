@@ -44,6 +44,7 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
     appendCheckPart(new RotationStandardDeviationHeuristic(this));
     appendCheckPart(new RotationModuloResetHeuristic(this));
     appendCheckPart(new PacketOrderSwingHeuristic(this));
+    appendCheckPart(new PacketSprintToggleHeuristic(this));
   }
 
   public void saveAnomaly(Player player, Anomaly anomaly) {
