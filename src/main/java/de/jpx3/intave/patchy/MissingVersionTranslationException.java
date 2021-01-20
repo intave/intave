@@ -1,4 +1,4 @@
-package de.jpx3.patchy;
+package de.jpx3.intave.patchy;
 
 public final class MissingVersionTranslationException extends RuntimeException {
   public MissingVersionTranslationException() {

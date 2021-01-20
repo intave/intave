@@ -2,20 +2,20 @@ package de.jpx3.intave;
 
 import de.jpx3.intave.access.IntaveAccess;
 import de.jpx3.intave.access.IntaveColdException;
-import de.jpx3.intave.tools.annotate.Natify;
+import de.jpx3.intave.tools.annotate.Native;
 
 import java.lang.ref.WeakReference;
 
 public final class IntaveAccessor {
   private static transient WeakReference<IntaveAccess> weakAccess;
 
-  @Natify
+  @Native
   public static synchronized boolean loaded() {
     IntavePlugin plugin = IntavePlugin.singletonInstance();
     return plugin != null && plugin.isEnabled() && uncheckedUnsafeAccess() != null;
   }
 
-  @Natify
+  @Native
   public static synchronized WeakReference<IntaveAccess> weakAccess() {
     if (!loaded()) {
       throw new IntaveColdException("Intave offline");
@@ -26,7 +26,7 @@ public final class IntaveAccessor {
     return weakAccess;
   }
 
-  @Natify
+  @Native
   public static synchronized IntaveAccess unsafeAccess() {
     if (!loaded()) {
       throw new IntaveColdException("Intave offline");
@@ -34,7 +34,7 @@ public final class IntaveAccessor {
     return uncheckedUnsafeAccess();
   }
 
-  @Natify
+  @Native
   private static IntaveAccess uncheckedUnsafeAccess() {
     return null;//IntavePlugin.singletonInstance().intaveAccess();
   }

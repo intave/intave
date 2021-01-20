@@ -141,24 +141,57 @@ public final class Physics extends IntaveCheck {
      */
     EntityCollisionResult predictedMovement;
     predictedMovement = simulateMovementBiased(user, friction, sprinting, sneaking, yawSine, yawCosine);
-    PhysicsProcessorContext contextFastProcess = predictedMovement.context();
-    double differenceX = contextFastProcess.motionX - receivedMotionX;
-    double differenceY = contextFastProcess.motionY - receivedMotionY;
-    double differenceZ = contextFastProcess.motionZ - receivedMotionZ;
-    double distance = MathHelper.resolveDistance(differenceX, differenceY, differenceZ);
+    PhysicsProcessorContext context = predictedMovement.context();
+    double distance = MathHelper.resolveDistance(
+      context.motionX, context.motionY, context.motionZ,
+      receivedMotionX, receivedMotionY, receivedMotionZ
+    );
     if (distance > 0.001) {
       predictedMovement = simulatePossibleMovements(
         user, friction, sprinting, sneaking, yawSine, yawCosine,
         receivedMotionX, receivedMotionY, receivedMotionZ
       );
-//    if (DEBUG_PERFORMANCE) {
-//      double endTime = (System.nanoTime() - startTime) / 1_000_000.0;
-//      System.out.println("[Intave] Physics-Performance-Debug: " + endTime + " ms/c");
-//    }
     }
+
+/*   context = predictedMovement.context();
+    distance = MathHelper.resolveDistance(
+      context.motionX, context.motionY, context.motionZ,
+      receivedMotionX, receivedMotionY, receivedMotionZ
+    );
+
+    if (distance > 0.005 && movementData.pastVelocity == 1 && movementData.lastVelocity != null) {
+      double actualMotionX = movementData.physicsLastMotionX;
+      double actualMotionY = movementData.physicsLastMotionY;
+      double actualMotionZ = movementData.physicsLastMotionZ;
+      movementData.physicsLastMotionX = movementData.lastVelocity.getX();
+      movementData.physicsLastMotionY = movementData.lastVelocity.getY();
+      movementData.physicsLastMotionZ = movementData.lastVelocity.getZ();
+
+
+      double distanceBefore = distance;
+
+      if (distance < distanceBefore) {
+        predictedMovement = simulatePossibleMovements(
+          user, friction, sprinting, sneaking, yawSine, yawCosine,
+          receivedMotionX, receivedMotionY, receivedMotionZ
+        );
+        distance = MathHelper.resolveDistance(
+          context.motionX, context.motionY, context.motionZ,
+          receivedMotionX, receivedMotionY, receivedMotionZ
+        );
+        context = predictedMovement.context();
+      }
+      if (distance < 0.001) {
+        player.sendMessage(ChatColor.DARK_RED + "Velocity was delayed! " + distance + "; before=" + distanceBefore +
+                             ": pastVelocity=" + movementData.pastVelocity);
+      }
+
+      movementData.physicsLastMotionX = actualMotionX;
+      movementData.physicsLastMotionY = actualMotionY;
+      movementData.physicsLastMotionZ = actualMotionZ;
+    }*/
+
     evaluateBestSimulation(user, predictedMovement);
-//      double endTime = (System.nanoTime() - startTime) / 1_000_000.0;
-//      System.out.println("[Intave] Physics-Performance-Debug: " + endTime + " ms/c");
     movementData.onGround = predictedMovement.onGround();
     movementData.collidedHorizontally = predictedMovement.collidedHorizontally();
     movementData.collidedVertically = predictedMovement.collidedVertically();
@@ -211,7 +244,7 @@ public final class Physics extends IntaveCheck {
 
       for (int attackState = 0; attackState <= 1; attackState++) {
         boolean attackReduce = attackState == 1;
-        if (attackReduce && movementData.pastPlayerAttackPhysics > 5) {
+        if (attackReduce && movementData.pastPlayerAttackPhysics >= 1) {
           continue;
         }
 
@@ -663,7 +696,10 @@ public final class Physics extends IntaveCheck {
       if (violationLevelIncrease > 0) {
         violationLevelIncrease = Math.max(violationLevelIncrease, 1.0);
       }
-      violationLevelIncrease *= 8.5;
+      // Could be smaller (testing required)
+      if (distance > 0.005) {
+        violationLevelIncrease *= 8.5;
+      }
     }
 
     if (violationLevelIncrease == 0 && violationLevelData.physicsVL > 0) {
@@ -872,7 +908,7 @@ public final class Physics extends IntaveCheck {
     );
     double predictedDistanceMoved = Math.hypot(predictedX, predictedZ);
     boolean pushedByWaterFlow = movementData.pastPushedByWaterFlow <= 20;
-    double legitimateDeviation = 0.0007;
+    double legitimateDeviation = movementData.pastPlayerAttackPhysics <= 1 ? 0.01 : 0.0007;
 
     if (movementData.pastWaterMovement < 10) {
       legitimateDeviation = 0.01;

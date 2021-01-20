@@ -1,7 +1,7 @@
 package de.jpx3.intave.tools;
 
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.tools.annotate.Natify;
+import de.jpx3.intave.tools.annotate.Native;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -67,7 +67,7 @@ public final class CachedResource {
     return lines;
   }
 
-  @Natify
+  @Native
   public InputStream read() {
     if(!fileStore().exists()) {
       throw new IllegalStateException();
@@ -100,7 +100,7 @@ public final class CachedResource {
     }
   }
 
-  @Natify
+  @Native
   private boolean refreshFile() {
     File file = fileStore();
     if(file.exists()) {
@@ -164,7 +164,7 @@ public final class CachedResource {
     if(operatingSystem.contains("win")) {
       filePath = System.getenv("APPDATA") + "/Intave/";
     } else {
-      filePath = "var/lib/intave/";
+      filePath = "/var/lib/intave/";
     }
     workDirectory = new File(filePath);
     if(!workDirectory.exists()) {

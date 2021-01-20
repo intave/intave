@@ -9,7 +9,7 @@ import de.jpx3.intave.permission.PermissionCheck;
 import de.jpx3.intave.security.LicenseVerification;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.DurationTranslator;
-import de.jpx3.intave.tools.annotate.Natify;
+import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.update.VersionInformation;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMessageChannel;
@@ -111,7 +111,7 @@ public final class IntaveCommandStage extends CommandStage {
     }
   }
 
-  @Natify
+  @Native
   private void sendVersionMessage(CommandSender player) {
     boolean hasVersionViewPermission = PermissionCheck.permissionCheck(player, "intave.command");
     boolean versionViewAllowed = false;

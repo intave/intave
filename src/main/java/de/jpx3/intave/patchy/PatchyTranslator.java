@@ -1,11 +1,11 @@
-package de.jpx3.patchy;
+package de.jpx3.intave.patchy;
 
 import de.jpx3.intave.lib.asm.ClassReader;
 import de.jpx3.intave.lib.asm.ClassWriter;
 import de.jpx3.intave.lib.asm.Type;
 import de.jpx3.intave.lib.asm.tree.*;
-import de.jpx3.intave.tools.annotate.Natify;
-import de.jpx3.patchy.annotate.PatchyAutoTranslation;
+import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
+import de.jpx3.intave.tools.annotate.Native;
 import org.bukkit.Bukkit;
 
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ final class PatchyTranslator {
     CURRENT_SERVER_VERSION =  packageName.substring(packageName.lastIndexOf(".") + 1);
   }
 
-  @Natify
+  @Native
   public static byte[] translateClass(byte[] inputBytes) {
     ClassNode classNode = classNodeOf(inputBytes);
 //    System.out.println("Translating " + classNode.name);
@@ -44,7 +44,7 @@ final class PatchyTranslator {
     return byteArrayOf(classNode);
   }
 
-  @Natify
+  @Native
   private static void translateClassDependencies(ClassNode classNode) {
     String newSuperName = translateDependency(classNode.superName);
 //    System.out.println("Patched " + classNode.superName + " to " + newSuperName);
@@ -80,7 +80,7 @@ final class PatchyTranslator {
     processMethodInstructions(methodNode);
   }
 
-  @Natify
+  @Native
   private static void processMethodDescription(MethodNode methodNode) {
     PatchyTranslationConfiguration configuration = PatchyTranslationConfiguration.createFrom(methodNode);
 
@@ -107,7 +107,7 @@ final class PatchyTranslator {
     methodNode.desc = newDesc;
   }
 
-  @Natify
+  @Native
   private static void processMethodInstructions(MethodNode methodNode) {
     PatchyTranslationConfiguration configuration = PatchyTranslationConfiguration.createFrom(methodNode);
 
@@ -155,7 +155,7 @@ final class PatchyTranslator {
     methodNode.localVariables = null;
   }
 
-  @Natify
+  @Native
   private static InstructionTarget process(InstructionTarget original, PatchyTranslationConfiguration configuration) {
 //    if(!isServerClass(original.owner)) {
 //      return original;
@@ -207,7 +207,7 @@ final class PatchyTranslator {
 //    return original;
   }
 
-  @Natify
+  @Native
   private static boolean isServerClass(String className) {
     return className.startsWith("net/minecraft/server") || className.startsWith("org/bukkit/craftbukkit");
   }
@@ -218,7 +218,7 @@ final class PatchyTranslator {
       .collect(Collectors.toList());
   }
 
-  @Natify
+  @Native
   private static boolean methodSelected(MethodNode methodNode) {
     List<AnnotationNode> annotationNodes = new ArrayList<>();
 

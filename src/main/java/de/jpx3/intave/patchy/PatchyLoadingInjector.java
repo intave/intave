@@ -1,6 +1,6 @@
-package de.jpx3.patchy;
+package de.jpx3.intave.patchy;
 
-import de.jpx3.intave.tools.annotate.Natify;
+import de.jpx3.intave.tools.annotate.Native;
 
 import java.io.*;
 import java.lang.reflect.Method;
@@ -11,7 +11,7 @@ import java.util.zip.ZipFile;
 
 public final class PatchyLoadingInjector {
 
-  @Natify
+  @Native
   public static <T> Class<T> loadUnloadedClassPatched(ClassLoader classLoader, String className) {
     className = className.replace("/", ".");
     try {
@@ -26,7 +26,7 @@ public final class PatchyLoadingInjector {
     }
   }
 
-  @Natify
+  @Native
   private static boolean classIsLoaded(ClassLoader classLoader, String className) {
     try {
       Method findLoadedClass = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
@@ -38,7 +38,7 @@ public final class PatchyLoadingInjector {
     }
   }
 
-  @Natify
+  @Native
   private static byte[] classBytesOf(ClassLoader classLoader, String className) throws IOException {
     className = className.replace('.', '/') + ".class";
     InputStream stream = classLoader.getResourceAsStream(className);
@@ -55,7 +55,7 @@ public final class PatchyLoadingInjector {
     return byteArrayFrom(stream);
   }
 
-  @Natify
+  @Native
   private static byte[] resourceFromJar(File inputFile, String fileName) {
     try {
       ZipFile zipFile = new ZipFile(inputFile);
@@ -76,7 +76,7 @@ public final class PatchyLoadingInjector {
     throw new IllegalStateException("Unable to locate " + fileName);
   }
 
-  @Natify
+  @Native
   private static byte[] byteArrayFrom(InputStream inputStream) throws IOException {
     ByteArrayOutputStream var1 = new ByteArrayOutputStream();
     copy(inputStream, var1);

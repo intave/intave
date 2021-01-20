@@ -1,7 +1,7 @@
 package de.jpx3.intave.security;
 
 import de.jpx3.intave.tools.EncryptedResource;
-import de.jpx3.intave.tools.annotate.Natify;
+import de.jpx3.intave.tools.annotate.Native;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
@@ -13,7 +13,7 @@ public final class HWIDVerification {
   private static EncryptedResource encryptedResource;
   private static String identifier;
 
-  @Natify
+  @Native
   public static String publicHardwareIdentifier() {
     if(encryptedResource == null) {
       encryptedResource = new EncryptedResource("hardware-id", false);
@@ -30,7 +30,7 @@ public final class HWIDVerification {
     return identifier;
   }
 
-  @Natify
+  @Native
   private static String randomString() {
     char[] available = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567890_-$@?".toCharArray();
     StringBuilder str = new StringBuilder();

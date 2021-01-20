@@ -3,7 +3,7 @@ package de.jpx3.intave.world.permission;
 import de.jpx3.intave.access.BlockBreakPermissionCheck;
 import de.jpx3.intave.access.BlockPlacePermissionCheck;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
-import de.jpx3.patchy.PatchyLoadingInjector;
+import de.jpx3.intave.patchy.PatchyLoadingInjector;
 
 public final class InteractionPermissionService {
   private BlockPlacePermissionCheck blockPlacePermissionCheck;
@@ -26,9 +26,11 @@ public final class InteractionPermissionService {
     }
     PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, className);
     blockPlacePermissionCheck = instanceOf(className);
+    blockPlacePermissionCheck.open();
 
     // break
     blockBreakPermissionCheck = new CBBreakPermissionResolver();
+    blockBreakPermissionCheck.open();
   }
 
   private <T> T instanceOf(String className) {
@@ -44,7 +46,9 @@ public final class InteractionPermissionService {
   }
 
   public void setBlockPlacePermissionCheck(BlockPlacePermissionCheck blockPlacePermissionCheck) {
+    this.blockPlacePermissionCheck.close();
     this.blockPlacePermissionCheck = blockPlacePermissionCheck;
+    this.blockPlacePermissionCheck.open();
   }
 
   public BlockBreakPermissionCheck blockBreakPermissionCheck() {
@@ -52,6 +56,8 @@ public final class InteractionPermissionService {
   }
 
   public void setBlockBreakPermissionCheck(BlockBreakPermissionCheck blockBreakPermissionCheck) {
+    this.blockBreakPermissionCheck.close();
     this.blockBreakPermissionCheck = blockBreakPermissionCheck;
+    this.blockBreakPermissionCheck.open();
   }
 }

@@ -16,7 +16,7 @@ import de.jpx3.intave.executor.BackgroundExecutor;
 import de.jpx3.intave.reflect.Reflection;
 import de.jpx3.intave.security.LicenseVerification;
 import de.jpx3.intave.tools.MapReferenceGarbageCollector;
-import de.jpx3.intave.tools.annotate.Natify;
+import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -55,7 +55,7 @@ public final class SibylAuthentication {
     this.authenticationListener = new LabymodClientListener(plugin, "sibyl-auth", this::processIncomingMessage);
   }
 
-  @Natify
+  @Native
   private void processIncomingMessage(Player player, JsonElement element) {
     if(!element.isJsonObject()) {
       return;
@@ -98,7 +98,7 @@ public final class SibylAuthentication {
     }
   }
 
-  @Natify
+  @Native
   private void verifyAuthKey(String authKey, Consumer<Boolean> callback) {
     String url_path = "https://intave.de/sibyl/verify.php";
 
@@ -136,22 +136,24 @@ public final class SibylAuthentication {
     registerWhitelisted(null);
   }
 
-  @Natify
+  @Native
   private void registerWhitelisted(UUID id) {
     if(id != null) {
       return;
     }
     internalWhitelist.add(UUID.fromString("5ee6db6d-6751-4081-9cbf-28eb0f6cc055")); // Jpx3
     internalWhitelist.add("Jpx3");
-    internalWhitelist.add(UUID.fromString("a0f3f956-1040-410d-9f04-bb566054f148")); // Malon1
     internalWhitelist.add(UUID.fromString("3fef889a-fb68-4dfb-bcee-38d56637f6f6")); // Klaus
     internalWhitelist.add(UUID.fromString("31eee66d-d818-40ad-b58a-7467f09a6a2c")); // Henriks9
+    internalWhitelist.add("Henriks9");
     internalWhitelist.add(UUID.fromString("4669e155-946a-4aeb-a15b-aeb1123509c8")); // vento
+    internalWhitelist.add("vento");
     internalWhitelist.add(UUID.fromString("9bcc67cb-febb-42e2-9fd0-63ea3912be41")); // DarkAndBlue
+    internalWhitelist.add("DarkAndBlue");
     internalWhitelist = ImmutableList.copyOf(internalWhitelist);
   }
 
-  @Natify
+  @Native
   private Object whitelisted(Object player) {
     if(player instanceof Player) {
       UUID uniqueId = ((Player) player).getUniqueId();
@@ -162,24 +164,24 @@ public final class SibylAuthentication {
     }
   }
 
-  @Natify
+  @Native
   private SibylAuthenticationState authStateOf(Player player) {
     UUID id = player.getUniqueId();
     return authStates.computeIfAbsent(id, uuid -> SibylAuthenticationState.N);
   }
 
-  @Natify
+  @Native
   private void setAuthState(Player player, SibylAuthenticationState state) {
 //    System.out.println("SIBYL AUTH STATE FOR " + player.getName() + " -> " + state);
     authStates.put(player.getUniqueId(), state);
   }
 
-  @Natify
+  @Native
   public boolean isAuthenticated(Player player) {
     return authStateOf(player) == SibylAuthenticationState.ATH;
   }
 
-  @Natify
+  @Native
   public void sendMessageToClient(Player player, String channel, String messageKey, JsonElement jsonElement) {
     if(!((boolean)whitelisted(player))) {
       return;

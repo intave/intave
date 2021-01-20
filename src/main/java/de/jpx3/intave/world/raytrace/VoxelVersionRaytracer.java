@@ -1,8 +1,8 @@
 package de.jpx3.intave.world.raytrace;
 
+import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
 import de.jpx3.intave.tools.wrapper.WrappedMovingObjectPosition;
 import de.jpx3.intave.tools.wrapper.WrappedVector;
-import de.jpx3.patchy.annotate.PatchyAutoTranslation;
 import net.minecraft.server.v1_15_R1.MovingObjectPositionBlock;
 import net.minecraft.server.v1_15_R1.RayTrace;
 import net.minecraft.server.v1_15_R1.Vec3D;

@@ -12,12 +12,7 @@ import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
 import de.jpx3.intave.event.service.entity.WrappedEntity;
 import de.jpx3.intave.tools.MathHelper;
-import de.jpx3.intave.tools.client.PlayerRotationHelper;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
-import de.jpx3.intave.tools.wrapper.WrappedMovingObjectPosition;
-import de.jpx3.intave.tools.wrapper.WrappedVector;
 import de.jpx3.intave.user.*;
-import de.jpx3.intave.world.raytrace.Raytracer;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 
@@ -34,7 +29,7 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
   private final IntavePlugin plugin;
 
   public AttackRaytrace(IntavePlugin plugin) {
-    super("AttackRaytrace", "attackRaytrace", AttackRaytraceMeta.class);
+    super("AttackRaytrace", "attackraytrace", AttackRaytraceMeta.class);
     this.plugin = plugin;
   }
 

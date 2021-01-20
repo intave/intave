@@ -5,7 +5,7 @@ import de.jpx3.intave.connect.sibyl.auth.SibylAuthentication;
 import de.jpx3.intave.connect.sibyl.data.SibylPacketTransmitter;
 import de.jpx3.intave.connect.sibyl.data.packet.SibylPacket;
 import de.jpx3.intave.connect.sibyl.data.packet.SibylPacketOutAttackCancel;
-import de.jpx3.intave.tools.annotate.Natify;
+import de.jpx3.intave.tools.annotate.Native;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -22,7 +22,7 @@ public final class SibylIntegrationService {
     broadcastRestart();
   }
 
-  @Natify
+  @Native
   private void broadcastRestart() {
     for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
       authentication.sendMessageToClient(onlinePlayer, "MC|Brand", "INTAVE", null);
@@ -37,7 +37,7 @@ public final class SibylIntegrationService {
     broadcastTrustedPacket(packet);
   }
 
-  @Natify
+  @Native
   public void broadcastTrustedPacket(SibylPacket packet) {
     for (Player player : Bukkit.getOnlinePlayers()) {
       if(authentication.isAuthenticated(player)) {

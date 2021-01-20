@@ -2,10 +2,13 @@ package de.jpx3.intave.world.permission;
 
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.BlockPlacePermissionCheck;
+import de.jpx3.intave.event.bukkit.BukkitEventSubscriber;
+import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
+import de.jpx3.intave.patchy.annotate.PatchyTranslateParameters;
 import de.jpx3.intave.reflect.Reflection;
 import de.jpx3.intave.reflect.ReflectionFailureException;
-import de.jpx3.patchy.annotate.PatchyAutoTranslation;
-import de.jpx3.patchy.annotate.PatchyTranslateParameters;
+import de.jpx3.intave.user.UserRepository;
 import net.minecraft.server.v1_8_R3.WorldServer;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -14,13 +17,14 @@ import org.bukkit.craftbukkit.v1_8_R3.CraftChunk;
 import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
 import org.bukkit.craftbukkit.v1_8_R3.block.CraftBlockState;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public final class LegacyCBPlacePermissionResolver implements BlockPlacePermissionCheck {
+public final class LegacyCBPlacePermissionResolver implements BlockPlacePermissionCheck, BukkitEventSubscriber {
   @Override
   @PatchyAutoTranslation
   public boolean hasPermission(Player player, World world, boolean mainHand, int blockX, int blockY, int blockZ, int typeId, byte data) {
@@ -32,7 +36,7 @@ public final class LegacyCBPlacePermissionResolver implements BlockPlacePermissi
       Block blockClicked = craftWorld.getBlockAt(blockX, blockY, blockZ);
       Block placedBlock = replacedBlockState.getBlock();
       boolean canBuild = canBuildReflectiveCall(craftWorld, player, placedBlock.getX(), placedBlock.getZ());
-      ItemStack item = player.getInventory().getItemInHand();
+      ItemStack item = UserRepository.userOf(player).meta().inventoryData().heldItem();//player.getInventory().getItemInHand();
       BlockPlaceEvent event = new PermissionCheckBlockPlaceEvent(placedBlock, replacedBlockState, blockClicked, item, player, canBuild);
       IntavePlugin.singletonInstance().eventLinker().fireExternalEvent(event);
       return !event.isCancelled();
@@ -59,6 +63,30 @@ public final class LegacyCBPlacePermissionResolver implements BlockPlacePermissi
       return (boolean) canBuildMethod.invoke(null, world, player, x, z);
     } catch (IllegalAccessException | InvocationTargetException exception) {
       throw new ReflectionFailureException(exception);
+    }
+  }
+
+  @Override
+  public void open() {
+    IntavePlugin.singletonInstance().eventLinker().registerEventsIn(this);
+  }
+
+  @Override
+  public void close() {
+    IntavePlugin.singletonInstance().eventLinker().unregisterEventsIn(this);
+  }
+
+  @BukkitEventSubscription(priority = EventPriority.LOWEST)
+  public void onPre(BlockPlaceEvent place) {
+    if(!(place instanceof PermissionCheckBlockPlaceEvent)) {
+      place.setCancelled(true);
+    }
+  }
+
+  @BukkitEventSubscription(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  public void onPost(BlockPlaceEvent place) {
+    if(!(place instanceof PermissionCheckBlockPlaceEvent)) {
+      place.setCancelled(false);
     }
   }
 

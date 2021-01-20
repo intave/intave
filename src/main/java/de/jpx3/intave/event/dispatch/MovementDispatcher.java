@@ -21,11 +21,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.util.Vector;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.concurrent.ThreadLocalRandom;
 
 public final class MovementDispatcher implements EventProcessor {
   private final TeleportPositionObserver teleportPositionObserver = new TeleportPositionObserver();
@@ -403,18 +405,24 @@ public final class MovementDispatcher implements EventProcessor {
       //}
       movementData.emulationVelocity = velocity.clone();
 
-      plugin.eventService().transactionFeedbackService().requestPong(player, velocity, (player1, velocity1) -> {
-        if (!isInActiveTeleportBundle) {
-          movementData.physicsLastMotionX = velocity1.getX();
-          movementData.physicsLastMotionY = velocity1.getY();
-          movementData.physicsLastMotionZ = velocity1.getZ();
-        }
-        Synchronizer.synchronize(() -> {
-          movementData.emulationVelocity = null;
-        });
-        movementData.pastVelocity = 0;
-      });
+      VelocityCallBackData velocityCallBackData = new VelocityCallBackData(isInActiveTeleportBundle, velocity);
+      plugin.eventService().transactionFeedbackService().requestPong(player, velocityCallBackData, this::receiveVelocity);
     }
+  }
+
+  private void receiveVelocity(Player player, VelocityCallBackData velocityCallBackData) {
+    User user = UserRepository.userOf(player);
+    UserMetaMovementData movementData = user.meta().movementData();
+    Vector velocity = velocityCallBackData.velocity;
+    if (!velocityCallBackData.isInActiveTeleportBundle) {
+      movementData.physicsLastMotionX = velocity.getX();
+      movementData.physicsLastMotionY = velocity.getY();
+      movementData.physicsLastMotionZ = velocity.getZ();
+      movementData.lastVelocity = velocity.clone();
+//      player.sendMessage("Apply velocity: " + MathHelper.formatMotion(velocity));
+    }
+    Synchronizer.synchronize(() -> movementData.emulationVelocity = null);
+    movementData.pastVelocity = 0;
   }
 
   @PacketSubscription(
@@ -456,5 +464,15 @@ public final class MovementDispatcher implements EventProcessor {
 //      return false;
 //    }
     return !inventoryData.inventoryOpen();
+  }
+
+  private static final class VelocityCallBackData {
+    private final boolean isInActiveTeleportBundle;
+    private final Vector velocity;
+
+    public VelocityCallBackData(boolean isInActiveTeleportBundle, Vector velocity) {
+      this.isInActiveTeleportBundle = isInActiveTeleportBundle;
+      this.velocity = velocity;
+    }
   }
 }

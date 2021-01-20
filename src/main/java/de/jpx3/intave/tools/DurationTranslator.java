@@ -1,10 +1,6 @@
 package de.jpx3.intave.tools;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public final class DurationTranslator {
 
@@ -12,24 +8,16 @@ public final class DurationTranslator {
     if(duration <= 0) {
       return "invalid";
     }
-    // wunderschön, oder nicht?
-    List<TimeUnit> best = Arrays.stream(TimeUnit.values())
-      .filter(timeUnit -> TimeUnit.MILLISECONDS.convert(duration, timeUnit) > 1)
-      .sorted(Comparator.<TimeUnit>comparingLong(o -> TimeUnit.MILLISECONDS.convert(duration, o)).reversed())
-      .collect(Collectors.toList());
-    TimeUnit leadingTimeUnit = best.get(0);
-    TimeUnit secondLeadingTimeUnit = best.get(1);
-    String firstType = translateType(leadingTimeUnit, duration);
-    String secondType = translateType(secondLeadingTimeUnit, duration);
+    int hours = (int) (duration / (1000 * 60 * 60));
+    int days = hours / 24;
+    hours = hours % 24;
+    String firstType = stringifyType(TimeUnit.DAYS, days);
+    String secondType = stringifyType(TimeUnit.HOURS, hours);
     return firstType + (firstType.isEmpty() ? "" : " and ") + secondType;
   }
 
-  private static String translateType(TimeUnit unit, long duration) {
-    long convert = unit.convert(duration, TimeUnit.MILLISECONDS);
-    if(convert == 0) {
-      return "";
-    }
+  private static String stringifyType(TimeUnit unit, long conv) {
     String name = unit.name().toLowerCase();
-    return (convert == 1 ? "one" : convert) + " " + name.substring(0, name.length() - (convert == 1 ? 1 : 0));
+    return (conv == 1 ? "one" : conv) + " " + name.substring(0, name.length() - (conv == 1 ? 1 : 0));
   }
 }

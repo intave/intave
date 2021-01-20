@@ -18,6 +18,7 @@ import de.jpx3.intave.reflect.Reflection;
 import de.jpx3.intave.reflect.ReflectionFailureException;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.tools.wrapper.WrappedEnumDirection;
+import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.world.BlockAccessor;
 import de.jpx3.intave.world.block.BlockDataAccess;
@@ -147,8 +148,9 @@ public final class BlockActionDispatcher implements EventProcessor {
     boolean replace = BlockDataAccess.replacementPlace(world, new BlockPosition(blockAgainstLocation.toVector()));
     Location blockPlacementLocation = replace ? blockAgainstLocation : blockAgainstLocation.clone().add(WrappedEnumDirection.getFront(enumDirection).getDirectionVec().convertToBukkitVec());
 
-    // TODO: 01/10/21 replace with own resolve (getItemInHand is not synchronized !!!)
-    Material itemTypeInHand = player.getItemInHand().getType();
+    User user = UserRepository.userOf(player);
+
+    Material itemTypeInHand = user.meta().inventoryData().heldItemType();
 
     Block clickedBlock = BlockAccessor.blockAccess(blockAgainstLocation);
     Material clickedType = clickedBlock.getType();
@@ -218,6 +220,7 @@ public final class BlockActionDispatcher implements EventProcessor {
   )
   public void receiveBreak(PacketEvent event) {
     Player player = event.getPlayer();
+    User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
     BlockPosition blockPosition = packet.getBlockPositionModifier().readSafely(0);
     if(blockPosition == null) {
@@ -225,7 +228,7 @@ public final class BlockActionDispatcher implements EventProcessor {
     }
     EnumWrappers.PlayerDigType playerDigType = packet.getPlayerDigTypes().readSafely(0);
 
-    float blockDamage = BlockDataAccess.blockDamage(player, player.getItemInHand(), blockPosition);
+    float blockDamage = BlockDataAccess.blockDamage(player, user.meta().inventoryData().heldItem(), blockPosition);
     boolean instantBreak = blockDamage == Float.POSITIVE_INFINITY || blockDamage >= 1.0f;
     boolean breakBlock = instantBreak || playerDigType == STOP_DESTROY_BLOCK;
 
@@ -312,7 +315,7 @@ public final class BlockActionDispatcher implements EventProcessor {
 
   private void refreshBlock(Player player, Location location) {
     PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.BLOCK_CHANGE);
-    Block block = location.getBlock();
+    Block block = BlockAccessor.blockAccess(location);
     WrappedBlockData blockData = WrappedBlockData.createData(block.getType(), block.getData());
     BlockPosition position = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     packet.getBlockData().write(0, blockData);

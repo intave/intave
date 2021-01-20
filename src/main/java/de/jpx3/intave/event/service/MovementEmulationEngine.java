@@ -11,6 +11,7 @@ import de.jpx3.intave.tools.client.PlayerMovementHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.tools.wrapper.WrappedBlockPosition;
+import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaMovementData;
 import de.jpx3.intave.user.UserMetaViolationLevelData;
@@ -252,7 +253,17 @@ public final class MovementEmulationEngine {
 
     // webs, water
 
+    // Limit motion (motion cannot be greater than 4.0,
+    // otherwise -> Excessive velocity set detected: tried to set velocity of entity #33 to ...)
+    collisionVector.setX(limitMotionAxis(collisionVector.getX()));
+    collisionVector.setY(limitMotionAxis(collisionVector.getY()));
+    collisionVector.setZ(limitMotionAxis(collisionVector.getZ()));
+
     return collisionVector;
+  }
+
+  private double limitMotionAxis(double axis) {
+    return WrappedMathHelper.clamp_double(axis, -4.0, 4.0);
   }
 
   private void teleport(Player player, Location teleportLocation) {

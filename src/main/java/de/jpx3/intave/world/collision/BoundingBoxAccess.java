@@ -1,10 +1,10 @@
 package de.jpx3.intave.world.collision;
 
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.patchy.PatchyLoadingInjector;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.world.BlockAccessor;
 import de.jpx3.intave.world.collision.patches.BoundingBoxPatcher;
-import de.jpx3.patchy.PatchyLoadingInjector;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;

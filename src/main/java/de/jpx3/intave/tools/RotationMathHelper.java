@@ -3,10 +3,10 @@ package de.jpx3.intave.tools;
 import java.util.List;
 
 public final class RotationMathHelper {
-  public static double averageOf(List<Double> data) {
+  public static double averageOf(List<? extends Number> data) {
     double sum = 0;
-    for (Double element : data) {
-      sum += element;
+    for (Number element : data) {
+      sum += element.doubleValue();
     }
     if (sum == 0) {
       return 0;
@@ -14,26 +14,14 @@ public final class RotationMathHelper {
     return sum / data.size();
   }
 
-  public static double calculateStandardDeviation(List<Double> sd) {
+  public static double calculateStandardDeviation(List<? extends Number> sd) {
     double sum = 0, newSum = 0;
-    for (double v : sd) {
-      sum = sum + v;
+    for (Number v : sd) {
+      sum = sum + v.doubleValue();
     }
     double mean = sum / sd.size();
-    for (double v : sd) {
-      newSum = newSum + (v - mean) * (v - mean);
-    }
-    return Math.sqrt(newSum / sd.size());
-  }
-
-  public static double calculateStandardDeviationFloat(List<Float> sd) {
-    double sum = 0, newSum = 0;
-    for (double v : sd) {
-      sum = sum + v;
-    }
-    double mean = sum / sd.size();
-    for (double v : sd) {
-      newSum = newSum + (v - mean) * (v - mean);
+    for (Number v : sd) {
+      newSum = newSum + (v.doubleValue() - mean) * (v.doubleValue() - mean);
     }
     return Math.sqrt(newSum / sd.size());
   }

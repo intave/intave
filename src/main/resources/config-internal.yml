@@ -1,3 +1,5 @@
+version: "14.0.0"
+
 check:
   physics:
 
@@ -18,6 +20,8 @@ check:
 
     enabled: true
 
+    disable-reducing: true
+
     confidence-thresholds:
       "!!":
         25:
@@ -34,8 +38,7 @@ check:
         50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously (?!) (heuristics)"
         75: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously #2 (?!) (heuristics)"
 
-
-  attackRaytrace:
+  attackraytrace:
 
     enabled: true
 
@@ -45,7 +48,7 @@ check:
         - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking suspiciously (hitbox)"
         - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat"
 
-  interactionRaytrace:
+  interactionraytrace:
 
     enabled: true
 
@@ -55,17 +58,61 @@ check:
         - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for interacting suspiciously"
         - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat"
 
-  protocolScanner:
+  protocolscanner:
+
+    enabled: true
+
+    invokant: false
 
     thresholds:
-      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is moving incorrectly"
+      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is sending invalid packets"
       100:
         - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for moving incorrectly"
         - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat"
 
-  abilitySpeedLimiter:
+  placementanalysis:
 
-    # nothing
+    enabled: true
+
+    thresholds:
+      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is placing blocks incorrectly"
+      100:
+        - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for placing blocks incorrectly"
+        - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat"
+
+  inventoryclickanalysis:
+
+    enabled: true
+
+    thresholds:
+      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is clicking suspiciously on items"
+      100:
+        - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for clicking suspiciously on items"
+        - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat"
+
+  clickspeedlimiter:
+
+    enabled: true
+
+    max-cps: 20
+
+    thresholds:
+      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking too quickly"
+      100:
+        - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking too quickly"
+        - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat"
+
+  abilityspeedlimiter:
+
+    # pure emptiness
+
+blacklist:
+
+  apply: true
+
+proxy:
+
+  enable: false
 
 filter:
 
@@ -76,6 +123,22 @@ filter:
   chat-insults: true
 
   chat-spam: true
+
+command:
+
+  hide: true
+
+rejoin:
+
+  delay: 3600
+
+  message: "&cYou were recently removed, please wait before connecting again"
+
+logging:
+
+  console_log: false
+
+  file_log: true
 
 layout:
 

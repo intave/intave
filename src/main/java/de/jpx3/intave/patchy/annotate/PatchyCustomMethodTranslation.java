@@ -1,4 +1,4 @@
-package de.jpx3.patchy.annotate;
+package de.jpx3.intave.patchy.annotate;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

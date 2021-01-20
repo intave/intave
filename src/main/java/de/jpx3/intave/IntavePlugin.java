@@ -20,7 +20,7 @@ import de.jpx3.intave.security.HWIDVerification;
 import de.jpx3.intave.security.SSLConnectionVerifier;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.DurationTranslator;
-import de.jpx3.intave.tools.annotate.Natify;
+import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.tools.client.SinusCache;
 import de.jpx3.intave.tools.items.InventoryUseItemHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
@@ -53,6 +53,12 @@ public final class IntavePlugin extends JavaPlugin {
   private static String defaultColor = "";
   private static boolean offlineMode = false;
 
+  static {
+    // stage 1
+
+
+  }
+
   private IntaveLogger logger;
   private ProxyMessenger proxyMessenger;
   private SibylIntegrationService sibylIntegrationService;
@@ -68,12 +74,6 @@ public final class IntavePlugin extends JavaPlugin {
   private TrustFactorService trustFactorService;
   private VersionList versionList;
 
-  static {
-    // stage 1
-
-
- }
-
   public IntavePlugin() {
     // stage 2
     singletonInstance = this;
@@ -81,7 +81,27 @@ public final class IntavePlugin extends JavaPlugin {
     this.logger = new IntaveLogger(this);
   }
 
-  @Natify
+  public static String version() {
+    return version;
+  }
+
+  public static String prefix() {
+    return prefix;
+  }
+
+  public static boolean isInOfflineMode() {
+    return offlineMode;
+  }
+
+  public static String defaultColor() {
+    return defaultColor;
+  }
+
+  public static IntavePlugin singletonInstance() {
+    return singletonInstance;
+  }
+
+  @Native
   @Override
   public void onLoad() {
     // stage 3
@@ -91,7 +111,7 @@ public final class IntavePlugin extends JavaPlugin {
 
   }
 
-  @Natify
+  @Native
   @Override
   public void onEnable() {
     logger.info("Please stand by..");
@@ -135,8 +155,8 @@ public final class IntavePlugin extends JavaPlugin {
       String requiredConfigurationHash;
 
       // ja das muss so krebsig hier hin
-      if(IntaveControl.DISABLE_LICENSE_CHECK) {
-        logger().info("This version has no license check");
+      if (IntaveControl.DISABLE_LICENSE_CHECK) {
+        logger().info("This self-signed version bypasses certification requirements");
         System.setProperty("8ugyoiodfg", "~bypass");
         requiredConfigurationHash = null;
       } else {
@@ -147,11 +167,12 @@ public final class IntavePlugin extends JavaPlugin {
           FileInputStream fis = new FileInputStream(currentJavaJarFile);
           byte[] dataBytes = new byte[1024];
           int nread;
-          while((nread = fis.read(dataBytes)) != -1) {
+          while ((nread = fis.read(dataBytes)) != -1) {
             md.update(dataBytes, 0, nread);
           }
           byte[] mdbytes = md.digest();
-          for (byte mdbyte : mdbytes) jarChecksum.append(Integer.toString((mdbyte & 0xff) + 0x100, 16).substring(1));
+          for (byte mdbyte : mdbytes)
+            jarChecksum.append(Integer.toString((mdbyte & 0xff) + 0x100, 16).substring(1));
         } catch (NoSuchAlgorithmException | IOException exception) {
           exception.printStackTrace();
           jarChecksum.append("~invalid");
@@ -222,10 +243,10 @@ public final class IntavePlugin extends JavaPlugin {
             message = null;
             break;
         }
-        if(message != null) {
+        if (message != null) {
           logger().error(message);
         }
-        if(bad || response.length() < 2) {
+        if (bad || response.length() < 2) {
           getCommand("intave").setExecutor((commandSender, command, s, strings) -> {
             commandSender.sendMessage(prefix() + ChatColor.RED + "Intave couldn't boot properly");
             return false;
@@ -234,7 +255,7 @@ public final class IntavePlugin extends JavaPlugin {
           return;
         }
 
-        if(response.equals("timeout")) {
+        if (response.equals("timeout")) {
           System.setProperty("8ugyoiodfg", "~timeout");
           offlineMode = true;
           requiredConfigurationHash = null;
@@ -248,7 +269,7 @@ public final class IntavePlugin extends JavaPlugin {
           Map<String, String> properties = new HashMap<>();
           boolean first = true;
           for (String propertyPair : split) {
-            if(first) {
+            if (first) {
               first = false;
               continue;
             }
@@ -259,7 +280,7 @@ public final class IntavePlugin extends JavaPlugin {
         }
       }
 
-      if(offlineMode && !configurationService.loader().configurationCacheExists()) {
+      if (offlineMode && !configurationService.loader().configurationCacheExists()) {
         logger().error("Unable to boot: Intave requires an internet connection for first-time startup");
         getCommand("intave").setExecutor((commandSender, command, s, strings) -> {
           commandSender.sendMessage(prefix() + ChatColor.RED + "Intave couldn't boot properly");
@@ -274,7 +295,7 @@ public final class IntavePlugin extends JavaPlugin {
 
       VersionInformation versionInformation = versionList.versionInformation(version());
 
-      if(versionInformation == null) {
+      if (versionInformation == null) {
         logger().info("This version of Intave is not listed in the official index");
       } else {
         long duration = AccessHelper.now() - versionInformation.release();
@@ -340,13 +361,13 @@ public final class IntavePlugin extends JavaPlugin {
     logger.info("Intave booted successfully");
   }
 
-  @Natify
+  @Native
   @Override
   public void onDisable() {
     performShutdown();
   }
 
-  @Natify
+  @Native
   public void performShutdown() {
     logger().info("Stopping Intave");
     BackgroundExecutor.stopBlocking();
@@ -406,25 +427,5 @@ public final class IntavePlugin extends JavaPlugin {
 
   public VersionList versionList() {
     return versionList;
-  }
-
-  public static String version() {
-    return version;
-  }
-
-  public static String prefix() {
-    return prefix;
-  }
-
-  public static boolean isInOfflineMode() {
-    return offlineMode;
-  }
-
-  public static String defaultColor() {
-    return defaultColor;
-  }
-
-  public static IntavePlugin singletonInstance() {
-    return singletonInstance;
   }
 }

@@ -43,7 +43,7 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
   private final IntavePlugin plugin;
 
   public InteractionRaytrace(IntavePlugin plugin) {
-    super("InteractionRaytrace", "interactionRaytrace", InteractionMeta.class);
+    super("InteractionRaytrace", "interactionraytrace", InteractionMeta.class);
     this.plugin = plugin;
   }
 
@@ -55,7 +55,6 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     }
   )
   public void receiveInteraction(PacketEvent event) {
-
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     BlockPosition blockPosition = packet.getBlockPositionModifier().readSafely(0);
@@ -81,7 +80,7 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     Location playerLocation = movementData.verifiedLocation().clone();
     playerLocation.setYaw(movementData.rotationYaw);
     playerLocation.setPitch(movementData.rotationPitch);
-    Material itemTypeInHand = player.getItemInHand().getType();
+    Material itemTypeInHand = user.meta().inventoryData().heldItemType();//player.getItemInHand().getType();
     boolean isPlacement = itemTypeInHand != Material.AIR && itemTypeInHand.isBlock();
 
     Interaction interaction = new Interaction(
@@ -112,8 +111,9 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
       return;
     }
 
+    User user = userOf(player);
     EnumWrappers.PlayerDigType playerDigType = packet.getPlayerDigTypes().readSafely(0);
-    float blockDamage = BlockDataAccess.blockDamage(player, player.getItemInHand(), blockPosition);
+    float blockDamage = BlockDataAccess.blockDamage(player, user.meta().inventoryData().heldItem(), blockPosition);
     boolean instantBreak = blockDamage == Float.POSITIVE_INFINITY || blockDamage >= 1.0f;
     boolean breakBlock = instantBreak || playerDigType == STOP_DESTROY_BLOCK;
 
@@ -127,7 +127,6 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
       return;
     }
 
-    User user = userOf(player);
     InteractionMeta interactionMeta = metaOf(user);
 
     Interaction interaction = new Interaction(
@@ -337,7 +336,7 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
       details = typeName + " block, " + append;
     } else if(type == InteractionType.PLACE) {
       String typeAgainstName = shortenTypeName(targetLocationBlock.getType());
-      String typeName = shortenTypeName(player.getItemInHand().getType());
+      String typeName = shortenTypeName(userOf(player).meta().inventoryData().heldItemType());
       message = "performed invalid placement";
       details = typeName + " block on " + typeAgainstName + " block";
       vl = 2.5;

@@ -1,4 +1,4 @@
-package de.jpx3.patchy.annotate;
+package de.jpx3.intave.patchy.annotate;
 
 public enum PatchyUnknownVersionPolicy {
   USE_NEXT_LOWER,

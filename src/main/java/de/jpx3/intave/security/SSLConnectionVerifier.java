@@ -1,13 +1,13 @@
 package de.jpx3.intave.security;
 
-import de.jpx3.intave.tools.annotate.Natify;
+import de.jpx3.intave.tools.annotate.Native;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 
 public final class SSLConnectionVerifier {
 
-  @Natify
+  @Native
   public static void verifyURLConnection(HttpsURLConnection connection) throws IOException {
 //    Certificate serverCertificate = connection.getServerCertificates()[0];
 //    try {

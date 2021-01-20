@@ -4,7 +4,7 @@ import com.google.common.hash.Hashing;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.security.SSLConnectionVerifier;
-import de.jpx3.intave.tools.annotate.Natify;
+import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.tools.annotate.Nullable;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -38,7 +38,7 @@ public final class ConfigurationLoader {
     this.configurationKey = configurationKey;
   }
 
-  @Natify
+  @Native
   @Nullable
   public String precomputeConfigurationHash() {
     if(!configurationCacheExists()) {
@@ -70,7 +70,7 @@ public final class ConfigurationLoader {
     }
   }
 
-  @Natify
+  @Native
   public void loadConfigurationUpdatedForcefully() {
     YamlConfiguration configuration = tryDownloadConfiguration();
     if(configuration == null) {
@@ -85,7 +85,7 @@ public final class ConfigurationLoader {
     this.configuration = configuration;
   }
 
-  @Natify
+  @Native
   public void loadConfiguration() {
     YamlConfiguration configuration;
     if(!configurationCacheExists()) {
@@ -112,7 +112,7 @@ public final class ConfigurationLoader {
     this.configuration = configuration;
   }
 
-  @Natify
+  @Native
   private YamlConfiguration tryDownloadConfiguration() {
     try {
       InputStream inputStream;
@@ -140,7 +140,7 @@ public final class ConfigurationLoader {
     }
   }
 
-  @Natify
+  @Native
   private YamlConfiguration readConfiguration() {
     try {
       File configurationCache = configurationCache();
@@ -171,7 +171,7 @@ public final class ConfigurationLoader {
     }
   }
 
-  @Natify
+  @Native
   private void saveConfiguration(YamlConfiguration configuration) {
     try {
       File configurationCache = configurationCache();
@@ -200,7 +200,7 @@ public final class ConfigurationLoader {
     }
   }
 
-  @Natify
+  @Native
   private SecretKey generateSecretKey(byte[] iv) throws NoSuchAlgorithmException, InvalidKeySpecException {
     KeySpec spec = new PBEKeySpec(ConfigurationLoader.SECRET_KEY.toCharArray(), iv, 65536, 128); // AES-128
     SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
@@ -213,7 +213,7 @@ public final class ConfigurationLoader {
   }
 
   private File configurationCache() {
-    String fileName = new UUID(((long)configurationKey.length() << 8) | (configurationKey.hashCode() >>> 1),  ~configurationKey.hashCode()).toString();
+    String fileName = new UUID(((long)configurationKey.length() << 8) | (configurationKey.hashCode() >>> 2),  ~configurationKey.hashCode()).toString();
     fileName = fileName/*.substring(0, fileName.length() - 1)*/ + CONF_CACHE_FILE_SUFFIX;
     return new File(intaveTempDirectory(), fileName);
   }

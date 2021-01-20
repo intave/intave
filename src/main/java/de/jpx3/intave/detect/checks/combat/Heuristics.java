@@ -4,6 +4,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.google.common.collect.Lists;
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.detect.IntaveMetaCheck;
 import de.jpx3.intave.detect.checks.combat.heuristics.*;
@@ -40,26 +41,36 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
   public void setupSubChecks() {
     appendCheckPart(new ReshapedJumpHeuristic(this));
     appendCheckPart(new RotationAccuracyHeuristic(this));
-    appendCheckPart(new RotationGCDHeuristic(this));
+    appendCheckPart(new RotationSensitivityHeuristic(this));
     appendCheckPart(new RotationStandardDeviationHeuristic(this));
     appendCheckPart(new RotationModuloResetHeuristic(this));
     appendCheckPart(new PacketOrderSwingHeuristic(this));
-    appendCheckPart(new AirClickLimitHeuristic(this));
+    appendCheckPart(new PacketSprintToggleHeuristic(this));
   }
 
   public void saveAnomaly(Player player, Anomaly anomaly) {
-    Synchronizer.synchronize(() -> {
-      for (Player otherPlayer : Bukkit.getOnlinePlayers()) {
-        if (plugin.sibylIntegrationService().isAuthenticated(otherPlayer)) {
-          otherPlayer.sendMessage(ChatColor.RED + "[HEUR] [DEB] " + player.getName() + ": " + anomaly.description() + " (" + anomaly.confidence() + ")");
-        }
-      }
-    });
-
-   // player.sendMessage(ChatColor.RED + "[HEUR] [DEB] " + player.getName() + ": " + anomaly.description() + " (" +
-    // anomaly.confidence() + ")");
-
     metaOf(player).anomalies.add(anomaly);
+    Synchronizer.synchronize(() -> debug(player, anomaly.description()));
+  }
+
+  private void debug(Player player, String description) {
+    HeuristicMeta heuristicMeta = metaOf(player);
+    List<Confidence> confidences = heuristicMeta.anomalies
+      .stream()
+      .map(Anomaly::confidence)
+      .collect(Collectors.toList());
+    Confidence overallConfidence = computeOverallConfidence(confidences);
+    String message = ChatColor.RED + "[HEUR] [DEB] " + player.getName() + "(" + overallConfidence + "): " + description;
+
+    if (IntaveControl.DEBUG_HEURISTICS && !plugin.sibylIntegrationService().isAuthenticated(player)) {
+      player.sendMessage(message);
+    }
+
+    for (Player authenticatedPlayer : Bukkit.getOnlinePlayers()) {
+      if (plugin.sibylIntegrationService().isAuthenticated(authenticatedPlayer)) {
+        authenticatedPlayer.sendMessage(message);
+      }
+    }
   }
 
   private void evaluateAll() {

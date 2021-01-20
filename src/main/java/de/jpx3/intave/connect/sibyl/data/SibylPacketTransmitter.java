@@ -10,7 +10,7 @@ import de.jpx3.intave.connect.sibyl.LabyModChannelHelper;
 import de.jpx3.intave.connect.sibyl.auth.SibylAuthentication;
 import de.jpx3.intave.connect.sibyl.data.packet.SibylPacket;
 import de.jpx3.intave.reflect.Reflection;
-import de.jpx3.intave.tools.annotate.Natify;
+import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -25,14 +25,14 @@ public final class SibylPacketTransmitter {
     this.authentication = authentication;
   }
 
-  @Natify
+  @Native
   public void transmitPacket(Player player, SibylPacket sibylPacket) {
     String packetName = sibylPacket.packetName();
     JsonElement packetContent = sibylPacket.asJsonElement();
     transmitPacketDataToPlayer(player, "sibyl-packet-" + packetName, packetContent);
   }
 
-  @Natify
+  @Native
   private void transmitPacketDataToPlayer(Player player, String messageKey, JsonElement jsonElement) {
     String channel = "LMC";
     if(!authenticated(player)) {
@@ -62,7 +62,7 @@ public final class SibylPacketTransmitter {
     }
   }
 
-  @Natify
+  @Native
   private boolean authenticated(Player player) {
     return authentication.isAuthenticated(player);
   }

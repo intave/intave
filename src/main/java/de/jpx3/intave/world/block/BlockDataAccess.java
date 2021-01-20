@@ -2,8 +2,8 @@ package de.jpx3.intave.world.block;
 
 import com.comphenix.protocol.wrappers.BlockPosition;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.patchy.PatchyLoadingInjector;
 import de.jpx3.intave.reflect.ReflectionFailureException;
-import de.jpx3.patchy.PatchyLoadingInjector;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;

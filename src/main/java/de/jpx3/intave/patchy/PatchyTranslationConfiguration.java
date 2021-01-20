@@ -1,4 +1,4 @@
-package de.jpx3.patchy;
+package de.jpx3.intave.patchy;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -6,8 +6,8 @@ import de.jpx3.intave.lib.asm.Type;
 import de.jpx3.intave.lib.asm.tree.AnnotationNode;
 import de.jpx3.intave.lib.asm.tree.ClassNode;
 import de.jpx3.intave.lib.asm.tree.MethodNode;
-import de.jpx3.intave.tools.annotate.Natify;
-import de.jpx3.patchy.annotate.*;
+import de.jpx3.intave.patchy.annotate.*;
+import de.jpx3.intave.tools.annotate.Native;
 
 import java.util.*;
 
@@ -32,7 +32,7 @@ final class PatchyTranslationConfiguration {
     return customFieldTranslations;
   }
 
-  @Natify
+  @Native
   public VersionMethodReference resolveCustomMethodDescriptor(String owner, String name, String descriptor) {
     CustomMethodTranslation selectedTranslation = null;
     VersionMethodReference originalMethodReference = null;
@@ -72,7 +72,7 @@ final class PatchyTranslationConfiguration {
     return ImmutableMap.copyOf(map);
   }
 
-  @Natify
+  @Native
   static String selectSuitableVersion(CustomMethodTranslation selectedTranslation, VersionMethodReference originalMethod) {
     String serverVersion = PatchyTranslator.CURRENT_SERVER_VERSION;
     String selectedVersion = null;
@@ -131,14 +131,14 @@ final class PatchyTranslationConfiguration {
     return Integer.parseInt(onlyIntegers);
   }
 
-  @Natify
+  @Native
   public static PatchyTranslationConfiguration createFrom(ClassNode classNode) {
     PatchyTranslationConfiguration configuration = new PatchyTranslationConfiguration();
     classNode.visibleAnnotations.forEach(annotation -> processAnnotation(configuration, annotation));
     return configuration;
   }
 
-  @Natify
+  @Native
   public static PatchyTranslationConfiguration createFrom(MethodNode methodNode) {
     PatchyTranslationConfiguration configuration = new PatchyTranslationConfiguration();
     annotationsOf(methodNode).forEach(annotation -> processAnnotation(configuration, annotation));
@@ -154,7 +154,7 @@ final class PatchyTranslationConfiguration {
     return annotationNodes;
   }
 
-  @Natify
+  @Native
   private static void processAnnotation(PatchyTranslationConfiguration configuration, AnnotationNode annotation) {
     String className = className(annotation);
     if(className.equals(AUTO_TRANSLATION_ANNOTATION_PATH)) {

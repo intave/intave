@@ -8,11 +8,11 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class UserRepository {
-  private final static Map<UUID, User> userRepository = Maps.newHashMap();
+  private final static Map<UUID, User> userRepository = Maps.newConcurrentMap();
   private final static User deadUser = User.empty();
   private final static Object lock = new Object();
 
-  public static synchronized void registerUser(Player player) {
+  public static void registerUser(Player player) {
     userRepository.put(player.getUniqueId(), User.userFor(player));
   }
 
@@ -20,7 +20,7 @@ public final class UserRepository {
     return userRepository.containsKey(player.getUniqueId());
   }
 
-  public static synchronized void unregisterUser(Player player) {
+  public static void unregisterUser(Player player) {
     userRepository.remove(player.getUniqueId());
   }
 

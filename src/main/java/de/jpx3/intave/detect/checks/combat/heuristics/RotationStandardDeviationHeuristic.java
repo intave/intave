@@ -40,22 +40,31 @@ public final class RotationStandardDeviationHeuristic extends IntaveMetaCheckPar
     RotationStandardDeviationMeta heuristicMeta = metaOf(player);
     WrappedEntity attackedEntity = attackData.lastAttackedEntity();
 
-    if (attackedEntity != null && attackedEntity.moving(0.05) && attackData.recentlyAttacked(1000)) {
+    if (attackedEntity != null && attackData.recentlyAttacked(500) && attackedEntity.moving(0.05)) {
       float yawSpeed = MathHelper.distanceInDegrees(movementData.rotationYaw, movementData.lastRotationYaw);
       float distanceToPerfectYaw = MathHelper.distanceInDegrees(attackData.perfectYaw(), movementData.rotationYaw);
       if (yawSpeed > 2.5) {
         heuristicMeta.distancesToPerfectYaw.add(distanceToPerfectYaw);
+//        heuristicMeta.borderDistancesToPerfectYaw.add(distanceToPerfectYaw);
+//        heuristicMeta.borderCheckYawSpeeds.add(yawSpeed);
       }
       if (heuristicMeta.distancesToPerfectYaw.size() >= 7) {
         evaluateResult(user);
+        heuristicMeta.distancesToPerfectYaw.clear();
       }
+//      if (heuristicMeta.borderDistancesToPerfectYaw.size() > 60) {
+//        evaluateBorders(user);
+//        heuristicMeta.borderCheckYawSpeeds.clear();
+//        heuristicMeta.borderDistancesToPerfectYaw.clear();
+//      }
     }
   }
 
   private void evaluateResult(User user) {
     Player player = user.player();
     RotationStandardDeviationMeta heuristicMeta = metaOf(user);
-    double standardDeviation = RotationMathHelper.calculateStandardDeviationFloat(heuristicMeta.distancesToPerfectYaw);
+    double standardDeviation = RotationMathHelper.calculateStandardDeviation(heuristicMeta.distancesToPerfectYaw);
+
     if (standardDeviation < 1.0) {
       if (heuristicMeta.rotationBalance++ >= 2) {
         String description = "standard deviation (" + standardDeviation + ")";
@@ -66,11 +75,47 @@ public final class RotationStandardDeviationHeuristic extends IntaveMetaCheckPar
     } else {
       heuristicMeta.rotationBalance -= heuristicMeta.rotationBalance > 0 ? 0.2 : 0;
     }
-    heuristicMeta.distancesToPerfectYaw.clear();
   }
+
+//  private void evaluateBorders(User user) {
+//    Player player = user.player();
+//    RotationStandardDeviationMeta heuristicMeta = metaOf(user);
+//
+//    double max = MathHelper.maximumIn(heuristicMeta.borderDistancesToPerfectYaw);
+//    double min = MathHelper.minimumIn(heuristicMeta.borderDistancesToPerfectYaw);
+//    double logicalAverage = max - min;
+//    double actualAverage = RotationMathHelper.averageOf(heuristicMeta.borderDistancesToPerfectYaw);
+//    double yawAverage = RotationMathHelper.averageOf(heuristicMeta.borderCheckYawSpeeds);
+//
+//    // 5 => 0.05
+//    // 20 => 1
+//
+//    double expected = Math.min(yawAverage * 0.9 - 0.5, 5);
+//    double averageDifference = Math.abs(logicalAverage - actualAverage);
+//
+//    if (averageDifference < expected && yawAverage > 6) {
+//      player.sendMessage("§c" + MathHelper.formatDouble(averageDifference,  2) + " " + MathHelper.formatDouble(expected,
+//                                                                                                           2));
+//      if (heuristicMeta.borderVL++ >= 2) {
+//        heuristicMeta.borderVL = 0;
+//        String description = "randomizer detected! (diff=" + MathHelper.formatDouble(averageDifference, 2) + ")";
+//        Anomaly anomaly = Anomaly.anomalyOf(Confidence.MAYBE, Anomaly.Type.KILLAURA, description, Anomaly.AnomalyOption.LIMIT_2);
+//        parentCheck().saveAnomaly(player, anomaly);
+//      }
+//    } else if (yawAverage > 6 && heuristicMeta.borderVL > 0) {
+//      heuristicMeta.borderVL -= 0.1;
+//    }
+//
+//    player.sendMessage(MathHelper.formatDouble(averageDifference,  2) + " " + MathHelper.formatDouble(expected, 2));
+//  }
 
   public static class RotationStandardDeviationMeta extends UserCustomCheckMeta {
     private final List<Float> distancesToPerfectYaw = Lists.newArrayList();
+
+//    private final List<Float> borderCheckYawSpeeds = Lists.newArrayList();
+//    private final List<Float> borderDistancesToPerfectYaw = Lists.newArrayList();
+
     private double rotationBalance;
+//    private double borderVL;
   }
 }

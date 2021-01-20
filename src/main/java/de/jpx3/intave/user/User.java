@@ -31,7 +31,7 @@ public final class User {
   private final List<UserMessageChannel> receivingUserChannels = new ArrayList<>();
   private final Map<UserMessageChannel, UserMessageChannelPlayerConstraint> receiveWhitelist = Maps.newEnumMap(UserMessageChannel.class);
   private boolean ignoreNextPacket;
-  private long birthTimestamp = AccessHelper.now();
+  private final long birthTimestamp = AccessHelper.now();
 
   private final PlayerContext playerPlaceholderContext = new PlayerContext(this);
   private TrustFactor trustFactor = TrustFactor.DARK_RED;

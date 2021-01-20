@@ -20,4 +20,4 @@ timer:
 
   buffer-size: [100, 16, 8, 6, 4, 4]
 
-  prevention-activation: [100, 0, 0, 0, 0, 0]
+  prevention-activation: [100, 50, 15, 10, 10, 10]

@@ -1,9 +1,9 @@
 package de.jpx3.intave.world.raytrace;
 
+import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
+import de.jpx3.intave.patchy.annotate.PatchyTranslateParameters;
 import de.jpx3.intave.tools.wrapper.WrappedMovingObjectPosition;
 import de.jpx3.intave.tools.wrapper.WrappedVector;
-import de.jpx3.patchy.annotate.PatchyAutoTranslation;
-import de.jpx3.patchy.annotate.PatchyTranslateParameters;
 import net.minecraft.server.v1_8_R3.*;
 import org.bukkit.Bukkit;
 import org.bukkit.World;

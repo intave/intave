@@ -1,15 +1,16 @@
-package de.jpx3.patchy.annotate;
+package de.jpx3.intave.tools.annotate;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target({ElementType.ANNOTATION_TYPE})
+/**
+ * Class generated using IntelliJ IDEA
+ * Created by Richard Strunk 2020
+ */
+
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface PatchyVersionMethodReference {
-  String version();
-  String owner();
-  String name();
-  String desc();
+public @interface Native {
 }

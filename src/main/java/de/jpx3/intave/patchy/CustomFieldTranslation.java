@@ -1,9 +1,9 @@
-package de.jpx3.patchy;
+package de.jpx3.intave.patchy;
 
 import com.google.common.collect.ImmutableList;
 import de.jpx3.intave.lib.asm.tree.AnnotationNode;
-import de.jpx3.intave.tools.annotate.Natify;
-import de.jpx3.patchy.annotate.PatchyUnknownVersionPolicy;
+import de.jpx3.intave.patchy.annotate.PatchyUnknownVersionPolicy;
+import de.jpx3.intave.tools.annotate.Native;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +21,7 @@ public final class CustomFieldTranslation {
     return versionFieldReferences;
   }
 
-  @Natify
+  @Native
   public static CustomFieldTranslation buildFrom(AnnotationNode annotationNode) {
     if (!PatchyTranslationConfiguration.className(annotationNode).equals(PatchyTranslationConfiguration.CUSTOM_FIELD_TRANSLATION_ANNOTATION_PATH)) {
       throw new IllegalArgumentException("Invalid annotation type");

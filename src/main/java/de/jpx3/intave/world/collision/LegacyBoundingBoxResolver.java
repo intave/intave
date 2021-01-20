@@ -1,10 +1,10 @@
 package de.jpx3.intave.world.collision;
 
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.patchy.PatchyLoadingInjector;
+import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
+import de.jpx3.intave.patchy.annotate.PatchyTranslateParameters;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
-import de.jpx3.patchy.PatchyLoadingInjector;
-import de.jpx3.patchy.annotate.PatchyAutoTranslation;
-import de.jpx3.patchy.annotate.PatchyTranslateParameters;
 import net.minecraft.server.v1_8_R3.*;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_8_R3.CraftChunk;

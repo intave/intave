@@ -1,6 +1,7 @@
 package de.jpx3.intave.world.raytrace;
 
 import de.jpx3.intave.event.service.entity.WrappedEntity;
+import de.jpx3.intave.patchy.PatchyLoadingInjector;
 import de.jpx3.intave.reflect.Reflection;
 import de.jpx3.intave.reflect.ReflectionFailureException;
 import de.jpx3.intave.tools.client.PlayerRotationHelper;
@@ -11,7 +12,6 @@ import de.jpx3.intave.tools.wrapper.WrappedVector;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaMovementData;
 import de.jpx3.intave.user.UserRepository;
-import de.jpx3.patchy.PatchyLoadingInjector;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;

@@ -5,6 +5,7 @@ import org.bukkit.util.Vector;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 
 public final class MathHelper {
   public static String formatDouble(double value, int digits) {
@@ -21,6 +22,22 @@ public final class MathHelper {
 
   public static long minmax(long a, long b, long c) {
     return Math.max(a, Math.min(b, c));
+  }
+
+  public static double maximumIn(List<? extends Number> numbers) {
+    double maximum = 0;
+    for (Number number : numbers) {
+      maximum = Math.max(maximum, number.doubleValue());
+    }
+    return maximum;
+  }
+
+  public static double minimumIn(List<? extends Number> numbers) {
+    double minimum = 1000;
+    for (Number number : numbers) {
+      minimum = Math.min(minimum, number.doubleValue());
+    }
+    return minimum;
   }
 
   public static float distanceInDegrees(float alpha, float beta) {

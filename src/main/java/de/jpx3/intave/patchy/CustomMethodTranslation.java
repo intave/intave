@@ -1,9 +1,9 @@
-package de.jpx3.patchy;
+package de.jpx3.intave.patchy;
 
 import com.google.common.collect.ImmutableList;
 import de.jpx3.intave.lib.asm.tree.AnnotationNode;
-import de.jpx3.intave.tools.annotate.Natify;
-import de.jpx3.patchy.annotate.PatchyUnknownVersionPolicy;
+import de.jpx3.intave.patchy.annotate.PatchyUnknownVersionPolicy;
+import de.jpx3.intave.tools.annotate.Native;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ public final class CustomMethodTranslation {
   private List<VersionMethodReference> versionMethodReferences = new ArrayList<>();
   private VersionMethodReference compiledTranslation;
 
-  @Natify
+  @Native
   public VersionMethodReference selectedTranslationOf(VersionMethodReference original) {
     if (compiledTranslation == null) {
       compiledTranslation = compileTranslation(original);
@@ -22,7 +22,7 @@ public final class CustomMethodTranslation {
     return compiledTranslation;
   }
 
-  @Natify
+  @Native
   private VersionMethodReference compileTranslation(VersionMethodReference original) {
     String version = PatchyTranslationConfiguration.selectSuitableVersion(this, original);
     for (VersionMethodReference versionMethodReference : versionMethodReferences) {
@@ -41,7 +41,7 @@ public final class CustomMethodTranslation {
     return versionMethodReferences;
   }
 
-  @Natify
+  @Native
   public static CustomMethodTranslation buildFrom(AnnotationNode annotationNode) {
     if (!PatchyTranslationConfiguration.className(annotationNode).equals(PatchyTranslationConfiguration.CUSTOM_METHOD_TRANSLATION_ANNOTATION_PATH)) {
       throw new IllegalArgumentException("Invalid annotation type");

@@ -43,6 +43,7 @@ public final class UserMetaMovementData {
   private volatile WrappedAxisAlignedBB boundingBox;
   public Vector emulationVelocity;
   public Vector setbackOverrideVelocity = new Vector(0,0,0);
+  public Vector lastVelocity = new Vector();
   public boolean canResetMotion;
   private double resetMotion;
   private double jumpUpwardsMotion;
