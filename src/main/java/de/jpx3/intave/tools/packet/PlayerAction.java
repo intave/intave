@@ -1,4 +1,4 @@
-package de.jpx3.intave.tools.vehicle;
+package de.jpx3.intave.tools.packet;
 
 public enum PlayerAction {
   START_SNEAKING,

@@ -1,4 +1,4 @@
-package de.jpx3.intave.tools.vehicle;
+package de.jpx3.intave.tools.packet;
 
 import com.comphenix.protocol.events.PacketContainer;
 import de.jpx3.intave.access.IntaveInternalException;
