@@ -3,7 +3,7 @@ package de.jpx3.intave.world.block;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.patchy.PatchyLoadingInjector;
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.reflect.ReflectionFailureException;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -40,7 +40,7 @@ public final class BlockDataAccess {
   }
 
   private static void loadClickableMaterials() {
-    Class<?> blockClass = Reflection.lookupServerClass("Block");
+    Class<?> blockClass = ReflectiveAccess.lookupServerClass("Block");
     Method getByIdMethod;
     try {
       getByIdMethod = blockClass.getMethod("getById", Integer.TYPE);
@@ -48,11 +48,11 @@ public final class BlockDataAccess {
       throw new ReflectionFailureException(exception);
     }
 
-    Class<?> world = Reflection.lookupServerClass("World");
-    Class<?> blockPosition = Reflection.lookupServerClass("BlockPosition");
-    Class<?> iBlockData = Reflection.lookupServerClass("IBlockData");
-    Class<?> entityHuman = Reflection.lookupServerClass("EntityHuman");
-    Class<?> enumDirection = Reflection.lookupServerClass("EnumDirection");
+    Class<?> world = ReflectiveAccess.lookupServerClass("World");
+    Class<?> blockPosition = ReflectiveAccess.lookupServerClass("BlockPosition");
+    Class<?> iBlockData = ReflectiveAccess.lookupServerClass("IBlockData");
+    Class<?> entityHuman = ReflectiveAccess.lookupServerClass("EntityHuman");
+    Class<?> enumDirection = ReflectiveAccess.lookupServerClass("EnumDirection");
     Class<Float> floatClass = Float.TYPE;
 
     // TODO: 01/10/21 check version availability

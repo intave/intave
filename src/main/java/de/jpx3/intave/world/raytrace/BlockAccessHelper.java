@@ -3,7 +3,7 @@ package de.jpx3.intave.world.raytrace;
 import de.jpx3.intave.access.IntaveException;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.tools.wrapper.WrappedMovingObjectPosition;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -12,7 +12,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import static de.jpx3.intave.reflect.Reflection.lookupServerClass;
+import static de.jpx3.intave.reflect.ReflectiveAccess.lookupServerClass;
 
 public final class BlockAccessHelper {
   private static boolean MINECRAFT_AUSRUTSCHER = ProtocolLibAdapter.serverVersion().isAtLeast(ProtocolLibAdapter.COMBAT_UPDATE) && !ProtocolLibAdapter.serverVersion().isAtLeast(ProtocolLibAdapter.AQUATIC_UPDATE);
@@ -79,7 +79,7 @@ public final class BlockAccessHelper {
   }
 
   public static Object resolveNativeWorld(World world) {
-    return Reflection.resolveWorldNMSHandle(world);
+    return ReflectiveAccess.handleResolver().resolveWorldHandleOf(world);
   }
 
   public static Object resolveBlockData(Location location) {

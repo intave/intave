@@ -9,7 +9,7 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.event.packet.*;
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.tools.hitbox.EntityHitBoxResolver;
 import de.jpx3.intave.tools.hitbox.HitBoxBoundaries;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
@@ -59,8 +59,8 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
 
     // search field
 
-    Class<?> entityClass = Reflection.NMS_ENTITY_CLASS;
-    Class<?> dataWatcherClass = Reflection.lookupServerClass("DataWatcher");
+    Class<?> entityClass = ReflectiveAccess.NMS_ENTITY_CLASS;
+    Class<?> dataWatcherClass = ReflectiveAccess.lookupServerClass("DataWatcher");
 
     for (Field declaredField : dataWatcherClass.getDeclaredFields()) {
       if(declaredField.getType() == entityClass) {
@@ -349,7 +349,7 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
   }
 
   private String entityNameByBukkitEntity(Entity entity) {
-    return entityNameOf(Reflection.resolveEntityNMSHandle(entity));
+    return entityNameOf(ReflectiveAccess.handleResolver().resolveEntityHandleOf(entity));
   }
 
   private Object entityOfDataWatcher(WrappedDataWatcher dataWatcher) {

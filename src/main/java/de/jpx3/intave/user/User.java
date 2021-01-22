@@ -6,7 +6,7 @@ import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.TrustFactor;
 import de.jpx3.intave.permission.PermissionCache;
 import de.jpx3.intave.permission.PermissionCheck;
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.placeholder.PlayerContext;
 import de.jpx3.intave.tools.sync.Synchronizer;
@@ -38,8 +38,8 @@ public final class User {
 
   private User(Player player) {
     this.playerRef = new WeakReference<>(player);
-    this.nmsEntity = new WeakReference<>(Reflection.resolveEntityNMSHandle(player));
     this.hasPlayer = player != null;
+    this.nmsEntity = new WeakReference<>(hasPlayer ? ReflectiveAccess.handleResolver().resolveEntityHandleOf(player) : null);
     this.userMeta = new UserMeta(player, this);
     this.permissionCache = new PermissionCache();
     this.boundingBoxAccess = new BoundingBoxAccess(hasOnlinePlayer() ? player() : null);

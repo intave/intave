@@ -2,7 +2,7 @@ package de.jpx3.intave.tools.hitbox;
 
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import org.bukkit.entity.Entity;
 
 import java.lang.reflect.Field;
@@ -22,7 +22,7 @@ public final class EntityHitBoxResolver {
   }
 
   private static void setupEntitySizeField() throws NoSuchFieldException {
-    Field entitySize = Reflection.NMS_ENTITY_CLASS.getDeclaredField("size");
+    Field entitySize = ReflectiveAccess.NMS_ENTITY_CLASS.getDeclaredField("size");
     if (!entitySize.isAccessible()) {
       entitySize.setAccessible(true);
     }
@@ -30,7 +30,7 @@ public final class EntityHitBoxResolver {
   }
 
   public static HitBoxBoundaries resolveHitBoxOf(Entity entity) {
-    return resolveHitBoxOf(Reflection.resolveEntityNMSHandle(entity));
+    return resolveHitBoxOf(ReflectiveAccess.handleResolver().resolveEntityHandleOf(entity));
   }
 
   public static HitBoxBoundaries resolveHitBoxOf(Object entity) {
@@ -39,12 +39,12 @@ public final class EntityHitBoxResolver {
     if (ENTITY_SIZE_CLASS) {
       Object entitySize = resolveEntitySizeOf(entity);
       Class<?> entitySizeClass = entitySize.getClass();
-      width = Reflection.invokeField(entitySizeClass, "width", entitySize);
-      height = Reflection.invokeField(entitySizeClass, "height", entitySize);
+      width = ReflectiveAccess.invokeField(entitySizeClass, "width", entitySize);
+      height = ReflectiveAccess.invokeField(entitySizeClass, "height", entitySize);
     } else {
-      Class<?> entityClass = Reflection.NMS_ENTITY_CLASS;
-      width = Reflection.invokeField(entityClass, "width", entity);
-      height = Reflection.invokeField(entityClass, "length", entity);
+      Class<?> entityClass = ReflectiveAccess.NMS_ENTITY_CLASS;
+      width = ReflectiveAccess.invokeField(entityClass, "width", entity);
+      height = ReflectiveAccess.invokeField(entityClass, "length", entity);
     }
     return HitBoxBoundaries.from(width, height);
   }

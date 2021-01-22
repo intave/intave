@@ -4,10 +4,10 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.StructureModifier;
 import de.jpx3.intave.detect.checks.movement.Physics;
 import de.jpx3.intave.detect.checks.movement.physics.CollisionHelper;
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.tools.client.PlayerEffectHelper;
 import de.jpx3.intave.tools.client.PlayerMovementHelper;
-import de.jpx3.intave.tools.client.PlayerMovementLocaleHelper;
+import de.jpx3.intave.tools.client.PlayerMovementPoseHelper;
 import de.jpx3.intave.tools.client.PlayerRotationHelper;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.world.BlockLiquidHelper;
@@ -108,10 +108,10 @@ public final class UserMetaMovementData {
 
   public void updateWorld() {
     if (player == null) {
-      nmsWorld = Reflection.resolveWorldNMSHandle(Bukkit.getWorlds().get(0));
+      nmsWorld = ReflectiveAccess.handleResolver().resolveWorldHandleOf(Bukkit.getWorlds().get(0));
       return;
     }
-    nmsWorld = Reflection.resolveWorldNMSHandle(player.getWorld());
+    nmsWorld = ReflectiveAccess.handleResolver().resolveWorldHandleOf(player.getWorld());
   }
 
   public void updateMovement(
@@ -137,8 +137,8 @@ public final class UserMetaMovementData {
       positionY = modifier.read(1);
       positionZ = modifier.read(2);
 
-      swimming = PlayerMovementLocaleHelper.isSwimming(player);
-      elytraFlying = PlayerMovementLocaleHelper.flyingWithElytra(player);
+      swimming = PlayerMovementPoseHelper.isSwimming(player);
+      elytraFlying = PlayerMovementPoseHelper.flyingWithElytra(player);
       boolean falling = motionY() <= 0.0D;
       if (falling && PlayerEffectHelper.isPotionSlowFallingActive(player)) {
         gravity = 0.01D;

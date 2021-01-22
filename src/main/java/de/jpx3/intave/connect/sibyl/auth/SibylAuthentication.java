@@ -15,7 +15,7 @@ import de.jpx3.intave.connect.sibyl.LabymodClientListener;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.executor.BackgroundExecutor;
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.security.LicenseVerification;
 import de.jpx3.intave.tools.MapReferenceGarbageCollector;
 import de.jpx3.intave.tools.annotate.Native;
@@ -211,7 +211,7 @@ public final class SibylAuthentication implements BukkitEventSubscriber {
     try {
       byte[] bytesToSend = LabyModChannelHelper.getBytesToSend(messageKey, jsonElement == null ? null : jsonElement.toString());
       //noinspection unchecked
-      Class<Object> packetDataSerializerClass = (Class<Object>) Reflection.lookupServerClass("PacketDataSerializer");
+      Class<Object> packetDataSerializerClass = (Class<Object>) ReflectiveAccess.lookupServerClass("PacketDataSerializer");
       Object packetDataSerializer = packetDataSerializerClass.getConstructor(ByteBuf.class).newInstance(Unpooled.wrappedBuffer(bytesToSend));
       packetContainer.getSpecificModifier(packetDataSerializerClass).write(0, packetDataSerializer);
       Synchronizer.synchronize(() -> {

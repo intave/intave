@@ -1,7 +1,7 @@
 package de.jpx3.intave.tools.sync;
 
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitScheduler;
 
@@ -21,7 +21,7 @@ public final class Synchronizer {
 
   public static void setup() {
     try {
-      Class<?> minecraftServerClass = Reflection.lookupServerClass("MinecraftServer");
+      Class<?> minecraftServerClass = ReflectiveAccess.lookupServerClass("MinecraftServer");
       Object minecraftServer = minecraftServerClass.getMethod("getServer").invoke(null);
       //noinspection unchecked
       cachedProcessQueue = (Queue<Runnable>) minecraftServerClass.getField("processQueue").get(minecraftServer);
@@ -33,7 +33,7 @@ public final class Synchronizer {
     }
 
     try {
-      minecraftServer = Reflection.lookupServerClass("MinecraftServer").getMethod("getServer").invoke(null);
+      minecraftServer = ReflectiveAccess.lookupServerClass("MinecraftServer").getMethod("getServer").invoke(null);
       Method postToMainThreadMethod = minecraftServer.getClass().getMethod("postToMainThread", Runnable.class);
       postToMainThreadMethodHandle = MethodHandles.lookup().unreflect(postToMainThreadMethod);
     } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException exception) {

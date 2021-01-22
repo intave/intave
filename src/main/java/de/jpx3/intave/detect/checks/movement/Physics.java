@@ -14,7 +14,7 @@ import de.jpx3.intave.detect.checks.movement.physics.water.*;
 import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.client.PlayerEffectHelper;
 import de.jpx3.intave.tools.client.PlayerMovementHelper;
-import de.jpx3.intave.tools.client.PlayerMovementLocaleHelper;
+import de.jpx3.intave.tools.client.PlayerMovementPoseHelper;
 import de.jpx3.intave.tools.client.SinusCache;
 import de.jpx3.intave.tools.items.InventoryUseItemHelper;
 import de.jpx3.intave.tools.items.PlayerEnchantmentHelper;
@@ -1003,7 +1003,7 @@ public final class Physics extends IntaveCheck {
     PhysicsProcessorContext context = movementData.physicsProcessorContext;
     context.reset(motionX, motionY, motionZ);
 
-    boolean elytraFlying = PlayerMovementLocaleHelper.flyingWithElytra(player);
+    boolean elytraFlying = PlayerMovementPoseHelper.flyingWithElytra(player);
     boolean inWater = movementData.inWater;
     boolean inLava = movementData.inLava();
     boolean collidedHorizontally = movementData.collidedHorizontally;

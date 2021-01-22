@@ -9,7 +9,7 @@ import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketEventSubscriber;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import io.netty.buffer.ByteBuf;
 import org.bukkit.entity.Player;
 
@@ -40,7 +40,7 @@ public final class LabymodClientListener implements PacketEventSubscriber {
     PacketContainer packet = event.getPacket();
     String tag;
     if (packet.getStrings().getValues().isEmpty()) {
-      Object minecraftKey = packet.getSpecificModifier(Reflection.lookupServerClass("MinecraftKey")).getValues().get(0);
+      Object minecraftKey = packet.getSpecificModifier(ReflectiveAccess.lookupServerClass("MinecraftKey")).getValues().get(0);
       try {
         tag = (String) minecraftKey.getClass().getMethod("toString").invoke(minecraftKey);
       } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
@@ -53,7 +53,7 @@ public final class LabymodClientListener implements PacketEventSubscriber {
     if (!tag.equalsIgnoreCase("LMC")) {
       return;
     }
-    ByteBuf bytes = (ByteBuf) packet.getSpecificModifier(Reflection.lookupServerClass("PacketDataSerializer")).getValues().get(0);
+    ByteBuf bytes = (ByteBuf) packet.getSpecificModifier(ReflectiveAccess.lookupServerClass("PacketDataSerializer")).getValues().get(0);
     try {
       bytes.markReaderIndex();
       String messageKey = LabyModChannelHelper.readString(bytes, 32767);

@@ -5,7 +5,7 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveException;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.detect.checks.movement.physics.CollisionHelper;
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.client.PlayerMovementHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
@@ -298,7 +298,7 @@ public final class MovementEmulationEngine {
       try {
         Object playerHandle = UserRepository.userOf(player).playerHandle();
         Object playerConnection = playerHandle.getClass().getField("playerConnection").get(playerHandle);
-        Class<?> playerConnectionClass = Reflection.lookupServerClass("PlayerConnection");
+        Class<?> playerConnectionClass = ReflectiveAccess.lookupServerClass("PlayerConnection");
         Method internalTeleport = playerConnectionClass.getDeclaredMethod("internalTeleport", Double.TYPE, Double.TYPE, Double.TYPE, Float.TYPE, Float.TYPE, Set.class);
         if (!internalTeleport.isAccessible()) {
           internalTeleport.setAccessible(true);
@@ -310,7 +310,7 @@ public final class MovementEmulationEngine {
         if (Math.abs(nativeYaw) > 360f) {
           internalTeleport.invoke(playerConnection, dest.getX(), dest.getY(), dest.getZ(), nativeYaw % 360f, nativePitch, Collections.emptySet());
         } else {
-          Class<?> entityClass = Reflection.lookupServerClass("Entity");
+          Class<?> entityClass = ReflectiveAccess.lookupServerClass("Entity");
           Field yawField = entityClass.getField("yaw");
           Field pitchField = entityClass.getField("pitch");
           float yaw = (float) yawField.get(playerHandle);
@@ -318,7 +318,7 @@ public final class MovementEmulationEngine {
           yawField.set(playerHandle, 0f);
           pitchField.set(playerHandle, 0f);
           if (teleportFlags.isEmpty()) {
-            Class<?> playerTeleportFlags = Reflection.lookupServerClass("PacketPlayOutPosition$EnumPlayerTeleportFlags");
+            Class<?> playerTeleportFlags = ReflectiveAccess.lookupServerClass("PacketPlayOutPosition$EnumPlayerTeleportFlags");
             teleportFlags.add(playerTeleportFlags.getField("X_ROT").get(null));
             teleportFlags.add(playerTeleportFlags.getField("Y_ROT").get(null));
           }
