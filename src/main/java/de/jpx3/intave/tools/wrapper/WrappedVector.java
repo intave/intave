@@ -1,6 +1,6 @@
 package de.jpx3.intave.tools.wrapper;
 
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.reflect.ReflectionFailureException;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -38,7 +38,7 @@ public class WrappedVector {
 
   public Object convertToNativeVec3() {
     try {
-      return Reflection.lookupServerClass("Vec3D")
+      return ReflectiveAccess.lookupServerClass("Vec3D")
         .getConstructor(Double.TYPE, Double.TYPE, Double.TYPE)
         .newInstance(xCoord, yCoord, zCoord);
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException exception) {

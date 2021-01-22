@@ -42,6 +42,27 @@ public class Anomaly {
     return AccessHelper.now() - added > ANOMALY_EXPIRE_DURATION;
   }
 
+  public boolean active() {
+    return AccessHelper.now() - added > AnomalyOption.delayInSeconds(options) * 1000L;
+  }
+
+  public int delay() {
+    return AnomalyOption.delayInSeconds(options);
+  }
+
+  public int limit() {
+    return AnomalyOption.limit(options);
+  }
+
+  public boolean miningSuggested() {
+    return AnomalyOption.matches(options, AnomalyOption.SUGGEST_MINING);
+  }
+
+  @Deprecated
+  public boolean requiresCombat() {
+    return AnomalyOption.matches(options, AnomalyOption.REQUIRES_HEAVY_COMBAT);
+  }
+
   public Type type() {
     return type;
   }
@@ -72,8 +93,8 @@ public class Anomaly {
   public static class AnomalyOption {
     public final static int LIMIT_1 = 1;
     public final static int LIMIT_2 = 1 << 1;
-    public final static int LIMIT_3 = 1 << 2;
-    public final static int LIMIT_4 = 1 << 3;
+    public final static int LIMIT_4 = 1 << 2;
+    public final static int LIMIT_8 = 1 << 3;
     public final static int SUGGEST_MINING = 1 << 4;
     public final static int REQUIRES_HEAVY_COMBAT = 1 << 5;
     public final static int DELAY_16s = 1 << 6;
@@ -83,6 +104,10 @@ public class Anomaly {
 
     public static boolean matches(int optionInt, int option) {
       return (optionInt & option) > 0;
+    }
+
+    public static int limit(int optionInt) {
+      return (optionInt & (LIMIT_1 | LIMIT_2 | LIMIT_4 | LIMIT_8));
     }
 
     public static int delayInSeconds(int optionInt) {

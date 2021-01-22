@@ -55,8 +55,7 @@ check:
     thresholds:
       50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is interacting suspiciously"
       100:
-        - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for interacting suspiciously"
-        - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat"
+        - "intave internals sendnotify &c{player}&7/{trust-color}&7 is interacting suspiciously #2"
 
   protocolscanner:
 

@@ -12,8 +12,8 @@ public final class UserMetaAttackData {
   private double lastReach;
   private int lastAttackedEntityID = -1;
 
-  private long lastAttack = Long.MAX_VALUE;
-  private long lastEntitySwitch = Long.MAX_VALUE;
+  private long lastAttack = 0;
+  private long lastEntitySwitch = 0;
 
   private WrappedEntity lastAttackedEntity;
   private float perfectYaw, perfectPitch;

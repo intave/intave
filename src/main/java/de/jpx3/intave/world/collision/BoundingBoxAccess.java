@@ -11,9 +11,9 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import java.lang.ref.WeakReference;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class BoundingBoxAccess {
   private final static BoundingBoxResolver globalBoundingBoxResolver;
@@ -23,10 +23,10 @@ public final class BoundingBoxAccess {
   }
 
   private final Player player;
-  private final Map<Integer, List<WrappedAxisAlignedBB>> blockCache = new HashMap<>(4096);
+  private final Map<Integer, List<WrappedAxisAlignedBB>> blockCache = new ConcurrentHashMap<>(4096);
 
-  private final Map<Integer, List<WrappedAxisAlignedBB>> localReplacements = new HashMap<>(16);
-  private final Map<Location, List<WrappedAxisAlignedBB>> globalReplacements = new HashMap<>(64);
+  private final Map<Integer, List<WrappedAxisAlignedBB>> localReplacements = new ConcurrentHashMap<>(16);
+  private final Map<Location, List<WrappedAxisAlignedBB>> globalReplacements = new ConcurrentHashMap<>(64);
 
   private WeakReference<Chunk> activeChunk = new WeakReference<>(null);
   private int chunkXPos;
@@ -108,6 +108,16 @@ public final class BoundingBoxAccess {
   }
 
   public void invalidate(int posX, int posY, int posZ) {
+    invalidate0(posX + 1, posY, posZ);
+    invalidate0(posX - 1, posY, posZ);
+    invalidate0(posX, posY, posZ + 1);
+    invalidate0(posX, posY, posZ - 1);
+    invalidate0(posX, posY + 1, posZ);
+    invalidate0(posX, posY - 1, posZ);
+    invalidate0(posX, posY, posZ);
+  }
+
+  private void invalidate0(int posX, int posY, int posZ) {
     int chunkX = this.chunkXPos;
     int chunkZ = this.chunkZPos;
     if (posX < chunkX || posZ < chunkZ || chunkX + 16 <= posX || chunkZ + 16 <= posZ) {
@@ -119,11 +129,7 @@ public final class BoundingBoxAccess {
   }
 
   public void override(World world, int posX, int posY, int posZ, int typeId, int blockState) {
-    List<WrappedAxisAlignedBB> boundingBoxes = BoundingBoxPatcher.patch(
-      world, player,
-      typeId, blockState,
-      globalBoundingBoxResolver.resolve(world, posX, posY, posZ, typeId, blockState)
-    );
+    List<WrappedAxisAlignedBB> boundingBoxes = constructBlock(world, posX, posY, posZ, typeId, blockState);
     int chunkX = this.chunkXPos;
     int chunkZ = this.chunkZPos;
     boolean useLocalList = posX >= chunkX && posZ >= chunkZ && chunkX + 16 > posX && chunkZ + 16 > posZ;
@@ -134,6 +140,14 @@ public final class BoundingBoxAccess {
     } else {
       globalReplacements.put(new Location(world, posX, posY, posZ), boundingBoxes);
     }
+  }
+
+  public List<WrappedAxisAlignedBB> constructBlock(World world, int posX, int posY, int posZ, int typeId, int blockState) {
+    return BoundingBoxPatcher.patch(
+      world, player,
+      typeId, blockState,
+      globalBoundingBoxResolver.resolve(world, posX, posY, posZ, typeId, blockState)
+    );
   }
 
   public void invalidateOverride(World world, int posX, int posY, int posZ) {

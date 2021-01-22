@@ -18,10 +18,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> {
@@ -41,6 +38,7 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
   public void setupSubChecks() {
     appendCheckPart(new ReshapedJumpHeuristic(this));
     appendCheckPart(new RotationAccuracyHeuristic(this));
+    appendCheckPart(new PerfectAttackHeuristic(this));
     appendCheckPart(new RotationSensitivityHeuristic(this));
     appendCheckPart(new RotationStandardDeviationHeuristic(this));
     appendCheckPart(new RotationModuloResetHeuristic(this));
@@ -51,6 +49,7 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
 
   public void saveAnomaly(Player player, Anomaly anomaly) {
     metaOf(player).anomalies.add(anomaly);
+//    player.sendMessage("Anomaly " + anomaly.description() + " active: " + anomaly.active() + " limit: " + anomaly.limit() + " delay: " + anomaly.delay());
     Synchronizer.synchronize(() -> debug(player, anomaly.description()));
   }
 
@@ -84,30 +83,42 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
     HeuristicMeta heuristicMeta = metaOf(player);
     List<Anomaly> anomalies = heuristicMeta.anomalies;
     anomalies.removeIf(Anomaly::expired);
+    anomalies = new ArrayList<>(anomalies);
 
-    List<Confidence> confidences = new ArrayList<>();
+    // filter non active
+    anomalies.removeIf(anomaly -> !anomaly.active());
+
+    Map<String, Integer> types = new HashMap<>();
+    List<Confidence> allConfidences = new ArrayList<>();
+
+    // limit
     for (Anomaly anomaly : anomalies) {
-      confidences.add(anomaly.confidence());
+      String key = anomaly.description();
+      types.put(key, types.getOrDefault(key, 0) + 1);
+      if(anomaly.limit() <= types.get(key) || anomaly.limit() < 1) {
+        allConfidences.add(anomaly.confidence());
+      }
     }
-    Confidence overallConfidence = computeOverallConfidence(confidences);
+
+    Confidence overallConfidence = computeOverallConfidence(allConfidences);
 
     if (overallConfidence.level() >= Confidence.PROBABLE.level()) {
       boolean hasPerformedMiningStrategyYet = !heuristicMeta.performedMiningStrategies.isEmpty();
       boolean mightBeAGoodIdeaToPerformMiningStrategy = overallConfidence.level() <= Confidence.VERY_LIKELY.level();
 
       if (!hasPerformedMiningStrategyYet && mightBeAGoodIdeaToPerformMiningStrategy) {
-
+        // perform mining strategies
       }
+    }
 
-      if(overallConfidence.level() >= Confidence.LIKELY.level()) {
-        Anomaly.Type type = findDominantType(anomalies);
-        plugin.retributionService().processViolation(
-          player, 25, this.name(),
-          "is fighting suspiciously",
-          type.details() + overallConfidence.output(),
-          "confidence-thresholds." + overallConfidence.output()
-        );
-      }
+    if(overallConfidence.level() >= Confidence.LIKELY.level()) {
+      Anomaly.Type type = findDominantType(anomalies);
+      plugin.retributionService().processViolation(
+        player, 25, this.name(),
+        "is fighting suspiciously",
+        type.details() + overallConfidence.output(),
+        "confidence-thresholds." + overallConfidence.output()
+      );
     }
   }
 

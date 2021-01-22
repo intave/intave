@@ -5,6 +5,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.detect.CheckViolationLevelDecrementer;
 import de.jpx3.intave.detect.IntaveMetaCheck;
 import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
@@ -27,10 +28,12 @@ import static de.jpx3.intave.world.raytrace.Raytracer.distanceOf;
 
 public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytraceMeta> {
   private final IntavePlugin plugin;
+  private final CheckViolationLevelDecrementer decrementer;
 
   public AttackRaytrace(IntavePlugin plugin) {
     super("AttackRaytrace", "attackraytrace", AttackRaytraceMeta.class);
     this.plugin = plugin;
+    this.decrementer = new CheckViolationLevelDecrementer(this, 1);
   }
 
   @PacketSubscription(
@@ -89,7 +92,7 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
 
         if (entity != null && entity.checkable() && !player.isDead()) {
           if (entity.clientSynchronized && clientData.protocolVersion() >= PROTOCOL_VERSION_COMBAT_UPDATE
-            && movementData.pastFlyingPacketAccurate > 4
+            && !movementData.recentlyEncounteredFlyingPacket(4)
             && attackRaytraceMeta.lastFlyPacketCounterReach > 1
           ) {
             invalid = processReachCheck(player, entity);
@@ -185,6 +188,7 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
         break;
       }
       default: {
+        decrementer.decrement(user, 0.05);
         return false;
       }
     }
@@ -286,6 +290,7 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
       plugin.retributionService().processViolation(player, 0, "AttackRaytrace", message, details);
       return true;
     }
+    decrementer.decrement(user, 0.05);
     return false;
   }
 

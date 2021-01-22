@@ -1,6 +1,6 @@
 package de.jpx3.intave.tools.wrapper;
 
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.reflect.ReflectionFailureException;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
@@ -41,7 +41,7 @@ public final class WrappedBlockPosition extends WrappedVector {
   }
 
   public static WrappedBlockPosition fromBlockPosition(Object blockPosition) {
-    Class<?> blockPositionBase = Reflection.lookupServerClass("BaseBlockPosition");
+    Class<?> blockPositionBase = ReflectiveAccess.lookupServerClass("BaseBlockPosition");
     try {
       Field xPosField = blockPositionBase.getDeclaredFields()[1];
       Field yPosField = blockPositionBase.getDeclaredFields()[2];

@@ -1,5 +1,9 @@
 package de.jpx3.intave;
 
+import de.jpx3.intave.access.IntaveAccess;
+import de.jpx3.intave.access.IntaveInternalAccess;
+import de.jpx3.intave.access.PlayerAccess;
+import de.jpx3.intave.access.ServerAccess;
 import de.jpx3.intave.adapter.ComponentLoader;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.adapter.ViaVersionAdapter;
@@ -31,7 +35,10 @@ import de.jpx3.intave.world.BlockAccessor;
 import de.jpx3.intave.world.collision.patches.BoundingBoxPatcher;
 import de.jpx3.intave.world.permission.InteractionPermissionService;
 import de.jpx3.intave.world.raytrace.Raytracer;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -118,6 +125,24 @@ public final class IntavePlugin extends JavaPlugin {
     // stage 4
 
     prefix = ChatColor.translateAlternateColorCodes('&', prefix);
+
+    Bukkit.getServicesManager().register(IntaveAccess.class, new IntaveAccess() {
+      @Override
+      public PlayerAccess player(Player player) {
+        return null;
+      }
+
+      @Override
+      public IntaveInternalAccess internal() {
+        return null;
+      }
+
+      @Override
+      public ServerAccess server() {
+        return null;
+      }
+    }, this, ServicePriority.Normal);
+
 
     try {
       SinusCache.setup();

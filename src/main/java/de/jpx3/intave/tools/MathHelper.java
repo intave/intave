@@ -9,6 +9,12 @@ import java.util.List;
 
 public final class MathHelper {
   public static String formatDouble(double value, int digits) {
+    if (Double.isNaN(value)) {
+      return "NaN";
+    }
+    if (Double.isInfinite(value)) {
+      return "Infinity";
+    }
     return new BigDecimal(value).setScale(digits, RoundingMode.HALF_UP).toPlainString();
   }
 

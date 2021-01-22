@@ -70,6 +70,21 @@ public final class Collision {
     return resolvedBoundingBoxes;
   }
 
+  public static boolean playerInImaginaryBlock(User user, World world, int posX, int posY, int posZ, int type, int data) {
+    List<WrappedAxisAlignedBB> boundingboxes =
+      user.boundingBoxAccess().constructBlock(world, posX, posY, posZ, type, data);
+    if(boundingboxes == null || boundingboxes.isEmpty()) {
+      return false;
+    }
+    WrappedAxisAlignedBB playerBox = user.meta().movementData().boundingBox();
+    for (WrappedAxisAlignedBB boundingbox : boundingboxes) {
+      if (playerBox.intersectsWith(boundingbox)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public static boolean hasNoCollisions(Player player, WrappedAxisAlignedBB playerBoundingBox) {
     return resolve(player, playerBoundingBox).isEmpty();
   }

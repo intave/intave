@@ -1,7 +1,7 @@
 package de.jpx3.intave.tools.wrapper;
 
 import de.jpx3.intave.access.IntaveInternalException;
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.reflect.ReflectionFailureException;
 
 import java.lang.reflect.Constructor;
@@ -61,7 +61,7 @@ public class WrappedAxisAlignedBB {
   public Object unwrap() {
     try {
       if (axisAlignedBBConstructor == null) {
-        axisAlignedBBConstructor = Reflection.NMS_AABB_CLASS.getConstructor(AABB_CONSTRUCTOR);
+        axisAlignedBBConstructor = ReflectiveAccess.NMS_AABB_CLASS.getConstructor(AABB_CONSTRUCTOR);
       }
       return axisAlignedBBConstructor.newInstance(minX, minY, minZ, maxX, maxY, maxZ);
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {

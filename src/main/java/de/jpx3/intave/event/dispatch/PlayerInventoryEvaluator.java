@@ -115,7 +115,7 @@ public final class PlayerInventoryEvaluator implements PacketEventSubscriber, Bu
     priority = ListenerPriority.LOWEST,
     packets = {
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "HELD_ITEM_SLOT"),
-      @PacketDescriptor(sender = Sender.SERVER, packetName = "HELD_ITEM_SLOT")
+//      @PacketDescriptor(sender = Sender.SERVER, packetName = "HELD_ITEM_SLOT")
     }
   )
   public void receiveSlotSwitch(PacketEvent event) {
@@ -134,7 +134,8 @@ public final class PlayerInventoryEvaluator implements PacketEventSubscriber, Bu
     } else {
       inventoryData.deactivateHand();
     }
-    inventoryData.setHeldItem(item);
+//    inventoryData.setHeldItem(item);
+    inventoryData.setHeldItemSlot(slot);
     inventoryData.pastHotBarSlotChange = 0;
     inventoryData.selectedHotBarSlot = slot;
   }
@@ -154,13 +155,15 @@ public final class PlayerInventoryEvaluator implements PacketEventSubscriber, Bu
     Integer entityID = packet.getIntegers().read(0);
 
     if (entityID == player.getEntityId()) {
-      ItemStack itemInHand = player.getItemInHand();
-      inventoryData.setHeldItem(itemInHand);
+      // sure this is correct? getItemInHand() might needs to be synchronized
+//      ItemStack itemInHand = player.getItemInHand();
+//      inventoryData.setHeldItem(itemInHand);
     }
   }
 
   @PacketSubscription(
-    priority = ListenerPriority.HIGH,
+//    priority = ListenerPriority.HIGH,
+    priority = ListenerPriority.LOWEST,
     packets = {
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "BLOCK_PLACE")
     }
@@ -172,6 +175,7 @@ public final class PlayerInventoryEvaluator implements PacketEventSubscriber, Bu
 
     PacketContainer packet = event.getPacket();
     ItemStack heldItem = inventoryData.heldItem();
+
     boolean requestedItemUse = requestedItemUse(packet);
     boolean useItem = InventoryUseItemHelper.isUseItem(player, heldItem);
 
@@ -213,7 +217,7 @@ public final class PlayerInventoryEvaluator implements PacketEventSubscriber, Bu
       case DROP_ALL_ITEMS:
       case DROP_ITEM: {
         inventoryData.deactivateHand();
-        inventoryData.setHeldItem(null);
+//        inventoryData.setHeldItem(null);
         break;
       }
     }

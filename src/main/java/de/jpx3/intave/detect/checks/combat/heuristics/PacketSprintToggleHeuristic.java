@@ -55,11 +55,11 @@ public final class PacketSprintToggleHeuristic extends IntaveMetaCheckPart<Heuri
 
     if (heuristicMeta.sprintTogglesInTick++ >= 1) {
       boolean flyingPacketStream = clientData.flyingPacketStream();
-      boolean checkable = flyingPacketStream || movementData.pastFlyingPacketAccurate >= 20;
+      boolean checkable = flyingPacketStream || !movementData.recentlyEncounteredFlyingPacket(20);
       if (checkable) {
         String description = "sent too many sprint toggles per tick (" + heuristicMeta.sprintTogglesInTick + ")";
         if (!flyingPacketStream) {
-          description += " (last flying: " + movementData.pastFlyingPacketAccurate + ")";
+          description += " (last flying: " + movementData.pastFlyingPacketAccurate() + ")";
         }
         // could be CERTAIN on 1.8
         Confidence confidence = flyingPacketStream ? Confidence.PROBABLE : Confidence.MAYBE;

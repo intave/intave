@@ -6,7 +6,7 @@ import de.jpx3.intave.event.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
 import de.jpx3.intave.patchy.annotate.PatchyTranslateParameters;
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.reflect.ReflectionFailureException;
 import de.jpx3.intave.user.UserRepository;
 import net.minecraft.server.v1_8_R3.WorldServer;
@@ -51,7 +51,7 @@ public final class LegacyCBPlacePermissionResolver implements BlockPlacePermissi
   private boolean canBuildReflectiveCall(CraftWorld world, Player player, int x, int z) {
     if(canBuildMethod == null) {
       try {
-        canBuildMethod = Reflection.lookupCraftBukkitClass("event.CraftEventFactory").getDeclaredMethod("canBuild", CraftWorld.class, Player.class, Integer.TYPE, Integer.TYPE);
+        canBuildMethod = ReflectiveAccess.lookupCraftBukkitClass("event.CraftEventFactory").getDeclaredMethod("canBuild", CraftWorld.class, Player.class, Integer.TYPE, Integer.TYPE);
         if(!canBuildMethod.isAccessible()) {
           canBuildMethod.setAccessible(true);
         }

@@ -12,8 +12,10 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.connect.sibyl.LabyModChannelHelper;
 import de.jpx3.intave.connect.sibyl.LabymodClientListener;
+import de.jpx3.intave.event.bukkit.BukkitEventSubscriber;
+import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.executor.BackgroundExecutor;
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.security.LicenseVerification;
 import de.jpx3.intave.tools.MapReferenceGarbageCollector;
 import de.jpx3.intave.tools.annotate.Native;
@@ -21,6 +23,7 @@ import de.jpx3.intave.tools.sync.Synchronizer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -44,7 +47,7 @@ import java.util.function.Consumer;
  */
 
 
-public final class SibylAuthentication {
+public final class SibylAuthentication implements BukkitEventSubscriber {
   private final IntavePlugin plugin;
   private final LabymodClientListener authenticationListener;
 
@@ -53,6 +56,7 @@ public final class SibylAuthentication {
   public SibylAuthentication(IntavePlugin plugin) {
     this.plugin = plugin;
     this.authenticationListener = new LabymodClientListener(plugin, "sibyl-auth", this::processIncomingMessage);
+    this.plugin.eventLinker().registerEventsIn(this);
   }
 
   @Native
@@ -154,6 +158,12 @@ public final class SibylAuthentication {
   }
 
   @Native
+  @BukkitEventSubscription
+  public void on(PlayerQuitEvent quit) {
+    authStates.remove(quit.getPlayer().getUniqueId());
+  }
+
+  @Native
   private Object whitelisted(Object player) {
     if(player instanceof Player) {
       UUID uniqueId = ((Player) player).getUniqueId();
@@ -201,7 +211,7 @@ public final class SibylAuthentication {
     try {
       byte[] bytesToSend = LabyModChannelHelper.getBytesToSend(messageKey, jsonElement == null ? null : jsonElement.toString());
       //noinspection unchecked
-      Class<Object> packetDataSerializerClass = (Class<Object>) Reflection.lookupServerClass("PacketDataSerializer");
+      Class<Object> packetDataSerializerClass = (Class<Object>) ReflectiveAccess.lookupServerClass("PacketDataSerializer");
       Object packetDataSerializer = packetDataSerializerClass.getConstructor(ByteBuf.class).newInstance(Unpooled.wrappedBuffer(bytesToSend));
       packetContainer.getSpecificModifier(packetDataSerializerClass).write(0, packetDataSerializer);
       Synchronizer.synchronize(() -> {

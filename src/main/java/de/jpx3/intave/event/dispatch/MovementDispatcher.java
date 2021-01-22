@@ -10,9 +10,9 @@ import de.jpx3.intave.detect.EventProcessor;
 import de.jpx3.intave.detect.checks.movement.Physics;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.event.packet.*;
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.tools.MathHelper;
-import de.jpx3.intave.tools.client.PlayerMovementLocaleHelper;
+import de.jpx3.intave.tools.client.PlayerMovementPoseHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.user.*;
@@ -21,13 +21,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.util.Vector;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.concurrent.ThreadLocalRandom;
 
 public final class MovementDispatcher implements EventProcessor {
   private final TeleportPositionObserver teleportPositionObserver = new TeleportPositionObserver();
@@ -51,7 +49,7 @@ public final class MovementDispatcher implements EventProcessor {
   }
 
   private void linkFallDamageInvokeMethod() {
-    Class<?> entityLivingClass = Reflection.lookupServerClass("EntityLiving");
+    Class<?> entityLivingClass = ReflectiveAccess.lookupServerClass("EntityLiving");
     String methodName = "e";
     if (ProtocolLibAdapter.VILLAGE_UPDATE.atOrAbove()) {
       methodName = "b";
@@ -204,7 +202,7 @@ public final class MovementDispatcher implements EventProcessor {
     }
 
     // flag -> remove packet
-    if (movementData.invalidMovement) {
+    if (movementData.invalidMovement && violationLevelData.isInActiveTeleportBundle) {
       event.setCancelled(true);
     }
   }
@@ -266,7 +264,7 @@ public final class MovementDispatcher implements EventProcessor {
     movementData.suspiciousMovement = false;
     movementData.isTeleportConfirmationPacket = false;
 
-    boolean flyingWithElytra = PlayerMovementLocaleHelper.flyingWithElytra(player);
+    boolean flyingWithElytra = PlayerMovementPoseHelper.flyingWithElytra(player);
     if (flyingWithElytra) {
       movementData.pastElytraFlying = 0;
     } else {

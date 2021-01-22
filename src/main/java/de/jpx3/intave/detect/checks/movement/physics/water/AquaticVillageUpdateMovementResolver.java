@@ -2,7 +2,7 @@ package de.jpx3.intave.detect.checks.movement.physics.water;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.reflect.ReflectionFailureException;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.tools.wrapper.WrappedVector;
@@ -48,20 +48,20 @@ public final class AquaticVillageUpdateMovementResolver extends AquaticWaterMove
   }
 
   private void loadFluidMethodHandle() throws NoSuchMethodException, IllegalAccessException {
-    Class<?> fluidClass = Reflection.lookupServerClass("Fluid");
+    Class<?> fluidClass = ReflectiveAccess.lookupServerClass("Fluid");
     MethodType methodType = resolveFluidMethodType(fluidClass);
     fluidMethodHandle = MethodHandles
       .lookup()
-      .findVirtual(Reflection.NMS_WORLD_SERVER_CLASS, "getFluid", methodType);
+      .findVirtual(ReflectiveAccess.NMS_WORLD_SERVER_CLASS, "getFluid", methodType);
   }
 
   private MethodType resolveFluidMethodType(Class<?> fluidClass) {
-    Class<?> blockPositionClass = Reflection.lookupServerClass("BlockPosition");
+    Class<?> blockPositionClass = ReflectiveAccess.lookupServerClass("BlockPosition");
     return MethodType.methodType(fluidClass, blockPositionClass);
   }
 
   private void loadFluidTaggedMethodHandle() throws NoSuchMethodException, IllegalAccessException {
-    Class<?> fluidClass = Reflection.lookupServerClass("Fluid");
+    Class<?> fluidClass = ReflectiveAccess.lookupServerClass("Fluid");
     MethodType methodType = resolveFluidTaggedMethodType();
     fluidTaggedMethodHandle = MethodHandles
       .lookup()
@@ -69,48 +69,48 @@ public final class AquaticVillageUpdateMovementResolver extends AquaticWaterMove
   }
 
   private MethodType resolveFluidTaggedMethodType() {
-    Class<?> tagClass = Reflection.lookupServerClass("Tag");
+    Class<?> tagClass = ReflectiveAccess.lookupServerClass("Tag");
     return MethodType.methodType(Boolean.TYPE, tagClass);
   }
 
   private void loadFluidTagWater() throws NoSuchFieldException, IllegalAccessException {
-    fluidTagWater = Reflection.lookupServerClass("TagsFluid")
+    fluidTagWater = ReflectiveAccess.lookupServerClass("TagsFluid")
       .getField("WATER")
       .get(null);
   }
 
   private void loadBlockPositionClass() {
-    blockPositionClass = Reflection.lookupServerClass("BlockPosition");
+    blockPositionClass = ReflectiveAccess.lookupServerClass("BlockPosition");
   }
 
   private void loadFluidHeightMethodHandle() throws NoSuchMethodException, IllegalAccessException {
-    Class<?> fluidClass = Reflection.lookupServerClass("Fluid");
+    Class<?> fluidClass = ReflectiveAccess.lookupServerClass("Fluid");
     fluidHeightMethodHandle = MethodHandles
       .lookup()
       .findVirtual(fluidClass, "f", MethodType.methodType(Float.TYPE));
   }
 
   private void loadFluidFlowMethodHandle() throws NoSuchMethodException, IllegalAccessException {
-    Class<?> fluidClass = Reflection.lookupServerClass("Fluid");
-    Class<?> vector = Reflection.lookupServerClass("Vec3D");
-    Class<?> blockPosition = Reflection.lookupServerClass("BlockPosition");
-    Class<?> blockAccess = Reflection.lookupServerClass("IBlockAccess");
+    Class<?> fluidClass = ReflectiveAccess.lookupServerClass("Fluid");
+    Class<?> vector = ReflectiveAccess.lookupServerClass("Vec3D");
+    Class<?> blockPosition = ReflectiveAccess.lookupServerClass("BlockPosition");
+    Class<?> blockAccess = ReflectiveAccess.lookupServerClass("IBlockAccess");
     fluidFlowMethodHandle = MethodHandles
       .lookup()
       .findVirtual(fluidClass, "c", MethodType.methodType(vector, blockAccess, blockPosition));
   }
 
   private void loadWorldTypeMethodHandle() throws NoSuchMethodException, IllegalAccessException {
-    Class<?> blockDataClass = Reflection.lookupServerClass("IBlockData");
-    Class<?> blockPositionClass = Reflection.lookupServerClass("BlockPosition");
+    Class<?> blockDataClass = ReflectiveAccess.lookupServerClass("IBlockData");
+    Class<?> blockPositionClass = ReflectiveAccess.lookupServerClass("BlockPosition");
     MethodType methodType = MethodType.methodType(blockDataClass, blockPositionClass);
     worldTypeMethodHandle = MethodHandles
       .lookup()
-      .findVirtual(Reflection.NMS_WORLD_SERVER_CLASS, "getType", methodType);
+      .findVirtual(ReflectiveAccess.NMS_WORLD_SERVER_CLASS, "getType", methodType);
   }
 
   private void loadFluidEmptyMethodHandle() throws NoSuchMethodException, IllegalAccessException {
-    Class<?> fluidClass = Reflection.lookupServerClass("Fluid");
+    Class<?> fluidClass = ReflectiveAccess.lookupServerClass("Fluid");
     worldTypeMethodHandle = MethodHandles
       .lookup()
       .findVirtual(fluidClass, "isEmpty", MethodType.methodType(Boolean.TYPE));

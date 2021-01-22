@@ -46,7 +46,7 @@ public final class RotationSensitivityHeuristic extends IntaveMetaCheckPart<Heur
 
     // old liquidbounce gcd patch
     // detects a few clients
-    if (pitchDifference > 0 && yawDifference > 0) {
+    if (pitchDifference > 0 && yawDifference > 0 && user.meta().attackData().recentlyAttacked(16000)) {
       int yawDecimal = decimalPlacesOf(rotationYaw);
       int pitchDecimal = decimalPlacesOf(rotationPitch);
 
@@ -61,7 +61,7 @@ public final class RotationSensitivityHeuristic extends IntaveMetaCheckPart<Heur
               Confidence.PROBABLE,
               Anomaly.Type.KILLAURA,
               "rotations have too few decimals",
-              LIMIT_2 | DELAY_16s | SUGGEST_MINING
+              LIMIT_1 | LIMIT_2 | DELAY_16s | SUGGEST_MINING
             )
           );
         }

@@ -41,6 +41,10 @@ public enum TrustFactor implements Comparable<TrustFactor> {
     return values[MathHelper.minmax(0, ordinal() + 1, values.length)];
   }
 
+  public boolean atLeast(TrustFactor trustFactor) {
+    return factor() >= trustFactor.factor();
+  }
+
   public int factor() {
     return factor;
   }

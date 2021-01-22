@@ -2,7 +2,7 @@
 
 physics:
 
-  prevention-activation: [100, 50, 15, 10, 5, 5]
+  prevention-activation: [100, 20, 10, 5, 5, 5]
 
 attackraytrace:
 

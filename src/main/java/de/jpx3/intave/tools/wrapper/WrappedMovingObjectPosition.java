@@ -1,6 +1,6 @@
 package de.jpx3.intave.tools.wrapper;
 
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -66,7 +66,7 @@ public class WrappedMovingObjectPosition {
       return null;
     }
     try {
-      Class<?> movingObjectPositionClass = Reflection.lookupServerClass("MovingObjectPosition");
+      Class<?> movingObjectPositionClass = ReflectiveAccess.lookupServerClass("MovingObjectPosition");
       Field eField = movingObjectPositionClass.getDeclaredField("e");
       if(!eField.isAccessible()) {
         eField.setAccessible(true);

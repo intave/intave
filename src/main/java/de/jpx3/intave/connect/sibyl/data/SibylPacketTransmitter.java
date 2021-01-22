@@ -9,7 +9,7 @@ import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.connect.sibyl.LabyModChannelHelper;
 import de.jpx3.intave.connect.sibyl.auth.SibylAuthentication;
 import de.jpx3.intave.connect.sibyl.data.packet.SibylPacket;
-import de.jpx3.intave.reflect.Reflection;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import io.netty.buffer.ByteBuf;
@@ -47,7 +47,7 @@ public final class SibylPacketTransmitter {
     try {
       byte[] bytesToSend = LabyModChannelHelper.getBytesToSend(messageKey, jsonElement == null ? null : jsonElement.toString());
       //noinspection unchecked
-      Class<Object> packetDataSerializerClass = (Class<Object>) Reflection.lookupServerClass("PacketDataSerializer");
+      Class<Object> packetDataSerializerClass = (Class<Object>) ReflectiveAccess.lookupServerClass("PacketDataSerializer");
       Object packetDataSerializer = packetDataSerializerClass.getConstructor(ByteBuf.class).newInstance(Unpooled.wrappedBuffer(bytesToSend));
       packetContainer.getSpecificModifier(packetDataSerializerClass).write(0, packetDataSerializer);
       Synchronizer.synchronize(() -> {

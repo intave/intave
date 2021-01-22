@@ -5,11 +5,11 @@ import de.jpx3.intave.tools.items.PlayerEnchantmentHelper;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 
 public final class UserMetaInventoryData {
   private final Player player;
-  private ItemStack heldItem;
+//  private ItemStack heldItem;
+  private int handSlot;
   private boolean handActive;
 
   private boolean foodItem;
@@ -21,40 +21,45 @@ public final class UserMetaInventoryData {
 
   public UserMetaInventoryData(Player player) {
     this.player = player;
-    this.heldItem = resolveMaterialInHand();
+    if(player != null) {
+      this.handSlot = player.getInventory().getHeldItemSlot();
+    }
+//    this.heldItem = resolveMaterialInHand();
   }
 
-  public void resynchronizeHeldItem() {
-    this.heldItem = resolveMaterialInHand();
-  }
+//  public void resynchronizeHeldItem() {
+//    this.heldItem = resolveMaterialInHand();
+//  }
 
-  private ItemStack resolveMaterialInHand() {
-    return player == null ? null : player.getItemInHand();
-  }
+//  private ItemStack resolveMaterialInHand() {
+//    return player == null ? null : player.getItemInHand();
+//  }
 
   public boolean handActive() {
     return handActive;
   }
 
   public ItemStack heldItem() {
-    return heldItem;
+    return player == null ? null : player.getInventory().getItem(handSlot);//heldItem;
   }
 
   public Material heldItemType() {
-    return heldItem == null ? Material.AIR : heldItem.getType();
+    ItemStack heldItem = heldItem();
+    return heldItem == null || heldItem.getAmount() == 0 ? Material.AIR : heldItem.getType();
   }
 
   public boolean inventoryOpen() {
     return inventoryOpen;
   }
-
-  public void setHeldItem(ItemStack heldItem) {
-    this.heldItem = heldItem;
-  }
+//
+//  public void setHeldItem(ItemStack heldItem) {
+//    this.heldItem = heldItem;
+//  }
 
   public void deactivateHand() {
     User user = UserRepository.userOf(player);
     UserMetaMovementData movementData = user.meta().movementData();
+    ItemStack heldItem = heldItem();
     if (heldItem != null && PlayerEnchantmentHelper.tridentRiptideEnchanted(heldItem)) {
       movementData.pastRiptideSpin = 0;
     }
@@ -70,7 +75,11 @@ public final class UserMetaInventoryData {
     this.handActiveTicks = 0;
   }
 
-  public void applySlotSwitch() {
+  public void setHeldItemSlot(int slot) {
+    this.handSlot = slot;
+  }
+
+/*  public void applySlotSwitch() {
     int previousItemSlot = this.selectedHotBarSlot;
     int newItemSlot = this.selectedHotBarSlot + 1;
     if (newItemSlot > 8) {
@@ -86,7 +95,7 @@ public final class UserMetaInventoryData {
     }
     PlayerInventory inventory = player.getInventory();
     inventory.setHeldItemSlot(slot);
-  }
+  }*/
 
   public void setInventoryOpen(boolean inventoryOpen) {
     this.inventoryOpen = inventoryOpen;

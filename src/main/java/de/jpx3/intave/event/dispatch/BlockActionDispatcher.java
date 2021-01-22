@@ -14,8 +14,6 @@ import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
-import de.jpx3.intave.reflect.Reflection;
-import de.jpx3.intave.reflect.ReflectionFailureException;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.tools.wrapper.WrappedEnumDirection;
 import de.jpx3.intave.user.User;
@@ -23,6 +21,7 @@ import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.world.BlockAccessor;
 import de.jpx3.intave.world.block.BlockDataAccess;
 import de.jpx3.intave.world.collision.BoundingBoxAccess;
+import de.jpx3.intave.world.collision.Collision;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -30,7 +29,6 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +37,6 @@ import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.STOP_DE
 public final class BlockActionDispatcher implements EventProcessor {
   private final IntavePlugin plugin;
 
-  public final List<Material> clickableMaterials = new ArrayList<>();
   public final List<Material> replaceableMaterials = new ArrayList<>();
 
   // TODO: 01/09/21 prevent invalid chunk access
@@ -48,66 +45,11 @@ public final class BlockActionDispatcher implements EventProcessor {
     this.plugin = plugin;
     this.plugin.packetSubscriptionLinker().linkSubscriptionsIn(this);
     this.plugin.eventLinker().registerEventsIn(this);
-    this.loadClickableMaterials();
   }
 
-  public void loadClickableMaterials() {
-    Class<?> blockClass = Reflection.lookupServerClass("Block");
-    Method getByIdMethod;
-    try {
-      getByIdMethod = blockClass.getMethod("getById", Integer.TYPE);
-    } catch (NoSuchMethodException exception) {
-      throw new ReflectionFailureException(exception);
-    }
-
-    Class<?> world = Reflection.lookupServerClass("World");
-    Class<?> blockPosition = Reflection.lookupServerClass("BlockPosition");
-    Class<?> iBlockData = Reflection.lookupServerClass("IBlockData");
-    Class<?> entityHuman = Reflection.lookupServerClass("EntityHuman");
-    Class<?> enumDirection = Reflection.lookupServerClass("EnumDirection");
-    Class<Float> floatClass = Float.TYPE;
-
-    // TODO: 01/10/21 check version availability
-
-
-/*
-    for (IBlockData x : net.minecraft.server.v1_8_R3.Block.d) {
-      int integer = 0;
-      for (int i = 0; i < 4096; i++) {
-        if(net.minecraft.server.v1_8_R3.Block.d.a(i) == x) {
-          integer = i;
-        }
-      }
-
-      net.minecraft.server.v1_8_R3.Block block = x.getBlock();
-      if(block instanceof BlockTrapdoor) {
-        System.out.println(net.minecraft.server.v1_8_R3.Block.getId(block) + " " + x + " " + Integer.toBinaryString(integer));
-
-      }
-    }
-*/
-
-    try {
-      for (int i = 0; i < 64000; i++) {
-        Material material = Material.getMaterial(i);
-        if(material == null) {
-          continue;
-        }
-        Object block = getByIdMethod.invoke(null, i);
-        if(block == null) {
-          continue;
-        }
-        if(block.getClass().getMethod("interact", world, blockPosition, iBlockData, entityHuman, enumDirection, floatClass, floatClass, floatClass).getDeclaringClass() != blockClass) {
-          clickableMaterials.add(material);
-        }
-      }
-    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-      throw new IllegalStateException(e);
-    }
-  }
 
   @PacketSubscription(
-    priority = ListenerPriority.LOWEST,
+    priority = ListenerPriority.LOW,
     packets = {
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "BLOCK_PLACE"),
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "USE_ITEM")
@@ -139,30 +81,44 @@ public final class BlockActionDispatcher implements EventProcessor {
 
     // air check
 
-    if(BlockAccessor.blockAccess(blockAgainstLocation).getType() == Material.AIR) {
-      event.setCancelled(true);
-      refreshBlocksAround(player, blockAgainstLocation);
-      return;
-    }
+//    if(BlockAccessor.blockAccess(blockAgainstLocation).getType() == Material.AIR) {
+//      event.setCancelled(true);
+//      refreshBlocksAround(player, blockAgainstLocation);
+//      return;
+//    }
 
     boolean replace = BlockDataAccess.replacementPlace(world, new BlockPosition(blockAgainstLocation.toVector()));
     Location blockPlacementLocation = replace ? blockAgainstLocation : blockAgainstLocation.clone().add(WrappedEnumDirection.getFront(enumDirection).getDirectionVec().convertToBukkitVec());
 
     User user = UserRepository.userOf(player);
-
     Material itemTypeInHand = user.meta().inventoryData().heldItemType();
 
     Block clickedBlock = BlockAccessor.blockAccess(blockAgainstLocation);
     Material clickedType = clickedBlock.getType();
-    boolean clickable = clickableMaterials.contains(clickedType);
+    boolean clickable = BlockDataAccess.isClickable(clickedType);
     boolean isPlacement = itemTypeInHand != Material.AIR && itemTypeInHand.isBlock() && !clickable;
 
-    if(isPlacement) {
-//      Bukkit.broadcastMessage(blockAgainstLocation + " " + WrappedEnumDirection.getFront(enumDirection));
+//    player.sendMessage(clickedType + " " + isPlacement);
 
+    if(isPlacement) {
       int blockX = blockPlacementLocation.getBlockX();
       int blockY = blockPlacementLocation.getBlockY();
       int blockZ = blockPlacementLocation.getBlockZ();
+
+      // we need to check if a player is on 1.16 and ViaVersion emulates a placement packet invalid
+      Material material = user.meta().inventoryData().heldItemType();
+      int dat = 0;
+      boolean raytraceCollidesWithPosition = Collision.playerInImaginaryBlock(
+        user, world, blockX, blockY, blockZ,
+        material.getId(),
+        dat
+      );
+
+      if(raytraceCollidesWithPosition) {
+        event.setCancelled(true);
+        refreshBlocksAround(player, blockPlacementLocation);
+        return;
+      }
 
       EnumWrappers.Hand hand = packet.getHands().readSafely(0);
 
@@ -181,15 +137,17 @@ public final class BlockActionDispatcher implements EventProcessor {
         );
 
       if(access) {
+//        player.sendMessage("Internal place emulation at " + MathHelper.formatPosition(blockPlacementLocation));
+
         BoundingBoxAccess boundingBoxAccess = UserRepository.userOf(player).boundingBoxAccess();
         boundingBoxAccess.override(world, blockX, blockY, blockZ, id, shape);
 
         Synchronizer.synchronizeDelayed(() -> {
           boundingBoxAccess.invalidateOverride(world, blockX, blockY, blockZ);
-        }, 1);
+        }, 2);
       } else {
-        refreshBlocksAround(player, blockPlacementLocation);
         event.setCancelled(true);
+        refreshBlocksAround(player, blockPlacementLocation);
       }
     } else {
       if(clickedType == Material.WOODEN_DOOR) {
@@ -257,7 +215,7 @@ public final class BlockActionDispatcher implements EventProcessor {
       int blockY = blockBreakLocation.getBlockY();
       int blockZ = blockBreakLocation.getBlockZ();
 
-//      player.sendMessage("Block-placement confirmation for " + MathHelper.formatPosition(blockBreakLocation));
+//      player.sendMessage("Internal break emulation at " + MathHelper.formatPosition(blockBreakLocation));
 //      Synchronizer.synchronize(() -> {
 //        Raytracer.ignoreBlock(player, blockBreakLocation);
 //      });
@@ -265,6 +223,10 @@ public final class BlockActionDispatcher implements EventProcessor {
       // add to future bounding boxes
       BoundingBoxAccess boundingBoxAccess = UserRepository.userOf(player).boundingBoxAccess();
       boundingBoxAccess.override(world, blockX, blockY, blockZ, 0, (byte) 0);
+
+      Synchronizer.synchronizeDelayed(() -> {
+        boundingBoxAccess.invalidateOverride(world, blockX, blockY, blockZ);
+      }, 2);
     } else {
       refreshBlocksAround(player, blockBreakLocation);
       event.setCancelled(true);
