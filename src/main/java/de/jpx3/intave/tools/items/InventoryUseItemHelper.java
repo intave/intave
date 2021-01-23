@@ -23,6 +23,7 @@ import static de.jpx3.intave.tools.items.PlayerEnchantmentHelper.tridentRiptideE
 public final class InventoryUseItemHelper {
   public static final Material ITEM_TRIDENT = materialByName("TRIDENT");
   private static final List<Material> materialUseItemList = Lists.newArrayList();
+  private static final List<Material> materialSwordItemList = Lists.newArrayList();
   private static final List<Material> materialPotionList = Lists.newArrayList();
   private static FoodItemsRegistry foodItemRegistry;
 
@@ -50,6 +51,8 @@ public final class InventoryUseItemHelper {
     } else {
       materialUseItemList.addAll(resolveSwords());
     }
+
+    materialSwordItemList.addAll(resolveSwords());
     materialUseItemList.add(resolveBow());
   }
 
@@ -82,6 +85,12 @@ public final class InventoryUseItemHelper {
     boolean useItem = materialUseItemList.contains(type);
     boolean potion = materialPotionList.contains(type);
     return useItem || potion || foodItemRegistry.foodConsumable(player.getFoodLevel(), type);
+  }
+
+  public static boolean isSwordItem(Player player, @Nullable ItemStack itemStack) {
+    Material type = itemStack == null ? Material.AIR : itemStack.getType();
+    boolean itemSword = materialSwordItemList.contains(type);
+    return itemSword;
   }
 
   private static boolean tridentUsable(User user, ItemStack itemStack) {

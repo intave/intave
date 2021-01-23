@@ -16,25 +16,25 @@ import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
+import de.jpx3.intave.tools.items.InventoryUseItemHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.tools.wrapper.WrappedBlockPosition;
 import de.jpx3.intave.tools.wrapper.WrappedEnumDirection;
 import de.jpx3.intave.tools.wrapper.WrappedMovingObjectPosition;
 import de.jpx3.intave.tools.wrapper.WrappedVector;
-import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserCustomCheckMeta;
-import de.jpx3.intave.user.UserMetaMovementData;
-import de.jpx3.intave.user.UserRepository;
+import de.jpx3.intave.user.*;
 import de.jpx3.intave.world.BlockAccessor;
 import de.jpx3.intave.world.block.BlockDataAccess;
 import de.jpx3.intave.world.collision.BoundingBoxAccess;
 import de.jpx3.intave.world.collision.Collision;
 import de.jpx3.intave.world.raytrace.Raytracer;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.InvocationTargetException;
@@ -123,6 +123,8 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     BlockPosition blockPosition = packet.getBlockPositionModifier().readSafely(0);
+    User user = userOf(player);
+
     if(blockPosition == null) {
       return;
     }
@@ -131,7 +133,12 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
       return;
     }
 
-    User user = userOf(player);
+    UserMetaInventoryData inventoryData = user.meta().inventoryData();
+    ItemStack heldItemStack = inventoryData.heldItem();
+    if(InventoryUseItemHelper.isSwordItem(player, heldItemStack) && player.getGameMode() == GameMode.CREATIVE) {
+      event.setCancelled(true);
+    }
+
     EnumWrappers.PlayerDigType playerDigType = packet.getPlayerDigTypes().readSafely(0);
     float blockDamage = BlockDataAccess.blockDamage(player, user.meta().inventoryData().heldItem(), blockPosition);
     boolean instantBreak = blockDamage == Float.POSITIVE_INFINITY || blockDamage >= 1.0f;
