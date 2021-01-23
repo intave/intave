@@ -362,8 +362,8 @@ public final class Physics extends IntaveCheck {
     }
 
     // Movement in webs is always skipped
-    if (movementData.inWeb && receivedMotionY < 0.0) {
-      legitimateDeviation = 0.1;
+    if (movementData.inWeb && receivedMotionY < 0.05) {
+      legitimateDeviation = 0.03;
     }
 
     // Water flow cannot be calculated correctly
