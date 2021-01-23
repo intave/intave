@@ -1,5 +1,6 @@
 package de.jpx3.intave.event.dispatch;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
@@ -12,21 +13,25 @@ import de.jpx3.intave.event.packet.*;
 import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.client.PlayerMovementPoseHelper;
-import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.tools.packet.PlayerAction;
 import de.jpx3.intave.tools.packet.PlayerActionResolver;
+import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.user.*;
 import de.jpx3.intave.world.collision.Collision;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.util.Vector;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+
+import static de.jpx3.intave.user.UserMetaClientData.PROTOCOL_VERSION_COMBAT_UPDATE;
 
 public final class MovementDispatcher implements EventProcessor {
   private final TeleportPositionObserver teleportPositionObserver = new TeleportPositionObserver();
@@ -77,11 +82,6 @@ public final class MovementDispatcher implements EventProcessor {
     StructureModifier<String> strings = packet.getStrings();
 
 
-
-
-
-
-
   }
 
   @BukkitEventSubscription
@@ -90,6 +90,32 @@ public final class MovementDispatcher implements EventProcessor {
     User user = UserRepository.userOf(player);
     UserMetaMovementData movementData = user.meta().movementData();
     movementData.updateWorld();
+  }
+
+  @BukkitEventSubscription
+  public void receiveVehicleMove(PlayerMoveEvent event) {
+    Player player = event.getPlayer();
+    User user = UserRepository.userOf(player);
+    if (player.getVehicle() == null) {
+      return;
+    }
+    Location location = event.getTo();
+    User.UserMeta meta = user.meta();
+    UserMetaMovementData movementData = meta.movementData();
+    UserMetaClientData clientData = meta.clientData();
+    if (clientData.protocolVersion() >= PROTOCOL_VERSION_COMBAT_UPDATE) {
+      return;
+    }
+    movementData.lastPositionX = movementData.positionX;
+    movementData.lastPositionY = movementData.positionY;
+    movementData.lastPositionZ = movementData.positionZ;
+    movementData.positionX = location.getX();
+    movementData.positionY = location.getY();
+    movementData.positionZ = location.getZ();
+    movementData.lastRotationYaw = movementData.rotationYaw;
+    movementData.lastRotationPitch = movementData.rotationPitch;
+    movementData.rotationYaw = location.getYaw();
+    movementData.rotationPitch = location.getPitch();
   }
 
   @PacketSubscription(
@@ -140,7 +166,8 @@ public final class MovementDispatcher implements EventProcessor {
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION"),
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION_LOOK"),
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "LOOK"),
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "FLYING")
+      @PacketDescriptor(sender = Sender.CLIENT, packetName = "FLYING"),
+      @PacketDescriptor(sender = Sender.CLIENT, packetName = "VEHICLE_MOVE")
     }
   )
   public void receiveMovement(PacketEvent event) {
@@ -153,8 +180,11 @@ public final class MovementDispatcher implements EventProcessor {
     UserMetaAttackData attackData = meta.attackData();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
 
-    boolean hasMovement = packet.getBooleans().read(1);
-    boolean hasRotation = packet.getBooleans().read(2);
+    PacketType packetType = event.getPacketType();
+    boolean vehicleMove = packetType == PacketType.Play.Client.VEHICLE_MOVE;
+
+    boolean hasMovement = vehicleMove || packet.getBooleans().read(1);
+    boolean hasRotation = vehicleMove || packet.getBooleans().read(2);
 
     movementData.updateMovement(packet, hasMovement, hasRotation);
     teleportPositionObserver.receiveMovement(event);
@@ -199,7 +229,9 @@ public final class MovementDispatcher implements EventProcessor {
     if (!movementData.isTeleportConfirmationPacket) {
       physicsCheck.receiveMovement(user, hasMovement);
     }
-    movementData.applyGroundInformationToPacket(packet);
+    if (!vehicleMove) {
+      movementData.applyGroundInformationToPacket(packet);
+    }
 
     if (!movementData.isTeleportConfirmationPacket) {
 
@@ -232,7 +264,8 @@ public final class MovementDispatcher implements EventProcessor {
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION"),
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION_LOOK"),
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "LOOK"),
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "FLYING")
+      @PacketDescriptor(sender = Sender.CLIENT, packetName = "FLYING"),
+      @PacketDescriptor(sender = Sender.CLIENT, packetName = "VEHICLE_MOVE")
     }
   )
   public void receiveFinalMovement(PacketEvent event) {
@@ -246,7 +279,9 @@ public final class MovementDispatcher implements EventProcessor {
     UserMetaInventoryData inventoryData = meta.inventoryData();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
 
-    boolean hasMovement = packet.getBooleans().read(1);
+    PacketType packetType = event.getPacketType();
+    boolean vehicleMove = packetType == PacketType.Play.Client.VEHICLE_MOVE;
+    boolean hasMovement = vehicleMove || packet.getBooleans().read(1);
 
     if (movementData.awaitTeleport) {
       return;
