@@ -10,7 +10,7 @@ public final class BackgroundExecutor {
   private static ExecutorService executorService;
 
   public static void start() {
-    executorService = Executors.newSingleThreadExecutor(IntaveThreadFactory.ofPriority(Thread.MIN_PRIORITY));
+    executorService = Executors.newSingleThreadExecutor(IntaveThreadFactory.ofLowestPriority());
   }
 
   public static void stopBlocking() {

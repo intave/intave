@@ -44,6 +44,10 @@ public final class IntaveThreadFactory implements ThreadFactory {
     return ofPriority(Thread.MAX_PRIORITY);
   }
 
+  public static IntaveThreadFactory ofLowestPriority() {
+    return ofPriority(Thread.MIN_PRIORITY);
+  }
+
   public static IntaveThreadFactory ofPriority(int threadPriority) {
     return new IntaveThreadFactory(threadPriority);
   }

@@ -65,7 +65,7 @@ public final class PhysicsSimulationService {
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     PhysicsMovementPoseType movementPoseType = movementData.movementPoseType();
-    Physics.PhysicsProcessorContext context = movementData.physicsProcessorContext;
+    Physics.PhysicsProcessorContext context = Physics.PhysicsProcessorContext.from(movementData.physicsProcessorContext);
     context.reset(movementData.physicsLastMotionX, movementData.physicsLastMotionY,movementData.physicsLastMotionZ);
     boolean sprinting = movementData.sprinting;
     boolean sneaking = movementData.sneaking;

@@ -20,6 +20,7 @@ import de.jpx3.intave.event.service.ViolationService;
 import de.jpx3.intave.executor.BackgroundExecutor;
 import de.jpx3.intave.lib.asm.Frame;
 import de.jpx3.intave.logging.IntaveLogger;
+import de.jpx3.intave.metrics.Metrics;
 import de.jpx3.intave.security.HWIDVerification;
 import de.jpx3.intave.security.SSLConnectionVerifier;
 import de.jpx3.intave.tools.AccessHelper;
@@ -80,6 +81,8 @@ public final class IntavePlugin extends JavaPlugin {
   private InteractionPermissionService interactionPermissionService;
   private TrustFactorService trustFactorService;
   private VersionList versionList;
+  private Metrics metrics;
+
 
   public IntavePlugin() {
     // stage 2
@@ -371,6 +374,7 @@ public final class IntavePlugin extends JavaPlugin {
       }
 
       // stage 8
+      metrics = new Metrics(this, 6019);
 
       trustFactorService.setup();
       checkService.setup();

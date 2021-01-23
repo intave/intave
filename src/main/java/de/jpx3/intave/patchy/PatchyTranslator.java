@@ -1,9 +1,13 @@
 package de.jpx3.intave.patchy;
 
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.lib.asm.ClassReader;
 import de.jpx3.intave.lib.asm.ClassWriter;
+import de.jpx3.intave.lib.asm.MethodVisitor;
 import de.jpx3.intave.lib.asm.Type;
 import de.jpx3.intave.lib.asm.tree.*;
+import de.jpx3.intave.lib.asm.util.Textifier;
+import de.jpx3.intave.lib.asm.util.TraceMethodVisitor;
 import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
 import de.jpx3.intave.tools.annotate.Native;
 import org.bukkit.Bukkit;
@@ -26,23 +30,30 @@ final class PatchyTranslator {
   @Native
   public static byte[] translateClass(byte[] inputBytes) {
     ClassNode classNode = classNodeOf(inputBytes);
-    System.out.println("[Intave/Patchy] Translating " + classNode.name);
+    if(IntaveControl.OUTPUT_PATCHY_RESULT) {
+      System.out.println("[Intave/Patchy] Translating " + classNode.name);
+    }
     translateClassDependencies(classNode);
 //    System.out.println("Translating methods..");
     processMethods(selectedMethodsIn(classNode));
 
-//    System.out.println(classNode.name + " " + classNode.superName);
-//    System.out.println(classNode.name + " " + classNode.superName);
-//    for (MethodNode method : classNode.methods) {
-//      System.out.println(method.name);
-//
-//      Textifier textifier;
-//      MethodVisitor methodVisitor = new TraceMethodVisitor(textifier = new Textifier());
-//      method.accept(methodVisitor);
-//      System.out.println(textifier.text);
-//    }
 
-    System.out.println("[Intave/Patchy] Done");
+    if(IntaveControl.OUTPUT_PATCHY_RESULT) {
+      System.out.println(classNode.name + " " + classNode.superName);
+      System.out.println(classNode.name + " " + classNode.superName);
+      for (MethodNode method : classNode.methods) {
+        System.out.println(method.name);
+
+        Textifier textifier;
+        MethodVisitor methodVisitor = new TraceMethodVisitor(textifier = new Textifier());
+        method.accept(methodVisitor);
+        System.out.println(textifier.text);
+      }
+    }
+
+    if(IntaveControl.OUTPUT_PATCHY_RESULT) {
+      System.out.println("[Intave/Patchy] Done");
+    }
 
     return byteArrayOf(classNode);
   }

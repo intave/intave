@@ -182,6 +182,18 @@ public final class Physics extends IntaveCheck {
 
     if (distance > 1e-3) {
       movementData.suspiciousMovement = true;
+
+      float friction = PlayerMovementHelper.resolveFriction(
+        user,
+        movementData.verifiedPositionX,
+        movementData.verifiedPositionY,
+        movementData.verifiedPositionZ
+      );
+      EntityCollisionResult entityCollisionResult = simulationService.simulateMovementWithoutKeyPress(user, friction);
+      PhysicsProcessorContext setbackContext = entityCollisionResult.context();
+      predictedX = setbackContext.motionX;
+      predictedY = setbackContext.motionY;
+      predictedZ = setbackContext.motionZ;
     }
 
     if (flying || spectator) {
@@ -203,13 +215,15 @@ public final class Physics extends IntaveCheck {
       violationLevelData.physicsVL -= 0.012;
     }
 
+
+
     Location verifiedLocation = movementData.verifiedLocation();
 
     List<WrappedAxisAlignedBB> intersectionBoundingBoxesLast = Collision.resolve(user.player(), CollisionHelper.boundingBoxOf(user, verifiedLocation.getX(), verifiedLocation.getY(), verifiedLocation.getZ()));
     List<WrappedAxisAlignedBB> intersectionBoundingBoxesCurrent = Collision.resolve(user.player(), CollisionHelper.boundingBoxOf(user, receivedPositionX, receivedPositionY, receivedPositionZ));
 
-    boolean boundingBoxIntersectionLast = !intersectionBoundingBoxesLast.isEmpty();//CollisionHelper.checkBoundingBoxIntersection(user, CollisionHelper.boundingBoxOf(user, verifiedLocation.getX(), verifiedLocation.getY(), verifiedLocation.getZ()));
-    WrappedAxisAlignedBB currentPhaseBoundingBox = CollisionHelper.boundingBoxOf(user, 0.299, receivedPositionX, receivedPositionY, receivedPositionZ);
+    boolean boundingBoxIntersectionLast = !intersectionBoundingBoxesLast.isEmpty();
+    WrappedAxisAlignedBB currentPhaseBoundingBox = CollisionHelper.boundingBoxOf(user, receivedPositionX, receivedPositionY, receivedPositionZ);
     boolean boundingBoxIntersectionCurrent = CollisionHelper.checkBoundingBoxIntersection(user, currentPhaseBoundingBox);
     boolean movedIntoBlock = !boundingBoxIntersectionLast && boundingBoxIntersectionCurrent;
 

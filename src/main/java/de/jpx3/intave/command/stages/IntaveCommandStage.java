@@ -39,6 +39,18 @@ public final class IntaveCommandStage extends CommandStage {
   public void verboseCommand(User user, @Optional Player[] selectedPlayers) {
     Player player = user.player();
     boolean receivesVerbose = user.receives(UserMessageChannel.VERBOSE);
+
+    if(user.receives(UserMessageChannel.VERBOSE)) {
+      if(selectedPlayers != null && !user.hasChannelConstraint(UserMessageChannel.VERBOSE)) {
+        List<UUID> uniqueIds = Arrays.stream(selectedPlayers).map(Entity::getUniqueId).collect(Collectors.toList());
+        String names = Arrays.stream(selectedPlayers).map(Entity::getName).map(s -> s + " ").collect(Collectors.joining()).trim();
+        user.setChannelConstraint(UserMessageChannel.VERBOSE, player1 -> uniqueIds.contains(player1.getUniqueId()));
+        String target = ChatColor.RED + names;
+        player.sendMessage(IntavePlugin.prefix() + "You have specified verbose output to: " + target);
+        return;
+      }
+    }
+
     user.toggleReceive(UserMessageChannel.VERBOSE);
 
     if(receivesVerbose) {
