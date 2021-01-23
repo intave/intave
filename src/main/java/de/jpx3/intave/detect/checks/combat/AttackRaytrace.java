@@ -75,6 +75,7 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
     User.UserMeta meta = user.meta();
     UserMetaClientData clientData = meta.clientData();
     UserMetaMovementData movementData = meta.movementData();
+    UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
 
     List<Attack> remainingAttacks = attackRaytraceMeta.remainingAttacks;
 
@@ -106,7 +107,7 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
         }
 //        duration += System.nanoTime() - start;
 
-        if(!invalid) {
+        if(!invalid && !violationLevelData.isInActiveTeleportBundle) {
           receiveExcludedPacket(player, remainingAttack.packet);
         }
       }
