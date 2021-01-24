@@ -136,6 +136,7 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     ItemStack heldItemStack = inventoryData.heldItem();
     if (InventoryUseItemHelper.isSwordItem(player, heldItemStack) && player.getGameMode() == GameMode.CREATIVE) {
       event.setCancelled(true);
+      return;
     }
 
     EnumWrappers.PlayerDigType playerDigType = packet.getPlayerDigTypes().readSafely(0);
