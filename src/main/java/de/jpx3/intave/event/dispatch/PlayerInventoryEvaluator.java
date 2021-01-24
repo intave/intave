@@ -134,10 +134,8 @@ public final class PlayerInventoryEvaluator implements PacketEventSubscriber, Bu
     } else {
       inventoryData.deactivateHand();
     }
-//    inventoryData.setHeldItem(item);
     inventoryData.setHeldItemSlot(slot);
     inventoryData.pastHotBarSlotChange = 0;
-    inventoryData.selectedHotBarSlot = slot;
   }
 
   @PacketSubscription(

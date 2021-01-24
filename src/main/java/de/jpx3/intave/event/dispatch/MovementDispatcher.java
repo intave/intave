@@ -203,6 +203,7 @@ public final class MovementDispatcher implements EventProcessor {
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaAttackData attackData = meta.attackData();
+    UserMetaInventoryData inventoryData = meta.inventoryData();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
 
     PacketType packetType = event.getPacketType();
@@ -269,8 +270,13 @@ public final class MovementDispatcher implements EventProcessor {
 //      }
 
       attackData.updatePerfectRotation();
-      // Check calls
 
+      if (inventoryData.awaitingSlotSet != -1) {
+        Synchronizer.synchronize(() -> {
+          player.getInventory().setHeldItemSlot(inventoryData.awaitingSlotSet);
+          inventoryData.awaitingSlotSet = -1;
+        });
+      }
       updatePotionEffects(user);
       movementData.canResetMotion = false;
     } else {

@@ -67,6 +67,10 @@ public final class PhysicsSimulationService {
           inventoryData.setHandActive(true);
         } else {
           // Release the player's hand on the client and serverside
+          ItemStack itemStack = inventoryData.heldItem();
+          if (itemStack != null && !InventoryUseItemHelper.isSwordItem(user.player(), itemStack)) {
+            inventoryData.applySlotSwitch();
+          }
           Synchronizer.synchronize(() -> ReflectiveDataWatcherAccess.setDataWatcherFlag(user.player(), DATA_WATCHER_BLOCKING_ID, false));
         }
       }

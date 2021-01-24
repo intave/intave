@@ -2,6 +2,7 @@ package de.jpx3.intave.user;
 
 import de.jpx3.intave.tools.items.InventoryUseItemHelper;
 import de.jpx3.intave.tools.items.PlayerEnchantmentHelper;
+import de.jpx3.intave.tools.sync.Synchronizer;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -17,7 +18,7 @@ public final class UserMetaInventoryData {
   public int handActiveTicks;
   public int pastItemUsageTransition;
   public int pastHotBarSlotChange;
-  public int selectedHotBarSlot;
+  public int awaitingSlotSet = -1;
 
   public UserMetaInventoryData(Player player) {
     this.player = player;
@@ -65,6 +66,19 @@ public final class UserMetaInventoryData {
     this.foodItem = InventoryUseItemHelper.foodItemRegistry().foodConsumable(player.getFoodLevel(), heldItemType());
     this.pastItemUsageTransition = 0;
     this.handActiveTicks = 0;
+  }
+
+  public void applySlotSwitch() {
+    int previousItemSlot = this.handSlot;
+    int newItemSlot = this.handSlot + 1;
+    if (newItemSlot > 8) {
+      newItemSlot = 7;
+    }
+    int finalNewItemSlot = newItemSlot;
+    Synchronizer.packetSynchronize(() -> {
+      player.getInventory().setHeldItemSlot(finalNewItemSlot);
+      awaitingSlotSet = previousItemSlot;
+    });
   }
 
   public void setHeldItemSlot(int slot) {
