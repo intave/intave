@@ -7,6 +7,8 @@ package de.jpx3.intave.diagnostics.timings;
  */
 
 public class Timing implements Cloneable, Comparable<Timing> {
+  public static final Timing CHECK_PHYSICS_PROCESS = Timing.of("Check Physics Process");
+  public static final Timing CHECK_PHYSICS_EVALUATION = Timing.of("Check Physics Evaluation");
 
   private final String timingName;
   private final TimingData totalTimingData = new TimingData();

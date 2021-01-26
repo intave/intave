@@ -15,6 +15,7 @@ import de.jpx3.intave.detect.checks.movement.physics.pose.PhysicsCalculationPart
 import de.jpx3.intave.detect.checks.movement.physics.pose.PhysicsMovementPoseType;
 import de.jpx3.intave.detect.checks.movement.physics.water.AquaticWaterMovementBase;
 import de.jpx3.intave.detect.checks.movement.physics.water.aquatics.*;
+import de.jpx3.intave.diagnostics.timings.Timing;
 import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.client.PlayerMovementHelper;
 import de.jpx3.intave.tools.client.PlayerMovementPoseHelper;
@@ -134,6 +135,8 @@ public final class Physics extends IntaveCheck {
     UserMetaMovementData movementData = meta.movementData();
     simulateMotionClamp(user);
 
+    Timing.CHECK_PHYSICS_PROCESS.start();
+
     if (movementData.pastVelocity == 0) {
       double motionX = movementData.physicsMotionXBeforeVelocity * 0.91f;
       double motionY = (movementData.physicsMotionYBeforeVelocity - 0.08) * 0.98f;
@@ -165,8 +168,11 @@ public final class Physics extends IntaveCheck {
     movementData.collidedVertically = predictedMovement.collidedVertically();
     movementData.physicsResetMotionX = predictedMovement.resetMotionX();
     movementData.physicsResetMotionZ = predictedMovement.resetMotionZ();
-    movementData.pastRiptideSpin++;
+    Timing.CHECK_PHYSICS_PROCESS.stop();
+    Timing.CHECK_PHYSICS_EVALUATION.start();
     evaluateBestSimulation(user, predictedMovement);
+    Timing.CHECK_PHYSICS_EVALUATION.stop();
+    movementData.pastRiptideSpin++;
   }
 
   private void evaluateBestSimulation(User user, EntityCollisionResult expectedMovement) {
