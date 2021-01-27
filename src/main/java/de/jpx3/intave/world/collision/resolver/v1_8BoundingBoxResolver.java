@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PatchyAutoTranslation
 public final class v1_8BoundingBoxResolver implements BoundingBoxResolver {
   private final static v1_8AlwaysCollidingBoundingBox ALWAYS_COLLIDING_BOX = new v1_8AlwaysCollidingBoundingBox();
 

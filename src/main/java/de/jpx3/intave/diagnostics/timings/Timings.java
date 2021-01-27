@@ -28,4 +28,8 @@ public class Timings {
     String eventName = classNameCache.computeIfAbsent(event.getClass(), eventClass -> event.getEventName());
     return eventTimings.computeIfAbsent(eventName, x -> Timing.of("Event-" + eventName));
   }
+
+  public static List<Timing> timingPool() {
+    return timingPool;
+  }
 }

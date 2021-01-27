@@ -1,6 +1,7 @@
 package de.jpx3.intave.tools;
 
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.tools.annotate.Native;
 
 import javax.crypto.Cipher;
@@ -19,7 +20,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 public final class EncryptedResource {
-  private final static int CLASS_VERSION = 3;
+  private final static int CLASS_VERSION = 4;
   private final String name;
   private final boolean versionDependent;
 
@@ -57,7 +58,7 @@ public final class EncryptedResource {
       cipher.init(Cipher.DECRYPT_MODE, secretKey, parameterSpec);
       return new ByteArrayInputStream(cipher.doFinal(cipherBytes));
     } catch (Exception | Error e) {
-      throw new IllegalStateException();
+      throw new IntaveInternalException("Unable to access resource file");
     }
   }
 
@@ -114,7 +115,6 @@ public final class EncryptedResource {
     return file.exists();
   }
 
-  @Native
   private File fileStore() {
     String operatingSystem = System.getProperty("os.name").toLowerCase(Locale.ROOT);
     File workDirectory;

@@ -99,6 +99,19 @@ public final class IntaveCommandStage extends CommandStage {
   }
 
   @SubCommand(
+    selectors = "root",
+    usage = "",
+    description = "Internal performance tools",
+    permission = "sibyl",
+    hideInHelp = true
+  )
+  @Forward(
+    target = IntaveRootStage.class
+  )
+  public void rootCommand(User user) {}
+
+
+  @SubCommand(
     selectors = "internals",
     usage = "",
     description = "",
@@ -108,9 +121,7 @@ public final class IntaveCommandStage extends CommandStage {
   @Forward(
     target = IntaveInternalsStage.class
   )
-  public void internalCommand(CommandSender commandSender) {
-    // not executed
-  }
+  public void internalCommand(User user) {}
 
   @Override
   protected void showInfo(CommandSender sender) {

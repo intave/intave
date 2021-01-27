@@ -50,7 +50,12 @@ public final class SibylIntegrationService {
     return packetTransmitter;
   }
 
-  public boolean isAuthenticated(Player player) {
-    return authentication.isAuthenticated(player);
+  public SibylAuthentication authentication() {
+    return authentication;
+  }
+
+  @Native
+  public boolean isAuthenticated(Player user) {
+    return authentication.isAuthenticated(user);
   }
 }

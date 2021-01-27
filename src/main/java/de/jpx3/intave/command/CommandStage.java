@@ -2,6 +2,7 @@ package de.jpx3.intave.command;
 
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.permission.PermissionCheck;
+import de.jpx3.intave.tools.annotate.Native;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -38,6 +39,7 @@ public abstract class CommandStage {
 
   private final static String NO_PERMISSION_MESSAGE = ChatColor.RED + "I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.";
 
+  @Native
   public void execute(CommandSender sender, String currentCommand) {
     if(currentCommand.isEmpty()) {
       showInfo(sender);
@@ -56,7 +58,10 @@ public abstract class CommandStage {
 
     if(link.forwardClass() != null) {
       String permission = link.permission();
-      if(sender instanceof Player && !permission.equals("none") && !PermissionCheck.permissionCheck(sender, permission)) {
+      if(sender instanceof Player && permission.equals("sibyl") && !IntavePlugin.singletonInstance().sibylIntegrationService().isAuthenticated((Player) sender)) {
+        showInfo(sender);
+        return;
+      } else if(sender instanceof Player && !permission.equals("none") && !permission.equals("sibyl") && !PermissionCheck.permissionCheck(sender, permission)) {
         sender.sendMessage(NO_PERMISSION_MESSAGE);
         return;
       }
@@ -67,6 +72,7 @@ public abstract class CommandStage {
     }
   }
 
+  @Native
   public List<String> tabComplete(CommandSender sender, String currentCommand) {
     if(currentCommand.isEmpty()) {
       return subcommandCompletions(sender);
@@ -81,6 +87,12 @@ public abstract class CommandStage {
 
     String leftCommand = command.length > 1 ? command[1] : "";
     if(link.forwardClass() != null) {
+      String permission = link.permission();
+      if(sender instanceof Player && permission.equals("sibyl") && !IntavePlugin.singletonInstance().sibylIntegrationService().isAuthenticated((Player) sender)) {
+        return null;
+      } else if(sender instanceof Player && !permission.equals("none") && !permission.equals("sibyl") && !PermissionCheck.permissionCheck(sender, permission)) {
+        return null;
+      }
       CommandStage commandStage = globalInstances.get(link.forwardClass());
       return commandStage.tabComplete(sender, leftCommand);
     } else {

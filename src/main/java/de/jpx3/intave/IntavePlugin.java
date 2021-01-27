@@ -474,6 +474,7 @@ public final class IntavePlugin extends JavaPlugin {
       performShutdown();
       return;
     }
+
     packetSubscriptionLinker.refreshInternalSubscriptions();
     logger.info("Intave booted successfully");
   }

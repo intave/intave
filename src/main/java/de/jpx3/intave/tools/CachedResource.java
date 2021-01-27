@@ -157,7 +157,6 @@ public final class CachedResource {
     return file.exists();
   }
 
-  @Native
   private File fileStore() {
     String operatingSystem = System.getProperty("os.name").toLowerCase(Locale.ROOT);
     File workDirectory;

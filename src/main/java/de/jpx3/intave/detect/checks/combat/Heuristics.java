@@ -12,6 +12,7 @@ import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
 import de.jpx3.intave.tools.AccessHelper;
+import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.user.UserCustomCheckMeta;
 import org.bukkit.Bukkit;
@@ -50,10 +51,10 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
 
   public void saveAnomaly(Player player, Anomaly anomaly) {
     metaOf(player).anomalies.add(anomaly);
-//    player.sendMessage("Anomaly " + anomaly.description() + " active: " + anomaly.active() + " limit: " + anomaly.limit() + " delay: " + anomaly.delay());
     Synchronizer.synchronize(() -> debug(player, anomaly.description()));
   }
 
+  @Native
   private void debug(Player player, String description) {
     HeuristicMeta heuristicMeta = metaOf(player);
     List<Confidence> confidences = heuristicMeta.anomalies
