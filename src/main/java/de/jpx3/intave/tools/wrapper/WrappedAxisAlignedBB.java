@@ -3,6 +3,7 @@ package de.jpx3.intave.tools.wrapper;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.reflect.ReflectionFailureException;
 import de.jpx3.intave.reflect.ReflectiveAccess;
+import de.jpx3.intave.tools.MathHelper;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -417,6 +418,10 @@ public class WrappedAxisAlignedBB {
 
   public String toString() {
     return "box[" + this.minX + ", " + this.minY + ", " + this.minZ + " -> " + this.maxX + ", " + this.maxY + ", " + this.maxZ + "]";
+  }
+
+  public String toCompactString() {
+    return "" + MathHelper.formatDouble(this.minX, 3) + ", " + MathHelper.formatDouble(this.minY, 3) + ", " + MathHelper.formatDouble(this.minZ, 3) + " -> " + MathHelper.formatDouble(this.maxX, 3) + ", " + MathHelper.formatDouble(this.maxY, 3) + ", " + MathHelper.formatDouble(this.maxZ, 3);
   }
 
   public boolean func_181656_b() {

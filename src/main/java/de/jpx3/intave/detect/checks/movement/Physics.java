@@ -21,11 +21,15 @@ import de.jpx3.intave.tools.client.PlayerMovementHelper;
 import de.jpx3.intave.tools.client.PlayerMovementPoseHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.*;
+import de.jpx3.intave.world.BlockAccessor;
 import de.jpx3.intave.world.collision.Collision;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
@@ -271,17 +275,19 @@ public final class Physics extends IntaveCheck {
       if (movedIntoBlock) {
         movementData.invalidMovement = true;
 
-        String boundingBoxOutput;
-        if (intersectionBoundingBoxesCurrent.size() > 1) {
-          boundingBoxOutput = String.valueOf(intersectionBoundingBoxesCurrent);
-        } else {
-          boundingBoxOutput = String.valueOf(intersectionBoundingBoxesCurrent.get(0));
-        }
+        WrappedAxisAlignedBB playerBox = user.meta().movementData().boundingBox();
+        WrappedAxisAlignedBB boundingBox = intersectionBoundingBoxesCurrent.get(0);
 
-        String selfBoundingBox = String.valueOf(currentBoundingBox);
+        double blockPositionX = (boundingBox.minX + boundingBox.maxX) / 2.0;
+        double blockPositionY = (boundingBox.minY + boundingBox.maxY) / 2.0;
+        double blockPositionZ = (boundingBox.minZ + boundingBox.maxZ) / 2.0;
+        Block block = BlockAccessor.blockAccess(player.getWorld(), blockPositionX, blockPositionY, blockPositionZ);
+        boolean currentlyInOverride = user.boundingBoxAccess().currentlyInOverride(WrappedMathHelper.floor(blockPositionX), WrappedMathHelper.floor(blockPositionY), WrappedMathHelper.floor(blockPositionZ));
 
-        String message = "moved into block";
-        String details = "self: " + selfBoundingBox  + " coll:" + boundingBoxOutput;
+        String message = "moved into "+(currentlyInOverride ? "<emulated>" : shortenTypeName(block.getType())) + " block";
+        boolean multipleBoxes = intersectionBoundingBoxesCurrent.size() > 1;
+        String details = (multipleBoxes ? intersectionBoundingBoxesCurrent.size() : "one") + " box" + (multipleBoxes ? "es" : "");
+
         user.boundingBoxAccess().invalidate();
 
         plugin.retributionService().processViolation(player, 0, "Physics", message, details);
@@ -375,6 +381,10 @@ public final class Physics extends IntaveCheck {
       String finalDebug = debug + " " + movementData.collidedHorizontally;
       Synchronizer.synchronize(() -> player.sendMessage(finalDebug));
     }
+  }
+
+  private String shortenTypeName(Material type) {
+    return type.name().toLowerCase().replace("_", "").replace("block", "");
   }
 
   private final static double LADDER_UPWARDS_MOTION = (0.2 - 0.08) * 0.98005f;

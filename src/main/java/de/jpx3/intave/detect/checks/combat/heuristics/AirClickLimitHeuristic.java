@@ -64,6 +64,7 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
     User user = userOf(player);
     AirClickLimitHeuristicMeta meta = metaOf(user);
 
+    // TODO: 01/28/21 Warning by Richy: The block-place is empty for native server versions from 1.9! Use the USE_ITEM packet instead
     BlockPosition blockPosition = event.getPacket().getBlockPositionModifier().read(0);
 
     if(blockPosition.getX() != -1 && blockPosition.getY() != -1 && blockPosition.getZ() != -1) {

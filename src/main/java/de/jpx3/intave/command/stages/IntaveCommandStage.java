@@ -144,7 +144,11 @@ public final class IntaveCommandStage extends CommandStage {
     String version;
 
     if(versionInformation != null) {
-      version = IntavePlugin.version() + " (" + DurationTranslator.translateDuration(AccessHelper.now() - versionInformation.release()) + " old)";
+      version = IntavePlugin.version() + " (" + DurationTranslator.translateDuration(AccessHelper.now() - versionInformation.release()) + " old";
+      if(versionInformation.typeClassifier() == VersionInformation.VersionTypeClassifier.OUTDATED) {
+        version += " and outdated";
+      }
+      version += ")";
     } else {
       version = IntavePlugin.version() + " (experimental)";
     }

@@ -1,5 +1,6 @@
 package de.jpx3.intave.detect.checks.movement;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.detect.IntaveMetaCheck;
@@ -24,27 +25,22 @@ public final class Timer extends IntaveMetaCheck<Timer.TimerData> {
     this.plugin = plugin;
   }
 
-  @PacketSubscription(
-    packets = {
-      @PacketDescriptor(sender = Sender.SERVER, packetName = "POSITION")
-    }
-  )
-  public void sentPosition(PacketEvent event) {
-    metaOf(event.getPlayer()).timerBalance -= 10.0;
-  }
+//  @PacketSubscription(
+//    packets = {
+//      @PacketDescriptor(sender = Sender.SERVER, packetName = "POSITION")
+//    }
+//  )
+//  public void sentPosition(PacketEvent event) {
+//    metaOf(event.getPlayer()).timerBalance -= 10.0;
+//  }
 
-  @PacketSubscription(
-    priority = ListenerPriority.LOWEST,
-    packets = {
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "LOOK"),
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION"),
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION_LOOK"),
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "FLYING")
-    }
-  )
-  public void checkPacketFrequency(PacketEvent event) {
+  public void receiveMovement(PacketEvent event, boolean teleportConf) {
     Player player = event.getPlayer();
     if(player == null) {
+      return;
+    }
+
+    if(teleportConf) {
       return;
     }
 
@@ -56,13 +52,12 @@ public final class Timer extends IntaveMetaCheck<Timer.TimerData> {
     timerData.lastFlyingPacket = AccessHelper.now();
     timerData.timerBalance -= delta / 5.0;
 
-/*    if(!user.meta().clientData().flyingPacketStream() && event.getPacketType() == PacketType.Play.Client.FLYING) {
+    if(!user.meta().clientData().flyingPacketStream() && event.getPacketType() == PacketType.Play.Client.FLYING) {
       // account missing flying packets
       timerData.timerBalance += 200;
-      player.sendMessage("Flying packet -> +200");
-    } else {*/
+    } else {
       timerData.timerBalance += 10;
-//    }
+    }
 
     int allowedLagInSeconds = trustFactorSetting("buffer-size", player);
     int packetLimit = allowedLagInSeconds * -(20 * 10);
@@ -83,6 +78,8 @@ public final class Timer extends IntaveMetaCheck<Timer.TimerData> {
       timerData.timerBalance += adder;
     }
 
+//    player.sendMessage(String.valueOf(timerData.timerBalance));
+
     if(timerData.timerBalance > 10) {
       String balanceAsString = MathHelper.formatDouble(timerData.timerBalance / 10, 2);
       if (plugin.retributionService().processViolation(player, 0.5, "Timer", "moved too frequently", balanceAsString + " packets ahead")) {
@@ -92,9 +89,11 @@ public final class Timer extends IntaveMetaCheck<Timer.TimerData> {
         if(timerData.timerBalance > 50) {
           event.setCancelled(true);
         }
-//        timerData.flagTick = true;
+        // packet removed
+        timerData.timerBalance -= 10.0;
       }
-      timerData.timerBalance -= 12.5;
+      // leniency
+      timerData.timerBalance -= 1;
     }
   }
 

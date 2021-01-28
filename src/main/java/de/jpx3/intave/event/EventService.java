@@ -1,5 +1,6 @@
 package de.jpx3.intave.event;
 
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
@@ -9,6 +10,8 @@ import de.jpx3.intave.event.service.MovementEmulationEngine;
 import de.jpx3.intave.event.service.TransactionFeedbackService;
 import de.jpx3.intave.event.service.entity.ClientSideEntityService;
 import de.jpx3.intave.permission.PermissionCheck;
+import de.jpx3.intave.reflect.caller.CallerResolver;
+import de.jpx3.intave.reflect.caller.PluginInvocation;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.DurationTranslator;
 import de.jpx3.intave.update.VersionInformation;
@@ -17,6 +20,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 
 public final class EventService implements BukkitEventSubscriber {
   private final IntavePlugin plugin;
@@ -67,6 +71,15 @@ public final class EventService implements BukkitEventSubscriber {
         sendPrefixedMessage(ChatColor.RED + "This server is running an outdated version of Intave ("+durationAsString+" old)", player);
         sendPrefixedMessage(ChatColor.RED + "I hope you know why updating your *security* software might be important.", player);
       }
+    }
+  }
+
+  @BukkitEventSubscription
+  public void on(PlayerTeleportEvent event) {
+    if(IntaveControl.DEBUG_TELEPORT_CAUSE_AND_CAUSER) {
+      PluginInvocation pluginInvocation = CallerResolver.callerPluginInfo();
+      String pluginClass = pluginInvocation == null ? "no other plugin" : pluginInvocation.className();
+      event.getPlayer().sendMessage("Teleport " + event.getCause() + " " + event.getTo() + " by " + pluginClass);
     }
   }
 

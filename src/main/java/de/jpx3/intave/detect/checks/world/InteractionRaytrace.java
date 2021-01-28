@@ -166,16 +166,16 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     event.setCancelled(true);
   }
 
-  @PacketSubscription(
-    priority = ListenerPriority.HIGHEST, // last one to work with position
-    packets = {
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "LOOK"),
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "FLYING"),
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION"),
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION_LOOK")
-    }
-  )
-  public void receivePositionUpdate(PacketEvent event) {
+//  @PacketSubscription(
+//    priority = ListenerPriority.HIGHEST, // last one to work with position
+//    packets = {
+//      @PacketDescriptor(sender = Sender.CLIENT, packetName = "LOOK"),
+//      @PacketDescriptor(sender = Sender.CLIENT, packetName = "FLYING"),
+//      @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION"),
+//      @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION_LOOK")
+//    }
+//  )
+  public void receiveMovement(PacketEvent event) {
     Player player = event.getPlayer();
     World world = player.getWorld();
     User user = userOf(player);
@@ -186,6 +186,7 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     if (interactionList.isEmpty()) {
       return;
     }
+//    player.sendMessage("A");
 
     Location playerLocation = new Location(world, movementData.lastPositionX, movementData.lastPositionY, movementData.lastPositionZ);
     playerLocation.setYaw(movementData.rotationYaw);
@@ -201,6 +202,8 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
       processTraceReport(interaction, raycastResult, raycastResultmdf, false);
     }
     interactionList.clear();
+
+//    player.sendMessage("B");
   }
 
   private void processTraceReport(
@@ -474,6 +477,7 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
   }
 
   private void receiveExcludedPacket(Player player, PacketContainer packet) {
+//    player.sendMessage("Packet wire");
     try {
       userOf(player).ignoreNextPacket();
       ProtocolLibrary.getProtocolManager().recieveClientPacket(player, packet);

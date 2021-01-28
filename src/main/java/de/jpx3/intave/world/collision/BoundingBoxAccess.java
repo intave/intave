@@ -20,14 +20,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import static de.jpx3.intave.IntaveControl.DISABLE_BLOCK_CACHING_ENTIRELY;
 
 public final class BoundingBoxAccess {
-  private final static BoundingBoxResolver globalBoundingBoxResolver;
-  static {
-    String className = "de.jpx3.intave.world.collision.resolver.v1_8BoundingBoxResolver";
-    String acClass = "de.jpx3.intave.world.collision.resolver.ac.v1_8AlwaysCollidingBoundingBox";
+  private static BoundingBoxResolver globalBoundingBoxResolver;
+
+  public static void setup() {
+    String className = "de.jpx3.intave.world.collision.resolver.v8BoundingBoxResolver";
+    String acClass = "de.jpx3.intave.world.collision.resolver.ac.v8AlwaysCollidingBoundingBox";
 
     if(ProtocolLibAdapter.COMBAT_UPDATE.atOrAbove()) {
-      className = "de.jpx3.intave.world.collision.resolver.v1_9BoundingBoxResolver";
-      acClass = "de.jpx3.intave.world.collision.resolver.ac.v1_9AlwaysCollidingBoundingBox";
+      className = "de.jpx3.intave.world.collision.resolver.v9BoundingBoxResolver";
+      acClass = "de.jpx3.intave.world.collision.resolver.ac.v9AlwaysCollidingBoundingBox";
     }
 
     PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), acClass);
@@ -165,6 +166,32 @@ public final class BoundingBoxAccess {
     } else {
       globalReplacements.put(new Location(world, posX, posY, posZ), boundingBoxes);
     }
+  }
+
+  public boolean currentlyInOverride(int posX, int posY, int posZ) {
+    int chunkX = this.chunkXPos;
+    int chunkZ = this.chunkZPos;
+    boolean useLocalList = posX >= chunkX && posZ >= chunkZ && chunkX + 16 > posX && chunkZ + 16 > posZ;
+
+    if(useLocalList) {
+      byte dx = (byte) (chunkXPos - posX), dz = (byte) (chunkZPos - posZ);
+      int blockPositionKey = (posY & 0x1FF) << 16 | (dx & 0x0FF) << 8 | (dz & 0x0FF);
+      // local replacements (fast access)
+      if(!localReplacements.isEmpty()) {
+        List<WrappedAxisAlignedBB> replacementBlock = localReplacements.get(blockPositionKey);
+        return replacementBlock != null;
+      }
+    } else {
+      // global replacements (escape current-chunk constrain)
+      if(!globalReplacements.isEmpty()) {
+        for (Location location : globalReplacements.keySet()) {
+          if(location.getX() == posX && location.getZ() == posZ && location.getY() == posY) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   public List<WrappedAxisAlignedBB> constructBlock(World world, int posX, int posY, int posZ, int typeId, int blockState) {

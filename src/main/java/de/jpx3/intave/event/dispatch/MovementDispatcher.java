@@ -8,6 +8,8 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.detect.EventProcessor;
 import de.jpx3.intave.detect.checks.movement.Physics;
+import de.jpx3.intave.detect.checks.movement.Timer;
+import de.jpx3.intave.detect.checks.world.InteractionRaytrace;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.event.packet.*;
 import de.jpx3.intave.reflect.ReflectiveAccess;
@@ -40,6 +42,8 @@ public final class MovementDispatcher implements EventProcessor {
 
   private final IntavePlugin plugin;
   private final Physics physicsCheck;
+  private final InteractionRaytrace interactionRaytraceCheck;
+  private final Timer timerCheck;
   private MethodHandle fallDamageInvokeMethod;
 
   public MovementDispatcher(IntavePlugin plugin) {
@@ -47,6 +51,8 @@ public final class MovementDispatcher implements EventProcessor {
     this.plugin.packetSubscriptionLinker().linkSubscriptionsIn(this);
     this.plugin.eventLinker().registerEventsIn(this);
     this.physicsCheck = plugin.checkService().searchCheck(Physics.class);
+    this.interactionRaytraceCheck = plugin.checkService().searchCheck(InteractionRaytrace.class);
+    this.timerCheck = plugin.checkService().searchCheck(Timer.class);
     linkTeleportObserver(plugin);
     linkFallDamageInvokeMethod();
   }
@@ -215,6 +221,8 @@ public final class MovementDispatcher implements EventProcessor {
     movementData.updateMovement(packet, hasMovement, hasRotation);
     teleportPositionObserver.receiveMovement(event);
 
+    timerCheck.receiveMovement(event, movementData.isTeleportConfirmationPacket);
+
     if (movementData.awaitTeleport) {
       event.setCancelled(true);
       return;
@@ -252,7 +260,10 @@ public final class MovementDispatcher implements EventProcessor {
       return;
     }
 
+
     if (!movementData.isTeleportConfirmationPacket) {
+      interactionRaytraceCheck.receiveMovement(event);
+
       physicsCheck.receiveMovement(user, hasMovement);
     }
     if (!vehicleMove) {

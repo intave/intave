@@ -10,7 +10,8 @@ import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-public final class LegacyBlockAccessor implements BlockAccessor {
+@PatchyAutoTranslation
+public final class v8BlockAccessor implements BlockAccessor {
   @Override
   @PatchyAutoTranslation
   public float blockDamage(Player player, ItemStack itemInHand, BlockPosition blockPosition) {

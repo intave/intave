@@ -1,5 +1,6 @@
 package de.jpx3.intave.world.block;
 
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.patchy.PatchyLoadingInjector;
@@ -16,12 +17,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class BlockDataAccess {
-  private static final BlockAccessor blockAccessor;
+  private static BlockAccessor blockAccessor;
 
   private final static List<Material> clickableMaterials = new ArrayList<>();
 
-  static {
-    String resolverName = "de.jpx3.intave.world.block.LegacyBlockAccessor";
+  public static void setup() {
+    String resolverName = "de.jpx3.intave.world.block.v8BlockAccessor";
+
+    if(MinecraftVersion.COMBAT_UPDATE.atOrAbove()) {
+      resolverName = "de.jpx3.intave.world.block.v9BlockAccessor";
+    }
 
     ClassLoader classLoader = IntavePlugin.class.getClassLoader();
     PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, resolverName);
@@ -48,14 +53,24 @@ public final class BlockDataAccess {
       throw new ReflectionFailureException(exception);
     }
 
-    Class<?> world = ReflectiveAccess.lookupServerClass("World");
-    Class<?> blockPosition = ReflectiveAccess.lookupServerClass("BlockPosition");
-    Class<?> iBlockData = ReflectiveAccess.lookupServerClass("IBlockData");
-    Class<?> entityHuman = ReflectiveAccess.lookupServerClass("EntityHuman");
-    Class<?> enumDirection = ReflectiveAccess.lookupServerClass("EnumDirection");
-    Class<Float> floatClass = Float.TYPE;
+    /*
 
-    // TODO: 01/10/21 check version availability
+    class Block
+
+    1.8   public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman,                                                   EnumDirection enumdirection, float f, float f1, float f2)
+    1.9   public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumHand enumhand, @Nullable ItemStack itemstack, EnumDirection enumdirection, float f, float f1, float f2)
+    1.10  public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumHand enumhand, @Nullable ItemStack itemstack, EnumDirection enumdirection, float f, float f1, float f2)
+    1.11  public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumHand enumhand,                                EnumDirection enumdirection, float f, float f1, float f2)
+    1.12  public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman, EnumHand enumhand,                                EnumDirection enumdirection, float f, float f1, float f2)
+    1.13  public boolean interact(IBlockData iblockdata, World world, BlockPosition blockposition, EntityHuman entityhuman, EnumHand enumhand, EnumDirection enumdirection, float f, float f1, float f2) @D
+    1.14  public boolean interact(IBlockData iblockdata, World world, BlockPosition blockposition, EntityHuman entityhuman, EnumHand enumhand, MovingObjectPositionBlock movingobjectpositionblock) @D
+    1.15  public EnumInteractionResult interact(IBlockData iblockdata, World world, BlockPosition blockposition, EntityHuman entityhuman, EnumHand enumhand, MovingObjectPositionBlock movingobjectpositionblock) @D
+
+    class BlockBase
+
+    1.16  public EnumInteractionResult interact(IBlockData iblockdata, World world, BlockPosition blockposition, EntityHuman entityhuman, EnumHand enumhand, MovingObjectPositionBlock movingobjectpositionblock) @D
+
+     */
 
     try {
       for (int i = 0; i < 64000; i++) {
@@ -67,11 +82,17 @@ public final class BlockDataAccess {
         if(block == null) {
           continue;
         }
-        if(block.getClass().getMethod("interact", world, blockPosition, iBlockData, entityHuman, enumDirection, floatClass, floatClass, floatClass).getDeclaringClass() != blockClass) {
-          clickableMaterials.add(material);
+        Method[] methods = block.getClass().getDeclaredMethods();
+        for (Method method : methods) {
+          if(method.getName().equalsIgnoreCase("interact")) {
+            String declaringClassName = method.getDeclaringClass().getSimpleName();
+            if(!declaringClassName.equals("Block") && !declaringClassName.equals("BlockBase")) {
+              clickableMaterials.add(material);
+            }
+          }
         }
       }
-    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+    } catch (IllegalAccessException | InvocationTargetException e) {
       throw new IllegalStateException(e);
     }
   }

@@ -1,9 +1,5 @@
 package de.jpx3.intave;
 
-import de.jpx3.intave.access.IntaveAccess;
-import de.jpx3.intave.access.IntaveInternalAccess;
-import de.jpx3.intave.access.PlayerAccess;
-import de.jpx3.intave.access.ServerAccess;
 import de.jpx3.intave.adapter.ComponentLoader;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.adapter.ViaVersionAdapter;
@@ -35,13 +31,14 @@ import de.jpx3.intave.trustfactor.TrustFactorService;
 import de.jpx3.intave.update.VersionInformation;
 import de.jpx3.intave.update.VersionList;
 import de.jpx3.intave.world.BlockAccessor;
+import de.jpx3.intave.world.block.BlockDataAccess;
+import de.jpx3.intave.world.collision.BoundingBoxAccess;
 import de.jpx3.intave.world.collision.patches.BoundingBoxPatcher;
 import de.jpx3.intave.world.permission.InteractionPermissionService;
 import de.jpx3.intave.world.raytrace.Raytracer;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.ServicePriority;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.plugin.RegisteredListener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -66,7 +63,6 @@ public final class IntavePlugin extends JavaPlugin {
   static {
     // stage 1
 
-
   }
 
   private IntaveLogger logger;
@@ -86,32 +82,16 @@ public final class IntavePlugin extends JavaPlugin {
   private VersionList versionList;
   private Metrics metrics;
 
-
   public IntavePlugin() {
     // stage 2
+    stage2();
+  }
+
+  @Native
+  public void stage2() {
     singletonInstance = this;
     version = getDescription().getVersion();
     this.logger = new IntaveLogger(this);
-  }
-
-  public static String version() {
-    return version;
-  }
-
-  public static String prefix() {
-    return prefix;
-  }
-
-  public static boolean isInOfflineMode() {
-    return offlineMode;
-  }
-
-  public static String defaultColor() {
-    return defaultColor;
-  }
-
-  public static IntavePlugin singletonInstance() {
-    return singletonInstance;
   }
 
   @Native
@@ -121,7 +101,6 @@ public final class IntavePlugin extends JavaPlugin {
 
     // event links must be available throughout the onEnable call
     eventLinker = new BukkitEventLinker(this);
-
   }
 
   @Native
@@ -131,24 +110,6 @@ public final class IntavePlugin extends JavaPlugin {
     // stage 4
 
     prefix = ChatColor.translateAlternateColorCodes('&', prefix);
-
-    Bukkit.getServicesManager().register(IntaveAccess.class, new IntaveAccess() {
-      @Override
-      public PlayerAccess player(Player player) {
-        return null;
-      }
-
-      @Override
-      public IntaveInternalAccess internal() {
-        return null;
-      }
-
-      @Override
-      public ServerAccess server() {
-        return null;
-      }
-    }, this, ServicePriority.Normal);
-
 
     try {
       SinusCache.setup();
@@ -173,7 +134,9 @@ public final class IntavePlugin extends JavaPlugin {
 
       Raytracer.setup();
       BlockAccessor.setup();
+      BlockDataAccess.setup();
       ViaVersionAdapter.setup();
+      BoundingBoxAccess.setup();
       InventoryUseItemHelper.setup();
       BoundingBoxPatcher.setup();
       // stage 7
@@ -475,6 +438,15 @@ public final class IntavePlugin extends JavaPlugin {
       return;
     }
 
+    Synchronizer.synchronize(() -> {
+      for (RegisteredListener registeredListener : BlockPlaceEvent.getHandlerList().getRegisteredListeners()) {
+        if(registeredListener.isIgnoringCancelled() && registeredListener.getPlugin() != this) {
+          logger.info("WARNING: " + registeredListener.getPlugin().getName() + " in class " + registeredListener.getListener().getClass().getCanonicalName() + " has registered a BlockPlaceEvent listener ignoring cancels");
+          logger.info("This could cause severe issues for your world atm when using some sort of custom block-reset mechanic");
+        }
+      }
+    });
+
     packetSubscriptionLinker.refreshInternalSubscriptions();
     logger.info("Intave booted successfully");
   }
@@ -545,5 +517,25 @@ public final class IntavePlugin extends JavaPlugin {
 
   public VersionList versionList() {
     return versionList;
+  }
+
+  public static String version() {
+    return version;
+  }
+
+  public static String prefix() {
+    return prefix;
+  }
+
+  public static boolean isInOfflineMode() {
+    return offlineMode;
+  }
+
+  public static String defaultColor() {
+    return defaultColor;
+  }
+
+  public static IntavePlugin singletonInstance() {
+    return singletonInstance;
   }
 }

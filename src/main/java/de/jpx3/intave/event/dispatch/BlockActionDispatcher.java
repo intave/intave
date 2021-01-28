@@ -143,8 +143,8 @@ public final class BlockActionDispatcher implements EventProcessor {
 
       if(access) {
 //        Synchronizer.synchronize(() -> {
-//          player.sendMessage("Internal place emulation at " + MathHelper.formatPosition(blockPlacementLocation));
 //        });
+//        player.sendMessage("Internal place emulation at " + MathHelper.formatPosition(blockPlacementLocation));
 
         BoundingBoxAccess boundingBoxAccess = UserRepository.userOf(player).boundingBoxAccess();
         boundingBoxAccess.invalidate(blockX, blockY, blockZ);
@@ -245,11 +245,11 @@ public final class BlockActionDispatcher implements EventProcessor {
 
       // add to future bounding boxes
       BoundingBoxAccess boundingBoxAccess = UserRepository.userOf(player).boundingBoxAccess();
-      boundingBoxAccess.invalidate(blockX, blockY, blockZ);
       boundingBoxAccess.override(world, blockX, blockY, blockZ, 0, (byte) 0);
+      boundingBoxAccess.invalidate(blockX, blockY, blockZ);
 
       Synchronizer.synchronizeDelayed(() -> {
-        boundingBoxAccess.invalidateOverride(world, blockX, blockY, blockZ);
+//        boundingBoxAccess.invalidateOverride(world, blockX, blockY, blockZ);
         boundingBoxAccess.invalidate(blockX, blockY, blockZ);
       }, 2);
     } else {
