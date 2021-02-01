@@ -17,10 +17,7 @@ import de.jpx3.intave.event.packet.Sender;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.tools.wrapper.WrappedMovingObjectPosition;
 import de.jpx3.intave.tools.wrapper.WrappedVector;
-import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserCustomCheckMeta;
-import de.jpx3.intave.user.UserMetaClientData;
-import de.jpx3.intave.user.UserMetaMovementData;
+import de.jpx3.intave.user.*;
 import de.jpx3.intave.world.raytrace.Raytracer;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -52,7 +49,6 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
     }
   }
 
-
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packets = {
@@ -60,18 +56,23 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
     }
   )
   public void blockPlace(PacketEvent event) {
-    if(event.isCancelled()) {
-      return;
-    }
     Player player = event.getPlayer();
     User user = userOf(player);
     AirClickLimitHeuristicMeta meta = metaOf(user);
+    UserMetaInventoryData inventoryData = user.meta().inventoryData();
 
     // TODO: 01/28/21 Warning by Richy: The block-place is empty for native server versions from 1.9! Use the USE_ITEM packet instead
     BlockPosition blockPosition = event.getPacket().getBlockPositionModifier().read(0);
 
-    if(blockPosition.getX() != -1 && blockPosition.getY() != -1 && blockPosition.getZ() != -1) {
-      meta.blockPlacedThisTick = true;
+//    player.sendMessage("" + blockPosition);
+
+    if(blockPosition != null) {
+      if (blockPosition.getX() != -1 && blockPosition.getY() != -1 && blockPosition.getZ() != -1 && inventoryData.heldItem() != null) {
+        meta.blockPlacedThisTick = true;
+      } else {
+        meta.blockPlacedThisTick = false;
+        meta.usedItemThisTick = true;
+      }
     }
   }
 
@@ -118,37 +119,10 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
     User user = userOf(player);
     AirClickLimitHeuristicMeta meta = metaOf(user);
 
-    if(meta.getRealClicksPerTick() == 0) {
+    if(meta.getRealClicksPerTick() == 0 || meta.attackedThisTick) {
       meta.isBreakingServerSide = false;
       meta.isBreakingClientSide = false;
     }
-
-//    if(meta.startBreakThisTick && meta.getRealClicksPerTick() != 2 && !meta.stopBreakThisTick) {
-//      World world = event.getPlayer().getWorld();
-//      UserMetaMovementData movementData = user.meta().movementData();
-//
-//      Location playerLocation = new Location(world,
-//        movementData.positionX,
-//        movementData.positionY,
-//        movementData.positionZ);
-//
-//      playerLocation.setYaw(movementData.lastRotationYaw);
-//      playerLocation.setPitch(movementData.lastRotationPitch);
-//
-//      WrappedMovingObjectPosition raycastResult = Raytracer.blockRayTrace(player, playerLocation);
-//      if (raycastResult != null && raycastResult.hitVec != WrappedVector.ZERO) {
-//      }else{
-//        player.sendMessage("noweeeee " + raycastResult);
-//      }
-//
-////      player.sendMessage("missing swing packet on start break block ");
-////      parentCheck().saveAnomaly(player,
-////        Anomaly.anomalyOf(
-////          Confidence.VERY_LIKELY,
-////          Anomaly.Type.AUTOCLICKER,
-////          "missing swing packet on start break block", Anomaly.AnomalyOption.DELAY_128s | Anomaly.AnomalyOption.LIMIT_1
-////        ));
-//    }
 
     if(meta.currentDiggedBlock != null && !meta.isBreakingClientSide && meta.getRealClicksPerTick() > 0 && meta.getRealClicksOfLastTick() == 0) {
       World world = event.getPlayer().getWorld();
@@ -167,19 +141,25 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
       }
     }
 
+    String out = "";
+
     if(meta.attackedThisTick) {
+      out += "| attackedThisTick ";
       meta.removeClickFromTickArray();
     }
 
     if(meta.blockPlacedThisTick) {
+      out += "| blockPlacedThisTick ";
       meta.removeClickFromTickArray();
     }
 
     if(meta.startBreakThisTick && !meta.stopBreakThisTick) {
+      out += "| start break this tick";
       meta.removeClickFromTickArray();
     }
 
-    if(meta.isBreakingClientSide || meta.isBreakingServerSide) {
+    if((meta.isBreakingClientSide || meta.isBreakingServerSide) && !(meta.blockPlacedThisTick || meta.usedItemThisTick)) {
+      out += "| break client or server side ";
       meta.removeClickFromTickArray();
     }
 
@@ -188,7 +168,8 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
       sum += clickOfTick;
     }
 
-//    player.sendMessage("cps: " + sum + " " + meta.startBreakThisTick);
+//    if(sum != 0)
+//    player.sendMessage("cps: " + sum + out);
 
     if(sum > 13 && user.meta().clientData().protocolVersion() <= UserMetaClientData.PROTOCOL_VERSION_BOUNTIFUL_UPDATE) {
       parentCheck().saveAnomaly(player,
@@ -210,6 +191,7 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
     meta.stopBreakThisTick = false;
     meta.blockPlacedThisTick = false;
     meta.attackedThisTick = false;
+    meta.usedItemThisTick = false;
   }
 
   @PacketSubscription(
@@ -242,19 +224,19 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
   }
 
   public static class AirClickLimitHeuristicMeta extends UserCustomCheckMeta {
-    public boolean startBreakThisTick;
-
-    public boolean stopBreakThisTick;
-    public boolean blockPlacedThisTick;
-    public boolean attackedThisTick;
-    boolean isBreakingClientSide;
-    boolean isBreakingServerSide;
+    private boolean startBreakThisTick;
+    private boolean stopBreakThisTick;
+    private boolean blockPlacedThisTick;
+    private boolean usedItemThisTick;
+    private boolean attackedThisTick;
+    private boolean isBreakingClientSide;
+    private boolean isBreakingServerSide;
 
     private int tickIndex = 0;
     private int lastIndex;
     private int[] realTickArray = new int[20];
     private int[] tickArray = new int[20];
-    BlockPosition currentDiggedBlock;
+    private BlockPosition currentDiggedBlock;
 
     private void addClickToTick() {
       realTickArray[tickIndex]++;

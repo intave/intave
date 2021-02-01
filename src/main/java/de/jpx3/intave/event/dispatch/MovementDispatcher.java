@@ -346,15 +346,21 @@ public final class MovementDispatcher implements EventProcessor {
     }
 
     if (movementData.onGround) {
-      try {
-        if (movementData.artificialFallDistance > 3.4) {
+      if (movementData.artificialFallDistance > 3.4) {
+        float fallDistance = movementData.artificialFallDistance;
+
+        Synchronizer.synchronize(() -> {
+          Object playerHandle = user.playerHandle();
           movementData.allowFallDamage = true;
-          fallDamageInvokeMethod.invoke(user.playerHandle(), movementData.artificialFallDistance, 1.0f);
+          try {
+            fallDamageInvokeMethod.invoke(playerHandle, fallDistance, 1.0f);
+          } catch (Throwable throwable) {
+            throwable.printStackTrace();
+          }
           movementData.allowFallDamage = false;
-        }
-      } catch (Throwable throwable) {
-        throwable.printStackTrace();
+        });
       }
+
       movementData.artificialFallDistance = 0;
     }
 

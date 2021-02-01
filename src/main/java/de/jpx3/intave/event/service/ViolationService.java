@@ -39,6 +39,10 @@ public final class ViolationService {
 
     IntaveCheck check = plugin.checkService().searchCheck(checkName);
 
+    if(!check.enabled()) {
+      return false;
+    }
+
     double oldVl = violationMapOf(detectedPlayer).computeIfAbsent(checkName, s -> new HashMap<>()).computeIfAbsent(thresholdsKey, s -> 0d);
     double newVl = MathHelper.minmax(0, oldVl + vl, 1000);
     double preventionActivation = resolvePreventionActivationThreshold(checkName, detectedPlayer);

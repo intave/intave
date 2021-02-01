@@ -3,8 +3,10 @@ package de.jpx3.intave.world;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
+import de.jpx3.intave.user.User;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.event.world.WorldLoadEvent;
@@ -35,6 +37,13 @@ public final class BlockAccessor implements BukkitEventSubscriber {
       return blockAccess.getBlockAt(x, y, z);
     }
     return invalidRequestBlockMap.get(blockAccess);
+  }
+
+  public static Material cacheAppliedTypeAccess(User user, World blockAccess, int x, int y, int z) {
+    if (isInLoadedChunk(blockAccess, x, z) || Bukkit.isPrimaryThread()) {
+      return user.boundingBoxAccess().resolveType(blockAccess.getChunkAt(x >> 4, z >> 4), x, y, z);
+    }
+    return invalidRequestBlockMap.get(blockAccess).getType();
   }
 
   public static Block blockAccess(World blockAccess, double x, double y, double z) {

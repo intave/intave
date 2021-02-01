@@ -7,12 +7,8 @@ public final class IntaveControl {
   public final static boolean DEBUG_EMULATION = false;
   public final static boolean DEBUG_HEURISTICS = false;
   public final static boolean OUTPUT_PATCHY_RESULT = false;
-
   public final static boolean DEBUG_TELEPORT_CAUSE_AND_CAUSER = false;
-
   public final static boolean DISABLE_BLOCK_CACHING_ENTIRELY = false;
-
   public final static boolean GOMME_MODE = false;
-
   public final static boolean DISABLE_LICENSE_CHECK = true;
 }

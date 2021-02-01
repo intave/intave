@@ -9,6 +9,7 @@ import de.jpx3.intave.world.BlockAccessor;
 import de.jpx3.intave.world.collision.patches.BoundingBoxPatcher;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
@@ -46,10 +47,10 @@ public final class BoundingBoxAccess {
   }
 
   private final Player player;
-  private final Map<Integer, List<WrappedAxisAlignedBB>> blockCache = new ConcurrentHashMap<>(4096);
+  private final Map<Integer, CacheEntry> blockCache = new ConcurrentHashMap<>(4096);
 
-  private final Map<Integer, List<WrappedAxisAlignedBB>> localReplacements = new ConcurrentHashMap<>(16);
-  private final Map<Location, List<WrappedAxisAlignedBB>> globalReplacements = new ConcurrentHashMap<>(64);
+  private final Map<Integer, CacheEntry> localReplacements = new ConcurrentHashMap<>(16);
+  private final Map<Location, CacheEntry> globalReplacements = new ConcurrentHashMap<>(64);
 
   private WeakReference<Chunk> activeChunk = new WeakReference<>(null);
   private int chunkXPos;
@@ -78,9 +79,9 @@ public final class BoundingBoxAccess {
 
     // local replacements (fast access)
     if(!localReplacements.isEmpty()) {
-      List<WrappedAxisAlignedBB> replacementBlock = localReplacements.get(blockPositionKey);
-      if(replacementBlock != null) {
-        return replacementBlock;
+      CacheEntry localReplacement = localReplacements.get(blockPositionKey);
+      if(localReplacement != null) {
+        return localReplacement.boundingBoxes;
       }
     }
 
@@ -88,32 +89,84 @@ public final class BoundingBoxAccess {
     if(!globalReplacements.isEmpty()) {
       for (Location location : globalReplacements.keySet()) {
         if(location.getX() == posX && location.getZ() == posZ && location.getY() == posY) {
-          return globalReplacements.get(location);
+          return globalReplacements.get(location).boundingBoxes;
         }
       }
     }
 
-    List<WrappedAxisAlignedBB> boundingBoxes = blockCache.get(blockPositionKey);
-    if(boundingBoxes == null) {
+    CacheEntry cacheEntry = blockCache.get(blockPositionKey);
+    if(cacheEntry == null) {
+      List<WrappedAxisAlignedBB> boundingBoxes;
       World world = chunk.getWorld();
       boundingBoxes = BoundingBoxPatcher.patch(
         world, player,
         BlockAccessor.blockAccess(world, posX, posY, posZ),
         globalBoundingBoxResolver.resolve(world, posX, posY, posZ)
       );
-//      player.sendMessage(String.valueOf(boundingBoxes));
+      cacheEntry = new CacheEntry(boundingBoxes, BlockAccessor.blockAccess(chunk.getWorld(), posX, posY, posZ).getType());
       if(!DISABLE_BLOCK_CACHING_ENTIRELY) {
-        blockCache.put(blockPositionKey, boundingBoxes);
+        blockCache.put(blockPositionKey, cacheEntry);
       }
     }
-    return boundingBoxes;
+    return cacheEntry.boundingBoxes;
+  }
+
+  public Material resolveType(Chunk chunk, int posX, int posY, int posZ) {
+    if(posY < 0 || 255 < posY) {
+      posY = 256;
+    }
+
+    Chunk chunkX = activeChunk.get();
+    if(chunkX == null || (chunk.getX() != chunkX.getX() || chunk.getZ() != chunkX.getZ())) {
+      translateLocalReplacements(chunk.getWorld());
+      activeChunk = new WeakReference<>(chunk);
+      chunkXPos = chunk.getX() << 4;
+      chunkZPos = chunk.getZ() << 4;
+      blockCache.clear();
+    }
+
+    byte dx = (byte) (chunkXPos - posX), dz = (byte) (chunkZPos - posZ);
+    int blockPositionKey = (posY & 0x1FF) << 16 | (dx & 0x0FF) << 8 | (dz & 0x0FF);
+
+    // local replacements (fast access)
+    if(!localReplacements.isEmpty()) {
+      CacheEntry localReplacement = localReplacements.get(blockPositionKey);
+      if(localReplacement != null) {
+        return localReplacement.type;
+      }
+    }
+
+    // global replacements (escape current-chunk constrain)
+    if(!globalReplacements.isEmpty()) {
+      for (Location location : globalReplacements.keySet()) {
+        if(location.getX() == posX && location.getZ() == posZ && location.getY() == posY) {
+          return globalReplacements.get(location).type;
+        }
+      }
+    }
+
+    CacheEntry cacheEntry = blockCache.get(blockPositionKey);
+    if(cacheEntry == null) {
+      List<WrappedAxisAlignedBB> boundingBoxes;
+      World world = chunk.getWorld();
+      boundingBoxes = BoundingBoxPatcher.patch(
+        world, player,
+        BlockAccessor.blockAccess(world, posX, posY, posZ),
+        globalBoundingBoxResolver.resolve(world, posX, posY, posZ)
+      );
+      cacheEntry = new CacheEntry(boundingBoxes, BlockAccessor.blockAccess(chunk.getWorld(), posX, posY, posZ).getType());
+      if(!DISABLE_BLOCK_CACHING_ENTIRELY) {
+        blockCache.put(blockPositionKey, cacheEntry);
+      }
+    }
+    return cacheEntry.type;
   }
 
   private void translateLocalReplacements(World world) {
     if(localReplacements.isEmpty()) {
       return;
     }
-    for (Map.Entry<Integer, List<WrappedAxisAlignedBB>> entry : localReplacements.entrySet()) {
+    for (Map.Entry<Integer, CacheEntry> entry : localReplacements.entrySet()) {
       int blockPositionKey = entry.getKey();
       int posY = (blockPositionKey >> 16) & 0x1FF;
       int posX = chunkXPos + ((blockPositionKey >> 8) & 0xFF);
@@ -159,12 +212,13 @@ public final class BoundingBoxAccess {
     int chunkX = this.chunkXPos;
     int chunkZ = this.chunkZPos;
     boolean useLocalList = posX >= chunkX && posZ >= chunkZ && chunkX + 16 > posX && chunkZ + 16 > posZ;
+    CacheEntry cacheEntry = new CacheEntry(boundingBoxes, Material.getMaterial(typeId));
     if(useLocalList) {
       byte dx = (byte) (chunkXPos - posX), dz = (byte) (chunkZPos - posZ);
       int blockPositionKey = (posY & 0x1FF) << 16 | (dx & 0x0FF) << 8 | (dz & 0x0FF);
-      localReplacements.put(blockPositionKey, boundingBoxes);
+      localReplacements.put(blockPositionKey, cacheEntry);
     } else {
-      globalReplacements.put(new Location(world, posX, posY, posZ), boundingBoxes);
+      globalReplacements.put(new Location(world, posX, posY, posZ), cacheEntry);
     }
   }
 
@@ -178,8 +232,7 @@ public final class BoundingBoxAccess {
       int blockPositionKey = (posY & 0x1FF) << 16 | (dx & 0x0FF) << 8 | (dz & 0x0FF);
       // local replacements (fast access)
       if(!localReplacements.isEmpty()) {
-        List<WrappedAxisAlignedBB> replacementBlock = localReplacements.get(blockPositionKey);
-        return replacementBlock != null;
+        return localReplacements.get(blockPositionKey) != null;
       }
     } else {
       // global replacements (escape current-chunk constrain)
@@ -195,14 +248,12 @@ public final class BoundingBoxAccess {
   }
 
   public List<WrappedAxisAlignedBB> constructBlock(World world, int posX, int posY, int posZ, int typeId, int blockState) {
-    List<WrappedAxisAlignedBB> patch = BoundingBoxPatcher.patch(
+    return BoundingBoxPatcher.patch(
       world, player,
       posX, posY, posZ,
       typeId, blockState,
       globalBoundingBoxResolver.resolve(world, posX, posY, posZ, typeId, blockState)
     );
-//    Bukkit.broadcastMessage("Constructing ")
-    return patch;
   }
 
   public void invalidateOverride(World world, int posX, int posY, int posZ) {
@@ -215,5 +266,15 @@ public final class BoundingBoxAccess {
       localReplacements.remove(blockPositionKey);
     }
     globalReplacements.remove(new Location(world, posX, posY, posZ));
+  }
+
+  public static class CacheEntry {
+    private final List<WrappedAxisAlignedBB> boundingBoxes;
+    private final Material type;
+
+    public CacheEntry(List<WrappedAxisAlignedBB> boundingBoxes, Material type) {
+      this.boundingBoxes = boundingBoxes;
+      this.type = type;
+    }
   }
 }

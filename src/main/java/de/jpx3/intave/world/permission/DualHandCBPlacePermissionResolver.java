@@ -100,7 +100,6 @@ public final class DualHandCBPlacePermissionResolver implements BlockPlacePermis
     }
   }
 
-
   public static class PermissionCheckBlockPlaceEvent extends BlockPlaceEvent {
     public PermissionCheckBlockPlaceEvent(Block placedBlock, BlockState replacedBlockState, Block placedAgainst, ItemStack itemInHand, Player thePlayer, boolean canBuild, EquipmentSlot hand) {
       super(placedBlock, replacedBlockState, placedAgainst, itemInHand, thePlayer, canBuild, hand);

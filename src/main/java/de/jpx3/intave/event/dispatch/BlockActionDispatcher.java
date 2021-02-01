@@ -10,10 +10,12 @@ import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.detect.EventProcessor;
+import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
+import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.tools.wrapper.WrappedEnumDirection;
 import de.jpx3.intave.user.User;
@@ -27,6 +29,9 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -46,7 +51,6 @@ public final class BlockActionDispatcher implements EventProcessor {
     this.plugin.packetSubscriptionLinker().linkSubscriptionsIn(this);
     this.plugin.eventLinker().registerEventsIn(this);
   }
-
 
   @PacketSubscription(
     priority = ListenerPriority.LOW,
@@ -142,28 +146,18 @@ public final class BlockActionDispatcher implements EventProcessor {
         );
 
       if(access) {
-//        Synchronizer.synchronize(() -> {
-//        });
-//        player.sendMessage("Internal place emulation at " + MathHelper.formatPosition(blockPlacementLocation));
+        player.sendMessage("Internal place emulation at " + MathHelper.formatPosition(blockPlacementLocation) + " with " + Material.getMaterial(id));
 
         BoundingBoxAccess boundingBoxAccess = UserRepository.userOf(player).boundingBoxAccess();
-        boundingBoxAccess.invalidate(blockX, blockY, blockZ);
         boundingBoxAccess.override(world, blockX, blockY, blockZ, id, shape);
+//        boundingBoxAccess.invalidate(blockX, blockY, blockZ);
 
-        Synchronizer.synchronizeDelayed(() -> {
-//          Synchronizer.synchronize(() -> {
-//            player.sendMessage("Place emulation reverted");
-//          });
-          boundingBoxAccess.invalidate(blockX, blockY, blockZ);
-          boundingBoxAccess.invalidateOverride(world, blockX, blockY, blockZ);
-        }, 5);
       } else {
         event.setCancelled(true);
         refreshBlocksAround(player, blockPlacementLocation);
       }
     } else {
       if(clickedType == Material.WOODEN_DOOR) {
-
 
       } else if(clickedType == Material.TRAP_DOOR) {
         int data = clickedBlock.getData();
@@ -248,13 +242,39 @@ public final class BlockActionDispatcher implements EventProcessor {
       boundingBoxAccess.override(world, blockX, blockY, blockZ, 0, (byte) 0);
       boundingBoxAccess.invalidate(blockX, blockY, blockZ);
 
-      Synchronizer.synchronizeDelayed(() -> {
-//        boundingBoxAccess.invalidateOverride(world, blockX, blockY, blockZ);
-        boundingBoxAccess.invalidate(blockX, blockY, blockZ);
-      }, 2);
+//      Synchronizer.synchronizeDelayed(() -> {
+////        boundingBoxAccess.invalidateOverride(world, blockX, blockY, blockZ);
+//        boundingBoxAccess.invalidate(blockX, blockY, blockZ);
+//      }, 2);
     } else {
       refreshBlocksAround(player, blockBreakLocation);
       event.setCancelled(true);
+    }
+  }
+
+  @BukkitEventSubscription(priority = EventPriority.LOW, ignoreCancelled = true)
+  public void onPre(BlockPlaceEvent place) {
+    if(/*place.isCancelled() && */place.getClass().equals(BlockPlaceEvent.class)) {
+      Block block = place.getBlock();
+      Synchronizer.synchronizeDelayed(() -> {
+        BoundingBoxAccess boundingBoxAccess = UserRepository.userOf(place.getPlayer()).boundingBoxAccess();
+        boundingBoxAccess.invalidate(block.getX(), block.getY(), block.getZ());
+        boundingBoxAccess.invalidateOverride(block.getWorld(), block.getX(), block.getY(), block.getZ());
+        place.getPlayer().sendMessage("Reset place");
+      }, 2);
+    }
+  }
+
+  @BukkitEventSubscription(priority = EventPriority.LOW, ignoreCancelled = true)
+  public void onPre(BlockBreakEvent breeak) {
+    if(/*breeak.isCancelled() && */breeak.getClass().equals(BlockBreakEvent.class)) {
+      Block block = breeak.getBlock();
+      Synchronizer.synchronizeDelayed(() -> {
+        BoundingBoxAccess boundingBoxAccess = UserRepository.userOf(breeak.getPlayer()).boundingBoxAccess();
+        boundingBoxAccess.invalidate(block.getX(), block.getY(), block.getZ());
+        boundingBoxAccess.invalidateOverride(block.getWorld(), block.getX(), block.getY(), block.getZ());
+        breeak.getPlayer().sendMessage("Reset break");
+      }, 2);
     }
   }
 

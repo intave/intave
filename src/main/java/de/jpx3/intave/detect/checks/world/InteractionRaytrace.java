@@ -344,12 +344,14 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
             0,
             new BlockPosition(raycastLocation.getBlockX(), raycastLocation.getBlockY(), raycastLocation.getBlockZ())
           );
-          boundingBoxAccess.invalidate(targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
-          boundingBoxAccess.invalidateOverride(interaction.world, targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
-        } else {
-          boundingBoxAccess.invalidate(targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
+//          boundingBoxAccess.invalidate(targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
+//          boundingBoxAccess.invalidateOverride(interaction.world, targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
         }
         receiveExcludedPacket(player, packet);
+        Synchronizer.packetSynchronize(() -> {
+          boundingBoxAccess.invalidate(targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
+          boundingBoxAccess.invalidateOverride(interaction.world, targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
+        });
         if (canRefreshBlocks) {
           Synchronizer.synchronize(() -> refreshBlocksAround(player, targetLocation));
         }
@@ -359,16 +361,20 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
         if (canRefreshBlocks) {
           refreshBlocksAround(player, targetLocation);
         }
-        boundingBoxAccess.invalidateOverride(interaction.world, targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
+//        boundingBoxAccess.invalidateOverride(interaction.world, targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
       } else {
-        receiveExcludedPacket(player, interaction.thePacket);
+//        receiveExcludedPacket(player, interaction.thePacket);
       }
+      Synchronizer.packetSynchronize(() -> {
+        boundingBoxAccess.invalidate(targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
+        boundingBoxAccess.invalidateOverride(interaction.world, targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
+      });
     }
   }
 
   private void refreshBlocksAround(Player player, Location targetLocation) {
-    player.updateInventory();
     Synchronizer.synchronize(() -> {
+      player.updateInventory();
       refreshBlock(player, targetLocation);
       for (WrappedEnumDirection direction : WrappedEnumDirection.values()) {
         Location placedBlock = targetLocation.clone().add(direction.getDirectionVec().convertToBukkitVec());
