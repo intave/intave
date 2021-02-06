@@ -14,6 +14,7 @@ import org.bukkit.inventory.ItemStack;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public final class BlockDataAccess {
@@ -54,7 +55,6 @@ public final class BlockDataAccess {
     }
 
     /*
-
     class Block
 
     1.8   public boolean interact(World world, BlockPosition blockposition, IBlockData iblockdata, EntityHuman entityhuman,                                                   EnumDirection enumdirection, float f, float f1, float f2)
@@ -73,18 +73,21 @@ public final class BlockDataAccess {
      */
 
     try {
-      for (int i = 0; i < 64000; i++) {
+      for (int i = 0; i < 1000; i++) {
         Material material = Material.getMaterial(i);
         if(material == null) {
           continue;
         }
         Object block = getByIdMethod.invoke(null, i);
         if(block == null) {
+          System.out.println("No block fund for id " + i);
           continue;
         }
-        Method[] methods = block.getClass().getDeclaredMethods();
+
+        List<Method> methods = allMethodsIn(block.getClass());
         for (Method method : methods) {
-          if(method.getName().equalsIgnoreCase("interact")) {
+          String methodName = method.getName();
+          if(methodName.equalsIgnoreCase("interact")) {
             String declaringClassName = method.getDeclaringClass().getSimpleName();
             if(!declaringClassName.equals("Block") && !declaringClassName.equals("BlockBase")) {
               clickableMaterials.add(material);
@@ -95,6 +98,18 @@ public final class BlockDataAccess {
     } catch (IllegalAccessException | InvocationTargetException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  public static List<Method> allMethodsIn(Class<?> clazz) {
+    List<Method> methods = new ArrayList<>();
+    do {
+      Class<?> finalClazz = clazz;
+      Arrays.stream(clazz.getDeclaredMethods())
+        .filter(method -> method.getDeclaringClass() == finalClazz)
+        .forEach(methods::add);
+      clazz = clazz.getSuperclass();
+    } while (clazz != Object.class);
+    return methods;
   }
 
   public static boolean isClickable(Material type) {

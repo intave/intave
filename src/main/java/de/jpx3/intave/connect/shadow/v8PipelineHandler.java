@@ -73,7 +73,7 @@ public final class v8PipelineHandler extends ChannelInboundHandlerAdapter {
         boolean sprinting = data.readBoolean();
         int packetCounter = data.readInt();
 
-        MovementData movementData = new MovementData(
+        ShadowContext shadowContext = new ShadowContext(
           time,
           moveForward,
           moveStrafe,
@@ -84,7 +84,7 @@ public final class v8PipelineHandler extends ChannelInboundHandlerAdapter {
           packetCounter
         );
 
-        parentIntegration.pushPacket(player(), emulatedPacket, movementData);
+        parentIntegration.pushPacket(player(), emulatedPacket, shadowContext);
         super.channelRead(context, emulatedPacket);
         return;
       }

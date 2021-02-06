@@ -1,6 +1,6 @@
 package de.jpx3.intave.connect.shadow;
 
-public final class MovementData {
+public final class ShadowContext {
   private final long time;
   private final double moveForward;
   private final double moveStrafe;
@@ -14,7 +14,7 @@ public final class MovementData {
   private final boolean sprinting;
   private final int packetCounter;
 
-  public MovementData(
+  public ShadowContext(
     long time,
     double moveForward, double moveStrafe,
     boolean jump, boolean sneak,

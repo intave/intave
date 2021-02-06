@@ -7,17 +7,17 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class ShadowPacketDataLink {
   private final User user;
-  private Map<Object, MovementData> movementLink = new ConcurrentHashMap<>(512);
+  private Map<Object, ShadowContext> movementLink = new ConcurrentHashMap<>(512);
 
   public ShadowPacketDataLink(User user) {
     this.user = user;
   }
 
-  public void save(Object packet, MovementData data) {
+  public void save(Object packet, ShadowContext data) {
     movementLink.put(packet, data);
   }
 
-  public MovementData lookup(Object packet) {
+  public ShadowContext lookup(Object packet) {
     return movementLink.remove(packet);
   }
 }
