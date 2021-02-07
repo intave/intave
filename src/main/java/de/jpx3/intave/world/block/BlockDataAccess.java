@@ -5,13 +5,13 @@ import com.comphenix.protocol.wrappers.BlockPosition;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.patchy.PatchyLoadingInjector;
 import de.jpx3.intave.reflect.ReflectionFailureException;
-import de.jpx3.intave.reflect.ReflectiveAccess;
+import de.jpx3.intave.reflect.ReflectiveBlockAccess;
+import de.jpx3.intave.reflect.ReflectiveMaterialAccess;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,7 +25,7 @@ public final class BlockDataAccess {
   public static void setup() {
     String resolverName = "de.jpx3.intave.world.block.v8BlockAccessor";
 
-    if(MinecraftVersion.COMBAT_UPDATE.atOrAbove()) {
+    if (MinecraftVersion.COMBAT_UPDATE.atOrAbove()) {
       resolverName = "de.jpx3.intave.world.block.v9BlockAccessor";
     }
 
@@ -46,14 +46,6 @@ public final class BlockDataAccess {
   }
 
   private static void loadClickableMaterials() {
-    Class<?> blockClass = ReflectiveAccess.lookupServerClass("Block");
-    Method getByIdMethod;
-    try {
-      getByIdMethod = blockClass.getMethod("getById", Integer.TYPE);
-    } catch (NoSuchMethodException exception) {
-      throw new ReflectionFailureException(exception);
-    }
-
     /*
     class Block
 
@@ -72,31 +64,27 @@ public final class BlockDataAccess {
 
      */
 
-    try {
-      for (int i = 0; i < 1000; i++) {
-        Material material = Material.getMaterial(i);
-        if(material == null) {
-          continue;
-        }
-        Object block = getByIdMethod.invoke(null, i);
-        if(block == null) {
-          System.out.println("No block fund for id " + i);
-          continue;
-        }
+    for (int i = 0; i < 1000; i++) {
+      Material material = ReflectiveMaterialAccess.materialById(i);
+      if (material == null) {
+        continue;
+      }
+      Object block = ReflectiveBlockAccess.blockById(i);
+      if (block == null) {
+        System.out.println("No block fund for id " + i);
+        continue;
+      }
 
-        List<Method> methods = allMethodsIn(block.getClass());
-        for (Method method : methods) {
-          String methodName = method.getName();
-          if(methodName.equalsIgnoreCase("interact")) {
-            String declaringClassName = method.getDeclaringClass().getSimpleName();
-            if(!declaringClassName.equals("Block") && !declaringClassName.equals("BlockBase")) {
-              clickableMaterials.add(material);
-            }
+      List<Method> methods = allMethodsIn(block.getClass());
+      for (Method method : methods) {
+        String methodName = method.getName();
+        if (methodName.equalsIgnoreCase("interact")) {
+          String declaringClassName = method.getDeclaringClass().getSimpleName();
+          if (!declaringClassName.equals("Block") && !declaringClassName.equals("BlockBase")) {
+            clickableMaterials.add(material);
           }
         }
       }
-    } catch (IllegalAccessException | InvocationTargetException e) {
-      throw new IllegalStateException(e);
     }
   }
 

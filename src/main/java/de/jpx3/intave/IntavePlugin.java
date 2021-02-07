@@ -19,6 +19,7 @@ import de.jpx3.intave.filter.Filterer;
 import de.jpx3.intave.lib.asm.Frame;
 import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.metrics.Metrics;
+import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.security.ContextSecrets;
 import de.jpx3.intave.security.HWIDVerification;
 import de.jpx3.intave.security.SSLConnectionVerifier;
@@ -118,6 +119,7 @@ public final class IntavePlugin extends JavaPlugin {
     try {
       SinusCache.setup();
       WrapperLinkage.setup();
+      ReflectiveAccess.setup();
       Synchronizer.setup();
       ContextSecrets.setup();
       BackgroundExecutor.start();

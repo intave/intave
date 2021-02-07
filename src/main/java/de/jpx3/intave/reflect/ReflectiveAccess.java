@@ -16,7 +16,8 @@ public final class ReflectiveAccess {
   public final static Class<?> NMS_ENTITY_CLASS = lookupServerClass("Entity");
   public final static Class<?> NMS_AABB_CLASS = lookupServerClass("AxisAlignedBB");
 
-  static {
+  public static void setup() {
+    ReflectiveBlockAccess.setup();
     PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), "de.jpx3.intave.reflect.ReflectiveDataWatcherAccess");
     PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), "de.jpx3.intave.reflect.ReflectiveHandleAccess");
   }
