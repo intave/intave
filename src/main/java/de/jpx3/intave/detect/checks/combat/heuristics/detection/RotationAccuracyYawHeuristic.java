@@ -56,7 +56,7 @@ public final class RotationAccuracyYawHeuristic extends IntaveMetaCheckPart<Heur
           if (heuristicMeta.followBalance > 25) {
             String description = "follows entity movement too precisely";
             int options = Anomaly.AnomalyOption.LIMIT_4  | Anomaly.AnomalyOption.SUGGEST_MINING;
-            Anomaly anomaly = Anomaly.anomalyOf("20/1", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
+            Anomaly anomaly = Anomaly.anomalyOf("81", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
             parentCheck().saveAnomaly(player, anomaly);
             heuristicMeta.followBalance -= 10;
           }
@@ -69,7 +69,7 @@ public final class RotationAccuracyYawHeuristic extends IntaveMetaCheckPart<Heur
         if (distanceToPerfectYaw == 0) {
           String description = "rotated yaw too precisely (0.0)";
           int options = Anomaly.AnomalyOption.LIMIT_2 | Anomaly.AnomalyOption.DELAY_128s | Anomaly.AnomalyOption.SUGGEST_MINING;
-          Anomaly anomaly = Anomaly.anomalyOf("20", Confidence.LIKELY, Anomaly.Type.KILLAURA, description, options);
+          Anomaly anomaly = Anomaly.anomalyOf("82", Confidence.LIKELY, Anomaly.Type.KILLAURA, description, options);
           parentCheck().saveAnomaly(player, anomaly);
         }
 
@@ -83,7 +83,7 @@ public final class RotationAccuracyYawHeuristic extends IntaveMetaCheckPart<Heur
             if (heuristicMeta.rotationAccuracyVL++ > 3) {
               String description = "high accuracy rotation yaw vl:" + suspiciousLevel;
               int options = Anomaly.AnomalyOption.LIMIT_2 | Anomaly.AnomalyOption.DELAY_32s | Anomaly.AnomalyOption.SUGGEST_MINING;
-              Anomaly anomaly = Anomaly.anomalyOf("21", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
+              Anomaly anomaly = Anomaly.anomalyOf("83", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
               parentCheck().saveAnomaly(player, anomaly);
             }
           } else if (heuristicMeta.rotationAccuracyVL > 0) {
@@ -99,7 +99,7 @@ public final class RotationAccuracyYawHeuristic extends IntaveMetaCheckPart<Heur
         } else if (heuristicMeta.balanceYawAccuracyOther++ > 50) {
           String description = "high accuracy rotation yaw (2) vl:" + heuristicMeta.balanceYawAccuracyOther;
           int options = Anomaly.AnomalyOption.LIMIT_2 | Anomaly.AnomalyOption.DELAY_32s | Anomaly.AnomalyOption.SUGGEST_MINING;
-          Anomaly anomaly = Anomaly.anomalyOf("22", Confidence.MAYBE, Anomaly.Type.KILLAURA, description, options);
+          Anomaly anomaly = Anomaly.anomalyOf("84", Confidence.MAYBE, Anomaly.Type.KILLAURA, description, options);
           parentCheck().saveAnomaly(player, anomaly);
           heuristicMeta.balanceYawAccuracyOther = 0;
         }

@@ -67,7 +67,7 @@ public final class PacketSprintToggleHeuristic extends IntaveMetaCheckPart<Heuri
         // could be CERTAIN on 1.8
         Confidence confidence = flyingPacketStream ? Confidence.PROBABLE : Confidence.MAYBE;
         int options = Anomaly.AnomalyOption.DELAY_128s | Anomaly.AnomalyOption.REQUIRES_HEAVY_COMBAT;
-        Anomaly anomaly = Anomaly.anomalyOf("11", confidence, Anomaly.Type.KILLAURA, description, options);
+        Anomaly anomaly = Anomaly.anomalyOf("41", confidence, Anomaly.Type.KILLAURA, description, options);
         parentCheck().saveAnomaly(player, anomaly);
       }
     }

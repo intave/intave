@@ -1,43 +1,16 @@
-package de.jpx3.intave.encrypt;
+package de.jpx3.intave.detect.checks.combat.heuristics;
 
 import com.google.common.collect.Lists;
-import de.jpx3.intave.detect.checks.combat.heuristics.Anomaly;
-import de.jpx3.intave.detect.checks.combat.heuristics.Confidence;
-import joptsimple.internal.Strings;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import de.jpx3.intave.tools.annotate.Native;
 
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public final class HeuristicsPatternEncryption {
-  @Test
-  public void testPatternEncryption() {
-    List<Anomaly> anomalies = Lists.newArrayList(
-//      Anomaly.anomalyOf("11", Confidence.LIKELY, Anomaly.Type.KILLAURA, "description", 0),
-//      Anomaly.anomalyOf("13", Confidence.LIKELY, Anomaly.Type.KILLAURA, "description", 0),
-//      Anomaly.anomalyOf("121", Confidence.LIKELY, Anomaly.Type.KILLAURA, "description", 0),
-//      Anomaly.anomalyOf("31", Confidence.LIKELY, Anomaly.Type.KILLAURA, "description", 0),
-      Anomaly.anomalyOf("32", Confidence.LIKELY, Anomaly.Type.KILLAURA, "description", 0)
-    );
-    String encryptAnomalies = encryptAnomalies(anomalies);
-    System.out.println("encrypted:" + encryptAnomalies);
-
-    String decryptPatterns = decryptPatterns(encryptAnomalies);
-    System.out.println("decrypted:" + decryptPatterns);
-
-    String expectedResult = anomalies.stream().map(Anomaly::key).distinct().map(x -> "p[" + x + "]").collect(Collectors.joining(" "));
-    Assertions.assertEquals(expectedResult, decryptPatterns);
-  }
-
-  @Test
-  public void decrypt() {
-    System.out.println(decryptPatterns("pQZANwNA"));
-  }
-
-  private String encryptAnomalies(List<Anomaly> anomalies) {
+public final class AnomalyEnigma {
+  @Native
+  public static String encryptAnomalies(List<Anomaly> anomalies) {
     List<String> usableAnomalies = anomalies.stream()
       .map(Anomaly::key)
       .distinct()
@@ -49,10 +22,8 @@ public final class HeuristicsPatternEncryption {
     return encryptWithPadding(nonPadded, 6);
   }
 
-  private String encryptPattern(String pattern, int size) {
-    // 3 bits sub-check   -> 7    = 0 0 0 0 0 1 1 1
-    // 5 bits check       -> 31   = 1 1 1 1 1 0 0 0
-    // >= 33 && <= 126
+  @Native
+  private static String encryptPattern(String pattern, int size) {
     int subCheck = Integer.parseInt(pattern.substring(pattern.length() - 1));
     int mainCheck = Integer.parseInt(pattern.substring(0, pattern.length() - 1));
     if (mainCheck > 31) {
@@ -74,7 +45,8 @@ public final class HeuristicsPatternEncryption {
     return result;
   }
 
-  private String encryptWithPadding(String pattern, int paddingLength) {
+  @Native
+  private static String encryptWithPadding(String pattern, int paddingLength) {
     if (paddingLength % 2 != 0) {
       throw new IllegalArgumentException("Padding length cannot be odd");
     }
@@ -98,7 +70,8 @@ public final class HeuristicsPatternEncryption {
     return patternStringBuilder.toString();
   }
 
-  private String decryptPatterns(String patterns) {
+  @Native
+  public static String decryptPatterns(String patterns) {
     patterns = decryptWithPadding(patterns);
     int size = patterns.length() / 2;
     List<String> decryptedPatterns = Lists.newArrayList();
@@ -110,16 +83,18 @@ public final class HeuristicsPatternEncryption {
       }
       patterns = patterns.substring(1);
     }
-    return Strings.join(decryptedPatterns, " ");
+    return String.join(",", decryptedPatterns);
   }
 
-  private String decryptWithPadding(String pattern) {
+  @Native
+  private static String decryptWithPadding(String pattern) {
     String paddingLength = pattern.substring(0, 2);
     int paddingKey = (Base64.getDecoder().decode(paddingLength)[0]) ^ pattern.charAt(2);
     return pattern.substring(2, paddingKey > 0 ? pattern.length() - paddingKey + 2 : pattern.length());
   }
 
-  private String decryptPattern(String pattern, int size) {
+  @Native
+  private static String decryptPattern(String pattern, int size) {
     byte[] encode = Base64.getDecoder().decode(pattern);
     int checkCombined = encode[0];
     for (int i = 0; i < size * 2; i++) {

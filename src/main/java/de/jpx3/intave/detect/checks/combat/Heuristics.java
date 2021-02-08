@@ -7,7 +7,10 @@ import com.google.common.collect.Lists;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.detect.IntaveMetaCheck;
-import de.jpx3.intave.detect.checks.combat.heuristics.*;
+import de.jpx3.intave.detect.checks.combat.heuristics.Anomaly;
+import de.jpx3.intave.detect.checks.combat.heuristics.Confidence;
+import de.jpx3.intave.detect.checks.combat.heuristics.AnomalyEnigma;
+import de.jpx3.intave.detect.checks.combat.heuristics.MiningStrategy;
 import de.jpx3.intave.detect.checks.combat.heuristics.detection.*;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
@@ -34,9 +37,10 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
   }
 
   private void setupEvaluationScheduler(IntavePlugin plugin) {
-    Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, this::evaluateAll, 0, 400);
+    Bukkit.getScheduler().scheduleAsyncRepeatingTask(plugin, this::evaluateAll, 0, 400);
   }
 
+  @Native
   public void setupSubChecks() {
     appendCheckPart(new ReshapedJumpHeuristic(this));
     appendCheckPart(new RotationAccuracyYawHeuristic(this));
@@ -54,11 +58,11 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
 
   public void saveAnomaly(Player player, Anomaly anomaly) {
     metaOf(player).anomalies.add(anomaly);
-    Synchronizer.synchronize(() -> debug(player, anomaly.description()));
+    Synchronizer.synchronize(() -> debug(player, anomaly));
   }
 
   @Native
-  private void debug(Player player, String description) {
+  private void debug(Player player, Anomaly anomaly) {
     HeuristicMeta heuristicMeta = metaOf(player);
     List<Anomaly> anomalies = heuristicMeta.anomalies;
     anomalies.removeIf(Anomaly::expired);
@@ -68,16 +72,19 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
     List<Confidence> allConfidences = new ArrayList<>();
 
     // limit
-    for (Anomaly anomaly : anomalies) {
-      String key = anomaly.key();
-      if (types.getOrDefault(key, 0) <= anomaly.limit() || anomaly.limit() == 0) {
-        allConfidences.add(anomaly.confidence());
+    for (Anomaly existingAnomaly : anomalies) {
+      String key = existingAnomaly.key();
+      if (types.getOrDefault(key, 0) <= existingAnomaly.limit() || existingAnomaly.limit() == 0) {
+        allConfidences.add(existingAnomaly.confidence());
       }
       types.put(key, types.getOrDefault(key, 0) + 1);
     }
 
     Confidence overallConfidence = computeOverallConfidence(allConfidences);
-    String message = ChatColor.RED + "[HEUR] [DEB] " + player.getName() + "(" + overallConfidence + "): " + description;
+
+    String pattern = formatPattern(anomaly.key());
+    String description = anomaly.description();
+    String message = ChatColor.RED + "[HEUR] [DEB] " + player.getName() + " on p[" + pattern + "] (" + overallConfidence + "): " + description;
 
     if (IntaveControl.DEBUG_HEURISTICS && !plugin.sibylIntegrationService().isAuthenticated(player)) {
       player.sendMessage(message);
@@ -88,6 +95,11 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
         authenticatedPlayer.sendMessage(message);
       }
     }
+  }
+
+  @Native
+  private String formatPattern(String pattern) {
+    return pattern.startsWith("0") ? pattern.substring(1) : pattern;
   }
 
   private void evaluateAll() {
@@ -130,8 +142,45 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
 
     if (overallConfidence.level() >= Confidence.LIKELY.level()) {
       Anomaly.Type type = findDominantType(anomalies);
-      plugin.retributionService().processViolation(player, 25, this.name(), "is fighting suspiciously", type.details() + overallConfidence.output(), "confidence-thresholds." + overallConfidence.output());
+      String identifier = resolveIdentifier(anomalies);
+      if (IntaveControl.DEBUG_HEURISTICS) {
+        identifier = AnomalyEnigma.decryptPatterns(identifier);
+      }
+      String details = type.details() + overallConfidence.output() + ", " + identifier;
+      plugin.retributionService().processViolation(player, 25, this.name(), "is fighting suspiciously", details, "confidence-thresholds." + overallConfidence.output());
     }
+  }
+
+  @Native
+  private String resolveIdentifier(List<Anomaly> anomalies) {
+    // Remove anomalies without effect
+    anomalies.removeIf(anomaly -> anomaly.confidence() == Confidence.NONE);
+
+    // Remove duplicated anomalies
+    List<String> knownPatterns = Lists.newArrayList();
+    Iterator<Anomaly> iterator = anomalies.iterator();
+    while (iterator.hasNext()) {
+      Anomaly anomaly = iterator.next();
+      String pattern = anomaly.key();
+      if (knownPatterns.contains(pattern)) {
+        iterator.remove();
+      } else {
+        knownPatterns.add(pattern);
+      }
+    }
+
+    // Format anomalies for their priority
+    if (anomalies.size() > 3) {
+      anomalies.sort(Comparator.comparingInt(o -> o.confidence().level()));
+      Collections.reverse(anomalies);
+      List<Anomaly> reducedAnomalies = Lists.newArrayList();
+      for (int i = 0; i < 3; i++) {
+        reducedAnomalies.add(anomalies.get(i));
+      }
+      anomalies = reducedAnomalies;
+    }
+
+    return AnomalyEnigma.encryptAnomalies(anomalies);
   }
 
   private Anomaly.Type findDominantType(List<Anomaly> anomalies) {
@@ -170,7 +219,11 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
 
   // events
 
-  @PacketSubscription(packets = {@PacketDescriptor(sender = Sender.CLIENT, packetName = "USE_ENTITY")})
+  @PacketSubscription(
+    packets = {
+      @PacketDescriptor(sender = Sender.CLIENT, packetName = "USE_ENTITY")
+    }
+  )
   public void receiveUseEntity(PacketEvent event) {
     Player player = event.getPlayer();
     HeuristicMeta heuristicMeta = metaOf(player);
@@ -181,7 +234,6 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
       }
     }
   }
-
 
   public static class HeuristicMeta extends UserCustomCheckMeta {
     public List<Anomaly> anomalies = Lists.newCopyOnWriteArrayList();

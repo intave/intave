@@ -38,7 +38,7 @@ public final class AttackReduceIgnoreHeuristic extends IntaveMetaCheckPart<Heuri
         if (heuristicMeta.vl++ > 5) {
           String description = "did not reduce when attacking a player";
           int options = Anomaly.AnomalyOption.LIMIT_2 | Anomaly.AnomalyOption.SUGGEST_MINING | Anomaly.AnomalyOption.DELAY_16s;
-          Anomaly anomaly = Anomaly.anomalyOf("30/1", Confidence.LIKELY, Anomaly.Type.KILLAURA, description, options);
+          Anomaly anomaly = Anomaly.anomalyOf("21", Confidence.LIKELY, Anomaly.Type.KILLAURA, description, options);
           parentCheck().saveAnomaly(player, anomaly);
           heuristicMeta.vl = 0;
         }

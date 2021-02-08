@@ -60,7 +60,7 @@ public final class RotationSensitivityHeuristic extends IntaveMetaCheckPart<Heur
           parentCheck().saveAnomaly(
             player,
             Anomaly.anomalyOf(
-              "24",
+              "111",
               Confidence.PROBABLE,
               Anomaly.Type.KILLAURA,
               "rotations have too few decimals",
@@ -114,7 +114,7 @@ public final class RotationSensitivityHeuristic extends IntaveMetaCheckPart<Heur
         parentCheck().saveAnomaly(
           player,
           Anomaly.anomalyOf(
-            "25",
+            "112",
             Confidence.NONE,
             Anomaly.Type.KILLAURA,
             "gcd vl:" + heuristicMeta.sensitivityVL,

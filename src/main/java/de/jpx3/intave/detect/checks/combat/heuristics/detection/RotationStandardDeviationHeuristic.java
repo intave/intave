@@ -79,7 +79,7 @@ public final class RotationStandardDeviationHeuristic extends IntaveMetaCheckPar
     if (standardDeviation < 1.0) {
       if (heuristicMeta.rotationBalanceYaw++ >= 2) {
         String description = "standard deviation (yaw) (" + standardDeviation + ")";
-        Anomaly anomaly = Anomaly.anomalyOf("26", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, Anomaly.AnomalyOption.LIMIT_2);
+        Anomaly anomaly = Anomaly.anomalyOf("121", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, Anomaly.AnomalyOption.LIMIT_2);
         parentCheck().saveAnomaly(player, anomaly);
         heuristicMeta.rotationBalanceYaw--;
       }
@@ -96,7 +96,7 @@ public final class RotationStandardDeviationHeuristic extends IntaveMetaCheckPar
     if (standardDeviation < 3.0) {
       if (heuristicMeta.rotationBalancePitch++ >= 4) {
         String description = "standard deviation (pitch) (" + standardDeviation + ")";
-        Anomaly anomaly = Anomaly.anomalyOf("28", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, Anomaly.AnomalyOption.LIMIT_2);
+        Anomaly anomaly = Anomaly.anomalyOf("122", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, Anomaly.AnomalyOption.LIMIT_2);
         parentCheck().saveAnomaly(player, anomaly);
         heuristicMeta.rotationBalancePitch--;
       }

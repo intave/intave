@@ -45,7 +45,7 @@ public final class RotationAccuracyPitchHeuristic extends IntaveMetaCheckPart<He
         if (distanceToPerfectPitch == 0) {
           String description = "rotated pitch too precisely (0.0)";
           int options = Anomaly.AnomalyOption.LIMIT_2 | Anomaly.AnomalyOption.DELAY_128s | Anomaly.AnomalyOption.SUGGEST_MINING;
-          Anomaly anomaly = Anomaly.anomalyOf("27", Confidence.LIKELY, Anomaly.Type.KILLAURA, description, options);
+          Anomaly anomaly = Anomaly.anomalyOf("71", Confidence.LIKELY, Anomaly.Type.KILLAURA, description, options);
           parentCheck().saveAnomaly(player, anomaly);
         }
       }
