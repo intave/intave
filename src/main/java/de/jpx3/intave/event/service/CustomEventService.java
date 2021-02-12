@@ -17,10 +17,10 @@ public final class CustomEventService {
   }
 
   public void setup() {
-    setupClass(IntaveViolationEvent.class, () -> IntaveViolationEvent.empty(plugin));
-    setupClass(IntaveCommandExecutionEvent.class, () -> IntaveCommandExecutionEvent.empty(plugin));
-    setupClass(IntaveCreateEmulatedEntityEvent.class, () -> IntaveCreateEmulatedEntityEvent.empty(plugin));
-    setupClass(IntaveCreateEmulatedPlayerEvent.class, () -> IntaveCreateEmulatedPlayerEvent.empty(plugin));
+    setupClass(IntaveViolationEvent.class, () -> IntaveViolationEvent.empty());
+    setupClass(IntaveCommandExecutionEvent.class, () -> IntaveCommandExecutionEvent.empty());
+    setupClass(IntaveCreateEmulatedEntityEvent.class, () -> IntaveCreateEmulatedEntityEvent.empty());
+    setupClass(IntaveCreateEmulatedPlayerEvent.class, () -> IntaveCreateEmulatedPlayerEvent.empty());
   }
 
   private <T extends AbstractIntaveExternalEvent> void setupClass(Class<T> eventClass, Supplier<T> initializer) {

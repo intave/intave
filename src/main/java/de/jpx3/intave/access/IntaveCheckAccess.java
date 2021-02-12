@@ -10,17 +10,17 @@ public interface IntaveCheckAccess {
   boolean enabled();
 
   default double violationLevelOf(Player player) {
-    return violationLevelOf(player, "threshold");
+    return violationLevelOf(player, "thresholds");
   }
   double violationLevelOf(Player player, String threshold);
 
   default void addViolationPoints(Player player, double amount) {
-    addViolationPoints(player, "threshold", amount);
+    addViolationPoints(player, "thresholds", amount);
   }
   void addViolationPoints(Player player, String threshold, double amount);
 
   default void resetViolationLevel(Player player) {
-    resetViolationLevel(player, "threshold");
+    resetViolationLevel(player, "thresholds");
   }
   void resetViolationLevel(Player player, String threshold);
 

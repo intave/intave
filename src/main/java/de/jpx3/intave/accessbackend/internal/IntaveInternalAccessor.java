@@ -49,6 +49,16 @@ public final class IntaveInternalAccessor {
       }
 
       @Override
+      public void overrideInteractPermissionCheck(BlockInteractionPermissionCheck check) {
+
+      }
+
+      @Override
+      public void overrideBucketActionPermissionCheck(BucketActionPermissionCheck check) {
+
+      }
+
+      @Override
       public void subscribeOutputStream(PrintStream stream) {
         IntaveLogger.logger().addOutputStream(stream);
       }

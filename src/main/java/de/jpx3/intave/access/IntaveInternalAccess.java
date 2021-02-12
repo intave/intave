@@ -9,6 +9,8 @@ public interface IntaveInternalAccess {
 
   void overrideBreakPermissionCheck(BlockBreakPermissionCheck check);
   void overridePlacePermissionCheck(BlockPlacePermissionCheck check);
+  void overrideInteractPermissionCheck(BlockInteractionPermissionCheck check);
+  void overrideBucketActionPermissionCheck(BucketActionPermissionCheck check);
 
   void subscribeOutputStream(PrintStream stream);
   void unsubscribeOutputStream(PrintStream stream);

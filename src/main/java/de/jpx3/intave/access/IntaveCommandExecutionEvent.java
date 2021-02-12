@@ -1,7 +1,6 @@
 package de.jpx3.intave.access;
 
 import com.google.common.base.Preconditions;
-import de.jpx3.intave.IntavePlugin;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
@@ -62,14 +61,11 @@ public final class IntaveCommandExecutionEvent extends AbstractIntaveExternalEve
     this.setCancelled(false);
   }
 
-  public static IntaveCommandExecutionEvent empty(IntavePlugin handle) {
-    return construct(handle, null, "empty", false);
+  public static IntaveCommandExecutionEvent empty() {
+    return construct(null, "empty", false);
   }
 
-  public static IntaveCommandExecutionEvent construct(IntavePlugin plugin, Player punished, String command, boolean isWaveExecuted) {
-    if(plugin != IntavePlugin.singletonInstance()) {
-      throw new IllegalStateException();
-    }
+  public static IntaveCommandExecutionEvent construct(Player punished, String command, boolean isWaveExecuted) {
     return new IntaveCommandExecutionEvent(punished, command, isWaveExecuted);
   }
 }

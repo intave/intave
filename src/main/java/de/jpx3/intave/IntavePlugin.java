@@ -94,7 +94,6 @@ public final class IntavePlugin extends JavaPlugin {
   private IntaveAccess access;
   private Metrics metrics;
 
-
   public IntavePlugin() {
     // stage 2
     stage2();

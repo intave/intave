@@ -23,7 +23,7 @@ public final class DefaultTrustFactorResolver implements TrustFactorResolver {
    */
 
   @Override
-  public void resolveTrustFactor(Player player, Consumer<TrustFactor> callback) {
+  public void lazyResolve(Player player, Consumer<TrustFactor> callback) {
 
 
 

@@ -1,6 +1,5 @@
 package de.jpx3.intave.access;
 
-import de.jpx3.intave.IntavePlugin;
 import org.bukkit.entity.Player;
 
 import java.lang.ref.WeakReference;
@@ -39,14 +38,11 @@ public final class IntaveCreateEmulatedPlayerEvent extends IntaveCreateEmulatedE
     this.observer = null;
   }
 
-  public static IntaveCreateEmulatedPlayerEvent empty(IntavePlugin handle) {
-    return construct(handle, null,0, "error", null);
+  public static IntaveCreateEmulatedPlayerEvent empty() {
+    return construct(null,0, "error", null);
   }
 
-  public static IntaveCreateEmulatedPlayerEvent construct(IntavePlugin handle, Player observer, int reservedEntityId, String name, UUID id) {
-    if(handle != IntavePlugin.singletonInstance()) {
-      return null;
-    }
+  public static IntaveCreateEmulatedPlayerEvent construct(Player observer, int reservedEntityId, String name, UUID id) {
     return new IntaveCreateEmulatedPlayerEvent(observer, reservedEntityId, name, id);
   }
 }

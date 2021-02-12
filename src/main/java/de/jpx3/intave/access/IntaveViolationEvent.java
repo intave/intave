@@ -2,7 +2,6 @@ package de.jpx3.intave.access;
 
 import com.google.common.base.Preconditions;
 import de.jpx3.intave.IntaveAccessor;
-import de.jpx3.intave.IntavePlugin;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
@@ -88,9 +87,9 @@ public final class IntaveViolationEvent extends AbstractIntaveExternalEvent impl
     return reaction;
   }
 
-  public void copy(Player punished, String modulename, String message, String details, double vlBefore, double vlAfter) {
+  public void copy(Player punished, String checkName, String message, String details, double vlBefore, double vlAfter) {
     this.punished = punished;
-    this.checkName = modulename;
+    this.checkName = checkName;
     this.message = message;
     this.details = details;
     this.vlBefore = vlBefore;
@@ -104,20 +103,17 @@ public final class IntaveViolationEvent extends AbstractIntaveExternalEvent impl
     punished = null;
   }
 
-  public static IntaveViolationEvent empty(IntavePlugin handle) {
-    return construct(handle, null, "error", "error", "error", 0, 0);
+  public static IntaveViolationEvent empty() {
+    return construct(null, "error", "error", "error", 0, 0);
   }
 
-  public static IntaveViolationEvent construct(IntavePlugin handle, Player punished, String checkName, String message, String details, int vlBefore, int vlAfter) {
-    if(handle != IntavePlugin.singletonInstance()) {
-      return null;
-    }
+  public static IntaveViolationEvent construct(Player punished, String checkName, String message, String details, int vlBefore, int vlAfter) {
     return new IntaveViolationEvent(punished, checkName, message, details, vlBefore, vlAfter);
   }
 
   public enum Reaction {
     IGNORE,
-    ONLY_INTERRUPT,
+    INTERRUPT,
     INTERRUPT_AND_REPORT
   }
 }

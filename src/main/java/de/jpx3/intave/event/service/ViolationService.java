@@ -57,7 +57,7 @@ public final class ViolationService {
 
     if(violationEvent.isCancelled()) {
       IntaveViolationEvent.Reaction response = violationEvent.reaction();
-      return response == IntaveViolationEvent.Reaction.ONLY_INTERRUPT && preventionActivation <= newVl;
+      return response == IntaveViolationEvent.Reaction.INTERRUPT && preventionActivation <= newVl;
     }
 
     performVerbose(detectedUser, checkName, oldVl, newVl, message, details);

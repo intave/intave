@@ -100,13 +100,16 @@ public final class Timer extends IntaveMetaCheck<Timer.TimerData> {
         // packet removed
         timerData.timerBalance -= 5.0;
       }
+      timerData.lastTimerFlag = AccessHelper.now();
       // leniency
       timerData.timerBalance -= 5.5;
     } else {
       if(timerData.timerBalance > 0) {
         timerData.timerBalance -= 0.025;
       }
-      decrementer.decrement(user, 0.01);
+      if(AccessHelper.now() - timerData.lastTimerFlag > 10000) {
+        decrementer.decrement(user, 0.01);
+      }
     }
   }
 
@@ -134,6 +137,7 @@ public final class Timer extends IntaveMetaCheck<Timer.TimerData> {
   public static class TimerData extends UserCustomCheckMeta {
     public double timerBalance;
     public long lastFlyingPacket;
+    public long lastTimerFlag;
     public long lastLagSpike;
     public boolean flagTick;
   }

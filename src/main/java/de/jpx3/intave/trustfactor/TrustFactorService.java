@@ -61,7 +61,7 @@ public final class TrustFactorService implements BukkitEventSubscriber {
       user.setTrustFactor(TrustFactor.DARK_RED);
       return;
     }
-    trustFactorResolver.resolveTrustFactor(player,
+    trustFactorResolver.lazyResolve(player,
       trustFactor -> {
         IntavePlugin.singletonInstance().logger().info("Assigned trust factor " + trustFactor + " to " + (user.hasOnlinePlayer() ? user.player().getName() : "null"));
         user.setTrustFactor(trustFactor);
