@@ -38,11 +38,14 @@ public final class RotationAccuracyYawHeuristic extends IntaveMetaCheckPart<Heur
     RotationAccuracyHeuristicMeta heuristicMeta = metaOf(player);
     WrappedEntity attackedEntity = attackData.lastAttackedEntity();
 
+    float rotationYaw = movementData.rotationYaw;
+    float perfectYaw = attackData.perfectYaw();
+    float yawSpeed = MathHelper.distanceInDegrees(rotationYaw, movementData.lastRotationYaw);
+    float distanceToPerfectYaw = MathHelper.distanceInDegrees(perfectYaw, rotationYaw);
+
     if (attackedEntity != null && attackedEntity.moving(0.2) && attackData.recentlyAttacked(1000)) {
-      float yawSpeed = MathHelper.distanceInDegrees(movementData.rotationYaw, movementData.lastRotationYaw);
 
       if (yawSpeed > 1.0) {
-        float distanceToPerfectYaw = MathHelper.distanceInDegrees(attackData.perfectYaw(), movementData.rotationYaw);
 
         if (yawSpeed > 3.0 && attackedEntity.moving(0.4)) {
           double increase = MathHelper.minmax(-0.5, (2 - distanceToPerfectYaw) * Math.min(6, yawSpeed), 2);
@@ -55,15 +58,13 @@ public final class RotationAccuracyYawHeuristic extends IntaveMetaCheckPart<Heur
 
           if (heuristicMeta.followBalance > 25) {
             String description = "follows entity movement too precisely";
-            int options = Anomaly.AnomalyOption.LIMIT_4  | Anomaly.AnomalyOption.SUGGEST_MINING;
+            int options = Anomaly.AnomalyOption.LIMIT_4 | Anomaly.AnomalyOption.SUGGEST_MINING;
             Anomaly anomaly = Anomaly.anomalyOf("81", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
             parentCheck().saveAnomaly(player, anomaly);
             heuristicMeta.followBalance -= 10;
           }
 
-//          player.sendMessage("balance:" + MathHelper.formatDouble(heuristicMeta.balanceYawStable, 5));
         }
-//        player.sendMessage("" + Math.abs(heuristicMeta.lastDistance - distanceToPerfectYaw));
 
         // Check perfect yaw
         if (distanceToPerfectYaw == 0) {
@@ -89,8 +90,6 @@ public final class RotationAccuracyYawHeuristic extends IntaveMetaCheckPart<Heur
           } else if (heuristicMeta.rotationAccuracyVL > 0) {
             heuristicMeta.rotationAccuracyVL -= 0.005;
           }
-
-          // player.sendMessage("vl:" + suspiciousLevel + ", " + distanceToPerfectYaw);
         }
 
         // Check yaw accuracy (other)
@@ -105,6 +104,30 @@ public final class RotationAccuracyYawHeuristic extends IntaveMetaCheckPart<Heur
         }
       }
     }
+
+    if (Math.hypot(movementData.motionX(), movementData.motionZ()) < 0.05 || attackData.lastReach() < 1) {
+      return;
+    }
+
+    int direction = perfectYaw > rotationYaw ? 1 : 0;
+    boolean sameDirection = heuristicMeta.lastBodyDirection == direction;
+
+    if (!sameDirection) {
+      heuristicMeta.bitBoxCornerBalance = 0;
+    } else if (yawSpeed > 3) {
+      float deviation = MathHelper.distanceInDegrees(heuristicMeta.prevDistanceToPerfectYaw, distanceToPerfectYaw);
+      double increase = MathHelper.minmax(-0.2, (1 - deviation) * 4, 4);
+      heuristicMeta.bitBoxCornerBalance = (int) MathHelper.minmax(0, heuristicMeta.bitBoxCornerBalance + increase, 100);
+      if (heuristicMeta.bitBoxCornerBalance > 30) {
+        int options = Anomaly.AnomalyOption.SUGGEST_MINING | Anomaly.AnomalyOption.DELAY_16s;
+        Anomaly anomaly = Anomaly.anomalyOf("85", Confidence.MAYBE, Anomaly.Type.KILLAURA, "high accuracy rotation yaw on hit-box corners", options);
+        parentCheck().saveAnomaly(player, anomaly);
+        heuristicMeta.bitBoxCornerBalance -= 20;
+      }
+    }
+
+    heuristicMeta.lastBodyDirection = direction;
+    heuristicMeta.prevDistanceToPerfectYaw = distanceToPerfectYaw;
   }
 
   public final static class RotationAccuracyHeuristicMeta extends UserCustomCheckMeta {
@@ -112,5 +135,9 @@ public final class RotationAccuracyYawHeuristic extends IntaveMetaCheckPart<Heur
     private double balanceYawAccuracyOther;
     private double rotationAccuracyVL;
     private double followBalance;
+
+    private int lastBodyDirection;
+    private int bitBoxCornerBalance;
+    private float prevDistanceToPerfectYaw;
   }
 }

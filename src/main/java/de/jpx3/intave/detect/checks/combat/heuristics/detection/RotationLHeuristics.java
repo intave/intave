@@ -39,6 +39,10 @@ public final class RotationLHeuristics extends IntaveMetaCheckPart<Heuristics, R
     UserMetaAttackData attackData = meta.attackData();
     UserMetaMovementData movementData = meta.movementData();
 
+    if (!attackData.recentlyAttacked(1000)) {
+      return;
+    }
+
     double distanceToPerfectYaw = MathHelper.distanceInDegrees(attackData.perfectYaw(), movementData.rotationYaw);
     float yawSpeed = MathHelper.distanceInDegrees(movementData.rotationYaw, movementData.lastRotationYaw);
 
@@ -53,8 +57,6 @@ public final class RotationLHeuristics extends IntaveMetaCheckPart<Heuristics, R
       List<Double> angleData = heuristicMeta.distancesToPerfectYaw;
       double averageRatio = yawAverage / averageOf(angleData);
       double maxRatio = maxDistanceToPerfectYaw / yawAverage;
-
-//      player.sendMessage(maxRatio + " " + maxDistanceToPerfectYaw);
 
       if (maxRatio < 2 && maxDistanceToPerfectYaw < 30) {
         String descriptor = "rotated suspiciously (" + maxRatio + " / " + maxDistanceToPerfectYaw + ")";

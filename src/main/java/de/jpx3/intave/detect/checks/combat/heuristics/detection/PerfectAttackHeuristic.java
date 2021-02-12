@@ -97,7 +97,7 @@ public final class PerfectAttackHeuristic extends IntaveMetaCheckPart<Heuristics
           + "%, r:" + MathHelper.formatDouble(yawSpeedAverage, 2)
           + ", d:" + MathHelper.formatDouble(distanceAverage, 2)
           + ")";
-        int options = Anomaly.AnomalyOption.LIMIT_2 | Anomaly.AnomalyOption.SUGGEST_MINING | Anomaly.AnomalyOption.DELAY_16s;
+        int options = Anomaly.AnomalyOption.LIMIT_4 | Anomaly.AnomalyOption.SUGGEST_MINING | Anomaly.AnomalyOption.DELAY_16s;
         Anomaly anomaly = Anomaly.anomalyOf("51", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
         parentCheck().saveAnomaly(player, anomaly);
 //      } else {

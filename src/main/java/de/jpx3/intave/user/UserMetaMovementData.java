@@ -106,6 +106,13 @@ public final class UserMetaMovementData {
     applySizeUpdate();
   }
 
+  private void initializeBoundingBox() {
+    UserMetaClientData clientData = user.meta().clientData();
+    this.resetMotion = clientData.protocolVersion() <= 47 ? 0.005 : 0.003;
+    Location location = player.getLocation();
+    boundingBox = CollisionHelper.boundingBoxOf(user, location.getX(), location.getY(), location.getZ());
+  }
+
   private void applyPlayerLocation() {
     Location location;
     if (player == null) {
@@ -149,11 +156,7 @@ public final class UserMetaMovementData {
     boolean hasMovement, boolean hasRotation
   ) {
     if (boundingBox == null) {
-      UserMetaClientData clientData = user.meta().clientData();
-      this.resetMotion = clientData.protocolVersion() <= 47 ? 0.005 : 0.003;
-
-      Location location = player.getLocation();
-      boundingBox = CollisionHelper.boundingBoxOf(user, location.getX(), location.getY(), location.getZ());
+      initializeBoundingBox();
     }
 
     jumpUpwardsMotion = PlayerMovementHelper.jumpMotionFor(player);
@@ -316,11 +319,14 @@ public final class UserMetaMovementData {
   }
 
   public void setBoundingBox(WrappedAxisAlignedBB entityBoundingBox) {
+    if (this.boundingBox == null) {
+      initializeBoundingBox();
+    }
     this.boundingBox = entityBoundingBox;
   }
 
   public void setVerifiedLocation(Location verifiedLocation, @SuppressWarnings("unused") String reason) {
-    /*boolean boundingBoxIntersection = CollisionHelper.checkBoundingBoxIntersection(user, CollisionHelper.boundingBoxOf(user, verifiedLocation));
+   /* boolean boundingBoxIntersection = CollisionHelper.checkBoundingBoxIntersection(user, CollisionHelper.boundingBoxOf(user, verifiedLocation));
     if (boundingBoxIntersection) {
       Bukkit.broadcastMessage(ChatColor.DARK_RED + "Position was set into a block: " + reason);
     }*/
