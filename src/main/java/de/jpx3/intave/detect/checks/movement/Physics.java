@@ -27,7 +27,10 @@ import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.*;
 import de.jpx3.intave.world.BlockAccessor;
 import de.jpx3.intave.world.collision.Collision;
-import org.bukkit.*;
+import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -75,7 +78,8 @@ public final class Physics extends IntaveCheck {
       methodName = "c";
     }
     try {
-      fallDamageInvokeMethod = MethodHandles
+      fallDamageInvokeMethod =
+        MethodHandles
         .publicLookup()
         .findVirtual(entityLivingClass, methodName, MethodType.methodType(Void.TYPE, Float.TYPE, Float.TYPE));
     } catch (NoSuchMethodException | IllegalAccessException e) {
@@ -546,8 +550,13 @@ public final class Physics extends IntaveCheck {
       && movementData.pastExternalVelocity != 0;
 
     if (movementData.inWeb) {
-      legitimateDeviation = criticalWeb ? 1e-6 : 0.03;
+      legitimateDeviation = criticalWeb ? 1e-6 : 0.13;
     }
+
+    if (movementData.pastInWeb < 10 && !movementData.inWeb && differenceY < 0.1) {
+      legitimateDeviation = 0.1;
+    }
+
     double abuseVertically = Math.max(0, differenceY - legitimateDeviation);
 
     // Jump out of water

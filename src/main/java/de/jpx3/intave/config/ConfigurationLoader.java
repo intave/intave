@@ -234,7 +234,7 @@ public final class ConfigurationLoader {
       if(GOMME_MODE) {
         workDirectory = new File(ContextSecrets.secret("cache-directory"));
       } else {
-        workDirectory = new File("/var/lib/intave/");
+        workDirectory = new File("/home/.intave/");
       }
     }
     if(!workDirectory.exists()) {

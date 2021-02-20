@@ -6,15 +6,7 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.user.UserRepository;
 
-import java.util.Arrays;
-
 public final class LocalPacketAdapter extends IntavePacketAdapter implements Comparable<LocalPacketAdapter> {
-  private final static boolean TEMP_PLAYER_CHECK;
-  static {
-    TEMP_PLAYER_CHECK = Arrays.stream(PacketEvent.class.getMethods())
-      .anyMatch(method -> method.getName().equalsIgnoreCase("isPlayerTemporary"));
-  }
-
   private final String methodName;
   private final ListenerPriority priority;
   private final PacketEventSubscriber subscriber;
@@ -41,13 +33,6 @@ public final class LocalPacketAdapter extends IntavePacketAdapter implements Com
 //    boolean cancelled = event.isCancelled();
     try {
 //      Timings.packetProcessing.start();
-      if (TEMP_PLAYER_CHECK) {
-        // perform temporary check
-        if(event.isPlayerTemporary()) {
-//          Timings.packetProcessing.stop();
-          return;
-        }
-      }
       executor.invoke(subscriber, event);
 //      Timings.packetProcessing.stop();
     } catch (RuntimeException exception) {
@@ -62,13 +47,6 @@ public final class LocalPacketAdapter extends IntavePacketAdapter implements Com
   public void onPacketSending(PacketEvent event) {
     if(!validateEvent(event)) {
       return;
-    }
-    if (TEMP_PLAYER_CHECK) {
-      // perform temporary check
-      // this method does not exist in all version of protocollib, so we need to check for it before
-      if(event.isPlayerTemporary()) {
-        return;
-      }
     }
     try {
       executor.invoke(subscriber, event);

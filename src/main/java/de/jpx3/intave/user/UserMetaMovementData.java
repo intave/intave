@@ -54,13 +54,12 @@ public final class UserMetaMovementData {
   public boolean canResetMotion;
   private double resetMotion;
   private double jumpUpwardsMotion;
-  public int pastWaterMovement;
   private int pastClientFlyingPacket, pastFlyingPacketAccurate;
   private float aiMoveSpeed, jumpMovementFactor;
   public boolean inWater, eyesInWater;
   public boolean inWeb;
   public int pastPushedByWaterFlow = 100;
-  public int pastElytraFlying = 100, pastVelocity = 100, pastExternalVelocity = 100;
+  public int pastElytraFlying = 100, pastVelocity = 100, pastExternalVelocity = 100, pastInWeb = 100, pastWaterMovement = 100;
   public boolean onLadderLast;
 
   public int physicsPacketRelinkFlyVL; // In Air
