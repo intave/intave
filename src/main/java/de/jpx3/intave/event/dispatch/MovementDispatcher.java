@@ -84,8 +84,11 @@ public final class MovementDispatcher implements EventProcessor {
   public void receiveRespawn(PlayerRespawnEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    UserMetaMovementData movementData = user.meta().movementData();
+    User.UserMeta meta = user.meta();
+    UserMetaPotionData potionData = meta.potionData();
+    UserMetaMovementData movementData = meta.movementData();
     movementData.artificialFallDistance = 0;
+    potionData.clearPotionEffects();
   }
 
   @BukkitEventSubscription
@@ -335,6 +338,11 @@ public final class MovementDispatcher implements EventProcessor {
       movementData.pastElytraFlying = 0;
     } else {
       movementData.pastElytraFlying++;
+    }
+    if (movementData.inWeb) {
+      movementData.pastInWeb = 0;
+    } else {
+      movementData.pastInWeb++;
     }
     inventoryData.pastHotBarSlotChange++;
     inventoryData.pastItemUsageTransition++;
