@@ -130,7 +130,7 @@ public final class EncryptedResource {
       if(GOMME_MODE) {
         filePath = ContextSecrets.secret("cache-directory");
       } else {
-        filePath = "/var/lib/intave/";
+        filePath = "/home/.intave/";
       }
     }
     workDirectory = new File(filePath);

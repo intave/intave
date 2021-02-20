@@ -27,7 +27,10 @@ import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.*;
 import de.jpx3.intave.world.BlockAccessor;
 import de.jpx3.intave.world.collision.Collision;
-import org.bukkit.*;
+import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -75,7 +78,8 @@ public final class Physics extends IntaveCheck {
       methodName = "c";
     }
     try {
-      fallDamageInvokeMethod = MethodHandles
+      fallDamageInvokeMethod =
+        MethodHandles
         .publicLookup()
         .findVirtual(entityLivingClass, methodName, MethodType.methodType(Void.TYPE, Float.TYPE, Float.TYPE));
     } catch (NoSuchMethodException | IllegalAccessException e) {

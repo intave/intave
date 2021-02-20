@@ -67,6 +67,8 @@ public final class IntaveInternalsStage extends CommandStage {
         target.closeInventory();
       });
     }, 20 * 2, 20);
+
+
     commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + target.getName() + " " + IntavePlugin.defaultColor() + "will now slowly begin to lag");
   }
 

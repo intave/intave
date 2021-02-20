@@ -29,7 +29,7 @@ public class Metrics {
   // The version of this bStats class
   public static final int B_STATS_VERSION = 1;
   // The url to which the data is sent
-  private static final String BSTATS_URL = "https://bStats.org/submitData/bukkit";
+  private static final String BSTATS_URL = "https://bstats.org/submitData/bukkit";
   // Should failed requests be logged?
   private static boolean logFailedRequests;
   // Should the sent data be logged?

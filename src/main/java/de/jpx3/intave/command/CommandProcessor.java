@@ -3,6 +3,7 @@ package de.jpx3.intave.command;
 import de.jpx3.intave.command.stages.IntaveCommandStage;
 import de.jpx3.intave.command.stages.IntaveInternalsStage;
 import de.jpx3.intave.command.stages.IntaveRootStage;
+import org.bukkit.block.CommandBlock;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -26,6 +27,9 @@ public final class CommandProcessor implements CommandExecutor, TabCompleter {
 
   @Override
   public boolean onCommand(CommandSender commandSender, Command command, String s, String[] strings) {
+    if(commandSender instanceof CommandBlock) {
+      return false;
+    }
     String rawCommand = Arrays.stream(strings).map(s1 -> s1 + " ").collect(Collectors.joining()).trim();
     rootCommandStage.execute(commandSender, rawCommand);
     return false;

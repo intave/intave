@@ -43,6 +43,9 @@ import de.jpx3.intave.world.collision.patches.BoundingBoxPatcher;
 import de.jpx3.intave.world.permission.InteractionPermissionService;
 import de.jpx3.intave.world.raytrace.Raytracer;
 import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.plugin.RegisteredListener;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -306,7 +309,7 @@ public final class IntavePlugin extends JavaPlugin {
               connection.connect();
               connection.setConnectTimeout(4000);
               connection.setReadTimeout(4000);
-              if(AccessHelper.now() - lastSuccessfulStart > TimeUnit.DAYS.toMillis(3)) {
+              if(AccessHelper.now() - lastSuccessfulStart <= TimeUnit.DAYS.toMillis(3)) {
                 try {
                   connection.connect();
                   allowLeniency = true;
@@ -424,11 +427,14 @@ public final class IntavePlugin extends JavaPlugin {
       return;
     }
 
-    Synchronizer.synchronize(() -> {
-      for (RegisteredListener registeredListener : BlockPlaceEvent.getHandlerList().getRegisteredListeners()) {
-        if(registeredListener.isIgnoringCancelled() && registeredListener.getPlugin() != this) {
-          logger.info("WARNING: " + registeredListener.getPlugin().getName() + " in class " + registeredListener.getListener().getClass().getCanonicalName() + " has registered a BlockPlaceEvent listener ignoring cancels");
-          logger.info("This could cause severe issues for your world atm when using some sort of custom block-reset mechanic");
+    Synchronizer.synchronize(new Runnable() {
+      @Override
+      public void run() {
+        for (RegisteredListener registeredListener : BlockPlaceEvent.getHandlerList().getRegisteredListeners()) {
+          if (registeredListener.isIgnoringCancelled() && registeredListener.getPlugin() != IntavePlugin.this) {
+            logger.info("WARNING: " + registeredListener.getPlugin().getName() + " in class " + registeredListener.getListener().getClass().getCanonicalName() + " has registered a BlockPlaceEvent listener ignoring cancels");
+            logger.info("This could cause severe issues for your world atm when using some sort of custom block-reset mechanic");
+          }
         }
       }
     });
@@ -444,9 +450,12 @@ public final class IntavePlugin extends JavaPlugin {
 
   @Native
   public void boolFailure() {
-    getCommand("intave").setExecutor((commandSender, command, s, strings) -> {
-      commandSender.sendMessage(prefix() + ChatColor.RED + "Intave couldn't boot properly");
-      return false;
+    getCommand("intave").setExecutor(new CommandExecutor() {
+      @Override
+      public boolean onCommand(CommandSender commandSender, Command command, String s, String[] strings) {
+        commandSender.sendMessage(prefix() + ChatColor.RED + "Intave couldn't boot properly");
+        return false;
+      }
     });
   }
 

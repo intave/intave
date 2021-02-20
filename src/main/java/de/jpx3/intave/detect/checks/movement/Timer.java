@@ -35,9 +35,9 @@ public final class Timer extends IntaveMetaCheck<Timer.TimerData> {
   )
   public void sentPosition(PacketEvent event) {
     User user = userOf(event.getPlayer());
-    if(user.meta().clientData().flyingPacketStream()) {
-      metaOf(user).timerBalance -= 10.0;
-    }
+//    if(user.meta().clientData().flyingPacketStream()) {
+//    }
+    metaOf(user).timerBalance -= 12.5;
   }
 
   public void receiveMovement(PacketEvent event, boolean teleportConf) {
@@ -98,7 +98,7 @@ public final class Timer extends IntaveMetaCheck<Timer.TimerData> {
           event.setCancelled(true);
         }
         // packet removed
-        timerData.timerBalance -= 5.0;
+//        timerData.timerBalance -= 5.0;
       }
       timerData.lastTimerFlag = AccessHelper.now();
       // leniency

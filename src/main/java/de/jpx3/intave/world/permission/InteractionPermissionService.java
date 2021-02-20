@@ -2,8 +2,6 @@ package de.jpx3.intave.world.permission;
 
 import de.jpx3.intave.access.BlockBreakPermissionCheck;
 import de.jpx3.intave.access.BlockPlacePermissionCheck;
-import de.jpx3.intave.adapter.ProtocolLibAdapter;
-import de.jpx3.intave.patchy.PatchyLoadingInjector;
 
 public final class InteractionPermissionService {
   private BlockPlacePermissionCheck blockPlacePermissionCheck;
@@ -16,20 +14,21 @@ public final class InteractionPermissionService {
   public void setup() {
 
     // placement
-    ClassLoader classLoader = InteractionPermissionService.class.getClassLoader();
-    PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, "de.jpx3.intave.world.permission.CustomCraftBlock");
-    String className;
-    if (ProtocolLibAdapter.COMBAT_UPDATE.atOrAbove()) {
-      className = "de.jpx3.intave.world.permission.DualHandCBPlacePermissionResolver";
-    } else {
-      className = "de.jpx3.intave.world.permission.LegacyCBPlacePermissionResolver";
-    }
-    PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, className);
-    blockPlacePermissionCheck = instanceOf(className);
+//    ClassLoader classLoader = InteractionPermissionService.class.getClassLoader();
+//    PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, "de.jpx3.intave.world.permission.CustomCraftBlock");
+//    String className;
+//    if (ProtocolLibAdapter.COMBAT_UPDATE.atOrAbove()) {
+//      className = "de.jpx3.intave.world.permission.DualHandCBPlacePermissionResolver";
+//    } else {
+//      className = "de.jpx3.intave.world.permission.LegacyCBPlacePermissionResolver";
+//    }
+//    PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, className);
+
+    blockPlacePermissionCheck = new AllowAllPlacePermissionResolver();//instanceOf(className);
     blockPlacePermissionCheck.open();
 
     // break
-    blockBreakPermissionCheck = new CBBreakPermissionResolver();
+    blockBreakPermissionCheck = new AllowAllBreakPermissionResolver();//new CBBreakPermissionResolver();
     blockBreakPermissionCheck.open();
   }
 

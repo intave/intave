@@ -6,11 +6,13 @@ import org.bukkit.entity.Player;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public final class UserRepository {
   private final static Map<UUID, User> userRepository = Maps.newConcurrentMap();
   private final static User deadUser = User.empty();
-  private final static Object lock = new Object();
+  private final static Lock lock = new ReentrantLock();
   private static boolean closed;
 
   public static void registerUser(Player player) {
@@ -36,9 +38,12 @@ public final class UserRepository {
       boolean isOnline = AccessHelper.isOnline(player);
       // online -> recreate user object
       if(isOnline) {
-        synchronized (lock) {
+        try {
+//          lock.lock();
           registerUser(player);
           return userRepository.get(player.getUniqueId());
+        } finally {
+//          lock.unlock();
         }
       } else {
         // offline -> return dead user
