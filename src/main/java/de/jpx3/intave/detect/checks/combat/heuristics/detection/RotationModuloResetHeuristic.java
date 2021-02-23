@@ -80,9 +80,9 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
       user.player(),
       attackData.lastAttackedEntity(),
       alternativePositionY,
-      movementData.positionX,
-      movementData.positionY,
-      movementData.positionZ,
+      movementData.lastPositionX,
+      movementData.lastPositionY,
+      movementData.lastPositionZ,
       movementData.rotationYaw,
       movementData.rotationPitch
     );

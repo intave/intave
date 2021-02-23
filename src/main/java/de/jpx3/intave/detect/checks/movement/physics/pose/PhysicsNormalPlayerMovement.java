@@ -28,14 +28,14 @@ public class PhysicsNormalPlayerMovement extends PhysicsCalculationPart {
   @Override
   public EntityCollisionResult performSimulation(
     User user, Physics.PhysicsProcessorContext context,
-    float yawSine, float yawCosine, float friction,
-    float forward, float strafe, boolean sneaking,
-    boolean attackReduce, boolean jumped,
-    boolean sprinting, boolean handActive
+    float forward, float strafe,
+    boolean attackReduce, boolean jumped, boolean handActive
   ) {
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();
+    float yawSine = movementData.yawSine();
+    float yawCosine = movementData.yawCosine();
     double positionX = movementData.verifiedPositionX;
     double positionY = movementData.verifiedPositionY;
     double positionZ = movementData.verifiedPositionZ;
@@ -44,7 +44,7 @@ public class PhysicsNormalPlayerMovement extends PhysicsCalculationPart {
     boolean inLava = movementData.inLava();
     boolean swimming = movementData.swimming;
     boolean waterUpdate = clientData.waterUpdate();
-    if (sneaking) {
+    if (movementData.actualSneaking()) {
       strafe = (float) ((double) strafe * 0.3);
       forward = (float) ((double) forward * 0.3);
       if (inWater && clientData.waterUpdate()) {
@@ -67,7 +67,7 @@ public class PhysicsNormalPlayerMovement extends PhysicsCalculationPart {
         context.motionY += 0.03999999910593033D;
       } else {
         context.motionY = movementData.jumpUpwardsMotion();
-        if (sprinting) {
+        if (movementData.sprintingAllowed()) {
           context.motionX -= yawSine * 0.2F;
           context.motionZ += yawCosine * 0.2F;
         }
@@ -86,7 +86,7 @@ public class PhysicsNormalPlayerMovement extends PhysicsCalculationPart {
     } else if (inLava) {
       performLavaSimulationOfState(context, forward, strafe, yawSine, yawCosine);
     } else {
-      performDefaultMoveSimulationOfState(user, context, forward, strafe, yawSine, yawCosine, friction);
+      performDefaultMoveSimulationOfState(user, context, forward, strafe, yawSine, yawCosine);
     }
 
     if (!inWater && !elytraFlying && !inLava) {
@@ -134,11 +134,10 @@ public class PhysicsNormalPlayerMovement extends PhysicsCalculationPart {
   private void performDefaultMoveSimulationOfState(
     User user, Physics.PhysicsProcessorContext context,
     float moveForward, float moveStrafe,
-    float yawSine, float yawCosine,
-    float friction
+    float yawSine, float yawCosine
   ) {
     UserMetaMovementData movementData = user.meta().movementData();
-    performRelativeMoveSimulationOfState(context, friction, yawSine, yawCosine, moveForward, moveStrafe);
+    performRelativeMoveSimulationOfState(context, movementData.friction(), yawSine, yawCosine, moveForward, moveStrafe);
     if (PlayerMovementHelper.isOnLadder(user, movementData.verifiedPositionX, movementData.verifiedPositionY, movementData.verifiedPositionZ)) {
       float f6 = 0.15F;
       context.motionX = WrappedMathHelper.clamp_double(context.motionX, -f6, f6);
@@ -279,7 +278,11 @@ public class PhysicsNormalPlayerMovement extends PhysicsCalculationPart {
   }
 
   @Override
-  public void prepareNextTick(User user, double positionX, double positionY, double positionZ, double motionX, double motionY, double motionZ) {
+  public void prepareNextTick(
+    User user,
+    double positionX, double positionY, double positionZ,
+    double motionX, double motionY, double motionZ
+  ) {
     Player player = user.player();
     World world = player.getWorld();
     User.UserMeta meta = user.meta();

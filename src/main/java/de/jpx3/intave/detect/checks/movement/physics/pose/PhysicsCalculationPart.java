@@ -16,11 +16,8 @@ public abstract class PhysicsCalculationPart {
 
   public abstract EntityCollisionResult performSimulation(
     User user, Physics.PhysicsProcessorContext context,
-    float yawSine, float yawCosine, float friction,
     float keyForward, float keyStrafe,
-    boolean sneaking, boolean attackReduce,
-    boolean jumped, boolean sprinting,
-    boolean handActive
+    boolean attackReduce, boolean jumped, boolean handActive
   );
 
   public abstract void prepareNextTick(

@@ -12,10 +12,8 @@ public final class PhysicsHorseMovement extends PhysicsNormalPlayerMovement {
   @Override
   public EntityCollisionResult performSimulation(
     User user, Physics.PhysicsProcessorContext context,
-    float yawSine, float yawCosine, float friction,
-    float forward, float strafe, boolean sneaking,
-    boolean attackReduce, boolean jumped,
-    boolean sprinting, boolean handActive
+    float forward, float strafe,
+    boolean attackReduce, boolean jumped, boolean handActive
   ) {
     UserMetaMovementData movementData = user.meta().movementData();
     float rotationYaw = movementData.rotationYaw;
@@ -59,10 +57,7 @@ public final class PhysicsHorseMovement extends PhysicsNormalPlayerMovement {
 //    float originalAIMoveSpeed = movementData.aiMoveSpeed();
 //    movementData.setAiMoveSpeed((float) 0.019904632);
 
-    EntityCollisionResult collisionResult = super.performSimulation(
-      user, context, yawSine, yawCosine, friction, forward, strafe, sneaking,
-      attackReduce, jumped, sprinting, handActive
-    );
+    EntityCollisionResult collisionResult = super.performSimulation(user, context, forward, strafe, attackReduce, jumped, handActive);
 
 //    movementData.setJumpMovementFactor(originalJumpMovementFactor);
 //    movementData.setAiMoveSpeed(originalAIMoveSpeed);

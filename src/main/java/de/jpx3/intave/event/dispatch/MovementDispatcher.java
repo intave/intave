@@ -352,8 +352,8 @@ public final class MovementDispatcher implements EventProcessor {
     movementData.pastExternalVelocity++;
     movementData.physicsUnpredictableVelocityExpected = false;
     movementData.step = false;
-    movementData.lastSprinting = movementData.sprinting;
-    movementData.lastSneaking = movementData.sneaking;
+    movementData.lastSprinting = movementData.sprintingAllowed();
+    movementData.lastSneaking = movementData.actualSneaking();
 
     if (!inventoryData.handActive()) {
       movementData.physicsEatingSlotSwitchVL = 0;

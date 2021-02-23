@@ -8,7 +8,7 @@ import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.detect.CheckViolationLevelDecrementer;
 import de.jpx3.intave.detect.IntaveCheck;
 import de.jpx3.intave.detect.checks.movement.physics.CollisionHelper;
-import de.jpx3.intave.detect.checks.movement.physics.PhysicsSimulationService;
+import de.jpx3.intave.detect.checks.movement.physics.PhysicsSimulator;
 import de.jpx3.intave.detect.checks.movement.physics.collision.block.BlockCollisionRepository;
 import de.jpx3.intave.detect.checks.movement.physics.collision.entity.EntityCollisionRepository;
 import de.jpx3.intave.detect.checks.movement.physics.collision.entity.EntityCollisionResult;
@@ -52,7 +52,7 @@ public final class Physics extends IntaveCheck {
   private final CheckViolationLevelDecrementer decrementer;
   private MethodHandle fallDamageInvokeMethod;
 
-  private final PhysicsSimulationService simulationService;
+  private final PhysicsSimulator simulationService;
   private final AquaticWaterMovementBase aquaticWaterMovementBase;
   private final EntityCollisionRepository entityCollisionRepository;
   private final BlockCollisionRepository blockCollisionRepository;
@@ -61,7 +61,7 @@ public final class Physics extends IntaveCheck {
     super("Physics", "physics");
     this.plugin = plugin;
     this.decrementer = new CheckViolationLevelDecrementer(this, VL_DECREMENT_PER_VALID_MOVE * 20);
-    this.simulationService = new PhysicsSimulationService();
+    this.simulationService = new PhysicsSimulator();
     this.entityCollisionRepository = new EntityCollisionRepository();
     this.blockCollisionRepository = new BlockCollisionRepository();
     this.aquaticWaterMovementBase = resolveAquaticMovement();
@@ -245,7 +245,6 @@ public final class Physics extends IntaveCheck {
 
     UserMetaMovementData movementData = meta.movementData();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
-    UserMetaInventoryData inventoryData = meta.inventoryData();
     UserMetaAbilityData abilityData = meta.abilityData();
     PhysicsProcessorContext context = expectedMovement.context();
 
@@ -285,17 +284,22 @@ public final class Physics extends IntaveCheck {
 
     double verticalViolationIncrease = calculateVerticalViolationLevelIncrease(user, predictedY, onLadder);
     double horizontalViolationIncrease = calculateHorizontalViolationIncrease(user, predictedX, predictedZ, onLadder);
+
+    if (movementData.pastVelocity < 10) {
+      if (horizontalViolationIncrease > 0) {
+        horizontalViolationIncrease = Math.max(horizontalViolationIncrease, 1.0);
+      }
+      // Could be smaller (testing required)
+      if (distance > 0.005) {
+        horizontalViolationIncrease *= 10.0;
+      }
+    }
+
     double violationLevelIncrease = horizontalViolationIncrease + verticalViolationIncrease;
 
     if (distance > 1e-3) {
       movementData.suspiciousMovement = true;
-      float friction = PlayerMovementHelper.resolveFriction(
-        user,
-        movementData.verifiedPositionX,
-        movementData.verifiedPositionY,
-        movementData.verifiedPositionZ
-      );
-      EntityCollisionResult entityCollisionResult = simulationService.simulateMovementWithoutKeyPress(user, friction);
+      EntityCollisionResult entityCollisionResult = simulationService.simulateMovementWithoutKeyPress(user);
       PhysicsProcessorContext setbackContext = entityCollisionResult.context();
       predictedX = setbackContext.motionX;
       predictedY = setbackContext.motionY;
@@ -304,16 +308,6 @@ public final class Physics extends IntaveCheck {
 
     if (flying || spectator) {
       violationLevelIncrease = 0;
-    }
-
-    if (movementData.pastVelocity < 10 && inventoryData.pastItemUsageTransition > 7) {
-      if (violationLevelIncrease > 0) {
-        violationLevelIncrease = Math.max(violationLevelIncrease, 1.0);
-      }
-      // Could be smaller (testing required)
-      if (distance > 0.005) {
-        violationLevelIncrease *= 8.5;
-      }
     }
 
     if (violationLevelIncrease == 0 && violationLevelData.physicsVL > 0) {
@@ -402,7 +396,7 @@ public final class Physics extends IntaveCheck {
       movementData.setVerifiedLocation(location, "Movement validation (normal)");
     }
 
-    if (violationLevelIncrease > 0 && !spectator) {
+    if (violationLevelIncrease > 0) {
       violationLevelIncrease = Math.min(60.0, violationLevelIncrease);
       violationLevelIncrease = Math.max(1, violationLevelIncrease);
       violationLevelData.physicsVL += violationLevelIncrease;
@@ -477,7 +471,7 @@ public final class Physics extends IntaveCheck {
         debug += " bb-intersection";
       }
 
-      String finalDebug = debug;
+      String finalDebug = debug + " p " + movementData.pastExternalVelocity;
       player.sendMessage(finalDebug);
 //      Synchronizer.synchronize(() -> player.sendMessage(finalDebug));
     }
@@ -557,6 +551,10 @@ public final class Physics extends IntaveCheck {
       legitimateDeviation = 0.1;
     }
 
+    if (movementData.recentlyEncounteredFlyingPacket(1) && movementData.pastExternalVelocity <= 4) {
+      legitimateDeviation = 0.03;
+    }
+
     double abuseVertically = Math.max(0, differenceY - legitimateDeviation);
 
     // Jump out of water
@@ -570,7 +568,7 @@ public final class Physics extends IntaveCheck {
       }
     }
 
-    double multiplier = abuseVertically > 1e-5 ? 205.0 : 25.0;
+    double multiplier = abuseVertically > 0.009 ? 205.0 : 10.0;
     if (criticalWeb) {
       multiplier *= 40;
     }
@@ -739,6 +737,10 @@ public final class Physics extends IntaveCheck {
       this.motionX = x;
       this.motionY = y;
       this.motionZ = z;
+    }
+
+    public void resetTo(UserMetaMovementData data) {
+      reset(data.physicsMotionX, data.physicsMotionY, data.physicsMotionZ);
     }
 
     public static PhysicsProcessorContext from(PhysicsProcessorContext context) {

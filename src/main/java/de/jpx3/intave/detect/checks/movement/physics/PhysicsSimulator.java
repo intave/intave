@@ -7,59 +7,40 @@ import de.jpx3.intave.detect.checks.movement.physics.pose.PhysicsMovementPoseTyp
 import de.jpx3.intave.diagnostics.timings.Timings;
 import de.jpx3.intave.reflect.ReflectiveDataWatcherAccess;
 import de.jpx3.intave.tools.MathHelper;
-import de.jpx3.intave.tools.client.PlayerMovementHelper;
-import de.jpx3.intave.tools.client.SinusCache;
 import de.jpx3.intave.tools.items.InventoryUseItemHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
-import de.jpx3.intave.user.*;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserMetaInventoryData;
+import de.jpx3.intave.user.UserMetaMovementData;
 import org.bukkit.inventory.ItemStack;
 
 import static de.jpx3.intave.reflect.ReflectiveDataWatcherAccess.DATA_WATCHER_BLOCKING_ID;
 
-public final class PhysicsSimulationService {
+public final class PhysicsSimulator {
   public EntityCollisionResult simulate(User user, PhysicsMovementPoseType poseType) {
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
-    UserMetaClientData clientData = meta.clientData();
     UserMetaInventoryData inventoryData = meta.inventoryData();
 
     PhysicsCalculationPart calculationPart = poseType.calculationPart();
     boolean keyCalculation = calculationPart.requiresKeyCalculation();
 
-    boolean sprinting = movementData.sprinting;
-    boolean sneaking;
-    if (clientData.delayedSneak()) {
-      sneaking = movementData.lastSneaking;
-    } else if (clientData.alternativeSneak()) {
-      sneaking = movementData.lastSneaking || movementData.sneaking;
-    } else {
-      sneaking = movementData.sneaking;
-    }
-    if (inventoryData.inventoryOpen()) {
-      sprinting = false;
-      sneaking = false;
-    }
-
-    float yawSine = SinusCache.sin(movementData.rotationYaw * (float) Math.PI / 180.0F, false);
-    float yawCosine = SinusCache.cos(movementData.rotationYaw * (float) Math.PI / 180.0F, false);
-    float friction = PlayerMovementHelper.resolveFriction(user, movementData.verifiedPositionX, movementData.verifiedPositionY, movementData.verifiedPositionZ);
-
     if (keyCalculation) {
       EntityCollisionResult predictedMovement;
       Timings.CHECK_PHYSICS_PROC_BIA.start();
-      predictedMovement = simulateMovementBiased(user, yawSine, yawCosine, friction, sprinting, sneaking);
+      predictedMovement = simulateMovementBiased(user);
       double movementDistance = calculateMovementDistance(user, predictedMovement.context());
       Timings.CHECK_PHYSICS_PROC_BIA.stop();
       if (movementDistance > 0.001) {
         Timings.CHECK_PHYSICS_PROC_ITR.start();
-        predictedMovement = simulatePossibleMovement(user, yawSine, yawCosine, friction, sprinting, sneaking);
+        predictedMovement = simulatePossibleMovement(user);
         movementDistance = calculateMovementDistance(user, predictedMovement.context());
         Timings.CHECK_PHYSICS_PROC_ITR.stop();
       }
 
       if (inventoryData.handActive() && movementDistance > 0.001) {
         inventoryData.setHandActive(false);
-        predictedMovement = simulatePossibleMovement(user, yawSine, yawCosine, friction, sprinting, sneaking);
+        predictedMovement = simulatePossibleMovement(user);
         movementDistance = calculateMovementDistance(user, predictedMovement.context());
 
         if (movementDistance > 0.001) {
@@ -82,7 +63,7 @@ public final class PhysicsSimulationService {
       return predictedMovement;
     }
 
-    return simulateMovementWithoutKeyPress(user, friction);
+    return simulateMovementWithoutKeyPress(user);
   }
 
   private double calculateMovementDistance(User user, Physics.PhysicsProcessorContext context) {
@@ -93,28 +74,20 @@ public final class PhysicsSimulationService {
     );
   }
 
-  public EntityCollisionResult simulateMovementWithoutKeyPress(User user, float friction) {
+  public EntityCollisionResult simulateMovementWithoutKeyPress(User user) {
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     PhysicsMovementPoseType movementPoseType = movementData.movementPoseType();
     Physics.PhysicsProcessorContext context = Physics.PhysicsProcessorContext.from(movementData.physicsProcessorContext);
-    context.reset(movementData.physicsMotionX, movementData.physicsMotionY, movementData.physicsMotionZ);
-    boolean sprinting = movementData.sprinting;
-    boolean sneaking = movementData.sneaking;
-    float yawSine = SinusCache.sin(movementData.rotationYaw * (float) Math.PI / 180.0F, false);
-    float yawCosine = SinusCache.cos(movementData.rotationYaw * (float) Math.PI / 180.0F, false);
+    context.resetTo(movementData);
     return movementPoseType.calculationPart().performSimulation(
-      user, context, yawSine, yawCosine, friction,
-      0, 0, sneaking, false, false,
-      sprinting, meta.inventoryData().handActive()
+      user, context,
+      0, 0, false, false,
+      meta.inventoryData().handActive()
     );
   }
 
-  private EntityCollisionResult simulateMovementBiased(
-    User user,
-    float yawSine, float yawCosine, float friction,
-    boolean sprinting, boolean sneaking
-  ) {
+  private EntityCollisionResult simulateMovementBiased(User user) {
     UserMetaMovementData movementData = user.meta().movementData();
     UserMetaInventoryData inventoryData = user.meta().inventoryData();
     PhysicsMovementPoseType movementPoseType = movementData.movementPoseType();
@@ -124,7 +97,7 @@ public final class PhysicsSimulationService {
     int keyStrafe = movementData.keyStrafe;
 
     boolean handActive = inventoryData.handActive();
-    boolean attackReduce = sprinting && user.meta().movementData().pastPlayerAttackPhysics == 0;
+    boolean attackReduce = movementData.sprintingAllowed() && user.meta().movementData().pastPlayerAttackPhysics == 0;
 
     boolean jumped = false;
     if (movementData.lastOnGround && !movementData.exceededJumpPrevention()) {
@@ -141,15 +114,11 @@ public final class PhysicsSimulationService {
     float moveForward = keyForward * 0.98f;
     float moveStrafe = keyStrafe * 0.98f;
     movementData.physicsJumped = jumped;
-    context.reset(movementData.physicsMotionX, movementData.physicsMotionY, movementData.physicsMotionZ);
-    return calculationPart.performSimulation(user, context, yawSine, yawCosine, friction, moveForward, moveStrafe, sneaking, attackReduce, jumped, sprinting, handActive);
+    context.resetTo(movementData);
+    return calculationPart.performSimulation(user, context, moveForward, moveStrafe, attackReduce, jumped, handActive);
   }
 
-  private EntityCollisionResult simulatePossibleMovement(
-    User user,
-    float yawSine, float yawCosine, float friction,
-    boolean sprinting, boolean sneaking
-  ) {
+  private EntityCollisionResult simulatePossibleMovement(User user) {
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaInventoryData inventoryData = meta.inventoryData();
@@ -160,9 +129,6 @@ public final class PhysicsSimulationService {
     double receivedMotionY = movementData.motionY();
     double receivedMotionZ = movementData.motionZ();
 
-    double lastMotionX = movementData.physicsMotionX;
-    double lastMotionY = movementData.physicsMotionY;
-    double lastMotionZ = movementData.physicsMotionZ;
     boolean inventoryOpen = inventoryData.inventoryOpen();
     boolean inLava = movementData.inLava();
     boolean inWater = movementData.inWater;
@@ -196,7 +162,7 @@ public final class PhysicsSimulationService {
 
         for (int keyForward = 1; keyForward > -2; keyForward--) {
           for (int keyStrafe = -1; keyStrafe <= 1; keyStrafe++) {
-            if (sprinting && keyForward != 1) {
+            if (movementData.sprintingAllowed() && keyForward != 1) {
               continue;
             }
             if (inventoryOpen) {
@@ -206,10 +172,10 @@ public final class PhysicsSimulationService {
             }
             float moveForward = keyForward * 0.98f;
             float moveStrafe = keyStrafe * 0.98f;
-            context.reset(lastMotionX, lastMotionY, lastMotionZ);
+            context.resetTo(movementData);
             EntityCollisionResult collisionResult = calculationPart.performSimulation(
-              user, context, yawSine, yawCosine, friction,
-              moveForward, moveStrafe, sneaking, attackReduce, jumped, sprinting, inventoryData.handActive()
+              user, context, moveForward, moveStrafe,
+              attackReduce, jumped, inventoryData.handActive()
             );
             Physics.PhysicsProcessorContext collisionContext = collisionResult.context();
             double differenceX = collisionContext.motionX - receivedMotionX;

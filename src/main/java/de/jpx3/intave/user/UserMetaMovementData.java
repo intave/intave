@@ -7,10 +7,7 @@ import de.jpx3.intave.detect.checks.movement.Physics;
 import de.jpx3.intave.detect.checks.movement.physics.CollisionHelper;
 import de.jpx3.intave.detect.checks.movement.physics.pose.PhysicsMovementPoseType;
 import de.jpx3.intave.reflect.ReflectiveHandleAccess;
-import de.jpx3.intave.tools.client.PlayerEffectHelper;
-import de.jpx3.intave.tools.client.PlayerMovementHelper;
-import de.jpx3.intave.tools.client.PlayerMovementPoseHelper;
-import de.jpx3.intave.tools.client.PlayerRotationHelper;
+import de.jpx3.intave.tools.client.*;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.trustfactor.TrustFactorService;
 import org.bukkit.Bukkit;
@@ -43,6 +40,8 @@ public final class UserMetaMovementData {
   public double lastPositionX, lastPositionY, lastPositionZ;
   public double positionX, positionY, positionZ;
   public boolean sprinting, lastSprinting, sneaking, lastSneaking;
+  private boolean sprintingAllowed, actualSneaking;
+  private float yawSine, yawCosine, friction;
   public float rotationYaw, rotationPitch;
   public float lastRotationYaw, lastRotationPitch;
   private PhysicsMovementPoseType movementPoseType = PhysicsMovementPoseType.PHYSICS_NORMAL_MOVEMENT;
@@ -176,6 +175,7 @@ public final class UserMetaMovementData {
       } else {
         gravity = 0.08D;
       }
+      updateEntityActionStates();
       updateMovementMetaData();
     } else {
       pastClientFlyingPacket = 0;
@@ -187,6 +187,8 @@ public final class UserMetaMovementData {
       rotationYaw = modifier.read(0);
       rotationPitch = modifier.read(1);
       lookVector = PlayerRotationHelper.vectorForRotation(rotationPitch, rotationYaw);
+      yawSine = SinusCache.sin(rotationYaw * (float) Math.PI / 180.0F, false);
+      yawCosine = SinusCache.cos(rotationYaw * (float) Math.PI / 180.0F, false);
     }
   }
 
@@ -214,7 +216,7 @@ public final class UserMetaMovementData {
     float speedAmplifier = potionData.potionEffectSpeedAmplifier();
     aiMoveSpeed *= 1f + (-0.15f * slowdownAmplifier);
     aiMoveSpeed *= 1f + (0.2f * speedAmplifier);
-    if (sprinting) {
+    if (sprintingAllowed) {
       aiMoveSpeed *= 1.3f;
     }
     if (lastSprinting) {
@@ -222,6 +224,27 @@ public final class UserMetaMovementData {
     }
     if (abilityData.flying()) {
       this.jumpMovementFactor = abilityData.flySpeed() * (float) (lastSprinting ? 2 : 1);
+    }
+    friction = PlayerMovementHelper.resolveFriction(user, verifiedPositionX, verifiedPositionY, verifiedPositionZ);
+  }
+
+  private void updateEntityActionStates() {
+    UserMetaClientData clientData = user.meta().clientData();
+    UserMetaInventoryData inventoryData = user.meta().inventoryData();
+    sprintingAllowed = sprinting;
+    if (sneaking && !clientData.sprintWhenSneaking()) {
+      sprintingAllowed = false;
+    }
+    if (inventoryData.inventoryOpen()) {
+      sprintingAllowed = false;
+    }
+    boolean sneakingAllowed = sneaking && !inventoryData.inventoryOpen();
+    if (clientData.delayedSneak()) {
+      actualSneaking = lastSneaking;
+    } else if (clientData.alternativeSneak()) {
+      actualSneaking = lastSneaking || sneakingAllowed;
+    } else {
+      actualSneaking = sneakingAllowed;
     }
   }
 
@@ -322,6 +345,26 @@ public final class UserMetaMovementData {
 
   public PhysicsMovementPoseType movementPoseType() {
     return movementPoseType;
+  }
+
+  public boolean sprintingAllowed() {
+    return sprintingAllowed;
+  }
+
+  public boolean actualSneaking() {
+    return actualSneaking;
+  }
+
+  public float friction() {
+    return friction;
+  }
+
+  public float yawSine() {
+    return yawSine;
+  }
+
+  public float yawCosine() {
+    return yawCosine;
   }
 
   public void setBoundingBox(WrappedAxisAlignedBB entityBoundingBox) {

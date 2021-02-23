@@ -11,10 +11,8 @@ public final class PhysicsElytraMovement extends PhysicsNormalPlayerMovement {
   @Override
   public EntityCollisionResult performSimulation(
     User user, Physics.PhysicsProcessorContext context,
-    float yawSine, float yawCosine, float friction,
-    float forward, float strafe, boolean sneaking,
-    boolean attackReduce, boolean jumped,
-    boolean sprinting, boolean handActive
+    float forward, float strafe,
+    boolean attackReduce, boolean jumped, boolean handActive
   ) {
     UserMetaMovementData movementData = user.meta().movementData();
     float rotationPitch = movementData.rotationPitch;
