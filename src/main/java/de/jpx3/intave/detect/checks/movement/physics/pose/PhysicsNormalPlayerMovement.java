@@ -1,7 +1,6 @@
 package de.jpx3.intave.detect.checks.movement.physics.pose;
 
 import de.jpx3.intave.detect.checks.movement.Physics;
-import de.jpx3.intave.detect.checks.movement.physics.CollisionHelper;
 import de.jpx3.intave.detect.checks.movement.physics.collision.entity.SimulationResult;
 import de.jpx3.intave.tools.client.PlayerEffectHelper;
 import de.jpx3.intave.tools.client.PlayerMovementHelper;
@@ -15,6 +14,7 @@ import de.jpx3.intave.user.UserMetaClientData;
 import de.jpx3.intave.user.UserMetaMovementData;
 import de.jpx3.intave.user.UserMetaViolationLevelData;
 import de.jpx3.intave.world.BlockAccessor;
+import de.jpx3.intave.world.collision.Collision;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -187,7 +187,7 @@ public class PhysicsNormalPlayerMovement extends PhysicsCalculationPart {
     double interpolateZ = context.motionZ;
 
     for (; interpolations <= 2; interpolations++) {
-      CollisionHelper.CollisionResult collisionResult = CollisionHelper.resolveQuickCollisions(
+      Collision.CollisionResult collisionResult = Collision.resolveQuickCollisions(
         player, positionX, positionY, positionZ,
         interpolateX, interpolateY, interpolateZ
       );
@@ -256,7 +256,7 @@ public class PhysicsNormalPlayerMovement extends PhysicsCalculationPart {
     double positionX, double positionY, double positionZ,
     double motionX, double motionY, double motionZ
   ) {
-    CollisionHelper.CollisionResult result = CollisionHelper.resolveQuickCollisions(player, positionX, positionY, positionZ, motionX, motionY, motionZ);
+    Collision.CollisionResult result = Collision.resolveQuickCollisions(player, positionX, positionY, positionZ, motionX, motionY, motionZ);
     context.motionX = result.motionX();
     context.motionY = result.motionY();
     context.motionZ = result.motionZ();
@@ -307,7 +307,7 @@ public class PhysicsNormalPlayerMovement extends PhysicsCalculationPart {
       slipperiness = 0.91f;
     }
 
-    WrappedAxisAlignedBB boundingBox = CollisionHelper.boundingBoxOf(user, positionX, positionY, positionZ);
+    WrappedAxisAlignedBB boundingBox = Collision.boundingBoxOf(user, positionX, positionY, positionZ);
     movementData.setBoundingBox(boundingBox);
 
     if (movementData.inWeb) {

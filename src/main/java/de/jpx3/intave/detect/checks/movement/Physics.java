@@ -7,7 +7,6 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.detect.CheckViolationLevelDecrementer;
 import de.jpx3.intave.detect.IntaveCheck;
-import de.jpx3.intave.detect.checks.movement.physics.CollisionHelper;
 import de.jpx3.intave.detect.checks.movement.physics.PhysicsSimulator;
 import de.jpx3.intave.detect.checks.movement.physics.collision.block.BlockCollisionRepository;
 import de.jpx3.intave.detect.checks.movement.physics.collision.entity.EntityCollisionRepository;
@@ -192,7 +191,7 @@ public final class Physics extends IntaveCheck {
     double motionY = (movementData.physicsMotionYBeforeVelocity - 0.08) * 0.98f;
     double motionZ = movementData.physicsMotionZBeforeVelocity * 0.91f;
     if (motionX != 0 && motionY != 0 && motionZ != 0) {
-      CollisionHelper.CollisionResult collisionResult = CollisionHelper.resolveQuickCollisions(
+      Collision.CollisionResult collisionResult = Collision.resolveQuickCollisions(
         user.player(),
         movementData.verifiedPositionX, movementData.verifiedPositionY, movementData.verifiedPositionZ,
         motionX, motionY, motionZ
@@ -247,6 +246,7 @@ public final class Physics extends IntaveCheck {
 
     UserMetaMovementData movementData = meta.movementData();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
+    UserMetaInventoryData inventoryData = meta.inventoryData();
     UserMetaAbilityData abilityData = meta.abilityData();
     PhysicsProcessorContext context = expectedMovement.context();
 
@@ -319,8 +319,8 @@ public final class Physics extends IntaveCheck {
 
     Location verifiedLocation = movementData.verifiedLocation();
 
-    List<WrappedAxisAlignedBB> intersectionBoundingBoxesLast = Collision.resolve(user.player(), CollisionHelper.boundingBoxOf(user, verifiedLocation.getX(), verifiedLocation.getY(), verifiedLocation.getZ()));
-    WrappedAxisAlignedBB currentBoundingBox = CollisionHelper.boundingBoxOf(user, receivedPositionX, receivedPositionY, receivedPositionZ);
+    List<WrappedAxisAlignedBB> intersectionBoundingBoxesLast = Collision.resolve(user.player(), Collision.boundingBoxOf(user, verifiedLocation.getX(), verifiedLocation.getY(), verifiedLocation.getZ()));
+    WrappedAxisAlignedBB currentBoundingBox = Collision.boundingBoxOf(user, receivedPositionX, receivedPositionY, receivedPositionZ);
     List<WrappedAxisAlignedBB> intersectionBoundingBoxesCurrent = Collision.resolve(user.player(), currentBoundingBox);
 
     boolean boundingBoxIntersectionLast = !intersectionBoundingBoxesLast.isEmpty();
@@ -382,7 +382,7 @@ public final class Physics extends IntaveCheck {
 
           plugin.violationProcessor().processViolation(player, 0, "Physics", message, details);
           Location phaseStartLocation = new Location(player.getWorld(), blockPositionX, blockPositionY, blockPositionZ);
-          WrappedAxisAlignedBB startPhaseBoundingBox = CollisionHelper.boundingBoxOf(user, phaseStartLocation);
+          WrappedAxisAlignedBB startPhaseBoundingBox = Collision.boundingBoxOf(user, phaseStartLocation);
           plugin.eventService().emulationEngine().emulationPushOutOfBlock(player, startPhaseBoundingBox);
         }
       }
@@ -562,7 +562,7 @@ public final class Physics extends IntaveCheck {
     // Jump out of water
     if (movementData.inWater && abuseVertically > 1e-5 && receivedMotionY > 0.0 && receivedMotionY < 0.35) {
       Location location = new Location(player.getWorld(), movementData.positionX, movementData.positionY, movementData.positionZ);
-      if (CollisionHelper.nearBySolidBlock(location, 0.4)) {
+      if (Collision.nearBySolidBlock(location, 0.4)) {
         boolean airAbove = !PlayerMovementHelper.isAllLiquid(player.getWorld(), movementData.boundingBox());
         if (airAbove) {
           abuseVertically = 0;

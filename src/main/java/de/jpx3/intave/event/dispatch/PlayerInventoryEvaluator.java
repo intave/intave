@@ -13,7 +13,11 @@ import de.jpx3.intave.event.packet.*;
 import de.jpx3.intave.tools.items.InventoryUseItemHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaInventoryData;
+import de.jpx3.intave.user.UserMetaMovementData;
 import de.jpx3.intave.user.UserRepository;
+import de.jpx3.intave.world.collision.Collision;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
@@ -103,7 +107,15 @@ public final class PlayerInventoryEvaluator implements PacketEventSubscriber, Bu
 
   private void openInventory(Player player, User user) {
     UserMetaInventoryData inventoryData = user.meta().inventoryData();
-    inventoryData.updateInventoryOpenState(true);
+    if (!inNetherPortal(user)) {
+      inventoryData.updateInventoryOpenState(true);
+    }
+  }
+
+  private boolean inNetherPortal(User user) {
+    World world = user.player().getWorld();
+    UserMetaMovementData movementData = user.meta().movementData();
+    return Collision.containsBlockInBB(world, movementData.boundingBox(), Material.PORTAL);
   }
 
   @PacketSubscription(

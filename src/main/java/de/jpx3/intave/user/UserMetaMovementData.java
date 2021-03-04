@@ -4,12 +4,12 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.StructureModifier;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.detect.checks.movement.Physics;
-import de.jpx3.intave.detect.checks.movement.physics.CollisionHelper;
 import de.jpx3.intave.detect.checks.movement.physics.pose.PhysicsMovementPose;
 import de.jpx3.intave.reflect.ReflectiveHandleAccess;
 import de.jpx3.intave.tools.client.*;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.trustfactor.TrustFactorService;
+import de.jpx3.intave.world.collision.Collision;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -110,7 +110,7 @@ public final class UserMetaMovementData {
     this.resetMotion = clientData.protocolVersion() <= 47 ? 0.005 : 0.003;
     this.frictionPosSubtraction = clientData.protocolVersion() <= PROTOCOL_VERSION_BEE_UPDATE ? 1.0 : 0.5000001;
     Location location = player.getLocation();
-    boundingBox = CollisionHelper.boundingBoxOf(user, location.getX(), location.getY(), location.getZ());
+    boundingBox = Collision.boundingBoxOf(user, location.getX(), location.getY(), location.getZ());
   }
 
   private void applyPlayerLocation() {
@@ -382,7 +382,7 @@ public final class UserMetaMovementData {
   }
 
   public void setVerifiedLocation(Location verifiedLocation, @SuppressWarnings("unused") String reason) {
-/*    boolean boundingBoxIntersection = CollisionHelper.checkBoundingBoxIntersection(user, CollisionHelper.boundingBoxOf(user, verifiedLocation));
+/*    boolean boundingBoxIntersection = Collision.checkBoundingBoxIntersection(user, Collision.boundingBoxOf(user, verifiedLocation));
     if (boundingBoxIntersection) {
       Bukkit.broadcastMessage(ChatColor.DARK_RED + "Position was set into a block: " + reason);
     }*/

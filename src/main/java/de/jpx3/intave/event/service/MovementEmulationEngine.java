@@ -4,7 +4,6 @@ import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveException;
 import de.jpx3.intave.access.IntaveInternalException;
-import de.jpx3.intave.detect.checks.movement.physics.CollisionHelper;
 import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.client.PlayerMovementHelper;
@@ -101,7 +100,7 @@ public final class MovementEmulationEngine {
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
     WrappedAxisAlignedBB boundingBox = movementData.boundingBox();
 
-    boolean boundingBoxIntersection = CollisionHelper.checkBoundingBoxIntersection(user, boundingBox);
+    boolean boundingBoxIntersection = Collision.checkBoundingBoxIntersection(user, boundingBox);
     if (boundingBoxIntersection) {
       double positionX = (boundingBox.minX + boundingBox.maxX) / 2.0;
       double positionY = (boundingBox.minY + boundingBox.maxY) / 2.0;
@@ -141,7 +140,7 @@ public final class MovementEmulationEngine {
 
     // check motion status (velocity?)
     Location futurePosition = movementData.verifiedLocation();
-    WrappedAxisAlignedBB boundingBox = CollisionHelper.boundingBoxOf(user, futurePosition);
+    WrappedAxisAlignedBB boundingBox = Collision.boundingBoxOf(user, futurePosition);
 
     Vector emulationVelocity = movementData.emulationVelocity;
     if (emulationVelocity != null) {
@@ -262,7 +261,7 @@ public final class MovementEmulationEngine {
   private void teleport(Player player, Location teleportLocation) {
     User user = UserRepository.userOf(player);
     UserMetaMovementData movementData = user.meta().movementData();
-    WrappedAxisAlignedBB entityBoundingBox = CollisionHelper.boundingBoxOf(
+    WrappedAxisAlignedBB entityBoundingBox = Collision.boundingBoxOf(
       user, teleportLocation.getX(), teleportLocation.getY(), teleportLocation.getZ()
     );
     movementData.setBoundingBox(entityBoundingBox);
@@ -395,6 +394,6 @@ public final class MovementEmulationEngine {
   }
 
   private boolean hasEmptyCollisionBox(Player player, WrappedBlockPosition blockPosition) {
-    return Collision.resolve(player, CollisionHelper.boundingBoxOf(blockPosition)).isEmpty();
+    return Collision.resolve(player, Collision.boundingBoxOf(blockPosition)).isEmpty();
   }
 }
