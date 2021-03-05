@@ -10,6 +10,7 @@ import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -44,7 +45,8 @@ public final class PlayerAccessor {
 
       @Override
       public double violationLevel(String check, String threshold) {
-        if(!plugin.checkService().hasCheck(check)) {
+        check = check.toLowerCase(Locale.ROOT);
+        if (!plugin.checkService().hasCheck(check)) {
           throw new UnknownCheckException("Unable to locale check \"" + check + "\"");
         }
         return violationLevel.getOrDefault(check, DEFAULT_RETURN).getOrDefault(threshold, 0d);
@@ -52,7 +54,8 @@ public final class PlayerAccessor {
 
       @Override
       public void addViolationPoints(String check, String threshold, double amount) {
-        if(!plugin.checkService().hasCheck(check)) {
+        check = check.toLowerCase(Locale.ROOT);
+        if (!plugin.checkService().hasCheck(check)) {
           throw new UnknownCheckException("Unable to locale check \"" + check + "\"");
         }
         violationLevel.getOrDefault(check, DEFAULT_RETURN).put(threshold, violationLevel(check, threshold) + amount);
@@ -60,7 +63,8 @@ public final class PlayerAccessor {
 
       @Override
       public void resetViolationLevel(String check, String threshold) {
-        if(!plugin.checkService().hasCheck(check)) {
+        check = check.toLowerCase(Locale.ROOT);
+        if (!plugin.checkService().hasCheck(check)) {
           throw new UnknownCheckException("Unable to locale check \"" + check + "\"");
         }
         violationLevel.getOrDefault(check, DEFAULT_RETURN).remove(threshold);
