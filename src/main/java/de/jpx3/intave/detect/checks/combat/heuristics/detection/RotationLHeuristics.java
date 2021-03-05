@@ -60,13 +60,13 @@ public final class RotationLHeuristics extends IntaveMetaCheckPart<Heuristics, R
 
       if (maxRatio < 2 && maxDistanceToPerfectYaw < 30) {
         String descriptor = "rotated suspiciously (" + maxRatio + " / " + maxDistanceToPerfectYaw + ")";
-        Anomaly anomaly = Anomaly.anomalyOf("91", Confidence.PROBABLE, Anomaly.Type.KILLAURA, descriptor, Anomaly.AnomalyOption.LIMIT_8);
+        Anomaly anomaly = Anomaly.anomalyOf("91", Confidence.MAYBE, Anomaly.Type.KILLAURA, descriptor, Anomaly.AnomalyOption.LIMIT_8);
         parentCheck().saveAnomaly(player, anomaly);
       }
 
       if (yawAverage >= 3.5 && maxDistanceToPerfectYaw <= 12.5 && averageRatio > 1) {
         String descriptor = "precise rotation yaw (" + yawAverage + ")";
-        Anomaly anomaly = Anomaly.anomalyOf("92", Confidence.PROBABLE, Anomaly.Type.KILLAURA, descriptor,  Anomaly.AnomalyOption.LIMIT_8);
+        Anomaly anomaly = Anomaly.anomalyOf("92", Confidence.MAYBE, Anomaly.Type.KILLAURA, descriptor,  Anomaly.AnomalyOption.LIMIT_8);
         parentCheck().saveAnomaly(player, anomaly);
       }
 
