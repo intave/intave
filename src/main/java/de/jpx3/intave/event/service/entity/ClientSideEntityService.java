@@ -126,7 +126,11 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     }
   )
   public void receiveEntitySpawn(PacketEvent event) {
-    plugin.eventService().transactionFeedbackService().requestPong(event.getPlayer(), event, this::processEntitySpawn);
+    /* IMPORTANT: If the entity spawn packet gets synchronized the player could be spammed with transaction packets
+     *   which could cause a too many packets kick
+     */
+//    plugin.eventService().transactionFeedbackService().requestPong(event.getPlayer(), event, this::processEntitySpawn);
+    processEntitySpawn(event.getPlayer(), event);
   }
 
   private void processEntitySpawn(Player player, PacketEvent event) {
@@ -159,7 +163,12 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
   public void receiveEntityDestroy(PacketEvent event) {
     Player player = event.getPlayer();
     int[] entityIDs = event.getPacket().getIntegerArrays().read(0);
-    plugin.eventService().transactionFeedbackService().requestPong(player, entityIDs, this::processEntityDestroy);
+    /* IMPORTANT: If the entity destroy packet gets synchronized the player could be spammed with transaction packets
+     *   which could cause a too many packets kick
+    */
+    // plugin.eventService().transactionFeedbackService().requestPong(player, entityIDs, this::processEntityDestroy);
+
+    processEntityDestroy(player, entityIDs);
   }
 
   private void processEntityDestroy(Player player, int[] entityIDs) {
