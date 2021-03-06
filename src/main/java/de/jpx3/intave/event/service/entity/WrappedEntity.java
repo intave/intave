@@ -5,12 +5,11 @@ import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.reflect.hitbox.HitBoxBoundaries;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
-import org.bukkit.entity.Player;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class WrappedEntity {
+public class WrappedEntity implements Cloneable {
   private final static boolean NEW_POSITION_PROCESSING = ProtocolLibAdapter.serverVersion().isAtLeast(ProtocolLibAdapter.COMBAT_UPDATE);
   private final String entityName;
 
@@ -33,7 +32,6 @@ public class WrappedEntity {
 
   // -> when entity is not traced
   public List<EntityPositionContext> possiblePositions = new CopyOnWriteArrayList<>();
-  public List<EntityPositionContext> possibleAlternativePositions = new CopyOnWriteArrayList<>();
 
   private WrappedAxisAlignedBB boundingBox;
 
@@ -43,6 +41,7 @@ public class WrappedEntity {
    * Internal value - do not change
    */
   public double distanceToPlayerCache;
+  private boolean isClone;
 
   public WrappedEntity(
     String entityName,
@@ -182,6 +181,14 @@ public class WrappedEntity {
    * Sets the position of the entity.
    */
   public void setPosition(double x, double y, double z) {
+    if(!isClone) {
+      if(possiblePositions.size() > 10) {
+        possiblePositions.remove(0);
+      }
+
+      possiblePositions.add(position);
+    }
+
     position.posX = x;
     position.posY = y;
     position.posZ = z;
@@ -228,22 +235,6 @@ public class WrappedEntity {
     return enabledResponseTracing;
   }
 
-  private final static int BACKTRACE_LENGTH = 8;
-
-  public void applyPositionUpdate(Player observer, boolean clientTickSync) {
-    if(!clientTickSync) {
-      if(possiblePositions.size() >= BACKTRACE_LENGTH) {
-        possiblePositions.remove(0);
-        possibleAlternativePositions.remove(0);
-      }
-    } else if (!possiblePositions.isEmpty()) {
-      possiblePositions.clear();
-      possibleAlternativePositions.clear();
-    }
-    possiblePositions.add(position.clone());
-    possibleAlternativePositions.add(alternativePosition.clone());
-  }
-
   public void setResponseTracingEnabled(boolean enabledResponseTracing) {
     this.enabledResponseTracing = enabledResponseTracing;
   }
@@ -262,7 +253,6 @@ public class WrappedEntity {
     return isEntityLiving /*&& clientSynchronized*/;
   }
 
-
   /**
    * Resolves the current {@link WrappedAxisAlignedBB} of the entity.
    *
@@ -273,6 +263,19 @@ public class WrappedEntity {
       return boundingBox;
     }
     return boundingBox = entityBoundingBoxFrom(position, this);
+  }
+
+  @Override
+  public WrappedEntity clone()  {
+    WrappedEntity clone = new WrappedEntity(entityName, isEntityLiving, hitBoxBoundaries);
+
+    clone.isClone = true;
+    clone.position = position.clone();
+    clone.alternativePosition = alternativePosition.clone();
+    clone.possiblePositions = new CopyOnWriteArrayList<> (possiblePositions);
+    clone.newPosRotationIncrements = newPosRotationIncrements;
+
+    return clone;
   }
 
   public static WrappedAxisAlignedBB entityBoundingBoxFrom(EntityPositionContext position, WrappedEntity entity) {

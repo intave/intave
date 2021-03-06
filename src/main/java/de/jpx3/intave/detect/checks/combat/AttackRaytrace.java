@@ -13,6 +13,7 @@ import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
 import de.jpx3.intave.event.service.entity.WrappedEntity;
 import de.jpx3.intave.tools.MathHelper;
+import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.user.*;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
@@ -84,7 +85,7 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
         boolean invalid = false;
         if (entity != null && entity.checkable() && !player.isDead()) {
           if (entity.clientSynchronized && clientData.protocolVersion() >= PROTOCOL_VERSION_COMBAT_UPDATE
-            && !movementData.recentlyEncounteredFlyingPacket(4)
+            && !movementData.recentlyEncounteredFlyingPacket(2)
             && attackRaytraceMeta.lastFlyPacketCounterReach > 1
           ) {
             invalid = processReachCheck(player, entity);
@@ -189,12 +190,12 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
       message += " (vehicle)";
     }
 
-    plugin.violationProcessor().processViolation(player, vl, "AttackRaytrace", message, details, thresholdKey);
+   plugin.violationProcessor().processViolation(player, vl, "AttackRaytrace", message, details, thresholdKey);
 //    player.sendMessage("§6s:" + reach);
     return true;
   }
 
-  private boolean processIterativeReachCheck(Player player, WrappedEntity entity) {
+  private boolean processIterativeReachCheck(Player player, WrappedEntity attackedEntity) {
     User user = UserRepository.userOf(player);
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
@@ -203,36 +204,28 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
     double blockReachDistance = reachDistance(player.getGameMode() == GameMode.CREATIVE);
     float lastRotationYaw = movementData.lastRotationYaw % 360;
     float rotationYaw = movementData.rotationYaw % 360;
-    boolean alternativePositionY = clientData.protocolVersion() == UserMetaClientData.PROTOCOL_VERSION_BOUNTIFUL_UPDATE;
     boolean hasAlwaysMouseDelayFix = clientData.protocolVersion() >= 314;
 
     double minReach = 10;
-    double maxReach = 0;
 
-    WrappedEntity.EntityPositionContext oldPosition = entity.position.clone();
-    WrappedEntity.EntityPositionContext oldAlternativePosition = entity.alternativePosition.clone();
+    WrappedEntity clonedEntity = attackedEntity.clone();
 
     int index = 0;
 
-    for (WrappedEntity.EntityPositionContext possiblePosition : entity.possiblePositions) {
-      entity.position = possiblePosition.clone();
-      entity.alternativePosition = entity.possibleAlternativePositions.get(index).clone();
-
+    for (WrappedEntity.EntityPositionContext possiblePosition : clonedEntity.possiblePositions) {
+      clonedEntity.position = possiblePosition.clone();
       // TODO: 01/07/21 add trust-factor based length tolerance
-
-      int originalNewPosRotationIncrements = entity.newPosRotationIncrements;
-      entity.newPosRotationIncrements = 3;
+      clonedEntity.newPosRotationIncrements = 3;
 
       double minReachInItr = 10;
-      double maxReachInItr = 0;
 
-      for (int i = 0; i < 4; i++) {
+      for (int loopRotationIncrement = 0; loopRotationIncrement < 4; loopRotationIncrement++) {
         // mouse delay fix
         double reach = distanceOf(
           player,
-          entity.entityBoundingBox().grow(0.15),
-          entity.position, entity.alternativePosition,
-          alternativePositionY,
+          clonedEntity.entityBoundingBox().grow(0.13),
+          clonedEntity.position, null,
+          false,
           movementData.lastPositionX, movementData.lastPositionY, movementData.lastPositionZ,
           rotationYaw, movementData.rotationPitch
         );
@@ -241,39 +234,31 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
           // normal
           reach = distanceOf(
             player,
-            entity.entityBoundingBox().grow(0.15),
-            entity.position, entity.alternativePosition,
-            true,
+            clonedEntity.entityBoundingBox().grow(0.13),
+            clonedEntity.position, null,
+            false,
             movementData.lastPositionX, movementData.lastPositionY, movementData.lastPositionZ,
             lastRotationYaw, movementData.rotationPitch
           );
         }
 
         minReachInItr = Math.min(minReachInItr, reach);
-        maxReachInItr = Math.max(maxReachInItr, reach);
 
-        entity.onLivingUpdate();
+        clonedEntity.onLivingUpdate();
       }
-
 //      player.sendMessage(MathHelper.formatMotion(new Vector(possiblePosition.posX, possiblePosition.posY, possiblePosition.posZ)) + " " + minReachInItr + " " + maxReachInItr);
 
       minReach = Math.min(minReach, minReachInItr);
-      maxReach = Math.max(maxReach, maxReachInItr);
 
-      entity.newPosRotationIncrements = originalNewPosRotationIncrements;
       index++;
     }
 
     // TODO: 01/07/21 clear after last possible position
 
-    entity.position = oldPosition;
-    entity.alternativePosition = oldAlternativePosition;
-
     if(minReach > blockReachDistance) {
-      String entityName = entity.entityName();
+      String entityName = attackedEntity.entityName();
       String targetDescriptor = resolveIndefArticle(entityName) + " " + entityName.toLowerCase();
       String thresholdKey = "";
-
 
       String message, details;
       if(minReach == 10) {

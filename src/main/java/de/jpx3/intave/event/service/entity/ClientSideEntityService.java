@@ -253,17 +253,6 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
       } else {
         entity.handleEntityMovement(packet);
       }
-      if (!clientTickSync) {
-        if (entity.possiblePositions.size() > 7) {
-          entity.possiblePositions.remove(0);
-          entity.possibleAlternativePositions.remove(0);
-        }
-      } else if (!entity.possiblePositions.isEmpty()) {
-        entity.possiblePositions.clear();
-        entity.possibleAlternativePositions.clear();
-      }
-      entity.possiblePositions.add(entity.position.clone());
-      entity.possibleAlternativePositions.add(entity.alternativePosition.clone());
     }
   }
 
