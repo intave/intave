@@ -564,8 +564,7 @@ public final class Physics extends IntaveCheck {
 
     // Jump out of water
     if (movementData.inWater && abuseVertically > 1e-5 && receivedMotionY > 0.0 && receivedMotionY < 0.35) {
-      Location location = new Location(player.getWorld(), movementData.positionX, movementData.positionY, movementData.positionZ);
-      if (Collision.nearBySolidBlock(location, 0.4)) {
+      if (Collision.nearBySolidBlock(player.getWorld(), movementData.boundingBox().grow(0.2))) {
         boolean airAbove = !PlayerMovementHelper.isAllLiquid(player.getWorld(), movementData.boundingBox());
         if (airAbove) {
           abuseVertically = 0;

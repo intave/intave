@@ -1,6 +1,7 @@
 package de.jpx3.intave.world.collision;
 
 import de.jpx3.intave.tools.annotate.Relocate;
+import de.jpx3.intave.tools.client.ClientBlockHelper;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.tools.wrapper.WrappedBlockPosition;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
@@ -97,12 +98,24 @@ public final class Collision {
     return resolve(player, playerBoundingBox).isEmpty();
   }
 
-  public static boolean nearBySolidBlock(Location location, double expansion) {
-    for (double x = -expansion; x <= expansion; x += expansion) {
-      for (double z = -expansion; z <= expansion; z += expansion) {
-        Block block = BlockAccessor.blockAccess(location.clone().add(x, 0.0, z));
-        if (block.getType().isSolid()) {
-          return true;
+  public static boolean nearBySolidBlock(
+    World world,
+    WrappedAxisAlignedBB boundingBox
+  ) {
+    int minX = WrappedMathHelper.floor(boundingBox.minX);
+    int maxX = WrappedMathHelper.floor(boundingBox.maxX);
+    int minY = WrappedMathHelper.floor(boundingBox.minY);
+    int maxY = WrappedMathHelper.floor(boundingBox.maxY);
+    int minZ = WrappedMathHelper.floor(boundingBox.minZ);
+    int maxZ = WrappedMathHelper.floor(boundingBox.maxZ);
+    for (int x = minX; x <= maxX; x++) {
+      for (int y = minY; y <= maxY; y++) {
+        for (int z = minZ; z <= maxZ ; z++) {
+          Block block = BlockAccessor.blockAccess(world, x, y, z);
+          Material type = block.getType();
+          if (!ClientBlockHelper.isLiquid(type) && block.getType() != Material.AIR) {
+            return true;
+          }
         }
       }
     }
