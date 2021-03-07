@@ -20,11 +20,18 @@ import de.jpx3.intave.user.UserMetaAttackData;
 import de.jpx3.intave.user.UserMetaMovementData;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 public final class AttackDispatcher implements EventProcessor {
   public static boolean REDUCING_DISABLED;
@@ -79,13 +86,57 @@ public final class AttackDispatcher implements EventProcessor {
     Synchronizer.synchronizeDelayed(() -> disableReducing(player), 4);
   }
 
+  @PacketSubscription(
+    priority = ListenerPriority.HIGH,
+    packets = {
+      @PacketDescriptor(sender = Sender.SERVER, packetName = "SET_SLOT")
+    }
+  )
+  public void filterSharpness(PacketEvent event) {
+    if (!REDUCING_DISABLED) {
+      return;
+    }
+    PacketContainer packet = event.getPacket();
+    ItemStack item = packet.getItemModifier().read(0).clone();
+    if (item.containsEnchantment(Enchantment.DAMAGE_ALL)) {
+      int level = item.getEnchantmentLevel(Enchantment.DAMAGE_ALL);
+      item.removeEnchantment(Enchantment.DAMAGE_ALL);
+      ItemMeta itemMeta = item.getItemMeta().clone();
+      if (!itemMeta.hasItemFlag(ItemFlag.HIDE_ENCHANTS)) {
+        List<String> lore = itemMeta.getLore() == null ? new ArrayList<>() : new ArrayList<>(itemMeta.getLore());
+        lore.add(ChatColor.GRAY + "Sharpness " + toRoman(level));
+        itemMeta.setLore(lore);
+      }
+      if (!itemMeta.hasEnchants()) {
+        itemMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        itemMeta.addEnchant(Enchantment.DURABILITY, 0,true);
+      }
+      item.setItemMeta(itemMeta);
+    }
+    packet.getItemModifier().write(0, item);
+  }
+
+  private final static int[] ROMAN_STEPS = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
+  private final static String[] ROMAN_LITERALS = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
+
+  private String toRoman(int number) {
+    StringBuilder roman = new StringBuilder();
+    for (int i = 0; i < ROMAN_STEPS.length; i++) {
+      while (number >= ROMAN_STEPS[i]) {
+        number -= ROMAN_STEPS[i];
+        roman.append(ROMAN_LITERALS[i]);
+      }
+    }
+    return roman.toString();
+  }
+
   @BukkitEventSubscription
   public void on(PlayerJoinEvent join) {
     disableReducing(join.getPlayer());
   }
 
   private void disableReducing(Player player) {
-    if(!REDUCING_DISABLED) {
+    if (!REDUCING_DISABLED) {
       return;
     }
     PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.UPDATE_ATTRIBUTES);

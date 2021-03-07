@@ -90,13 +90,7 @@ public final class PhysicsSimulator {
     int keyStrafe = movementData.keyStrafe;
 
     boolean handActive = inventoryData.handActive();
-    boolean attackReduce = movementData.sprintingAllowed() && user.meta().movementData().pastPlayerAttackPhysics == 0;
-
-//    if (AttackDispatcher.REDUCING_DISABLED) {
-//      attackReduce = false;
-//    } else {
-//      attackReduce = movementData.sprintingAllowed() && user.meta().movementData().pastPlayerAttackPhysics == 0;
-//    }
+    boolean attackReduce = AttackDispatcher.REDUCING_DISABLED && movementData.sprintingAllowed() && user.meta().movementData().pastPlayerAttackPhysics == 0;
 
     boolean jumped = false;
     if (movementData.lastOnGround && !movementData.denyJump()) {
@@ -152,9 +146,9 @@ public final class PhysicsSimulator {
       if (attackReduce && movementData.pastPlayerAttackPhysics >= 1) {
         continue;
       }
-     /* if (attackReduce && AttackDispatcher.REDUCING_DISABLED) {
+      if (attackReduce && AttackDispatcher.REDUCING_DISABLED) {
         continue;
-      }*/
+      }
 
       for (int jumpState = 0; jumpState <= 1; jumpState++) {
         boolean jumped = jumpState == 1;
