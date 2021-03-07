@@ -66,7 +66,7 @@ public final class RotationStandardDeviationHeuristic extends IntaveMetaCheckPar
        */
       float pitchSpeed = Math.abs(movementData.rotationPitch - movementData.lastRotationPitch);
       float distanceToPerfectPitch = Math.abs(movementData.rotationPitch - attackData.perfectPitch());
-      if (pitchSpeed > 0.5) {
+      if (pitchSpeed > 0.5 && yawSpeed > 3) {
         heuristicMeta.distancesToPerfectPitch.add(distanceToPerfectPitch);
       }
       if (heuristicMeta.distancesToPerfectPitch.size() >= 10) {
@@ -105,7 +105,7 @@ public final class RotationStandardDeviationHeuristic extends IntaveMetaCheckPar
         Anomaly anomaly = Anomaly.anomalyOf("122", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, Anomaly.AnomalyOption.LIMIT_2);
         parentCheck().saveAnomaly(player, anomaly);
         heuristicMeta.rotationBalancePitch--;
-        plugin.eventService().attackCancelService().requestDamageCancel(user, AttackCancelType.DCRM);
+//        plugin.eventService().attackCancelService().requestDamageCancel(user, AttackCancelType.DCRM);
       }
     } else {
       heuristicMeta.rotationBalancePitch -= heuristicMeta.rotationBalancePitch > 0 ? 0.2 : 0;
