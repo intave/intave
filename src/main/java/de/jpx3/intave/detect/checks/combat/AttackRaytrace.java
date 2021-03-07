@@ -168,6 +168,15 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
         details = "";
         thresholdKey = "applicable-thresholds.hitbox";
         vl = 2;
+        Synchronizer.synchronize(() -> {
+          String sibylMessage = ChatColor.RED + "[R] " + player.getName() + " missed " + entityName.toLowerCase();
+          for (Player authenticatedPlayer : Bukkit.getOnlinePlayers()) {
+            if (plugin.sibylIntegrationService().isAuthenticated(authenticatedPlayer)) {
+              authenticatedPlayer.sendMessage(sibylMessage);
+            }
+          }
+        });
+
         break;
       }
       case REACH: {
