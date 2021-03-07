@@ -26,12 +26,14 @@ public final class ReconDelayLimiter implements BukkitEventSubscriber {
 
   public ReconDelayLimiter(IntavePlugin plugin) {
     this.plugin = plugin;
+
+    setup();
   }
 
   public void setup() {
     YamlConfiguration config = plugin.configurationService().configuration();
 
-    delay = config.getInt("rejoin.delay");
+    delay = config.getInt("rejoin.delay") * 50L;
     refresh = config.getBoolean("rejoin.refresh");
     rawMessage = config.getString("rejoin.message");
 

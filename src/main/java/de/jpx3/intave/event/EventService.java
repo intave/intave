@@ -4,6 +4,7 @@ import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.event.context.ReconDelayLimiter;
 import de.jpx3.intave.event.dispatch.*;
 import de.jpx3.intave.event.punishment.AttackCancelService;
 import de.jpx3.intave.event.service.ConnectionHealthResolver;
@@ -31,6 +32,7 @@ public final class EventService implements BukkitEventSubscriber {
   private TransactionFeedbackService transactionFeedbackService;
   private MovementEmulationEngine emulationEngine;
   private AttackCancelService attackCancelService;
+  private ReconDelayLimiter reconDelayLimiter;
 
   public EventService(IntavePlugin plugin) {
     this.plugin = plugin;
@@ -40,6 +42,7 @@ public final class EventService implements BukkitEventSubscriber {
     this.transactionFeedbackService = new TransactionFeedbackService(plugin);
     this.emulationEngine = new MovementEmulationEngine(plugin);
     this.attackCancelService = new AttackCancelService(plugin);
+    this.reconDelayLimiter = new ReconDelayLimiter(plugin);
     new UserRepositoryEventListener(plugin);
     new AttackDispatcher(plugin);
     new BlockActionDispatcher(plugin);
@@ -98,6 +101,10 @@ public final class EventService implements BukkitEventSubscriber {
 
   public void sendPrefixedMessage(String message, CommandSender target) {
     target.sendMessage(IntavePlugin.prefix() + message);
+  }
+
+  public ReconDelayLimiter reconDelayLimiter() {
+    return reconDelayLimiter;
   }
 
   public MovementEmulationEngine emulationEngine() {

@@ -43,6 +43,9 @@ permissions:
   intave.command.verbose:
     default: op
 
+  intave.command.restart:
+    default: op
+
   intave.command.internals.*:
     default: false
 

@@ -14,6 +14,7 @@ import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
+import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaAttackData;
 import de.jpx3.intave.user.UserMetaMovementData;
@@ -65,6 +66,17 @@ public final class AttackDispatcher implements EventProcessor {
         movementData.pastPlayerAttackPhysics = 0;
       }
     }
+  }
+
+  @PacketSubscription(
+    priority = ListenerPriority.HIGH,
+    packets = {
+      @PacketDescriptor(sender = Sender.SERVER, packetName = "RESPAWN")
+    }
+  )
+  public void sentRespawn(PacketEvent event) {
+    Player player = event.getPlayer();
+    Synchronizer.synchronizeDelayed(() -> disableReducing(player), 4);
   }
 
   @BukkitEventSubscription

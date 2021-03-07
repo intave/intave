@@ -92,7 +92,11 @@ public final class ViolationService {
 
     if(resolvedCommands != null) {
       for (String resolvedCommand : resolvedCommands) {
+        String finalCheckName1 = checkName;
         Synchronizer.synchronize(() -> {
+          if(resolvedCommand.startsWith("ban") || resolvedCommand.startsWith("kick")) {
+            plugin.eventService().reconDelayLimiter().ban(detectedPlayer.getAddress().getAddress(), detectedPlayer.getUniqueId(), finalCheckName1);
+          }
           IntaveLogger.logger().globalPrintLn("[Intave] Executing \"" + ChatColor.stripColor(resolvedCommand) + "\"");
           plugin.logger().commandExecution(resolvedCommand);
           Bukkit.dispatchCommand(Bukkit.getConsoleSender(), resolvedCommand);

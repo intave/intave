@@ -115,7 +115,6 @@ public final class RotationSensitivityHeuristic extends IntaveMetaCheckPart<Heur
         heuristicMeta.sensitivityVL += pitchDifference > 5 ? 10 : 5;
       }
       if (heuristicMeta.sensitivityVL > 100) {
-        heuristicMeta.sensitivityVL = 0;
         parentCheck().saveAnomaly(
           player,
           Anomaly.anomalyOf(
@@ -126,6 +125,7 @@ public final class RotationSensitivityHeuristic extends IntaveMetaCheckPart<Heur
             SUGGEST_MINING
           )
         );
+        heuristicMeta.sensitivityVL = 0;
         plugin.eventService().attackCancelService().requestDamageCancel(user, AttackCancelType.DCRM);
       }
     } else if (heuristicMeta.sensitivityVL > 0) {
