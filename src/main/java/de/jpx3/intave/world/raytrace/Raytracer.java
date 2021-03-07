@@ -1,5 +1,6 @@
 package de.jpx3.intave.world.raytrace;
 
+import de.jpx3.intave.detect.checks.combat.AttackRaytrace;
 import de.jpx3.intave.event.service.entity.WrappedEntity;
 import de.jpx3.intave.patchy.PatchyLoadingInjector;
 import de.jpx3.intave.reflect.ReflectionFailureException;
@@ -19,6 +20,7 @@ import org.bukkit.entity.Player;
 
 public final class Raytracer {
   private static VersionRaytracer versionRaytracer;
+  private static final boolean[] BOOLEANSTATES = new boolean[] { false, true };
 
   public static void setup() {
     boolean voxelVersion = false;
@@ -79,29 +81,42 @@ public final class Raytracer {
   ) {
     WrappedVector eyeVector = positionEyes(player, prevPosX, prevPosY, prevPosZ);
     double blockReachDistance = 6d;
-    WrappedVector interpolatedLookVec = PlayerRotationHelper.wrappedVectorForRotation(pitch, prevYaw);
-    WrappedVector lookVector = eyeVector.addVector(
-      interpolatedLookVec.xCoord * blockReachDistance,
-      interpolatedLookVec.yCoord * blockReachDistance,
-      interpolatedLookVec.zCoord * blockReachDistance
-    );
+    double attackReachDistance = AttackRaytrace.reachDistance(player.getGameMode() == GameMode.CREATIVE);
+    double lastReach = 10;
+    for(boolean fastMath : BOOLEANSTATES) {
+      if(lastReach < attackReachDistance)
+        break;
 
-    WrappedAxisAlignedBB hitBox = entityBoundingBox.expand(0.1f, 0.1f, 0.1f);
-    if (alternativePositionY) {
-      hitBox = hitBox.addJustMaxY(alternativePosition.posY - position.posY);
+      WrappedVector interpolatedLookVec = PlayerRotationHelper.wrappedVectorForRotation(pitch, prevYaw, fastMath);
+      WrappedVector lookVector = eyeVector.addVector(
+        interpolatedLookVec.xCoord * blockReachDistance,
+        interpolatedLookVec.yCoord * blockReachDistance,
+        interpolatedLookVec.zCoord * blockReachDistance
+      );
+
+      WrappedAxisAlignedBB hitBox = entityBoundingBox.expand(0.1f, 0.1f, 0.1f);
+      if (alternativePositionY) {
+        hitBox = hitBox.addJustMaxY(alternativePosition.posY - position.posY);
+      }
+      WrappedMovingObjectPosition movingObjectPosition = hitBox.calculateIntercept(eyeVector, lookVector);
+      if (hitBox.isVecInside(eyeVector)) {
+         lastReach = 0;
+      } else if (movingObjectPosition != null) {
+        WrappedMovingObjectPosition blockMovingPosition = Raytracer.blockRayTrace(player.getWorld(), player, eyeVector, lookVector);
+
+        double distanceToBlock = blockMovingPosition == null || blockMovingPosition.hitVec == null ? 10 : eyeVector.distanceTo(blockMovingPosition.hitVec);
+        double distanceToEntity = eyeVector.distanceTo(movingObjectPosition.hitVec);
+
+        double reach = distanceToBlock < distanceToEntity ? 10 : distanceToEntity;
+//        if(fastMath)
+//          Bukkit.broadcastMessage("" + (lastReach - reach));
+        if(reach < lastReach) {
+          lastReach = reach;
+        }
+      }
     }
-    WrappedMovingObjectPosition movingObjectPosition = hitBox.calculateIntercept(eyeVector, lookVector);
-    if (hitBox.isVecInside(eyeVector)) {
-      return 0;
-    } else if (movingObjectPosition != null) {
-      WrappedMovingObjectPosition blockMovingPosition = Raytracer.blockRayTrace(player.getWorld(), player, eyeVector, lookVector);
 
-      double distanceToBlock = blockMovingPosition == null || blockMovingPosition.hitVec == null ? 10 : eyeVector.distanceTo(blockMovingPosition.hitVec);
-      double distanceToEntity = eyeVector.distanceTo(movingObjectPosition.hitVec);
-
-      return distanceToBlock < distanceToEntity ? 10 : distanceToEntity;
-    }
-    return 10;
+    return lastReach;
   }
 
   private static WrappedVector positionEyes(Player player, double prevPosX, double prevPosY, double prevPosZ) {

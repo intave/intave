@@ -93,10 +93,28 @@ public final class IntaveCommandStage extends CommandStage {
     usage = "",
     description = "Show version info"
   )
-  public void versionCommand(User user) {
-    Player player = user.player();
-    sendVersionMessage(player);
+  public void versionCommand(CommandSender commandSender) {
+    sendVersionMessage(commandSender);
   }
+
+/*
+  @SubCommand(
+    selectors = "restart",
+    usage = "",
+    permission = "intave.command.restart",
+    description = "Restart Intave"
+  )
+  public void restartCommand(CommandSender commandSender) {
+    IntavePlugin plugin = IntavePlugin.singletonInstance();
+    Synchronizer.synchronize(() -> {
+      plugin.getServer().getPluginManager().disablePlugin(plugin);
+      plugin.onLoad();
+      plugin.getServer().getPluginManager().enablePlugin(plugin);
+      commandSender.sendMessage(IntavePlugin.prefix() + "Intave has been restarted");
+//      plugin.violationProcessor().broadcastNotify("Intave has been restarted by " + commandSender.getName());
+    });
+  }
+*/
 
   @SubCommand(
     selectors = "root",
