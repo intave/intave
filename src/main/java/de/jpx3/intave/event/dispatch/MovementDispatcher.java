@@ -199,6 +199,16 @@ public final class MovementDispatcher implements EventProcessor {
     boolean hasMovement = vehicleMove || packet.getBooleans().read(1);
     boolean hasRotation = vehicleMove || packet.getBooleans().read(2);
 
+    if (hasRotation) {
+      Float rotationPitch = event.getPacket().getFloat().read(1);
+      if (Math.abs(rotationPitch) > 90.05f) {
+        event.getPacket().getFloat().writeSafely(1, 0f);
+        String message = "sent invalid rotation";
+        String details = "pitch " + MathHelper.formatDouble(rotationPitch, 4);
+        plugin.violationProcessor().processViolation(player, 1000, "ProtocolScanner", message, details);
+      }
+    }
+
     movementData.updateMovement(packet, hasMovement, hasRotation);
     teleportPositionObserver.receiveMovement(event);
 

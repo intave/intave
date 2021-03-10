@@ -26,6 +26,14 @@ inventoryclickanalysis:
 
   prevention-activation: [100, 15, 15, 10, 5, 5]
 
+placementanalysis:
+
+  prevention-activation: [100, 15, 15, 10, 5, 5]
+
+protocolscanner:
+
+  prevention-activation: [100, 0, 0, 0, 0, 0]
+
 timer:
 
   buffer-size: [100, 16, 8, 6, 4, 4]
