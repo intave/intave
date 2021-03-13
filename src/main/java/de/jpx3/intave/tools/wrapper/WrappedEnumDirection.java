@@ -241,6 +241,17 @@ public enum WrappedEnumDirection {
     return this.axis;
   }
 
+  public int getXOffset() {
+    return this.axis == Axis.X ? this.axisDirection.getOffset() : 0;
+  }
+
+  public int getYOffset() {
+    return this.axis == Axis.Y ? this.axisDirection.getOffset() : 0;
+  }
+
+  public int getZOffset() {
+    return this.axis == Axis.Z ? this.axisDirection.getOffset() : 0;
+  }
   /**
    * Get the facing specified by the given name
    */

@@ -4,6 +4,7 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.tools.annotate.Relocate;
+import de.jpx3.intave.tools.wrapper.WrappedBlockPosition;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.User;
 import org.bukkit.Bukkit;
@@ -66,6 +67,10 @@ public final class BlockAccessor implements BukkitEventSubscriber {
 
   public static Block blockAccess(World blockAccess, double x, double y, double z) {
     return blockAccess(blockAccess, WrappedMathHelper.floor(x), WrappedMathHelper.floor(y),WrappedMathHelper.floor(z));
+  }
+
+  public static Block blockAccess(World blockAccess, WrappedBlockPosition position) {
+    return blockAccess(blockAccess, position.xCoord, position.yCoord, position.zCoord);
   }
 
   public static boolean isInLoadedChunk(World world, int x, int z) {

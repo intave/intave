@@ -176,6 +176,14 @@ public final class WrappedBlockPosition extends WrappedVector {
     return this.offset(facing, 1);
   }
 
+  public WrappedBlockPosition move(WrappedEnumDirection facing) {
+    return move(facing, 1);
+  }
+
+  public WrappedBlockPosition move(WrappedEnumDirection facing, int n) {
+    return new WrappedBlockPosition(this.xCoord + facing.getXOffset() * n, this.yCoord + facing.getYOffset() * n, this.zCoord + facing.getZOffset() * n);
+  }
+
   /**
    * Offsets this BlockPos n blocks in the given direction
    */

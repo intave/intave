@@ -90,6 +90,10 @@ public class WrappedVector {
     return this.addVector(vec.xCoord, vec.yCoord, vec.zCoord);
   }
 
+  public WrappedVector add(double x, double y, double z) {
+    return new WrappedVector(this.xCoord + x, this.yCoord + y, this.zCoord + z);
+  }
+
   /**
    * Adds the specified x,y,z vector components to this vector and returns the resulting vector. Does not change this
    * vector.

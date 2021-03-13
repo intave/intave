@@ -1,11 +1,11 @@
 package de.jpx3.intave.reflect.irx;
 
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.lib.asm.ClassWriter;
 import de.jpx3.intave.lib.asm.Label;
 import de.jpx3.intave.lib.asm.MethodVisitor;
 import de.jpx3.intave.lib.asm.Type;
-import de.jpx3.intave.reflect.ReflectionFailureException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -199,7 +199,7 @@ final class IRXClassAssembler {
       defineClass.setAccessible(true);
       defineClass.invoke(classLoader, classBytes, 0, classBytes.length);
     } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-      throw new ReflectionFailureException(e);
+      throw new IntaveInternalException(e);
     }
   }
 
@@ -207,7 +207,7 @@ final class IRXClassAssembler {
     try {
       return Class.forName(name.replaceAll("/", "."), false, pluginClassLoader());
     } catch (ClassNotFoundException e) {
-      throw new ReflectionFailureException(e);
+      throw new IntaveInternalException(e);
     }
   }
 

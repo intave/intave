@@ -3,9 +3,9 @@ package de.jpx3.intave.world.block;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.patchy.PatchyLoadingInjector;
-import de.jpx3.intave.reflect.ReflectionFailureException;
 import de.jpx3.intave.reflect.ReflectiveBlockAccess;
 import de.jpx3.intave.reflect.ReflectiveMaterialAccess;
 import org.bukkit.Material;
@@ -42,7 +42,7 @@ public final class BlockDataAccess {
       //noinspection unchecked
       return (T) Class.forName(className).newInstance();
     } catch (InstantiationException | IllegalAccessException | ClassNotFoundException exception) {
-      throw new ReflectionFailureException(exception);
+      throw new IntaveInternalException(exception);
     }
   }
 

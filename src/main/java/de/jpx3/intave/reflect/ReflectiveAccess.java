@@ -1,6 +1,7 @@
 package de.jpx3.intave.reflect;
 
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.patchy.PatchyLoadingInjector;
 import de.jpx3.intave.reflect.hitbox.ReflectiveEntityHitBoxAccess;
 import org.bukkit.Bukkit;
@@ -29,7 +30,7 @@ public final class ReflectiveAccess {
       //noinspection unchecked
       return (Class<T>) Class.forName(className);
     } catch (ClassNotFoundException e) {
-      throw new ReflectionFailureException(e);
+      throw new IntaveInternalException(e);
     }
   }
 
