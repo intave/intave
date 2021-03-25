@@ -58,10 +58,10 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
     EnumWrappers.EntityUseAction useAction = packet.getEntityUseActions().readSafely(0);
     if (useAction == EnumWrappers.EntityUseAction.ATTACK) {
       PacketContainer packetClone = packet.deepClone();
-      int entityId =  packet.getIntegers().read(0);
+      int entityId = packet.getIntegers().read(0);
       Attack attack = new Attack(packetClone, entityId);
-      if(attackRaytraceMeta.remainingAttacks.size() < 4) {
-        attackRaytraceMeta.remainingAttacks.add(attack);
+      if(attackRaytraceMeta.pendingAttacks.size() < 4) {
+        attackRaytraceMeta.pendingAttacks.add(attack);
       }
       event.setCancelled(true);
     }
@@ -85,19 +85,17 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
     UserMetaClientData clientData = meta.clientData();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
-
     if(movementData.lastTeleport == 0) {
-      attackRaytraceMeta.remainingAttacks.clear();
+      attackRaytraceMeta.pendingAttacks.clear();
       return;
     }
-
-    List<Attack> remainingAttacks = attackRaytraceMeta.remainingAttacks;
+    List<Attack> remainingAttacks = attackRaytraceMeta.pendingAttacks;
     if(!remainingAttacks.isEmpty()) {
       for (Attack remainingAttack : remainingAttacks) {
         statistics().increaseTotal();
         WrappedEntity entity = entityByIdentifier(user, remainingAttack.entityId());
         boolean invalid = false;
-        if (entity != null && entity.checkable() && !player.isDead()) {
+        if (entity != null && entity.living() && !player.isDead()) {
           if(clientData.protocolVersion() >= PROTOCOL_VERSION_COMBAT_UPDATE) {
             // >= 1.9.x
             if (entity.clientSynchronized
@@ -111,7 +109,6 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
               invalid = processIterativeReachCheck(player, entity);
             }
           }
-
           if(clientData.protocolVersion() <= PROTOCOL_VERSION_BOUNTIFUL_UPDATE) {
             // <= 1.8.9
             if(!entity.clientSynchronized) {
@@ -131,14 +128,12 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
         } else {
           statistics().increasePasses();
         }
-
         if(!invalid && !violationLevelData.isInActiveTeleportBundle) {
           receiveExcludedPacket(player, remainingAttack.packet);
         }
       }
       remainingAttacks.clear();
     }
-
     boolean hasMovement = packet.getBooleans().read(1);
     if (!hasMovement) {
       attackRaytraceMeta.lastFlyPacketCounterReach = 0;
@@ -166,22 +161,19 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
     UserMetaAttackData attackData = meta.attackData();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();
-
     double blockReachDistance = reachDistance(player.getGameMode() == GameMode.CREATIVE);
     float lastRotationYaw = movementData.lastRotationYaw % 360;
     float rotationYaw = movementData.rotationYaw % 360;
     boolean alternativePositionY = clientData.protocolVersion() == UserMetaClientData.PROTOCOL_VERSION_BOUNTIFUL_UPDATE;
     boolean hasAlwaysMouseDelayFix = clientData.protocolVersion() >= 314;
-
     // mouse delay fix
-    Raytracer.DistanceOfResult distanceOfResult = distanceOf(
+    Raytracer.EntityInteractionRaytrace distanceOfResult = distanceOf(
       player,
       entity, alternativePositionY,
       movementData.lastPositionX, movementData.lastPositionY, movementData.lastPositionZ,
       rotationYaw, movementData.rotationPitch,
       expandHitbox
     );
-
     if (!hasAlwaysMouseDelayFix && distanceOfResult.reach > blockReachDistance) {
       // normal
       distanceOfResult = distanceOf(
@@ -192,52 +184,10 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
         expandHitbox
       );
     }
-
-//    if(IntaveControl.DISABLE_LICENSE_CHECK) {
-//      if(!IntaveControl.GOMME_MODE) {
-//        if (entity.clientSynchronized) {
-//          PacketContainer packetContainer = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.CUSTOM_PAYLOAD);
-//          packetContainer.getStrings().write(0, "ATTACKRAYTRACE");
-//          try {
-//            ByteBuf byteBuf = Unpooled.buffer();
-//            byteBuf.writeInt(entity.entityId());
-//            byteBuf.writeDouble(entity.position.posX);
-//            byteBuf.writeDouble(entity.position.posY);
-//            byteBuf.writeDouble(entity.position.posZ);
-//            byteBuf.writeFloat(movementData.rotationYaw);
-//            byteBuf.writeFloat(movementData.rotationPitch);
-//            byteBuf.writeDouble(movementData.lastPositionX);
-//            byteBuf.writeDouble(movementData.lastPositionY);
-//            byteBuf.writeDouble(movementData.lastPositionZ);
-//            byte[] bytes = ("newPosRotationIncrements " + entity.newPosRotationIncrements).getBytes(StandardCharsets.UTF_8);
-//            byteBuf.writeInt(bytes.length);
-//            byteBuf.writeBytes(bytes);
-//
-//            Class<Object> packetDataSerializerClass = (Class<Object>) ReflectiveAccess.lookupServerClass("PacketDataSerializer");
-//            Object packetDataSerializer = packetDataSerializerClass.getConstructor(ByteBuf.class).newInstance(byteBuf);
-//            packetContainer.getSpecificModifier(packetDataSerializerClass).write(0, packetDataSerializer);
-//            Synchronizer.synchronize(() -> {
-//              try {
-//                ProtocolLibrary.getProtocolManager().sendServerPacket(player, packetContainer);
-//              } catch (InvocationTargetException e) {
-//                e.printStackTrace();
-//              }
-//            });
-//          } catch (Exception e) {
-//            e.printStackTrace();
-//          }
-//        }
-//      }
-//    }
-
     attackData.setLastReach(distanceOfResult.reach);
-    String message;
-    String details;
-    String thresholdKey;
-
-    AttackRaytraceResult.ResultType attackRaytraceResult = AttackRaytraceResult.raytraceResultOf(blockReachDistance, distanceOfResult.reach);
-    final int vl = handleViolation(attackRaytraceResult, distanceOfResult, user, expandHitbox);
-
+    String message, details, thresholdKey;
+    AttackRaytraceResult attackRaytraceResult = AttackRaytrace.AttackRaytraceResult.of(distanceOfResult.reach, blockReachDistance);
+    final int vl = applicableViolationPoints(attackRaytraceResult, distanceOfResult, user, expandHitbox);
     String entityName = entity.entityName();
     switch (attackRaytraceResult) {
       case MISS: {
@@ -259,7 +209,6 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
             }
           }
         });
-
         break;
       }
       case REACH: {
@@ -271,8 +220,7 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
         details = displayReach + " blocks";
         thresholdKey = "applicable-thresholds.reach";
         Synchronizer.synchronize(() -> {
-          String sibylMessage = ChatColor.RED + "[R] " + player.getName() + " attacked " + entityName.toLowerCase() +
-            " from " + displayReach;
+          String sibylMessage = ChatColor.RED + "[R] " + player.getName() + " attacked " + entityName.toLowerCase() + " from " + displayReach;
           if(IntaveControl.GOMME_MODE) {
             Player p = playerByWrappedEntity(entity);
             if (p != null) {
@@ -286,7 +234,6 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
             }
           }
         });
-
         break;
       }
       default: {
@@ -295,34 +242,33 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
         return false;
       }
     }
-
     attackRaytraceMeta.lastHitVec = distanceOfResult.hitVec;
-
     if (movementData.inVehicle()) {
       message += " (vehicle)";
     }
-
-   plugin.violationProcessor().processViolation(player, vl, "AttackRaytrace", message, details, thresholdKey);
-//    player.sendMessage("§6s:" + reach);
+    plugin.violationProcessor().processViolation(player, vl, "AttackRaytrace", message, details, thresholdKey);
     return true;
   }
 
-  private int handleViolation(AttackRaytraceResult.ResultType attackRaytraceResult, Raytracer.DistanceOfResult distanceOfResult, User user, double expandHitbox) {
+  private int applicableViolationPoints(
+    AttackRaytraceResult attackRaytraceResult,
+    Raytracer.EntityInteractionRaytrace distanceOfResult,
+    User user, double expandHitbox
+  ) {
     AttackRaytraceMeta attackRaytraceMeta = metaOf(user);
     UserMetaMovementData movementData = user.meta().movementData();
-
     int vl = 0;
     switch (attackRaytraceResult) {
       case MISS: {
         vl = 4;
-      break;
+        break;
       }
       case REACH: {
         vl = 20;
-      break;
+        break;
       }
       default: {
-      break;
+        break;
       }
     }
     if(expandHitbox > 0.1f) {
@@ -333,7 +279,6 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
     } else if(distanceOfResult.hitVec != null && attackRaytraceMeta.lastHitVec != null && distanceOfResult.hitVec.distanceTo(attackRaytraceMeta.lastHitVec) == 0) {
       vl = 0;
     }
-
     return vl;
   }
 
@@ -352,28 +297,20 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();
-
     double blockReachDistance = reachDistance(player.getGameMode() == GameMode.CREATIVE);
     float lastRotationYaw = movementData.lastRotationYaw % 360;
     float rotationYaw = movementData.rotationYaw % 360;
     boolean hasAlwaysMouseDelayFix = clientData.protocolVersion() >= 314;
-
     double minReach = 10;
-
     WrappedEntity clonedEntity = attackedEntity.clone();
-
-    int index = 0;
-
-    for (WrappedEntity.EntityPositionContext possiblePosition : clonedEntity.possiblePositions) {
+    for (WrappedEntity.EntityPositionContext possiblePosition : clonedEntity.positionHistory) {
       clonedEntity.position = possiblePosition.clone();
       // TODO: 01/07/21 add trust-factor based length tolerance
       clonedEntity.newPosRotationIncrements = 3;
-
       double minReachInItr = 10;
-
       for (int loopRotationIncrement = 0; loopRotationIncrement < 4; loopRotationIncrement++) {
         // mouse delay fix
-        Raytracer.DistanceOfResult result = distanceOf(
+        Raytracer.EntityInteractionRaytrace result = distanceOf(
           player,
           clonedEntity,
           false,
@@ -381,7 +318,6 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
           rotationYaw, movementData.rotationPitch,
           0.13f
         );
-
         if (!hasAlwaysMouseDelayFix && result.reach > blockReachDistance) {
           // normal
           result = distanceOf(
@@ -393,25 +329,16 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
             0.13f
           );
         }
-
         minReachInItr = Math.min(minReachInItr, result.reach);
-
         clonedEntity.onLivingUpdate();
       }
-//      player.sendMessage(MathHelper.formatMotion(new Vector(possiblePosition.posX, possiblePosition.posY, possiblePosition.posZ)) + " " + minReachInItr + " " + maxReachInItr);
-
       minReach = Math.min(minReach, minReachInItr);
-
-      index++;
     }
-
     // TODO: 01/07/21 clear after last possible position
-
     if(minReach > blockReachDistance) {
       String entityName = attackedEntity.entityName();
       String targetDescriptor = resolveIndefArticle(entityName) + " " + entityName.toLowerCase();
       String thresholdKey = "";
-
       String message, details;
       if(minReach == 10) {
         message = "attacked " + targetDescriptor + " out of sight";
@@ -419,17 +346,13 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
         thresholdKey = "applicable-thresholds.hitbox";
       } else {
         String minReachDisplay = MathHelper.formatDouble(minReach, 4) + " blocks";
-//        String maxReachDisplay = maxReach == 10 ? "miss" : MathHelper.formatDouble(maxReach, 4) + " blocks";
-//        message = "attacked "+targetDescriptor+" too far away (estimated) (" + minReachDisplay + " at best)";
         message = "attacked " + targetDescriptor + " from too far away";
         details = minReachDisplay + " at best, estimated";
         thresholdKey = "applicable-thresholds.reach";
       }
-
       if (movementData.inVehicle()) {
         message += " (vehicle)";
       }
-
       plugin.violationProcessor().processViolation(player, 0, "AttackRaytrace", message, details, thresholdKey);
       return true;
     }
@@ -453,12 +376,12 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
   }
 
   public static float reachDistance(boolean creative) {
-    return (creative ? 5.0F : 3.0F) + 0.03f;
+    return (creative ? 5.0F : 3.0F) + 0.005f;
   }
 
   public static class AttackRaytraceMeta extends UserCustomCheckMeta {
     public int lastFlyPacketCounterReach = 0;
-    public List<Attack> remainingAttacks = new ArrayList<>();
+    public List<Attack> pendingAttacks = new ArrayList<>();
     public int confidence;
     public WrappedVector lastHitVec;
   }
@@ -466,7 +389,6 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
   public static class Attack {
     private final PacketContainer packet;
     private final int entityId;
-
 
     public Attack(PacketContainer packet, int entityId) {
       this.packet = packet;
@@ -482,18 +404,20 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
     }
   }
 
-  public static final class AttackRaytraceResult {
-    public static AttackRaytraceResult.ResultType raytraceResultOf(double allowedReach, double value) {
-      if (value == 10.0) {
-        return AttackRaytraceResult.ResultType.MISS;
-      }
-      return value > allowedReach ? AttackRaytraceResult.ResultType.REACH : AttackRaytraceResult.ResultType.NORMAL;
-    }
+  public enum AttackRaytraceResult {
+    NORMAL,
+    REACH,
+    MISS
 
-    public enum ResultType {
-      NORMAL,
-      REACH,
-      MISS
+    ;
+
+    public static AttackRaytraceResult of(double reach, double reachLimit) {
+      if (reach == 10.0) {
+        return AttackRaytrace.AttackRaytraceResult.MISS;
+      } else if (reach > reachLimit) {
+        return AttackRaytrace.AttackRaytraceResult.REACH;
+      }
+      return AttackRaytrace.AttackRaytraceResult.NORMAL;
     }
   }
 }

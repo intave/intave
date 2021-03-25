@@ -11,7 +11,7 @@ import de.jpx3.intave.connect.proxy.ProxyMessenger;
 import de.jpx3.intave.connect.shadow.LabymodShadowIntegration;
 import de.jpx3.intave.connect.sibyl.SibylIntegrationService;
 import de.jpx3.intave.detect.CheckService;
-import de.jpx3.intave.detect.checks.movement.physics.collider.Colliders;
+import de.jpx3.intave.detect.checks.movement.physics.collider.Collider;
 import de.jpx3.intave.event.EventService;
 import de.jpx3.intave.event.bukkit.BukkitEventLinker;
 import de.jpx3.intave.event.packet.PacketSubscriptionLinker;
@@ -152,7 +152,7 @@ public final class IntavePlugin extends JavaPlugin {
       ReflectiveAccess.setup();
       WrapperLinkage.setup();
       Raytracer.setup();
-      Colliders.setup();
+      Collider.setup();
       Waterflow.setup();
       BlockAccessor.setup();
       BlockDataAccess.setup();

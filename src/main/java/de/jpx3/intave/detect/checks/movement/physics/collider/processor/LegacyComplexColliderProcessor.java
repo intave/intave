@@ -1,6 +1,7 @@
-package de.jpx3.intave.detect.checks.movement.physics.collider;
+package de.jpx3.intave.detect.checks.movement.physics.collider.processor;
 
-import de.jpx3.intave.detect.checks.movement.Physics;
+import de.jpx3.intave.detect.checks.movement.physics.ProcessorMotionContext;
+import de.jpx3.intave.detect.checks.movement.physics.collider.result.ComplexColliderSimulationResult;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaMovementData;
@@ -9,9 +10,9 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 
-public final class LegacyCollider implements Collider {
+public final class LegacyComplexColliderProcessor implements ComplexColliderProcessor {
   @Override
-  public SimulationResult collide(User user, Physics.PhysicsProcessorContext context, boolean inWeb, double positionX, double positionY, double positionZ) {
+  public ComplexColliderSimulationResult simulateCollision(User user, ProcessorMotionContext context, boolean inWeb, double positionX, double positionY, double positionZ) {
     Player player = user.player();
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
@@ -157,8 +158,8 @@ public final class LegacyCollider implements Collider {
     context.motionX = newPositionX - positionX;
     context.motionY = newPositionY - positionY;
     context.motionZ = newPositionZ - positionZ;
-    return new SimulationResult(
-      Physics.PhysicsProcessorContext.from(context), onGround,
+    return new ComplexColliderSimulationResult(
+      ProcessorMotionContext.from(context), onGround,
       collidedHorizontally, collidedVertically, moveResetX, moveResetZ, step
     );
   }

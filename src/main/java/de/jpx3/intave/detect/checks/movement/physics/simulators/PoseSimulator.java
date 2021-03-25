@@ -1,8 +1,9 @@
 package de.jpx3.intave.detect.checks.movement.physics.simulators;
 
 import de.jpx3.intave.detect.checks.movement.Physics;
-import de.jpx3.intave.detect.checks.movement.physics.collider.SimulationResult;
-import de.jpx3.intave.detect.checks.movement.physics.custom.CustomBlocks;
+import de.jpx3.intave.detect.checks.movement.physics.ProcessorMotionContext;
+import de.jpx3.intave.detect.checks.movement.physics.block.CustomBlocks;
+import de.jpx3.intave.detect.checks.movement.physics.collider.result.ComplexColliderSimulationResult;
 import de.jpx3.intave.user.User;
 
 public abstract class PoseSimulator {
@@ -12,8 +13,8 @@ public abstract class PoseSimulator {
     this.physics = physics;
   }
 
-  public abstract SimulationResult performSimulation(
-    User user, Physics.PhysicsProcessorContext context,
+  public abstract ComplexColliderSimulationResult performSimulation(
+    User user, ProcessorMotionContext context,
     float keyForward, float keyStrafe,
     boolean attackReduce, boolean jumped, boolean handActive
   );

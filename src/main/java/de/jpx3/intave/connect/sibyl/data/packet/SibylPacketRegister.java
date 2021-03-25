@@ -14,16 +14,16 @@ public final class SibylPacketRegister {
     availablePackets = ImmutableMap.copyOf(availablePackets);
   }
 
-  public static <PACKET extends SibylPacket> PACKET createFrom(String label, JsonElement data) {
-    PACKET generatedPacket = generatePacket(label);
+  public static <P extends SibylPacket> P createFrom(String label, JsonElement data) {
+    P generatedPacket = generatePacket(label);
     generatedPacket.buildFrom(data);
     return generatedPacket;
   }
 
-  private static <PACKET extends SibylPacket> PACKET generatePacket(String label) {
+  private static <P extends SibylPacket> P generatePacket(String label) {
     try {
       //noinspection unchecked
-      return (PACKET) availablePackets.get(label).newInstance();
+      return (P) availablePackets.get(label).newInstance();
     } catch (InstantiationException | IllegalAccessException e) {
       throw new IllegalStateException(e);
     }

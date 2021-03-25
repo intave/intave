@@ -1,8 +1,10 @@
-package de.jpx3.intave.detect.checks.movement.physics.custom;
+package de.jpx3.intave.detect.checks.movement.physics.block;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaClientData;
+import de.jpx3.intave.user.UserMetaMovementData;
+import de.jpx3.intave.world.block.BlockTypeAccess;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.util.Vector;
@@ -12,30 +14,27 @@ import java.util.List;
 
 import static de.jpx3.intave.user.UserMetaClientData.PROTOCOL_VERSION_BEE_UPDATE;
 
-final class CustomBlockSoulSand implements CustomBlock {
+final class CustomBlockWeb implements CustomBlock {
   private List<Material> material;
 
   @Override
   public void setup(MinecraftVersion serverVersion) {
-    material = Collections.singletonList(Material.SOUL_SAND);
+    material = Collections.singletonList(BlockTypeAccess.WEB);
   }
 
   @Override
   public Vector entityCollidedWithBlock(User user, Location location, Location from, double motionX, double motionY, double motionZ) {
-    boolean requiresSpeedFactor = requiresSpeedFactor(user);
-    return !requiresSpeedFactor ? new Vector(motionX * 0.4, motionY, motionZ * 0.4) : null;
-  }
+    UserMetaMovementData movementData = user.meta().movementData();
+    movementData.inWeb = true;
+    movementData.artificialFallDistance = 0;
 
-  @Override
-  public Vector speedFactor(User user, double motionX, double motionY, double motionZ) {
-    boolean requiresSpeedFactor = requiresSpeedFactor(user);
-    return requiresSpeedFactor ? new Vector(motionX * 0.4, motionY, motionZ * 0.4) : null;
-  }
-
-  private boolean requiresSpeedFactor(User user) {
     UserMetaClientData clientData = user.meta().clientData();
-    return clientData.protocolVersion() >= PROTOCOL_VERSION_BEE_UPDATE;
+    if (clientData.protocolVersion() >= PROTOCOL_VERSION_BEE_UPDATE) {
+      return new Vector(motionX * 0.25, motionY * 0.05f, motionZ * 0.25);
+    }
+    return null;
   }
+
 
   @Override
   public List<Material> materials() {

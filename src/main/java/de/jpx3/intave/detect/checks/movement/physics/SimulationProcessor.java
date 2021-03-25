@@ -1,7 +1,6 @@
 package de.jpx3.intave.detect.checks.movement.physics;
 
-import de.jpx3.intave.detect.checks.movement.Physics;
-import de.jpx3.intave.detect.checks.movement.physics.collider.SimulationResult;
+import de.jpx3.intave.detect.checks.movement.physics.collider.result.ComplexColliderSimulationResult;
 import de.jpx3.intave.detect.checks.movement.physics.simulators.PoseSimulator;
 import de.jpx3.intave.diagnostics.timings.Timings;
 import de.jpx3.intave.event.dispatch.AttackDispatcher;
@@ -17,7 +16,7 @@ import org.bukkit.inventory.ItemStack;
 import static de.jpx3.intave.reflect.ReflectiveDataWatcherAccess.DATA_WATCHER_BLOCKING_ID;
 
 public final class SimulationProcessor {
-  public SimulationResult simulate(User user, Pose pose) {
+  public ComplexColliderSimulationResult simulate(User user, Pose pose) {
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaInventoryData inventoryData = meta.inventoryData();
@@ -26,7 +25,7 @@ public final class SimulationProcessor {
     boolean keyCalculation = simulator.requiresKeyCalculation();
 
     if (keyCalculation) {
-      SimulationResult predictedMovement;
+      ComplexColliderSimulationResult predictedMovement;
       Timings.CHECK_PHYSICS_PROC_BIA.start();
       predictedMovement = simulateMovementBiased(user);
       double movementDistance = calculateMovementDistance(user, predictedMovement.context());
@@ -66,11 +65,11 @@ public final class SimulationProcessor {
     return simulateMovementWithoutKeyPress(user);
   }
 
-  public SimulationResult simulateMovementWithoutKeyPress(User user) {
+  public ComplexColliderSimulationResult simulateMovementWithoutKeyPress(User user) {
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     Pose movementPoseType = movementData.movementPoseType();
-    Physics.PhysicsProcessorContext context = Physics.PhysicsProcessorContext.from(movementData.physicsProcessorContext);
+    ProcessorMotionContext context = ProcessorMotionContext.from(movementData.processorMotionContext);
     context.resetTo(movementData);
     return movementPoseType.simulator().performSimulation(
       user, context,
@@ -79,12 +78,12 @@ public final class SimulationProcessor {
     );
   }
 
-  private SimulationResult simulateMovementBiased(User user) {
+  private ComplexColliderSimulationResult simulateMovementBiased(User user) {
     UserMetaMovementData movementData = user.meta().movementData();
     UserMetaInventoryData inventoryData = user.meta().inventoryData();
     Pose movementPoseType = movementData.movementPoseType();
     PoseSimulator calculationPart = movementPoseType.simulator();
-    Physics.PhysicsProcessorContext context = movementData.physicsProcessorContext;
+    ProcessorMotionContext context = movementData.processorMotionContext;
     int keyForward = movementData.keyForward;
     int keyStrafe = movementData.keyStrafe;
 
@@ -114,7 +113,7 @@ public final class SimulationProcessor {
     return calculationPart.performSimulation(user, context, moveForward, moveStrafe, attackReduce, jumped, handActive);
   }
 
-  private SimulationResult simulatePossibleMovement(User user) {
+  private ComplexColliderSimulationResult simulatePossibleMovement(User user) {
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaInventoryData inventoryData = meta.inventoryData();
@@ -136,8 +135,8 @@ public final class SimulationProcessor {
     double mostAccurateDistance = Integer.MAX_VALUE;
     boolean reduceOnPlayerAttack = false;
 
-    Physics.PhysicsProcessorContext context = movementData.physicsProcessorContext;
-    SimulationResult predictedMovement = null;
+    ProcessorMotionContext context = movementData.processorMotionContext;
+    ComplexColliderSimulationResult predictedMovement = null;
 
     LOOP:
     for (int attackState = 0; attackState <= 1; attackState++) {
@@ -169,11 +168,11 @@ public final class SimulationProcessor {
             float moveForward = keyForward * 0.98f;
             float moveStrafe = keyStrafe * 0.98f;
             context.resetTo(movementData);
-            SimulationResult collisionResult = simulator.performSimulation(
+            ComplexColliderSimulationResult collisionResult = simulator.performSimulation(
               user, context, moveForward, moveStrafe,
               attackReduce, jumped, inventoryData.handActive()
             );
-            Physics.PhysicsProcessorContext collisionContext = collisionResult.context();
+            ProcessorMotionContext collisionContext = collisionResult.context();
             double differenceX = collisionContext.motionX - receivedMotionX;
             double differenceY = collisionContext.motionY - receivedMotionY;
             double differenceZ = collisionContext.motionZ - receivedMotionZ;
@@ -212,7 +211,7 @@ public final class SimulationProcessor {
     return predictedMovement;
   }
 
-  private double calculateMovementDistance(User user, Physics.PhysicsProcessorContext context) {
+  private double calculateMovementDistance(User user, ProcessorMotionContext context) {
     UserMetaMovementData movementData = user.meta().movementData();
     return MathHelper.resolveDistance(
       context.motionX, context.motionY, context.motionZ,

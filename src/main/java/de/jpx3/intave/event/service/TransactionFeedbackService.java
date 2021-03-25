@@ -24,7 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 
 public final class TransactionFeedbackService implements PacketEventSubscriber {
-  private final static long TRANSACTION_TIMEOUT = 4000;
+  private final static long TRANSACTION_TIMEOUT = 3000;
   private final static long TRANSACTION_TIMEOUT_KICK = 8000;
   public final static short TRANSACTION_MIN_CODE = -32768;
   public final static short TRANSACTION_MAX_CODE = -16370;
@@ -34,6 +34,22 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
     plugin.packetSubscriptionLinker().linkSubscriptionsIn(this);
 
 //    plugin.getServer().getScheduler().scheduleAsyncRepeatingTask(plugin, this::nettyThreadDump, 20 * 10, 20 * 10);
+
+    plugin.getServer().getScheduler().scheduleAsyncRepeatingTask(plugin, this::checkTransactionTimeout, 20 * 2, 20 * 2);
+  }
+
+  private void checkTransactionTimeout() {
+    for (Player player : Bukkit.getOnlinePlayers()) {
+      User user = UserRepository.userOf(player);
+//      player.sendMessage(oldestPendingTransaction(user) + "ms since last transaction");
+      if (oldestPendingTransaction(user) > TRANSACTION_TIMEOUT_KICK) {
+        System.out.println("[Intave] " + player.getName() + " was not responding to transaction packets");
+
+        Synchronizer.synchronize(() -> {
+          player.kickPlayer("Missing transaction response");
+        });
+      }
+    }
   }
 
   @PacketSubscription(
@@ -79,26 +95,33 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
   }
 
   @PacketSubscription(
-    priority = ListenerPriority.HIGHEST,
+    priority = ListenerPriority.LOWEST,
     packets = {
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "FLYING"),
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION"),
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION_LOOK"),
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "LOOK"),
-      @PacketDescriptor(sender = Sender.CLIENT, packetName = "KEEP_ALIVE")
+      @PacketDescriptor(sender = Sender.CLIENT, packetName = "USE_ENTITY")
     }
   )
-  public void keepAlive(PacketEvent event) {
+  public void cancelAttacksIfTransactionMissing(PacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    if (oldestPendingTransaction(user) > TRANSACTION_TIMEOUT_KICK) {
-      System.out.println("[Intave] " + player.getName() + " is not responding to ");
-
-      Synchronizer.synchronize(() -> {
-        player.kickPlayer("Missing transaction response");
-      });
+    PacketContainer packet = event.getPacket();
+    if (oldestPendingTransaction(user) > TRANSACTION_TIMEOUT) {
+      event.setCancelled(true);
     }
   }
+
+//  @PacketSubscription(
+//    priority = ListenerPriority.HIGHEST,
+//    packets = {
+////      @PacketDescriptor(sender = Sender.CLIENT, packetName = "FLYING"),
+////      @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION"),
+////      @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION_LOOK"),
+////      @PacketDescriptor(sender = Sender.CLIENT, packetName = "LOOK"),
+//      @PacketDescriptor(sender = Sender.CLIENT, packetName = "KEEP_ALIVE")
+//    }
+//  )
+//  public void keepAlive(PacketEvent event) {
+//
+//  }
 
   private void nettyThreadDump() {
     Thread.getAllStackTraces().forEach((thread, stackTraceElements) -> {
@@ -162,9 +185,9 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
   private static long oldestPendingTransaction(User user) {
     UserMetaSynchronizeData synchronizeData = user.meta().synchronizeData();
     Map<Short, TransactionCallBackData<?>> transactionFeedBackMap = synchronizeData.transactionFeedBackMap();
-    long duration = 0;
+    long duration = AccessHelper.now();
     for (TransactionCallBackData<?> value : transactionFeedBackMap.values()) {
-      duration = Math.max(duration, value.requested());
+      duration = Math.min(duration, value.requested());
     }
     return duration == 0 ? 0 : AccessHelper.now() - duration;
   }

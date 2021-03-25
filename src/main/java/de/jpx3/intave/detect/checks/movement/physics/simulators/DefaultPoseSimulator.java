@@ -1,9 +1,10 @@
 package de.jpx3.intave.detect.checks.movement.physics.simulators;
 
-import de.jpx3.intave.detect.checks.movement.Physics;
 import de.jpx3.intave.detect.checks.movement.physics.LegacyWaterPhysics;
-import de.jpx3.intave.detect.checks.movement.physics.collider.Colliders;
-import de.jpx3.intave.detect.checks.movement.physics.collider.SimulationResult;
+import de.jpx3.intave.detect.checks.movement.physics.ProcessorMotionContext;
+import de.jpx3.intave.detect.checks.movement.physics.collider.Collider;
+import de.jpx3.intave.detect.checks.movement.physics.collider.result.ComplexColliderSimulationResult;
+import de.jpx3.intave.detect.checks.movement.physics.collider.result.QuickColliderSimulationResult;
 import de.jpx3.intave.tools.client.ClientBlockHelper;
 import de.jpx3.intave.tools.client.PlayerEffectHelper;
 import de.jpx3.intave.tools.client.PlayerMovementHelper;
@@ -16,7 +17,6 @@ import de.jpx3.intave.user.UserMetaClientData;
 import de.jpx3.intave.user.UserMetaMovementData;
 import de.jpx3.intave.user.UserMetaViolationLevelData;
 import de.jpx3.intave.world.BlockAccessor;
-import de.jpx3.intave.world.collision.Collision;
 import de.jpx3.intave.world.waterflow.Waterflow;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -29,8 +29,8 @@ import static de.jpx3.intave.user.UserMetaClientData.PROTOCOL_VERSION_VILLAGE_UP
 
 public class DefaultPoseSimulator extends PoseSimulator {
   @Override
-  public SimulationResult performSimulation(
-    User user, Physics.PhysicsProcessorContext context,
+  public ComplexColliderSimulationResult performSimulation(
+    User user, ProcessorMotionContext context,
     float forward, float strafe,
     boolean attackReduce, boolean jumped, boolean handActive
   ) {
@@ -113,7 +113,7 @@ public class DefaultPoseSimulator extends PoseSimulator {
       tryRelinkFlyingPosition(user, context);
     }
 
-    SimulationResult collisionResult = Colliders.collide(
+    ComplexColliderSimulationResult collisionResult = Collider.simulateComplexCollision(
       user, context, movementData.inWeb,
       positionX, positionY, positionZ
     );
@@ -122,7 +122,7 @@ public class DefaultPoseSimulator extends PoseSimulator {
   }
 
   private void performSimulationInWaterOfState(
-    User user, Physics.PhysicsProcessorContext context,
+    User user, ProcessorMotionContext context,
     float moveForward, float moveStrafe,
     float yawSine, float yawCosine
   ) {
@@ -143,7 +143,7 @@ public class DefaultPoseSimulator extends PoseSimulator {
   }
 
   private void performLavaSimulationOfState(
-    Physics.PhysicsProcessorContext context,
+    ProcessorMotionContext context,
     float moveForward, float moveStrafe,
     float yawSine, float yawCosine
   ) {
@@ -152,7 +152,7 @@ public class DefaultPoseSimulator extends PoseSimulator {
   }
 
   private void performDefaultMoveSimulationOfState(
-    User user, Physics.PhysicsProcessorContext context,
+    User user, ProcessorMotionContext context,
     float moveForward, float moveStrafe,
     float yawSine, float yawCosine
   ) {
@@ -172,7 +172,7 @@ public class DefaultPoseSimulator extends PoseSimulator {
   }
 
   private void performRelativeMoveSimulationOfState(
-    Physics.PhysicsProcessorContext context, float friction,
+    ProcessorMotionContext context, float friction,
     float yawSine, float yawCosine,
     float moveForward, float moveStrafe
   ) {
@@ -187,7 +187,7 @@ public class DefaultPoseSimulator extends PoseSimulator {
     }
   }
 
-  private void tryRelinkFlyingPosition(User user, Physics.PhysicsProcessorContext context) {
+  private void tryRelinkFlyingPosition(User user, ProcessorMotionContext context) {
     Player player = user.player();
     UserMetaMovementData movementData = user.meta().movementData();
 
@@ -207,22 +207,22 @@ public class DefaultPoseSimulator extends PoseSimulator {
     double interpolateZ = context.motionZ;
 
     for (; interpolations <= 2; interpolations++) {
-      Collision.CollisionResult collisionResult = Collision.resolveQuickCollisions(
+      QuickColliderSimulationResult colliderResult = Collider.simulateQuickCollision(
         player, positionX, positionY, positionZ,
         interpolateX, interpolateY, interpolateZ
       );
 
-      positionX += collisionResult.motionX();
-      positionY += collisionResult.motionZ();
-      positionZ += collisionResult.motionY();
+      positionX += colliderResult.motionX();
+      positionY += colliderResult.motionZ();
+      positionZ += colliderResult.motionY();
 
       double diffX = positionX - movementData.verifiedPositionX;
       double diffY = positionY - movementData.verifiedPositionY;
       double diffZ = positionZ - movementData.verifiedPositionZ;
-      onGround = collisionResult.onGround();
+      onGround = colliderResult.onGround();
 
-      boolean jumpLessThanExpected = collisionResult.motionY() < jumpUpwardsMotion;
-      boolean jump = onGround && Math.abs(((collisionResult.motionY()) + jumpUpwardsMotion) - movementData.motionY()) < 1e-5 && jumpLessThanExpected;
+      boolean jumpLessThanExpected = colliderResult.motionY() < jumpUpwardsMotion;
+      boolean jump = onGround && Math.abs(((colliderResult.motionY()) + jumpUpwardsMotion) - movementData.motionY()) < 1e-5 && jumpLessThanExpected;
 
       if (!flyingPacket(diffX, diffY, diffZ) && !jump) {
         break;
@@ -272,19 +272,19 @@ public class DefaultPoseSimulator extends PoseSimulator {
   }
 
   private void applyCollidedMotionsToContext(
-    Player player, Physics.PhysicsProcessorContext context,
+    Player player, ProcessorMotionContext context,
     double positionX, double positionY, double positionZ,
     double motionX, double motionY, double motionZ
   ) {
-    Collision.CollisionResult result = Collision.resolveQuickCollisions(player, positionX, positionY, positionZ, motionX, motionY, motionZ);
-    context.motionX = result.motionX();
-    context.motionY = result.motionY();
-    context.motionZ = result.motionZ();
+    QuickColliderSimulationResult colliderResult = Collider.simulateQuickCollision(player, positionX, positionY, positionZ, motionX, motionY, motionZ);
+    context.motionX = colliderResult.motionX();
+    context.motionY = colliderResult.motionY();
+    context.motionZ = colliderResult.motionZ();
   }
 
-  public void notePossibleFlyingPacket(User user, SimulationResult collisionResult) {
+  public void notePossibleFlyingPacket(User user, ComplexColliderSimulationResult collisionResult) {
     UserMetaMovementData movementData = user.meta().movementData();
-    Physics.PhysicsProcessorContext context = collisionResult.context();
+    ProcessorMotionContext context = collisionResult.context();
     if (flyingPacket(context.motionX, context.motionY, context.motionZ)) {
       movementData.resetFlyingPacketAccurate();
     }
@@ -308,7 +308,7 @@ public class DefaultPoseSimulator extends PoseSimulator {
     User.UserMeta meta = user.meta();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
     UserMetaMovementData movementData = meta.movementData();
-    Physics.PhysicsProcessorContext context = movementData.physicsProcessorContext;
+    ProcessorMotionContext context = movementData.processorMotionContext;
     context.reset(motionX, motionY, motionZ);
 
     boolean elytraFlying = PlayerMovementPoseHelper.flyingWithElytra(player);
@@ -383,7 +383,7 @@ public class DefaultPoseSimulator extends PoseSimulator {
   }
 
   private void simulateMovementOfCollidedBlocks(
-    User user, Physics.PhysicsProcessorContext context,
+    User user, ProcessorMotionContext context,
     WrappedAxisAlignedBB entityBoundingBox
   ) {
     Player player = user.player();
@@ -483,7 +483,7 @@ public class DefaultPoseSimulator extends PoseSimulator {
   }
 
   private void simulateWaterAfter(
-    User user, Physics.PhysicsProcessorContext context, WrappedAxisAlignedBB entityBoundingBox,
+    User user, ProcessorMotionContext context, WrappedAxisAlignedBB entityBoundingBox,
     boolean collidedHorizontally, double gravity
   ) {
     Player player = user.player();
@@ -537,7 +537,7 @@ public class DefaultPoseSimulator extends PoseSimulator {
 
   private void simulateLavaAfter(
     Player player, User user,
-    Physics.PhysicsProcessorContext context, WrappedAxisAlignedBB boundingBox,
+    ProcessorMotionContext context, WrappedAxisAlignedBB boundingBox,
     boolean collidedHorizontally
   ) {
     UserMetaMovementData movementData = user.meta().movementData();
@@ -557,7 +557,7 @@ public class DefaultPoseSimulator extends PoseSimulator {
     }
   }
 
-  private void simulateNormalAfter(User user, Physics.PhysicsProcessorContext context, double gravity, double multiplier) {
+  private void simulateNormalAfter(User user, ProcessorMotionContext context, double gravity, double multiplier) {
     Player player = user.player();
     if (PlayerEffectHelper.isPotionLevitationActive(player)) {
       int levitationAmplifier = PlayerEffectHelper.effectAmplifier(player, PlayerEffectHelper.EFFECT_LEVITATION);

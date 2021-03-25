@@ -85,16 +85,14 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
   }
 
   private final static int REQUIRED_DISTANCE = 16;
-  private final static int MAX_TRACED_ENTITIES = 8;
+  private final static int MAX_TRACED_ENTITIES = 4;
 
   private void reevaluteTracingEntitiesFor(Player player) {
     User user = UserRepository.userOf(player);
     UserMetaSynchronizeData synchronizeData = user.meta().synchronizeData();
-
     Vector location = new Vector(0, 0, 0);
     Vector playerLocation = player.getLocation().toVector();
     List<WrappedEntity> validEntities = new ArrayList<>();
-
     for (WrappedEntity entity : synchronizeData.synchronizedEntityMap().values()) {
       boolean firstSurvive = false;
       if (entity.isEntityLiving) {
@@ -111,9 +109,7 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
       }
       entity.setResponseTracingEnabled(firstSurvive);
     }
-
     validEntities.sort(Comparator.comparingDouble(entity -> entity.distanceToPlayerCache));
-
     int count = 0;
     for (WrappedEntity entity : validEntities) {
       entity.setResponseTracingEnabled(count++ < MAX_TRACED_ENTITIES);
@@ -248,16 +244,7 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
       entity.handleEntityMovement(event.getPacket());
     }
   }
-/*
-  private boolean suitableDistanceForSynchronization(Player player, WrappedEntity entity) {
-    WrappedEntity.EntityPositionContext positions = entity.positions;
-    Location location = player.getLocation();
-    double diffX = location.getX() - positions.posX;
-    double diffY = location.getY() - positions.posY;
-    double diffZ = location.getZ() - positions.posZ;
-    return Math.sqrt(diffX * diffX + diffY * diffY + diffZ * diffZ) < 7.0;
-  }
-*/
+
   private void registerEntity(PacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();

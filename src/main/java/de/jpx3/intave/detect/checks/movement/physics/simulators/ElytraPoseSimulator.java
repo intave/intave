@@ -1,8 +1,8 @@
 package de.jpx3.intave.detect.checks.movement.physics.simulators;
 
-import de.jpx3.intave.detect.checks.movement.Physics;
-import de.jpx3.intave.detect.checks.movement.physics.collider.Colliders;
-import de.jpx3.intave.detect.checks.movement.physics.collider.SimulationResult;
+import de.jpx3.intave.detect.checks.movement.physics.ProcessorMotionContext;
+import de.jpx3.intave.detect.checks.movement.physics.collider.Collider;
+import de.jpx3.intave.detect.checks.movement.physics.collider.result.ComplexColliderSimulationResult;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaMovementData;
@@ -10,8 +10,8 @@ import org.bukkit.util.Vector;
 
 public final class ElytraPoseSimulator extends DefaultPoseSimulator {
   @Override
-  public SimulationResult performSimulation(
-    User user, Physics.PhysicsProcessorContext context,
+  public ComplexColliderSimulationResult performSimulation(
+    User user, ProcessorMotionContext context,
     float forward, float strafe,
     boolean attackReduce, boolean jumped, boolean handActive
   ) {
@@ -69,7 +69,7 @@ public final class ElytraPoseSimulator extends DefaultPoseSimulator {
     context.motionY *= 0.98f;
     context.motionZ *= 0.99f;
 
-    SimulationResult collisionResult = Colliders.collide(
+    ComplexColliderSimulationResult collisionResult = Collider.simulateComplexCollision(
       user, context, movementData.inWeb,
       positionX, positionY, positionZ
     );

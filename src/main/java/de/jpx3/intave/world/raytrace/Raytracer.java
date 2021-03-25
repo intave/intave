@@ -49,7 +49,7 @@ public final class Raytracer {
   /**
    * @param expandBoundingBox should be "0.1f" for a default hitbox
    */
-  public static DistanceOfResult distanceOf(
+  public static EntityInteractionRaytrace distanceOf(
     Player player, WrappedEntity entity,
     boolean useAlternativePositionY,
     double prevPosX, double prevPosY, double prevPosZ,
@@ -74,7 +74,7 @@ public final class Raytracer {
    * @return distance the distance between the entity and the eyes of the player 0 means the player is inside of the
    * entity -1 means the player hit outside of the hitbox of the entity >0 means the reach of the player
    */
-  private static DistanceOfResult distanceOf(
+  private static EntityInteractionRaytrace distanceOf(
     Player player,
     WrappedAxisAlignedBB entityBoundingBox,
     WrappedEntity.EntityPositionContext position,
@@ -124,13 +124,13 @@ public final class Raytracer {
       }
     }
 
-    return new DistanceOfResult(lastHitVec, lastReach);
+    return new EntityInteractionRaytrace(lastHitVec, lastReach);
   }
 
-  public static class DistanceOfResult {
+  public static class EntityInteractionRaytrace {
     public final WrappedVector hitVec;
     public final double reach;
-    public DistanceOfResult(WrappedVector hitVec, double distance) {
+    public EntityInteractionRaytrace(WrappedVector hitVec, double distance) {
       this.hitVec = hitVec;
       this.reach = distance;
     }

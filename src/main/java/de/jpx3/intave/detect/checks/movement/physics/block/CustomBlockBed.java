@@ -1,4 +1,4 @@
-package de.jpx3.intave.detect.checks.movement.physics.custom;
+package de.jpx3.intave.detect.checks.movement.physics.block;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;

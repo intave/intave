@@ -30,12 +30,9 @@ public class WrappedEntity implements Cloneable {
 
   public EntityPositionContext position;
   public EntityPositionContext alternativePosition;
-
-  // -> when entity is not traced
-  public List<EntityPositionContext> possiblePositions = new CopyOnWriteArrayList<>();
+  public List<EntityPositionContext> positionHistory = new CopyOnWriteArrayList<>();
 
   private WrappedAxisAlignedBB boundingBox;
-
   private boolean enabledResponseTracing;
 
   /**
@@ -185,13 +182,11 @@ public class WrappedEntity implements Cloneable {
    */
   public void setPosition(double x, double y, double z) {
     if(!isClone) {
-      if(possiblePositions.size() > 10) {
-        possiblePositions.remove(0);
+      if(positionHistory.size() > 10) {
+        positionHistory.remove(0);
       }
-
-      possiblePositions.add(position);
+      positionHistory.add(position);
     }
-
     position.posX = x;
     position.posY = y;
     position.posZ = z;
@@ -213,7 +208,6 @@ public class WrappedEntity implements Cloneable {
       setPosition(x, y, z);
       return;
     }
-
     position.newPosX = x;
     position.newPosY = y;
     position.newPosZ = z;
@@ -225,7 +219,6 @@ public class WrappedEntity implements Cloneable {
       setPosition(alternativeY);
       return;
     }
-
     alternativePosition.newPosY = alternativeY;
   }
 
@@ -256,8 +249,8 @@ public class WrappedEntity implements Cloneable {
   /**
    * Returns whether the entity is checkable.
    */
-  public boolean checkable() {
-    return isEntityLiving /*&& clientSynchronized*/;
+  public boolean living() {
+    return isEntityLiving;
   }
 
   /**
@@ -275,13 +268,11 @@ public class WrappedEntity implements Cloneable {
   @Override
   public WrappedEntity clone()  {
     WrappedEntity clone = new WrappedEntity(entityName, entityId, isEntityLiving, hitBoxBoundaries);
-
     clone.isClone = true;
     clone.position = position.clone();
     clone.alternativePosition = alternativePosition.clone();
-    clone.possiblePositions = new CopyOnWriteArrayList<> (possiblePositions);
+    clone.positionHistory = new CopyOnWriteArrayList<> (positionHistory);
     clone.newPosRotationIncrements = newPosRotationIncrements;
-
     return clone;
   }
 

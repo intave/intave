@@ -3,8 +3,8 @@ package de.jpx3.intave.user;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.StructureModifier;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.detect.checks.movement.Physics;
 import de.jpx3.intave.detect.checks.movement.physics.Pose;
+import de.jpx3.intave.detect.checks.movement.physics.ProcessorMotionContext;
 import de.jpx3.intave.reflect.ReflectiveHandleAccess;
 import de.jpx3.intave.tools.client.*;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
@@ -36,7 +36,7 @@ public final class UserMetaMovementData {
   public boolean allowFallDamage;
   public double gravity;
 
-  public Physics.PhysicsProcessorContext physicsProcessorContext = new Physics.PhysicsProcessorContext();
+  public ProcessorMotionContext processorMotionContext = new ProcessorMotionContext();
   public Vector lookVector;
   public double verifiedPositionX, verifiedPositionY, verifiedPositionZ;
   public double lastPositionX, lastPositionY, lastPositionZ;

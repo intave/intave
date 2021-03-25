@@ -1,4 +1,4 @@
-package de.jpx3.intave.detect.checks.movement.physics.custom;
+package de.jpx3.intave.detect.checks.movement.physics.block;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.Lists;
@@ -15,42 +15,38 @@ import java.util.Map;
 
 public final class CustomBlocks {
   private final static MinecraftVersion MINECRAFT_VERSION = ProtocolLibAdapter.serverVersion();
-  private final List<CustomBlock> blockCollisions = Lists.newArrayList();
-  private final Map<Material, CustomBlock> accessCache = new HashMap<>();
+  private final List<CustomBlock> blocks = Lists.newArrayList();
+  private final Map<Material, CustomBlock> blockAccessCache = new HashMap<>();
 
   public CustomBlocks() {
     try {
-      initializeBlocks();
-      setupBlocks();
-      prepareAccessCache();
+      loadBlocks();
     } catch (Exception e) {
       e.printStackTrace();
     }
   }
 
-  private void initializeBlocks() {
-    blockCollisions.add(new CustomBlockBed());
-    blockCollisions.add(new CustomBlockSlime());
-    blockCollisions.add(new CustomBlockWeb());
-    blockCollisions.add(new CustomBlockSoulSand());
-    blockCollisions.add(new CustomBlockBerryBush());
-    blockCollisions.add(new CustomBlockWeb());
+  private void loadBlocks() {
+    loadBlock(CustomBlockBed.class);
+    loadBlock(CustomBlockSlime.class);
+    loadBlock(CustomBlockWeb.class);
+    loadBlock(CustomBlockSoulSand.class);
+    loadBlock(CustomBlockBerryBush.class);
+    loadBlock(CustomBlockWeb.class);
   }
 
-  private void setupBlocks() {
-    for (CustomBlock blockCollision : blockCollisions) {
-      blockCollision.setup(MINECRAFT_VERSION);
-    }
-  }
-
-  private void prepareAccessCache() {
-    for (CustomBlock blockCollision : blockCollisions) {
-      if(!blockCollision.supportedOnServerVersion()) {
-        continue;
+  private void loadBlock(Class<? extends CustomBlock> blockClass) {
+    try {
+      CustomBlock block = blockClass.newInstance();
+      block.setup(MINECRAFT_VERSION);
+      if (block.supportedOnServerVersion()) {
+        for (Material material : block.materials()) {
+          blockAccessCache.put(material, block);
+        }
       }
-      for (Material material : blockCollision.materials()) {
-        accessCache.put(material, blockCollision);
-      }
+      blocks.add(block);
+    } catch (InstantiationException | IllegalAccessException exception) {
+      exception.printStackTrace();
     }
   }
 
@@ -103,6 +99,6 @@ public final class CustomBlocks {
   }
 
   private CustomBlock findPotentialCollision(Material material) {
-    return accessCache.get(material);
+    return blockAccessCache.get(material);
   }
 }

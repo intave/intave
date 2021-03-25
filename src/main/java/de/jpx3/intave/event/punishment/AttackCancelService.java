@@ -4,6 +4,7 @@ import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaPunishmentData;
@@ -52,6 +53,7 @@ public final class AttackCancelService implements BukkitEventSubscriber {
     });
   }
 
+  @Native
   private void sendSibylNotify(
     User user,
     UserMetaPunishmentData.DamageCancel damageCancel

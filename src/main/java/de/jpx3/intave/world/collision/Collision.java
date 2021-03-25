@@ -13,7 +13,6 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 @Relocate
@@ -72,13 +71,7 @@ public final class Collision {
     if (resolvedBoundingBoxes == null) {
       resolvedBoundingBoxes = Collections.emptyList();
     } else {
-      // filter invalid
-      final Iterator<WrappedAxisAlignedBB> each = resolvedBoundingBoxes.iterator();
-      while (each.hasNext()) {
-        if (!each.next().intersectsWith(playerBoundingBox)) {
-          each.remove();
-        }
-      }
+      resolvedBoundingBoxes.removeIf(wrappedAxisAlignedBB -> !wrappedAxisAlignedBB.intersectsWith(playerBoundingBox));
     }
     return resolvedBoundingBoxes;
   }
@@ -87,28 +80,20 @@ public final class Collision {
     WorldBorder worldBorder = world.getWorldBorder();
     Location center = worldBorder.getCenter();
     double radians = worldBorder.getSize() / 2.0;
-    double minX = center.getX() - radians;
-    double minZ = center.getZ() - radians;
+    double minX = center.getX() - radians - 1;
+    double minZ = center.getZ() - radians - 1;
     double maxX = center.getX() + radians;
     double maxZ = center.getZ() + radians;
-      --minX;
-      --minZ;
     return positionX > minX && positionX < maxX && positionZ > minZ && positionZ < maxZ;
   }
 
   public static boolean playerInImaginaryBlock(User user, World world, int posX, int posY, int posZ, int type, int data) {
-    List<WrappedAxisAlignedBB> boundingboxes =
-      user.boundingBoxAccess().constructBlock(world, posX, posY, posZ, type, data);
+    List<WrappedAxisAlignedBB> boundingboxes = user.boundingBoxAccess().constructBlock(world, posX, posY, posZ, type, data);
     if (boundingboxes == null || boundingboxes.isEmpty()) {
       return false;
     }
     WrappedAxisAlignedBB playerBox = user.meta().movementData().boundingBox();
-    for (WrappedAxisAlignedBB boundingbox : boundingboxes) {
-      if (playerBox.intersectsWith(boundingbox)) {
-        return true;
-      }
-    }
-    return false;
+    return boundingboxes.stream().anyMatch(playerBox::intersectsWith);
   }
 
   public static boolean hasNoCollisions(Player player, WrappedAxisAlignedBB playerBoundingBox) {
@@ -163,66 +148,8 @@ public final class Collision {
     return false;
   }
 
-  public static CollisionResult resolveQuickCollisions(
-    Player player,
-    double positionX, double positionY, double positionZ,
-    double motionX, double motionY, double motionZ
-  ) {
-    WrappedAxisAlignedBB boundingBox = WrappedAxisAlignedBB.createFromPosition(positionX, positionY, positionZ);
-    List<WrappedAxisAlignedBB> collisionBoxes = Collision.resolve(
-      player,
-      boundingBox.addCoord(motionX, motionY, motionZ)
-    );
-    double startMotionY = motionY;
-    for (WrappedAxisAlignedBB collisionBox : collisionBoxes) {
-      motionY = collisionBox.calculateYOffset(boundingBox, motionY);
-    }
-    boundingBox = (boundingBox.offset(0.0D, motionY, 0.0D));
-    boolean onGround = startMotionY != motionY && startMotionY < 0.0D;
-    for (WrappedAxisAlignedBB collisionBox : collisionBoxes) {
-      motionX = collisionBox.calculateXOffset(boundingBox, motionX);
-    }
-    boundingBox = boundingBox.offset(motionX, 0.0D, 0.0D);
-    for (WrappedAxisAlignedBB collisionBox : collisionBoxes) {
-      motionZ = collisionBox.calculateZOffset(boundingBox, motionZ);
-    }
-    return new CollisionResult(motionX, motionY, motionZ, onGround, startMotionY != motionY);
-  }
-
   public static boolean checkBoundingBoxIntersection(User user, WrappedAxisAlignedBB boundingBox) {
     return !Collision.resolve(user.player(), boundingBox).isEmpty();
   }
 
-  public static class CollisionResult {
-    private final double motionX, motionY, motionZ;
-    private final boolean onGround, collidedVertically;
-
-    public CollisionResult(double motionX, double motionY, double motionZ, boolean onGround, boolean collidedVertically) {
-      this.motionX = motionX;
-      this.motionY = motionY;
-      this.motionZ = motionZ;
-      this.onGround = onGround;
-      this.collidedVertically = collidedVertically;
-    }
-
-    public double motionX() {
-      return motionX;
-    }
-
-    public double motionY() {
-      return motionY;
-    }
-
-    public double motionZ() {
-      return motionZ;
-    }
-
-    public boolean onGround() {
-      return onGround;
-    }
-
-    public boolean collidedVertically() {
-      return collidedVertically;
-    }
-  }
 }

@@ -8,9 +8,12 @@ import de.jpx3.intave.detect.CheckViolationLevelDecrementer;
 import de.jpx3.intave.detect.IntaveCheck;
 import de.jpx3.intave.detect.checks.movement.physics.LegacyWaterPhysics;
 import de.jpx3.intave.detect.checks.movement.physics.Pose;
+import de.jpx3.intave.detect.checks.movement.physics.ProcessorMotionContext;
 import de.jpx3.intave.detect.checks.movement.physics.SimulationProcessor;
-import de.jpx3.intave.detect.checks.movement.physics.collider.SimulationResult;
-import de.jpx3.intave.detect.checks.movement.physics.custom.CustomBlocks;
+import de.jpx3.intave.detect.checks.movement.physics.block.CustomBlocks;
+import de.jpx3.intave.detect.checks.movement.physics.collider.Collider;
+import de.jpx3.intave.detect.checks.movement.physics.collider.result.ComplexColliderSimulationResult;
+import de.jpx3.intave.detect.checks.movement.physics.collider.result.QuickColliderSimulationResult;
 import de.jpx3.intave.detect.checks.movement.physics.simulators.PoseSimulator;
 import de.jpx3.intave.diagnostics.timings.Timings;
 import de.jpx3.intave.reflect.ReflectiveAccess;
@@ -120,7 +123,7 @@ public final class Physics extends IntaveCheck {
     Timings.CHECK_PHYSICS_PROC_TOT.start();
     predictFlyingPacketBeforeVelocity(user);
 
-    SimulationResult predictedMovement = simulationService.simulate(user, movementData.movementPoseType());
+    ComplexColliderSimulationResult predictedMovement = simulationService.simulate(user, movementData.movementPoseType());
     movementData.onGround = predictedMovement.onGround();
     movementData.collidedHorizontally = predictedMovement.collidedHorizontally();
     movementData.collidedVertically = predictedMovement.collidedVertically();
@@ -173,16 +176,16 @@ public final class Physics extends IntaveCheck {
     double motionY = (movementData.physicsMotionYBeforeVelocity - 0.08) * 0.98f;
     double motionZ = movementData.physicsMotionZBeforeVelocity * 0.91f;
     if (motionX != 0 && motionY != 0 && motionZ != 0) {
-      Collision.CollisionResult collisionResult = Collision.resolveQuickCollisions(
+      QuickColliderSimulationResult colliderResult = Collider.simulateQuickCollision(
         user.player(),
         movementData.verifiedPositionX, movementData.verifiedPositionY, movementData.verifiedPositionZ,
         motionX, motionY, motionZ
       );
-      motionX = collisionResult.motionX();
-      motionY = collisionResult.motionY();
-      motionZ = collisionResult.motionZ();
+      motionX = colliderResult.motionX();
+      motionY = colliderResult.motionY();
+      motionZ = colliderResult.motionZ();
 
-      if (collisionResult.onGround() || movementData.onGround) {
+      if (colliderResult.onGround() || movementData.onGround) {
         double distance = motionX * motionX + motionY * motionY + motionZ * motionZ;
         if (distance < 0.009) {
           movementData.physicsUnpredictableVelocityExpected = true;
@@ -221,7 +224,7 @@ public final class Physics extends IntaveCheck {
     }
   }
 
-  private void evaluateBestSimulation(User user, SimulationResult expectedMovement) {
+  private void evaluateBestSimulation(User user, ComplexColliderSimulationResult expectedMovement) {
     Player player = user.player();
     User.UserMeta meta = user.meta();
     boolean spectator = player.getGameMode() == GameMode.SPECTATOR;
@@ -229,7 +232,7 @@ public final class Physics extends IntaveCheck {
     UserMetaMovementData movementData = meta.movementData();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
     UserMetaAbilityData abilityData = meta.abilityData();
-    PhysicsProcessorContext context = expectedMovement.context();
+    ProcessorMotionContext context = expectedMovement.context();
 
     int keyForward = movementData.keyForward;
     int keyStrafe = movementData.keyStrafe;
@@ -283,8 +286,8 @@ public final class Physics extends IntaveCheck {
 
     if (distance > 1e-3) {
       movementData.suspiciousMovement = true;
-      SimulationResult entityCollisionResult = simulationService.simulateMovementWithoutKeyPress(user);
-      PhysicsProcessorContext setbackContext = entityCollisionResult.context();
+      ComplexColliderSimulationResult entityCollisionResult = simulationService.simulateMovementWithoutKeyPress(user);
+      ProcessorMotionContext setbackContext = entityCollisionResult.context();
       predictedX = setbackContext.motionX;
       predictedY = setbackContext.motionY;
       predictedZ = setbackContext.motionZ;
@@ -732,33 +735,4 @@ public final class Physics extends IntaveCheck {
     return customBlocks;
   }
 
-  public static final class PhysicsProcessorContext {
-    public double motionX;
-    public double motionY;
-    public double motionZ;
-
-    public PhysicsProcessorContext() {
-      this(0.0, 0.0, 0.0);
-    }
-
-    public PhysicsProcessorContext(double motionX, double motionY, double motionZ) {
-      this.motionX = motionX;
-      this.motionY = motionY;
-      this.motionZ = motionZ;
-    }
-
-    public void reset(double x, double y, double z) {
-      this.motionX = x;
-      this.motionY = y;
-      this.motionZ = z;
-    }
-
-    public void resetTo(UserMetaMovementData data) {
-      reset(data.physicsMotionX, data.physicsMotionY, data.physicsMotionZ);
-    }
-
-    public static PhysicsProcessorContext from(PhysicsProcessorContext context) {
-      return new PhysicsProcessorContext(context.motionX, context.motionY, context.motionZ);
-    }
-  }
 }

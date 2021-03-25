@@ -40,7 +40,6 @@ public final class LegacyWaterPhysics {
         }
       }
     }
-
     if (inWater && flowVector != null && flowVector.lengthVector() > 0.0D) {
       flowVector = flowVector.normalize();
       double d1 = 0.014D;

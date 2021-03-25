@@ -38,10 +38,24 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\src\main\java\de\jpx3\intave\detect\checks\movement\Physics.java">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\src\main\java\de\jpx3\intave\detect\checks\movement\Timer.java">
           <value>
             <Attribute>
               <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\main\java\de\jpx3\intave\detect\checks\movement\physics\collider\Collider.java">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
             </Attribute>
           </value>
         </entry>
@@ -60,6 +74,13 @@
           </value>
         </entry>
         <entry key="\src\main\java\de\jpx3\intave\event\packet\ForwardingPacketAdapter.java">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\main\java\de\jpx3\intave\event\service\entity\WrappedEntity.java">
           <value>
             <Attribute>
               <option name="separator" value=";" />

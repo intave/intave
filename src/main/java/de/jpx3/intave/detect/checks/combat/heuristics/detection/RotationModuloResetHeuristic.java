@@ -82,7 +82,7 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();
     boolean alternativePositionY = clientData.protocolVersion() == UserMetaClientData.PROTOCOL_VERSION_BOUNTIFUL_UPDATE;
-    double rayTraceResult = Raytracer.distanceOf(
+    Raytracer.EntityInteractionRaytrace rayTraceResult = Raytracer.distanceOf(
       user.player(),
       attackData.lastAttackedEntity(),
       alternativePositionY,
@@ -93,7 +93,7 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
       movementData.rotationPitch,
       0.1f
     );
-    return rayTraceResult != 10;
+    return rayTraceResult.reach != 10;
   }
 
   public static final class RotationModuloResetHeuristicMeta extends UserCustomCheckMeta {
