@@ -1,0 +1,56 @@
+package de.jpx3.intave.world.collision.resolver;
+
+import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
+import de.jpx3.intave.reflect.ReflectiveMaterialAccess;
+import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.world.collision.BoundingBoxResolver;
+import net.minecraft.server.v1_13_R2.*;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_13_R2.util.CraftMagicNumbers;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+@PatchyAutoTranslation
+public final class v13BoundingBoxResolver implements BoundingBoxResolver {
+  @Override
+  @PatchyAutoTranslation
+  public List<WrappedAxisAlignedBB> resolve(World world, int posX, int posY, int posZ) {
+    Location location = new Location(world, posX, posY, posZ);
+    org.bukkit.block.Block block = location.getBlock();
+    return resolve(world, posX, posY, posZ, block.getType().getId(), block.getData());
+  }
+
+  @Override
+  @PatchyAutoTranslation
+  public List<WrappedAxisAlignedBB> resolve(World world, int posX, int posY, int posZ, int typeId, int blockState) {
+    WorldServer handle = ((CraftWorld) world).getHandle();
+    BlockPosition blockPosition = new BlockPosition(posX, posY, posZ);
+    Material material = ReflectiveMaterialAccess.materialById(typeId);
+    IBlockData blockData = CraftMagicNumbers.getBlock(material, (byte) blockState);
+    if(blockData == null) {
+      return Collections.emptyList();
+    }
+    VoxelShape collisionShape = blockData.getCollisionShape(handle, blockPosition);
+    List<AxisAlignedBB> nativeBoxes = collisionShape.d();
+    if(nativeBoxes.isEmpty()) {
+      return Collections.emptyList();
+    }
+    return translate(nativeBoxes, posX, posY, posZ);
+  }
+
+  private List<WrappedAxisAlignedBB> translate(List<?> bbs, int posX, int posY, int posZ) {
+    if(bbs.isEmpty()) {
+      return Collections.emptyList();
+    }
+    List<WrappedAxisAlignedBB> list = new ArrayList<>();
+    for (Object bb : bbs) {
+      list.add(WrappedAxisAlignedBB.fromNative(bb).offset(posX, posY, posZ));
+    }
+    return list;
+  }
+}

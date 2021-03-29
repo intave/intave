@@ -1,7 +1,10 @@
 package de.jpx3.intave.reflect;
 
+import com.google.common.collect.Maps;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import org.bukkit.Material;
+
+import java.util.Map;
 
 public final class ReflectiveMaterialAccess {
   public static Material materialById(int id) {
@@ -12,11 +15,18 @@ public final class ReflectiveMaterialAccess {
     }
   }
 
+  private static final Map<Integer, Material> resolverCache = Maps.newHashMap();
+
   private static Material resolveIterative(int id) {
-    for (Material value : Material.values()) {
-      int valueId = value.getId();
+    Material material = resolverCache.get(id);
+    if (material != null) {
+      return material;
+    }
+    for (Material selectedMaterial : Material.values()) {
+      int valueId = selectedMaterial.getId();
       if (valueId == id) {
-        return value;
+        resolverCache.put(valueId, selectedMaterial);
+        return selectedMaterial;
       }
     }
     return null;

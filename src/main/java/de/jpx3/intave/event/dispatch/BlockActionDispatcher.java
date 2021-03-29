@@ -15,6 +15,7 @@ import de.jpx3.intave.detect.EventProcessor;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
+import de.jpx3.intave.reflect.ReflectiveMaterialAccess;
 import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.tools.wrapper.WrappedEnumDirection;
@@ -132,7 +133,7 @@ public final class BlockActionDispatcher implements EventProcessor {
 
       if(access) {
         if (IntaveControl.DEBUG_BLOCK_CACHING) {
-          player.sendMessage("Internal place emulation at " + MathHelper.formatPosition(blockPlacementLocation) + " with " + Material.getMaterial(replacementId));
+          player.sendMessage("Internal place emulation at " + MathHelper.formatPosition(blockPlacementLocation) + " with " + ReflectiveMaterialAccess.materialById(replacementId));
         }
 
         BoundingBoxAccess boundingBoxAccess = UserRepository.userOf(player).boundingBoxAccess();
@@ -145,7 +146,7 @@ public final class BlockActionDispatcher implements EventProcessor {
       } else {
         if (IntaveControl.DEBUG_BLOCK_CACHING) {
           Synchronizer.synchronize(() -> {
-            player.sendMessage("Internal place emulation denied at " + MathHelper.formatPosition(blockPlacementLocation) + " with " + Material.getMaterial(replacementId));
+            player.sendMessage("Internal place emulation denied at " + MathHelper.formatPosition(blockPlacementLocation) + " with " + ReflectiveMaterialAccess.materialById(replacementId));
           });
         }
 

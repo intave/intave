@@ -1,5 +1,6 @@
 package de.jpx3.intave.world.collision.patches;
 
+import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -22,8 +23,9 @@ public final class BoundingBoxPatcher {
   private static void add(Class<? extends BoundingBoxPatch> patchClass) {
     try {
       add(patchClass.newInstance());
-    } catch (InstantiationException | IllegalAccessException exception) {
-      throw new IllegalStateException(exception);
+    } catch (Exception | Error exception) {
+      IntaveLogger.logger().info("Failed to load bounding box patch (class " + patchClass + ")");
+      exception.printStackTrace();
     }
   }
 
@@ -32,7 +34,7 @@ public final class BoundingBoxPatcher {
   }
 
   public static List<WrappedAxisAlignedBB> patch(World world, Player player, Block block, List<WrappedAxisAlignedBB> bbs) {
-    BoundingBoxPatch boundingBoxPatch = patches.get(block.getTypeId());
+    BoundingBoxPatch boundingBoxPatch = patches.get(block.getType().getId());
     return boundingBoxPatch == null ? bbs : transpose(boundingBoxPatch.patch(world, player, block, bbs), block.getX(), block.getY(), block.getZ());
   }
 

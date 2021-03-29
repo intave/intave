@@ -78,6 +78,7 @@ public final class Collision {
     return resolvedBoundingBoxes;
   }
 
+  @Deprecated
   public static List<WrappedAxisAlignedBB> resolve(
     World world,
     WrappedAxisAlignedBB boundingBox

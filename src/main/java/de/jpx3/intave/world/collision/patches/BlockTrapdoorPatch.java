@@ -1,8 +1,8 @@
 package de.jpx3.intave.world.collision.patches;
 
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
 import de.jpx3.intave.world.collision.BoundingBoxBuilder;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
@@ -10,7 +10,7 @@ import java.util.List;
 
 public final class BlockTrapdoorPatch extends BoundingBoxPatch {
   protected BlockTrapdoorPatch() {
-    super(Material.TRAP_DOOR.getId());
+    super(BlockTypeAccess.TRAP_DOOR.getId());
   }
 
   /*

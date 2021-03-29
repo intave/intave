@@ -6,13 +6,13 @@ import de.jpx3.intave.tools.wrapper.WrappedMovingObjectPosition;
 import de.jpx3.intave.tools.wrapper.WrappedVector;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.world.collision.BoundingBoxAccess;
-import net.minecraft.server.v1_8_R3.*;
+import net.minecraft.server.v1_9_R2.*;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_9_R2.CraftWorld;
 import org.bukkit.entity.Player;
 
 @PatchyAutoTranslation
-public final class LegacyVersionRaytracer implements VersionRaytracer {
+public final class CombatUpdateRaytracer implements VersionRaytracer {
   @Override
   @PatchyAutoTranslation
   public WrappedMovingObjectPosition raytrace(World world, Player player, WrappedVector eyeVector, WrappedVector targetVector) {
@@ -47,7 +47,7 @@ public final class LegacyVersionRaytracer implements VersionRaytracer {
     IBlockData iblockdata = typeOf(player, world, blockposition);//world.getType(blockposition);
     Block block = iblockdata.getBlock();
     if (block.a(iblockdata, false) &&
-      (movingobjectposition = block.a(world, blockposition, (Vec3D) lookVector.convertToNativeVec3(), (Vec3D) position.convertToNativeVec3())) != null
+      (movingobjectposition = block.a(iblockdata, world, blockposition, (Vec3D) lookVector.convertToNativeVec3(), (Vec3D) position.convertToNativeVec3())) != null
     ) {
       return movingobjectposition;
     }
@@ -131,7 +131,7 @@ public final class LegacyVersionRaytracer implements VersionRaytracer {
 
       // block1.a refers to getCollisionBoundingBox
       if (block1.a(iblockdata1, false)) {
-        MovingObjectPosition movingobjectposition2 = block1.a(world, blockposition, (Vec3D) lookVector.convertToNativeVec3(), (Vec3D) position.convertToNativeVec3());
+        MovingObjectPosition movingobjectposition2 = block1.a(iblockdata1, world, blockposition, (Vec3D) lookVector.convertToNativeVec3(), (Vec3D) position.convertToNativeVec3());
         if (movingobjectposition2 == null) {
           continue;
         }

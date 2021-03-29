@@ -1,6 +1,7 @@
 package de.jpx3.intave.tools.wrapper;
 
 import de.jpx3.intave.reflect.ReflectiveAccess;
+import de.jpx3.intave.tools.wrapper.link.WrapperLinkage;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.util.Vector;
@@ -178,6 +179,10 @@ public class WrappedVector {
       double d3 = (z - this.zCoord) / d2;
       return d3 >= 0.0D && d3 <= 1.0D ? new WrappedVector(this.xCoord + d0 * d3, this.yCoord + d1 * d3, this.zCoord + d2 * d3) : null;
     }
+  }
+
+  public static WrappedVector fromNative(Object vec3d) {
+    return WrapperLinkage.vectorOf(vec3d);
   }
 
   public String toString() {

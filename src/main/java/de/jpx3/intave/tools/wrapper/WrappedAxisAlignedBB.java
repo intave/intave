@@ -1,6 +1,7 @@
 package de.jpx3.intave.tools.wrapper;
 
 import de.jpx3.intave.tools.MathHelper;
+import de.jpx3.intave.tools.wrapper.link.WrapperLinkage;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaMovementData;
 import org.bukkit.Location;
@@ -427,6 +428,10 @@ public class WrappedAxisAlignedBB {
 
   public static WrappedAxisAlignedBB createFromPosition(WrappedBlockPosition position) {
     return createFromPosition(position.xCoord, position.yCoord, position.zCoord);
+  }
+
+  public static WrappedAxisAlignedBB fromNative(Object nativeBB) {
+    return WrapperLinkage.boundingBoxOf(nativeBB);
   }
 
   private final static float PLAYER_HEIGHT = 1.8f;

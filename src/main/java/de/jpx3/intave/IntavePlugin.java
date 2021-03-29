@@ -494,7 +494,9 @@ public final class IntavePlugin extends JavaPlugin {
 
   @Native
   public void clearCacheFiles() {
-    configurationService.deleteCache();
+    if(configurationService != null) {
+      configurationService.deleteCache();
+    }
     clearIntegrityGarbage();
   }
 

@@ -1,6 +1,8 @@
 package de.jpx3.intave.world.raytrace;
 
+import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.access.IntaveInternalException;
+import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.detect.checks.combat.AttackRaytrace;
 import de.jpx3.intave.event.service.entity.WrappedEntity;
 import de.jpx3.intave.patchy.PatchyLoadingInjector;
@@ -31,6 +33,8 @@ public final class Raytracer {
     String className;
     if(voxelVersion) {
       className = "de.jpx3.intave.world.raytrace.VoxelVersionRaytracer";
+    } else if (ProtocolLibAdapter.serverVersion().isAtLeast(MinecraftVersion.COMBAT_UPDATE)) {
+      className = "de.jpx3.intave.world.raytrace.CombatUpdateRaytracer";
     } else {
       className = "de.jpx3.intave.world.raytrace.LegacyVersionRaytracer";
     }
