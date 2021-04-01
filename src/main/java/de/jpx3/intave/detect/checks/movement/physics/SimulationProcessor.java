@@ -161,6 +161,8 @@ public final class SimulationProcessor {
               }
               simulateIterativeState(
                 user,
+                movementData,
+                inventoryData,
                 iterativeSimulation,
                 simulator,
                 keyForward,
@@ -180,6 +182,8 @@ public final class SimulationProcessor {
     if (iterativeSimulation.noMatch()) {
       simulateIterativeState(
         user,
+        movementData,
+        inventoryData,
         iterativeSimulation,
         simulator,
         0,
@@ -202,6 +206,8 @@ public final class SimulationProcessor {
 
   private void simulateIterativeState(
     User user,
+    UserMetaMovementData movementData,
+    UserMetaInventoryData inventoryData,
     IterativeSimulationResult result,
     PoseSimulator simulator,
     int keyForward,
@@ -210,7 +216,6 @@ public final class SimulationProcessor {
     boolean jumped,
     boolean handActive
   ) {
-    UserMetaMovementData movementData = user.meta().movementData();
     MotionVector motionVector = movementData.motionVector;
     float moveForward = keyForward * 0.98f;
     float moveStrafe = keyStrafe * 0.98f;
@@ -221,7 +226,9 @@ public final class SimulationProcessor {
     );
     MotionVector collisionContext = collisionResult.context();
     double distance = calculateMovementDistance(user, collisionContext);
-    result.tryAppendToState(collisionResult, distance, keyForward, keyStrafe, attackReduce, jumped, handActive);
+    if (inventoryData.handActive() == handActive || distance < 0.001) {
+      result.tryAppendToState(collisionResult, distance, keyForward, keyStrafe, attackReduce, jumped, handActive);
+    }
   }
 
   private static final class IterativeSimulationResult {
