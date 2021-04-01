@@ -149,9 +149,8 @@ public final class SimulationProcessor {
       double direction;
       direction = Math.toDegrees(Math.atan2(differenceZ, differenceX)) - 90d;
       direction -= yaw;
-      while (direction > 360)
-        direction -= 360;
-      while (direction < 0)
+      direction %= 360d;
+      if (direction < 0)
         direction += 360;
       direction = Math.abs(direction);
       direction /= 45d;
