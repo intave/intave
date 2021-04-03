@@ -13,6 +13,9 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.event.BucketAction;
 import de.jpx3.intave.detect.CheckViolationLevelDecrementer;
 import de.jpx3.intave.detect.IntaveMetaCheck;
+import de.jpx3.intave.detect.checks.movement.Physics;
+import de.jpx3.intave.detect.checks.movement.physics.MotionVector;
+import de.jpx3.intave.detect.checks.movement.physics.SimulationProcessor;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.event.dispatch.PlayerAbilityEvaluator;
 import de.jpx3.intave.event.packet.ListenerPriority;
@@ -30,6 +33,7 @@ import de.jpx3.intave.user.UserMetaInventoryData;
 import de.jpx3.intave.user.UserMetaMovementData;
 import de.jpx3.intave.world.blockaccess.BlockDataAccess;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
+import de.jpx3.intave.world.collider.result.ComplexColliderSimulationResult;
 import de.jpx3.intave.world.collision.BoundingBoxAccess;
 import de.jpx3.intave.world.collision.Collision;
 import de.jpx3.intave.world.permission.WorldPermission;
@@ -58,6 +62,7 @@ import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.STOP_DE
 
 public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytrace.InteractionMeta> {
   private final IntavePlugin plugin;
+  private final SimulationProcessor simulationProcessor;
   private final CheckViolationLevelDecrementer decrementer;
 
   private boolean enabled;
@@ -66,6 +71,7 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     super("InteractionRaytrace", "interactionraytrace", InteractionMeta.class);
     this.plugin = plugin;
     this.decrementer = new CheckViolationLevelDecrementer(this, 1);
+    this.simulationProcessor = plugin.checkService().searchCheck(Physics.class).simulationService();
   }
 
   @PacketSubscription(
@@ -791,6 +797,25 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
   public boolean enabled() {
     this.enabled = super.enabled();
     return true;
+  }
+
+  private Vector resolveLocationWithoutKeyPress(User user) {
+    ComplexColliderSimulationResult result = simulationProcessor.simulateMovementWithLastKeys(user);
+    return resolvePositionMotion(user, result.context());
+  }
+
+  private Vector resolvePositionWithLastKeys(User user) {
+    ComplexColliderSimulationResult result = simulationProcessor.simulateMovementWithLastKeys(user);
+    return resolvePositionMotion(user, result.context());
+  }
+
+  private Vector resolvePositionMotion(User user, MotionVector vector) {
+    UserMetaMovementData movementData = user.meta().movementData();
+    return new Vector(
+      movementData.positionX + vector.motionX,
+      movementData.positionY + vector.motionY,
+      movementData.positionZ + vector.motionZ
+    );
   }
 
   public static class InteractionMeta extends UserCustomCheckMeta {

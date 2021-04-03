@@ -760,4 +760,8 @@ public final class Physics extends IntaveCheck {
       movementData.physicsMotionZ = 0.0;
     }
   }
+
+  public SimulationProcessor simulationService() {
+    return simulationService;
+  }
 }

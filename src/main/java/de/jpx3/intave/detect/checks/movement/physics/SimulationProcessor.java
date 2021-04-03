@@ -96,6 +96,19 @@ public final class SimulationProcessor {
   }
 
   public ComplexColliderSimulationResult simulateMovementWithoutKeyPress(User user) {
+    return simulateMovementWithoutKeyPress(user, 0, 0);
+  }
+
+  public ComplexColliderSimulationResult simulateMovementWithLastKeys(User user) {
+    UserMetaMovementData movementData = user.meta().movementData();
+    return simulateMovementWithoutKeyPress(user, movementData.keyForward, movementData.keyStrafe);
+  }
+
+  private ComplexColliderSimulationResult simulateMovementWithoutKeyPress(
+    User user,
+    int keyForward,
+    int keyStrafe
+  ) {
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     Pose movementPoseType = movementData.movementPoseType();
@@ -103,7 +116,7 @@ public final class SimulationProcessor {
     motionVector.resetTo(movementData);
     return movementPoseType.simulator().performSimulation(
       user, motionVector,
-      0, 0, false, false,
+      keyForward, keyStrafe, false, false,
       meta.inventoryData().handActive()
     );
   }
