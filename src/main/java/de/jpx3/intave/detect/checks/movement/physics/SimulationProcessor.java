@@ -183,7 +183,7 @@ public final class SimulationProcessor {
   private final static boolean[] BOOLEAN_STATES_TF = new boolean[]{true, false};
   private final static boolean[] BOOLEAN_STATES_FT = new boolean[]{false, true};
 
-  private final static int[][] SORTED_KEYS = {{1, 0}, {1, -1}, {1, 1}, {0, 0}, {0, -1}, {0, 1}, {-1, -1}, {-1, 0}, {-1, -1}};
+  private final static int[][] SORTED_KEYS = {{1, 0}, {1, -1}, {1, 1}, {0, 0}, {0, -1}, {0, 1}, {-1, -1}, {-1, 0}, {-1, 1}};
 
   private IterativeSimulationResult simulatePossibleMovement(User user) {
     User.UserMeta meta = user.meta();

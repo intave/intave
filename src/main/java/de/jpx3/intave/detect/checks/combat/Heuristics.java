@@ -111,7 +111,7 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
   @Native
   public void evaluate(Player player, boolean enforceDecision) {
     Collection<? extends Player> onlinePlayers = Bukkit.getOnlinePlayers();
-    if (!IntaveControl.DISABLE_LICENSE_CHECK && onlinePlayers.size() <= 6) {
+    if (!IntaveControl.DISABLE_LICENSE_CHECK && onlinePlayers.size() <= 5) {
       return;
     }
 

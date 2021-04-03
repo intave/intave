@@ -13,7 +13,7 @@ public final class IntaveControl {
   public final static boolean DISABLE_BLOCK_CACHING_ENTIRELY = false;
   public final static boolean USE_EXTERNAL_CONFIGURATION_FILE = true;
   public final static boolean GOMME_MODE = false;
-  public final static boolean DISABLE_LICENSE_CHECK = true;
+  public final static boolean DISABLE_LICENSE_CHECK = false;
 
   public final static boolean USE_AUTOCLICKER_CHECK = false;
 }

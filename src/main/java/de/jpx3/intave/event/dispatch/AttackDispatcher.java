@@ -1,8 +1,11 @@
 package de.jpx3.intave.event.dispatch;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.WrappedAttribute;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.detect.EventProcessor;
 import de.jpx3.intave.detect.checks.combat.Heuristics;
@@ -25,7 +28,9 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public final class AttackDispatcher implements EventProcessor {
@@ -134,16 +139,16 @@ public final class AttackDispatcher implements EventProcessor {
     if (!REDUCING_DISABLED) {
       return;
     }
-//    PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.UPDATE_ATTRIBUTES);
-//    packet.getIntegers().write(0, player.getEntityId());
-//    WrappedAttribute wrappedAttribute = WrappedAttribute.newBuilder().packet(packet).attributeKey("generic.attackDamage").baseValue(0).modifiers(Collections.emptyList()).build();
-//    packet.getAttributeCollectionModifier().write(0, Collections.singletonList(wrappedAttribute));
-//
-//    try {
-//      ProtocolLibrary.getProtocolManager().sendServerPacket(player, packet);
-//    } catch (InvocationTargetException e) {
-//      e.printStackTrace();
-//    }
+    PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.UPDATE_ATTRIBUTES);
+    packet.getIntegers().write(0, player.getEntityId());
+    WrappedAttribute wrappedAttribute = WrappedAttribute.newBuilder().packet(packet).attributeKey("generic.attackDamage").baseValue(0).modifiers(Collections.emptyList()).build();
+    packet.getAttributeCollectionModifier().write(0, Collections.singletonList(wrappedAttribute));
+
+    try {
+      ProtocolLibrary.getProtocolManager().sendServerPacket(player, packet);
+    } catch (InvocationTargetException e) {
+      e.printStackTrace();
+    }
   }
 
   private boolean playerAttack(Integer entityId) {
