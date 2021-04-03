@@ -28,7 +28,6 @@ public final class v8BoundingBoxResolver implements BoundingBoxResolver {
       return Collections.emptyList();
     }
     List<AxisAlignedBB> bbs = new ArrayList<>();
-
     blockData.getBlock().a(
       ((CraftWorld) world).getHandle(),
       blockposition,

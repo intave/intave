@@ -21,24 +21,24 @@ public final class CubicBoundingBoxResolverFilter implements BoundingBoxResolver
   @Override
   public List<WrappedAxisAlignedBB> resolve(World world, Material advanceType, int posX, int posY, int posZ) {
     if (solidMaterials.contains(advanceType)) {
-      WrappedAxisAlignedBB defaultCubeBox = new WrappedAxisAlignedBB(
-        posX, posY, posZ, posX + 1, posY + 1, posZ + 1
+      return Collections.singletonList(
+        new WrappedAxisAlignedBB(posX, posY, posZ, posX + 1, posY + 1, posZ + 1)
       );
-      return Collections.singletonList(defaultCubeBox);
     } else if(otherMaterials.contains(advanceType)) {
       return forward.resolve(world, advanceType, posX, posY, posZ);
     }
     List<WrappedAxisAlignedBB> resolve = forward.resolve(world, advanceType, posX, posY, posZ);
-    boolean solid = false;
-    if(resolve.size() == 1) {
-      WrappedAxisAlignedBB theBox = resolve.get(0).offset(-posX, -posY, -posZ);
-      if(
-        theBox.minX == 0 && theBox.minY == 0 && theBox.minZ == 0 &&
-        theBox.maxX == 1 && theBox.maxY == 1 && theBox.maxZ == 1
-      ) solid = true;
-    }
-    (solid ? solidMaterials : otherMaterials).add(advanceType);
+    (isSolid(resolve, posX, posY, posZ) ? solidMaterials : otherMaterials).add(advanceType);
     return resolve;
+  }
+
+  private boolean isSolid(List<WrappedAxisAlignedBB> resolve, int posX, int posY, int posZ) {
+    if (resolve.size() != 1) {
+      return false;
+    }
+    WrappedAxisAlignedBB theBox = resolve.get(0).offset(-posX, -posY, -posZ);
+    return theBox.minX == 0 && theBox.minY == 0 && theBox.minZ == 0 &&
+           theBox.maxX == 1 && theBox.maxY == 1 && theBox.maxZ == 1;
   }
 
   @Override

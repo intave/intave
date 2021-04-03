@@ -3,6 +3,7 @@ package de.jpx3.intave.world.collision.resolver;
 import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
 import de.jpx3.intave.reflect.ReflectiveMaterialAccess;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
 import de.jpx3.intave.world.collision.BoundingBoxResolver;
 import net.minecraft.server.v1_13_R2.*;
 import org.bukkit.Location;
@@ -11,9 +12,9 @@ import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
 import org.bukkit.craftbukkit.v1_13_R2.util.CraftMagicNumbers;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @PatchyAutoTranslation
 public final class v13BoundingBoxResolver implements BoundingBoxResolver {
@@ -21,8 +22,8 @@ public final class v13BoundingBoxResolver implements BoundingBoxResolver {
   @PatchyAutoTranslation
   public List<WrappedAxisAlignedBB> resolve(World world, Material advanceType, int posX, int posY, int posZ) {
     Location location = new Location(world, posX, posY, posZ);
-    org.bukkit.block.Block block = location.getBlock();
-    return resolve(world, posX, posY, posZ, block.getType().getId(), block.getData());
+    org.bukkit.block.Block block = BukkitBlockAccess.blockAccess(location);
+    return resolve(world, posX, posY, posZ, advanceType.getId(), block.getData());
   }
 
   @Override
@@ -47,10 +48,6 @@ public final class v13BoundingBoxResolver implements BoundingBoxResolver {
     if(bbs.isEmpty()) {
       return Collections.emptyList();
     }
-    List<WrappedAxisAlignedBB> list = new ArrayList<>();
-    for (Object bb : bbs) {
-      list.add(WrappedAxisAlignedBB.fromNative(bb).offset(posX, posY, posZ));
-    }
-    return list;
+    return bbs.stream().map(bb -> WrappedAxisAlignedBB.fromNative(bb).offset(posX, posY, posZ)).collect(Collectors.toList());
   }
 }
