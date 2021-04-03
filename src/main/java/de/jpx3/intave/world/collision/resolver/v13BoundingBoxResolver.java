@@ -19,7 +19,7 @@ import java.util.List;
 public final class v13BoundingBoxResolver implements BoundingBoxResolver {
   @Override
   @PatchyAutoTranslation
-  public List<WrappedAxisAlignedBB> resolve(World world, int posX, int posY, int posZ) {
+  public List<WrappedAxisAlignedBB> resolve(World world, Material advanceType, int posX, int posY, int posZ) {
     Location location = new Location(world, posX, posY, posZ);
     org.bukkit.block.Block block = location.getBlock();
     return resolve(world, posX, posY, posZ, block.getType().getId(), block.getData());

@@ -122,7 +122,8 @@ public final class Collision {
           for (int x = xstart; x < xend; ++x) {
             for (int z = zstart; z < zend; ++z) {
               for (int y = ystart; y < maxY; ++y) {
-                List<WrappedAxisAlignedBB> resolve = boundingBoxResolver.resolve(world, x, y, z);
+                Material type = BukkitBlockAccess.blockAccess(world, x, y, z).getType();
+                List<WrappedAxisAlignedBB> resolve = boundingBoxResolver.resolve(world, type, x, y, z);
 
                 boolean insideBorder = !blockOutsideBorder(world, x, z);
                 if (insideBorder) {

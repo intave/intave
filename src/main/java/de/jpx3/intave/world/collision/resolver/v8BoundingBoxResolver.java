@@ -20,7 +20,7 @@ public final class v8BoundingBoxResolver implements BoundingBoxResolver {
 
   @Override
   @PatchyAutoTranslation
-  public List<WrappedAxisAlignedBB> resolve(World world, int posX, int posY, int posZ) {
+  public List<WrappedAxisAlignedBB> resolve(World world, org.bukkit.Material advanceType, int posX, int posY, int posZ) {
     Chunk handle = ((CraftChunk) world.getChunkAt(posX >> 4, posZ >> 4)).getHandle();
     BlockPosition blockposition = new BlockPosition(posX, posY, posZ);
     IBlockData blockData = handle.getBlockData(blockposition);

@@ -49,7 +49,7 @@ public final class BoundingBoxAccess {
 
     PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), acClass);
     PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), className);
-    globalBoundingBoxResolver = instanceOf(className);
+    globalBoundingBoxResolver = new CubicBoundingBoxResolverFilter(instanceOf(className));
   }
 
   private static <T> T instanceOf(String className) {
@@ -108,7 +108,7 @@ public final class BoundingBoxAccess {
       if(type == Material.AIR) {
         cacheEntry = EMPTY_CACHE_ENTRY;
       } else {
-        List<WrappedAxisAlignedBB> boundingBoxes = globalBoundingBoxResolver.resolve(world, posX, posY, posZ);
+        List<WrappedAxisAlignedBB> boundingBoxes = globalBoundingBoxResolver.resolve(world, type, posX, posY, posZ);
         boundingBoxes = BoundingBoxPatcher.patch(world, player, block, boundingBoxes);
         cacheEntry = new CacheEntry(boundingBoxes, type, block.getData());
       }
@@ -152,7 +152,7 @@ public final class BoundingBoxAccess {
       if(type == Material.AIR) {
         cacheEntry = EMPTY_CACHE_ENTRY;
       } else {
-        List<WrappedAxisAlignedBB> boundingBoxes = globalBoundingBoxResolver.resolve(world, posX, posY, posZ);
+        List<WrappedAxisAlignedBB> boundingBoxes = globalBoundingBoxResolver.resolve(world, type, posX, posY, posZ);
         boundingBoxes = BoundingBoxPatcher.patch(world, player, block, boundingBoxes);
         cacheEntry = new CacheEntry(boundingBoxes, type, block.getData());
       }
@@ -196,7 +196,8 @@ public final class BoundingBoxAccess {
       if(type == Material.AIR) {
         cacheEntry = EMPTY_CACHE_ENTRY;
       } else {
-        List<WrappedAxisAlignedBB> boundingBoxes = globalBoundingBoxResolver.resolve(world, posX, posY, posZ);
+        List<WrappedAxisAlignedBB> boundingBoxes;
+        boundingBoxes = globalBoundingBoxResolver.resolve(world, type, posX, posY, posZ);
         boundingBoxes = BoundingBoxPatcher.patch(world, player, block, boundingBoxes);
         cacheEntry = new CacheEntry(boundingBoxes, type, block.getData());
       }
