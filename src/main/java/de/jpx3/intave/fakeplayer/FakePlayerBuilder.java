@@ -143,6 +143,11 @@ public final class FakePlayerBuilder {
       wrappedGameProfile = new WrappedGameProfile(uuid, name);
     } else {
       JSONObject jsonObject = connect(uuid);
+      if (jsonObject == null) {
+        String name = randomString();
+        wrappedGameProfile = new WrappedGameProfile(uuid, name);
+        return wrappedGameProfile;
+      }
       String name = readNameFromJson(jsonObject);
       wrappedGameProfile = new WrappedGameProfile(uuid, name);
       applySkinToProfile(wrappedGameProfile, jsonObject);
@@ -178,7 +183,7 @@ public final class FakePlayerBuilder {
       Scanner scanner = new Scanner(inputStream, "UTF-8");
       return (JSONObject) jsonParser.parse(scanner.useDelimiter("\\A").next());
     } catch (IOException | ParseException e) {
-      throw new IntaveInternalException(e);
+      return null;
     }
   }
 

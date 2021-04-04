@@ -60,7 +60,9 @@ public final class EmulationLight extends MiningStrategyExecutor {
   protected void stopStrategy() {
     UserMetaAttackData attackData = user().meta().attackData();
     FakePlayer fakePlayer = attackData.fakePlayer();
-    fakePlayer.despawn();
+    if (fakePlayer != null) {
+      fakePlayer.despawn();
+    }
   }
 
   @Override

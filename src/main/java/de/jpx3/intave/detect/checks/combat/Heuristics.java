@@ -49,7 +49,7 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
 
   private void setupEvaluationScheduler(IntavePlugin plugin) {
     //noinspection deprecation
-    Bukkit.getScheduler().scheduleAsyncRepeatingTask(plugin, this::evaluateAll, 0, 500);
+    Bukkit.getScheduler().scheduleAsyncRepeatingTask(plugin, this::evaluateAll, 0, 400);
   }
 
   @Native
@@ -132,7 +132,7 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
     }
 
     boolean suitableConfidence = overallConfidenceWithoutDelay.level() >= Confidence.MAYBE.level() && overallConfidenceWithoutDelay.level() < Confidence.CERTAIN.level();
-    if (suitableConfidence && !enforceDecision) {
+    if (IntaveControl.USE_ANTIBOTS && suitableConfidence && !enforceDecision) {
       // perform mining strategies
       if (attackData.activeMiningStrategy == null) {
         MiningStrategy strategy = findSuitableMiningStrategy(
