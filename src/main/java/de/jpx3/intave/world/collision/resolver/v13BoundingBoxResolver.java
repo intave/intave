@@ -1,7 +1,6 @@
 package de.jpx3.intave.world.collision.resolver;
 
 import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
-import de.jpx3.intave.reflect.ReflectiveMaterialAccess;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
 import de.jpx3.intave.world.collision.BoundingBoxResolver;
@@ -23,16 +22,15 @@ public final class v13BoundingBoxResolver implements BoundingBoxResolver {
   public List<WrappedAxisAlignedBB> resolve(World world, Material advanceType, int posX, int posY, int posZ) {
     Location location = new Location(world, posX, posY, posZ);
     org.bukkit.block.Block block = BukkitBlockAccess.blockAccess(location);
-    return resolve(world, posX, posY, posZ, advanceType.getId(), block.getData());
+    return resolve(world, posX, posY, posZ, advanceType, block.getData());
   }
 
   @Override
   @PatchyAutoTranslation
-  public List<WrappedAxisAlignedBB> resolve(World world, int posX, int posY, int posZ, int typeId, int blockState) {
+  public List<WrappedAxisAlignedBB> resolve(World world, int posX, int posY, int posZ, Material type, int blockState) {
     WorldServer handle = ((CraftWorld) world).getHandle();
     BlockPosition blockPosition = new BlockPosition(posX, posY, posZ);
-    Material material = ReflectiveMaterialAccess.materialById(typeId);
-    IBlockData blockData = CraftMagicNumbers.getBlock(material, (byte) blockState);
+    IBlockData blockData = CraftMagicNumbers.getBlock(type, (byte) blockState);
     if(blockData == null) {
       return Collections.emptyList();
     }

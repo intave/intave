@@ -485,17 +485,21 @@ public final class IntavePlugin extends JavaPlugin {
       Files.walk(tempDir.toPath())
         .filter(Files::isRegularFile)
         .map(Path::toFile)
+        .filter(File::canRead)
+        .filter(File::canWrite)
         .filter(file -> file.getName().equalsIgnoreCase("deleteme") && file.getParentFile().getName().toLowerCase(Locale.ROOT).contains("intave"))
         .filter(file -> (AccessHelper.now() - file.lastModified()) > INTEGRITY_ERASE_BUFFER)
         .map(File::getParentFile)
+        .filter(File::canRead)
+        .filter(File::canWrite)
         .forEach(file -> {
           try {
             FileUtils.deleteDirectory(file);
           } catch (IOException exception) {
-            exception.printStackTrace();
+//            exception.printStackTrace();
           }
         });
-    } catch (IOException exception) {
+    } catch (Exception exception) {
 //      exception.printStackTrace();
     }
   }
@@ -525,10 +529,18 @@ public final class IntavePlugin extends JavaPlugin {
       Files.walk(workDirectory.toPath())
         .filter(Files::isRegularFile)
         .map(Path::toFile)
+        .filter(File::canWrite)
+        .filter(File::canRead)
         .filter(file -> (AccessHelper.now() - file.lastModified()) > FILE_EXPIRE)
-        .forEach(File::delete);
-    } catch (IOException exception) {
-//      exception.printStackTrace();
+        .forEach(file -> {
+          try {
+            file.delete();
+          } catch (Exception exception) {
+            exception.printStackTrace();
+          }
+        });
+    } catch (Exception | Error throwable) {
+      throwable.printStackTrace();
     }
   }
 

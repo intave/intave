@@ -3,6 +3,7 @@ package de.jpx3.intave.world.collision.patches;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
 import de.jpx3.intave.world.collision.BoundingBoxBuilder;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
@@ -10,14 +11,14 @@ import java.util.List;
 
 public final class BlockTrapdoorPatch extends BoundingBoxPatch {
   protected BlockTrapdoorPatch() {
-    super(BlockTypeAccess.TRAP_DOOR.getId());
+    super(BlockTypeAccess.TRAP_DOOR);
   }
 
   /*
    makes state-control constrain redundant
    */
   @Override
-  public List<WrappedAxisAlignedBB> patch(World world, Player player, int typeId, int blockState, List<WrappedAxisAlignedBB> bbs) {
+  public List<WrappedAxisAlignedBB> patch(World world, Player player, Material type, int blockState, List<WrappedAxisAlignedBB> bbs) {
     BoundingBoxBuilder boundingBoxBuilder = BoundingBoxBuilder.create();
     boolean isTop = (blockState & 8) != 0;
     boolean isOpen = (blockState & 4) != 0;

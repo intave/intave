@@ -24,12 +24,19 @@ public final class CubicBoundingBoxResolverFilter implements BoundingBoxResolver
       return Collections.singletonList(
         new WrappedAxisAlignedBB(posX, posY, posZ, posX + 1, posY + 1, posZ + 1)
       );
-    } else if(otherMaterials.contains(advanceType)) {
+    } else if (otherMaterials.contains(advanceType)) {
       return forward.resolve(world, advanceType, posX, posY, posZ);
     }
     List<WrappedAxisAlignedBB> resolve = forward.resolve(world, advanceType, posX, posY, posZ);
+    if (!isInLoadedChunk(world, posX, posZ)) {
+      return resolve;
+    }
     (isSolid(resolve, posX, posY, posZ) ? solidMaterials : otherMaterials).add(advanceType);
     return resolve;
+  }
+
+  public static boolean isInLoadedChunk(World world, int x, int z) {
+    return world.isChunkLoaded(x >> 4, z >> 4);
   }
 
   private boolean isSolid(List<WrappedAxisAlignedBB> resolve, int posX, int posY, int posZ) {
@@ -38,11 +45,11 @@ public final class CubicBoundingBoxResolverFilter implements BoundingBoxResolver
     }
     WrappedAxisAlignedBB theBox = resolve.get(0).offset(-posX, -posY, -posZ);
     return theBox.minX == 0 && theBox.minY == 0 && theBox.minZ == 0 &&
-           theBox.maxX == 1 && theBox.maxY == 1 && theBox.maxZ == 1;
+      theBox.maxX == 1 && theBox.maxY == 1 && theBox.maxZ == 1;
   }
 
   @Override
-  public List<WrappedAxisAlignedBB> resolve(World world, int posX, int posY, int posZ, int typeId, int blockState) {
-    return forward.resolve(world, posX, posY, posZ, typeId, blockState);
+  public List<WrappedAxisAlignedBB> resolve(World world, int posX, int posY, int posZ, Material type, int blockState) {
+    return forward.resolve(world, posX, posY, posZ, type, blockState);
   }
 }

@@ -31,16 +31,10 @@ public final class IntaveThreadFactory implements ThreadFactory {
 
   private String newThreadName() {
     return "Intave";
-//    return String.format("Intave (%02X-%02X)", currentPoolNumber, Math.min(threadNumber.getAndIncrement(), 99));
   }
 
   private Runnable wrapTask(Runnable runnable) {
-//    IntavePerformanceTelemetry performanceTelemetry = IntavePlugin.staticReference().reporterService().performanceTelemetry();
-    return () -> {
-//      performanceTelemetry.processWorkerThreadActivation(Thread.currentThread());
-      runnable.run();
-//      performanceTelemetry.processWorkerThreadDeactivation(Thread.currentThread());
-    };
+    return runnable;
   }
 
   public static IntaveThreadFactory ofHighestPriority() {

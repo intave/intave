@@ -168,6 +168,12 @@ public final class CheckService {
   public <T extends IntaveCheck> T searchCheck(Class<T> checkClass) {
     IntaveCheck check = classRequestCache.get(checkClass);
     if (check == null) {
+      for (IntaveCheck intaveCheck : checks) {
+        if(intaveCheck.getClass() == checkClass) {
+          //noinspection unchecked
+          return (T) intaveCheck;
+        }
+      }
       throw new IllegalStateException("Unable to find check " + checkClass);
     }
     //noinspection unchecked
@@ -177,6 +183,12 @@ public final class CheckService {
   public <T extends IntaveCheck> T searchCheck(String checkName) {
     IntaveCheck check = nameRequestCache.get(checkName.toLowerCase());
     if (check == null) {
+      for (IntaveCheck intaveCheck : checks) {
+        if(intaveCheck.name().equalsIgnoreCase(checkName)) {
+          //noinspection unchecked
+          return (T) intaveCheck;
+        }
+      }
       throw new IllegalStateException("Unable to find check " + checkName);
     }
     //noinspection unchecked

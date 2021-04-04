@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public final class PlayerArrayTranslator extends TypeTranslator<Player[]> {
 
@@ -29,6 +30,7 @@ public final class PlayerArrayTranslator extends TypeTranslator<Player[]> {
       }
       players.add(player);
     }
+    players = players.stream().distinct().collect(Collectors.toList());
     return players.toArray(new Player[0]);
   }
 

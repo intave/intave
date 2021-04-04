@@ -106,7 +106,6 @@ public final class Collision {
     int maxZ = WrappedMathHelper.floor(boundingBox.maxZ + 1.0D);
 
     int ystart = Math.max(minY - 1, 0);
-
     List<WrappedAxisAlignedBB> resolvedBoundingBoxes = null;
 
     // this looks 1000x slower than it actually is
@@ -191,13 +190,13 @@ public final class Collision {
     return positionX > minX && positionX < maxX && positionZ > minZ && positionZ < maxZ;
   }
 
-  public static boolean playerInImaginaryBlock(User user, World world, int posX, int posY, int posZ, int type, int data) {
-    List<WrappedAxisAlignedBB> boundingboxes = user.boundingBoxAccess().constructBlock(world, posX, posY, posZ, type, data);
-    if (boundingboxes == null || boundingboxes.isEmpty()) {
+  public static boolean playerInImaginaryBlock(User user, World world, int posX, int posY, int posZ, Material type, int data) {
+    List<WrappedAxisAlignedBB> boundingBoxes = user.boundingBoxAccess().constructBlock(world, posX, posY, posZ, type, data);
+    if (boundingBoxes == null || boundingBoxes.isEmpty()) {
       return false;
     }
     WrappedAxisAlignedBB playerBox = user.meta().movementData().boundingBox();
-    return boundingboxes.stream().anyMatch(playerBox::intersectsWith);
+    return boundingBoxes.stream().anyMatch(playerBox::intersectsWith);
   }
 
   public static boolean hasNoCollisions(Player player, WrappedAxisAlignedBB playerBoundingBox) {
@@ -255,5 +254,4 @@ public final class Collision {
   public static boolean checkBoundingBoxIntersection(User user, WrappedAxisAlignedBB boundingBox) {
     return !Collision.resolve(user.player(), boundingBox).isEmpty();
   }
-
 }

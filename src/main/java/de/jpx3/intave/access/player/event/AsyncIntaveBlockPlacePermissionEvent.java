@@ -2,6 +2,7 @@ package de.jpx3.intave.access.player.event;
 
 import de.jpx3.intave.access.IntaveEvent;
 import de.jpx3.intave.tools.annotate.Relocate;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -13,7 +14,7 @@ public final class AsyncIntaveBlockPlacePermissionEvent extends IntaveEvent impl
   private boolean mainHand;
   private int blockX, blockY, blockZ;
   private int enumDirection;
-  private int typeId;
+  private Material type;
   private byte data;
   private boolean cancelled;
 
@@ -26,7 +27,7 @@ public final class AsyncIntaveBlockPlacePermissionEvent extends IntaveEvent impl
     boolean mainHand,
     int blockX, int blockY, int blockZ,
     int enumDirection,
-    int typeId, byte data
+    Material type, byte data
   ) {
     this.player = player;
     this.world = world;
@@ -35,7 +36,7 @@ public final class AsyncIntaveBlockPlacePermissionEvent extends IntaveEvent impl
     this.blockY = blockY;
     this.blockZ = blockZ;
     this.enumDirection = enumDirection;
-    this.typeId = typeId;
+    this.type = type;
     this.data = data;
     this.cancelled = false;
   }
@@ -68,8 +69,8 @@ public final class AsyncIntaveBlockPlacePermissionEvent extends IntaveEvent impl
     return enumDirection;
   }
 
-  public int typeId() {
-    return typeId;
+  public Material type() {
+    return type;
   }
 
   public byte data() {

@@ -21,9 +21,9 @@ public final class WorldPermission {
   }
 
   public static boolean blockPlacePermission(
-    Player player, World world, boolean mainHand, int blockX, int blockY, int blockZ, int enumDirection, int typeId, byte data
+    Player player, World world, boolean mainHand, int blockX, int blockY, int blockZ, int enumDirection, Material type, byte data
   ) {
-    return blockPlacePermissionCheck.hasPermission(player, world, mainHand, blockX, blockY, blockZ, enumDirection, typeId, data);
+    return blockPlacePermissionCheck.hasPermission(player, world, mainHand, blockX, blockY, blockZ, enumDirection, type, data);
   }
 
   public static boolean blockBreakPermission(

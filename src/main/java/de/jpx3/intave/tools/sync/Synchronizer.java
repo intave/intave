@@ -1,6 +1,8 @@
 package de.jpx3.intave.tools.sync;
 
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.diagnostics.timings.Timings;
+import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.reflect.ReflectiveAccess;
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -56,8 +58,7 @@ public final class Synchronizer {
   }
 
   public static void synchronize(Runnable runnable) {
-    runnable = bindToContext(runnable);
-
+    runnable = wrapTask(runnable);
     if (useScheduler) {
       scheduler.runTask(IntavePlugin.singletonInstance(), runnable);
     } else {
@@ -66,24 +67,29 @@ public final class Synchronizer {
   }
 
   public static void packetSynchronize(Runnable runnable) {
-    Runnable wrappedRunnable = bindToContext(runnable);
+    runnable = wrapTask(runnable);
     try {
-      postToMainThreadMethodHandle.invoke(minecraftServer, wrappedRunnable);
+      postToMainThreadMethodHandle.invoke(minecraftServer, runnable);
     } catch (Throwable throwable) {
       throwable.printStackTrace();
     }
   }
 
   public static void synchronizeDelayed(Runnable runnable, int ticks) {
+    runnable = wrapTask(runnable);
     scheduler.runTaskLater(IntavePlugin.singletonInstance(), runnable, ticks);
   }
 
-  private static Runnable bindToContext(Runnable runnable) {
+  private static Runnable wrapTask(Runnable runnable) {
     return () -> {
       try {
+        Timings.EXE_SERVER.start();
         runnable.run();
       } catch (Exception | Error exception) {
+        IntaveLogger.logger().error("Failed to execute server task " + runnable);
         exception.printStackTrace();
+      } finally {
+        Timings.EXE_SERVER.stop();
       }
     };
   }

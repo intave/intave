@@ -25,7 +25,6 @@ public final class BlockDataAccess {
 
   public static void setup() {
     String resolverName = "de.jpx3.intave.world.blockaccess.v8BlockAccessor";
-
     if (MinecraftVersion.COMBAT_UPDATE.atOrAbove()) {
       resolverName = "de.jpx3.intave.world.blockaccess.v9BlockAccessor";
     }
@@ -65,6 +64,8 @@ public final class BlockDataAccess {
 
      */
 
+    // TODO: 4/4/2021 add option for 1.16
+
     for (int i = 0; i < 1000; i++) {
       Material material = ReflectiveMaterialAccess.materialById(i);
       if (material == null) {
@@ -75,7 +76,6 @@ public final class BlockDataAccess {
         IntaveLogger.logger().globalPrintLn("No block found for id " + i);
         continue;
       }
-
       List<Method> methods = allMethodsIn(block.getClass());
       for (Method method : methods) {
         String methodName = method.getName();

@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import de.jpx3.intave.command.translator.*;
 import org.bukkit.command.CommandSender;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,9 +44,6 @@ public final class TypeTranslators {
 
   public static List<String> findTabCompletes(CommandSender player, Class<?> type, String element, String forward) {
     TypeTranslator<?> typeTranslator = typeTranslatorMap.get(type);
-    if(typeTranslator == null) {
-      return Lists.newArrayList();
-    }
-    return typeTranslator.settingConstrains(player);
+    return typeTranslator == null ? Collections.emptyList() : typeTranslator.settingConstrains(player);
   }
 }

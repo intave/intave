@@ -28,7 +28,6 @@ public final class v9BoundingBoxResolver implements BoundingBoxResolver {
       return Collections.emptyList();
     }
     List<AxisAlignedBB> bbs = new ArrayList<>();
-
     blockData.getBlock().a(
       blockData,
       ((CraftWorld) world).getHandle(),
@@ -42,9 +41,9 @@ public final class v9BoundingBoxResolver implements BoundingBoxResolver {
 
   @Override
   @PatchyAutoTranslation
-  public List<WrappedAxisAlignedBB> resolve(World world, int posX, int posY, int posZ, int typeId, int blockState) {
+  public List<WrappedAxisAlignedBB> resolve(World world, int posX, int posY, int posZ, org.bukkit.Material type, int blockState) {
     BlockPosition blockposition = new BlockPosition(posX, posY, posZ);
-    IBlockData blockData = Block.getByCombinedId(typeId | blockState << 12 & 0xF);
+    IBlockData blockData = Block.getByCombinedId(type.getId() | ((blockState << 12) & 0xF));
     List<AxisAlignedBB> bbs = new ArrayList<>();
     if(blockData == null) {
       return Collections.emptyList();

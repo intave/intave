@@ -18,6 +18,7 @@ public final class ReflectiveBlockAccess {
     blockAccess = useNewResolver ? new BlockAccessNew() : new BlockAccessLegacy();
   }
 
+  @Deprecated
   public static Object blockById(int blockId) {
     return blockAccess.resolveById(blockId);
   }

@@ -2,6 +2,7 @@ package de.jpx3.intave.world.collision.patches;
 
 import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -12,6 +13,7 @@ import java.util.Map;
 
 public final class BoundingBoxPatcher {
   private final static Map<Integer, BoundingBoxPatch> patches = new HashMap<>();
+  private final static Map<Material, BoundingBoxPatch> patchesMaterial = new HashMap<>();
 
   public static void setup() {
     add(BlockTrapdoorPatch.class);
@@ -30,17 +32,17 @@ public final class BoundingBoxPatcher {
   }
 
   private static void add(BoundingBoxPatch boundingBoxPatch) {
-    patches.put(boundingBoxPatch.blockId(), boundingBoxPatch);
+    patchesMaterial.put(boundingBoxPatch.material(), boundingBoxPatch);
   }
 
   public static List<WrappedAxisAlignedBB> patch(World world, Player player, Block block, List<WrappedAxisAlignedBB> bbs) {
-    BoundingBoxPatch boundingBoxPatch = patches.get(block.getType().getId());
+    BoundingBoxPatch boundingBoxPatch = patchesMaterial.get(block.getType());
     return boundingBoxPatch == null ? bbs : transpose(boundingBoxPatch.patch(world, player, block, bbs), block.getX(), block.getY(), block.getZ());
   }
 
-  public static List<WrappedAxisAlignedBB> patch(World world, Player player, int blockX, int blockY, int blockZ, int typeId, int blockState, List<WrappedAxisAlignedBB> bbs) {
-    BoundingBoxPatch boundingBoxPatch = patches.get(typeId);
-    return boundingBoxPatch == null ? bbs : transpose(boundingBoxPatch.patch(world, player, typeId, blockState, bbs), blockX, blockY, blockZ);
+  public static List<WrappedAxisAlignedBB> patch(World world, Player player, int blockX, int blockY, int blockZ, Material type, int blockState, List<WrappedAxisAlignedBB> bbs) {
+    BoundingBoxPatch boundingBoxPatch = patchesMaterial.get(type);
+    return boundingBoxPatch == null ? bbs : transpose(boundingBoxPatch.patch(world, player, type, blockState, bbs), blockX, blockY, blockZ);
   }
 
   public static List<WrappedAxisAlignedBB> transpose(List<WrappedAxisAlignedBB> boundingBoxes, int posX, int posY, int posZ) {

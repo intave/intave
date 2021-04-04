@@ -1,6 +1,8 @@
 package de.jpx3.intave.executor;
 
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.diagnostics.timings.Timings;
+import de.jpx3.intave.logging.IntaveLogger;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -30,6 +32,21 @@ public final class BackgroundExecutor {
     if(executorService == null || executorService.isShutdown() || executorService.isTerminated()) {
       return;
     }
+    runnable = wrapTask(runnable);
     executorService.execute(runnable);
+  }
+
+  private static Runnable wrapTask(Runnable runnable) {
+    return () -> {
+      try {
+        Timings.EXE_BACKGROUND.start();
+        runnable.run();
+      } catch (Exception | Error throwable) {
+        IntaveLogger.logger().error("Failed to execute background task " + runnable);
+        throwable.printStackTrace();
+      } finally {
+        Timings.EXE_BACKGROUND.stop();
+      }
+    };
   }
 }

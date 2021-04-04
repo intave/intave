@@ -9,6 +9,6 @@ public final class AccessHelper {
   }
 
   public static boolean isOnline(OfflinePlayer player) {
-    return player.isOnline() || Bukkit.getPlayer(player.getUniqueId()) != null;
+    return player != null && (player.isOnline() || Bukkit.getPlayer(player.getUniqueId()) != null);
   }
 }

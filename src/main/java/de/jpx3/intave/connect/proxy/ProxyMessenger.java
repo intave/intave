@@ -82,7 +82,9 @@ public final class ProxyMessenger {
   }
 
   public void closeChannel() {
-    packetListeners.clear();
+    if(packetListeners != null) {
+      packetListeners.clear();
+    }
     Messenger messenger = Bukkit.getServer().getMessenger();
     messenger.unregisterIncomingPluginChannel(plugin);
     messenger.unregisterOutgoingPluginChannel(plugin);

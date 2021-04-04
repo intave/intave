@@ -11,9 +11,11 @@ public final class IntaveControl {
   public final static boolean DEBUG_TELEPORT_CAUSE_AND_CAUSER = false;
   public final static boolean DEBUG_INTAVE_TELEPORT_EVENT_CANCELS = false;
   public final static boolean DISABLE_BLOCK_CACHING_ENTIRELY = false;
+  public final static boolean DISABLE_CHUNK_PACKET_HOOK = true;
   public final static boolean USE_EXTERNAL_CONFIGURATION_FILE = false;
-  public final static boolean GOMME_MODE = false;
-  public final static boolean DISABLE_LICENSE_CHECK = false;
+  public final static boolean DISABLE_AUTOCLICKER_CHECK = false;
 
-  public final static boolean USE_AUTOCLICKER_CHECK = false;
+  public final static boolean GOMME_MODE = false;
+  public final static boolean DISABLE_LICENSE_CHECK = true;
+
 }

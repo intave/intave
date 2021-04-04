@@ -7,6 +7,7 @@ import org.bukkit.Material;
 import java.util.Map;
 
 public final class ReflectiveMaterialAccess {
+  @Deprecated
   public static Material materialById(int id) {
     if (ProtocolLibAdapter.EXPLORATION_UPDATE.atOrAbove()) {
       return resolveIterative(id);
@@ -23,9 +24,8 @@ public final class ReflectiveMaterialAccess {
       return material;
     }
     for (Material selectedMaterial : Material.values()) {
-      int valueId = selectedMaterial.getId();
-      if (valueId == id) {
-        resolverCache.put(valueId, selectedMaterial);
+      if (selectedMaterial.getId() == id) {
+        resolverCache.put(id, selectedMaterial);
         return selectedMaterial;
       }
     }

@@ -14,16 +14,16 @@ import java.util.List;
 
 public final class BlockLadderPatch extends BoundingBoxPatch {
   protected BlockLadderPatch() {
-    super(Material.LADDER.getId());
+    super(Material.LADDER);
   }
 
   @Override
   public List<WrappedAxisAlignedBB> patch(World world, Player player, Block block, List<WrappedAxisAlignedBB> bbs) {
-    return patch(world, player, block.getTypeId(), block.getData(), bbs);
+    return patch(world, player, block.getType(), block.getData(), bbs);
   }
 
   @Override
-  public List<WrappedAxisAlignedBB> patch(World world, Player player, int typeId, int blockState, List<WrappedAxisAlignedBB> bbs) {
+  public List<WrappedAxisAlignedBB> patch(World world, Player player, Material type, int blockState, List<WrappedAxisAlignedBB> bbs) {
     User user = UserRepository.userOf(player);
     BoundingBoxBuilder builder = BoundingBoxBuilder.create();
     WrappedEnumDirection direction = WrappedEnumDirection.getFront(blockState);

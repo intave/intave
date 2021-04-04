@@ -239,16 +239,15 @@ public final class BoundingBoxAccess {
     blockCache.remove(blockPositionKey);
   }
 
-  public void override(World world, int posX, int posY, int posZ, int typeId, int blockState) {
+  public void override(World world, int posX, int posY, int posZ, Material type, int blockState) {
     invalidateOverride(posX, posY, posZ);
     CacheEntry cacheEntry;
-    if(typeId == 0) {
+    if(type == Material.AIR) {
       cacheEntry = EMPTY_CACHE_ENTRY;
     } else {
       cacheEntry = new CacheEntry(
-        constructBlock(world, posX, posY, posZ, typeId, blockState),
-        ReflectiveMaterialAccess.materialById(typeId),
-        blockState
+        constructBlock(world, posX, posY, posZ, type, blockState),
+        type, blockState
       );
     }
     long key = bigKey(posX, posY, posZ);
@@ -279,13 +278,11 @@ public final class BoundingBoxAccess {
     return indexedReplacements.get(key);
   }
 
-  public List<WrappedAxisAlignedBB> constructBlock(World world, int posX, int posY, int posZ, int typeId, int blockState) {
-    return BoundingBoxPatcher.patch(
-      world, player,
-      posX, posY, posZ,
-      typeId, blockState,
-      globalBoundingBoxResolver.resolve(world, posX, posY, posZ, typeId, blockState)
-    );
+  public List<WrappedAxisAlignedBB> constructBlock(World world, int posX, int posY, int posZ, Material type, int blockState) {
+    List<WrappedAxisAlignedBB> resolve;
+    resolve = globalBoundingBoxResolver.resolve(world, posX, posY, posZ, type, blockState);
+    resolve = BoundingBoxPatcher.patch(world, player, posX, posY, posZ, type, blockState, resolve);
+    return resolve;
   }
 
   public void invalidateOverride(int posX, int posY, int posZ) {

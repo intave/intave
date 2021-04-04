@@ -11,16 +11,16 @@ import java.util.List;
 
 public final class BlockAnvilPatch extends BoundingBoxPatch {
   protected BlockAnvilPatch() {
-    super(Material.ANVIL.getId());
+    super(Material.ANVIL);
   }
 
   @Override
   public List<WrappedAxisAlignedBB> patch(World world, Player player, Block block, List<WrappedAxisAlignedBB> bbs) {
-    return patch(world, player, block.getTypeId(), block.getData(), bbs);
+    return patch(world, player, block.getType(), block.getData(), bbs);
   }
 
   @Override
-  public List<WrappedAxisAlignedBB> patch(World world, Player player, int typeId, int blockState, List<WrappedAxisAlignedBB> bbs) {
+  public List<WrappedAxisAlignedBB> patch(World world, Player player, Material type, int blockState, List<WrappedAxisAlignedBB> bbs) {
     BoundingBoxBuilder boundingBoxBuilder = BoundingBoxBuilder.create();
 
     if((blockState & 3) % 2 == 0) {

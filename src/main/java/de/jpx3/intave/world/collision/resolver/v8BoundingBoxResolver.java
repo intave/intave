@@ -24,7 +24,7 @@ public final class v8BoundingBoxResolver implements BoundingBoxResolver {
     Chunk handle = ((CraftChunk) world.getChunkAt(posX >> 4, posZ >> 4)).getHandle();
     BlockPosition blockposition = new BlockPosition(posX, posY, posZ);
     IBlockData blockData = handle.getBlockData(blockposition);
-    if(blockData == null) {
+    if (blockData == null) {
       return Collections.emptyList();
     }
     List<AxisAlignedBB> bbs = new ArrayList<>();
@@ -41,11 +41,11 @@ public final class v8BoundingBoxResolver implements BoundingBoxResolver {
 
   @Override
   @PatchyAutoTranslation
-  public List<WrappedAxisAlignedBB> resolve(World world, int posX, int posY, int posZ, int typeId, int blockState) {
+  public List<WrappedAxisAlignedBB> resolve(World world, int posX, int posY, int posZ, org.bukkit.Material type, int blockState) {
     BlockPosition blockposition = new BlockPosition(posX, posY, posZ);
-    IBlockData blockData = Block.d.a((typeId << 4) | (blockState & 0xF));
+    IBlockData blockData = Block.d.a((type.getId() << 4) | (blockState & 0xF));
     List<AxisAlignedBB> bbs = new ArrayList<>();
-    if(blockData == null) {
+    if (blockData == null) {
       return Collections.emptyList();
     }
     blockData.getBlock().a(
@@ -60,7 +60,7 @@ public final class v8BoundingBoxResolver implements BoundingBoxResolver {
   }
 
   private List<WrappedAxisAlignedBB> translate(List<?> bbs) {
-    if(bbs.isEmpty()) {
+    if (bbs.isEmpty()) {
       return Collections.emptyList();
     }
     List<WrappedAxisAlignedBB> list = new ArrayList<>();

@@ -193,7 +193,6 @@ public final class IntaveSubCommand {
       Class<?> clazz = allTypes[args.length];
       return TypeTranslators.findTabCompletes(commandSender, clazz, args.length > 0 ? args[args.length - 1] : "", executedCommand);
     }
-
     return null;
   }
 

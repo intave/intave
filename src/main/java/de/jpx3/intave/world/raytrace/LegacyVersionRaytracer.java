@@ -147,7 +147,6 @@ public final class LegacyVersionRaytracer implements VersionRaytracer {
     BoundingBoxAccess boundingBoxAccess = UserRepository.userOf(player).boundingBoxAccess();
     BoundingBoxAccess.CacheEntry cacheEntry = boundingBoxAccess.overrideOf(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
     if(cacheEntry != null) {
-//      player.sendMessage("Raytracer/ " + blockPosition + " requires override to type " + cacheEntry.type());
       return Block.getById(cacheEntry.type().getId()).fromLegacyData(cacheEntry.data());
     } else {
       return world.getType(blockPosition);

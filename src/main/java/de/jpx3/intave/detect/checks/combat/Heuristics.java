@@ -63,7 +63,7 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
     appendCheckPart(new RotationModuloResetHeuristic(this));
     appendCheckPart(new PacketOrderSwingHeuristic(this));
     appendCheckPart(new PacketSprintToggleHeuristic(this));
-    if(IntaveControl.USE_AUTOCLICKER_CHECK) {
+    if(!IntaveControl.DISABLE_AUTOCLICKER_CHECK) {
       appendCheckPart(new AirClickLimitHeuristic(this));
     }
     appendCheckPart(new RotationLHeuristics(this));

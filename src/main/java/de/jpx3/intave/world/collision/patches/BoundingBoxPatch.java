@@ -1,6 +1,7 @@
 package de.jpx3.intave.world.collision.patches;
 
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -13,21 +14,21 @@ import java.util.List;
  */
 
 public abstract class BoundingBoxPatch {
-  private final int blockId;
+  private final Material material;
 
-  protected BoundingBoxPatch(int blockId) {
-    this.blockId = blockId;
+  protected BoundingBoxPatch(Material material) {
+    this.material = material;
   }
 
   public List<WrappedAxisAlignedBB> patch(World world, Player player, Block block, List<WrappedAxisAlignedBB> bbs) {
     return bbs;
   }
 
-  public List<WrappedAxisAlignedBB> patch(World world, Player player, int typeId, int blockState, List<WrappedAxisAlignedBB> bbs) {
+  public List<WrappedAxisAlignedBB> patch(World world, Player player, Material type, int blockState, List<WrappedAxisAlignedBB> bbs) {
     return bbs;
   }
 
-  public int blockId() {
-    return blockId;
+  public Material material() {
+    return material;
   }
 }
