@@ -56,7 +56,7 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
 
     EnumWrappers.EntityUseAction entityUseAction = event.getPacket().getEntityUseActions().read(0);
 
-    if(entityUseAction == EnumWrappers.EntityUseAction.ATTACK) {
+    if (entityUseAction == EnumWrappers.EntityUseAction.ATTACK) {
       meta.resetedLeftClickCounterThisTick = true;
     }
   }
@@ -80,12 +80,12 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
     BlockPosition blockPosition = event.getPacket().getBlockPositionModifier().read(0);
     int blockPlaceDirection = event.getPacket().getIntegers().read(0);
 
-    if(blockPosition != null) {
+    if (blockPosition != null) {
       if (blockPlaceDirection != 255) {
         Material clickedType = BukkitBlockAccess.blockAccess(blockPosition.toLocation(player.getWorld())).getType();
         boolean clickable = BlockDataAccess.isClickable(clickedType);
 
-        if(clickable) {
+        if (clickable) {
           meta.resetedLeftClickCounterThisTick = true;
         }
       }
@@ -109,14 +109,14 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
 
     EnumWrappers.PlayerDigType digType = event.getPacket().getPlayerDigTypes().read(0);
 
-    if(digType == EnumWrappers.PlayerDigType.START_DESTROY_BLOCK) {
+    if (digType == EnumWrappers.PlayerDigType.START_DESTROY_BLOCK) {
       meta.isBreakingClientSide = true;
 
       BlockPosition blockPosition = event.getPacket().getBlockPositionModifier().read(0);
       meta.currentDiggedBlock = blockPosition;
-    } else if(digType == EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK) {
+    } else if (digType == EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK) {
       meta.isBreakingClientSide = false;
-    } else if(digType == EnumWrappers.PlayerDigType.STOP_DESTROY_BLOCK) {
+    } else if (digType == EnumWrappers.PlayerDigType.STOP_DESTROY_BLOCK) {
       meta.currentDiggedBlock = null;
       meta.isBreakingClientSide = false;
     }
@@ -140,11 +140,11 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
     User user = userOf(player);
     AirClickLimitHeuristicMeta meta = metaOf(user);
 
-    if(meta.isBreakingClientSide) {
+    if (meta.isBreakingClientSide) {
       meta.resetedLeftClickCounterThisTick = true;
     }
 
-    if(meta.swingsThisTick > 0 && !meta.resetedLeftClickCounterThisTick) {
+    if (meta.swingsThisTick > 0 && !meta.resetedLeftClickCounterThisTick) {
       /*TODO: Überprüfen ob der Spieler im letztem Tick auch ein Swing-packet gesendet hat
          oder er ein Stop-break Packet im Tick davor gesendet hat. (Um so wenig Raytracing wie
          möglich zu machen)
@@ -158,39 +158,41 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
       playerLocation.setYaw(movementData.rotationYaw);
       playerLocation.setPitch(movementData.rotationPitch);
       WrappedMovingObjectPosition raycastResult = Raytracer.blockRayTrace(player, playerLocation);
-      if(raycastResult != null && raycastResult.hitVec != WrappedVector.ZERO) {
+      if (raycastResult != null && raycastResult.hitVec != WrappedVector.ZERO) {
         // TODO: check if meta.lastDiggedBlock is the same as from the raycastResult (geht nur wenn man den mc bug fixt der für 5 ticks flaggt wenn man ein block abgebaut hat)
 
 //        player.sendMessage("Is digging client side but not server side");
         meta.resetedLeftClickCounterThisTick = true;
-        if(meta.currentDiggedBlock != null) {
-          Synchronizer.synchronize(() -> sendStopDig(player, meta));
-        }
+        Synchronizer.synchronize(() -> {
+          if (meta.currentDiggedBlock != null) {
+            sendStopDig(player, meta);
+          }
+        });
       }
     }
 
-    if(!meta.resetedLeftClickCounterThisTick) {
+    if (!meta.resetedLeftClickCounterThisTick) {
       meta.tickArray[meta.tickIndex] = meta.swingsThisTick;
     }
 
     int sum = 0;
-    for(int clickOfTick : meta.tickArray) {
+    for (int clickOfTick : meta.tickArray) {
       sum += clickOfTick;
     }
 
-    if(sum != 0) {
+    if (sum != 0) {
 //      player.sendMessage("cps: " + sum);
     }
 
-    if(sum > 13 && user.meta().clientData().protocolVersion() <= UserMetaClientData.PROTOCOL_VERSION_BOUNTIFUL_UPDATE) {
-      if(!IntaveControl.DISABLE_AUTOCLICKER_CHECK) {
-        parentCheck().saveAnomaly(player,
-          Anomaly.anomalyOf(
-            "11",
-            sum > 14 ? Confidence.VERY_LIKELY : Confidence.PROBABLE,
-            Anomaly.Type.AUTOCLICKER,
-            "too many swing packets in air " + sum, Anomaly.AnomalyOption.DELAY_128s
-          ));
+    if (sum > 13 && user.meta().clientData().protocolVersion() <= UserMetaClientData.PROTOCOL_VERSION_BOUNTIFUL_UPDATE) {
+      if (!IntaveControl.DISABLE_AUTOCLICKER_CHECK) {
+        Anomaly anomaly = Anomaly.anomalyOf(
+          "11",
+          sum > 14 ? Confidence.VERY_LIKELY : Confidence.PROBABLE,
+          Anomaly.Type.AUTOCLICKER,
+          "too many swing packets in air " + sum, Anomaly.AnomalyOption.DELAY_128s
+        );
+        parentCheck().saveAnomaly(player, anomaly);
       }
     }
 
@@ -202,7 +204,7 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
     meta.swingsThisTick = 0;
 
     meta.tickIndex++;
-    if(meta.tickIndex > 19) {
+    if (meta.tickIndex > 19) {
       meta.tickIndex = 0;
     }
 
