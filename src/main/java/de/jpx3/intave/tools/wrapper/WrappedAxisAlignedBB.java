@@ -3,6 +3,7 @@ package de.jpx3.intave.tools.wrapper;
 import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.wrapper.link.WrapperLinkage;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserMetaClientData;
 import de.jpx3.intave.user.UserMetaMovementData;
 import org.bukkit.Location;
 
@@ -381,10 +382,16 @@ public class WrappedAxisAlignedBB {
     double positionX, double positionY, double positionZ
   ) {
     UserMetaMovementData movementData = user.meta().movementData();
+    UserMetaClientData clientData = user.meta().clientData();
     double width = movementData.widthRounded;
     float height = movementData.height;
-    // 0.000000001 accuracy
-    double newYMax = Math.round((positionY + height) * 10000000d) / 10000000d;
+
+    double newYMax;
+    if(clientData.roundEnvironmentNumbers()) {
+      newYMax = Math.round((positionY + height) * 10000000d) / 10000000d;
+    } else {
+      newYMax = (positionY + height);
+    }
     return new WrappedAxisAlignedBB(
       positionX - width, positionY, positionZ - width,
       positionX + width, newYMax, positionZ + width

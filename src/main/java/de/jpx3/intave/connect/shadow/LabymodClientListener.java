@@ -55,9 +55,9 @@ public final class LabymodClientListener implements PacketEventSubscriber {
       return;
     }
     ByteBuf bytes = (ByteBuf) packet.getSpecificModifier(ReflectiveAccess.lookupServerClass("PacketDataSerializer")).getValues().get(0);
-    if(bytes.array().length == 0) {
-      return;
-    }
+//    if(bytes.array().length == 0) {
+//      return;
+//    }
     try {
       bytes.markReaderIndex();
       String messageKey = LabyModChannelHelper.readString(bytes, 32767);

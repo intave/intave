@@ -1,7 +1,6 @@
-package de.jpx3.intave.connect.shadow;
+package de.jpx3.intave.event.packet.pipeinject;
 
 import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
-import de.jpx3.intave.tools.annotate.Native;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import net.minecraft.server.v1_8_R3.EntityPlayer;
@@ -10,30 +9,28 @@ import org.bukkit.entity.Player;
 
 @PatchyAutoTranslation
 public final class v8PipelineInjector implements PipelineInjector {
-  private final LabymodShadowIntegration integration;
+  private final InjectionService injectionService;
 
-  public v8PipelineInjector(LabymodShadowIntegration integration) {
-    this.integration = integration;
+  public v8PipelineInjector(InjectionService injectionService) {
+    this.injectionService = injectionService;
   }
 
   @Override
-  @Native
   @PatchyAutoTranslation
   public void inject(Player target) {
     EntityPlayer entityPlayer = ((CraftPlayer) target).getHandle();
     Channel channel = entityPlayer.playerConnection.networkManager.channel;
-    ChannelPipeline pipeline = channel.pipeline();
-//    IntaveLogger.logger().globalPrintLn(pipeline.get("protocol_lib_decoder"));
-    pipeline.addBefore("decoder", "shadowpacketin", new v8PipelineHandler(target.getUniqueId(), integration));
+    channel.pipeline().addBefore("decoder", "intave", new v8PipelineHandler(target.getUniqueId(), injectionService));
   }
 
   @Override
-  @Native
   @PatchyAutoTranslation
   public void uninject(Player target) {
     EntityPlayer entityPlayer = ((CraftPlayer) target).getHandle();
     Channel channel = entityPlayer.playerConnection.networkManager.channel;
     ChannelPipeline pipeline = channel.pipeline();
-    pipeline.remove("shadowpacketin");
+    if(pipeline.context("intave") != null) {
+      pipeline.remove("intave");
+    }
   }
 }

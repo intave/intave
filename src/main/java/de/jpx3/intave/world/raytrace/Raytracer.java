@@ -90,7 +90,7 @@ public final class Raytracer {
   ) {
     WrappedVector eyeVector = positionEyes(player, prevPosX, prevPosY, prevPosZ);
     double blockReachDistance = 6d;
-    double attackReachDistance = AttackRaytrace.reachDistance(player.getGameMode() == GameMode.CREATIVE);
+    double attackReachDistance = AttackRaytrace.reachDistance(UserRepository.userOf(player).meta().abilityData().inGameMode(GameMode.CREATIVE));
     double lastReach = 10;
     WrappedVector lastHitVec = null;
     for(boolean fastMath : BOOLEANSTATES) {

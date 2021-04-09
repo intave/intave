@@ -35,7 +35,6 @@ public final class BlockLilyPadPatch extends BoundingBoxPatch {
       float f1 = 0.015625F;
       builder.shape(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, f1, 0.5F + f);
     }
-    builder.apply();
-    return builder.resolve();
+    return builder.applyAndResolve();
   }
 }

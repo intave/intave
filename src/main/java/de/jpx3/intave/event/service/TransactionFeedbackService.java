@@ -43,10 +43,10 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
       User user = UserRepository.userOf(player);
 //      player.sendMessage(oldestPendingTransaction(user) + "ms since last transaction");
       if (oldestPendingTransaction(user) > TRANSACTION_TIMEOUT_KICK) {
-        System.out.println("[Intave] " + player.getName() + " was not responding to transaction packets");
+        System.out.println("[Intave] " + player.getName() + " was not responding to validation packets");
 
         Synchronizer.synchronize(() -> {
-          player.kickPlayer("Missing transaction response");
+          player.kickPlayer("Missing validation response");
         });
       }
     }
@@ -78,7 +78,7 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
       long expected = synchronizeData.lastReceivedTransactionNum + 1;
       if (transactionResponse.num() != expected) {
         Synchronizer.synchronize(() -> {
-          player.kickPlayer("Invalid transaction response (received " + transactionResponse.num() + ", but expected " + expected +")");
+          player.kickPlayer("Invalid validation response (received " + transactionResponse.num() + ", but expected " + expected +")");
         });
       }
 //      Synchronizer.synchronize(() -> {
@@ -108,20 +108,6 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
       event.setCancelled(true);
     }
   }
-
-//  @PacketSubscription(
-//    priority = ListenerPriority.HIGHEST,
-//    packets = {
-////      @PacketDescriptor(sender = Sender.CLIENT, packetName = "FLYING"),
-////      @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION"),
-////      @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION_LOOK"),
-////      @PacketDescriptor(sender = Sender.CLIENT, packetName = "LOOK"),
-//      @PacketDescriptor(sender = Sender.CLIENT, packetName = "KEEP_ALIVE")
-//    }
-//  )
-//  public void keepAlive(PacketEvent event) {
-//
-//  }
 
   private void nettyThreadDump() {
     Thread.getAllStackTraces().forEach((thread, stackTraceElements) -> {
@@ -217,7 +203,7 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
 
   private void sendTransactionPacket(Player receiver, short id) {
     if(!Bukkit.isPrimaryThread()) {
-      IntaveLogger.logger().error("Can't perform transaction-validation off main thread.");
+      IntaveLogger.logger().error("Can't perform tick-validation off main thread.");
       IntaveLogger.logger().error("Please check if you sent a packet / performed a bukkit player action asynchronously in the following trace:");
       Thread.dumpStack();
       Synchronizer.synchronize(() -> sendTransactionPacket(receiver, id));

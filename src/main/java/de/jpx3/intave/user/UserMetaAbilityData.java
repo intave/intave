@@ -42,6 +42,10 @@ public final class UserMetaAbilityData {
     return this.gameMode == gameMode || this.pendingGameMode == gameMode;
   }
 
+  public boolean inGameMode(GameMode gameMode) {
+    return this.gameMode.id() == gameMode.getValue();
+  }
+
   public boolean inGameMode(PlayerAbilityEvaluator.GameMode gameMode) {
     return this.gameMode == gameMode;
   }

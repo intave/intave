@@ -6,6 +6,7 @@ import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.event.packet.pipeinject.InjectionService;
 import de.jpx3.intave.lib.asm.Type;
 import de.jpx3.intave.reflect.irx.IRXFactory;
 
@@ -19,13 +20,17 @@ import static de.jpx3.intave.IntaveControl.DISABLE_CHUNK_PACKET_HOOK;
 
 public final class PacketSubscriptionLinker {
   private final IntavePlugin plugin;
+  private final Map<PacketType, SCOWAList<LocalPacketAdapter>> customEngineListenerMappings = new ConcurrentHashMap<>();
   private final Map<PacketType, SCOWAList<LocalPacketAdapter>> internalPacketListenerMappings = new ConcurrentHashMap<>();
   private final List<IntavePacketAdapter> internalPacketListener = new ArrayList<>();
   private final List<IntavePacketAdapter> externalPacketListener = new ArrayList<>();
+
+  private final InjectionService customInjector;
   private final static boolean NO_CHAT_HOOKUP = false;
 
   public PacketSubscriptionLinker(IntavePlugin plugin) {
     this.plugin = plugin;
+    this.customInjector = new InjectionService(plugin);
   }
 
   public void linkSubscriptionsIn(PacketEventSubscriber subscriber) {
@@ -62,6 +67,10 @@ public final class PacketSubscriptionLinker {
     ProtocolLibrary.getProtocolManager().removePacketListeners(plugin);
     internalPacketListenerMappings.values().forEach(SCOWAList::clear);
     internalPacketListenerMappings.clear();
+    customEngineListenerMappings.values().forEach(SCOWAList::clear);
+    customEngineListenerMappings.clear();
+    customInjector.reset();
+    customInjector.uninjectAll();
   }
 
   public void refreshLinkages() {
@@ -72,6 +81,8 @@ public final class PacketSubscriptionLinker {
     for (IntavePacketAdapter intavePacketAdapter : externalPacketListener) {
       linkAdapter(intavePacketAdapter);
     }
+    customInjector.reset();
+    customEngineListenerMappings.forEach(customInjector::setupSubscriptions);
   }
 
   private void bakeSubscriptions(PacketType type, SCOWAList<LocalPacketAdapter> localPacketAdapters) {
@@ -108,10 +119,14 @@ public final class PacketSubscriptionLinker {
   private void linkSubscription(PacketEventSubscriber subscriber, Method method) {
     PacketSubscription metadata = method.getAnnotation(PacketSubscription.class);
     PacketSubscriptionMethodExecutor executor = assembleSubscriptionMethodCaller(subscriber, method, metadata.identifier());
-    if(metadata.prioritySlot() == PrioritySlot.INTERNAL) {
-      performInternalLinkage(plugin, subscriber, metadata.priority(), translatePacketTypes(metadata.packets()), method.getName(), executor);
+    if(metadata.engine() == Engine.INTERNAL) {
+      performCustomLinkage(plugin, subscriber, metadata.priority(), translatePacketTypes(metadata.packets()), method.getName(), executor);
     } else {
-      performExternalLinkage(plugin, subscriber, metadata.priority(), translatePacketTypes(metadata.packets()), method.getName(), executor);
+      if(metadata.prioritySlot() == PrioritySlot.INTERNAL) {
+        performInternalLinkage(plugin, subscriber, metadata.priority(), translatePacketTypes(metadata.packets()), method.getName(), executor);
+      } else {
+        performExternalLinkage(plugin, subscriber, metadata.priority(), translatePacketTypes(metadata.packets()), method.getName(), executor);
+      }
     }
   }
 
@@ -213,6 +228,22 @@ public final class PacketSubscriptionLinker {
     return input.replaceAll("\\.", "/");
   }
 
+  private void performCustomLinkage(
+    IntavePlugin plugin, PacketEventSubscriber subscriber,
+    ListenerPriority priority, PacketType[] translatePacketTypes,
+    String methodName, PacketSubscriptionMethodExecutor executor
+  ) {
+    if(translatePacketTypes.length == 0) {
+      return;
+    }
+    LocalPacketAdapter adapter = new LocalPacketAdapter(plugin, subscriber, priority, translatePacketTypes, methodName, executor);
+    for (PacketType translatePacketType : translatePacketTypes) {
+      SCOWAList<LocalPacketAdapter> adapters =
+        customEngineListenerMappings.computeIfAbsent(translatePacketType, x -> new SCOWAList<>());
+      adapters.add(adapter);
+    }
+  }
+
   private void performInternalLinkage(
     IntavePlugin plugin, PacketEventSubscriber subscriber,
     ListenerPriority priority, PacketType[] translatePacketTypes,
@@ -232,7 +263,6 @@ public final class PacketSubscriptionLinker {
     ListenerPriority priority, PacketType[] translatePacketTypes,
     String methodName, PacketSubscriptionMethodExecutor executor
   ) {
-//    IntaveLogger.logger().globalPrintLn(subscriber + " " + priority + " " + Arrays.toString(translatePacketTypes) + " " + methodName + " " + executor);
     if(translatePacketTypes.length == 0) {
       return;
     }

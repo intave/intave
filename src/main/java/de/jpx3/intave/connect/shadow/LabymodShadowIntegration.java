@@ -7,9 +7,7 @@ import com.comphenix.protocol.wrappers.MinecraftKey;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
-import de.jpx3.intave.patchy.PatchyLoadingInjector;
 import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.tools.sync.Synchronizer;
@@ -23,35 +21,13 @@ import org.bukkit.entity.Player;
 import java.lang.reflect.InvocationTargetException;
 
 public final class LabymodShadowIntegration {
-  static {
-    String handler = "de.jpx3.intave.connect.shadow.v8PipelineHandler";
-    String injector = "de.jpx3.intave.connect.shadow.v8PipelineInjector";
-    PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), handler);
-    PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), injector);
-    injectorClassName = injector;
-  }
-
   private final static int SHADOW_VERSION = 1;
-  private final static String injectorClassName;
-
-  private final PipelineInjector pipelineInjector;
   private final IntavePlugin plugin;
 
   private final LabymodClientListener shadowPacketListener;
   public LabymodShadowIntegration(IntavePlugin plugin) {
     this.plugin = plugin;
     this.shadowPacketListener = new LabymodClientListener(plugin, "info", this::processIncomingMessage);
-    this.pipelineInjector = loadInjector();
-  }
-
-  @Native
-  private <T> T loadInjector() {
-    try {
-      //noinspection unchecked
-      return (T) Class.forName(injectorClassName).getConstructor(LabymodShadowIntegration.class).newInstance(this);
-    } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException exception) {
-      throw new IntaveInternalException(exception);
-    }
   }
 
   @Native
@@ -74,9 +50,7 @@ public final class LabymodShadowIntegration {
 
   @Native
   private void enableShadow(Player player) {
-
     // not ready yet
-
 //    User user = UserRepository.userOf(player);
 //    user.setShadow(true);
 //    user.setShadowRepo(new ShadowPacketDataLink(user));
@@ -100,7 +74,6 @@ public final class LabymodShadowIntegration {
     user.setShadow(false);
     user.setShadowRepo(null);
     performShadowUpdate(player, ShadowStatus.DISABLE);
-    pipelineInjector.uninject(player);
   }
 
   @Native

@@ -362,7 +362,7 @@ public final class Physics extends IntaveCheck {
 
         String message = "moved into " + (currentlyInOverride ? "emulated" : "") + " " + shortenTypeName(block.getType()) + " block";
         boolean multipleBoxes = intersectionBoundingBoxesCurrent.size() > 1;
-        String details = (multipleBoxes ? intersectionBoundingBoxesCurrent.size() : "one") + " box" + (multipleBoxes ? "es" : "") + " " + blockPositionX + ", " + blockPositionY + ", " + blockPositionZ;
+        String details = (multipleBoxes ? intersectionBoundingBoxesCurrent.size() : "one") + " box" + (multipleBoxes ? "es" : "") + " " + movementData.height;
 
         user.boundingBoxAccess().identityInvalidate();
 

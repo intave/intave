@@ -26,6 +26,11 @@ public final class BoundingBoxBuilder {
     this.maxZ = maxZ;
   }
 
+  public List<WrappedAxisAlignedBB> applyAndResolve() {
+    apply();
+    return resolve();
+  }
+
   public void apply() {
     WrappedAxisAlignedBB boundingBox = new WrappedAxisAlignedBB(minX, minY, minZ, maxX, maxY, maxZ);
     boundingBox.setOriginBox(true);

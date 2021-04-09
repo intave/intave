@@ -45,8 +45,6 @@ public final class BlockTrapdoorPatch extends BoundingBoxPatch {
         boundingBoxBuilder.shape(0.0F, 0.0F, 0.0F, 1.0F, 0.1875F, 1.0F);
       }
     }
-
-    boundingBoxBuilder.apply();
-    return boundingBoxBuilder.resolve();
+    return boundingBoxBuilder.applyAndResolve();
   }
 }

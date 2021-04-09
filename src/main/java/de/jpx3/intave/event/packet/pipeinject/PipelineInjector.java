@@ -1,4 +1,4 @@
-package de.jpx3.intave.connect.shadow;
+package de.jpx3.intave.event.packet.pipeinject;
 
 import org.bukkit.entity.Player;
 

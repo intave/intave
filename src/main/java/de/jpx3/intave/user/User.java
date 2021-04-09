@@ -50,6 +50,7 @@ public final class User {
     this.hasPlayer = player != null;
     this.nmsEntity = new WeakReference<>(hasPlayer ? ReflectiveHandleAccess.handleOf(player) : null);
     this.userMeta = new UserMeta(player, this);
+    this.userMeta.setup();
     this.permissionCache = new PermissionCache();
     this.boundingBoxAccess = new BoundingBoxAccess(hasOnlinePlayer() ? player() : null);
     this.colliderProcessor = Collider.suitableComplexColliderProcessorFor(this);
@@ -80,7 +81,7 @@ public final class User {
 
   public boolean hasOnlinePlayer() {
     Player player = playerRef.get();
-    return player != null && AccessHelper.isOnline(player);
+    return AccessHelper.isOnline(player);
   }
 
   public UserCustomCheckMeta customMeta(Class<? extends UserCustomCheckMeta> classTarget) {
@@ -280,6 +281,10 @@ public final class User {
 
     public UserMetaPunishmentData punishmentData() {
       return punishmentData;
+    }
+
+    public void setup() {
+      movementData.setup();
     }
   }
 }

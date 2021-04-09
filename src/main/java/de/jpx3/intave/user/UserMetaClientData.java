@@ -30,8 +30,13 @@ public final class UserMetaClientData {
     return protocolVersion >= SOMETHING_BETWEEN ? 0.35f : 0.08f;
   }
 
-  public boolean hitBoxSneakAffected() {
-    return protocolVersion >= PROTOCOL_VERSION_COMBAT_UPDATE;
+  public float hitBoxHeightWhenSneaking() {
+    if (protocolVersion >= SOMETHING_BETWEEN) {
+      return 1.5F;
+    } else if(protocolVersion >= PROTOCOL_VERSION_COMBAT_UPDATE) {
+      return 1.65F;
+    }
+    return 1.8F;
   }
 
   public boolean flyingPacketStream() {
@@ -45,6 +50,11 @@ public final class UserMetaClientData {
   public boolean applyNewEntityCollisions() {
     // >= 1.14
     return protocolVersion >= PROTOCOL_VERSION_VILLAGE_UPDATE;
+  }
+
+  public boolean roundEnvironmentNumbers() {
+    // < 1.14
+    return protocolVersion < PROTOCOL_VERSION_VILLAGE_UPDATE;
   }
 
   public boolean sprintWhenSneaking() {

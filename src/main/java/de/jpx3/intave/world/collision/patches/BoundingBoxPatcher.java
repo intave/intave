@@ -20,6 +20,7 @@ public final class BoundingBoxPatcher {
     add(BlockLadderPatch.class);
     add(BlockLilyPadPatch.class);
     add(BlockFenceGatePatch.class);
+    add(BlockFarmlandPatch.class);
   }
 
   private static void add(Class<? extends BoundingBoxPatch> patchClass) {

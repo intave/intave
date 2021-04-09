@@ -32,8 +32,7 @@ public final class BlockLadderPatch extends BoundingBoxPatch {
     } else {
       emulateLegacy(builder, direction);
     }
-    builder.apply();
-    return builder.resolve();
+    return builder.applyAndResolve();
   }
 
   private void emulateNew(BoundingBoxBuilder builder, WrappedEnumDirection direction) {

@@ -101,6 +101,7 @@ public final class BoundingBoxAccess {
 
     CacheEntry cacheEntry = blockCache.get(blockPositionKey);
     if (cacheEntry == null) {
+//      player.sendMessage(Integer.toBinaryString(posX) + /*" " + posY + " " + posZ + " " */" "+ Long.toBinaryString(bigKey(posX, posY, posZ)));
       World world = player.getWorld();
       Block block = BukkitBlockAccess.blockAccess(world, posX, posY, posZ);
       Material type = block.getType();
@@ -218,8 +219,6 @@ public final class BoundingBoxAccess {
   }
 
   public void invalidate(int posX, int posY, int posZ) {
-//    PluginInvocation pluginInvocation = CallerResolver.callerPluginInfo();
-//    player.sendMessage(ChatColor.DARK_GRAY + "Invalidated " + posX + " " + posY + " " + posZ + " (now type " + BukkitBlockAccess.blockAccess(player.getWorld(), posX, posY,  posZ).getType() + ") (" + pluginInvocation.baseClassName() + "." + pluginInvocation.methodName() + ")");
     invalidate0(posX + 1, posY, posZ);
     invalidate0(posX - 1, posY, posZ);
     invalidate0(posX, posY, posZ + 1);
@@ -251,8 +250,6 @@ public final class BoundingBoxAccess {
         type, blockState
       );
     }
-//    PluginInvocation pluginInvocation = CallerResolver.callerPluginInfo();
-//    player.sendMessage(ChatColor.GRAY + "Override " + posX + " " + posY + " " + posZ + " -> " + type + " (" + pluginInvocation.baseClassName() + "." + pluginInvocation.methodName() + ")");
     long key = bigKey(posX, posY, posZ);
     indexedReplacements.put(key, cacheEntry);
     locatedReplacements.put(new Location(world, posX, posY, posZ), cacheEntry);
@@ -289,8 +286,6 @@ public final class BoundingBoxAccess {
   }
 
   public void invalidateOverride(int posX, int posY, int posZ) {
-//    PluginInvocation pluginInvocation = CallerResolver.callerPluginInfo();
-//    player.sendMessage(ChatColor.BLACK + "Invalidated override " + posX + " " + posY + " " + posZ  + " (" + pluginInvocation.baseClassName() + "." + pluginInvocation.methodName() + ")");
     long key = bigKey(posX, posY, posZ);
     indexedReplacements.remove(key);
   }
@@ -311,13 +306,8 @@ public final class BoundingBoxAccess {
     return indexedReplacements;
   }
 
-  private int chunkConstraintKey(int posX, int posY, int posZ) {
-    byte dx = (byte) (chunkXPos - posX), dz = (byte) (chunkZPos - posZ);
-    return (posY & 0x1FF) << 16 | (dx & 0x0FF) << 8 | (dz & 0x0FF);
-  }
-
   private long bigKey(int posX, int posY, int posZ) {
-    return (long) (posX & 0x7ffffff) << 36 | (posZ & 0x7ffffff) | (long) posY << 30;
+    return (long) (posX & 0b111111111111111111111111111) << 38 | (long) posY << 30 | (posZ & 0b111111111111111111111111111);
   }
 
   public static BoundingBoxResolver globalBoundingBoxResolver() {

@@ -424,11 +424,10 @@ public final class MovementDispatcher implements EventProcessor {
       width = 0.2F;
       height = 0.2F;
     } else if (!movementData.swimming) {
-      if (movementData.sneaking && meta.clientData().hitBoxSneakAffected()) {
-        width = 0.6F;
-        height = 1.65F;
+      width = 0.6F;
+      if(movementData.sneaking) {
+        height = meta.clientData().hitBoxHeightWhenSneaking();
       } else {
-        width = 0.6F;
         height = 1.8F;
       }
     } else {

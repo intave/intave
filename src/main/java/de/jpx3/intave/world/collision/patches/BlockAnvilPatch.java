@@ -28,8 +28,6 @@ public final class BlockAnvilPatch extends BoundingBoxPatch {
     } else {
       boundingBoxBuilder.shape(0.0F, 0.0F, 0.125F, 1.0F, 1.0F, 0.875F);
     }
-
-    boundingBoxBuilder.apply();
-    return boundingBoxBuilder.resolve();
+    return boundingBoxBuilder.applyAndResolve();
   }
 }

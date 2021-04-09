@@ -321,7 +321,6 @@ public final class IntavePlugin extends JavaPlugin {
           }
 
           // verify the server integrity
-
           boolean validResponse = false;
           if(keyResponse != null) {
             UUID receivedResponse = UUID.fromString(keyResponse);
