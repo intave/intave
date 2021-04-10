@@ -255,14 +255,13 @@ public final class FakePlayer implements TickTaskScheduler {
     double distanceMoved = movement.distanceMoved();
     double distanceToPlayer = movement.distanceToPlayer(parentPlayer);
     setSprinting(distanceMoved > 0.0 && !this.movement.sneaking);
-    if (distanceMoved < 0.5 && distanceToPlayer < 9) {
-      if (System.currentTimeMillis() % 50 == 0L) {
+    if (distanceMoved < 0.5 && distanceToPlayer < 9 && ticks != 0) {
+      if (ThreadLocalRandom.current().nextInt(1, 10) % 5 == 0 && ticks % 250 == 0) {
         setSneaking(true);
       }
-    } else {
+    } else if (distanceMoved > 1.0) {
       setSneaking(false);
     }
-    setSneaking(false);
     if (this.ticks % 5 == 0 && this.movement.onGround) {
       sendWalkingSoundEffect(this.movement.location);
     }
