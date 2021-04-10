@@ -27,7 +27,7 @@ public final class LazyEntityCollisionService {
 
   private void synchronizeBoats() {
     for (Player player : Bukkit.getOnlinePlayers()) {
-      List<Entity> entities = player.getWorld().getEntities();
+      List<Entity> entities = player.getNearbyEntities(5, 5, 5);
       synchronizeBoatsOf(player, entities);
     }
   }
