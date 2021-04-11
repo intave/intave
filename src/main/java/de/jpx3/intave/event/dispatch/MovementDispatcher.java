@@ -134,6 +134,10 @@ public final class MovementDispatcher implements EventProcessor {
   )
   public void sentRespawn(PacketEvent event) {
     Player player = event.getPlayer();
+    User user = UserRepository.userOf(player);
+    UserMetaViolationLevelData violationLevelData = user.meta().violationLevelData();
+    violationLevelData.physicsVelocityVL = 0;
+    violationLevelData.physicsVL = Math.max(0, violationLevelData.physicsVL - 10);
     synchronizeRespawn(player);
   }
 
