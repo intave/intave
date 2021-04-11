@@ -1,5 +1,6 @@
 package de.jpx3.intave.event.service.entity;
 
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaMovementData;
@@ -18,7 +19,9 @@ public final class LazyEntityCollisionService {
 
   public LazyEntityCollisionService(IntavePlugin plugin) {
     this.plugin = plugin;
-    this.setupBoatScheduler();
+    if (IntaveControl.USE_BOAT_COLLISIONS) {
+      this.setupBoatScheduler();
+    }
   }
 
   private void setupBoatScheduler() {
