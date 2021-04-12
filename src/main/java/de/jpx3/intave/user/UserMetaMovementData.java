@@ -307,10 +307,12 @@ public final class UserMetaMovementData {
     if (inventoryData.inventoryOpen()) {
       return true;
     }
-    IntavePlugin plugin = IntavePlugin.singletonInstance();
-    TrustFactorService trustFactorService = plugin.trustFactorService();
-    int trustFactorSetting = trustFactorService.trustFactorSetting("physics.joap-limit", player);
-    return pastVelocity == 0 && physicsJumpedOverrideVL >= trustFactorSetting;
+    return false;
+    //fixme
+//    IntavePlugin plugin = IntavePlugin.singletonInstance();
+//    TrustFactorService trustFactorService = plugin.trustFactorService();
+//    int trustFactorSetting = trustFactorService.trustFactorSetting("physics.joap-limit", player);
+//    return pastVelocity == 0 && physicsJumpedOverrideVL >= trustFactorSetting;
   }
 
   public double baseMoveSpeed() {
