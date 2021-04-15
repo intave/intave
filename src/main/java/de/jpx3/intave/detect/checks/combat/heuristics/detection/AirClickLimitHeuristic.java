@@ -242,6 +242,19 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
   }
 
   private void sendStopDig(Player player, AirClickLimitHeuristicMeta meta) {
+    //    Synchronizer.synchronize(()->{
+    //        try {
+    //          PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.BLOCK_BREAK_ANIMATION);
+    //          packet.getIntegers().write(0, player.getEntityId());
+    //          packet.getBlockPositionModifier().write(0, meta.currentDiggedBlock);
+    //          packet.getIntegers().write(1, 0);
+    ////          userOf(player).ignoreNextPacket();
+    //          ProtocolLibrary.getProtocolManager().sendServerPacket(player, packet);
+    //        } catch(Exception e) {
+    //          e.printStackTrace();
+    //        }
+    //    });
+    //TODO: das BLOCK_DIG verhindert nicht komplett das der block abgebaut wird (das abbauen wird manchmal vom server verhindert wenn der spieler den block zu schnell abgebaut hat)
     try {
       PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Client.BLOCK_DIG);
 
