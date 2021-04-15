@@ -28,6 +28,7 @@
 package de.jpx3.intave.lib.asm.util;
 
 import de.jpx3.intave.lib.asm.*;
+import de.jpx3.intave.tools.annotate.Relocate;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -39,6 +40,7 @@ import java.util.*;
  * @author Eric Bruneton
  */
 // DontCheck(AbbreviationAsWordInName): can't be renamed (for backward binary compatibility).
+@Relocate
 public class ASMifier extends Printer {
 
   /**

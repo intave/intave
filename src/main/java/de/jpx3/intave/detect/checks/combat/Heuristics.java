@@ -17,6 +17,7 @@ import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
+import de.jpx3.intave.event.service.violation.Violation;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.tools.annotate.Nullable;
@@ -157,8 +158,14 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
       } else {
         identifier = resolveIdentifier(anomalies);
       }
+      String threshold = "confidence-thresholds." + overallConfidence.output();
+      String message = "is fighting suspiciously";
       String details = type.details() + ": " + define(overallConfidence) + " / " + identifier;
-      plugin.violationProcessor().processViolation(player, 25, this.name(), "is fighting suspiciously", details, "confidence-thresholds." + overallConfidence.output(), true);
+      Violation violation = Violation.fromType(Heuristics.class)
+        .withPlayer(player).withMessage(message).withDetails(details)
+        .withCustomThreshold(threshold).withVL(25)
+        .build();
+      plugin.violationProcessor().processViolation(violation);
     }
   }
 

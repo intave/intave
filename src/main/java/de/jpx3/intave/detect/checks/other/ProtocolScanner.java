@@ -7,6 +7,7 @@ import de.jpx3.intave.detect.IntaveMetaCheck;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
+import de.jpx3.intave.event.service.violation.Violation;
 import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserCustomCheckMeta;
@@ -33,7 +34,11 @@ public final class ProtocolScanner extends IntaveMetaCheck<ProtocolScanner.Proto
       event.getPacket().getFloat().writeSafely(1, 0f);
       String message = "sent invalid rotation";
       String details = "pitch at " + MathHelper.formatDouble(rotationPitch, 4);
-      plugin.violationProcessor().processViolation(player, 100, "ProtocolScanner", message, details);
+      Violation violation = Violation.fromType(ProtocolScanner.class)
+        .withPlayer(player).withMessage(message).withDetails(details)
+        .withDefaultThreshold().withVL(100)
+        .build();
+      plugin.violationProcessor().processViolation(violation);
     }
   }
 
@@ -49,7 +54,11 @@ public final class ProtocolScanner extends IntaveMetaCheck<ProtocolScanner.Proto
     ProtocolScannerMeta meta = metaOf(user);
     int slot = packet.getIntegers().read(0);
     if (meta.lastSlot == slot && slot > 0) {
-      plugin.violationProcessor().processViolation(player, meta.slotPacketsSent > 4 ? 100 : 0, "ProtocolScanner", "sent slot twice", "slot " + slot);
+      Violation violation = Violation.fromType(ProtocolScanner.class)
+        .withPlayer(player).withMessage("sent slot twice").withDetails("slot " + slot)
+        .withDefaultThreshold().withVL(meta.slotPacketsSent > 4 ? 100 : 0)
+        .build();
+      plugin.violationProcessor().processViolation(violation);
     }
     meta.lastSlot = slot;
     meta.slotPacketsSent++;

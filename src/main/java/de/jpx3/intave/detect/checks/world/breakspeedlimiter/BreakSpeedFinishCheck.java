@@ -14,7 +14,9 @@ import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
-import de.jpx3.intave.event.service.ViolationService;
+import de.jpx3.intave.event.service.violation.Violation;
+import de.jpx3.intave.event.service.violation.ViolationContext;
+import de.jpx3.intave.event.service.violation.ViolationProcessor;
 import de.jpx3.intave.reflect.ReflectiveEntityAccess;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
@@ -96,13 +98,18 @@ public final class BreakSpeedFinishCheck extends IntaveMetaCheckPart<BreakSpeedL
       case STOP_DESTROY_BLOCK: {
         if (clientData.flyingPacketStream()) {
           float blockDamageDealt = meta.curBlockDamageMP;
-          if (blockDamageDealt < 0.9) { // ~90%
+          if (blockDamageDealt < 0.79) { // ~79%
             String message = "finished breaking-process too quickly";
             String percentage = (int)(blockDamageDealt * 100d) + "%";
             String details = "at " + percentage;
 
-            ViolationService violationService = IntavePlugin.singletonInstance().violationProcessor();
-            if (violationService.processViolation(player, 10, "BreakSpeedLimiter", message, details)) {
+            ViolationProcessor violationProcessor = IntavePlugin.singletonInstance().violationProcessor();
+            Violation violation = Violation.fromType(BreakSpeedLimiter.class)
+              .withPlayer(player).withMessage(message).withDetails(details)
+              .withDefaultThreshold().withVL(10)
+              .build();
+            ViolationContext violationContext = violationProcessor.processViolation(violation);
+            if (violationContext.shouldCounterThreat()) {
               event.setCancelled(true);
               refreshBlocksAround(player, blockPosition.toLocation(player.getWorld()));
             }
@@ -115,8 +122,13 @@ public final class BreakSpeedFinishCheck extends IntaveMetaCheckPart<BreakSpeedL
           if (exceeded > 100) {
             String message = "finished breaking-process too quickly";
             String details = exceeded + "ms faster than expected";
-            ViolationService violationService = IntavePlugin.singletonInstance().violationProcessor();
-            if (violationService.processViolation(player, 1, "BreakSpeedLimiter", message, details)) {
+            ViolationProcessor violationProcessor = IntavePlugin.singletonInstance().violationProcessor();
+            Violation violation = Violation.fromType(BreakSpeedLimiter.class)
+              .withPlayer(player).withMessage(message).withDetails(details)
+              .withDefaultThreshold().withVL(10)
+              .build();
+            ViolationContext violationContext = violationProcessor.processViolation(violation);
+            if (violationContext.shouldCounterThreat()) {
               event.setCancelled(true);
               refreshBlocksAround(player, blockPosition.toLocation(player.getWorld()));
             }

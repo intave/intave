@@ -10,7 +10,9 @@ import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
-import de.jpx3.intave.event.service.ViolationService;
+import de.jpx3.intave.event.service.violation.Violation;
+import de.jpx3.intave.event.service.violation.ViolationContext;
+import de.jpx3.intave.event.service.violation.ViolationProcessor;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserCustomCheckMeta;
@@ -60,10 +62,15 @@ public final class BreakSpeedStartCheck extends IntaveMetaCheckPart<BreakSpeedLi
         if (clientData.flyingPacketStream()) {
           int ticksBetween = meta.ticks - meta.blockBreakTick;
           if (ticksBetween < 5) {
-            ViolationService violationService = IntavePlugin.singletonInstance().violationProcessor();
             String message = "started block-break too quickly";
             String details = ticksBetween + " " + (ticksBetween == 1 ? "tick" : "ticks") + " between";
-            if (violationService.processViolation(player, 5, "BreakSpeedLimiter", message, details)) {
+            ViolationProcessor violationProcessor = IntavePlugin.singletonInstance().violationProcessor();
+            Violation violation = Violation.fromType(BreakSpeedLimiter.class)
+              .withPlayer(player).withMessage(message).withDetails(details)
+              .withDefaultThreshold().withVL(5)
+              .build();
+            ViolationContext violationContext = violationProcessor.processViolation(violation);
+            if (violationContext.shouldCounterThreat()) {
               event.setCancelled(true);
             }
           }
@@ -71,10 +78,15 @@ public final class BreakSpeedStartCheck extends IntaveMetaCheckPart<BreakSpeedLi
           long milliseconds = AccessHelper.now() - meta.blockBreakTimestamp;
           if (milliseconds < 200) {
             if (meta.blockBreakStartVL++ > 5) {
-              ViolationService violationService = IntavePlugin.singletonInstance().violationProcessor();
               String message = "started block-break too quickly";
               String details = milliseconds + "ms between";
-              if (violationService.processViolation(player, 1, "BreakSpeedLimiter", message, details)) {
+              ViolationProcessor violationProcessor = IntavePlugin.singletonInstance().violationProcessor();
+              Violation violation = Violation.fromType(BreakSpeedLimiter.class)
+                .withPlayer(player).withMessage(message).withDetails(details)
+                .withDefaultThreshold().withVL(1)
+                .build();
+              ViolationContext violationContext = violationProcessor.processViolation(violation);
+              if (violationContext.shouldCounterThreat()) {
                 event.setCancelled(true);
               }
               meta.blockBreakStartVL--;

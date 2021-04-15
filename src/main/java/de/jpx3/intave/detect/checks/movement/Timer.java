@@ -8,6 +8,8 @@ import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
+import de.jpx3.intave.event.service.violation.Violation;
+import de.jpx3.intave.event.service.violation.ViolationContext;
 import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.MathHelper;
@@ -128,8 +130,14 @@ public final class Timer extends IntaveMetaCheck<Timer.TimerData> {
     if (timerData.timerBalance > overflowLimit) {
       String balanceAsString = MathHelper.formatDouble(timerData.timerBalance / 10, 2);
       statistics().increaseFails();
-      if (plugin.violationProcessor().processViolation(player, 0.5, "Timer", "moved too frequently", balanceAsString + " ticks ahead")) {
-//        plugin.eventService().emulationEngine().emulationSetBack(player, new Vector(0,0,0), 6);
+
+      Violation violation = Violation.fromType(Timer.class)
+        .withPlayer(player).withMessage("moved too frequently").withDetails(balanceAsString + " ticks ahead")
+        .withDefaultThreshold().withVL(0.5)
+        .build();
+      ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
+
+      if (violationContext.shouldCounterThreat()) {
         UserMetaMovementData movementData = user.meta().movementData();
         plugin.eventService().emulationEngine().emulationSetBack(player, new Vector(movementData.physicsMotionX, movementData.physicsMotionY, movementData.physicsMotionZ), 12);
         if (timerData.timerBalance > 50) {

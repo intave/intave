@@ -9,6 +9,8 @@ import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
+import de.jpx3.intave.event.service.violation.Violation;
+import de.jpx3.intave.event.service.violation.ViolationContext;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserCustomCheckMeta;
 import de.jpx3.intave.user.UserMetaClientData;
@@ -137,9 +139,12 @@ public class ClickSpeedLimiter extends IntaveMetaCheck<ClickSpeedLimiter.ClickSp
         addedVL = 3;
       }
 
-      boolean punishment = plugin.violationProcessor().processViolation(player, addedVL, "ClickSpeedLimiter", "attacked too quickly", sum + " c/s");
-
-      if(punishment) {
+      Violation violation = Violation.fromType(ClickSpeedLimiter.class)
+        .withPlayer(player).withMessage("attacked too quickly").withDetails(sum + " c/s")
+        .withDefaultThreshold().withVL(addedVL)
+        .build();
+      ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
+      if(violationContext.shouldCounterThreat()) {
         //TODO: hit cancel
       }
     }

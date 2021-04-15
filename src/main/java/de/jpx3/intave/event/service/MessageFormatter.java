@@ -3,7 +3,7 @@ package de.jpx3.intave.event.service;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.tools.placeholder.Placeholders;
 import de.jpx3.intave.tools.placeholder.TextContext;
-import de.jpx3.intave.tools.placeholder.ViolationContext;
+import de.jpx3.intave.tools.placeholder.ViolationPlaceholderContext;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.ChatColor;
@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 
 public final class MessageFormatter {
 
-  public static String resolveVerboseMessage(Player player, ViolationContext violationContext) {
+  public static String resolveVerboseMessage(Player player, ViolationPlaceholderContext violationPlaceholderContext) {
     String messageLayout = resolveLayout("verbose");
     User user = UserRepository.userOf(player);
     String output = Placeholders.replacePlaceholders(
@@ -19,7 +19,7 @@ public final class MessageFormatter {
       Placeholders.PLUGIN_CONTEXT,
       Placeholders.SERVER_CONTEXT,
       user.placeholderContext(),
-      violationContext
+      violationPlaceholderContext
     );
     output = ChatColor.translateAlternateColorCodes('&', output);
     output = output.trim().replace("  ", " ");

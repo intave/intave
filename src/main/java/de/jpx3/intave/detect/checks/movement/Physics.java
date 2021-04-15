@@ -12,6 +12,8 @@ import de.jpx3.intave.detect.checks.movement.physics.Pose;
 import de.jpx3.intave.detect.checks.movement.physics.SimulationProcessor;
 import de.jpx3.intave.detect.checks.movement.physics.simulators.PoseSimulator;
 import de.jpx3.intave.diagnostics.timings.Timings;
+import de.jpx3.intave.event.service.violation.Violation;
+import de.jpx3.intave.event.service.violation.ViolationContext;
 import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.annotate.DispatchCrossCall;
@@ -373,7 +375,12 @@ public final class Physics extends IntaveCheck {
 
         user.boundingBoxAccess().identityInvalidate();
 
-        plugin.violationProcessor().processViolation(player, 0, "Physics", message, details);
+        Violation violation = Violation.fromType(Physics.class)
+          .withPlayer(player).withMessage(message).withDetails(details)
+          .withDefaultThreshold().withVL(0)
+          .build();
+        plugin.violationProcessor().processViolation(violation);
+
         Vector emulationMotion = new Vector(predictedX, predictedY, predictedZ);
         plugin.eventService().emulationEngine().emulationSetBack(player, emulationMotion, 2);
       } else {
@@ -406,8 +413,11 @@ public final class Physics extends IntaveCheck {
           String message = "moved into " + shortenTypeName(block.getType()) + " block whilst moving in another block";
           boolean multipleBoxes = intersectionBoundingBoxesCurrent.size() > 1;
           String details = (multipleBoxes ? intersectionBoundingBoxesCurrent.size() : "one") + " box" + (multipleBoxes ? "es" : "");
-
-          plugin.violationProcessor().processViolation(player, 0, "Physics", message, details);
+          Violation violation = Violation.fromType(Physics.class)
+            .withPlayer(player).withMessage(message).withDetails(details)
+            .withDefaultThreshold().withVL(0)
+            .build();
+          plugin.violationProcessor().processViolation(violation);
           WrappedAxisAlignedBB startPhaseBoundingBox = WrappedAxisAlignedBB.createFromPosition(user, movementData.verifiedLocation());
           plugin.eventService().emulationEngine().emulationPushOutOfBlock(player, startPhaseBoundingBox, predictedX, predictedY, predictedZ);
         }
@@ -450,7 +460,13 @@ public final class Physics extends IntaveCheck {
 
       user.boundingBoxAccess().identityInvalidate();
 
-      boolean setback = plugin.violationProcessor().processViolation(player, violationLevelIncrease / 10d, "Physics", message, details) || violationLevelData.physicsVL >= 60;
+      Violation violation = Violation.fromType(Physics.class)
+        .withPlayer(player).withMessage(message).withDetails(details)
+        .withDefaultThreshold().withVL(violationLevelIncrease / 10d)
+        .build();
+      ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
+
+      boolean setback = violationContext.shouldCounterThreat() || violationLevelData.physicsVL >= 60;
       if (setback) {
         int setbackTicks;
         if (movementData.pastExternalVelocity <= 8) {

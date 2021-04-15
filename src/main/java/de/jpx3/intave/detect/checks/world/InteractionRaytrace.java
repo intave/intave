@@ -19,6 +19,8 @@ import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
+import de.jpx3.intave.event.service.violation.Violation;
+import de.jpx3.intave.event.service.violation.ViolationContext;
 import de.jpx3.intave.tools.annotate.DispatchCrossCall;
 import de.jpx3.intave.tools.client.MaterialLogic;
 import de.jpx3.intave.tools.items.InventoryUseItemHelper;
@@ -116,7 +118,9 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     playerLocation.setPitch(movementData.rotationPitch);
     Location playerLocationmdf = playerLocation.clone();
     playerLocationmdf.setYaw(movementData.lastRotationYaw);
-    if(prevalidateInteraction(interaction, playerLocation, playerLocationmdf)) {
+
+    boolean mustPostValidate = interactionMeta.remainingBlockStart > 0 || interactionMeta.isBreakingBlock;
+    if(!mustPostValidate && prevalidateInteraction(interaction, playerLocation, playerLocationmdf)) {
       emulate(interaction);
     } else {
       interactionMeta.interactionList.add(interaction);
@@ -157,7 +161,6 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     }
 
     InteractionMeta interactionMeta = metaOf(user);
-
     Interaction interaction = new Interaction(
       player.getWorld(), player, blockPosition, enumDirection, packet.deepClone(), breakBlock ? InteractionType.BREAK : InteractionType.INTERACT,
       null,
@@ -172,7 +175,8 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     Location playerLocationmdf = playerLocation.clone();
     playerLocationmdf.setYaw(movementData.lastRotationYaw);
 
-    boolean mustPostValidate = interactionMeta.remainingBlockStart > 0;
+
+    boolean mustPostValidate = interactionMeta.remainingBlockStart > 0 || interactionMeta.isBreakingBlock;
     if(!mustPostValidate && prevalidateInteraction(interaction, playerLocation, playerLocationmdf)) {
       emulate(interaction);
     } else {
@@ -181,6 +185,11 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
       if(playerDigType == START_DESTROY_BLOCK) {
         interactionMeta.remainingBlockStart++;
       }
+    }
+    if(breakBlock || playerDigType == ABORT_DESTROY_BLOCK) {
+      interactionMeta.isBreakingBlock = false;
+    } else if(playerDigType == START_DESTROY_BLOCK) {
+      interactionMeta.isBreakingBlock = true;
     }
   }
 
@@ -670,7 +679,12 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
       mustFlag = true;
       vl = 0;
     }
-    return plugin.violationProcessor().processViolation(player, vl, name(), message, details) || mustFlag;
+    Violation violation = Violation.fromType(InteractionRaytrace.class)
+      .withPlayer(player).withMessage(message).withDetails(details)
+      .withDefaultThreshold().withVL(vl)
+      .build();
+    ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
+    return violationContext.shouldCounterThreat() || mustFlag;
   }
 
   private String shortenTypeName(Material type) {
@@ -855,6 +869,7 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     final List<Interaction> interactionList = new CopyOnWriteArrayList<>();
     public long lastPlacement;
     public boolean estimateMouseDelayFix = false;
+    public boolean isBreakingBlock = false;
     public long remainingBlockStart = 0;
   }
 }

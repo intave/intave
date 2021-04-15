@@ -5,14 +5,14 @@ import de.jpx3.intave.tools.MathHelper;
 
 import java.util.Map;
 
-public final class ViolationContext extends PlaceholderContext {
+public final class ViolationPlaceholderContext extends PlaceholderContext {
   private final String check;
   private final String message;
   private final String details;
   private final double preVL;
   private final double postVL;
 
-  public ViolationContext(
+  public ViolationPlaceholderContext(
     String check,
     String message,
     String details,
@@ -46,5 +46,9 @@ public final class ViolationContext extends PlaceholderContext {
     builder.put("vladded", MathHelper.formatDouble(postVL - preVL, 2));
 
     return builder.build();
+  }
+
+  public enum DetailScope {
+    FULL, COMPACT
   }
 }

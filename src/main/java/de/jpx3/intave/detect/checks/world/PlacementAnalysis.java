@@ -3,6 +3,7 @@ package de.jpx3.intave.detect.checks.world;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.detect.IntaveCheck;
 import de.jpx3.intave.detect.checks.world.placementanalysis.PlacementInvalidFacingPattern;
+import de.jpx3.intave.event.service.violation.Violation;
 import org.bukkit.entity.Player;
 
 public final class PlacementAnalysis extends IntaveCheck {
@@ -15,7 +16,11 @@ public final class PlacementAnalysis extends IntaveCheck {
   }
 
   public void processViolation(Player player) {
-    plugin.violationProcessor().processViolation(player, 1, "PlacementAnalysis", "suspicious block-placement", "");
+    Violation violation = Violation.fromType(PlacementAnalysis.class)
+      .withPlayer(player).withMessage("suspicious block-placement")
+      .withDefaultThreshold().withVL(1)
+      .build();
+    plugin.violationProcessor().processViolation(violation);
   }
 
   public void setupSubChecks() {

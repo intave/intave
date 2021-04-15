@@ -16,7 +16,7 @@ import de.jpx3.intave.event.EventService;
 import de.jpx3.intave.event.bukkit.BukkitEventLinker;
 import de.jpx3.intave.event.packet.PacketSubscriptionLinker;
 import de.jpx3.intave.event.service.CustomEventService;
-import de.jpx3.intave.event.service.ViolationService;
+import de.jpx3.intave.event.service.violation.ViolationProcessor;
 import de.jpx3.intave.executor.BackgroundExecutor;
 import de.jpx3.intave.fakeplayer.event.FakePlayerEventService;
 import de.jpx3.intave.filter.Filters;
@@ -90,7 +90,7 @@ public final class IntavePlugin extends JavaPlugin {
   private EventService eventService;
   private FakePlayerEventService fakePlayerEventService;
   private CustomEventService customEventService;
-  private ViolationService violationService;
+  private ViolationProcessor violationProcessor;
   private CheckService checkService;
   private Filters filters;
   private WorldPermission worldPermission;
@@ -202,6 +202,7 @@ public final class IntavePlugin extends JavaPlugin {
 
         long longOne = ThreadLocalRandom.current().nextLong(0, Long.MAX_VALUE);
         long longTwo = ThreadLocalRandom.current().nextLong(0, Long.MAX_VALUE);
+        String requestedId = String.valueOf(new UUID(longOne, longTwo));
 
         String idKey = identificationKey > 0 ? new String(bytes) : "aaaaaaaa", response = "";
         try {
@@ -218,7 +219,7 @@ public final class IntavePlugin extends JavaPlugin {
           connection.addRequestProperty("C", HWIDVerification.publicHardwareIdentifier());
           connection.addRequestProperty("D", configurationKey);
           connection.addRequestProperty("E", LicenseVerification.rawLicense());
-          connection.addRequestProperty("F", String.valueOf(new UUID(longOne, longTwo)));
+          connection.addRequestProperty("F", requestedId);
           connection.connect();
           connection.setConnectTimeout(4000);
           connection.setReadTimeout(4000);
@@ -240,7 +241,8 @@ public final class IntavePlugin extends JavaPlugin {
         boolean clearReloCache = false;
 
         // VMProtect doesn't like switches :(
-        if ("banned".equals(response) || "invalid".equals(response)) {
+        //noinspection IfCanBeSwitch
+        if ("banned".equals(response) || "invalid".equals(response) || "error".equals(response)) {
           message = "Unable to boot: Something went wrong verifying integrity";
           bad = true;
           clearReloCache = true;
@@ -308,6 +310,15 @@ public final class IntavePlugin extends JavaPlugin {
             String[] split1 = propertyPair.split("=");
             properties.put(split1[0], split1[1]);
           }
+
+          if(properties.isEmpty()) {
+            logger.error("Invalid server response " + response);
+            contextStatusResource.write(new ByteArrayInputStream(("failure-"+response).getBytes(StandardCharsets.UTF_8)));
+            boolFailure();
+            performShutdown();
+            return;
+          }
+
           requiredState = properties.get("configuration-hash");
           partnerServer = properties.containsKey("partner");
           enterpriseEdition = properties.containsKey("enterprise");
@@ -452,7 +463,7 @@ public final class IntavePlugin extends JavaPlugin {
 
       customEventService = new CustomEventService(this);
       checkService = new CheckService(this);
-      violationService = new ViolationService(this);
+      violationProcessor = new ViolationProcessor(this);
       eventService = new EventService(this);
       fakePlayerEventService = new FakePlayerEventService(this);
       proxyMessenger = new ProxyMessenger(this);
@@ -690,8 +701,8 @@ public final class IntavePlugin extends JavaPlugin {
     return packetSubscriptionLinker;
   }
 
-  public ViolationService violationProcessor() {
-    return this.violationService;
+  public ViolationProcessor violationProcessor() {
+    return this.violationProcessor;
   }
 
   public WorldPermission interactionPermissionService() {

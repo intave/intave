@@ -11,6 +11,7 @@ import de.jpx3.intave.detect.checks.movement.Timer;
 import de.jpx3.intave.detect.checks.world.InteractionRaytrace;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.event.packet.*;
+import de.jpx3.intave.event.service.violation.Violation;
 import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.annotate.Relocate;
 import de.jpx3.intave.tools.client.PoseHelper;
@@ -225,8 +226,13 @@ public final class MovementDispatcher implements EventProcessor {
       event.setCancelled(true);
       Vector vector = new Vector(movementData.physicsMotionX, movementData.physicsMotionY, movementData.physicsMotionZ);
       plugin.eventService().emulationEngine().emulationSetBack(player, vector, 10);
+      String message = "sent unsafe position";
       String details = "moved " + MathHelper.formatDouble(distance, 2) + " blocks";
-      plugin.violationProcessor().processViolation(player, 25, "Physics", "sent unsafe position", details);
+      Violation violation = Violation.fromType(Physics.class)
+        .withPlayer(player).withMessage(message).withDetails(details)
+        .withDefaultThreshold().withVL(25)
+        .build();
+      plugin.violationProcessor().processViolation(violation);
       return;
     }
 

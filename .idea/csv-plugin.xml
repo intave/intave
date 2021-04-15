@@ -31,6 +31,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\src\main\java\de\jpx3\intave\detect\checks\combat\AttackRaytrace.java">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\src\main\java\de\jpx3\intave\detect\checks\combat\Heuristics.java">
           <value>
             <Attribute>
@@ -137,6 +144,13 @@
           </value>
         </entry>
         <entry key="\src\main\java\de\jpx3\intave\event\service\entity\WrappedEntity.java">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\main\java\de\jpx3\intave\event\service\violation\ViolationProcessor.java">
           <value>
             <Attribute>
               <option name="separator" value=";" />

@@ -54,6 +54,7 @@ public final class IntaveLogger {
   }
 
   public void commandExecution(String command) {
+    globalPrintLn("[Intave] Issued server command /" + ChatColor.stripColor(command) + "");
     command = ChatColor.stripColor(command);
     logToFile("(EXE) " + command);
   }

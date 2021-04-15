@@ -12,6 +12,7 @@ import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
 import de.jpx3.intave.event.service.entity.WrappedEntity;
+import de.jpx3.intave.event.service.violation.Violation;
 import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.tools.sync.Synchronizer;
@@ -233,7 +234,12 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
     if (movementData.inVehicle()) {
       message += " (vehicle)";
     }
-    plugin.violationProcessor().processViolation(player, vl, "AttackRaytrace", message, details, thresholdKey, true);
+
+    Violation violation = Violation.fromType(AttackRaytrace.class)
+      .withPlayer(player).withMessage(message).withDetails(details)
+      .withCustomThreshold(thresholdKey).withVL(vl)
+      .build();
+    plugin.violationProcessor().processViolation(violation);
     return true;
   }
 
@@ -341,7 +347,12 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
       if (movementData.inVehicle()) {
         message += " (vehicle)";
       }
-      plugin.violationProcessor().processViolation(player, 0, "AttackRaytrace", message, details, thresholdKey, false);
+
+      Violation violation = Violation.fromType(AttackRaytrace.class)
+        .withPlayer(player).withMessage(message).withDetails(details)
+        .withCustomThreshold(thresholdKey).withVL(0)
+        .build();
+      plugin.violationProcessor().processViolation(violation);
       return true;
     }
     hitboxDecrementer.decrement(user, VL_DECREMENT_PER_ATTACK);
