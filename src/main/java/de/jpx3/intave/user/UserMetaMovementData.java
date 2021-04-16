@@ -338,7 +338,8 @@ public final class UserMetaMovementData {
   }
 
   public boolean inVehicle() {
-    return player != null && player.isInsideVehicle();
+    //TODO return player != null && player.isInsideVehicle();
+    return false;
   }
 
   public Object nmsWorld() {
