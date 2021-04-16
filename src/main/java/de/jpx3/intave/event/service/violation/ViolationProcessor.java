@@ -19,6 +19,8 @@ import org.bukkit.entity.Player;
 
 import java.util.*;
 
+import static de.jpx3.intave.event.service.violation.Violation.ViolationFlags;
+
 public final class ViolationProcessor {
   private final IntavePlugin plugin;
 
@@ -122,7 +124,7 @@ public final class ViolationProcessor {
     if(violationContext.completed()) {
       return;
     }
-    boolean ignoreVioStat = violationContext.violation().flagSet(Violation.ViolationFlags.DONT_PROCESS_VIOSTAT);
+    boolean ignoreVioStat = violationContext.violation().flagSet(ViolationFlags.DONT_PROCESS_VIOSTAT);
     if(ignoreVioStat) {
       return;
     }

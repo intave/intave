@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Locale;
 
 import static de.jpx3.intave.event.service.entity.ClientSideEntityService.entityByIdentifier;
+import static de.jpx3.intave.event.service.violation.Violation.ViolationFlags.DONT_PROCESS_VIOSTAT;
 import static de.jpx3.intave.user.UserMetaClientData.PROTOCOL_VERSION_BOUNTIFUL_UPDATE;
 import static de.jpx3.intave.user.UserMetaClientData.PROTOCOL_VERSION_COMBAT_UPDATE;
 import static de.jpx3.intave.world.raytrace.Raytracer.distanceOf;
@@ -351,6 +352,7 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
       Violation violation = Violation.fromType(AttackRaytrace.class)
         .withPlayer(player).withMessage(message).withDetails(details)
         .withCustomThreshold(thresholdKey).withVL(0)
+        .appendFlags(DONT_PROCESS_VIOSTAT)
         .build();
       plugin.violationProcessor().processViolation(violation);
       return true;
