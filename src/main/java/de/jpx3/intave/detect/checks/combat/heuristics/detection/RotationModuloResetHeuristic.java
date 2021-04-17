@@ -130,8 +130,8 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
             + " lMotion:" +  MathHelper.formatDouble(meta.lastYawMotion, 2)
             + " curMotion:" + MathHelper.formatDouble(yawMotion, 2)
             + " swing:" + Math.max(meta.lastSwing,99)
-            + " attack:" + meta.lastAttack
-            + " tp:" + movementData.lastTeleport
+            + " attack:" + Math.max(meta.lastAttack, 99)
+            + " tp:" + Math.max(movementData.lastTeleport, 99)
             + ")";
         int options = Anomaly.AnomalyOption.DELAY_128s;
         Anomaly anomaly = Anomaly.anomalyOf("102", Confidence.NONE, Anomaly.Type.KILLAURA, description, options);
