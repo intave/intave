@@ -126,12 +126,13 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
       if (meta.lastLastYawMotion < 7 && meta.lastYawMotion > 50 && yawMotion < 3) {
         // lastLastYawMotion < 7 && lastYawMotion > 50 && yawMotion < 7 && lastSwing <= 3
         String description = "rotation hop (llMotion:"
-          + MathHelper.formatDouble(meta.lastLastYawMotion, 2)
-          + " lMotion:" +  MathHelper.formatDouble(meta.lastYawMotion, 2)
-          + " currentMotion:" + MathHelper.formatDouble(yawMotion, 2)
-          + " swing:" + meta.lastSwing +
-          " attack:" + meta.lastAttack
-          + ")";
+            + MathHelper.formatDouble(meta.lastLastYawMotion, 2)
+            + " lMotion:" +  MathHelper.formatDouble(meta.lastYawMotion, 2)
+            + " curMotion:" + MathHelper.formatDouble(yawMotion, 2)
+            + " swing:" + meta.lastSwing
+            + " attack:" + meta.lastAttack
+            + " tp:" + movementData.lastTeleport
+            + ")";
         int options = Anomaly.AnomalyOption.DELAY_128s;
         Anomaly anomaly = Anomaly.anomalyOf("102", Confidence.NONE, Anomaly.Type.KILLAURA, description, options);
         parentCheck().saveAnomaly(player, anomaly);
