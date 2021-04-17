@@ -1,6 +1,7 @@
 package de.jpx3.intave.detect.checks.combat.heuristics.detection;
 
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.detect.IntaveMetaCheckPart;
@@ -116,32 +117,36 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
     UserMetaMovementData movementData = user.meta().movementData();
     RotationModuloResetHeuristicMeta meta = metaOf(user);
 
-    if(movementData.lastTeleport == 0) {
-      return;
-    }
-    if (ProtocolLibAdapter.serverVersion().isAtLeast(ProtocolLibAdapter.COMBAT_UPDATE)) {
-      return;
-    }
-
     double yawMotion = Math.abs(movementData.lastRotationYaw - movementData.rotationYaw);
 
-//    if(meta.lastYawMotion > 70)
-//      player.sendMessage("n " + meta.lastLastYawMotion + " " + meta.lastYawMotion + " " + yawMotion + " " + meta.lastSwing);
-
-    if(meta.lastLastYawMotion < 6 && meta.lastYawMotion > 50 && yawMotion < 3) {
-      // lastLastYawMotion < 7 lastYawMotion > 50 yawMotion < 7 lastSwing <= 3
-      String description = "rotation hop (lastMotion:" +
-        MathHelper.formatDouble(meta.lastYawMotion, 2)
-        + " currentMotion:" + MathHelper.formatDouble(yawMotion, 2) + " swing:" + meta.lastSwing + ")";
-
-      int options = Anomaly.AnomalyOption.DELAY_128s;
-      Anomaly anomaly = Anomaly.anomalyOf("102", Confidence.NONE, Anomaly.Type.KILLAURA, description, options);
-      parentCheck().saveAnomaly(player, anomaly);
+    if(movementData.lastTeleport > 5) {
+      if (ProtocolLibAdapter.serverVersion().isAtLeast(ProtocolLibAdapter.COMBAT_UPDATE)) {
+        return;
+      }
+      if (meta.lastLastYawMotion < 7 && meta.lastYawMotion > 50 && yawMotion < 3) {
+        // lastLastYawMotion < 7 && lastYawMotion > 50 && yawMotion < 7 && lastSwing <= 3
+        String description = "rotation hop (llMotion:"
+          + MathHelper.formatDouble(meta.lastLastYawMotion, 2)
+          + " lMotion:" +  MathHelper.formatDouble(meta.lastYawMotion, 2)
+          + " currentMotion:" + MathHelper.formatDouble(yawMotion, 2)
+          + " swing:" + meta.lastSwing +
+          " attack:" + meta.lastAttack
+          + ")";
+        int options = Anomaly.AnomalyOption.DELAY_128s;
+        Anomaly anomaly = Anomaly.anomalyOf("102", Confidence.NONE, Anomaly.Type.KILLAURA, description, options);
+        parentCheck().saveAnomaly(player, anomaly);
+      }
     }
+    if(movementData.lastTeleport != 0) {
+      prepareNextTick(meta, yawMotion);
+    }
+  }
 
+  private void prepareNextTick(RotationModuloResetHeuristicMeta meta, double yawMotion) {
     meta.lastLastYawMotion = meta.lastYawMotion;
     meta.lastYawMotion = yawMotion;
     meta.lastSwing++;
+    meta.lastAttack++;
   }
 
   @PacketSubscription(
@@ -150,7 +155,7 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "ARM_ANIMATION")
     }
   )
-  public void swing(PacketEvent event) {
+  public void receiveSwingPacket(PacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     RotationModuloResetHeuristicMeta meta = metaOf(user);
@@ -158,9 +163,27 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
     meta.lastSwing = 0;
   }
 
+  @PacketSubscription(
+    priority = ListenerPriority.HIGH,
+    packets = {
+      @PacketDescriptor(sender = Sender.CLIENT, packetName = "USE_ENTITY")
+    }
+  )
+  public void receiveAttackPacket(PacketEvent event) {
+    Player player = event.getPlayer();
+    User user = userOf(player);
+    RotationModuloResetHeuristicMeta meta = metaOf(user);
+
+    EnumWrappers.EntityUseAction entityUseAction = event.getPacket().getEntityUseActions().read(0);
+
+    if (entityUseAction == EnumWrappers.EntityUseAction.ATTACK) {
+      meta.lastAttack = 0;
+    }
+  }
 
   public static final class RotationModuloResetHeuristicMeta extends UserCustomCheckMeta {
     private int lastSwing;
+    private int lastAttack;
     private boolean roundedRotationLooking;
     private double lastYawMotion;
     private double lastLastYawMotion;
