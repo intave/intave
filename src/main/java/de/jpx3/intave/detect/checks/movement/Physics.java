@@ -30,7 +30,10 @@ import de.jpx3.intave.world.collider.result.ComplexColliderSimulationResult;
 import de.jpx3.intave.world.collider.result.QuickColliderSimulationResult;
 import de.jpx3.intave.world.collision.Collision;
 import de.jpx3.intave.world.waterflow.Waterflow;
-import org.bukkit.*;
+import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -459,11 +462,10 @@ public final class Physics extends IntaveCheck {
 
       Violation violation = Violation.fromType(Physics.class)
         .withPlayer(player).withMessage(message).withDetails(details)
-        .withVL(violationLevelIncrease / 10d)
-        .build();
+        .withVL(violationLevelIncrease / 10d).build();
       ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
 
-      boolean setback = violationContext.shouldCounterThreat() || violationLevelData.physicsVL >= 60;
+      boolean setback = violationContext.shouldCounterThreat() || violationLevelData.physicsVL >= 75;
       if (setback) {
         int setbackTicks;
         if (movementData.pastExternalVelocity <= 8) {
