@@ -250,7 +250,7 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
       @PacketDescriptor(sender = Sender.SERVER, packetName = "ENTITY_LOOK")
     }
   )
-  public void receiveTeleport(PacketEvent event) {
+  public void receiveEntityMovementPacket(PacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
@@ -268,18 +268,18 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     if (entity.isEntityLiving && entity.tracingEnabled()) {
       WrappedEntity finalEntity = entity;
       plugin.eventService().transactionFeedbackService().requestPong(player, event, (player1, event1) -> {
-        processEntityTeleport(event1, finalEntity);
+        processEntityMovement(event1, finalEntity);
         if (event1.getPacketType() == PacketType.Play.Server.ENTITY_TELEPORT) {
           finalEntity.clientSynchronized = true;
         }
       });
     } else {
-      processEntityTeleport(event, entity);
+      processEntityMovement(event, entity);
       entity.clientSynchronized = false;
     }
   }
 
-  private void processEntityTeleport(PacketEvent event, WrappedEntity entity) {
+  private void processEntityMovement(PacketEvent event, WrappedEntity entity) {
     if (event.getPacketType() == PacketType.Play.Server.ENTITY_TELEPORT) {
       entity.handleEntityTeleport(event.getPacket());
     } else {

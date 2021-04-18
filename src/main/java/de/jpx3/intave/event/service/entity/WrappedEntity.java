@@ -4,7 +4,9 @@ import com.comphenix.protocol.events.PacketContainer;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.reflect.hitbox.HitBoxBoundaries;
+import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
+import org.bukkit.Bukkit;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -26,7 +28,7 @@ public class WrappedEntity implements Cloneable {
    * This value is used to interpolate the positions of the Entity
    */
   public int newPosRotationIncrements;
-  public int serverPosX, serverPosY, serverPosZ;
+  public long serverPosX, serverPosY, serverPosZ;
 
   public EntityPositionContext position;
   public EntityPositionContext alternativePosition;
@@ -125,9 +127,9 @@ public class WrappedEntity implements Cloneable {
       newPosX = packet.getDoubles().read(0);
       newPosY = packet.getDoubles().read(1);
       newPosZ = packet.getDoubles().read(2);
-//      serverPosX = (int) (newPosX * 32.0);
-//      serverPosY = (int) (newPosY * 32.0);
-//      serverPosZ = (int) (newPosZ * 32.0);
+      serverPosX = getPositionLong(newPosX);
+      serverPosY = getPositionLong(newPosY);
+      serverPosZ = getPositionLong(newPosZ);
     } else {
       serverPosX = packet.getIntegers().read(1);
       serverPosY = packet.getIntegers().read(2);
@@ -157,6 +159,9 @@ public class WrappedEntity implements Cloneable {
       setPositionAndRotationEntityLiving(alternativeNewPosY);
     }
   }
+  public static long getPositionLong(double value) {
+    return MathHelper.floor_double_long(value * 4096.0D);
+  }
 
   /**
    * Handles relative movement. Packets: REL_ENTITY_MOVE, REL_ENTITY_MOVE_LOOK or ENTITY_LOOK
@@ -164,20 +169,31 @@ public class WrappedEntity implements Cloneable {
    * @param packet contains information about the entity movement
    */
   public void handleEntityMovement(PacketContainer packet) {
+    double newPosX;
+    double newPosY;
+    double alternativeNewPosY;
+    double newPosZ;
+
     if (NEW_POSITION_PROCESSING) {
       this.serverPosX += packet.getIntegers().readSafely(1);
       this.serverPosY += packet.getIntegers().readSafely(2);
       this.serverPosZ += packet.getIntegers().readSafely(3);
+
+      newPosX = (double) serverPosX / 4096d;
+      newPosY = (double) serverPosY / 4096d;
+      alternativeNewPosY = newPosY;
+      newPosZ = (double) serverPosZ / 4096d;
+
     } else {
       this.serverPosX += packet.getBytes().readSafely(0);
       this.serverPosY += packet.getBytes().readSafely(1);
       this.serverPosZ += packet.getBytes().readSafely(2);
-    }
 
-    double newPosX = (double) serverPosX / 32d;
-    double newPosY = (double) serverPosY / 32d;
-    double alternativeNewPosY = (double) serverPosY / 32d;
-    double newPosZ = (double) serverPosZ / 32d;
+      newPosX = (double) serverPosX / 32d;
+      newPosY = (double) serverPosY / 32d;
+      alternativeNewPosY = (double) serverPosY / 32d;
+      newPosZ = (double) serverPosZ / 32d;
+    }
 
     // 3 is used to interpolate the entity position in new client ticks
     setPositionAndRotationEntityLiving(newPosX, newPosY, newPosZ, 3);

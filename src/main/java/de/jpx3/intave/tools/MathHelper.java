@@ -22,6 +22,15 @@ public final class MathHelper {
     return (currentValue - min) / (max - min) * (max2 - min2) + min2;
   }
 
+  /**
+   * Long version of floor_double
+   */
+  public static long floor_double_long(double value)
+  {
+    long i = (long)value;
+    return value < (double)i ? i - 1L : i;
+  }
+
   public static double minmax(double min, double val, double max) {
     return Math.max(min, Math.min(val, max));
   }
