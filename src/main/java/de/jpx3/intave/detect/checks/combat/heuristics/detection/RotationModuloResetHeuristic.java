@@ -21,6 +21,7 @@ import de.jpx3.intave.world.raytrace.Raytracer;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heuristics, RotationModuloResetHeuristic.RotationModuloResetHeuristicMeta> {
@@ -30,6 +31,7 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
     super(parentCheck, RotationModuloResetHeuristicMeta.class);
     this.plugin = IntavePlugin.singletonInstance();
   }
+
   @PacketSubscription(
     packets = {
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "POSITION_LOOK"),
@@ -122,24 +124,47 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
       return;
     }
 
-    if(movementData.lastTeleport <= 2) {
-      meta.lastLastYawMotion = 0;
-      meta.lastYawMotion = 0;
+    if (movementData.lastTeleport <= 5) {
+      meta.rotationMotions = new double[meta.rotationMotions.length];
       return;
     }
 
     double yawMotion = Math.abs(movementData.lastRotationYaw - movementData.rotationYaw);
 
-    if (meta.lastLastYawMotion < 7 && meta.lastYawMotion > 50 && yawMotion < 6) {
+    boolean isLegit = false;
+
+    for (int i = 0; i < meta.rotationMotions.length; i++) {
+      double value = meta.rotationMotions[i];
+      if (i == getHopIndex(meta)) {
+        if (value < 50) {
+          isLegit = true;
+        }
+      } else {
+        if (value > 9) {
+          isLegit = true;
+        }
+      }
+      /*
+      6  -3
+      6  -2
+      60 -1
+      6   0
+      now  */
+    }
+
+    if (yawMotion > 12) {
+      isLegit = true;
+    }
+
+    if (!isLegit && (meta.lastSwing <= 5 || meta.lastAttack <= 5)) {
       // lastLastYawMotion < 7 && lastYawMotion > 50 && yawMotion < 7 && lastSwing <= 3
-      String description = "rotation hop (llMotion:"
-          + MathHelper.formatDouble(meta.lastLastYawMotion, 2)
-          + " lMotion:" +  MathHelper.formatDouble(meta.lastYawMotion, 2)
-          + " curMotion:" + MathHelper.formatDouble(yawMotion, 2)
-          + " swing:" + Math.min(meta.lastSwing, 99)
-          + " attack:" + Math.min(meta.lastAttack, 99);
-      if(movementData.lastTeleport < 20)
+      String description = "rotation hop ("
+        + "val:" + getArrayAsString(meta, yawMotion)
+        + " swing:" + Math.min(meta.lastSwing, 99)
+        + "," + Math.min(meta.lastAttack, 99);
+      if(movementData.lastTeleport < 20) {
         description += " tp:" + Math.min(movementData.lastTeleport, 99);
+      }
       description += ")";
 
       int options = Anomaly.AnomalyOption.DELAY_128s;
@@ -147,14 +172,37 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
       parentCheck().saveAnomaly(player, anomaly);
     }
 
+//    if (meta.lastLastYawMotion < 7 && meta.lastYawMotion > 50 && yawMotion < 6) {
+
+//    }
+
     prepareNextTick(meta, yawMotion);
   }
 
+  private String getArrayAsString(RotationModuloResetHeuristicMeta meta, double yawMotion) {
+    String out = "[";
+    for(int i = 0; i < meta.rotationMotions.length; i++) {
+      double value = meta.rotationMotions[Math.floorMod(i + meta.index - 3, meta.rotationMotions.length)];
+      out += MathHelper.formatDouble(value, 2) + ",";
+    }
+    out += yawMotion;
+    out += "]";
+    return out;
+  }
+
+  private int getHopIndex(RotationModuloResetHeuristicMeta meta) {
+    return Math.floorMod(meta.index - 1, meta.rotationMotions.length);
+  }
+
   private void prepareNextTick(RotationModuloResetHeuristicMeta meta, double yawMotion) {
-    meta.lastLastYawMotion = meta.lastYawMotion;
-    meta.lastYawMotion = yawMotion;
     meta.lastSwing++;
     meta.lastAttack++;
+
+    meta.rotationMotions[meta.index] = yawMotion;
+    meta.index++;
+    if (meta.index > meta.rotationMotions.length - 1) {
+      meta.index = 0;
+    }
   }
 
   @PacketSubscription(
@@ -190,10 +238,10 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
   }
 
   public static final class RotationModuloResetHeuristicMeta extends UserCustomCheckMeta {
+    private double[] rotationMotions = new double[4];
+    private int index;
     private int lastSwing;
     private int lastAttack;
     private boolean roundedRotationLooking;
-    private double lastYawMotion;
-    private double lastLastYawMotion;
   }
 }
