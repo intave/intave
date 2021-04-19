@@ -67,7 +67,30 @@ public final class Raytracer {
       useAlternativePositionY,
       prevPosX, prevPosY, prevPosZ,
       prevYaw, pitch,
-      expandBoundingBox
+      expandBoundingBox,
+      true
+    );
+  }
+
+  /**
+   * @param expandBoundingBox should be "0.1f" for a default hitbox
+   */
+  public static EntityInteractionRaytrace distanceOfIgnoringBlocks(
+    Player player, WrappedEntity entity,
+    boolean useAlternativePositionY,
+    double prevPosX, double prevPosY, double prevPosZ,
+    float prevYaw, float pitch,
+    double expandBoundingBox
+  ) {
+    return distanceOf(
+      player,
+      entity.entityBoundingBox(),
+      entity.position, entity.alternativePosition,
+      useAlternativePositionY,
+      prevPosX, prevPosY, prevPosZ,
+      prevYaw, pitch,
+      expandBoundingBox,
+      false
     );
   }
 
@@ -86,7 +109,8 @@ public final class Raytracer {
     boolean alternativePositionY,
     double prevPosX, double prevPosY, double prevPosZ,
     float prevYaw, float pitch,
-    double expandBoundingBox
+    double expandBoundingBox,
+    boolean rayTraceBlocks
   ) {
     WrappedVector eyeVector = positionEyes(player, prevPosX, prevPosY, prevPosZ);
     double blockReachDistance = 6d;
@@ -113,12 +137,15 @@ public final class Raytracer {
         lastReach = 0;
         lastHitVec = null;
       } else if (movingObjectPosition != null) {
-        WrappedMovingObjectPosition blockMovingPosition = Raytracer.blockRayTrace(player.getWorld(), player, eyeVector, lookVector);
-
-        double distanceToBlock = blockMovingPosition == null || blockMovingPosition.hitVec == null ? 10 : eyeVector.distanceTo(blockMovingPosition.hitVec);
         double distanceToEntity = eyeVector.distanceTo(movingObjectPosition.hitVec);
-
-        double reach = distanceToBlock < distanceToEntity ? 10 : distanceToEntity;
+        double reach;
+        if (rayTraceBlocks) {
+          WrappedMovingObjectPosition blockMovingPosition = Raytracer.blockRayTrace(player.getWorld(), player, eyeVector, lookVector);
+          double distanceToBlock = blockMovingPosition == null || blockMovingPosition.hitVec == null ? 10 : eyeVector.distanceTo(blockMovingPosition.hitVec);
+          reach = distanceToBlock < distanceToEntity ? 10 : distanceToEntity;
+        } else {
+          reach = distanceToEntity;
+        }
 //        if(fastMath)
 //          Bukkit.broadcastMessage("" + (lastReach - reach));
         if(reach < lastReach) {

@@ -15,14 +15,9 @@ import de.jpx3.intave.event.packet.Sender;
 import de.jpx3.intave.event.punishment.AttackCancelType;
 import de.jpx3.intave.event.service.entity.WrappedEntity;
 import de.jpx3.intave.tools.MathHelper;
-import de.jpx3.intave.tools.RotationMathHelper;
 import de.jpx3.intave.user.*;
 import de.jpx3.intave.world.raytrace.Raytracer;
 import org.bukkit.entity.Player;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heuristics, RotationModuloResetHeuristic.RotationModuloResetHeuristicMeta> {
   private final IntavePlugin plugin;
@@ -93,7 +88,7 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();
     boolean alternativePositionY = clientData.protocolVersion() == UserMetaClientData.PROTOCOL_VERSION_BOUNTIFUL_UPDATE;
-    Raytracer.EntityInteractionRaytrace rayTraceResult = Raytracer.distanceOf(
+    Raytracer.EntityInteractionRaytrace rayTraceResult = Raytracer.distanceOfIgnoringBlocks(
       user.player(),
       attackData.lastAttackedEntity(),
       alternativePositionY,
@@ -165,7 +160,7 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
         + " swing:" + Math.min(meta.lastSwing, 99)
         + "," + Math.min(meta.lastAttack, 99);
       if(movementData.lastTeleport < 20) {
-        description += " tp:" + Math.min(movementData.lastTeleport, 99);
+        description += " tp:" + movementData.lastTeleport;
       }
       description += ")";
 
