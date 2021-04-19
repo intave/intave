@@ -476,7 +476,8 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
 
       if(HEALTH_PROCESSING_1_10) {
         if (index == 7) {
-          return (Float) watchableObject.getRawValue();
+          Object rawValue = watchableObject.getRawValue();
+          return ((Number) rawValue).floatValue();
         }
       }else {
         if (index == 6) {

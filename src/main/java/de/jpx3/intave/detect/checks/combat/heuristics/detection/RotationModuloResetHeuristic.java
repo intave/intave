@@ -141,12 +141,6 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
           isLegit = true;
         }
       }
-      /*
-      6  -3
-      6  -2
-      60 -1
-      6   0
-      now  */
     }
 
     if (yawMotion > 12) {
@@ -154,11 +148,10 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
     }
 
     if (!isLegit && (meta.lastSwing <= 5 || meta.lastAttack <= 5) && meta.rotationPacketCounter > 5) {
-      // lastLastYawMotion < 7 && lastYawMotion > 50 && yawMotion < 7 && lastSwing <= 3
       String description = "rotation hop ("
         + "val:" + getArrayAsString(meta, yawMotion)
         + " swing:" + Math.min(meta.lastSwing, 99)
-        + "," + Math.min(meta.lastAttack, 99);
+        + "/" + Math.min(meta.lastAttack, 99);
       if(movementData.lastTeleport < 20) {
         description += " tp:" + movementData.lastTeleport;
       }
