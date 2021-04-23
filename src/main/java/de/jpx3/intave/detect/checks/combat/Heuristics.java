@@ -56,24 +56,31 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
 
   @Native
   public void setupSubChecks() {
+    boolean enterprise = (UserMetaClientData.VERSION_DETAILS & 0x200) != 0;
+    boolean partner = (UserMetaClientData.VERSION_DETAILS & 0x100) != 0;
+
+    if(enterprise) {
+      appendCheckPart(new AirClickLimitHeuristic(this));
+      appendCheckPart(new AttackRequiredHeuristic(this));
+      appendCheckPart(new AttackReduceIgnoreHeuristic(this));
+      appendCheckPart(new RotationStandardDeviationHeuristic(this));
+
+    }
+
     appendCheckPart(new ReshapedJumpHeuristic(this));
     appendCheckPart(new RotationAccuracyYawHeuristic(this));
     appendCheckPart(new RotationAccuracyPitchHeuristic(this));
     appendCheckPart(new PerfectAttackHeuristic(this));
     appendCheckPart(new RotationSensitivityHeuristic(this));
-    appendCheckPart(new RotationStandardDeviationHeuristic(this));
     appendCheckPart(new RotationModuloResetHeuristic(this));
     appendCheckPart(new PacketOrderSwingHeuristic(this));
     appendCheckPart(new PacketSprintToggleHeuristic(this));
-    appendCheckPart(new AirClickLimitHeuristic(this));
     appendCheckPart(new RotationLHeuristics(this));
-    appendCheckPart(new AttackReduceIgnoreHeuristic(this));
     appendCheckPart(new PacketInventoryHeuristic(this));
     appendCheckPart(new BlockingHeuristic(this));
     appendCheckPart(new AttackDeadEntityHeuristic(this));
 //    appendCheckPart(new VentolotlHeuristic(this));
 //    appendCheckPart(new LinearRegressionHeuristic(this));
-    appendCheckPart(new AttackRequiredHeuristic(this));
   }
 
   public void saveAnomaly(Player player, Anomaly anomaly) {
@@ -188,7 +195,7 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
     }
   }
 
-  private List<Anomaly> catchAnomaliesOf(User user, boolean delay) {
+  public List<Anomaly> catchAnomaliesOf(User user, boolean delay) {
     List<Anomaly> anomalies = new ArrayList<>(metaOf(user).anomalies);
     anomalies.removeIf(Anomaly::expired);
     if (delay) {
@@ -199,7 +206,7 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
     return anomalies;
   }
 
-  private List<Confidence> resolveConfidencesOf(List<Anomaly> anomalies) {
+  public List<Confidence> resolveConfidencesOf(List<Anomaly> anomalies) {
     Map<String, Integer> types = new HashMap<>();
     List<Confidence> allConfidences = new ArrayList<>();
     for (Anomaly existingAnomaly : anomalies) {
@@ -257,11 +264,11 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
     miningStrategy.apply(user);
   }
 
-  private Confidence computeOverallConfidence(List<Confidence> confidences) {
+  public Confidence computeOverallConfidence(List<Confidence> confidences) {
     return computeOverallConfidence(confidences.toArray(new Confidence[0]));
   }
 
-  private Confidence computeOverallConfidence(Confidence... confidences) {
+  public Confidence computeOverallConfidence(Confidence... confidences) {
     return Confidence.confidenceFrom(Confidence.levelFrom(confidences));
   }
 

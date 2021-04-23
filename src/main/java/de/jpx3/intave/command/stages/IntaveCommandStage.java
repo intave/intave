@@ -13,6 +13,7 @@ import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.update.Version;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMessageChannel;
+import de.jpx3.intave.user.UserMetaClientData;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
@@ -193,6 +194,9 @@ public final class IntaveCommandStage extends CommandStage {
       version = IntavePlugin.version() + " (experimental)";
     }
 
+    boolean enterprise = (UserMetaClientData.VERSION_DETAILS & 0x200) != 0;
+    boolean partner = (UserMetaClientData.VERSION_DETAILS & 0x100) != 0;
+
     String prefix = IntavePlugin.prefix();
     player.sendMessage(new String[]{
       prefix + "Running Intave " + version,
@@ -205,7 +209,7 @@ public final class IntaveCommandStage extends CommandStage {
     } else if(LicenseVerification.network().equals("~bypass")){
       player.sendMessage(prefix + "This self-issued version does not require certification");
     } else {
-      player.sendMessage(prefix + "Certified for " + LicenseVerification.network() + " / " + LicenseVerification.licenseKey());
+      player.sendMessage(prefix + "Certified for " + LicenseVerification.network() + (enterprise || partner ? " (verified)" : "")  +" / " + LicenseVerification.licenseKey());
     }
   }
 

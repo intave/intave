@@ -28,6 +28,10 @@ public enum Confidence {
     return output;
   }
 
+  public boolean atLeast(Confidence confidence) {
+    return level() >= confidence.level();
+  }
+
   public static int levelFrom(Confidence... confidences) {
     return Arrays.stream(confidences).mapToInt(Confidence::level).sum();
   }

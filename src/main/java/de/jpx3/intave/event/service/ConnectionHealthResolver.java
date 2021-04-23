@@ -33,7 +33,8 @@ public final class ConnectionHealthResolver implements PacketEventSubscriber {
         long dur = AccessHelper.now() - lastKeepAliveResponse(user);
         if(TIMEOUT_DURATION < dur) {
           Synchronizer.synchronize(() -> {
-            player.kickPlayer("Connection timeout (no response for 20 seconds)");
+            System.out.println("[Intave] " + player.getName() + " was not responding to any packets since 20 seconds");
+            player.kickPlayer("Timed out");
           });
         }
       }

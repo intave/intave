@@ -8,10 +8,12 @@ import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
 @PatchyAutoTranslation
-public final class v8PipelineInjector implements PipelineInjector {
+public final class IntavePipelineInjector implements PipelineInjector {
   private final InjectionService injectionService;
+  private final static String PIPELINE_DECODER_NAME = "intave_decoder";
+  private final static String PIPELINE_ENCODER_NAME = "intave_encoder";
 
-  public v8PipelineInjector(InjectionService injectionService) {
+  public IntavePipelineInjector(InjectionService injectionService) {
     this.injectionService = injectionService;
   }
 
@@ -20,7 +22,12 @@ public final class v8PipelineInjector implements PipelineInjector {
   public void inject(Player target) {
     EntityPlayer entityPlayer = ((CraftPlayer) target).getHandle();
     Channel channel = entityPlayer.playerConnection.networkManager.channel;
-    channel.pipeline().addBefore("decoder", "intave", new v8PipelineHandler(target.getUniqueId(), injectionService));
+//    channel.pipeline().forEach(System.out::println);
+//    System.out.println("Inject");
+    channel.pipeline().addBefore("decoder", PIPELINE_DECODER_NAME, new PipelineDecoder(target.getUniqueId(), injectionService));
+    channel.pipeline().addAfter("encoder", PIPELINE_ENCODER_NAME, new PipelineEncoder(target.getUniqueId(), injectionService));
+//    System.out.println("Done");
+//    channel.pipeline().forEach(System.out::println);
   }
 
   @Override
@@ -29,8 +36,11 @@ public final class v8PipelineInjector implements PipelineInjector {
     EntityPlayer entityPlayer = ((CraftPlayer) target).getHandle();
     Channel channel = entityPlayer.playerConnection.networkManager.channel;
     ChannelPipeline pipeline = channel.pipeline();
-    if(pipeline.context("intave") != null) {
-      pipeline.remove("intave");
+    if(pipeline.context(PIPELINE_DECODER_NAME) != null) {
+      pipeline.remove(PIPELINE_DECODER_NAME);
+    }
+    if(pipeline.context(PIPELINE_ENCODER_NAME) != null) {
+      pipeline.remove(PIPELINE_ENCODER_NAME);
     }
   }
 }

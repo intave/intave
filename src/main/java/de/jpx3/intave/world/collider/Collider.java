@@ -39,6 +39,8 @@ public final class Collider {
     return user.colliderProcessor().simulateCollision(user, context, inWeb, positionX, positionY, positionZ);
   }
 
+  @Deprecated
+  // please remove this method, must have at least player to simulate accurate collisions ~richy
   public static QuickColliderSimulationResult simulateQuickCollision(
     World world,
     double positionX, double positionY, double positionZ,
@@ -49,7 +51,7 @@ public final class Collider {
       world,
       boundingBox.addCoord(motionX, motionY, motionZ)
     );
-    return resolveCollisionOf(boundingBox, collisionBoxes, motionX, motionY, motionZ);
+    return performSimpleBoxCollision(boundingBox, collisionBoxes, motionX, motionY, motionZ);
   }
 
   public static QuickColliderSimulationResult simulateQuickCollision(
@@ -62,10 +64,10 @@ public final class Collider {
       player,
       boundingBox.addCoord(motionX, motionY, motionZ)
     );
-    return resolveCollisionOf(boundingBox, collisionBoxes, motionX, motionY, motionZ);
+    return performSimpleBoxCollision(boundingBox, collisionBoxes, motionX, motionY, motionZ);
   }
 
-  private static QuickColliderSimulationResult resolveCollisionOf(
+  private static QuickColliderSimulationResult performSimpleBoxCollision(
     WrappedAxisAlignedBB boundingBox,
     List<WrappedAxisAlignedBB> collisionBoxes,
     double motionX, double motionY, double motionZ

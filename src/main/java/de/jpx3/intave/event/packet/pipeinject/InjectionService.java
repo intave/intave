@@ -21,10 +21,13 @@ import java.util.Map;
 public final class InjectionService implements EventProcessor {
   private final static String injectorClassName;
   static {
-    String handler = "de.jpx3.intave.event.packet.pipeinject.v8PipelineHandler";
-    String injector = "de.jpx3.intave.event.packet.pipeinject.v8PipelineInjector";
-    PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), handler);
-    PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), injector);
+    String decoder = "de.jpx3.intave.event.packet.pipeinject.PipelineDecoder";
+    String encoder = "de.jpx3.intave.event.packet.pipeinject.PipelineEncoder";
+    String injector = "de.jpx3.intave.event.packet.pipeinject.IntavePipelineInjector";
+    ClassLoader classLoader = IntavePlugin.class.getClassLoader();
+    PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, decoder);
+    PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, encoder);
+    PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, injector);
     injectorClassName = injector;
   }
 

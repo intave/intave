@@ -4,6 +4,7 @@ import de.jpx3.intave.detect.checks.combat.heuristics.MiningStrategy;
 import de.jpx3.intave.detect.checks.combat.heuristics.mining.MiningStrategyContainer;
 import de.jpx3.intave.event.service.entity.ClientSideEntityService;
 import de.jpx3.intave.event.service.entity.WrappedEntity;
+import de.jpx3.intave.event.service.entity.WrappedEntity.EntityPositionContext;
 import de.jpx3.intave.fakeplayer.FakePlayer;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.annotate.Nullable;
@@ -22,6 +23,7 @@ public final class UserMetaAttackData {
 
   private WrappedEntity lastAttackedEntity;
   private float perfectYaw, perfectPitch;
+  private float previousPerfectYaw, previousPerfectPitch;
 
   @Nullable
   public MiningStrategyContainer activeMiningStrategy;
@@ -42,14 +44,20 @@ public final class UserMetaAttackData {
     User user = UserRepository.userOf(player);
     UserMetaMovementData movementData = user.meta().movementData();
     double positionX = movementData.positionX;
+    double lastPositionX = movementData.lastPositionX;
     double positionY = movementData.positionY;
+    double lastPositionY = movementData.lastPositionY;
     double positionZ = movementData.positionZ;
+    double lastPositionZ = movementData.lastPositionZ;
 
     // Set prefect yaw & pitch
     if (lastAttackedEntity != null) {
-      WrappedEntity.EntityPositionContext positions = lastAttackedEntity.position;
-      perfectYaw = RotationHelper.resolveYawRotation(positions, positionX, positionZ);
-      perfectPitch = RotationHelper.resolvePitchRotation(positions, positionX, positionY, positionZ);
+      EntityPositionContext currentPosition = lastAttackedEntity.position;
+      EntityPositionContext lastPosition = lastAttackedEntity.lastPosition;
+      perfectYaw = RotationHelper.resolveYawRotation(currentPosition, positionX, positionZ);
+      perfectPitch = RotationHelper.resolvePitchRotation(currentPosition, positionX, positionY, positionZ);
+      previousPerfectYaw = RotationHelper.resolveYawRotation(lastPosition, lastPositionX, lastPositionZ);
+      previousPerfectPitch = RotationHelper.resolvePitchRotation(lastPosition, lastPositionX, lastPositionY, lastPositionZ);
     }
   }
 
@@ -79,6 +87,14 @@ public final class UserMetaAttackData {
 
   public float perfectPitch() {
     return perfectPitch;
+  }
+
+  public float previousPerfectYaw() {
+    return previousPerfectYaw;
+  }
+
+  public float previousPerfectPitch() {
+    return previousPerfectPitch;
   }
 
   @Nullable

@@ -41,12 +41,10 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
   private void checkTransactionTimeout() {
     for (Player player : Bukkit.getOnlinePlayers()) {
       User user = UserRepository.userOf(player);
-//      player.sendMessage(oldestPendingTransaction(user) + "ms since last transaction");
       if (oldestPendingTransaction(user) > TRANSACTION_TIMEOUT_KICK) {
-        System.out.println("[Intave] " + player.getName() + " was not responding to validation packets");
-
         Synchronizer.synchronize(() -> {
-          player.kickPlayer("Missing validation response");
+          System.out.println("[Intave] " + player.getName() + " is not responding to validation packets");
+          player.kickPlayer("Timed out");
         });
       }
     }
@@ -78,7 +76,8 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
       long expected = synchronizeData.lastReceivedTransactionNum + 1;
       if (transactionResponse.num() != expected) {
         Synchronizer.synchronize(() -> {
-          player.kickPlayer("Invalid validation response (received " + transactionResponse.num() + ", but expected " + expected +")");
+          System.out.println("[Intave] " + player.getName() + " sent invalid validation response (received " + transactionResponse.num() + ", but expected " + expected + ")");
+          player.kickPlayer("Timed out");
         });
       }
 //      Synchronizer.synchronize(() -> {
@@ -191,7 +190,6 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
     if (transactionCounter >= TRANSACTION_MAX_CODE) {
       synchronizeData.transactionCounter = TRANSACTION_MIN_CODE;
     }
-    //player.setLevel((int) transactionNumCounter);
     if(obj == null) {
       //noinspection unchecked
       obj = (T) FALLBACK_OBJECT;
@@ -212,6 +210,8 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
 
 //    IntaveLogger.logger().globalPrintLn("Transaction packet to " + receiver + ", id: " + id + ")");
     PacketContainer transactionPacket = protocolManager.createPacket(PacketType.Play.Server.TRANSACTION);
+
+    transactionPacket.deepClone();
     transactionPacket.getIntegers().write(0, 0);
     transactionPacket.getShorts().write(0, id);
     transactionPacket.getBooleans().write(0, false);

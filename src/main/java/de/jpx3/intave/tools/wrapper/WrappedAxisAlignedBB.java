@@ -390,7 +390,6 @@ public class WrappedAxisAlignedBB {
     if(clientData.roundEnvironmentNumbers()) {
       newYMax = Math.round((positionY + height) * 10000000d) / 10000000d;
     } else {
-//      newYMax = (positionY + height);
       newYMax = Math.round((positionY + height) * 10000000000d) / 10000000000d;
     }
     return new WrappedAxisAlignedBB(
@@ -399,26 +398,14 @@ public class WrappedAxisAlignedBB {
     );
   }
 
-  public static WrappedAxisAlignedBB createFromPosition(
-    User user, double width,
-    double positionX, double positionY, double positionZ
-  ) {
-    UserMetaMovementData movementData = user.meta().movementData();
-    double height = movementData.height;
-    return new WrappedAxisAlignedBB(
-      positionX - width, positionY, positionZ - width,
-      positionX + width, positionY + height, positionZ + width
-    );
-  }
-
+  @Deprecated
+  // doomed to be inaccurate, just guesses default BB size - please remove ~richy
   public static WrappedAxisAlignedBB createFromPosition(User user, Location location) {
     return createFromPosition(user, location.getX(), location.getY(), location.getZ());
   }
 
-  public static WrappedAxisAlignedBB createFromPosition(Location center) {
-    return createFromPosition(center.getX(), center.getY(), center.getZ());
-  }
-
+  @Deprecated
+  // doomed to be inaccurate, just guesses default BB size - please remove ~richy
   public static WrappedAxisAlignedBB createFromPosition(WrappedBlockPosition position) {
     return createFromPosition(position.xCoord, position.yCoord, position.zCoord);
   }
@@ -427,10 +414,12 @@ public class WrappedAxisAlignedBB {
     return WrapperLinkage.boundingBoxOf(nativeBB);
   }
 
+  // just assuming defaults - please remove
   private final static float PLAYER_HEIGHT = 1.8f;
   private final static double HALF_WIDTH = 0.3;
 
   @Deprecated
+  // doomed to be inaccurate, just guesses default BB size - please remove ~richy
   public static WrappedAxisAlignedBB createFromPosition(
     double positionX, double positionY, double positionZ
   ) {

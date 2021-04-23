@@ -5,13 +5,17 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.BlockPosition;
+import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.detect.EventProcessor;
+import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserMetaMovementData;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.world.collision.BoundingBoxAccess;
 import org.bukkit.Location;
@@ -19,10 +23,13 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.util.NumberConversions;
+import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.*;
 
 public final class BlockActionDispatcher implements EventProcessor {
   private final IntavePlugin plugin;
@@ -70,6 +77,54 @@ public final class BlockActionDispatcher implements EventProcessor {
     int chunkZMinPos = chunkZ << 4, chunkZMaxPos = chunkZMinPos + 16;
     BoundingBoxAccess boundingBoxAccess = UserRepository.userOf(player).boundingBoxAccess();
     boundingBoxAccess.invalidateOverridesInBounds(chunkXMinPos, chunkXMaxPos, chunkZMinPos, chunkZMaxPos);
+  }
+
+  @PacketSubscription(
+    priority = ListenerPriority.LOWEST,
+    packets = {
+      @PacketDescriptor(sender = Sender.CLIENT, packetName = "BLOCK_DIG"),
+      @PacketDescriptor(sender = Sender.CLIENT, packetName = "BLOCK_PLACE"),
+      @PacketDescriptor(sender = Sender.CLIENT, packetName = "USE_ITEM")
+    }
+  )
+  public void checkInteractionTarget(PacketEvent event) {
+    Player player = event.getPlayer();
+    PacketType packetType = event.getPacketType();
+    PacketContainer packet = event.getPacket();
+
+    boolean check = true;
+
+    if(packetType == PacketType.Play.Client.BLOCK_DIG) {
+      EnumWrappers.PlayerDigType playerDigType = packet.getPlayerDigTypes().read(0);
+      check = playerDigType == START_DESTROY_BLOCK || playerDigType == STOP_DESTROY_BLOCK || playerDigType == ABORT_DESTROY_BLOCK;
+    } else if(packetType == PacketType.Play.Client.BLOCK_PLACE) {
+      Integer enumDirection = packet.getIntegers().readSafely(0);
+      if (enumDirection == null) {
+        enumDirection = packet.getDirections().readSafely(0).ordinal();
+      }
+      if (enumDirection == 255 || event.isCancelled()) {
+        check = false;
+      }
+    }
+
+    if(check) {
+      BlockPosition blockPosition = packet.getBlockPositionModifier().read(0);
+      // distance check
+
+      if(blockPosition == null) {
+        return;
+      }
+
+      Vector targetBlock = blockPosition.toVector();
+
+      User user = UserRepository.userOf(player);
+      UserMetaMovementData movementData = user.meta().movementData();
+      Vector playerLocation = new Vector(movementData.lastPositionX, movementData.lastPositionY, movementData.lastPositionZ);
+
+      if(playerLocation.distance(targetBlock) > 16) {
+        event.setCancelled(true);
+      }
+    }
   }
 
   @PacketSubscription(

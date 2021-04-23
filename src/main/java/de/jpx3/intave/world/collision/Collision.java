@@ -94,6 +94,7 @@ public final class Collision {
   }
 
   @Deprecated
+  // this is not really performant - please remove me ~richy
   public static List<WrappedAxisAlignedBB> resolve(
     World world,
     WrappedAxisAlignedBB boundingBox

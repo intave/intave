@@ -1,7 +1,9 @@
 package de.jpx3.intave.event.service.violation;
 
 import com.google.common.collect.ImmutableList;
+import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.tools.placeholder.ViolationPlaceholderContext;
+import de.jpx3.intave.user.UserMetaClientData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -136,10 +138,13 @@ public final class ViolationContext {
     return this.processCompleted;
   }
 
+  @Native
   public ViolationPlaceholderContext placeholderContextOf(
     ViolationPlaceholderContext.DetailScope type
   ) {
-    boolean fullMessage = type == ViolationPlaceholderContext.DetailScope.FULL;
+    boolean enterprise = (UserMetaClientData.VERSION_DETAILS & 0x200) != 0;
+    boolean partner = (UserMetaClientData.VERSION_DETAILS & 0x100) != 0;
+    boolean fullMessage = enterprise && type == ViolationPlaceholderContext.DetailScope.FULL;
     return new ViolationPlaceholderContext(
       initialViolation.check().name(),
       initialViolation.message(),

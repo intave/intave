@@ -67,7 +67,7 @@ public final class BreakSpeedFinishCheck extends IntaveMetaCheckPart<BreakSpeedL
   }
 
   @PacketSubscription(
-    priority = ListenerPriority.LOWEST,
+    priority = ListenerPriority.LOW,
     packets = {
       @PacketDescriptor(sender = Sender.CLIENT, packetName = "BLOCK_DIG")
     }

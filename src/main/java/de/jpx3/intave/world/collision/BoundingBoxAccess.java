@@ -101,7 +101,6 @@ public final class BoundingBoxAccess {
 
     CacheEntry cacheEntry = blockCache.get(blockPositionKey);
     if (cacheEntry == null) {
-//      player.sendMessage(Integer.toBinaryString(posX) + /*" " + posY + " " + posZ + " " */" "+ Long.toBinaryString(bigKey(posX, posY, posZ)));
       World world = player.getWorld();
       Block block = BukkitBlockAccess.blockAccess(world, posX, posY, posZ);
       Material type = block.getType();
@@ -313,6 +312,8 @@ public final class BoundingBoxAccess {
     return (long) (posX & 0b111111111111111111111111111) << 38 | (long) posY << 30 | (posZ & 0b111111111111111111111111111);
   }
 
+  @Deprecated
+  // the global bb resolver should not be available to external classes, please remove this method ~richy
   public static BoundingBoxResolver globalBoundingBoxResolver() {
     return globalBoundingBoxResolver;
   }

@@ -8,11 +8,13 @@ import de.jpx3.intave.connect.proxy.protocol.packets.IntavePacketOutKicked;
 import de.jpx3.intave.detect.IntaveCheck;
 import de.jpx3.intave.event.service.MessageFormatter;
 import de.jpx3.intave.tools.MathHelper;
+import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.tools.placeholder.TextContext;
 import de.jpx3.intave.tools.placeholder.ViolationPlaceholderContext.DetailScope;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMessageChannel;
+import de.jpx3.intave.user.UserMetaClientData;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -133,7 +135,10 @@ public final class ViolationProcessor {
 
   private final static String LOGGER_MESSAGE_LAYOUT = "%s/%s %s %s(+%s -> %s on %s)";
 
+  @Native
   private void processViolationVerbose(ViolationContext violationContext) {
+    boolean enterprise = (UserMetaClientData.VERSION_DETAILS & 0x200) != 0;
+    boolean partner = (UserMetaClientData.VERSION_DETAILS & 0x100) != 0;
     if(violationContext.completed()) {
       return;
     }
@@ -151,6 +156,9 @@ public final class ViolationProcessor {
     String vlAfterViolation = MathHelper.formatDouble(violationContext.violationLevelAfter(), 2);
     String message = violation.message().trim();
     String details = violation.details().isEmpty() ? "" : "(" + violation.details().trim() + ")" + " ";
+    if(!enterprise) {
+      details = "";
+    }
     String consoleMessage = String.format(
       LOGGER_MESSAGE_LAYOUT, player.getName(), trustFactor,
       message, details, vlAdded, vlAfterViolation, checkName

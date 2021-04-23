@@ -6,6 +6,9 @@ import de.jpx3.intave.command.Optional;
 import de.jpx3.intave.command.SubCommand;
 import de.jpx3.intave.detect.CheckStatistics;
 import de.jpx3.intave.detect.IntaveCheck;
+import de.jpx3.intave.detect.checks.combat.Heuristics;
+import de.jpx3.intave.detect.checks.combat.heuristics.Anomaly;
+import de.jpx3.intave.detect.checks.combat.heuristics.Confidence;
 import de.jpx3.intave.detect.checks.combat.heuristics.MiningStrategy;
 import de.jpx3.intave.diagnostics.KeyPressStudy;
 import de.jpx3.intave.diagnostics.timings.Timing;
@@ -15,10 +18,12 @@ import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.world.collision.BoundingBoxAccess;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class IntaveRootStage extends CommandStage {
   private static IntaveRootStage singletonInstance;
@@ -132,29 +137,6 @@ public final class IntaveRootStage extends CommandStage {
     });
   }
 
-  public <K extends Comparable<? super K>, V extends Comparable<? super V>> Map<K, V> sortHashMapByValues(
-    Map<K, V> passedMap
-  ) {
-    List<K> mapKeys = new ArrayList<>(passedMap.keySet());
-    List<V> mapValues = new ArrayList<>(passedMap.values());
-    Collections.sort(mapValues);
-    Collections.reverse(mapValues);
-    Collections.sort(mapKeys);
-    Map<K, V> sortedMap = new LinkedHashMap<>();
-    for (V val : mapValues) {
-      Iterator<K> keyIt = mapKeys.iterator();
-      while (keyIt.hasNext()) {
-        K key = keyIt.next();
-        if (passedMap.get(key).equals(val)) {
-          keyIt.remove();
-          sortedMap.put(key, val);
-          break;
-        }
-      }
-    }
-    return sortedMap;
-  }
-
   @SubCommand(
     selectors = "replacements",
     usage = "",
@@ -181,6 +163,65 @@ public final class IntaveRootStage extends CommandStage {
     User targetUser = UserRepository.userOf(target);
     player.sendMessage(ChatColor.GREEN + "MiningStrategy applied to " + target.getName());
     strategy.apply(targetUser);
+  }
+
+  @SubCommand(
+    selectors = "badboys",
+    usage = "",
+    description = "",
+    permission = "sibyl"
+  )
+  @Native
+  public void showConfidences(User user) {
+    Player player = user.player();
+    Heuristics heuristics = plugin.checkService().searchCheck(Heuristics.class);
+    Map<UUID, Confidence> confidenceMap = new HashMap<>();
+
+    for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+      List<Anomaly> anomalies = heuristics.catchAnomaliesOf(UserRepository.userOf(onlinePlayer), true);
+      Confidence confidence = heuristics.computeOverallConfidence(heuristics.resolveConfidencesOf(anomalies));
+      confidenceMap.put(onlinePlayer.getUniqueId(), confidence);
+    }
+
+    sortHashMapByValues(confidenceMap);
+
+    AtomicBoolean output = new AtomicBoolean(false);
+
+    confidenceMap.forEach((uuid, confidence) -> {
+      if(!confidence.atLeast(Confidence.LIKELY)) {
+        return;
+      }
+      output.set(true);
+      Player otherPlayer = Bukkit.getPlayer(uuid);
+      player.sendMessage(ChatColor.RED + confidence.name() + " " + ChatColor.GRAY + otherPlayer.getName());
+    });
+
+    if(!output.get()) {
+      player.sendMessage(ChatColor.GREEN + "No badboys detected");
+    }
+  }
+
+  public <K extends Comparable<? super K>, V extends Comparable<? super V>> Map<K, V> sortHashMapByValues(
+    Map<K, V> passedMap
+  ) {
+    List<K> mapKeys = new ArrayList<>(passedMap.keySet());
+    List<V> mapValues = new ArrayList<>(passedMap.values());
+    Collections.sort(mapValues);
+    Collections.reverse(mapValues);
+    Collections.sort(mapKeys);
+    Map<K, V> sortedMap = new LinkedHashMap<>();
+    for (V val : mapValues) {
+      Iterator<K> keyIt = mapKeys.iterator();
+      while (keyIt.hasNext()) {
+        K key = keyIt.next();
+        if (passedMap.get(key).equals(val)) {
+          keyIt.remove();
+          sortedMap.put(key, val);
+          break;
+        }
+      }
+    }
+    return sortedMap;
   }
 
   public static IntaveRootStage singletonInstance() {

@@ -38,6 +38,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\src\main\java\de\jpx3\intave\command\stages\IntaveCommandStage.java">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\src\main\java\de\jpx3\intave\command\stages\IntaveRootStage.java">
           <value>
             <Attribute>
@@ -81,6 +88,13 @@
           </value>
         </entry>
         <entry key="\src\main\java\de\jpx3\intave\detect\checks\movement\Timer.java">
+          <value>
+            <Attribute>
+              <option name="separator" value=";" />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\main\java\de\jpx3\intave\detect\checks\movement\physics\SimulationProcessor.java">
           <value>
             <Attribute>
               <option name="separator" value=";" />

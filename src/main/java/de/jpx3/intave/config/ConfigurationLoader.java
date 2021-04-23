@@ -9,6 +9,7 @@ import de.jpx3.intave.security.SSLConnectionVerifier;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.EncryptedResource;
 import de.jpx3.intave.tools.annotate.Native;
+import de.jpx3.intave.user.UserMetaClientData;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import javax.crypto.Cipher;
@@ -162,15 +163,24 @@ public final class ConfigurationLoader {
   private YamlConfiguration tryDownloadConfiguration() {
     try {
       InputStream inputStream;
-      if(IntaveControl.USE_EXTERNAL_CONFIGURATION_FILE) {
+
+      boolean enterprise = (UserMetaClientData.VERSION_DETAILS & 0x200) != 0;
+      boolean partner = (UserMetaClientData.VERSION_DETAILS & 0x100) != 0;
+
+      boolean useExternalConfigurationFile = (configurationKey.equalsIgnoreCase("file") && enterprise) || IntaveControl.USE_EXTERNAL_CONFIGURATION_FILE;
+      if(useExternalConfigurationFile) {
         IntavePlugin plugin = IntavePlugin.singletonInstance();
         File settingFile = new File(plugin.getDataFolder(), "settings.yml");
         if(!settingFile.exists()) {
-          throw new IntaveException("Unable to find file " + settingFile.getAbsolutePath());
+          if(plugin.getResource("settings.yml") != null) {
+            plugin.saveResource("settings.yml", false);
+          } else {
+            throw new IntaveException("Please download Intave again to use file configurations");
+          }
         }
         inputStream = new FileInputStream(settingFile);
       } else if(IntaveControl.USE_DEBUG_RESOURCES) {
-        inputStream = ConfigurationLoader.class.getResourceAsStream("/config-internal.yml");
+        inputStream = ConfigurationLoader.class.getResourceAsStream("/settings.yml");
       } else {
         URL url = new URL("https://intave.de/api/configuration-download");
         URLConnection urlConnection = url.openConnection();

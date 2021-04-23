@@ -75,7 +75,7 @@ public final class CachedResource {
     if(!fileStore().exists()) {
       throw new IllegalStateException();
     }
-    fileStore().setLastModified(AccessHelper.now());
+//    fileStore().setLastModified(AccessHelper.now());
     try {
       FileInputStream fileInputStream = new FileInputStream(fileStore());
       ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();

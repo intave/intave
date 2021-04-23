@@ -1,6 +1,5 @@
 package de.jpx3.intave.security;
 
-import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.tools.annotate.Native;
 
 import java.io.File;
@@ -10,7 +9,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public final class HashAccess {
-
   @Native
   public static String hashOf(File file) {
     StringBuilder jarChecksum = new StringBuilder();
@@ -33,16 +31,16 @@ public final class HashAccess {
     return jarChecksum.toString();
   }
 
-  @Native
-  public static void push(FileInputStream stream, MessageDigest digest) {
-    byte[] dataBytes = new byte[1024];
-    int nread;
-    try {
-      while ((nread = stream.read(dataBytes)) != -1) {
-        digest.update(dataBytes, 0, nread);
-      }
-    } catch (Exception exception) {
-      throw new IntaveInternalException(exception);
-    }
-  }
+//  @Native
+//  public static void push(FileInputStream stream, MessageDigest digest) {
+//    byte[] dataBytes = new byte[1024];
+//    int nread;
+//    try {
+//      while ((nread = stream.read(dataBytes)) != -1) {
+//        digest.update(dataBytes, 0, nread);
+//      }
+//    } catch (Exception exception) {
+//      throw new IntaveInternalException(exception);
+//    }
+//  }
 }

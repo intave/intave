@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'de.jpx3'
-version = '14.0.0-pre19'
+version = '14.0.0-pre21'
 description = 'Intave is an event- & packetbased, hyper-threaded & polyheuristic cheat detection software, providing fair play'
 
 def fileName = "Intave"

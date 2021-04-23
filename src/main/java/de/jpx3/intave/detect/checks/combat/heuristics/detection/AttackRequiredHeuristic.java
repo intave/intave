@@ -97,7 +97,7 @@ public final class AttackRequiredHeuristic extends IntaveMetaCheckPart<Heuristic
           int vl = (meta.vl += 200) / 200;
           int options = Anomaly.AnomalyOption.DELAY_64s | Anomaly.AnomalyOption.DELAY_128s;
           boolean flag = vl >= 8;
-          Confidence confidence = flag ? Confidence.PROBABLE : Confidence.NONE;
+          Confidence confidence = /*flag ? Confidence.PROBABLE :*/ Confidence.NONE;
           Anomaly anomaly = Anomaly.anomalyOf("151", confidence, Anomaly.Type.KILLAURA, "missed attack packet vl:" + vl, options);
           parentCheck().saveAnomaly(player, anomaly);
           if (flag) {

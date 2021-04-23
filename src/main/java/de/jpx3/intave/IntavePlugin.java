@@ -165,7 +165,7 @@ public final class IntavePlugin extends JavaPlugin {
       configurationService = new ConfigurationService(this);
       String configurationKey = configurationService.configurationKey();
 
-      if(IntaveControl.USE_EXTERNAL_CONFIGURATION_FILE) {
+      if(IntaveControl.USE_EXTERNAL_CONFIGURATION_FILE || configurationKey.equalsIgnoreCase("file")) {
         logger.info("Using the file configuration");
       } else {
         logger.info("Using the \"" + configurationKey + "\" configuration");
@@ -177,15 +177,14 @@ public final class IntavePlugin extends JavaPlugin {
 
       String requiredState = null; // leave this be
       boolean offlineMode = false;
-      boolean partnerServer = false;
-      boolean enterpriseEdition = false;
 
       // ja das muss so krebsig hier hin
       if (IntaveControl.DISABLE_LICENSE_CHECK) {
         logger().info("This self-signed version bypasses certification requirements");
         System.setProperty("java.net.serviceprovider.key", "~bypass");
-        partnerServer = true;
-        enterpriseEdition = true;
+
+        UserMetaClientData.VERSION_DETAILS |= 0x100;
+        UserMetaClientData.VERSION_DETAILS |= 0x200;
       } else {
         File currentJavaJarFile = new File(IntavePlugin.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         long identificationKey;
@@ -320,19 +319,17 @@ public final class IntavePlugin extends JavaPlugin {
           }
 
           requiredState = properties.get("configuration-hash");
-          partnerServer = properties.containsKey("partner");
-          enterpriseEdition = properties.containsKey("enterprise");
           String keyResponse = properties.get("exchange-key");
-
-          if(partnerServer) {
+          if(properties.containsKey("partner")) {
             UserMetaClientData.VERSION_DETAILS |= 0x100;
           }
-          if(enterpriseEdition) {
+          if(properties.containsKey("enterprise")) {
             UserMetaClientData.VERSION_DETAILS |= 0x200;
           }
 
           // verify the server integrity
           boolean validResponse = false;
+          UUID expectedResponse = UUID.randomUUID();
           if(keyResponse != null) {
             UUID receivedResponse = UUID.fromString(keyResponse);
             for (int i = 0; i < 64; i++) {
@@ -342,16 +339,26 @@ public final class IntavePlugin extends JavaPlugin {
             longTwo &= longOne << 4;
             longTwo &= longOne << 2;
             longTwo &= longOne;
+            expectedResponse = new UUID(longOne, longTwo);
             validResponse = receivedResponse.getMostSignificantBits() == longOne && receivedResponse.getLeastSignificantBits() == longTwo;
           }
           if(!validResponse) {
-            logger.error("Unable to boot: Authentication response not trustworthy");
+            logger.error("Unable to boot: Authentication response not trustworthy (" + keyResponse + ", expected "+expectedResponse+")");
             contextStatusResource.write(new ByteArrayInputStream(("failure-"+response).getBytes(StandardCharsets.UTF_8)));
             boolFailure();
             performShutdown();
             return;
           }
         }
+      }
+
+      boolean partner = (UserMetaClientData.VERSION_DETAILS & 0x100) != 0;
+      boolean enterprise = (UserMetaClientData.VERSION_DETAILS & 0x200) != 0;
+
+      if (partner) {
+        logger.info("Running Intave in partner mode");
+      } else if (enterprise) {
+        logger.info("Running Intave in enterprise mode");
       }
 
       if (offlineMode) {
@@ -371,7 +378,6 @@ public final class IntavePlugin extends JavaPlugin {
             try {
               lastSuccessfulStart = Long.valueOf(textString.split("/")[1]);
             } catch (Exception ignored) {}
-
             if(lastSuccessfulStart != null) {
               String url_path = "https://raw.githubusercontent.com/Jpx3/IntaveStatus/main/availability";
               URL url = new URL(url_path);

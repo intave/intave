@@ -4,10 +4,8 @@ import com.comphenix.protocol.events.PacketContainer;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.reflect.hitbox.HitBoxBoundaries;
-import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
-import org.bukkit.Bukkit;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -32,6 +30,7 @@ public class WrappedEntity implements Cloneable {
   public long serverPosX, serverPosY, serverPosZ;
 
   public EntityPositionContext position;
+  public EntityPositionContext lastPosition;
   public EntityPositionContext alternativePosition;
   public List<EntityPositionContext> positionHistory = new CopyOnWriteArrayList<>();
   public boolean dead, fakeDead;
@@ -59,6 +58,7 @@ public class WrappedEntity implements Cloneable {
     this.hitBoxBoundaries = hitBoxBoundaries;
 
     this.position = new EntityPositionContext();
+    this.lastPosition = new EntityPositionContext();
     this.alternativePosition = new EntityPositionContext();
   }
 
@@ -222,6 +222,9 @@ public class WrappedEntity implements Cloneable {
       }
       positionHistory.add(position);
     }
+    lastPosition.posX = position.posX;
+    lastPosition.posY = position.posY;
+    lastPosition.posZ = position.posZ;
     position.posX = x;
     position.posY = y;
     position.posZ = z;

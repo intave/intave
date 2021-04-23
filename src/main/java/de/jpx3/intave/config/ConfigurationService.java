@@ -4,6 +4,8 @@ import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveException;
 import de.jpx3.intave.tools.AccessHelper;
+import de.jpx3.intave.tools.annotate.Native;
+import de.jpx3.intave.user.UserMetaClientData;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -41,19 +43,24 @@ public final class ConfigurationService {
         throw new IntaveException("It seems like you are using an old/invalid configuration");
       }
       return configurationIdentifier;
-    } catch (FileNotFoundException e) {
+    } catch (FileNotFoundException exception) {
       throw new IntaveException("It seems like Intave is unable to create the default configuration file");
-    } catch (InvalidConfigurationException | IOException e) {
-      throw new IntaveException("It seems like your configuration is invalid", e);
+    } catch (InvalidConfigurationException | IOException exception) {
+      throw new IntaveException("It seems like your configuration is invalid", exception);
     }
   }
 
+  @Native
   public void setupConfiguration(String requiredState) {
-    if(IntaveControl.DISABLE_LICENSE_CHECK) {
-      if (IntaveControl.USE_EXTERNAL_CONFIGURATION_FILE || AccessHelper.now() - loader().configurationCache().lastModified() > 1000 * 60 * 60 * 2) {
-        loader.loadConfigurationUpdatedForcefully();
-        return;
-      }
+    boolean enterprise = (UserMetaClientData.VERSION_DETAILS & 0x200) != 0;
+    boolean partner = (UserMetaClientData.VERSION_DETAILS & 0x100) != 0;
+
+    boolean useExternalConfigurationFile = (enterprise && configurationKey.equalsIgnoreCase("file")) || IntaveControl.USE_EXTERNAL_CONFIGURATION_FILE;
+    boolean configurationCacheOutdated = AccessHelper.now() - loader().configurationCache().lastModified() > 1000 * 60 * 60 * 2;
+
+    if (useExternalConfigurationFile || configurationCacheOutdated) {
+      loader.loadConfigurationUpdatedForcefully();
+      return;
     }
 
 //    String hash = loader.precomputeConfigurationHash();
