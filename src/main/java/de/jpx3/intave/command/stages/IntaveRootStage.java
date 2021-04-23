@@ -23,6 +23,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public final class IntaveRootStage extends CommandStage {
@@ -185,17 +186,19 @@ public final class IntaveRootStage extends CommandStage {
     }
 
     sortHashMapByValues(confidenceMap);
+    AtomicBoolean active = new AtomicBoolean();
     confidenceMap.forEach((uuid, confidence) -> {
       if (!confidence.atLeast(Confidence.PROBABLE)) {
         return;
       }
+      active.set(true);
       Player otherPlayer = Bukkit.getPlayer(uuid);
       List<Anomaly> anomalies = heuristicsCheck.catchAnomaliesOf(UserRepository.userOf(otherPlayer), false);
       String patterns = anomalies.stream().map(anomaly -> "p[" + anomaly.key() + "]").distinct().collect(Collectors.joining(","));
       player.sendMessage(ChatColor.RED + confidence.name() + " " + ChatColor.GRAY + otherPlayer.getName() + " | " + patterns);
     });
 
-    if (confidenceMap.isEmpty()) {
+    if (!active.get()) {
       player.sendMessage(ChatColor.GREEN + "No badboys detected");
     }
   }
