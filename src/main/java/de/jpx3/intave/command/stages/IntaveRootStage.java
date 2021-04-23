@@ -23,7 +23,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 public final class IntaveRootStage extends CommandStage {
   private static IntaveRootStage singletonInstance;
@@ -43,7 +43,7 @@ public final class IntaveRootStage extends CommandStage {
   @Native
   public void timingsCommand(User user) {
     Player player = user.player();
-    if(plugin.sibylIntegrationService().authentication().isAuthenticated(player)) {
+    if (plugin.sibylIntegrationService().authentication().isAuthenticated(player)) {
       player.sendMessage(ChatColor.RED + "Loading timings...");
       List<Timing> timings = new ArrayList<>(Timings.timingPool());
       timings.sort(Timing::compareTo);
@@ -51,14 +51,15 @@ public final class IntaveRootStage extends CommandStage {
       timings.forEach(timing -> {
         boolean suspicious = timing.getAverageCallDurationInMillis() > 0.5d;
         boolean dumping = timing.getAverageCallDurationInMillis() > 1.5d;
-        String message = String.format("%s: %s::%sms (%s&f ms/c)",
+        String message = String.format(
+          "%s: %s::%sms (%s&f ms/c)",
           timing.getTimingName(),
           timing.getRecordedCalls(),
           MathHelper.formatDouble(timing.totalDurationMillis(), 4),
-          (suspicious ? (dumping ? ChatColor.RED : ChatColor.YELLOW ) : ChatColor.GREEN) + "" +
+          (suspicious ? (dumping ? ChatColor.RED : ChatColor.YELLOW) : ChatColor.GREEN) + "" +
             MathHelper.formatDouble(timing.getAverageCallDurationInMillis(), 8)
         );
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&',message));
+        player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
       });
     }
   }
@@ -130,7 +131,7 @@ public final class IntaveRootStage extends CommandStage {
     Map<String, Double> sortedStudy = sortHashMapByValues(studyResult);
 
     sortedStudy.forEach((keys, percentage) -> {
-      if(keys.trim().isEmpty()) {
+      if (keys.trim().isEmpty()) {
         keys = "N";
       }
       player.sendMessage("Key " + keys + " " + MathHelper.formatDouble(percentage * 100, 4) + "%");
@@ -147,7 +148,7 @@ public final class IntaveRootStage extends CommandStage {
   public void outputReplacements(User user) {
     Player player = user.player();
     BoundingBoxAccess bba = user.boundingBoxAccess();
-    player.sendMessage(ChatColor.RED + "You have " + bba.locatedReplacements().size() + "/"+bba.indexedReplacements().size()+" replacements");
+    player.sendMessage(ChatColor.RED + "You have " + bba.locatedReplacements().size() + "/" + bba.indexedReplacements().size() + " replacements");
   }
 
   @SubCommand(
@@ -174,29 +175,27 @@ public final class IntaveRootStage extends CommandStage {
   @Native
   public void showConfidences(User user) {
     Player player = user.player();
-    Heuristics heuristics = plugin.checkService().searchCheck(Heuristics.class);
     Map<UUID, Confidence> confidenceMap = new HashMap<>();
+    Heuristics heuristicsCheck = plugin.checkService().searchCheck(Heuristics.class);
 
     for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-      List<Anomaly> anomalies = heuristics.catchAnomaliesOf(UserRepository.userOf(onlinePlayer), true);
-      Confidence confidence = heuristics.computeOverallConfidence(heuristics.resolveConfidencesOf(anomalies));
+      List<Anomaly> anomalies = heuristicsCheck.catchAnomaliesOf(UserRepository.userOf(onlinePlayer), false);
+      Confidence confidence = heuristicsCheck.computeOverallConfidence(heuristicsCheck.resolveConfidencesOf(anomalies));
       confidenceMap.put(onlinePlayer.getUniqueId(), confidence);
     }
 
     sortHashMapByValues(confidenceMap);
-
-    AtomicBoolean output = new AtomicBoolean(false);
-
     confidenceMap.forEach((uuid, confidence) -> {
-      if(!confidence.atLeast(Confidence.LIKELY)) {
+      if (!confidence.atLeast(Confidence.PROBABLE)) {
         return;
       }
-      output.set(true);
       Player otherPlayer = Bukkit.getPlayer(uuid);
-      player.sendMessage(ChatColor.RED + confidence.name() + " " + ChatColor.GRAY + otherPlayer.getName());
+      List<Anomaly> anomalies = heuristicsCheck.catchAnomaliesOf(UserRepository.userOf(otherPlayer), false);
+      String patterns = anomalies.stream().map(anomaly -> "p[" + anomaly.key() + "]").distinct().collect(Collectors.joining(","));
+      player.sendMessage(ChatColor.RED + confidence.name() + " " + ChatColor.GRAY + otherPlayer.getName() + " | " + patterns);
     });
 
-    if(!output.get()) {
+    if (confidenceMap.isEmpty()) {
       player.sendMessage(ChatColor.GREEN + "No badboys detected");
     }
   }
@@ -225,7 +224,7 @@ public final class IntaveRootStage extends CommandStage {
   }
 
   public static IntaveRootStage singletonInstance() {
-    if(singletonInstance == null) {
+    if (singletonInstance == null) {
       singletonInstance = new IntaveRootStage();
     }
     return singletonInstance;
