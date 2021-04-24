@@ -194,9 +194,16 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
       }
 
       if(timeDiffrenceInSeconds > 30) {
+        Confidence confidence;
+        if(meta.flaggCounter > 10 && meta.maxCPS > 15) {
+          confidence = Confidence.LIKELY;
+        } else {
+          confidence = Confidence.PROBABLE;
+        }
+
         Anomaly anomaly = Anomaly.anomalyOf(
           "11",
-          IntaveControl.DISABLE_AUTOCLICKER_CHECK ? Confidence.NONE : (sum > 14 ? Confidence.VERY_LIKELY : Confidence.PROBABLE),
+          IntaveControl.DISABLE_AUTOCLICKER_CHECK ? Confidence.NONE : confidence,
           Anomaly.Type.AUTOCLICKER,
           "swings in air (cps " + meta.maxCPS + ") (sum " + meta.flaggCounter + ")", Anomaly.AnomalyOption.DELAY_128s
         );
