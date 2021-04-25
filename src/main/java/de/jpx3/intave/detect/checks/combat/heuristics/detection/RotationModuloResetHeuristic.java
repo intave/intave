@@ -188,7 +188,7 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
       }
     }
 
-    if (yawMotion > 12) {
+    if (yawMotion > 9) {
       isLegit = true;
     }
 
