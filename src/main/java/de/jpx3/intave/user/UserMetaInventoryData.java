@@ -21,7 +21,7 @@ public final class UserMetaInventoryData {
   public int pastItemUsageTransition;
   public int pastHotBarSlotChange;
   public int awaitingSlotSet = -1;
-  public boolean forceInventoryOnClickOpen;
+  public boolean forceInventoryOnClickOpen = true;
 
   public UserMetaInventoryData(Player player) {
     this.player = player;

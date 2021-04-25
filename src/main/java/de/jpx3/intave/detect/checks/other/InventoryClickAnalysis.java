@@ -9,6 +9,7 @@ import de.jpx3.intave.user.UserMetaInventoryData;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 
 public final class InventoryClickAnalysis extends IntaveCheck {
@@ -30,6 +31,11 @@ public final class InventoryClickAnalysis extends IntaveCheck {
     User.UserMeta meta = user.meta();
     UserMetaInventoryData inventoryData = meta.inventoryData();
     boolean inventoryOpen = inventoryData.inventoryOpen();
+
+    ClickType click = event.getClick();
+    if (click == ClickType.CREATIVE) {
+      return;
+    }
 
     if (inventoryData.forceInventoryOnClickOpen && !inventoryOpen) {
       String message = "insufficient inventory-click (inventory not open)";
