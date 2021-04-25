@@ -206,17 +206,21 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
 
       UserMetaAttackData attackData = user.meta().attackData();
       if(attackData.lastAttackedEntity() != null) {
-        double values[] = new double[] { meta.perfectRotations[Math.floorMod(meta.index - 2, meta.perfectRotations.length)],
-          meta.perfectRotations[Math.floorMod(meta.index - 1, meta.perfectRotations.length)]};
+        double values[] = new double[] {
+          meta.perfectRotations[Math.floorMod(getHopIndex(meta) - 1, meta.perfectRotations.length)],
+          meta.perfectRotations[Math.floorMod(getHopIndex(meta), meta.perfectRotations.length)]};
+
         if(values[0] != Double.NaN && values[1] != Double.NaN) {
           double minValue = Math.min(values[0], values[1]);
           double maxValue = Math.max(values[0], values[1]);
           if(minValue < 10 && maxValue > 65) {
             if(valueOfSnap > 90) {
+              confidence = Confidence.VERY_LIKELY;
+            } else {
               confidence = Confidence.LIKELY;
             }
-            description += " pYaw:" + MathHelper.formatDouble(meta.perfectRotations[Math.floorMod(meta.index - 2, meta.perfectRotations.length)], 2)
-              + "/" + MathHelper.formatDouble(meta.perfectRotations[Math.floorMod(meta.index - 1, meta.perfectRotations.length)], 2);
+            description += " pYaw:" + MathHelper.formatDouble(values[0], 2)
+              + "/" + MathHelper.formatDouble(values[1], 2);
           }
         }
       }
@@ -235,10 +239,6 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
         meta.violationLevel--;
       meta.lastViolationTimeStamp = System.currentTimeMillis();
     }
-
-//    if (meta.lastLastYawMotion < 7 && meta.lastYawMotion > 50 && yawMotion < 6) {
-
-//    }
 
     prepareNextTick(meta, yawMotion);
   }
