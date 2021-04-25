@@ -242,7 +242,6 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
     }
 
     if(System.currentTimeMillis() - meta.lastViolationTimeStamp > 15000 && (movementData.motionX() + movementData.motionZ() != 0)) {
-      player.sendMessage("substraced " + meta.violationLevel);
       if(meta.violationLevel > 0)
         meta.violationLevel--;
       meta.lastViolationTimeStamp = System.currentTimeMillis();
