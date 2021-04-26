@@ -5,11 +5,13 @@ import de.jpx3.intave.event.punishment.AttackCancelType;
 import de.jpx3.intave.event.punishment.EntityNoDamageTickChanger;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.annotate.Relocate;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
 @Relocate
@@ -18,6 +20,8 @@ public final class UserMetaPunishmentData {
   private final static long DAMAGE_CANCEL_MEDIUM_DURATION = 20_000;
   private final static long DAMAGE_CANCEL_HEAVY_DURATION = 5_000;
   private final static long BLOCKING_DAMAGE_CANCEL_DURATION = 5_000;
+
+  private final static long ENTITY_HURT_TIME_CHANGE_DURATION = 5_000;
 
   private final List<DamageCancel> damageCancels;
 
@@ -31,11 +35,15 @@ public final class UserMetaPunishmentData {
       new DamageCancel(AttackCancelType.HEAVY, DAMAGE_CANCEL_HEAVY_DURATION, (event) -> event.setCancelled(true)),
       new DamageCancel(AttackCancelType.MEDIUM, DAMAGE_CANCEL_MEDIUM_DURATION, (event) -> {
         // Perform hurt-time change
-        EntityNoDamageTickChanger.applyHurtTimeChangeTo(player, (int) (DAMAGE_CANCEL_MEDIUM_DURATION / 50), true);
+        int ticks = -ThreadLocalRandom.current().nextInt(4, 7);
+        EntityNoDamageTickChanger.applyHurtTimeChangeTo(player, (int) (DAMAGE_CANCEL_MEDIUM_DURATION / 50), ticks);
+        // Perform hurt-time change on entity
+        performEntityHurtTimeChange(event.getEntity());
       }),
       new DamageCancel(AttackCancelType.LIGHT, DAMAGE_CANCEL_LIGHT_DURATION, (event) -> {
         // Perform hurt-time change
-        EntityNoDamageTickChanger.applyHurtTimeChangeTo(player, (int) (DAMAGE_CANCEL_LIGHT_DURATION / 50), false);
+        int ticks = -ThreadLocalRandom.current().nextInt(3, 4);
+        EntityNoDamageTickChanger.applyHurtTimeChangeTo(player, (int) (DAMAGE_CANCEL_LIGHT_DURATION / 50), ticks);
       }),
       new DamageCancel(AttackCancelType.BLOCKING, BLOCKING_DAMAGE_CANCEL_DURATION, (event) -> {
         double blockingDamageAbsorption = event.getDamage(EntityDamageEvent.DamageModifier.BLOCKING);
@@ -44,6 +52,15 @@ public final class UserMetaPunishmentData {
         }
       })
     );
+  }
+
+  private void performEntityHurtTimeChange(Entity entity) {
+    if (!(entity instanceof Player)) {
+      return;
+    }
+    Player player = (Player) entity;
+    int increase = 2;
+    EntityNoDamageTickChanger.applyHurtTimeChangeTo(player, (int) (ENTITY_HURT_TIME_CHANGE_DURATION / 50), increase);
   }
 
   public List<DamageCancel> damageCancels() {

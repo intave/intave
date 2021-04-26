@@ -7,7 +7,6 @@ import de.jpx3.intave.detect.IntaveMetaCheckPart;
 import de.jpx3.intave.detect.checks.combat.Heuristics;
 import de.jpx3.intave.detect.checks.combat.heuristics.Anomaly;
 import de.jpx3.intave.detect.checks.combat.heuristics.Confidence;
-import de.jpx3.intave.event.dispatch.PlayerAbilityEvaluator;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
@@ -68,7 +67,7 @@ public final class PacketPlayerActionToggleHeuristic extends IntaveMetaCheckPart
       return;
     }
 
-    if (abilityData.inGameModeIncludePending(PlayerAbilityEvaluator.GameMode.SPECTATOR)) {
+    if (abilityData.ignoringMovementPackets()) {
       heuristicMeta.reset();
       return;
     }

@@ -30,7 +30,7 @@ public final class PlayerContext extends PlaceholderContext {
     builder.put("latency", String.valueOf(user.latency()));
     builder.put("jitter", String.valueOf(user.latencyJitter()));
     builder.put("player", player.getName());
-//    builder.put("version", MinecraftVersionResolver.fancyProtocolVersionOf(player));
+    builder.put("version", user.meta().clientData().versionString());
     builder.put("world", player.getWorld().getName());
 
 

@@ -5,11 +5,13 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.event.packet.*;
+import de.jpx3.intave.event.service.entity.ClientSideEntityService;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaAbilityData;
 import de.jpx3.intave.user.UserMetaMovementData;
 import de.jpx3.intave.user.UserRepository;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
 public final class PlayerAbilityEvaluator implements PacketEventSubscriber {
@@ -18,6 +20,25 @@ public final class PlayerAbilityEvaluator implements PacketEventSubscriber {
   public PlayerAbilityEvaluator(IntavePlugin plugin) {
     this.plugin = plugin;
     this.plugin.packetSubscriptionLinker().linkSubscriptionsIn(this);
+  }
+
+  @PacketSubscription(
+    packets = {
+      @PacketDescriptor(sender = Sender.SERVER, packetName = "CAMERA")
+    }
+  )
+  public void receiveCamera(PacketEvent event) {
+    Player player = event.getPlayer();
+    PacketContainer packet = event.getPacket();
+    Integer entityID = packet.getIntegers().read(0);
+    plugin.eventService().transactionFeedbackService().requestPong(player, entityID, this::synchronizeCameraUpdate);
+  }
+
+  private void synchronizeCameraUpdate(Player player, int entityID) {
+    User user = UserRepository.userOf(player);
+    UserMetaAbilityData abilityData = user.meta().abilityData();
+    Entity entity = ClientSideEntityService.serverEntityByIdentifier(player, entityID);
+    abilityData.hasViewEntity = entity != player;
   }
 
   @PacketSubscription(

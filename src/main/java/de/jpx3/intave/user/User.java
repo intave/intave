@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.connect.shadow.ShadowPacketDataLink;
+import de.jpx3.intave.event.punishment.EntityNoDamageTickChanger;
 import de.jpx3.intave.fakeplayer.FakePlayer;
 import de.jpx3.intave.permission.BukkitPermissionCache;
 import de.jpx3.intave.permission.BukkitPermissionCheck;
@@ -222,6 +223,7 @@ public final class User {
     if (fakePlayer != null) {
       fakePlayer.despawn();
     }
+    EntityNoDamageTickChanger.removeNoDamageTickChangeOf(this);
   }
 
   public static final class UserMeta {

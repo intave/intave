@@ -19,6 +19,7 @@ public final class UserMetaAbilityData {
   private float walkSpeed = 0.1f;
   public float health;
   public int ticksToLastHealthUpdate;
+  public boolean hasViewEntity;
 
   public UserMetaAbilityData(Player player) {
     boolean hasPlayer = (player != null);
@@ -44,6 +45,10 @@ public final class UserMetaAbilityData {
 
   public boolean inGameModeIncludePending(PlayerAbilityEvaluator.GameMode gameMode) {
     return this.gameMode == gameMode || this.pendingGameMode == gameMode;
+  }
+
+  public boolean ignoringMovementPackets() {
+    return inGameModeIncludePending(PlayerAbilityEvaluator.GameMode.SPECTATOR) || hasViewEntity;
   }
 
   public boolean inGameMode(GameMode gameMode) {

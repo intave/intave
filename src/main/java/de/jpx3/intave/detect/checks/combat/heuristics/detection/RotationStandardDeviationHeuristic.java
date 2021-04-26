@@ -55,7 +55,7 @@ public final class RotationStandardDeviationHeuristic extends IntaveMetaCheckPar
        */
       float yawSpeed = MathHelper.distanceInDegrees(movementData.rotationYaw, movementData.lastRotationYaw);
       float distanceToPerfectYaw = MathHelper.distanceInDegrees(attackData.perfectYaw(), movementData.rotationYaw);
-      if (yawSpeed > 0.6) {
+      if (yawSpeed > 2.6) {
         heuristicMeta.distancesToPerfectYaw.add(distanceToPerfectYaw);
       }
       if (heuristicMeta.distancesToPerfectYaw.size() >= 7) {
