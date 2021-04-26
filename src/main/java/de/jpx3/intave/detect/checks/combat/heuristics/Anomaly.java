@@ -5,21 +5,21 @@ import de.jpx3.intave.tools.AccessHelper;
 import java.util.concurrent.TimeUnit;
 
 public class Anomaly {
-  private final static long ANOMALY_EXPIRE_DURATION = TimeUnit.MINUTES.toMillis(5);
-
   private final String key;
   private final long added;
   private final String description;
   private final Confidence confidence;
   private final Type type;
   private final int options;
+  private final long expireDuration;
 
   private Anomaly(
     String key,
     Confidence confidence,
     Type type,
     String description,
-    int options
+    int options,
+    long expireDuration
   ) {
     this.key = key;
     this.added = AccessHelper.now();
@@ -27,6 +27,7 @@ public class Anomaly {
     this.confidence = confidence;
     this.type = type;
     this.options = options;
+    this.expireDuration = expireDuration;
   }
 
   public String key() {
@@ -46,7 +47,7 @@ public class Anomaly {
   }
 
   public boolean expired() {
-    return AccessHelper.now() - added > ANOMALY_EXPIRE_DURATION;
+    return AccessHelper.now() - added > expireDuration;
   }
 
   public boolean active() {
@@ -73,12 +74,18 @@ public class Anomaly {
     return type;
   }
 
-  public static Anomaly anomalyOf(String key, Confidence confidence, Type type, String description) {
-    return new Anomaly(key, confidence, type, description, AnomalyOption.LIMIT_2);
+  private final static long ANOMALY_EXPIRE_DURATION = TimeUnit.MINUTES.toMillis(5);
+
+  public static Anomaly anomalyOf(String key, Confidence confidence, Type type, String description, int options, long expireDuration) {
+    return new Anomaly(key, confidence, type, description, options, expireDuration);
   }
 
   public static Anomaly anomalyOf(String key, Confidence confidence, Type type, String description, int options) {
-    return new Anomaly(key, confidence, type, description, options);
+    return new Anomaly(key, confidence, type, description, options, ANOMALY_EXPIRE_DURATION);
+  }
+
+  public static Anomaly anomalyOf(String key, Confidence confidence, Type type, String description) {
+    return new Anomaly(key, confidence, type, description, AnomalyOption.LIMIT_2, ANOMALY_EXPIRE_DURATION);
   }
 
   public enum Type {
