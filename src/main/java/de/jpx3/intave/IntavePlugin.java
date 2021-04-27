@@ -24,6 +24,7 @@ import de.jpx3.intave.lib.asm.Frame;
 import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.metrics.Metrics;
 import de.jpx3.intave.reflect.ReflectiveAccess;
+import de.jpx3.intave.reflect.relocate.ClassRelocator;
 import de.jpx3.intave.security.*;
 import de.jpx3.intave.tools.*;
 import de.jpx3.intave.tools.annotate.Native;
@@ -352,10 +353,12 @@ public final class IntavePlugin extends JavaPlugin {
       boolean enterprise = (UserMetaClientData.VERSION_DETAILS & 0x200) != 0;
 
       if (partner || enterprise) {
-        logger.info("Identify confirmed, special features enabled");
+        logger.info("Identity confirmed, special features enabled");
       } else {
         logger.info("Identity verification missing");
       }
+
+      ClassRelocator.findClass("de.jpx3.intave.IntavePlugin");
 
       if (offlineMode) {
         // check last online

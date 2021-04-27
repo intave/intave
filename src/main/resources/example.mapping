@@ -1,0 +1,7 @@
+class "net.minecraft.server.v1_8R3.MinecraftServer" is now "path.to.the.minecraft.Server"
+class "net.minecraft.server.v1_8R3.MinecraftServer" is now located at "path.to.the.minecraft"
+class "net.minecraft.server.v1_8R3.MinecraftServer" is now called "Server"
+method "net.minecraft.server.v1_8R3.MinecraftServer.postToMainThread V(Ljava/lang/Runnable;)" is now "path.to.the.minecraft.Server.pushToMainThread V(Ljava/lang/Runnable;)"
+method "net.minecraft.server.v1_8R3.MinecraftServer.postToMainThread V(Ljava/lang/Runnable;)" is now located at "path.to.the.minecraft.Server"
+method "net.minecraft.server.v1_8R3.MinecraftServer.postToMainThread *" is now located at "path.to.the.minecraft.Server"
+method "net.minecraft.server.v1_8R3.MinecraftServer.postToMainThread V(Ljava/lang/Runnable;)" is now called "pushToMainThread"
