@@ -9,6 +9,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.detect.EventProcessor;
 import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
@@ -50,7 +51,7 @@ public final class BlockActionDispatcher implements EventProcessor {
     PacketContainer packet = event.getPacket();
     PacketType type = packet.getType();
     Player player = event.getPlayer();
-    if(type == PacketType.Play.Server.MAP_CHUNK_BULK) {
+    if (type == PacketType.Play.Server.MAP_CHUNK_BULK) {
       StructureModifier<int[]> integerArrays = packet.getIntegerArrays();
       int[] xArr = integerArrays.read(0).clone();
       int[] zArr = integerArrays.read(1).clone();
@@ -94,11 +95,15 @@ public final class BlockActionDispatcher implements EventProcessor {
 
     boolean check = true;
 
-    if(packetType == PacketType.Play.Client.BLOCK_DIG) {
+    if (packetType == PacketType.Play.Client.BLOCK_DIG) {
       EnumWrappers.PlayerDigType playerDigType = packet.getPlayerDigTypes().read(0);
       check = playerDigType == START_DESTROY_BLOCK || playerDigType == STOP_DESTROY_BLOCK || playerDigType == ABORT_DESTROY_BLOCK;
-    } else if(packetType == PacketType.Play.Client.BLOCK_PLACE) {
+    } else if (packetType == PacketType.Play.Client.BLOCK_PLACE) {
       Integer enumDirection = packet.getIntegers().readSafely(0);
+      BlockPosition blockPosition = packet.getBlockPositionModifier().readSafely(0);
+      if (blockPosition == null) {
+        return;
+      }
       if (enumDirection == null) {
         enumDirection = packet.getDirections().readSafely(0).ordinal();
       }
@@ -107,11 +112,11 @@ public final class BlockActionDispatcher implements EventProcessor {
       }
     }
 
-    if(check) {
+    if (check) {
       BlockPosition blockPosition = packet.getBlockPositionModifier().read(0);
       // distance check
 
-      if(blockPosition == null) {
+      if (blockPosition == null) {
         return;
       }
 
@@ -121,7 +126,7 @@ public final class BlockActionDispatcher implements EventProcessor {
       UserMetaMovementData movementData = user.meta().movementData();
       Vector playerLocation = new Vector(movementData.lastPositionX, movementData.lastPositionY, movementData.lastPositionZ);
 
-      if(playerLocation.distance(targetBlock) > 16) {
+      if (playerLocation.distance(targetBlock) > 16) {
         event.setCancelled(true);
       }
     }
@@ -144,7 +149,7 @@ public final class BlockActionDispatcher implements EventProcessor {
     List<BlockPosition> blockPositions;
     List<WrappedBlockData> blockDataList;
 
-    if(packetType == PacketType.Play.Server.MULTI_BLOCK_CHANGE) {
+    if (packetType == PacketType.Play.Server.MULTI_BLOCK_CHANGE) {
       MultiBlockChangeInfo[] multiBlockChangeInfos = packet.getMultiBlockChangeInfoArrays().readSafely(0);
       blockPositions = new ArrayList<>();
       blockDataList = new ArrayList<>();
@@ -161,14 +166,14 @@ public final class BlockActionDispatcher implements EventProcessor {
     boolean transactionSynchronize = false;
     Location location = player.getLocation();
     for (BlockPosition blockPosition : blockPositions) {
-      if(distance(location, blockPosition) < 8) {
+      if (distance(location, blockPosition) < 8) {
         transactionSynchronize = true;
         break;
       }
     }
 
     World world = player.getWorld();
-    if(transactionSynchronize) {
+    if (transactionSynchronize) {
       plugin.eventService().transactionFeedbackService().requestPong(player, null, (player1, target) -> {
         for (int i = 0; i < blockPositions.size(); i++) {
           BlockPosition blockPosition = blockPositions.get(i);
