@@ -57,7 +57,7 @@ public final class TrustFactorService implements BukkitEventSubscriber {
     user.setTrustFactor(defaultTrustFactor);
 
     if(IntaveControl.APPLY_LOWEST_TRUSTFACTOR) {
-      user.setTrustFactor(TrustFactor.DARK_RED);
+      user.setTrustFactor(TrustFactor.RED);
       return;
     }
     trustFactorResolver.resolve(player,

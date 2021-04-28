@@ -1,6 +1,7 @@
 package de.jpx3.intave.user;
 
 import com.google.common.collect.Maps;
+import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.connect.shadow.ShadowPacketDataLink;
@@ -155,6 +156,10 @@ public final class User {
 
   public void setTrustFactor(TrustFactor trustFactor) {
     this.trustFactor = trustFactor;
+  }
+
+  public int trustFactorSetting(String key) {
+    return IntavePlugin.singletonInstance().trustFactorService().trustFactorSetting(key, player());
   }
 
   public void setDefaultMessagingChannel() {
