@@ -4,8 +4,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
-import com.comphenix.protocol.wrappers.WrappedWatchableObject;
+import com.comphenix.protocol.wrappers.*;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.ProtocolLibAdapter;
@@ -27,14 +26,12 @@ import org.bukkit.util.Vector;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class ClientSideEntityService implements PacketEventSubscriber {
   private final IntavePlugin plugin;
   private String dataWatcherEntityFieldName;
+
   private final static boolean NEW_POSITION_PROCESSING = ProtocolLibAdapter.serverVersion().isAtLeast(ProtocolLibAdapter.COMBAT_UPDATE);
   private final static boolean HEALTH_PROCESSING_1_10 = ProtocolLibAdapter.serverVersion().isAtLeast(ProtocolLibAdapter.FROSTBURN_UPDATE);
 

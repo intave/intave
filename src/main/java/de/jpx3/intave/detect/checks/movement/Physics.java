@@ -144,8 +144,13 @@ public final class Physics extends IntaveCheck {
     Player player = user.player();
     if (player.getVehicle() != null) {
       return Pose.VEHICLE;
-    } else if (PoseHelper.flyingWithElytra(player)) {
-      return Pose.ELYTRA;
+    } else {
+      UserMetaMovementData movementData = user.meta().movementData();
+      boolean inLava = movementData.inLava();
+      boolean inWater = movementData.inWater;
+      if (PoseHelper.flyingWithElytra(player) && !inWater && !inLava) {
+        return Pose.ELYTRA;
+      }
     }
     return Pose.PLAYER;
   }

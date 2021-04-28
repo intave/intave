@@ -11,7 +11,8 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class WrappedEntity implements Cloneable {
-  private final static boolean NEW_POSITION_PROCESSING = ProtocolLibAdapter.serverVersion().isAtLeast(ProtocolLibAdapter.COMBAT_UPDATE);
+  private final static boolean NEW_POSITION_PROCESSING_1_9 = ProtocolLibAdapter.serverVersion().isAtLeast(ProtocolLibAdapter.COMBAT_UPDATE);
+  private final static boolean NEW_POSITION_PROCESSING_1_14 = ProtocolLibAdapter.serverVersion().isAtLeast(ProtocolLibAdapter.VILLAGE_UPDATE);
   private final String entityName;
   private final int entityId;
 
@@ -124,7 +125,8 @@ public class WrappedEntity implements Cloneable {
     double newPosX;
     double newPosY;
     double newPosZ;
-    if (NEW_POSITION_PROCESSING) {
+
+    if (NEW_POSITION_PROCESSING_1_9) {
       newPosX = packet.getDoubles().read(0);
       newPosY = packet.getDoubles().read(1);
       newPosZ = packet.getDoubles().read(2);
@@ -161,7 +163,6 @@ public class WrappedEntity implements Cloneable {
     }
   }
 
-
   /**
    * Handles relative movement. Packets: REL_ENTITY_MOVE, REL_ENTITY_MOVE_LOOK or ENTITY_LOOK
    *
@@ -173,7 +174,16 @@ public class WrappedEntity implements Cloneable {
     double alternativeNewPosY;
     double newPosZ;
 
-    if (NEW_POSITION_PROCESSING) {
+    if(NEW_POSITION_PROCESSING_1_14) {
+      this.serverPosX += packet.getShorts().readSafely(0);
+      this.serverPosY += packet.getShorts().readSafely(1);
+      this.serverPosZ += packet.getShorts().readSafely(2);
+
+      newPosX = (double) serverPosX / 4096d;
+      newPosY = (double) serverPosY / 4096d;
+      alternativeNewPosY = newPosY;
+      newPosZ = (double) serverPosZ / 4096d;
+    } else if (NEW_POSITION_PROCESSING_1_9) {
       this.serverPosX += packet.getIntegers().readSafely(1);
       this.serverPosY += packet.getIntegers().readSafely(2);
       this.serverPosZ += packet.getIntegers().readSafely(3);

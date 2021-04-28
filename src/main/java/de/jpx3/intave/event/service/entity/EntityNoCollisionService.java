@@ -1,0 +1,72 @@
+package de.jpx3.intave.event.service.entity;
+
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.PlayerInfoData;
+import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.adapter.ProtocolLibAdapter;
+import de.jpx3.intave.event.packet.*;
+import de.jpx3.intave.reflect.ReflectiveScoreboardAccess;
+import de.jpx3.intave.tools.sync.Synchronizer;
+import org.bukkit.entity.Player;
+
+import java.util.List;
+
+public final class EntityNoCollisionService implements PacketEventSubscriber {
+  private final static String SCOREBOARD_NAME = "INTAVE";
+  private final static int COLLISION_RULE_FIELD = ProtocolLibAdapter.AQUATIC_UPDATE.atOrAbove() ? 2 : 5;
+
+  public EntityNoCollisionService(IntavePlugin plugin) {
+    plugin.packetSubscriptionLinker().linkSubscriptionsIn(this);
+  }
+
+  @PacketSubscription(
+    priority = ListenerPriority.HIGHEST,
+    packets = {
+      @PacketDescriptor(sender = Sender.SERVER, packetName = "PLAYER_INFO")
+    }
+  )
+  public void receiveTabListName(PacketEvent event) {
+    Player player = event.getPlayer();
+    PacketContainer packet = event.getPacket();
+    EnumWrappers.PlayerInfoAction action = packet.getPlayerInfoAction().read(0);
+    if (action != EnumWrappers.PlayerInfoAction.ADD_PLAYER) {
+      return;
+    }
+    List<PlayerInfoData> playerInformationList = packet.getPlayerInfoDataLists().readSafely(0);
+    for (PlayerInfoData playerInfoData : playerInformationList) {
+      WrappedGameProfile profile = playerInfoData.getProfile();
+      String name = profile.getName();
+      disableCollisions(player, name);
+    }
+  }
+
+  @PacketSubscription(
+    priority = ListenerPriority.HIGHEST,
+    packets = {
+      @PacketDescriptor(sender = Sender.SERVER, packetName = "SPAWN_ENTITY_LIVING")
+    }
+  )
+  public void receiveEntitySpawn(PacketEvent event) {
+    Player player = event.getPlayer();
+    PacketContainer packet = event.getPacket();
+    disableCollisions(player, packet.getUUIDs().read(0).toString());
+  }
+
+  @PacketSubscription(
+    priority = ListenerPriority.HIGHEST,
+    packets = {
+      @PacketDescriptor(sender = Sender.SERVER, packetName = "SCOREBOARD_TEAM")
+    }
+  )
+  public void receiveScoreboardUpdate(PacketEvent event) {
+    PacketContainer packet = event.getPacket();
+    packet.getStrings().write(COLLISION_RULE_FIELD, "never");
+  }
+
+  private void disableCollisions(Player player, String entityScoreboardName) {
+    Synchronizer.synchronize(() -> ReflectiveScoreboardAccess.applyNoCollisionRule(player, SCOREBOARD_NAME, entityScoreboardName));
+  }
+}

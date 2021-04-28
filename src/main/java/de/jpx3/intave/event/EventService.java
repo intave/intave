@@ -2,6 +2,7 @@ package de.jpx3.intave.event;
 
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.event.context.ReconDelayLimiter;
@@ -11,6 +12,7 @@ import de.jpx3.intave.event.service.ConnectionHealthResolver;
 import de.jpx3.intave.event.service.MovementEmulationEngine;
 import de.jpx3.intave.event.service.TransactionFeedbackService;
 import de.jpx3.intave.event.service.entity.ClientSideEntityService;
+import de.jpx3.intave.event.service.entity.EntityNoCollisionService;
 import de.jpx3.intave.event.service.entity.LazyEntityCollisionService;
 import de.jpx3.intave.permission.BukkitPermissionCheck;
 import de.jpx3.intave.reflect.caller.CallerResolver;
@@ -29,6 +31,8 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
 public final class EventService implements BukkitEventSubscriber {
+  private final static boolean DISABLE_ENTITY_COLLISIONS = ProtocolLibAdapter.serverVersion().isAtLeast(ProtocolLibAdapter.COMBAT_UPDATE);
+
   private final IntavePlugin plugin;
   private TransactionFeedbackService transactionFeedbackService;
   private MovementEmulationEngine emulationEngine;
@@ -54,6 +58,9 @@ public final class EventService implements BukkitEventSubscriber {
     new ClientSideEntityService(plugin);
     new LazyEntityCollisionService(plugin);
     new ConnectionHealthResolver(plugin);
+    if (DISABLE_ENTITY_COLLISIONS) {
+      new EntityNoCollisionService(plugin);
+    }
 
     plugin.eventLinker().registerEventsIn(this);
   }
