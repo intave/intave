@@ -15,7 +15,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
-final class UnknownWaterflow extends AbstractWaterflow {
+final class UnknownWaterflowEngine extends AbstractWaterflowEngine {
   @Override
   public boolean fluidStateEmpty(User user, double x, double y, double z) {
     World world = user.player().getWorld();

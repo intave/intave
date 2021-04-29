@@ -11,7 +11,7 @@ import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
 import org.bukkit.Material;
 import org.bukkit.World;
 
-public abstract class AbstractWaterflow {
+public abstract class AbstractWaterflowEngine {
   protected void setup() throws Exception {}
 
   protected abstract boolean fluidStateEmpty(User user, double x, double y, double z);

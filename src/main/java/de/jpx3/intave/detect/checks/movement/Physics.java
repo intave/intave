@@ -30,7 +30,10 @@ import de.jpx3.intave.world.collider.result.ComplexColliderSimulationResult;
 import de.jpx3.intave.world.collider.result.QuickColliderSimulationResult;
 import de.jpx3.intave.world.collision.Collision;
 import de.jpx3.intave.world.waterflow.Waterflow;
-import org.bukkit.*;
+import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -122,7 +125,7 @@ public final class Physics extends IntaveCheck {
   public void receiveMovement(User user) {
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
-    UserMetaClientData clientData = user.meta().clientData();
+    UserMetaClientData clientData = meta.clientData();
 
     movementData.setMovementPoseType(poseOf(user));
 
@@ -478,13 +481,13 @@ public final class Physics extends IntaveCheck {
       user.boundingBoxAccess().identityInvalidate();
 
       double addedVL = violationLevelIncrease;
-      if(movementData.denyJump() && violationLevelData.physicsVL <= 100) {
-        addedVL = Math.min(50, verticalViolationIncrease);
-      }
+//      if(movementData.denyJump() && violationLevelData.physicsVL <= 100) {
+//        addedVL = Math.min(250, verticalViolationIncrease);
+//      }
 
       Violation violation = Violation.builderFor(Physics.class)
         .withPlayer(player).withMessage(message).withDetails(details)
-        .withVL(addedVL / 10d).build();
+        .withVL(addedVL / 50d).build();
       ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
 
       boolean setback = violationContext.shouldCounterThreat() || violationLevelData.physicsVL >= 75;

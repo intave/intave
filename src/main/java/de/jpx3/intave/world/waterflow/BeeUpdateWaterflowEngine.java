@@ -15,7 +15,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
 
-final class NetherUpdateWaterflow extends AbstractWaterflow {
+final class BeeUpdateWaterflowEngine extends AbstractWaterflowEngine {
   private MethodHandle fluidMethodHandle;
   private MethodHandle fluidTaggedMethodHandle;
   private MethodHandle fluidHeightMethodHandle;
@@ -24,7 +24,7 @@ final class NetherUpdateWaterflow extends AbstractWaterflow {
   private Object fluidTagWater;
   private Class<?> blockPositionClass;
 
-  public NetherUpdateWaterflow() {
+  public BeeUpdateWaterflowEngine() {
   }
 
   @Override
@@ -82,7 +82,7 @@ final class NetherUpdateWaterflow extends AbstractWaterflow {
     Class<?> fluidClass = ReflectiveAccess.lookupServerClass("Fluid");
     fluidHeightMethodHandle = MethodHandles
       .lookup()
-      .findVirtual(fluidClass, "d", MethodType.methodType(Float.TYPE));
+      .findVirtual(fluidClass, "f", MethodType.methodType(Float.TYPE));
   }
 
   private void loadFluidFlowMethodHandle() throws NoSuchMethodException, IllegalAccessException {
@@ -176,6 +176,6 @@ final class NetherUpdateWaterflow extends AbstractWaterflow {
 
   @Override
   public boolean appliesToAtLeast(MinecraftVersion currentVersion) {
-    return currentVersion.isAtLeast(ProtocolLibAdapter.NETHER_UPDATE);
+    return currentVersion.isAtLeast(ProtocolLibAdapter.BEE_UPDATE);
   }
 }

@@ -18,6 +18,7 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 @Relocate
 public final class Collision {
@@ -233,6 +234,14 @@ public final class Collision {
     WrappedAxisAlignedBB playerBoundingBox,
     Material blockType
   ) {
+    return containsBlockInBB(world, playerBoundingBox, material -> material == blockType);
+  }
+
+  public static boolean containsBlockInBB(
+    World world,
+    WrappedAxisAlignedBB playerBoundingBox,
+    Function<Material, Boolean> blockTypeApplier
+  ) {
     int minX = WrappedMathHelper.floor(playerBoundingBox.minX);
     int maxX = WrappedMathHelper.floor(playerBoundingBox.maxX);
     int minY = WrappedMathHelper.floor(playerBoundingBox.minY);
@@ -243,7 +252,7 @@ public final class Collision {
       for (int y = minY; y <= maxY; y++) {
         for (int z = minZ; z <= maxZ; z++) {
           Block block = BukkitBlockAccess.blockAccess(world, x, y, z);
-          if (block.getType() == blockType) {
+          if (blockTypeApplier.apply(block.getType())) {
             return true;
           }
         }

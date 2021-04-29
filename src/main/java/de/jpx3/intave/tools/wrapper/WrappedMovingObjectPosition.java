@@ -84,10 +84,8 @@ public class WrappedMovingObjectPosition {
       Class<?> movingObjectPositionBase = ReflectiveAccess.lookupServerClass("MovingObjectPosition");
       Class<?> movingObjectPositionEntity = ReflectiveAccess.lookupServerClass("MovingObjectPositionEntity");
       Class<?> movingObjectPositionBlock = ReflectiveAccess.lookupServerClass("MovingObjectPositionBlock");
-
       String typeName = (String) Enum.class.getMethod("name").invoke(movingObjectPositionBase.getMethod("getType").invoke(movingObjectPosition));
       MovingObjectType movingObjectType = MovingObjectType.valueOf(typeName);
-
       if(movingObjectType == MovingObjectType.ENTITY) {
         Field field = movingObjectPositionEntity.getDeclaredField("entity");
         if(!field.isAccessible()) {
@@ -101,20 +99,17 @@ public class WrappedMovingObjectPosition {
           movingObjectPositionBaseField.setAccessible(true);
         Object pos = movingObjectPositionBaseField.get(movingObjectPosition);
         WrappedVector wrappedPos = WrapperLinkage.vectorOf(pos);
-
         Field bField = movingObjectPositionBlock.getDeclaredField("b");
         if(!bField.isAccessible())
           bField.setAccessible(true);
         Object direction = bField.get(movingObjectPosition);
         String directionName = (String) Enum.class.getMethod("name").invoke(direction);
         WrappedEnumDirection wrappedEnumDirection = WrappedEnumDirection.valueOf(directionName);
-
         Field cField = movingObjectPositionBlock.getDeclaredField("c");
         if(!cField.isAccessible())
           cField.setAccessible(true);
         Object blockPosition = cField.get(movingObjectPosition);
         WrappedBlockPosition wrappedBlockPosition = WrapperLinkage.blockPositionOf(blockPosition);
-
         return new WrappedMovingObjectPosition(movingObjectType, wrappedPos, wrappedEnumDirection, wrappedBlockPosition);
       }
     } catch (Exception exception) {

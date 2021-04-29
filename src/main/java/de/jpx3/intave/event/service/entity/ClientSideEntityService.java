@@ -3,6 +3,7 @@ package de.jpx3.intave.event.service.entity;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
@@ -356,9 +357,11 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     Integer entityID = packet.getIntegers().read(0);
 
     if (NEW_POSITION_PROCESSING) {
-      double posX = packet.getDoubles().read(0);
-      double posY = packet.getDoubles().read(1);
-      double posZ = packet.getDoubles().read(2);
+      StructureModifier<Double> doubles = packet.getDoubles();
+
+      double posX = doubles.read(0);
+      double posY = doubles.read(1);
+      double posZ = doubles.read(2);
 
       processEntitySpawnNewVersion(
         user, entityName, isEntityLiving, entityID,
@@ -371,16 +374,18 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
       Integer serverPosY;
       Integer serverPosZ;
 
+      StructureModifier<Integer> integers = packet.getIntegers();
+
       if (packetType == PacketType.Play.Server.SPAWN_ENTITY_LIVING) {
         // dead or living entities
-        serverPosX = packet.getIntegers().read(2);
-        serverPosY = packet.getIntegers().read(3);
-        serverPosZ = packet.getIntegers().read(4);
+        serverPosX = integers.read(2);
+        serverPosY = integers.read(3);
+        serverPosZ = integers.read(4);
       } else {
         // players
-        serverPosX = packet.getIntegers().read(1);
-        serverPosY = packet.getIntegers().read(2);
-        serverPosZ = packet.getIntegers().read(3);
+        serverPosX = integers.read(1);
+        serverPosY = integers.read(2);
+        serverPosZ = integers.read(3);
       }
 
       processEntitySpawn(

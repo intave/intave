@@ -11,21 +11,21 @@ import java.util.Collections;
 import java.util.List;
 
 public final class Waterflow {
-  private static AbstractWaterflow engine;
-  private static List<AbstractWaterflow> availableEngines = new ArrayList<>();
+  private static AbstractWaterflowEngine engine;
+  private static List<AbstractWaterflowEngine> availableEngines = new ArrayList<>();
 
   public static void setup() {
-    registerEngine(NetherUpdateWaterflow.class);
-    registerEngine(BeeUpdateWaterflow.class);
-    registerEngine(VillageUpdateWaterflow.class);
-    registerEngine(AquaticUpdateWaterflow.class);
-    registerEngine(UnknownWaterflow.class);
+    registerEngine(NetherUpdateWaterflowEngine.class);
+    registerEngine(BeeUpdateWaterflowEngine.class);
+    registerEngine(VillageUpdateWaterflowEngine.class);
+    registerEngine(AquaticUpdateWaterflowEngine.class);
+    registerEngine(UnknownWaterflowEngine.class);
 
     selectAppropriateEngine();
   }
 
-  private static void registerEngine(Class<? extends AbstractWaterflow> engineClass) {
-    AbstractWaterflow engine;
+  private static void registerEngine(Class<? extends AbstractWaterflowEngine> engineClass) {
+    AbstractWaterflowEngine engine;
     try {
       engine = engineClass.newInstance();
     } catch (InstantiationException | IllegalAccessException exception) {
@@ -46,14 +46,14 @@ public final class Waterflow {
   }
 
   public static boolean areEyesInFluid(User user, double positionX, double positionY, double positionZ) {
-    return engine.areEyesInFluid(user, positionX, positionY, positionZ);
+    return engine != null && engine.areEyesInFluid(user, positionX, positionY, positionZ);
   }
 
   public static boolean handleFluidAcceleration(User user, WrappedAxisAlignedBB boundingBox) {
-    return engine.handleFluidAcceleration(user, boundingBox);
+    return engine != null && engine.handleFluidAcceleration(user, boundingBox);
   }
 
   public static boolean fluidStateEmpty(User user, double x, double y, double z) {
-    return engine.fluidStateEmpty(user, x, y, z);
+    return engine != null && engine.fluidStateEmpty(user, x, y, z);
   }
 }

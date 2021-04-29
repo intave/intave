@@ -7,9 +7,11 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.MovingObjectPositionBlock;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.event.BucketAction;
+import de.jpx3.intave.adapter.ProtocolLibAdapter;
 import de.jpx3.intave.detect.CheckViolationLevelDecrementer;
 import de.jpx3.intave.detect.IntaveMetaCheck;
 import de.jpx3.intave.detect.checks.movement.physics.MotionVector;
@@ -81,7 +83,7 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     InteractionMeta interactionMeta = metaOf(user);
     UserMetaMovementData movementData = user.meta().movementData();
     PacketContainer packet = event.getPacket();
-    BlockPosition blockPosition = packet.getBlockPositionModifier().readSafely(0);
+    BlockPosition blockPosition = readBlockPositionFrom(packet);//packet.getBlockPositionModifier().readSafely(0);
     if (blockPosition == null || movementData.inVehicle()) {
       return;
     }
@@ -137,7 +139,7 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
   public void receiveBreak(PacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
-    BlockPosition blockPosition = packet.getBlockPositionModifier().readSafely(0);
+    BlockPosition blockPosition = readBlockPositionFrom(packet);//packet.getBlockPositionModifier().readSafely(0);
     User user = userOf(player);
     UserMetaMovementData movementData = user.meta().movementData();
     if (blockPosition == null || event.isCancelled()) {
@@ -728,6 +730,17 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
 //    ComplexColliderSimulationResult result = simulationProcessor.simulateMovementWithLastKeys(user);
 //    return resolvePositionMotion(user, result.context());
 //  }
+
+  private final static boolean USE_MBP_FOR_BC = ProtocolLibAdapter.AQUATIC_UPDATE.atOrAbove();
+
+  private BlockPosition readBlockPositionFrom(PacketContainer container) {
+    if(USE_MBP_FOR_BC) {
+      MovingObjectPositionBlock movingObjectPositionBlock = container.getMovingBlockPositions().readSafely(0);
+      return movingObjectPositionBlock == null ? null : movingObjectPositionBlock.getBlockPosition();
+    } else {
+      return container.getBlockPositionModifier().readSafely(0);
+    }
+  }
 
   private Vector resolvePositionMotion(User user, MotionVector vector) {
     UserMetaMovementData movementData = user.meta().movementData();
