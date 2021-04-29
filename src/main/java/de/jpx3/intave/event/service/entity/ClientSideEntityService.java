@@ -480,6 +480,9 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     if (entity == null) {
       return;
     }
+    if(!entity.isEntityLiving) {
+      return;
+    }
     Float health = readHealthOf(packet.getWatchableCollectionModifier().read(0));
     if (health != null) {
       boolean synchronize = entity.clientSynchronized && entity.tracingEnabled();

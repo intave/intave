@@ -554,6 +554,7 @@ public final class MovementDispatcher implements EventProcessor {
       case STOP_SPRINTING:
         movementData.sprinting = false;
         break;
+      case PRESS_SHIFT_KEY:
       case START_SNEAKING:
         if (AccessHelper.now() - punishmentData.timeLastSneakToggleCancel < 1000) {
           event.setCancelled(true);
@@ -561,6 +562,7 @@ public final class MovementDispatcher implements EventProcessor {
         movementData.lastSneakingTimestamps = AccessHelper.now();
         movementData.sneaking = true;
         break;
+      case RELEASE_SHIFT_KEY:
       case STOP_SNEAKING:
         movementData.sneaking = false;
         break;
