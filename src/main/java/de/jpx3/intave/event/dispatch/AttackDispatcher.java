@@ -7,6 +7,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedAttribute;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.detect.EventProcessor;
 import de.jpx3.intave.detect.checks.combat.Heuristics;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
@@ -155,8 +156,10 @@ public final class AttackDispatcher implements EventProcessor {
     disableReducing(join.getPlayer());
   }
 
+  private final static boolean COMBAT_UPDATE = MinecraftVersions.VER1_9_0.atOrAbove();
+
   private void disableReducing(Player player) {
-    if (!REDUCING_DISABLED) {
+    if (COMBAT_UPDATE || !REDUCING_DISABLED) {
       return;
     }
     PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.UPDATE_ATTRIBUTES);

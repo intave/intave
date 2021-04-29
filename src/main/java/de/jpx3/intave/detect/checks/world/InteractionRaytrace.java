@@ -11,7 +11,7 @@ import com.comphenix.protocol.wrappers.MovingObjectPositionBlock;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.event.BucketAction;
-import de.jpx3.intave.adapter.ProtocolLibAdapter;
+import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.detect.CheckViolationLevelDecrementer;
 import de.jpx3.intave.detect.IntaveMetaCheck;
 import de.jpx3.intave.detect.checks.movement.physics.MotionVector;
@@ -731,7 +731,7 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
 //    return resolvePositionMotion(user, result.context());
 //  }
 
-  private final static boolean USE_MBP_FOR_BC = ProtocolLibAdapter.AQUATIC_UPDATE.atOrAbove();
+  private final static boolean USE_MBP_FOR_BC = MinecraftVersions.VER1_13_0.atOrAbove();
 
   private BlockPosition readBlockPositionFrom(PacketContainer container) {
     if(USE_MBP_FOR_BC) {
