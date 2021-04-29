@@ -92,7 +92,7 @@ public final class PacketPlayerActionToggleHeuristic extends IntaveMetaCheckPart
         Anomaly anomaly = Anomaly.anomalyOf("41", confidence, Anomaly.Type.KILLAURA, description, options);
         parentCheck().saveAnomaly(player, anomaly);
         if (sprint) {
-          plugin.eventService().combatMitigator().mitigate(user, AttackNerfStrategy.CANCEL);
+          user.applyAttackNerfer(AttackNerfStrategy.CANCEL);
         } else {
           punishmentData.timeLastSneakToggleCancel = AccessHelper.now();
           Synchronizer.synchronize(() -> ReflectiveDataWatcherAccess.setDataWatcherFlag(player, DATA_WATCHER_SNEAK_ID, false));

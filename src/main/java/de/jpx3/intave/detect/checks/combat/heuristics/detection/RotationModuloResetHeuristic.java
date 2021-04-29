@@ -55,7 +55,7 @@ public final class RotationModuloResetHeuristic extends IntaveMetaCheckPart<Heur
           int options = Anomaly.AnomalyOption.LIMIT_4 | Anomaly.AnomalyOption.DELAY_128s | Anomaly.AnomalyOption.SUGGEST_MINING;
           Anomaly anomaly = Anomaly.anomalyOf("101", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
           parentCheck().saveAnomaly(player, anomaly);
-          plugin.eventService().combatMitigator().mitigate(user, AttackNerfStrategy.HT_MEDIUM);
+          user.applyAttackNerfer(AttackNerfStrategy.HT_MEDIUM);
         }
       }
       heuristicMeta.roundedRotationLooking = false;

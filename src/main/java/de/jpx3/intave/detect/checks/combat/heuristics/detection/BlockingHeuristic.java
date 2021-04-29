@@ -86,8 +86,8 @@ public final class BlockingHeuristic extends IntaveMetaCheckPart<Heuristics, Blo
           int options = DELAY_128s | LIMIT_2 | SUGGEST_MINING;
           Anomaly anomaly = Anomaly.anomalyOf("143", Confidence.MAYBE, Anomaly.Type.KILLAURA, description, options);
           parentCheck().saveAnomaly(player, anomaly);
-          plugin.eventService().combatMitigator().mitigate(user, AttackNerfStrategy.BLOCKING);
-          plugin.eventService().combatMitigator().mitigate(user, AttackNerfStrategy.DMG_MEDIUM);
+          user.applyAttackNerfer(AttackNerfStrategy.BLOCKING);
+          user.applyAttackNerfer(AttackNerfStrategy.DMG_LIGHT);
           punishmentData.timeLastBlockCancel = AccessHelper.now();
           Synchronizer.synchronize(() -> ReflectiveDataWatcherAccess.setDataWatcherFlag(player, ReflectiveDataWatcherAccess.DATA_WATCHER_BLOCKING_ID, false));
         }
@@ -102,7 +102,8 @@ public final class BlockingHeuristic extends IntaveMetaCheckPart<Heuristics, Blo
         int options = DELAY_128s | SUGGEST_MINING;
         Anomaly anomaly = Anomaly.anomalyOf("141", Confidence.CERTAIN, Anomaly.Type.KILLAURA, description, options);
         parentCheck().saveAnomaly(player, anomaly);
-        plugin.eventService().combatMitigator().mitigate(user, AttackNerfStrategy.BLOCKING);
+        user.applyAttackNerfer(AttackNerfStrategy.BLOCKING);
+        user.applyAttackNerfer(AttackNerfStrategy.DMG_LIGHT);
       }
 
       int clientTicksBetweenBlockingToggle = meta.clientTicksBetweenBlockingToggle;
@@ -121,7 +122,7 @@ public final class BlockingHeuristic extends IntaveMetaCheckPart<Heuristics, Blo
             int options = DELAY_128s | SUGGEST_MINING;
             Anomaly anomaly = Anomaly.anomalyOf("142", Confidence.CERTAIN, Anomaly.Type.KILLAURA, description, options);
             parentCheck().saveAnomaly(player, anomaly);
-            plugin.eventService().combatMitigator().mitigate(user, AttackNerfStrategy.BLOCKING);
+            user.applyAttackNerfer(AttackNerfStrategy.BLOCKING);
           }
         } else if (meta.acaBlockingVL > 1) {
           meta.acaBlockingVL -= 2;

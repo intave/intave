@@ -100,8 +100,8 @@ public final class AttackRequiredHeuristic extends IntaveMetaCheckPart<Heuristic
           if (flag) {
             Anomaly anomaly = Anomaly.anomalyOf("151", Confidence.PROBABLE, Anomaly.Type.KILLAURA, "missed attack packet vl:" + vl, options);
             parentCheck().saveAnomaly(player, anomaly);
-            plugin.eventService().combatMitigator().mitigate(user, AttackNerfStrategy.HT_LIGHT);
-            plugin.eventService().combatMitigator().mitigate(user, AttackNerfStrategy.CANCEL_FIRST_HIT);
+            user.applyAttackNerfer(AttackNerfStrategy.HT_LIGHT);
+            user.applyAttackNerfer(AttackNerfStrategy.CANCEL_FIRST_HIT);
           }
         }
         meta.lastFlag = AccessHelper.now();

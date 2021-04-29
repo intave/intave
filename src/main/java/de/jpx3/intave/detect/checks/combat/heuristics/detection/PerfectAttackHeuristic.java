@@ -104,9 +104,9 @@ public final class PerfectAttackHeuristic extends IntaveMetaCheckPart<Heuristics
         int options = Anomaly.AnomalyOption.LIMIT_4 | Anomaly.AnomalyOption.SUGGEST_MINING | Anomaly.AnomalyOption.DELAY_16s;
         Anomaly anomaly = Anomaly.anomalyOf("51", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
         parentCheck().saveAnomaly(player, anomaly);
-        plugin.eventService().combatMitigator().mitigate(user, AttackNerfStrategy.HT_MEDIUM);
+        user.applyAttackNerfer(AttackNerfStrategy.HT_MEDIUM);
         if (heuristicMeta.vl >= 2) {
-          plugin.eventService().combatMitigator().mitigate(user, AttackNerfStrategy.CANCEL_FIRST_HIT);
+          user.applyAttackNerfer(AttackNerfStrategy.CANCEL_FIRST_HIT);
         }
       } else if (heuristicMeta.vl > 0) {
         heuristicMeta.vl -= 0.2;

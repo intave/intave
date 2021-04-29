@@ -182,6 +182,8 @@ public final class IntavePlugin extends JavaPlugin {
         return;
       }
 
+      InterceptorDetection.revert();
+
       String requiredState = null; // leave this be
       boolean offlineMode = false;
 
@@ -656,7 +658,6 @@ public final class IntavePlugin extends JavaPlugin {
     if(proxyMessenger != null) {
       proxyMessenger.closeChannel();
     }
-    InterceptorDetection.revert();
     try {
       // mark caches as deletable
       Class<?> relocator = Class.forName("de.jpx3.relocator.Relocator");

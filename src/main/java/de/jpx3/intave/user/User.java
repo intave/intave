@@ -5,6 +5,7 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.connect.shadow.ShadowPacketDataLink;
+import de.jpx3.intave.event.punishment.AttackNerfStrategy;
 import de.jpx3.intave.event.punishment.EntityNoDamageTickChanger;
 import de.jpx3.intave.fakeplayer.FakePlayer;
 import de.jpx3.intave.permission.BukkitPermissionCache;
@@ -199,6 +200,11 @@ public final class User {
     return receiveWhitelist.get(channel);
   }
 
+  public void applyAttackNerfer(AttackNerfStrategy strategy) {
+    //noinspection deprecation
+    plugin().eventService().combatMitigator().mitigate(this, strategy);
+  }
+
   public void removeChannelConstraint(UserMessageChannel channel) {
     receiveWhitelist.remove(channel);
   }
@@ -213,6 +219,10 @@ public final class User {
 
   public PlayerContext placeholderContext() {
     return playerPlaceholderContext;
+  }
+
+  private IntavePlugin plugin() {
+    return IntavePlugin.singletonInstance();
   }
 
   public static User empty() {

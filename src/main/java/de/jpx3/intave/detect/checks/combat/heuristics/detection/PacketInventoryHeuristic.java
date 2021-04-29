@@ -60,7 +60,7 @@ public final class PacketInventoryHeuristic extends IntaveMetaCheckPart<Heuristi
       String details = "closed inventory too quickly (" + meta.inventoryTicks + ")";
       Anomaly anomaly = Anomaly.anomalyOf("131", Confidence.PROBABLE, Anomaly.Type.KILLAURA, details, options);
       parentCheck().saveAnomaly(player, anomaly);
-      plugin.eventService().combatMitigator().mitigate(user, AttackNerfStrategy.HT_MEDIUM);
+      user.applyAttackNerfer(AttackNerfStrategy.HT_MEDIUM);
     }
   }
 
@@ -100,7 +100,7 @@ public final class PacketInventoryHeuristic extends IntaveMetaCheckPart<Heuristi
         String details = "sent rotations in inventory (" + meta.rotationsInInventory + " rotations)";
         Anomaly anomaly = Anomaly.anomalyOf("132", Confidence.NONE, Anomaly.Type.KILLAURA, details, options);
         parentCheck().saveAnomaly(player, anomaly);
-        plugin.eventService().combatMitigator().mitigate(user, AttackNerfStrategy.HT_LIGHT);
+        user.applyAttackNerfer(AttackNerfStrategy.HT_LIGHT);
       }
     }
 

@@ -73,7 +73,7 @@ public final class InventoryClickDelayAnalyzer extends IntaveMetaCheckPart<Inven
 
       if (IntaveControl.GOMME_MODE) {
         if (distance > 0 && violationContext.violationLevelAfter() > 30) {
-          plugin.eventService().combatMitigator().mitigate(userOf(player), AttackNerfStrategy.DMG_LIGHT);
+          userOf(player).applyAttackNerfer(AttackNerfStrategy.DMG_MEDIUM);
         }
       }
     }

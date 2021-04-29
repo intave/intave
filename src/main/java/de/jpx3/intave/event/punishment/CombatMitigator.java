@@ -39,11 +39,12 @@ public final class CombatMitigator implements BukkitEventSubscriber {
     }
   }
 
+  @Deprecated
   public void mitigate(User user, AttackNerfStrategy type) {
     Synchronizer.synchronize(() -> {
-      AttackNerfer attackNerfer = user.meta().punishmentData().nerferOfType(type);
-      sendSibylNotify(user, attackNerfer);
-      attackNerfer.activate();
+      AttackNerfer nerfer = user.meta().punishmentData().nerferOfType(type);
+      sendSibylNotify(user, nerfer);
+      nerfer.activate();
     });
   }
 

@@ -226,6 +226,7 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
       }
     }
 
+    // still required?!
     Synchronizer.synchronize(new Runnable() {
       @Native
       @Override
@@ -249,7 +250,7 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
       .build();
     ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
     if (violationContext.violationLevelAfter() > 50) {
-      plugin.eventService().combatMitigator().mitigate(user, AttackNerfStrategy.DMG_MEDIUM);
+      user.applyAttackNerfer(AttackNerfStrategy.DMG_MEDIUM);
     }
     return true;
   }

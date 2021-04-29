@@ -55,7 +55,7 @@ public final class AttackReduceIgnoreHeuristic extends IntaveMetaCheckPart<Heuri
           Anomaly anomaly = Anomaly.anomalyOf("21", Confidence.LIKELY, Anomaly.Type.KILLAURA, description, options);
           parentCheck().saveAnomaly(player, anomaly);
           heuristicMeta.vl = 0;
-          plugin.eventService().combatMitigator().mitigate(user, AttackNerfStrategy.HT_MEDIUM);
+          user.applyAttackNerfer(AttackNerfStrategy.HT_MEDIUM);
         }
       } else if (heuristicMeta.vl > 0) {
         heuristicMeta.vl--;

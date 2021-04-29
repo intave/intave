@@ -201,7 +201,7 @@ public class RotationSnapHeuristic extends IntaveMetaCheckPart<Heuristics, Rotat
       }
 
       if(addVL >= 40) {
-        plugin.eventService().combatMitigator().mitigate(user, AttackNerfStrategy.HT_MEDIUM);
+        user.applyAttackNerfer(AttackNerfStrategy.HT_MEDIUM);
       }
       Confidence confidence = Confidence.confidenceFrom((int) (addVL + meta.internalViolation));
       meta.internalViolation += addVL;
