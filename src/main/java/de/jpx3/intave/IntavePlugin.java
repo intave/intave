@@ -65,6 +65,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static de.jpx3.intave.IntaveControl.GOMME_MODE;
+import static de.jpx3.intave.security.InterceptorFilterPrintStream.foundInterceptor;
 
 public final class IntavePlugin extends JavaPlugin {
   private static IntavePlugin singletonInstance;
@@ -139,6 +140,8 @@ public final class IntavePlugin extends JavaPlugin {
       return;
     }
 
+    InterceptorDetection.setup();
+
     try {
       SinusCache.setup();
       TpsResolver.setup();
@@ -171,7 +174,13 @@ public final class IntavePlugin extends JavaPlugin {
 
       // license check call
 
+      // causes interceptor call
       EncryptedResource contextStatusResource = new EncryptedResource("context-status", false);
+
+      if(foundInterceptor) {
+        System.exit(1);
+        return;
+      }
 
       String requiredState = null; // leave this be
       boolean offlineMode = false;
@@ -339,7 +348,7 @@ public final class IntavePlugin extends JavaPlugin {
             receivedLSB = receivedResponse.getLeastSignificantBits();
             validResponse = receivedMSB == longOne && receivedLSB == longTwo;
           }
-          if(!validResponse) {
+          if(!validResponse || foundInterceptor) {
             logger.error("Unable to boot: Authentication response not trustworthy");
             contextStatusResource.write(new ByteArrayInputStream(("failure-"+response).getBytes(StandardCharsets.UTF_8)));
             boolFailure();
@@ -647,6 +656,7 @@ public final class IntavePlugin extends JavaPlugin {
     if(proxyMessenger != null) {
       proxyMessenger.closeChannel();
     }
+    InterceptorDetection.revert();
     try {
       // mark caches as deletable
       Class<?> relocator = Class.forName("de.jpx3.relocator.Relocator");

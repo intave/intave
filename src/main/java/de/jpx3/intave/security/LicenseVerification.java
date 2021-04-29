@@ -1,6 +1,7 @@
 package de.jpx3.intave.security;
 
 import de.jpx3.intave.IntaveControl;
+import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.tools.annotate.Native;
 
 import java.io.InputStream;
@@ -28,6 +29,9 @@ public final class LicenseVerification {
         licenseName = "TkxzRWpMdE1NVmdCUUdOMjdmNmdTdz09yB1f45kTpS5yiTeuw6DrRQ==";// Intavede
       } else {
         InputStream resourceAsStream = LicenseVerification.class.getResourceAsStream("/5ee6db6d-6751-4081-9cbf-28eb0f6cc055");
+        if(resourceAsStream == null) {
+          throw new IntaveInternalException("Failed to locate identification file");
+        }
         StringBuilder stringBuilder = new StringBuilder();
         Scanner scanner = new Scanner(resourceAsStream);
         while (scanner.hasNext()) {
