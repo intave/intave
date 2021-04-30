@@ -9,6 +9,8 @@ import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.world.blockaccess.BlockDataAccess;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
+import de.jpx3.intave.world.collision.dynamic.CubeDynamicResolver;
+import de.jpx3.intave.world.collision.dynamic.LiquidDynamicResolver;
 import de.jpx3.intave.world.collision.patches.BoundingBoxPatcher;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -51,7 +53,9 @@ public final class BoundingBoxAccess {
 
     PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), acClass);
     PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), className);
-    globalBoundingBoxResolver = new DynamicForwardingCubeResolver(instanceOf(className));
+    globalBoundingBoxResolver = instanceOf(className);
+    globalBoundingBoxResolver = new LiquidDynamicResolver(globalBoundingBoxResolver);
+    globalBoundingBoxResolver = new CubeDynamicResolver(globalBoundingBoxResolver);
   }
 
   private static <T> T instanceOf(String className) {
@@ -87,7 +91,7 @@ public final class BoundingBoxAccess {
       posY = 256;
     }
 
-    BoundingBoxAccessFlowStudy.REQUEST++;
+    BoundingBoxAccessFlowStudy.requests++;
 
     if ((chunkX != this.chunkX || chunkZ != this.chunkZ)) {
       this.chunkXPos = (chunkX) << 4;
@@ -151,7 +155,7 @@ public final class BoundingBoxAccess {
       posY = 256;
     }
 
-    BoundingBoxAccessFlowStudy.REQUEST++;
+    BoundingBoxAccessFlowStudy.requests++;
 
     if ((chunkX != this.chunkX || chunkZ != this.chunkZ)) {
       this.chunkXPos = (chunkX) << 4;
@@ -215,7 +219,7 @@ public final class BoundingBoxAccess {
       posY = 256;
     }
 
-    BoundingBoxAccessFlowStudy.REQUEST++;
+    BoundingBoxAccessFlowStudy.requests++;
 
     if ((chunkX != this.chunkX || chunkZ != this.chunkZ)) {
       this.chunkXPos = (chunkX) << 4;
@@ -281,7 +285,7 @@ public final class BoundingBoxAccess {
     if(type == Material.AIR) {
       return EMPTY_CACHE_ENTRY;
     } else {
-      BoundingBoxAccessFlowStudy.LOOKUP++;
+      BoundingBoxAccessFlowStudy.increaseLookups();
       List<WrappedAxisAlignedBB> boundingBoxes;
       boundingBoxes = globalBoundingBoxResolver.resolve(world, type, posX, posY, posZ);
       boundingBoxes = BoundingBoxPatcher.patch(world, player, block, boundingBoxes);

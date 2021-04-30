@@ -151,7 +151,7 @@ public final class IntaveRootStage extends CommandStage {
     Player player = user.player();
     player.sendMessage(ChatColor.RED + "Loading bounding box access flow study..");
 
-    player.sendMessage(ChatColor.GRAY + "" + BoundingBoxAccessFlowStudy.REQUEST + " requests required " + BoundingBoxAccessFlowStudy.LOOKUP + " lookups, from which " + BoundingBoxAccessFlowStudy.DYNAMIC + " were resolved dynamically");
+    player.sendMessage(ChatColor.GRAY + "" + BoundingBoxAccessFlowStudy.requests + " requests required " + BoundingBoxAccessFlowStudy.lookups + " lookups, from which " + BoundingBoxAccessFlowStudy.dynamic + " were resolved dynamically");
 
   }
 
