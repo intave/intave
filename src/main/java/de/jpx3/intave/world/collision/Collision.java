@@ -70,7 +70,7 @@ public final class Collision {
                   if (resolvedBoundingBoxes == null) {
                     resolvedBoundingBoxes = new ArrayList<>();
                   }
-//                  resolvedBoundingBoxes.add(new WrappedAxisAlignedBB(x, y, z, x + 1, y, z + 1));
+                  resolvedBoundingBoxes.add(new WrappedAxisAlignedBB(x, y, z, x + 1, y, z + 1));
                 }
 
                 if (resolve != null && !resolve.isEmpty()) {
