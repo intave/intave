@@ -4,6 +4,7 @@ import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.*;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
+import de.jpx3.intave.world.blockphysics.BlockSlipperinessRepository;
 import de.jpx3.intave.world.collision.Collision;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -31,22 +32,7 @@ public final class MovementContextHelper {
 
   public static float resolveSlipperiness(User user, Location location) {
     Material type = BukkitBlockAccess.cacheAppliedTypeAccess(user, location);
-    float blockSlipperiness;
-    switch (type) {
-      case PACKED_ICE:
-      case ICE: {
-        blockSlipperiness = 0.98f;
-        break;
-      }
-      case SLIME_BLOCK: {
-        blockSlipperiness = 0.8f;
-        break;
-      }
-      default: {
-        blockSlipperiness = 0.6f;
-      }
-    }
-    return blockSlipperiness * 0.91f;
+    return BlockSlipperinessRepository.resolveSlipperinessOf(type) * 0.91f;
   }
 
   public static float resolveFriction(User user, double positionX, double positionY, double positionZ) {
