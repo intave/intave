@@ -84,7 +84,7 @@ public class DefaultPoseSimulator extends PoseSimulator {
         // #handleJumpLava
         context.motionY += 0.03999999910593033D;
       } else {
-        context.motionY = movementData.jumpUpwardsMotion();
+        context.motionY = movementData.jumpMotion();
         if (movementData.sprintingAllowed()) {
           context.motionX -= yawSine * 0.2F;
           context.motionZ += yawCosine * 0.2F;
@@ -197,7 +197,7 @@ public class DefaultPoseSimulator extends PoseSimulator {
     Location location = new Location(player.getWorld(), positionX, positionY, positionZ);
     double slipperiness = movementData.lastOnGround ? MovementContextHelper.resolveSlipperiness(user, location) : 0.91f;
     double resetMotion = movementData.resetMotion();
-    double jumpUpwardsMotion = movementData.jumpUpwardsMotion();
+    double jumpUpwardsMotion = movementData.jumpMotion();
 
     double interpolations = 0;
     double interpolateX = context.motionX;
@@ -471,12 +471,9 @@ public class DefaultPoseSimulator extends PoseSimulator {
       if (soulSandModifier == 0) {
         Block blockAccess = BukkitBlockAccess.blockAccess(world, positionX, positionY - 0.5000001, positionZ);
         Material material = blockAccess.getType();
-        Vector speedFactor = BlockPhysics.speedFactor(user, material, context.motionX, context.motionY, context.motionZ);
-        if (speedFactor != null) {
-          context.motionX = speedFactor.getX();
-          context.motionY = speedFactor.getY();
-          context.motionZ = speedFactor.getZ();
-        }
+        float speedFactor = BlockPhysics.speedFactor(user, material);
+        context.motionX *= speedFactor;
+        context.motionZ *= speedFactor;
       }
     }
   }

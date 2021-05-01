@@ -158,7 +158,7 @@ public final class Physics extends IntaveCheck {
   private Pose poseOf(User user) {
     Player player = user.player();
     if (player.getVehicle() != null) {
-      return Pose.VEHICLE;
+      return Pose.HORSE;
     } else {
       UserMetaMovementData movementData = user.meta().movementData();
       boolean inLava = movementData.inLava();
@@ -672,7 +672,7 @@ public final class Physics extends IntaveCheck {
         movementData.enforceBoatStep = false;
       } else if (movementData.physicsMotionY < 0) {
         legitimateDeviation = Math.max(legitimateDeviation, 10);
-        if (movementData.motionY() > movementData.jumpUpwardsMotion()) {
+        if (movementData.motionY() > movementData.jumpMotion()) {
           movementData.enforceBoatStep = true;
         }
       }
@@ -763,7 +763,7 @@ public final class Physics extends IntaveCheck {
     );
     double predictedDistanceMoved = Math.hypot(predictedX, predictedZ);
 
-    if (movementPoseType == Pose.VEHICLE) {
+    if (movementPoseType == Pose.HORSE) {
 
 //      user.player().sendMessage(distanceMoved + " " + predictedDistanceMoved);
 

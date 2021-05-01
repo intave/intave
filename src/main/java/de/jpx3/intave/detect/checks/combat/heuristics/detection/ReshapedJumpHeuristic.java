@@ -46,7 +46,7 @@ public final class ReshapedJumpHeuristic extends IntaveMetaCheckPart<Heuristics,
       return;
     }
 
-    boolean jump = Math.abs(movementData.jumpUpwardsMotion() - movementData.motionY()) < 1e-5;
+    boolean jump = Math.abs(movementData.jumpMotion() - movementData.motionY()) < 1e-5;
     if (jump && movementData.sprinting && movementData.suspiciousMovement && movementData.lastTeleport > 5) {
       float rotationYaw = movementData.rotationYaw;
       float yawSine = SinusCache.sin(rotationYaw * (float) Math.PI / 180.0F, false);
@@ -64,8 +64,8 @@ public final class ReshapedJumpHeuristic extends IntaveMetaCheckPart<Heuristics,
       if (abs < 1e-5) {
         if (heuristicMeta.balance++ >= 1) {
           String description = "player performed rotation hop";
-          int options = Anomaly.AnomalyOption.LIMIT_2 | Anomaly.AnomalyOption.DELAY_128s | Anomaly.AnomalyOption.SUGGEST_MINING;
-          Anomaly anomaly = Anomaly.anomalyOf("61", Confidence.LIKELY, Anomaly.Type.KILLAURA, description, options);
+          int options = Anomaly.AnomalyOption.LIMIT_8 | Anomaly.AnomalyOption.DELAY_128s | Anomaly.AnomalyOption.SUGGEST_MINING;
+          Anomaly anomaly = Anomaly.anomalyOf("61", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
           parentCheck().saveAnomaly(player, anomaly);
           user.applyAttackNerfer(AttackNerfStrategy.HT_MEDIUM);
         }

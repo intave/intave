@@ -24,6 +24,7 @@ public final class BlockPhysics {
     loadBlock(BlockPhysicWeb.class);
     loadBlock(BlockPhysicSoulSand.class);
     loadBlock(BlockPhysicBerryBush.class);
+    loadBlock(BlockPhysicsHoney.class);
     loadBlock(BlockPhysicWeb.class);
   }
 
@@ -73,14 +74,14 @@ public final class BlockPhysics {
     return collision != null ? collision.landed(user, motionX, motionY, motionZ) : null;
   }
 
-  @Nullable
-  public static Vector speedFactor(
-    User user,
-    Material material,
-    double motionX, double motionY, double motionZ
-  ) {
+  public static float speedFactor(User user, Material material) {
     BlockPhysic collision = findCustomPhysicsEntry(material);
-    return collision != null ? collision.speedFactor(user, motionX, motionY, motionZ) : null;
+    return collision != null ? collision.speedFactor(user) : 1.0f;
+  }
+
+  public static float jumpFactor(User user, Material material) {
+    BlockPhysic collision = findCustomPhysicsEntry(material);
+    return collision != null ? collision.jumpFactor(user) : 1.0f;
   }
 
   public static void fallenUpon(User user, Material material) {

@@ -12,6 +12,7 @@ import java.util.List;
 public interface BlockPhysic {
   void setup(MinecraftVersion serverVersion);
 
+  // Called from #doBlockCollisions
   @Nullable
   default Vector entityCollidedWithBlock(
     User user,
@@ -31,9 +32,13 @@ public interface BlockPhysic {
     return null;
   }
 
-  @Nullable
-  default Vector speedFactor(User user, double motionX, double motionY, double motionZ) {
-    return null;
+  default float speedFactor(User user) {
+    return 1.0f;
+  }
+
+  // Since 1.15
+  default float jumpFactor(User user) {
+    return 1.0f;
   }
 
   default void fallenUpon(User user) {

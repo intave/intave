@@ -19,15 +19,14 @@ import org.bukkit.material.Openable;
 import java.util.List;
 
 public final class MovementContextHelper {
-  public static double jumpMotionFor(Player player) {
+  public static double jumpMotionFor(Player player, float jumpUpwardsMotion) {
     User user = UserRepository.userOf(player);
     UserMetaPotionData potionData = user.meta().potionData();
-    double motionY = 0.42f;
     if (potionData.potionEffectJumpDuration > 0) {
       int jumpAmplifier = potionData.potionEffectJumpAmplifier();
-      motionY += (float) ((jumpAmplifier + 1) * 0.1);
+      jumpUpwardsMotion += (float) ((jumpAmplifier + 1) * 0.1);
     }
-    return motionY;
+    return jumpUpwardsMotion;
   }
 
   public static float resolveSlipperiness(User user, Location location) {

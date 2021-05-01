@@ -133,7 +133,7 @@ public final class SimulationProcessor {
     boolean jumped = false;
     if (movementData.lastOnGround && !movementData.denyJump()) {
       double motionY = movementData.motionY();
-      jumped = Math.abs(motionY - 0.2) < 1e-5 || motionY == movementData.jumpUpwardsMotion();
+      jumped = Math.abs(motionY - 0.2) < 1e-5 || motionY == movementData.jumpMotion();
       if (jumped && movementData.sprinting) {
         lastMotionX -= movementData.yawSine() * 0.2f;
         lastMotionZ += movementData.yawCosine() * 0.2f;
@@ -210,7 +210,7 @@ public final class SimulationProcessor {
     boolean inLava = movementData.inLava();
     boolean inWater = movementData.inWater;
     boolean lastOnGround = movementData.lastOnGround;
-    boolean estimatedJump = Math.abs(movementData.motionY() - 0.2) < 1e-5 || movementData.motionY() == movementData.jumpUpwardsMotion();
+    boolean estimatedJump = Math.abs(movementData.motionY() - 0.2) < 1e-5 || movementData.motionY() == movementData.jumpMotion();
     boolean skipUseItem = !clientData.sprintWhenHandActive() && movementData.sprinting;
 
     SIMULATION:

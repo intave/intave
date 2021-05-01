@@ -8,8 +8,11 @@ import de.jpx3.intave.detect.checks.movement.physics.SimulationProcessor;
 import de.jpx3.intave.reflect.ReflectiveHandleAccess;
 import de.jpx3.intave.tools.client.*;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
+import de.jpx3.intave.world.blockphysics.BlockPhysics;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
@@ -21,6 +24,8 @@ public final class UserMetaMovementData {
   private final Player player;
   private final User user;
   private volatile Object nmsWorld;
+
+  private boolean hasJumpFactor;
 
   public boolean disabledFlying;
   public float width = 0.6f, height = 1.8f;
@@ -58,7 +63,7 @@ public final class UserMetaMovementData {
   public Vector setbackOverrideVelocity = new Vector(0,0,0);
   public Vector lastVelocity = new Vector();
   public boolean canResetMotion;
-  private double jumpUpwardsMotion;
+  private double jumpMotion;
   private int pastClientFlyingPacket, pastFlyingPacketAccurate;
   private float aiMoveSpeed, jumpMovementFactor;
   public boolean inWater, eyesInWater;
@@ -95,6 +100,8 @@ public final class UserMetaMovementData {
   // Entity collision
   public boolean enforceBoatStep;
   public volatile Location nearestBoatLocation = null;
+  // Vehicle
+  public boolean entityAttached;
 
   public boolean isTeleportConfirmationPacket;
   public boolean willReceiveSetbackVelocity;
@@ -121,6 +128,7 @@ public final class UserMetaMovementData {
     UserMetaClientData clientData = user.meta().clientData();
     this.resetMotion = clientData.protocolVersion() <= 47 ? 0.005 : 0.003;
     this.frictionPosSubtraction = clientData.protocolVersion() <= PROTOCOL_VERSION_BEE_UPDATE ? 1.0 : 0.5000001;
+    this.hasJumpFactor = clientData.protocolVersion() >= PROTOCOL_VERSION_BEE_UPDATE;
     Location location = player.getLocation();
     boundingBox = WrappedAxisAlignedBB.createFromPosition(user, location.getX(), location.getY(), location.getZ());
   }
@@ -176,7 +184,7 @@ public final class UserMetaMovementData {
       setupDefaults();
     }
 
-    jumpUpwardsMotion = MovementContextHelper.jumpMotionFor(player);
+    jumpMotion = MovementContextHelper.jumpMotionFor(player, jumpUpwardsMotion());
     lastPositionX = positionX;
     lastPositionY = positionY;
     lastPositionZ = positionZ;
@@ -214,6 +222,17 @@ public final class UserMetaMovementData {
       yawSine = SinusCache.sin(rotationYaw * (float) Math.PI / 180.0F, false);
       yawCosine = SinusCache.cos(rotationYaw * (float) Math.PI / 180.0F, false);
     }
+  }
+
+  private float jumpUpwardsMotion() {
+    return hasJumpFactor ? 0.42f * jumpFactor() : 0.42f;
+  }
+
+  private float jumpFactor() {
+    World world = player.getWorld();
+    float f = BlockPhysics.jumpFactor(user, BukkitBlockAccess.blockAccess(world, positionX, positionY, positionZ).getType());
+    float f1 = BlockPhysics.jumpFactor(user, BukkitBlockAccess.blockAccess(world, positionX, positionY - frictionPosSubtraction, positionZ).getType());
+    return (double) f == 1.0D ? f1 : f;
   }
 
   public boolean collidedWithBoat() {
@@ -340,7 +359,7 @@ public final class UserMetaMovementData {
   }
 
   public boolean inVehicle() {
-    //TODO return player != null && player.isInsideVehicle();
+//    TODO return player != null && player.isInsideVehicle();
     return false;
   }
 
@@ -376,8 +395,8 @@ public final class UserMetaMovementData {
     return resetMotion;
   }
 
-  public double jumpUpwardsMotion() {
-    return jumpUpwardsMotion;
+  public double jumpMotion() {
+    return jumpMotion;
   }
 
   public float aiMoveSpeed() {
@@ -386,6 +405,17 @@ public final class UserMetaMovementData {
 
   public float jumpMovementFactor() {
     return jumpMovementFactor;
+  }
+
+  // Override on vehicle movement
+  public void setJumpMovementFactor(float jumpMovementFactor) {
+    this.jumpMovementFactor = jumpMovementFactor;
+    friction = MovementContextHelper.resolveFriction(user, verifiedPositionX, verifiedPositionY, verifiedPositionZ);
+  }
+
+  public void setAiMoveSpeed(float aiMoveSpeed) {
+    this.aiMoveSpeed = aiMoveSpeed;
+    friction = MovementContextHelper.resolveFriction(user, verifiedPositionX, verifiedPositionY, verifiedPositionZ);
   }
 
   public int pastFlyingPacketAccurate() {

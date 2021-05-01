@@ -27,9 +27,9 @@ final class BlockPhysicSoulSand implements BlockPhysic {
   }
 
   @Override
-  public Vector speedFactor(User user, double motionX, double motionY, double motionZ) {
+  public float speedFactor(User user) {
     boolean requiresSpeedFactor = requiresSpeedFactor(user);
-    return requiresSpeedFactor ? new Vector(motionX * 0.4, motionY, motionZ * 0.4) : null;
+    return requiresSpeedFactor ? 0.4f : 1.0f;
   }
 
   private boolean requiresSpeedFactor(User user) {
