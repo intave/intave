@@ -53,6 +53,9 @@ public final class IntaveRootStage extends CommandStage {
       timings.sort(Timing::compareTo);
 
       timings.forEach(timing -> {
+        if(timing.isPacketEventTiming() || timing.isBukkitEventTiming()) {
+          return;
+        }
         boolean suspicious = timing.averageCallDurationInMillis() > 0.5d;
         boolean dumping = timing.averageCallDurationInMillis() > 1.5d;
         String message = String.format(
@@ -72,16 +75,76 @@ public final class IntaveRootStage extends CommandStage {
   }
 
   @SubCommand(
-    selectors = "timings2",
+    selectors = "eventtimings",
     usage = "",
     description = "Output timing data",
     permission = "sibyl"
   )
   @Native
-  public void timings2Command(User user, @Optional String[] specifier) {
+  public void eventTimingsCommand(User user, @Optional String[] specifier) {
+    String fullSpecifier = specifier != null ? Arrays.stream(specifier).map(s -> s + " ").collect(Collectors.joining()).trim().toLowerCase(Locale.ROOT) : "";
+
     Player player = user.player();
     if (plugin.sibylIntegrationService().authentication().isAuthenticated(player)) {
       player.sendMessage(ChatColor.RED + "Loading timings...");
+
+      List<Timing> timings = new ArrayList<>(Timings.timingPool());
+      timings.sort(Timing::compareTo);
+
+      timings.forEach(timing -> {
+        if(!timing.isBukkitEventTiming()) return;
+        boolean suspicious = timing.averageCallDurationInMillis() > 0.5d;
+        boolean dumping = timing.averageCallDurationInMillis() > 1.5d;
+        String message = String.format(
+          "%s: %s::%sms (%s&f ms/c)",
+          timing.coloredName(),
+          timing.recordedCalls(),
+          MathHelper.formatDouble(timing.totalDurationMillis(), 4),
+          (suspicious ? (dumping ? ChatColor.RED : ChatColor.YELLOW) : ChatColor.GREEN) + "" +
+            MathHelper.formatDouble(timing.averageCallDurationInMillis(), 8)
+        );
+        if(!fullSpecifier.isEmpty() && !timing.name().toLowerCase(Locale.ROOT).contains(fullSpecifier)) {
+          message = ChatColor.GRAY + ChatColor.stripColor(message);
+        }
+        player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
+      });
+    }
+  }
+
+  @SubCommand(
+    selectors = "packettimings",
+    usage = "",
+    description = "Output timing data",
+    permission = "sibyl"
+  )
+  @Native
+  public void packetTimingsCommand(User user, @Optional String[] specifier) {
+    String fullSpecifier = specifier != null ? Arrays.stream(specifier).map(s -> s + " ").collect(Collectors.joining()).trim().toLowerCase(Locale.ROOT) : "";
+
+    Player player = user.player();
+    if (plugin.sibylIntegrationService().authentication().isAuthenticated(player)) {
+      player.sendMessage(ChatColor.RED + "Loading timings...");
+
+      List<Timing> timings = new ArrayList<>(Timings.timingPool());
+      timings.sort(Timing::compareTo);
+
+      timings.forEach(timing -> {
+        if(!timing.isPacketEventTiming()) return;
+        boolean suspicious = timing.averageCallDurationInMillis() > 0.5d;
+        boolean dumping = timing.averageCallDurationInMillis() > 1.5d;
+        String message = String.format(
+          "%s: %s::%sms (%s&f ms/c)",
+          timing.coloredName(),
+          timing.recordedCalls(),
+          MathHelper.formatDouble(timing.totalDurationMillis(), 4),
+          (suspicious ? (dumping ? ChatColor.RED : ChatColor.YELLOW) : ChatColor.GREEN) + "" +
+            MathHelper.formatDouble(timing.averageCallDurationInMillis(), 8)
+        );
+        if(!fullSpecifier.isEmpty() && !timing.name().toLowerCase(Locale.ROOT).contains(fullSpecifier)) {
+          message = ChatColor.GRAY + ChatColor.stripColor(message);
+        }
+        player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
+      });
     }
   }
 

@@ -16,6 +16,7 @@ public class Timing implements Cloneable, Comparable<Timing> {
 
   private final String timingName;
   private final String parentName;
+  private TimingType timingType = TimingType.BASE;
   private final TimingData totalTimingData = new TimingData();
 
 //  private Lock lock = new ReentrantLock();
@@ -63,6 +64,22 @@ public class Timing implements Cloneable, Comparable<Timing> {
     }
     String outputString = path.stream().map(s -> s + "/").collect(Collectors.joining());
     return outputString.substring(0, outputString.length() - 1);
+  }
+
+  public void specifyAsBukkitEventTiming() {
+    timingType = TimingType.BUKKIT_EVENT;
+  }
+
+  public boolean isBukkitEventTiming() {
+    return timingType == TimingType.BUKKIT_EVENT;
+  }
+
+  public void specifyAsPacketEventTiming() {
+    timingType = TimingType.PACKET_EVENT;
+  }
+
+  public boolean isPacketEventTiming() {
+    return timingType == TimingType.PACKET_EVENT;
   }
 
   public long getTotalDurationNanos() {
@@ -117,5 +134,11 @@ public class Timing implements Cloneable, Comparable<Timing> {
     Timing timing = new Timing(name, parentName);
     Timings.addTiming(timing);
     return timing;
+  }
+
+  public enum TimingType {
+    BASE,
+    BUKKIT_EVENT,
+    PACKET_EVENT
   }
 }

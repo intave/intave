@@ -3,17 +3,21 @@ package de.jpx3.intave.event.packet;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.diagnostics.timings.Timing;
 import de.jpx3.intave.diagnostics.timings.Timings;
 import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.user.UserRepository;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public final class LocalPacketAdapter extends IntavePacketAdapter implements Comparable<LocalPacketAdapter> {
   private final String methodName;
   private final ListenerPriority priority;
   private final PacketEventSubscriber subscriber;
   private final PacketSubscriptionMethodExecutor executor;
+  private final Map<PacketType, Timing> localTimings = new HashMap<>();
 
   public LocalPacketAdapter(
     IntavePlugin plugin,
@@ -33,12 +37,17 @@ public final class LocalPacketAdapter extends IntavePacketAdapter implements Com
     if(!validateEvent(event)) {
       return;
     }
+
+    Timing timing = localTimings.computeIfAbsent(event.getPacketType(), Timings::packetTimingOf);
+
     try {
       Timings.EXE_NETTY.start();
+      timing.start();
       executor.invoke(subscriber, event);
     } catch (RuntimeException exception) {
       processException(event.getPacketType(), exception);
     } finally {
+      timing.stop();
       Timings.EXE_NETTY.stop();
     }
   }

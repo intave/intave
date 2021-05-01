@@ -1,13 +1,16 @@
 package de.jpx3.intave.diagnostics.timings;
 
+import com.comphenix.protocol.PacketType;
 import com.google.common.collect.Maps;
 import org.bukkit.ChatColor;
 import org.bukkit.event.Event;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 /**
  * Class generated using IntelliJ IDEA
@@ -18,6 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class Timings {
   private static final List<Timing> timingPool = new CopyOnWriteArrayList<>();
   private static final Map<String, Timing> eventTimings = Maps.newConcurrentMap();
+  private static final Map<String, Timing> packetTimings = Maps.newConcurrentMap();
   private final static Map<Class<?>, String> classNameCache = Maps.newConcurrentMap();
 
   public static final Timing CHECK_PHYSICS_PROC_TOT = Timing.of("Check/Physics/ProcTot", "Exe/Netty");
@@ -37,6 +41,8 @@ public class Timings {
       put("Check", ChatColor.RED);
       put("Service", ChatColor.YELLOW);
       put("Exe", ChatColor.GRAY);
+      put("Event", ChatColor.GOLD);
+      put("Packet", ChatColor.DARK_PURPLE);
     }
   };
 
@@ -49,8 +55,26 @@ public class Timings {
   }
 
   public static Timing eventTimingOf(Event event) {
-    String eventName = classNameCache.computeIfAbsent(event.getClass(), eventClass -> event.getEventName());
-    return eventTimings.computeIfAbsent(eventName, x -> Timing.of("Event/" + eventName));
+    String eventName = classNameCache.computeIfAbsent(event.getClass(), eventClass -> event.getClass().getSimpleName());
+    return eventTimings.computeIfAbsent(eventName, x -> {
+      Timing timing = Timing.of("Event/" + x);
+      timing.specifyAsBukkitEventTiming();
+      return timing;
+    });
+  }
+
+  public static Timing packetTimingOf(PacketType type) {
+    String packetTypeName = type.name();
+    return packetTimings.computeIfAbsent(packetTypeName, x -> {
+      String name = !x.contains("_") ? firstUpper(x) : Arrays.stream(x.split("_")).map(Timings::firstUpper).collect(Collectors.joining());
+      Timing timing = Timing.of("Packet/" + name);
+      timing.specifyAsPacketEventTiming();
+      return timing;
+    });
+  }
+
+  public static String firstUpper(String string) {
+    return string.substring(0, 1).toUpperCase() + string.substring(1).toLowerCase();
   }
 
   public static List<Timing> timingPool() {

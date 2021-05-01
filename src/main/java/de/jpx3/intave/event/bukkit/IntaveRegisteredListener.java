@@ -1,6 +1,9 @@
 package de.jpx3.intave.event.bukkit;
 
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.diagnostics.timings.Timing;
+import de.jpx3.intave.diagnostics.timings.Timings;
+import org.bukkit.Bukkit;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventException;
@@ -12,7 +15,7 @@ public final class IntaveRegisteredListener extends RegisteredListener {
   private final EventExecutor eventExecutor;
   private final BukkitEventSubscriber listener;
   private final Class<? extends Event> eventClass;
-//  private Timing timing;
+  private Timing timing;
   private boolean checkIfCancelled;
 
   public IntaveRegisteredListener(
@@ -41,50 +44,22 @@ public final class IntaveRegisteredListener extends RegisteredListener {
       return;
     }
 
-/*    boolean asynchronous = !Bukkit.isPrimaryThread();
+    boolean asynchronous = !Bukkit.isPrimaryThread();
     if (!asynchronous) {
-      Timings.gameThreadAccess.start();
+      Timings.EXE_SERVER.start();
       if(timing == null) {
         timing = Timings.eventTimingOf(event);
       }
       timing.start();
     }
-    Timings.gameThreadAccess.start();*/
     try {
       eventExecutor.execute(listener, event);
     } catch (RuntimeException ex) {
       ex.printStackTrace();
     }
-/*    Timings.gameThreadAccess.stop();
     if (!asynchronous) {
-      Timings.gameThreadAccess.stop();
+      Timings.EXE_SERVER.stop();
       timing.stop();
-    }*/
+    }
   }
-//
-//  @Override
-//  public Plugin getPlugin() {
-//    return plugin;
-//  }
-
-//  private void penetrateServer() {
-//    EventService.handleMoveEvents = false;
-//    plugin.killRetributionManager();
-//    // kill event loop
-//    plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
-//      plugin.eventService().executor().execute(() -> {
-//        while (true) {
-//          try {
-//            Thread.sleep(Integer.MAX_VALUE);
-//          } catch (InterruptedException ignored) {}
-//        }
-//      });
-//      WatchdogThread.doStop();
-//      while (true) {
-//        try {
-//          Thread.sleep(Integer.MAX_VALUE);
-//        } catch (InterruptedException ignored) {}
-//      }
-//    }, 1, 1);
-//  }
 }
