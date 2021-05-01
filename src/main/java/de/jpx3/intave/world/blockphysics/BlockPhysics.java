@@ -24,7 +24,7 @@ public final class BlockPhysics {
     loadBlock(BlockPhysicWeb.class);
     loadBlock(BlockPhysicSoulSand.class);
     loadBlock(BlockPhysicBerryBush.class);
-    loadBlock(BlockPhysicsHoney.class);
+    loadBlock(BlockPhysicHoney.class);
     loadBlock(BlockPhysicWeb.class);
   }
 
