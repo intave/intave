@@ -25,7 +25,7 @@ check:
 
     enabled: true
 
-    disable-reducing: true
+    disable-reducing: false
 
     confidence-thresholds:
       "!!":

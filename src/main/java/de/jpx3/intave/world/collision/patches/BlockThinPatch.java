@@ -24,7 +24,6 @@ public final class BlockThinPatch extends BoundingBoxPatch {
     new WrappedAxisAlignedBB(0.0F, 0.0F, 0.4375F, 0.5F, 1.0F, 0.5625F), // west
   };
 
-
   protected static final WrappedAxisAlignedBB[] STATES_9 = new WrappedAxisAlignedBB[] {
     new WrappedAxisAlignedBB(0.4375D, 0.0D, 0.4375D, 0.5625D, 1.0D, 0.5625D), // base
     new WrappedAxisAlignedBB(0.4375D, 0.0D, 0.0D, 0.5625D, 1.0D, 0.5625D), // north
@@ -158,6 +157,6 @@ public final class BlockThinPatch extends BoundingBoxPatch {
   @Override
   public boolean appliesTo(Material material) {
     String name = material.name();
-    return name.contains("GLASS_PANE") || name.contains("THIN_GLASS") || name.contains("IRON_BAR");
+    return name.contains("GLASS_PANE") || name.contains("THIN_GLASS") || name.contains("IRON_BAR") || name.contains("IRON_FENCE");
   }
 }

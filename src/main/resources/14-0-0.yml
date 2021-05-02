@@ -4,6 +4,8 @@ physics:
 
   joap-limit: [100, 100, 8, 2, 1, 0]
 
+  pa-override-threshold: [200, 175, 100, 75, 75, 75]
+
   prevention-activation: [100, 20, 10, 5, 5, 5]
 
 attackraytrace:

@@ -3,7 +3,6 @@ package de.jpx3.intave.detect.checks.movement;
 import com.google.common.collect.ImmutableList;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.detect.CheckViolationLevelDecrementer;
 import de.jpx3.intave.detect.IntaveCheck;
@@ -491,7 +490,7 @@ public final class Physics extends IntaveCheck {
         .withVL(addedVL / 50d).build();
       ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
 
-      boolean overrideSetbackSuggestion = violationLevelData.physicsVL >= 75 && !user.trustFactor().atLeast(TrustFactor.BYPASS);
+      boolean overrideSetbackSuggestion = violationLevelData.physicsVL > trustFactorSetting("pa-override-threshold", player);
       boolean setback = violationContext.shouldCounterThreat() || overrideSetbackSuggestion;
       if (setback) {
         int setbackTicks;
