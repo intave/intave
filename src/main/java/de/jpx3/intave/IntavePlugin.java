@@ -460,7 +460,11 @@ public final class IntavePlugin extends JavaPlugin {
       InventoryUseItemHelper.setup();
       BoundingBoxPatcher.setup();
 
-      Bukkit.getServer().getMessenger().registerOutgoingPluginChannel(this, "minecraft:intave");
+      try {
+        Bukkit.getServer().getMessenger().registerOutgoingPluginChannel(this, "minecraft:intave");
+      } catch (Exception exception) {
+        logger.info("Failed to register output channel: " + exception.getClass().getSimpleName());
+      }
 
       versionList = new VersionList();
       versionList.setup();
