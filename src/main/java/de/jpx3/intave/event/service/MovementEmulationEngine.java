@@ -158,9 +158,6 @@ public final class MovementEmulationEngine {
     Location futurePosition = movementData.verifiedLocation();
     WrappedAxisAlignedBB boundingBox = WrappedAxisAlignedBB.createFromPosition(user, futurePosition);
 
-    // expand BB
-    boundingBox.expand(0.001, 0.0, 0.001);
-
     Vector emulationVelocity = movementData.emulationVelocity;
     if (emulationVelocity != null) {
 //      Bukkit.broadcastMessage(player.getName() + ": velocity midair apply " + emulationVelocity);
