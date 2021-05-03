@@ -25,7 +25,6 @@ import de.jpx3.intave.lib.asm.Frame;
 import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.metrics.Metrics;
 import de.jpx3.intave.reflect.ReflectiveAccess;
-import de.jpx3.intave.reflect.relocate.ClassRelocator;
 import de.jpx3.intave.security.*;
 import de.jpx3.intave.tools.*;
 import de.jpx3.intave.tools.annotate.Native;
@@ -51,7 +50,6 @@ import de.jpx3.intave.world.collision.patches.BoundingBoxPatcher;
 import de.jpx3.intave.world.permission.WorldPermission;
 import de.jpx3.intave.world.raytrace.Raytracer;
 import de.jpx3.intave.world.waterflow.Waterflow;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -149,8 +147,15 @@ public final class IntavePlugin extends JavaPlugin {
       Synchronizer.setup();
       ContextSecrets.setup();
 
+      // added loading info for herobrine server
+
+      logger.info(" Taking a nap to collect even more anticheating power..");
+
       trustFactorService = new TrustFactorService(this);
       // version mambo jumbo
+
+
+      logger.info(" Loading super secret checks..");
 
       // stage 5
       componentLoader = new ComponentLoader(this);
@@ -159,11 +164,16 @@ public final class IntavePlugin extends JavaPlugin {
       // we need to put this here
       BackgroundExecutor.start();
 
+      logger.info(" Saving even more performance..");
+
       packetSubscriptionLinker = new PacketSubscriptionLinker(this);
 
       // stage 6
 
       ProtocolLibraryAdapter.checkIfOutdated();
+
+
+      logger.info(" Checking if universe still exists..");
 
       // stage 7
       configurationService = new ConfigurationService(this);
@@ -175,6 +185,7 @@ public final class IntavePlugin extends JavaPlugin {
         logger.info("Using the \"" + configurationKey + "\" configuration");
       }
 
+      logger.info(" It probably does, check!");
       // license check call
 
       // causes interceptor call
@@ -367,12 +378,10 @@ public final class IntavePlugin extends JavaPlugin {
       boolean enterprise = (UserMetaClientData.VERSION_DETAILS & 0x200) != 0;
 
       if (partner || enterprise) {
-        logger.info("Identity confirmed, special features enabled");
+        logger.info("Identity confirmed, overdrive mode enabled");
       } else {
         logger.info("Identity verification missing");
       }
-
-      ClassRelocator.findClass("de.jpx3.intave.IntavePlugin");
 
       if (offlineMode) {
         // check last online
@@ -461,12 +470,6 @@ public final class IntavePlugin extends JavaPlugin {
       BlockClimableRepository.setup();
       InventoryUseItemHelper.setup();
       BoundingBoxPatcher.setup();
-
-      try {
-        Bukkit.getServer().getMessenger().registerOutgoingPluginChannel(this, "minecraft:intave");
-      } catch (Exception exception) {
-        logger.info("Failed to register output channel: " + exception.getClass().getSimpleName());
-      }
 
       versionList = new VersionList();
       versionList.setup();

@@ -14,11 +14,13 @@ import de.jpx3.intave.detect.EventProcessor;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
+import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.user.UserRepository;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.lang.reflect.InvocationTargetException;
@@ -32,6 +34,11 @@ public final class CustomClientSupportService implements EventProcessor {
   }
 
   public void setup() {
+    try {
+      Bukkit.getServer().getMessenger().registerOutgoingPluginChannel(plugin, "minecraft:intave");
+    } catch (Exception exception) {
+      IntaveLogger.logger().info("Failed to register output channel: " + exception.getClass().getSimpleName());
+    }
     plugin.packetSubscriptionLinker().linkSubscriptionsIn(this);
   }
 

@@ -138,7 +138,7 @@ public final class Violation {
       return this;
     }
 
-    public Violation build() {
+    public synchronized Violation build() {
       if(constructed) {
         throw new IllegalStateException();
       }
@@ -155,6 +155,7 @@ public final class Violation {
       if(threshold == null) {
         withDefaultThreshold();
       }
+      constructed = true;
       return new Violation(checkClass, playerid, baseMessage, details, threshold, addedViolationPoints, optionFlags);
     }
   }
@@ -164,7 +165,7 @@ public final class Violation {
     public static int OPTION_TWO = 1 << 1;
 
     public static boolean matches(int optionFlags, int optionFlag) {
-      return (optionFlags & optionFlag) > 0;
+      return (optionFlags & optionFlag) != 0;
     }
   }
 }

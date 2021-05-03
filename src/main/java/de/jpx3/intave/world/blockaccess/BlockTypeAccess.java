@@ -7,6 +7,7 @@ public final class BlockTypeAccess {
   public static final Material WEB = resolveFrom("WEB", "COBWEB");
   public static final Material SNOW_LAYER = resolveFrom("SNOW", "SNOW_LAYER");
   public static final Material TRAP_DOOR = resolveFrom("TRAP_DOOR", "LEGACY_TRAP_DOOR");
+  public static final Material NETHER_PORTAL = resolveFrom("PORTAL", "NETHER_PORTAL");
 
   private static Material resolveFrom(String name, String alternativeName) {
     Material material = Material.getMaterial(name);
