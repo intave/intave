@@ -59,8 +59,7 @@ public final class Raytracer {
     return distanceOf(
       player,
       entity.entityBoundingBox(),
-      entity.position, entity.alternativePosition,
-      useAlternativePositionY,
+      useAlternativePositionY ? (entity.alternativePosition.posY - entity.position.posY) : 0,
       prevPosX, prevPosY, prevPosZ,
       prevYaw, pitch,
       expandBoundingBox,
@@ -81,8 +80,7 @@ public final class Raytracer {
     return distanceOf(
       player,
       entity.entityBoundingBox(),
-      entity.position, entity.alternativePosition,
-      useAlternativePositionY,
+      useAlternativePositionY ? (entity.alternativePosition.posY - entity.position.posY) : 0,
       prevPosX, prevPosY, prevPosZ,
       prevYaw, pitch,
       expandBoundingBox,
@@ -100,9 +98,7 @@ public final class Raytracer {
   public static EntityInteractionRaytrace distanceOf(
     Player player,
     WrappedAxisAlignedBB entityBoundingBox,
-    WrappedEntity.EntityPositionContext position,
-    WrappedEntity.EntityPositionContext alternativePosition,
-    boolean alternativePositionY,
+    double alternativeYDiffrence,
     double prevPosX, double prevPosY, double prevPosZ,
     float prevYaw, float pitch,
     double expandBoundingBox,
@@ -126,8 +122,8 @@ public final class Raytracer {
       );
 
       WrappedAxisAlignedBB hitBox = entityBoundingBox.expand(expandBoundingBox, expandBoundingBox, expandBoundingBox);
-      if (alternativePositionY) {
-        hitBox = hitBox.addJustMaxY(alternativePosition.posY - position.posY);
+      if (alternativeYDiffrence != 0) {
+        hitBox = hitBox.addJustMaxY(alternativeYDiffrence);
       }
       WrappedMovingObjectPosition movingObjectPosition = hitBox.calculateIntercept(eyeVector, lookVector);
       if (hitBox.isVecInside(eyeVector)) {

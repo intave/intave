@@ -231,7 +231,9 @@ public class WrappedEntity implements Cloneable {
       if(positionHistory.size() > 10) {
         positionHistory.remove(0);
       }
-      positionHistory.add(position);
+      if(lastPosition.posX != position.posX || lastPosition.posY != position.posY || lastPosition.posZ != position.posZ) {
+        positionHistory.add(position.clone());
+      }
     }
     lastPosition.posX = position.posX;
     lastPosition.posY = position.posY;

@@ -213,8 +213,7 @@ public class RotationSnapHeuristic extends IntaveMetaCheckPart<Heuristics, Rotat
           Raytracer.EntityInteractionRaytrace last = distanceOf(
             player,
             lastBoundingBox,
-            lastEntityPosition, null,
-            false,
+            0,
             tick.posX, tick.posY, tick.posZ,
             tick.yaw, tick.pitch,
             0.1f,
@@ -224,8 +223,7 @@ public class RotationSnapHeuristic extends IntaveMetaCheckPart<Heuristics, Rotat
           Raytracer.EntityInteractionRaytrace now = distanceOf(
             player,
             wrappedEntity.entityBoundingBox(),
-            wrappedEntity.position, null,
-            false,
+            0,
             movementData.lastPositionX, movementData.lastPositionY, movementData.lastPositionZ,
             movementData.lastRotationYaw, movementData.lastRotationPitch,
             0.1f,
