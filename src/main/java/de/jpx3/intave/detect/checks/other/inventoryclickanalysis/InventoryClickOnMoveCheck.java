@@ -42,7 +42,7 @@ public final class InventoryClickOnMoveCheck extends IntaveCheckPart<InventoryCl
     int keyStrafe = movementData.keyStrafe;
 
     // Be more lenient when a flying packet was sent
-    if (movementData.recentlyEncounteredFlyingPacket(2)) {
+    if (movementData.inWeb || movementData.recentlyEncounteredFlyingPacket(2)) {
       return;
     }
 
