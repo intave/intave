@@ -249,11 +249,15 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     }
   }
 
+  private HitBoxBoundaries hitBoxBoundariesByBukkitEntity(Entity bukkitEntity) {
+    return bukkitEntity.isDead() ? HitBoxBoundaries.zero() : ReflectiveEntityHitBoxAccess.boundariesOf(bukkitEntity);
+  }
+
   private void spawnMobByBukkitEntity(User user, Entity bukkitEntity) {
     String entityName = entityTypeResolver.entityNameByBukkitEntity(bukkitEntity);
     Location location = bukkitEntity.getLocation();
     boolean isEntityLiving = !bukkitEntity.isDead();
-    HitBoxBoundaries boundaries = bukkitEntity.isDead() ? HitBoxBoundaries.zero() : ReflectiveEntityHitBoxAccess.boundariesOf(bukkitEntity);
+    HitBoxBoundaries boundaries = hitBoxBoundariesByBukkitEntity(bukkitEntity);
     int entityID = bukkitEntity.getEntityId();
     long serverPosX;
     long serverPosY;
@@ -417,7 +421,19 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     if (!entity.isEntityLiving) {
       return;
     }
-    Float health = readHealthOf(packet.getWatchableCollectionModifier().read(0));
+
+    List<WrappedWatchableObject> watchableObjects = packet.getWatchableCollectionModifier().read(0);
+
+    Integer age = readAgeOf(watchableObjects);
+    if(age != null && !NEW_POSITION_PROCESSING) {
+      Entity bukkitEntity = serverEntityByIdentifier(player, entityID);
+
+      if(bukkitEntity != null) {
+        entity.hitBoxBoundaries = hitBoxBoundariesByBukkitEntity(bukkitEntity);
+      }
+    }
+
+    Float health = readHealthOf(watchableObjects);
     if (health != null) {
       boolean synchronize = entity.clientSynchronized && entity.tracingEnabled();
       if (synchronize) {
@@ -447,6 +463,19 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
       if (index == requiredIndex) {
         Object rawValue = watchableObject.getRawValue();
         return ((Number) rawValue).floatValue();
+      }
+    }
+    return null;
+  }
+
+  private Integer readAgeOf(List<WrappedWatchableObject> watchableObjects) {
+    for (WrappedWatchableObject watchableObject : watchableObjects) {
+      int index = watchableObject.getIndex();
+
+      int requiredIndex = 12;
+      if (index == requiredIndex) {
+        Object rawValue = watchableObject.getRawValue();
+        return ((Number) rawValue).intValue();
       }
     }
     return null;

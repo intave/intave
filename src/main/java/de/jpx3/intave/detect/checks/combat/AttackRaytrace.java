@@ -312,9 +312,8 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
     double minReach = 10;
     WrappedEntity clonedEntity = attackedEntity.clone();
     for (WrappedEntity.EntityPositionContext possiblePosition : clonedEntity.positionHistory) {
-      clonedEntity.position = possiblePosition.clone();
       // TODO: 01/07/21 add trust-factor based length tolerance
-      clonedEntity.newPosRotationIncrements = 3;
+      clonedEntity.setPositionAndRotationEntityLiving(possiblePosition.posX, possiblePosition.posY, possiblePosition.posZ, 3);
       double minReachInItr = 10;
       for (int loopRotationIncrement = 0; loopRotationIncrement < 4; loopRotationIncrement++) {
         // mouse delay fix

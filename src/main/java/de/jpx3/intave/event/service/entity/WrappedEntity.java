@@ -18,7 +18,7 @@ public class WrappedEntity implements Cloneable {
   private final int entityId;
 
   final public boolean isEntityLiving;
-  public final HitBoxBoundaries hitBoxBoundaries;
+  public HitBoxBoundaries hitBoxBoundaries;
 
   /**
    * Indicates if the entity position is synchronized with the client
@@ -98,7 +98,7 @@ public class WrappedEntity implements Cloneable {
         double newPosZ = position.posZ + (position.newPosZ - position.posZ) / (double) this.newPosRotationIncrements;
 
         --this.newPosRotationIncrements;
-        setPosition(newPosX, newPosY, newPosZ);
+        setPosition(newPosX, newPosY, newPosZ, true);
         setPosition(alternativeNewPosY);
       }
     }
@@ -219,19 +219,21 @@ public class WrappedEntity implements Cloneable {
     alternativePosition.prevPosY = alternativePosition.posY = alternativeY;
     position.prevPosZ = position.posZ = z;
 
-    setPosition(position.posX, position.posY, position.posZ);
+    setPosition(position.posX, position.posY, position.posZ, false);
     setPosition(alternativePosition.posY);
   }
 
   /**
    * Sets the position of the entity.
    */
-  public void setPosition(double x, double y, double z) {
-    if(!isClone) {
-      if(positionHistory.size() > 10) {
+  public void setPosition(double x, double y, double z, boolean onLivingUpdate) {
+    if(!isClone
+      && !onLivingUpdate
+    ) {
+      if(positionHistory.size() > 20) {
         positionHistory.remove(0);
       }
-//      if(lastPosition.posX != position.posX || lastPosition.posY != position.posY || lastPosition.posZ != position.posZ)
+      if(lastPosition.posX != position.posX || lastPosition.posY != position.posY || lastPosition.posZ != position.posZ)
       {
         positionHistory.add(position.clone());
       }
@@ -257,7 +259,7 @@ public class WrappedEntity implements Cloneable {
    */
   public void setPositionAndRotationEntityLiving(double x, double y, double z, int newPosRotationIncrements) {
     if (!isEntityLiving) {
-      setPosition(x, y, z);
+      setPosition(x, y, z, false);
       return;
     }
     position.newPosX = x;
