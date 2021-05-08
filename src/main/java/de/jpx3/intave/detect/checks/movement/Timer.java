@@ -66,7 +66,9 @@ public final class Timer extends IntaveMetaCheck<Timer.TimerData> {
 //    if(user.meta().clientData().flyingPacketStream()) {
 //    }
     double leniency = user.meta().violationLevelData().isInActiveTeleportBundle ? 2 : 12.5;
-    metaOf(user).timerBalance -= leniency;
+    TimerData timerData = metaOf(user);
+    timerData.timerBalance -= leniency;
+    timerData.lastFlyingPacket = AccessHelper.now();
   }
 
   public void receiveMovement(PacketEvent event, boolean teleportConf) {
@@ -126,6 +128,8 @@ public final class Timer extends IntaveMetaCheck<Timer.TimerData> {
       int adder = timerData.timerBalance < -400 ? 9 : 3;
       timerData.timerBalance += adder;
     }
+
+//    player.sendMessage(timerData.timerBalance + " " + highToleranceMode);
 
     statistics().increaseTotal();
 

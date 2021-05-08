@@ -14,7 +14,8 @@ public final class WorldPermission {
   private static BlockBreakPermissionCheck blockBreakPermissionCheck;
   private static BucketActionPermissionCheck bucketActionPermissionCheck;
 
-  public static void setup(IntavePlugin plugin) {
+  public static void setup() {
+    IntavePlugin plugin = IntavePlugin.singletonInstance();
     blockPlacePermissionCheck = new EventPlacePermissionResolver(plugin);
     blockBreakPermissionCheck = new EventBreakPermissionResolver(plugin);
     bucketActionPermissionCheck = new EventBukkitActionPermissionResolver(plugin);

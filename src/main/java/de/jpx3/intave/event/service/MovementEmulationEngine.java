@@ -4,6 +4,7 @@ import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveException;
 import de.jpx3.intave.access.IntaveInternalException;
+import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.detect.checks.movement.Physics;
 import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.reflect.caller.CallerResolver;
@@ -200,6 +201,10 @@ public final class MovementEmulationEngine {
       if (movementData.onGround) {
         physicsCheck.applyFallDamageUpdate(user);
         movementData.artificialFallDistance = 0;
+      }
+
+      if(futurePosition.getY() < 0 && !MinecraftVersions.VER1_17_0.atOrAbove()) {
+        Synchronizer.synchronize(() -> player.damage(4));
       }
 
       if (IntaveControl.DEBUG_EMULATION) {

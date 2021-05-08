@@ -31,9 +31,13 @@ public final class RuntimeBlockDataIndexer {
     Arrays.stream(Material.values())
       .filter(Material::isBlock)
       .forEach(type -> Indexer.index(type, blockDataIndex::put, blockDataRegister::put));
-    AtomicInteger artificialIds = new AtomicInteger();
-    blockDataIndex.forEach((material, objectIntegerMap) -> artificialIds.addAndGet(objectIntegerMap.size()));
-    IntaveLogger.logger().info("Indexed " + artificialIds.get() + " new block-data keys");
+    AtomicInteger blocks = new AtomicInteger(), artificialIds = new AtomicInteger();
+    blockDataIndex.forEach((material, objectIntegerMap) -> {
+      blocks.incrementAndGet();
+      artificialIds.addAndGet(objectIntegerMap.size());
+    });
+    String message = "Indexed " + artificialIds.get() + " new block-data keys for " + blocks.get() + " blocks";
+    IntaveLogger.logger().info(message);
   }
 
   public static int indexOfModernState(Material type, Object rawBlockData) {

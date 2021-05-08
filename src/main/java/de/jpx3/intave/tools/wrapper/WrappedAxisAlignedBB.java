@@ -415,6 +415,10 @@ public class WrappedAxisAlignedBB {
     return result;
   }
 
+  public static WrappedAxisAlignedBB createFromPosition(User user, Location location) {
+    return createFromPosition(user, location.getX(), location.getY(), location.getZ());
+  }
+
   public static WrappedAxisAlignedBB createFromPosition(
     User user,
     double positionX, double positionY, double positionZ
@@ -434,12 +438,6 @@ public class WrappedAxisAlignedBB {
       positionX - width, positionY, positionZ - width,
       positionX + width, newYMax, positionZ + width
     );
-  }
-
-  @Deprecated
-  // doomed to be inaccurate, just guesses default BB size - please remove ~richy
-  public static WrappedAxisAlignedBB createFromPosition(User user, Location location) {
-    return createFromPosition(user, location.getX(), location.getY(), location.getZ());
   }
 
   @Deprecated

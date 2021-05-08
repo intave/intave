@@ -54,6 +54,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLConnection;
@@ -149,15 +150,8 @@ public final class IntavePlugin extends JavaPlugin {
       Synchronizer.setup();
       ContextSecrets.setup();
 
-      // added loading info for herobrine server
-
-      logger.info(" Taking a nap to collect even more anticheating power..");
-
       trustFactorService = new TrustFactorService(this);
       // version mambo jumbo
-
-
-      logger.info(" Loading super secret checks..");
 
       // stage 5
       componentLoader = new ComponentLoader(this);
@@ -166,16 +160,11 @@ public final class IntavePlugin extends JavaPlugin {
       // we need to put this here
       BackgroundExecutor.start();
 
-      logger.info(" Saving even more performance..");
-
       packetSubscriptionLinker = new PacketSubscriptionLinker(this);
 
       // stage 6
 
       ProtocolLibraryAdapter.checkIfOutdated();
-
-
-      logger.info(" Checking if universe still exists..");
 
       // stage 7
       configurationService = new ConfigurationService(this);
@@ -187,11 +176,13 @@ public final class IntavePlugin extends JavaPlugin {
         logger.info("Using the \"" + configurationKey + "\" configuration");
       }
 
-      logger.info(" It probably does, check!");
       // license check call
 
-      // causes interceptor call
-      EncryptedResource contextStatusResource = new EncryptedResource("context-status", false);
+      // causes interceptor output
+      for (int i = 0; i < 3; i++) {
+        URL url = new URL("https://intave.de/api/versions.json");
+        url.getDefaultPort();
+      }
 
       if(foundInterceptor) {
         System.exit(1);
@@ -199,6 +190,27 @@ public final class IntavePlugin extends JavaPlugin {
       }
 
       InterceptorDetection.revert();
+
+      // search for debuggers
+      boolean debuggerFound = false;
+      for (String string : ManagementFactory.getRuntimeMXBean().getInputArguments()) {
+        if (string.contains("-agentlib:jdwp")) {
+          debuggerFound = true;
+        }
+        if (string.contains("-Xdebug")) {
+          debuggerFound = true;
+        }
+        if (string.contains("-Xrunjdwp:")) {
+          debuggerFound = true;
+        }
+      }
+
+      if(debuggerFound) {
+        System.exit(1);
+        return;
+      }
+
+      EncryptedResource contextStatusResource = new EncryptedResource("context-status", false);
 
       String requiredState = null; // leave this be
       boolean offlineMode = false;
@@ -444,7 +456,6 @@ public final class IntavePlugin extends JavaPlugin {
         if(!allowLeniency) {
           logger().error("Unable to boot: Internet connection required to proceed");
           boolFailure();
-//          Synchronizer.synchronize(this::performShutdown);
           performShutdown();
           return;
         }
@@ -452,10 +463,7 @@ public final class IntavePlugin extends JavaPlugin {
         contextStatusResource.write(new ByteArrayInputStream(("success/" + AccessHelper.now()).getBytes(StandardCharsets.UTF_8)));
       }
 
-      logger.info(" Tweaking latency..");
-
       SSLConnectionVerifier.setup();
-
       RuntimeBlockDataIndexer.prepareIndex();
 
       ReflectiveAccess.setup();
@@ -468,14 +476,12 @@ public final class IntavePlugin extends JavaPlugin {
       BlockDataAccess.setup();
       ViaVersionAdapter.setup();
       BoundingBoxResolverFactory.createNew();
-      WorldPermission.setup(this);
+      WorldPermission.setup();
       BlockPhysics.setup();
       BlockSlipperinessRepository.setup();
       BlockClimableRepository.setup();
       InventoryUseItemHelper.setup();
       BoundingBoxPatcher.setup();
-
-      logger.info(" Guessing gender of players..");
 
       versionList = new VersionList();
       try {
@@ -489,8 +495,6 @@ public final class IntavePlugin extends JavaPlugin {
 
       // resolve config hash
       configurationService.setupConfiguration(requiredState);
-
-      logger.info(" Guessing own gender..");
 
       prefix = configurationService.configuration().getString("layout.prefix", prefix);
       prefix = ChatColor.translateAlternateColorCodes('&', prefix);
@@ -511,8 +515,6 @@ public final class IntavePlugin extends JavaPlugin {
       customClientSupportService = new CustomClientSupportService(this);
       customClientSupportService.setup();
 
-      logger.info(" I'm probably a <hidden>");
-
       customEventService = new CustomEventService(this);
       checkService = new CheckService(this);
       violationProcessor = new ViolationProcessor(this);
@@ -520,8 +522,6 @@ public final class IntavePlugin extends JavaPlugin {
       fakePlayerEventService = new FakePlayerEventService(this);
       proxyMessenger = new ProxyMessenger(this);
       sibylIntegrationService = new SibylIntegrationService(this);
-
-      logger.info(" hidden? why is that message hidden?");
 
       getCommand("intave").setExecutor(new CommandProcessor());
 
@@ -531,8 +531,6 @@ public final class IntavePlugin extends JavaPlugin {
 
       // stage 8
       metrics = new Metrics(this, 6019);
-
-      logger.info(" (from the silence) they wouldn't understand..");
 
       trustFactorService.setup();
       checkService.setup();
@@ -548,8 +546,6 @@ public final class IntavePlugin extends JavaPlugin {
       performShutdown();
       return;
     }
-
-    logger.info(" sure..");
 
     GarbageCollector.setup();
     BackgroundExecutor.execute(this::clearIntegrityGarbage);
