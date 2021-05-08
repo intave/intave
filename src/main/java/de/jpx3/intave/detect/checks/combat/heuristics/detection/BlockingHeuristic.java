@@ -16,10 +16,7 @@ import de.jpx3.intave.event.punishment.AttackNerfStrategy;
 import de.jpx3.intave.reflect.ReflectiveDataWatcherAccess;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
-import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserCustomCheckMeta;
-import de.jpx3.intave.user.UserMetaPunishmentData;
-import de.jpx3.intave.user.UserRepository;
+import de.jpx3.intave.user.*;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -145,10 +142,23 @@ public final class BlockingHeuristic extends IntaveMetaCheckPart<Heuristics, Blo
     if (user.meta().abilityData().ignoringMovementPackets()) {
       return;
     }
-    if (user.meta().clientData().flyingPacketStream() && blockingMeta.heldItemOperations++ >= 1) {
+    boolean flyingPackets = user.meta().clientData().flyingPacketStream();
+    UserMetaMovementData movementData = user.meta().movementData();
+    if (!flyingPackets && movementData.recentlyEncounteredFlyingPacket(20) || movementData.inWeb) {
+      return;
+    }
+    if (blockingMeta.heldItemOperations++ >= 1) {
+      boolean cancel = blockingMeta.heldItemOperations >= 2;
       String description = "sent too many item operations (operations: " + blockingMeta.heldItemOperations + ")";
+      description += " (version " + user.meta().clientData().versionString() + ")";
+      if (cancel) {
+        description += " cancelled";
+      }
       Anomaly anomaly = Anomaly.anomalyOf("144", Confidence.NONE, Anomaly.Type.KILLAURA, description, 0);
       parentCheck().saveAnomaly(player, anomaly);
+      if (cancel) {
+        event.setCancelled(true);
+      }
     }
   }
 
