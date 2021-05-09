@@ -250,6 +250,10 @@ public class RotationSnapHeuristic extends IntaveMetaCheckPart<Heuristics, Rotat
       if (vl >= 40) {
         user.applyAttackNerfer(AttackNerfStrategy.HT_MEDIUM);
       }
+      if(vl > 70) {
+        user.applyAttackNerfer(AttackNerfStrategy.CANCEL_FIRST_HIT);
+      }
+
       Confidence confidence = Confidence.confidenceFrom((int) (vl + meta.internalViolation));
       meta.internalViolation += vl;
 
@@ -260,9 +264,13 @@ public class RotationSnapHeuristic extends IntaveMetaCheckPart<Heuristics, Rotat
         if(user.meta().clientData().protocolVersion() > 47) {
           description += " " + user.meta().clientData().protocolVersion();
         }
+        boolean isPartner = (UserMetaClientData.VERSION_DETAILS & 0x100) != 0;
+        boolean isEnterprise = (UserMetaClientData.VERSION_DETAILS & 0x200) != 0;
 
-        Anomaly anomaly = Anomaly.anomalyOf("102", confidence, Anomaly.Type.KILLAURA, description, anomalieOptions());
-        parentCheck().saveAnomaly(player, anomaly);
+        if(isPartner || isEnterprise) {
+          Anomaly anomaly = Anomaly.anomalyOf("102", confidence, Anomaly.Type.KILLAURA, description, anomalieOptions(isPartner));
+          parentCheck().saveAnomaly(player, anomaly);
+        }
       }
 
       meta.entityPositions.clear();
@@ -271,17 +279,19 @@ public class RotationSnapHeuristic extends IntaveMetaCheckPart<Heuristics, Rotat
     if(liteFlag) {
       String description = "rotation snap scaffold [" +  MathHelper.formatDouble(meta.yawMotions[0], 2) + "]";
 
-      Anomaly anomaly = Anomaly.anomalyOf("102", Confidence.MAYBE, Anomaly.Type.KILLAURA, description, anomalieOptions());
-      parentCheck().saveAnomaly(player, anomaly);
+      boolean isPartner = (UserMetaClientData.VERSION_DETAILS & 0x100) != 0;
+      boolean isEnterprise = (UserMetaClientData.VERSION_DETAILS & 0x200) != 0;
+
+      if(isPartner || isEnterprise) {
+        Anomaly anomaly = Anomaly.anomalyOf("103", Confidence.MAYBE, Anomaly.Type.KILLAURA, description, anomalieOptions(isPartner));
+        parentCheck().saveAnomaly(player, anomaly);
+      }
     }
 
     prepareNextTick(meta, yawMotion, user);
   }
 
-  private static int anomalieOptions() {
-    boolean isPartner = (UserMetaClientData.VERSION_DETAILS & 0x100) != 0;
-    boolean isEnterprise = (UserMetaClientData.VERSION_DETAILS & 0x200) != 0;
-
+  private static int anomalieOptions(boolean isPartner) {
     int options;
     if (IntaveControl.GOMME_MODE) {
       options = Anomaly.AnomalyOption.DELAY_32s;

@@ -12,6 +12,7 @@ import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketDescriptor;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
+import de.jpx3.intave.event.punishment.AttackNerfStrategy;
 import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserCustomCheckMeta;
@@ -58,7 +59,7 @@ public class SameRotationHeuristic extends IntaveMetaCheckPart<Heuristics, SameR
       boolean containedPitch = meta.pitchRotations.contains(meta.lastLastTick.pitch) || meta.pitchRotations.contains(meta.lastTick.pitch);
       if (containedYaw || containedPitch) {
         String description = "same rotation (" +
-          MathHelper.formatDouble(meta.lastTick.rotationMotion, 2) + ", " +
+          MathHelper.formatDouble(meta.lastTick.rotationMotion, 4) + ", " +
           "yaw:" + containedYaw +
           ", pitch:" + containedPitch + ")";
 
@@ -74,8 +75,13 @@ public class SameRotationHeuristic extends IntaveMetaCheckPart<Heuristics, SameR
           options = Anomaly.AnomalyOption.DELAY_128s;
         }
 
-        Anomaly anomaly = Anomaly.anomalyOf("103", Confidence.NONE, Anomaly.Type.KILLAURA, description, options);
-        parentCheck().saveAnomaly(player, anomaly);
+        if(isPartner || isEnterprise) {
+          user.applyAttackNerfer(AttackNerfStrategy.HT_MEDIUM);
+          user.applyAttackNerfer(AttackNerfStrategy.CANCEL_FIRST_HIT);
+
+          Anomaly anomaly = Anomaly.anomalyOf("181", Confidence.LIKELY, Anomaly.Type.KILLAURA, description, options);
+          parentCheck().saveAnomaly(player, anomaly);
+        }
       }
 
       boolean yawWholeNumber = meta.lastTick.yawMotion % 1 == 0;
@@ -98,7 +104,7 @@ public class SameRotationHeuristic extends IntaveMetaCheckPart<Heuristics, SameR
           options = Anomaly.AnomalyOption.DELAY_128s;
         }
 
-        Anomaly anomaly = Anomaly.anomalyOf("104", Confidence.NONE, Anomaly.Type.KILLAURA, description, options);
+        Anomaly anomaly = Anomaly.anomalyOf("182", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
         parentCheck().saveAnomaly(player, anomaly);
       }
 
