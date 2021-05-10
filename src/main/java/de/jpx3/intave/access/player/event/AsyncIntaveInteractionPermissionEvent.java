@@ -1,7 +1,6 @@
 package de.jpx3.intave.access.player.event;
 
 import de.jpx3.intave.access.IntaveEvent;
-import de.jpx3.intave.tools.annotate.Relocate;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
@@ -9,7 +8,6 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.block.Action;
 import org.bukkit.inventory.ItemStack;
 
-@Relocate
 public final class AsyncIntaveInteractionPermissionEvent extends IntaveEvent implements Cancellable {
   private Player player;
   private Action action;

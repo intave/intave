@@ -4,11 +4,9 @@ import com.google.common.base.Preconditions;
 import de.jpx3.intave.IntaveAccessor;
 import de.jpx3.intave.access.IntaveEvent;
 import de.jpx3.intave.access.player.PlayerAccess;
-import de.jpx3.intave.tools.annotate.Relocate;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
-@Relocate
 public final class IntaveViolationEvent extends IntaveEvent implements Cancellable {
   private Player punished;
   private String checkName;
@@ -94,8 +92,7 @@ public final class IntaveViolationEvent extends IntaveEvent implements Cancellab
     return new IntaveViolationEvent();
   }
 
-  @Relocate
-  public enum Reaction {
+    public enum Reaction {
     IGNORE,
     INTERRUPT,
     INTERRUPT_AND_REPORT

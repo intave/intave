@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.detect.CheckStatistics;
 import de.jpx3.intave.detect.CheckViolationLevelDecrementer;
 import de.jpx3.intave.detect.IntaveCheck;
 import de.jpx3.intave.detect.checks.movement.physics.LegacyWaterPhysics;
@@ -458,10 +459,10 @@ public final class Physics extends IntaveCheck {
       violationLevelData.physicsVL = MathHelper.minmax(0, violationLevelData.physicsVL + violationLevelIncrease, 200);
       violationLevelData.physicsInvalidMovementsInRow++;
       user.blockShapeAccess().identityInvalidate();
-      statistics().increaseFails();
+      statisticApply(user, CheckStatistics::increaseFails);
     } else {
       violationLevelData.physicsInvalidMovementsInRow = 0;
-      statistics().increasePasses();
+      statisticApply(user, CheckStatistics::increasePasses);
     }
 
     if (!spectator && violationLevelData.physicsVL > 50 && violationLevelIncrease > 0) {
@@ -495,13 +496,13 @@ public final class Physics extends IntaveCheck {
       }
     }
 
-    statistics().increaseTotal();
+    statisticApply(user, CheckStatistics::increaseTotal);
 
     if (violationLevelIncrease == 0 && violationLevelData.physicsVL < 1) {
       decrementer.decrement(user, VL_DECREMENT_PER_VALID_MOVE);
     }
 
-    violationLevelData.physicsVL = MathHelper.minmax(0, violationLevelData.physicsVL, 200);
+    violationLevelData.physicsVL = MathHelper.minmax(0, violationLevelData.physicsVL, 100);
 
     if (movementData.onLadderLast) {
       movementData.artificialFallDistance = 0;

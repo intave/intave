@@ -6,6 +6,7 @@ import de.jpx3.intave.access.check.event.IntaveCommandExecutionEvent;
 import de.jpx3.intave.access.check.event.IntaveViolationEvent;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.connect.proxy.protocol.packets.IntavePacketOutKicked;
+import de.jpx3.intave.detect.CheckStatistics;
 import de.jpx3.intave.detect.IntaveCheck;
 import de.jpx3.intave.event.service.MessageFormatter;
 import de.jpx3.intave.tools.MathHelper;
@@ -136,7 +137,9 @@ public final class ViolationProcessor {
     if(ignoreVioStat) {
       return;
     }
-    violationContext.violation().check().statistics().increaseViolations();
+    User user = UserRepository.userOf(violationContext.violation().player().orElseThrow(IllegalStateException::new));
+    IntaveCheck check = violationContext.violation().check();
+    check.statisticApply(user, CheckStatistics::increaseViolations);
   }
 
   private final static String LOGGER_MESSAGE_LAYOUT = "%s/%s %s %s(+%s -> %s on %s)";

@@ -2,11 +2,9 @@ package de.jpx3.intave.access.check.event;
 
 import com.google.common.base.Preconditions;
 import de.jpx3.intave.access.IntaveEvent;
-import de.jpx3.intave.tools.annotate.Relocate;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
-@Relocate
 public final class IntaveCommandExecutionEvent extends IntaveEvent implements Cancellable {
   private Player punished;
   private String command;

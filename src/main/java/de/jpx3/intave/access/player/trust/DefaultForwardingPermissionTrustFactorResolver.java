@@ -1,14 +1,12 @@
 package de.jpx3.intave.access.player.trust;
 
 import de.jpx3.intave.permission.BukkitPermissionCheck;
-import de.jpx3.intave.tools.annotate.Relocate;
 import org.bukkit.entity.Player;
 
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-@Relocate
 public final class DefaultForwardingPermissionTrustFactorResolver implements TrustFactorResolver {
   private final TrustFactorResolver defaultResolver;
 

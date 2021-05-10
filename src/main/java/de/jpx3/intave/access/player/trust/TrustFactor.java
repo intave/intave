@@ -1,10 +1,8 @@
 package de.jpx3.intave.access.player.trust;
 
 import de.jpx3.intave.tools.MathHelper;
-import de.jpx3.intave.tools.annotate.Relocate;
 import org.bukkit.ChatColor;
 
-@Relocate
 public enum TrustFactor implements Comparable<TrustFactor> {
   BYPASS(1000, ChatColor.WHITE, "intave.bypass"), // pocketmc
   GREEN(2, ChatColor.GREEN, "intave.trust.green"), // badlion

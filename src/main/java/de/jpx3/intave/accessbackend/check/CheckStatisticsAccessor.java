@@ -37,22 +37,22 @@ public final class CheckStatisticsAccessor {
     return new CheckStatisticsAccess() {
       @Override
       public final long totalViolations() {
-        return intaveCheck.statistics().totalViolations();
+        return intaveCheck.baseStatistics().totalViolations();
       }
 
       @Override
       public long totalPasses() {
-        return intaveCheck.statistics().totalPasses();
+        return intaveCheck.baseStatistics().totalPasses();
       }
 
       @Override
       public long totalProcesses() {
-        return intaveCheck.statistics().totalProcessed();
+        return intaveCheck.baseStatistics().totalProcessed();
       }
 
       @Override
       public long totalFails() {
-        return intaveCheck.statistics().totalFails();
+        return intaveCheck.baseStatistics().totalFails();
       }
     };
   }

@@ -1,12 +1,10 @@
 package de.jpx3.intave.access.player.event;
 
-import de.jpx3.intave.tools.annotate.Relocate;
 import org.bukkit.entity.Player;
 
 import java.lang.ref.WeakReference;
 import java.util.UUID;
 
-@Relocate
 public final class IntaveCreateEmulatedPlayerEvent extends IntaveCreateEmulatedEntityEvent {
   private String name;
   private UUID id;

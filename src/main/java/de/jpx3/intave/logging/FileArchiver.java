@@ -57,20 +57,19 @@ public final class FileArchiver {
   }
 
   private void moveFileToArchive(File file, File archiveFile) {
-    try {
+    try(
       FileInputStream in = new FileInputStream(file);
       ZipOutputStream out = new ZipOutputStream(new FileOutputStream(archiveFile));
+    ) {
       out.putNextEntry(new ZipEntry(file.getName()));
       out.setLevel(Deflater.BEST_COMPRESSION);
-      byte[] b = new byte[1024];
       int count;
-      while ((count = in.read(b)) > 0) {
-        out.write(b, 0, count);
+      byte[] buffer = new byte[1024];
+      while ((count = in.read(buffer)) != 0) {
+        out.write(buffer, 0, count);
       }
-      out.close();
-      in.close();
-    } catch (IOException e) {
-      throw new IntaveException(e);
+    } catch (IOException exception) {
+      throw new IntaveException(exception);
     }
   }
 

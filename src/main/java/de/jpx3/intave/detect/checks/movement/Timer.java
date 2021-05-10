@@ -2,6 +2,7 @@ package de.jpx3.intave.detect.checks.movement;
 
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.detect.CheckStatistics;
 import de.jpx3.intave.detect.CheckViolationLevelDecrementer;
 import de.jpx3.intave.detect.IntaveMetaCheck;
 import de.jpx3.intave.detect.checks.movement.physics.SimulationProcessor;
@@ -131,13 +132,13 @@ public final class Timer extends IntaveMetaCheck<Timer.TimerData> {
 
 //    player.sendMessage(timerData.timerBalance + " " + highToleranceMode);
 
-    statistics().increaseTotal();
+    statisticApply(user, CheckStatistics::increaseTotal);
 
     int overflowLimit = highToleranceMode ? 150 : 20;
 
     if (timerData.timerBalance > overflowLimit) {
       String balanceAsString = MathHelper.formatDouble(timerData.timerBalance / 10, 2);
-      statistics().increaseFails();
+      statisticApply(user, CheckStatistics::increaseFails);
 
       Violation violation = Violation.builderFor(Timer.class).withPlayer(player)
         .withMessage("moved too frequently").withDetails(balanceAsString + " ticks ahead").withVL(0.5)
@@ -153,7 +154,7 @@ public final class Timer extends IntaveMetaCheck<Timer.TimerData> {
       // leniency
       timerData.timerBalance -= highToleranceMode || timerData.timerBalance > overflowLimit ? 2.5 : 0.5;
     } else {
-      statistics().increasePasses();
+      statisticApply(user, CheckStatistics::increasePasses);
       if (timerData.timerBalance > 0) {
         timerData.timerBalance -= highToleranceMode ? 0.075 : 0.025;
       }

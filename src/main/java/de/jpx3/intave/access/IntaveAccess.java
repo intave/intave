@@ -6,13 +6,11 @@ import de.jpx3.intave.access.player.PlayerAccess;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.access.player.trust.TrustFactorResolver;
 import de.jpx3.intave.access.server.ServerAccess;
-import de.jpx3.intave.tools.annotate.Relocate;
 import org.bukkit.entity.Player;
 
 import java.io.PrintStream;
 import java.util.function.BiConsumer;
 
-@Relocate
 public interface IntaveAccess {
   void setTrustFactorResolver(TrustFactorResolver resolver);
   void setDefaultTrustFactor(TrustFactor defaultTrustFactor);

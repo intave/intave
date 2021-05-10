@@ -159,7 +159,7 @@ public final class IntaveRootStage extends CommandStage {
     Player player = user.player();
     player.sendMessage(ChatColor.RED + "Loading statistics...");
     for (IntaveCheck check : plugin.checkService().checks()) {
-      CheckStatistics statistics = check.statistics();
+      CheckStatistics statistics = check.baseStatistics();
       double processed = statistics.totalProcessed();
       double violations = statistics.totalViolations();
       double failed = statistics.totalFails();

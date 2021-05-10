@@ -59,9 +59,9 @@ public final class IntaveDiagnosticsStage extends CommandStage {
   public void checkStatisticsCommand(CommandSender sender) {
     sender.sendMessage(IntavePlugin.prefix() + "Loading check statistics...");
     List<IntaveCheck> checks = new ArrayList<>(plugin.checkService().checks());
-    checks.sort(Comparator.comparing(check -> check.statistics().totalFails()));
+    checks.sort(Comparator.comparing(check -> check.baseStatistics().totalFails()));
     for (IntaveCheck check : checks) {
-      CheckStatistics statistics = check.statistics();
+      CheckStatistics statistics = check.baseStatistics();
       long processed = statistics.totalProcessed();
       long violations = statistics.totalViolations();
       if (processed == 0 || !check.enabled()) {

@@ -11,7 +11,9 @@ import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class IntaveLogger {
@@ -115,7 +117,7 @@ public final class IntaveLogger {
       });
 
       if(compressLogsLater) {
-        BackgroundExecutor.execute(this::performCompression);
+        performCompression();
       }
     } catch (Exception exception) {
       exception.printStackTrace();
@@ -148,32 +150,27 @@ public final class IntaveLogger {
   }
 
   public synchronized void performCompression() {
-    long start = AccessHelper.now();
-
     File[] pendingFiles = pendingLogFiles();
-    int compressed = 0;
-    if(pendingFiles != null) {
-      for (File pendingFile : pendingFiles) {
-        File archiveFile = archiveFileOf(pendingFile);
-        if(pendingFile.exists() && !archiveFile.exists()) {
-          try {
-            archiver.archiveAndDeleteFile(pendingFile, archiveFile);
-            compressed++;
-          } catch (RuntimeException exception) {
-            exception.printStackTrace();
-          }
-        }
+    if(pendingFiles == null || pendingFiles.length == 0) {
+      return;
+    }
+    Map<File, File> filesToArchive = new HashMap<>();
+    for (File pendingFile : pendingFiles) {
+      File archiveFile = archiveFileOf(pendingFile);
+      if(pendingFile.exists() && !archiveFile.exists()) {
+        filesToArchive.put(pendingFile, archiveFile);
       }
     }
 
-    long duration = AccessHelper.now() - start;
-
-    if(compressed > 0) {
-      if(compressed == 1) {
-        info("Compressed last log file (took " + duration + "ms)");
-      } else {
-        info("Compressed " + compressed + " log files (took " + duration + "ms)");
-      }
+    for (Map.Entry<File, File> file : filesToArchive.entrySet()) {
+      File originalFile = file.getKey();
+      File archiveFile = file.getValue();
+      BackgroundExecutor.execute(() -> {
+        if(originalFile.exists() && !archiveFile.exists()) {
+          archiver.archiveAndDeleteFile(originalFile, archiveFile);
+          info("Compressed \"" + originalFile + "\"");
+        }
+      });
     }
   }
 

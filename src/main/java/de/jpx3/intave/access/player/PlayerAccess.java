@@ -1,9 +1,7 @@
 package de.jpx3.intave.access.player;
 
 import de.jpx3.intave.access.player.trust.TrustFactor;
-import de.jpx3.intave.tools.annotate.Relocate;
 
-@Relocate
 public interface PlayerAccess {
   int protocolVersion();
 

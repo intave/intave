@@ -1,6 +1,7 @@
 package de.jpx3.intave;
 
 import de.jpx3.intave.access.IntaveAccess;
+import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.accessbackend.IntaveAccessService;
 import de.jpx3.intave.adapter.ComponentLoader;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
@@ -175,8 +176,6 @@ public final class IntavePlugin extends JavaPlugin {
       } else {
         logger.info("Using the \"" + configurationKey + "\" configuration");
       }
-
-      // license check call
 
       // causes interceptor output
       for (int i = 0; i < 3; i++) {
@@ -415,32 +414,36 @@ public final class IntavePlugin extends JavaPlugin {
               lastSuccessfulStart = Long.valueOf(textString.split("/")[1]);
             } catch (Exception ignored) {}
             if(lastSuccessfulStart != null) {
-              String url_path = "https://raw.githubusercontent.com/Jpx3/IntaveStatus/main/availability";
-              URL url = new URL(url_path);
-              URLConnection connection = url.openConnection();
-              connection.setUseCaches(false);
-              connection.setDefaultUseCaches(false);
-              connection.addRequestProperty("User-Agent", "Intave/" + version());
-              connection.addRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate");
-              connection.addRequestProperty("Pragma", "no-cache");
-              connection.connect();
-              connection.setConnectTimeout(4000);
-              connection.setReadTimeout(4000);
-              if(AccessHelper.now() - lastSuccessfulStart <= TimeUnit.DAYS.toMillis(3)) {
-                try {
-                  connection.connect();
-                  allowLeniency = true;
-                } catch (Exception ignored) {}
-              } else {
-                // perform github check
-                Scanner scanner2 = new Scanner(connection.getInputStream(), "UTF-8");
-                Map<String, String> availabilities = new HashMap<>();
-                while (scanner2.hasNextLine()) {
-                  String line = scanner2.nextLine();
-                  String[] split = line.split("=");
-                  availabilities.put(split[0], split[1]);
+              try {
+                String url_path = "https://raw.githubusercontent.com/Jpx3/IntaveStatus/main/availability";
+                URL url = new URL(url_path);
+                URLConnection connection = url.openConnection();
+                connection.setUseCaches(false);
+                connection.setDefaultUseCaches(false);
+                connection.addRequestProperty("User-Agent", "Intave/" + version());
+                connection.addRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate");
+                connection.addRequestProperty("Pragma", "no-cache");
+                connection.connect();
+                connection.setConnectTimeout(4000);
+                connection.setReadTimeout(4000);
+                if(AccessHelper.now() - lastSuccessfulStart <= TimeUnit.DAYS.toMillis(3)) {
+                  try {
+                    connection.connect();
+                    allowLeniency = true;
+                  } catch (Exception ignored) {}
+                } else {
+                  // perform github check
+                  Scanner scanner2 = new Scanner(connection.getInputStream(), "UTF-8");
+                  Map<String, String> availabilities = new HashMap<>();
+                  while (scanner2.hasNextLine()) {
+                    String line = scanner2.nextLine();
+                    String[] split = line.split("=");
+                    availabilities.put(split[0], split[1]);
+                  }
+                  allowLeniency = availabilities.get("intave.de").equalsIgnoreCase("false");
                 }
-                allowLeniency = availabilities.get("intave.de").equalsIgnoreCase("false");
+              } catch (Exception exception) {
+                allowLeniency = false;
               }
             }
           }
@@ -550,7 +553,8 @@ public final class IntavePlugin extends JavaPlugin {
     GarbageCollector.setup();
     BackgroundExecutor.execute(this::clearIntegrityGarbage);
     BackgroundExecutor.execute(this::clearSaveFolderGarbage);
-    BackgroundExecutor.execute(() -> IntaveLogger.logger().performCompression());
+    IntaveLogger.logger().performCompression();
+
     packetSubscriptionLinker.refreshLinkages();
     displayVersionInformation();
     logger.info("Intave booted successfully");
@@ -594,7 +598,7 @@ public final class IntavePlugin extends JavaPlugin {
           logger().error("Unable to boot: This version has been deactivated");
           boolFailure();
           performShutdown();
-          return;
+          throw new IntaveInternalException("Escape exception");
       }
       logger().info(infoMessage);
     }

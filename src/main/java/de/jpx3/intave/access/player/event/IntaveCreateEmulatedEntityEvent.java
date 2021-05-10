@@ -1,12 +1,10 @@
 package de.jpx3.intave.access.player.event;
 
 import de.jpx3.intave.access.IntaveEvent;
-import de.jpx3.intave.tools.annotate.Relocate;
 import org.bukkit.entity.Player;
 
 import java.lang.ref.WeakReference;
 
-@Relocate
 public class IntaveCreateEmulatedEntityEvent extends IntaveEvent {
   protected WeakReference<Player> observer;
   protected int reservedEntityId;

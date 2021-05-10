@@ -67,9 +67,6 @@ public final class FastDoubleIndexOCBlockShapeAccess implements OCBlockShapeAcce
       frequencyCounter++;
     }
 
-    byte dx = (byte) (this.chunkXPos - posX), dz = (byte) (this.chunkZPos - posZ);
-    int blockPositionKey = (posY & 0x1FF) << 16 | (dx & 0x0FF) << 8 | (dz & 0x0FF);
-
     if(!indexedReplacements.isEmpty()) {
       long key = bigKey(posX, posY, posZ);
       BlockShape entry = indexedReplacements.get(key);
@@ -84,9 +81,7 @@ public final class FastDoubleIndexOCBlockShapeAccess implements OCBlockShapeAcce
       if (blockShape == null) {
         World world = player.getWorld();
         Block block = BukkitBlockAccess.blockAccess(world, posX, posY, posZ);
-        if ((blockShape = blockCache.get(blockPositionKey)) == null) {
-          blockShape = lookup(world, block, posX, posY, posZ);
-        }
+        blockShape = lookup(world, block, posX, posY, posZ);
         boolean cacheType = /* to avoid saving unloaded chunk data*/ block.getY() >= 0;
         if (!DISABLE_BLOCK_CACHING_ENTIRELY && cacheType) {
           frequencyCache.put(daBigKey, blockShape);
@@ -95,17 +90,20 @@ public final class FastDoubleIndexOCBlockShapeAccess implements OCBlockShapeAcce
       return blockShape.boundingBoxes();
     }
 
-    BlockShape BlockShape = blockCache.get(blockPositionKey);
-    if (BlockShape == null) {
+    byte dx = (byte) (this.chunkXPos - posX), dz = (byte) (this.chunkZPos - posZ);
+    int localKey = (posY & 0x1FF) << 16 | (dx & 0x0FF) << 8 | (dz & 0x0FF);
+
+    BlockShape blockShape = blockCache.get(localKey);
+    if (blockShape == null) {
       World world = player.getWorld();
       Block block = BukkitBlockAccess.blockAccess(world, posX, posY, posZ);
       boolean cacheType = block.getY() >= 0;
-      BlockShape = lookup(world, block, posX, posY, posZ);
+      blockShape = lookup(world, block, posX, posY, posZ);
       if (!DISABLE_BLOCK_CACHING_ENTIRELY && cacheType) {
-        blockCache.put(blockPositionKey, BlockShape);
+        blockCache.put(localKey, blockShape);
       }
     }
-    return BlockShape.boundingBoxes();
+    return blockShape.boundingBoxes();
   }
 
   @Override
@@ -132,9 +130,6 @@ public final class FastDoubleIndexOCBlockShapeAccess implements OCBlockShapeAcce
       frequencyCounter++;
     }
 
-    byte dx = (byte) (this.chunkXPos - posX), dz = (byte) (this.chunkZPos - posZ);
-    int blockPositionKey = (posY & 0x1FF) << 16 | (dx & 0x0FF) << 8 | (dz & 0x0FF);
-
     if(!indexedReplacements.isEmpty()) {
       long key = bigKey(posX, posY, posZ);
       BlockShape entry = indexedReplacements.get(key);
@@ -149,9 +144,7 @@ public final class FastDoubleIndexOCBlockShapeAccess implements OCBlockShapeAcce
       if (blockShape == null) {
         World world = player.getWorld();
         Block block = BukkitBlockAccess.blockAccess(world, posX, posY, posZ);
-        if ((blockShape = blockCache.get(blockPositionKey)) == null) {
-          blockShape = lookup(world, block, posX, posY, posZ);
-        }
+        blockShape = lookup(world, block, posX, posY, posZ);
         boolean cacheType = /* to avoid saving unloaded chunk data*/ block.getY() >= 0;
         if (!DISABLE_BLOCK_CACHING_ENTIRELY && cacheType) {
           frequencyCache.put(daBigKey, blockShape);
@@ -160,17 +153,20 @@ public final class FastDoubleIndexOCBlockShapeAccess implements OCBlockShapeAcce
       return blockShape.type();
     }
 
-    BlockShape BlockShape = blockCache.get(blockPositionKey);
-    if (BlockShape == null) {
+    byte dx = (byte) (this.chunkXPos - posX), dz = (byte) (this.chunkZPos - posZ);
+    int localKey = (posY & 0x1FF) << 16 | (dx & 0x0FF) << 8 | (dz & 0x0FF);
+
+    BlockShape blockShape = blockCache.get(localKey);
+    if (blockShape == null) {
       World world = player.getWorld();
       Block block = BukkitBlockAccess.blockAccess(world, posX, posY, posZ);
       boolean cacheType = block.getY() >= 0;
-      BlockShape = lookup(world, block, posX, posY, posZ);
+      blockShape = lookup(world, block, posX, posY, posZ);
       if (!DISABLE_BLOCK_CACHING_ENTIRELY && cacheType) {
-        blockCache.put(blockPositionKey, BlockShape);
+        blockCache.put(localKey, blockShape);
       }
     }
-    return BlockShape.type();
+    return blockShape.type();
   }
 
   @Override
@@ -197,9 +193,6 @@ public final class FastDoubleIndexOCBlockShapeAccess implements OCBlockShapeAcce
       frequencyCounter++;
     }
 
-    byte dx = (byte) (this.chunkXPos - posX), dz = (byte) (this.chunkZPos - posZ);
-    int blockPositionKey = (posY & 0x1FF) << 16 | (dx & 0x0FF) << 8 | (dz & 0x0FF);
-
     if(!indexedReplacements.isEmpty()) {
       long key = bigKey(posX, posY, posZ);
       BlockShape entry = indexedReplacements.get(key);
@@ -214,9 +207,7 @@ public final class FastDoubleIndexOCBlockShapeAccess implements OCBlockShapeAcce
       if (blockShape == null) {
         World world = player.getWorld();
         Block block = BukkitBlockAccess.blockAccess(world, posX, posY, posZ);
-        if ((blockShape = blockCache.get(blockPositionKey)) == null) {
-          blockShape = lookup(world, block, posX, posY, posZ);
-        }
+        blockShape = lookup(world, block, posX, posY, posZ);
         boolean cacheType = /* to avoid saving unloaded chunk data*/ block.getY() >= 0;
         if (!DISABLE_BLOCK_CACHING_ENTIRELY && cacheType) {
           frequencyCache.put(daBigKey, blockShape);
@@ -225,17 +216,20 @@ public final class FastDoubleIndexOCBlockShapeAccess implements OCBlockShapeAcce
       return blockShape.data();
     }
 
-    BlockShape BlockShape = blockCache.get(blockPositionKey);
-    if (BlockShape == null) {
+    byte dx = (byte) (this.chunkXPos - posX), dz = (byte) (this.chunkZPos - posZ);
+    int localKey = (posY & 0x1FF) << 16 | (dx & 0x0FF) << 8 | (dz & 0x0FF);
+
+    BlockShape blockShape = blockCache.get(localKey);
+    if (blockShape == null) {
       World world = player.getWorld();
       Block block = BukkitBlockAccess.blockAccess(world, posX, posY, posZ);
       boolean cacheType = block.getY() >= 0;
-      BlockShape = lookup(world, block, posX, posY, posZ);
+      blockShape = lookup(world, block, posX, posY, posZ);
       if (!DISABLE_BLOCK_CACHING_ENTIRELY && cacheType) {
-        blockCache.put(blockPositionKey, BlockShape);
+        blockCache.put(localKey, blockShape);
       }
     }
-    return BlockShape.data();
+    return blockShape.data();
   }
 
   private final static BlockShape EMPTY_CACHE_ENTRY = new BlockShape(Collections.emptyList(), Material.AIR, 0);
@@ -352,6 +346,6 @@ public final class FastDoubleIndexOCBlockShapeAccess implements OCBlockShapeAcce
   }
 
   private long bigKey(int posX, int posY, int posZ) {
-    return (posX & 4194303L) << 42 | (posY & 0xFFFFFL) | (posZ & 0x3FFFFFL) << 20;
+    return (posX & 0x3fffffL) << 42 | (posY & 0xfffffL) | (posZ & 0x3fffffL) << 20;
   }
 }

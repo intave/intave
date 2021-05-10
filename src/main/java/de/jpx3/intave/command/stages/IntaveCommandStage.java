@@ -1,5 +1,6 @@
 package de.jpx3.intave.command.stages;
 
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.command.CommandStage;
 import de.jpx3.intave.command.Forward;
@@ -202,7 +203,9 @@ public final class IntaveCommandStage extends CommandStage {
       prefix + "Visit our website for a full list of contributors"
     });
 
-    if(IntavePlugin.isInOfflineMode()) {
+    if(IntaveControl.GOMME_MODE) {
+      player.sendMessage(prefix + "Certified for GommeHDnet / vemyb");
+    } else if(IntavePlugin.isInOfflineMode()) {
       player.sendMessage(prefix + "Unable to verify certificate " + LicenseVerification.licenseKey() + ". Intave servers down?");
     } else if(LicenseVerification.network().equals("~bypass")){
       player.sendMessage(prefix + "This self-issued version does not require certification");

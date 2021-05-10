@@ -5,6 +5,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.detect.CheckStatistics;
 import de.jpx3.intave.detect.CheckViolationLevelDecrementer;
 import de.jpx3.intave.detect.IntaveMetaCheck;
 import de.jpx3.intave.event.packet.ListenerPriority;
@@ -30,8 +31,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static de.jpx3.intave.event.service.entity.ClientSideEntityService.entityByIdentifier;
 import static de.jpx3.intave.event.service.violation.Violation.ViolationFlags.DONT_PROCESS_VIOSTAT;
@@ -99,7 +98,7 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
     List<Attack> remainingAttacks = attackRaytraceMeta.pendingAttacks;
     if (!remainingAttacks.isEmpty()) {
       for (Attack remainingAttack : remainingAttacks) {
-        statistics().increaseTotal();
+        statisticApply(user, CheckStatistics::increaseTotal);
         WrappedEntity entity = entityByIdentifier(user, remainingAttack.entityId());
         boolean invalid = false;
         if (entity != null && entity.living() && !player.isDead()) {
@@ -131,9 +130,9 @@ public class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackRaytrac
           }
         }
         if (invalid) {
-          statistics().increaseFails();
+          statisticApply(user, CheckStatistics::increaseFails);
         } else {
-          statistics().increasePasses();
+          statisticApply(user, CheckStatistics::increasePasses);
         }
         if (!invalid && !violationLevelData.isInActiveTeleportBundle) {
           receiveExcludedPacket(player, remainingAttack.packet);

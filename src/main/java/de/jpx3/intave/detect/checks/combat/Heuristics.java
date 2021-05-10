@@ -192,7 +192,6 @@ public final class Heuristics extends IntaveMetaCheck<Heuristics.HeuristicMeta> 
       case VERY_LIKELY:
         return "very likely (!)";
       case LIKELY:
-      case LESS_LIKELY:
         return "likely (?!)";
       case PROBABLE:
         return "probable (?)";

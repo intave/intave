@@ -31,11 +31,6 @@ public final class MovementContextHelper {
     return jumpUpwardsMotion;
   }
 
-  public static float resolveSlipperiness(User user, Location location) {
-    Material type = BukkitBlockAccess.cacheAppliedTypeAccess(user, location);
-    return BlockSlipperinessRepository.resolveSlipperinessOf(type) * 0.91f;
-  }
-
   public static float resolveFriction(User user, double positionX, double positionY, double positionZ) {
     UserMetaMovementData movementData = user.meta().movementData();
     World world = user.player().getWorld();
@@ -54,6 +49,11 @@ public final class MovementContextHelper {
       speed = movementData.jumpMovementFactor();
     }
     return speed;
+  }
+
+  public static float resolveSlipperiness(User user, Location location) {
+    Material type = BukkitBlockAccess.cacheAppliedTypeAccess(user, location);
+    return BlockSlipperinessRepository.resolveSlipperinessOf(type) * 0.91f;
   }
 
   public static boolean isOffsetPositionInLiquid(

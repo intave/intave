@@ -1,8 +1,5 @@
 package de.jpx3.intave.access;
 
-import de.jpx3.intave.tools.annotate.Relocate;
-
-@Relocate
 public final class IntaveColdException extends IntaveAccessException {
   public IntaveColdException() {
     super();

@@ -1,9 +1,7 @@
 package de.jpx3.intave.access.player;
 
 import de.jpx3.intave.access.IntaveAccessException;
-import de.jpx3.intave.tools.annotate.Relocate;
 
-@Relocate
 public final class UnknownPlayerException extends IntaveAccessException {
   public UnknownPlayerException() {
     super();
