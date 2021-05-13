@@ -142,7 +142,6 @@ public final class Physics extends IntaveCheck {
     predictFlyingPacketBeforeVelocity(user);
 
     ComplexColliderSimulationResult predictedMovement = simulationService.simulate(user, movementData.movementPoseType());
-//    movementData.entityMotionVector = predictedMovement.entityContext();
     movementData.onGround = predictedMovement.onGround();
     movementData.collidedHorizontally = predictedMovement.collidedHorizontally();
     movementData.collidedVertically = predictedMovement.collidedVertically();
@@ -331,7 +330,7 @@ public final class Physics extends IntaveCheck {
     boolean checkVelocity = !skipVLCalculation && movementData.pastInWeb > 5 && !movementData.inWater;
 
     if (checkVelocity && movementData.pastExternalVelocity < 10 && !movementData.recentlyEncounteredFlyingPacket(2)) {
-      if (distance > 0.0005 && !onLadder) {
+      if (distance > 0.008 && !onLadder) {
         boolean aggressive = violationLevelData.physicsVelocityVL++ >= VELOCITY_VL_THRESHOLD;
         if (aggressive || distance > 0.01) {
           if (aggressive) {
