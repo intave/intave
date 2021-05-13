@@ -11,6 +11,7 @@ import de.jpx3.intave.event.packet.*;
 import de.jpx3.intave.fakeplayer.FakePlayer;
 import de.jpx3.intave.reflect.hitbox.HitBoxBoundaries;
 import de.jpx3.intave.reflect.hitbox.ReflectiveEntityHitBoxAccess;
+import de.jpx3.intave.reflect.hitbox.typeaccess.EntityTypeData;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.*;
 import org.bukkit.Bukkit;
@@ -115,9 +116,9 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
       livingEntity = false;
     } else if (packetType == PacketType.Play.Server.SPAWN_ENTITY_LIVING) {
       // entities
-      PacketEntityTypeResolver.EntitySpawn entitySpawn = entityTypeResolver.spawnInformationOf(packet);
-      entityName = entitySpawn.entityName();
-      hitBoxBoundaries = entitySpawn.hitBoxBoundaries();
+      EntityTypeData entityTypeData = entityTypeResolver.spawnInformationOf(packet);
+      entityName = entityTypeData.entityName();
+      hitBoxBoundaries = entityTypeData.hitBoxBoundaries();
       livingEntity = true;
     } else {
       // player

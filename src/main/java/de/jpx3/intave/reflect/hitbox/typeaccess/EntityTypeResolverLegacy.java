@@ -18,23 +18,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static de.jpx3.intave.reflect.hitbox.typeaccess.EntityTypeAccess.ENTITY_ID_LOOKUP;
+import static de.jpx3.intave.reflect.hitbox.typeaccess.DualEntityTypeAccess.ENTITY_ID_LOOKUP;
 import static de.jpx3.intave.reflect.hitbox.typeaccess.ServerClassByteResolver.pollBytesOf;
 
 @PatchyAutoTranslation
-public final class LegacyEntityBoundariesResolver {
+final class EntityTypeResolverLegacy {
   // <ClassName, EntityID>
   private static final Map<String, Integer> classNameToIDMap = new HashMap<>();
   private static final Map<ClassNode, ClassNode> hierarchy = new HashMap<>();
   private static final List<ClassNode> classNodes = new ArrayList<>();
 
-  static void pollTo(Map<Integer, HitBoxBoundaries> entityHitBoxMap) {
+  static void pollTo(
+    Map<Integer, HitBoxBoundaries> entityHitBoxMap,
+    Map<Integer, String> entityNameMap
+  ) {
     linkEntityToIdMap();
 
     List<byte[]> classByteMap = pollBytesOf(entityPrefixOfVersion());
     acceptClassNodes(classByteMap);
     buildHierarchy();
     loadBoundaries(entityHitBoxMap);
+    loadEntityNames(entityNameMap);
   }
 
   private static String entityPrefixOfVersion() {
@@ -89,7 +93,7 @@ public final class LegacyEntityBoundariesResolver {
   }
 
   private static void acceptClassNodes(List<byte[]> classBytes) {
-    classBytes.forEach(LegacyEntityBoundariesResolver::acceptClassBytes);
+    classBytes.forEach(EntityTypeResolverLegacy::acceptClassBytes);
   }
 
   private static void acceptClassBytes(byte[] bytes) {
@@ -218,6 +222,15 @@ public final class LegacyEntityBoundariesResolver {
       .stream()
       .filter(method -> method.name.equals("<init>"))
       .collect(Collectors.toList());
+  }
+
+  private static void loadEntityNames(Map<Integer, String> entityNameMap) {
+    classNameToIDMap.forEach((entityName, entityID) -> entityNameMap.put(entityID, convertClassNameToEntityName(entityName)));
+  }
+
+  private static String convertClassNameToEntityName(String className) {
+    String actualClassName = className.substring(className.lastIndexOf('/') + 1);
+    return actualClassName.substring("Entity".length());
   }
 
   private enum EntitySizeResult {

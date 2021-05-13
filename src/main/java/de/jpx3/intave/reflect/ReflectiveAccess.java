@@ -5,12 +5,15 @@ import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.patchy.PatchyLoadingInjector;
 import de.jpx3.intave.reflect.hitbox.ReflectiveEntityHitBoxAccess;
+import de.jpx3.intave.reflect.hitbox.typeaccess.DualEntityTypeAccess;
 import org.bukkit.Bukkit;
 
 import java.lang.reflect.Field;
 
 public final class ReflectiveAccess {
   final static boolean DATA_WATCHER_NEW_ACCESS_VER = MinecraftVersions.VER1_9_0.atOrAbove();
+  private static final boolean ENTITY_SIZE_ACCESS = MinecraftVersions.VER1_14_0.atOrAbove();
+
   private final static String NMS_PACKAGE_NAME = Bukkit.getServer().getClass().getPackage().getName().substring(23);
   public final static String NMS_PREFIX = "net.minecraft.server." + NMS_PACKAGE_NAME;
   private final static String CRAFT_BUKKIT_PREFIX = "org.bukkit.craftbukkit." + NMS_PACKAGE_NAME;
@@ -33,6 +36,13 @@ public final class ReflectiveAccess {
     } else {
       PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), "de.jpx3.intave.reflect.datawatcher.LegacyDataWatcherAccess");
     }
+
+    if (ENTITY_SIZE_ACCESS) {
+      PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), "de.jpx3.intave.reflect.hitbox.typeaccess.EntityTypeResolverNew");
+    } else {
+      PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), "de.jpx3.intave.reflect.hitbox.typeaccess.EntityTypeResolverLegacy");
+    }
+    DualEntityTypeAccess.setup();
   }
 
   public static <T> Class<T> classByName(String className) {
