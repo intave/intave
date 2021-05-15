@@ -484,14 +484,14 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
       Object object = watchableObject.getRawValue();
 
       if(index == correctIndex) {
-        if(object instanceof Integer) {
+        if(object instanceof Boolean) {
           Boolean isChild = (Boolean) object;
           return isChild;
         } else if(object instanceof Byte) {
           byte isChild = (byte) object;
           return isChild < 0;
         } else {
-          IntaveLogger.logger().info("Failed to read EntityMetaData packet.");
+          IntaveLogger.logger().info("Failed to read EntityMetaData packet. " + object.getClass());
           return null;
         }
       }
