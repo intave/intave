@@ -413,19 +413,21 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     }
 
     List<WrappedWatchableObject> watchableObjects = packet.getWatchableCollectionModifier().read(0);
-    Boolean isChild = isChildByWatchableObjects(watchableObjects);
-    if (isChild != null) {
-      EntityTypeData entityTypeData = entityTypeResolver.entityTypeDataOfEntityMetaData(event, isChild, entity.entityTypeData.entityTypeId());
-      entity.entityTypeData = entityTypeData;
-    }
+    if(watchableObjects != null) {
+      Boolean isChild = isChildByWatchableObjects(watchableObjects);
+      if (isChild != null) {
+        EntityTypeData entityTypeData = entityTypeResolver.entityTypeDataOfEntityMetaData(event, isChild, entity.entityTypeData.entityTypeId());
+        entity.entityTypeData = entityTypeData;
+      }
 
-    Float health = readHealthOf(watchableObjects);
-    if (health != null) {
-      boolean synchronize = entity.clientSynchronized && entity.tracingEnabled();
-      if (synchronize) {
-        plugin.eventService().feedback().clientSynchronize(player, entity, (p, e) -> updateHealthState(e, health));
-      } else {
-        updateHealthState(entity, health);
+      Float health = readHealthOf(watchableObjects);
+      if (health != null) {
+        boolean synchronize = entity.clientSynchronized && entity.tracingEnabled();
+        if (synchronize) {
+          plugin.eventService().feedback().clientSynchronize(player, entity, (p, e) -> updateHealthState(e, health));
+        } else {
+          updateHealthState(entity, health);
+        }
       }
     }
   }
@@ -483,20 +485,22 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
       int index = watchableObject.getIndex();
       Object object = watchableObject.getRawValue();
 
-      if(index == correctIndex) {
-        if(object instanceof Boolean) {
-          Boolean isChild = (Boolean) object;
-          return isChild;
-        } else if(object instanceof Byte) {
-          if(!NEW_POSITION_PROCESSING_1_9) {
-            byte isChild = (byte) object;
-            return isChild < 0;
+      if(object != null) {
+        if(index == correctIndex) {
+          if(object instanceof Boolean) {
+            Boolean isChild = (Boolean) object;
+            return isChild;
+          } else if(object instanceof Byte) {
+            if(!NEW_POSITION_PROCESSING_1_9) {
+              byte isChild = (byte) object;
+              return isChild < 0;
+            } else {
+              // packet here should be ignored because for other vanilla use cases (for example when a bat is hanging on the ceiling)
+            }
           } else {
-            // packet here should be ignored because for other vanilla use cases (for example when a bat is hanging on the ceiling)
+            IntaveLogger.logger().info("Failed to read EntityMetaData packet. " + object.getClass());
+            return null;
           }
-        } else {
-          IntaveLogger.logger().info("Failed to read EntityMetaData packet. " + object.getClass());
-          return null;
         }
       }
     }
