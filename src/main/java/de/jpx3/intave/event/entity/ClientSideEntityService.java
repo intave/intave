@@ -205,14 +205,12 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     int entityId = packet.getIntegers().read(0);
     WrappedEntity entity = entityByIdentifier(user, entityId);
     if (entity == null) {
-      entity = entityByIdentifier(user, entityId);
-    }
-    if (entity == null) {
       entity = createEntityByMovePacket(event);
     }
     if (entity == null) {
-      IntaveLogger.logger().info("Failed to create entity (id " + entityId + ")");
+      IntaveLogger.logger().info("Unable to create entity (id " + entityId + ")");
 //        throw new NullPointerException("entity could not be created");
+      return;
     }
     if (entity.isEntityLiving && entity.tracingEnabled()) {
       WrappedEntity finalEntity = entity;
