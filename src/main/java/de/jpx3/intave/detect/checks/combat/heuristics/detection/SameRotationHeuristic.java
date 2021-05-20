@@ -83,13 +83,9 @@ public class SameRotationHeuristic extends IntaveMetaCheckPart<Heuristics, SameR
         }
       }
 
-      boolean lastYawWholeNumber = meta.lastLastTick.yawMotion % 1 == 0;
-      boolean lastPitchWholeNumber = meta.lastLastTick.pitchMotion % 1 == 0;
-
       boolean yawWholeNumber = meta.lastTick.yawMotion % 1 == 0;
       boolean pitchWholeNumber = meta.lastTick.pitchMotion % 1 == 0;
-      if ((yawWholeNumber && meta.lastTick.yawMotion != 0 && !lastYawWholeNumber)
-        || (pitchWholeNumber && Math.abs(meta.lastTick.pitchMotion) != 90) && meta.lastTick.pitchMotion != 0 && !lastPitchWholeNumber) {
+      if (yawWholeNumber || pitchWholeNumber) {
         String description = "whole rotation ("
           + "yaw: " + yawWholeNumber + ", " + meta.lastTick.yawMotion
           + ", pitch: " + pitchWholeNumber + ", " + meta.lastTick.pitchMotion + ")";
@@ -110,9 +106,12 @@ public class SameRotationHeuristic extends IntaveMetaCheckPart<Heuristics, SameR
         parentCheck().saveAnomaly(player, anomaly);
       }
 
+      boolean lastYawWholeExactNumber = meta.lastLastTick.yawMotion % 1 == 0;
+      boolean lastPitchWholeExactNumber = meta.lastLastTick.pitchMotion % 1 == 0;
       boolean yawWholeExactNumber = meta.lastTick.yaw % 1 == 0;
       boolean pitchWholeExactNumber = meta.lastTick.pitch % 1 == 0;
-      if(yawWholeExactNumber || pitchWholeExactNumber) {
+      if ((yawWholeExactNumber && meta.lastTick.yawMotion != 0 && !lastYawWholeExactNumber)
+          || (pitchWholeExactNumber && Math.abs(meta.lastTick.pitchMotion) != 90) && meta.lastTick.pitchMotion != 0 && !lastPitchWholeExactNumber) {
         String description = "whole exact rotation ("
           + "yaw: " + yawWholeExactNumber + ", " + meta.lastTick.yaw
           + ", pitch: " + pitchWholeExactNumber + ", " + meta.lastTick.pitch + ")";
