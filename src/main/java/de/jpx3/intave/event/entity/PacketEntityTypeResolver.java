@@ -4,6 +4,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;
@@ -79,6 +80,9 @@ public final class PacketEntityTypeResolver {
         HitBoxBoundaries boundaries = hitboxBoundariesByDeadEntityType(deadEntityType);
         return new EntityTypeData(name, boundaries, -1);
       } else {
+        if(IntaveControl.DISABLE_LICENSE_CHECK) {
+          IntaveLogger.logger().error("Zero BoundingBox 2");
+        }
         return new EntityTypeData("null", HitBoxBoundaries.zero(), -2);
       }
     }
@@ -192,7 +196,7 @@ public final class PacketEntityTypeResolver {
   }
 
   public HitBoxBoundaries hitBoxBoundariesByBukkitEntity(Entity bukkitEntity) {
-    return bukkitEntity.isDead() ? HitBoxBoundaries.zero() : ReflectiveEntityHitBoxAccess.boundariesOf(bukkitEntity);
+    return ReflectiveEntityHitBoxAccess.boundariesOf(bukkitEntity);
   }
 
   public String entityNameByBukkitEntity(Entity entity) {
@@ -324,6 +328,9 @@ public final class PacketEntityTypeResolver {
         return HitBoxBoundaries.of(0.5F, 0.5F);
       case 78:
         return HitBoxBoundaries.of(0.5F, 1.975F);
+    }
+    if (IntaveControl.DISABLE_LICENSE_CHECK) {
+      IntaveLogger.logger().error("Zero BoundingBox 1");
     }
     return HitBoxBoundaries.zero();
   }

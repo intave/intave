@@ -129,7 +129,7 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
 
       HitBoxBoundaries hitBoxBoundaries = HitBoxBoundaries.player();
       livingEntity = true;
-      entityTypeData = new EntityTypeData(entityName, hitBoxBoundaries, -1);
+      entityTypeData = new EntityTypeData(entityName, hitBoxBoundaries, 105);
     }
     processPacketSpawnMob(user, event.getPacketType(), entityTypeData, packet, livingEntity, entityId);
   }
