@@ -81,7 +81,7 @@ public final class PacketEntityTypeResolver {
         return new EntityTypeData(name, boundaries, -1);
       } else {
         if(IntaveControl.DISABLE_LICENSE_CHECK) {
-          IntaveLogger.logger().error("Zero BoundingBox 2");
+          IntaveLogger.logger().info("Zero BoundingBox 2");
         }
         return new EntityTypeData("null", HitBoxBoundaries.zero(), -2);
       }
@@ -330,7 +330,7 @@ public final class PacketEntityTypeResolver {
         return HitBoxBoundaries.of(0.5F, 1.975F);
     }
     if (IntaveControl.DISABLE_LICENSE_CHECK) {
-      IntaveLogger.logger().error("Zero BoundingBox 1");
+      IntaveLogger.logger().info("Zero BoundingBox 1");
     }
     return HitBoxBoundaries.zero();
   }
