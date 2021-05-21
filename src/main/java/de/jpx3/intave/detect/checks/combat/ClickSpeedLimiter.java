@@ -140,7 +140,7 @@ public final class ClickSpeedLimiter extends IntaveMetaCheck<ClickSpeedLimiter.C
     }
     if (sum > maxCPS) {
       int addedVL = 1;
-      if (meta.countAccuratePositionPackets >= 20) {
+      if (meta.countAccuratePositionPackets > 20) {
         // punishment can be 100% sure here
         addedVL = 3;
       }
@@ -152,9 +152,6 @@ public final class ClickSpeedLimiter extends IntaveMetaCheck<ClickSpeedLimiter.C
       ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
       if(violationContext.shouldCounterThreat()) {
         meta.lastFlag = AccessHelper.now();
-      }
-      if(violationContext.shouldCounterThreat()) {
-        //TODO: hit cancel
       }
     }
 
