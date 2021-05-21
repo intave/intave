@@ -11,6 +11,7 @@ import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.packet.Sender;
 import de.jpx3.intave.event.violation.Violation;
 import de.jpx3.intave.event.violation.ViolationContext;
+import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserCustomCheckMeta;
 import de.jpx3.intave.user.UserMetaClientData;
@@ -49,6 +50,11 @@ public final class ClickSpeedLimiter extends IntaveMetaCheck<ClickSpeedLimiter.C
         meta.attacksDuringFlyingPackets.add(System.currentTimeMillis());
 //        meta.attacksThisTick++;
       }
+    }
+
+    double timeDiff = (AccessHelper.now() - meta.lastFlag) / 1000d;
+    if(timeDiff < 1d) {
+      event.setCancelled(true);
     }
   }
 
@@ -145,6 +151,9 @@ public final class ClickSpeedLimiter extends IntaveMetaCheck<ClickSpeedLimiter.C
         .build();
       ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
       if(violationContext.shouldCounterThreat()) {
+        meta.lastFlag = AccessHelper.now();
+      }
+      if(violationContext.shouldCounterThreat()) {
         //TODO: hit cancel
       }
     }
@@ -166,6 +175,7 @@ public final class ClickSpeedLimiter extends IntaveMetaCheck<ClickSpeedLimiter.C
   }
 
   public static final class ClickSpeedLimiterMeta extends UserCustomCheckMeta {
+    private long lastFlag;
     PacketType lastMovePacketType;
     List<Long> attacksDuringFlyingPackets = new ArrayList<>();
     int[] attackCountArray = new int[20];
