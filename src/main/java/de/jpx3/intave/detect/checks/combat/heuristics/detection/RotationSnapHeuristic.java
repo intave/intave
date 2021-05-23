@@ -333,7 +333,7 @@ public class RotationSnapHeuristic extends IntaveMetaCheckPart<Heuristics, Rotat
     }
 
     if(user.meta().clientData().protocolVersion() <= UserMetaClientData.PROTOCOL_VERSION_BOUNTIFUL_UPDATE) {
-      vl /= 3;
+      vl /= 2;
     }
 
     if(liteFlag) {
