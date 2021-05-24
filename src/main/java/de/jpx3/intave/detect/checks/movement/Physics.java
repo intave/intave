@@ -33,10 +33,7 @@ import de.jpx3.intave.world.collider.result.ComplexColliderSimulationResult;
 import de.jpx3.intave.world.collider.result.QuickColliderSimulationResult;
 import de.jpx3.intave.world.collision.Collision;
 import de.jpx3.intave.world.waterflow.Waterflow;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -399,7 +396,7 @@ public final class Physics extends IntaveCheck {
         boolean currentlyInOverride = blockShapeAccess.currentlyInOverride(WrappedMathHelper.floor(blockPositionX), WrappedMathHelper.floor(blockPositionY), WrappedMathHelper.floor(blockPositionZ));
 
         String colliderName;
-        if(!Collision.blockInsideBorder(player.getWorld(), blockPositionX, blockPositionZ)) {
+        if (!Collision.blockInsideBorder(player.getWorld(), blockPositionX, blockPositionZ)) {
           colliderName = "world border";
         } else {
           colliderName = (currentlyInOverride ? "emulated " : "") + shortenTypeName(block.getType()) + " block";
@@ -499,7 +496,7 @@ public final class Physics extends IntaveCheck {
       boolean highPitchViolationOverflow = violationLevelData.physicsVL > trustFactorSetting("pa-override-threshold", player);
 
       boolean setback = deepPitchViolationOverflow || (!highToleranceMode && highPitchViolationOverflow);
-      if(distance > 0.75 && !user.trustFactor().atLeast(TrustFactor.BYPASS)) {
+      if (distance > 0.75 && !user.trustFactor().atLeast(TrustFactor.BYPASS)) {
         setback = true;
       }
 
@@ -868,7 +865,7 @@ public final class Physics extends IntaveCheck {
 
     if (movedTooQuickly && movedTooQuicklyCheckable && !movementData.physicsUnpredictableVelocityExpected) {
       //noinspection UnnecessaryLocalVariable
-      double vl = abuseHorizontally > 0.2 ? 1000 : Math.max(0.1, abuseHorizontally) * 100;
+      double vl = abuseHorizontally > 0.2 ? 1000 : Math.max(0.1, abuseHorizontally) * 300;
 //      Bukkit.broadcastMessage(user.player().getName() + " moved too quickly: vl+" + vl + " abuse:" + abuseHorizontally + " | un:" + movementData.physicsUnpredictableVelocityExpected);
       return vl;
     }
