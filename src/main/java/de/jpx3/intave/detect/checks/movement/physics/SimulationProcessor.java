@@ -22,7 +22,7 @@ import static de.jpx3.intave.reflect.ReflectiveDataWatcherAccess.DATA_WATCHER_BL
 
 @Relocate
 public final class SimulationProcessor {
-  private final static double REQUIRED_ACCURACY_FOR_BIAS = 0.001;
+  private final static double REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT = 0.001;
 
   public ComplexColliderSimulationResult simulate(User user, Pose pose) {
     PoseSimulator simulator = pose.simulator();
@@ -40,7 +40,7 @@ public final class SimulationProcessor {
     //
     // perform iterative simulation procedure
     //
-    boolean biasedSimulationFailed = simulationAccuracy > REQUIRED_ACCURACY_FOR_BIAS;
+    boolean biasedSimulationFailed = simulationAccuracy > REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT;
     boolean iterativeAllowed = !user.meta().inventoryData().inventoryOpen();
     if (biasedSimulationFailed && iterativeAllowed) {
       IterativeSimulationContext iterativeSimulationContext = simulateMovementIterative(user);
@@ -243,7 +243,7 @@ public final class SimulationProcessor {
               useItemState,
               false
             );
-            if (iterativeSimulation.smallestDistance() <= REQUIRED_ACCURACY_FOR_BIAS) {
+            if (iterativeSimulation.smallestDistance() <= REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT) {
               break SIMULATION;
             }
           }

@@ -146,7 +146,6 @@ public final class Physics extends IntaveCheck {
 
     Timings.CHECK_PHYSICS_PROC_TOT.start();
     predictFlyingPacketBeforeVelocity(user);
-
     ComplexColliderSimulationResult predictedMovement = simulationProcessor.simulate(user, movementData.movementPoseType());
     movementData.onGround = predictedMovement.onGround();
     movementData.collidedHorizontally = predictedMovement.collidedHorizontally();

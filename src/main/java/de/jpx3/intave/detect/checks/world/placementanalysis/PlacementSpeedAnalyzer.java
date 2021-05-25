@@ -13,7 +13,10 @@ import de.jpx3.intave.event.packet.Sender;
 import de.jpx3.intave.event.violation.Violation;
 import de.jpx3.intave.event.violation.ViolationContext;
 import de.jpx3.intave.tools.AccessHelper;
-import de.jpx3.intave.user.*;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserCustomCheckMeta;
+import de.jpx3.intave.user.UserMetaMovementData;
+import de.jpx3.intave.user.UserMetaPotionData;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -92,7 +95,7 @@ public final class PlacementSpeedAnalyzer extends IntaveMetaCheckPart<PlacementA
         boolean noHardFault = AccessHelper.now() - meta.lastHardFaultClick > 8000;
         boolean noSneaking = AccessHelper.now() - movementData.lastSneakingTimestamps > 8000;
         boolean recentJump = AccessHelper.now() - movementData.lastJumpTimestamps < 750;
-        double minAverage = (inOneLine ? ((recentJump ? 450 : noHardFault ? (noSneaking ? 500 : 300) : (noSneaking ? 300 : 200))) : 150);
+        double minAverage = (inOneLine ? ((recentJump ? 450 : noHardFault ? (noSneaking ? 500 : 350) : (noSneaking ? 375 : 200))) : 150);
 
         int speedAmplifier = potionData.potionEffectSpeedAmplifier();
         minAverage /= 0.15 * speedAmplifier * speedAmplifier + 1;

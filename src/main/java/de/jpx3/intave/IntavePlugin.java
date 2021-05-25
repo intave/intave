@@ -358,7 +358,7 @@ public final class IntavePlugin extends JavaPlugin {
             return;
           }
 
-          if(VERSION_DETAILS == 92) {
+          if(VERSION_DETAILS == 97) {
             requiredState = properties.get("configuration-hash");
             if(properties.containsKey("partner")) {
               VERSION_DETAILS |= 0x100;
@@ -367,7 +367,7 @@ public final class IntavePlugin extends JavaPlugin {
               VERSION_DETAILS |= 0x200;
             }
           } else {
-            VERSION_DETAILS = 92;
+            VERSION_DETAILS = 97;
           }
 
           String keyResponse = properties.get("exchange-key");
