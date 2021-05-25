@@ -134,7 +134,9 @@ public final class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackR
         statisticApply(user, CheckStatistics::increaseTotal);
         WrappedEntity entity = entityByIdentifier(user, remainingAttack.entityId());
         boolean invalid = false;
-        if (entity != null && !player.isDead()) {
+        UserMetaAbilityData abilityData = user.meta().abilityData();
+        float health = abilityData.health;
+        if (entity != null && health > 0) {
           if(entity.isEntityLiving) {
             if (clientData.protocolVersion() >= PROTOCOL_VERSION_COMBAT_UPDATE) {
               // >= 1.9.x
@@ -169,11 +171,30 @@ public final class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackR
               invalid = processIterativeReachCheck(player, entity);
             }
           }
-        }
-        if (invalid) {
-          statisticApply(user, CheckStatistics::increaseFails);
+
+          if (invalid) {
+            statisticApply(user, CheckStatistics::increaseFails);
+          } else {
+            statisticApply(user, CheckStatistics::increasePasses);
+          }
         } else {
-          statisticApply(user, CheckStatistics::increasePasses);
+          Synchronizer.synchronize(new Runnable() {
+            @Native
+            @Override
+            public void run() {
+              for (Player authenticatedPlayer : Bukkit.getOnlinePlayers()) {
+                if (plugin.sibylIntegrationService().isAuthenticated(authenticatedPlayer)) {
+                  String message;
+                  if(entity == null) {
+                    message = ChatColor.RED + "[R] " + player.getName() + " attacked a null entity";
+                  } else {
+                    message = ChatColor.RED + "[R] " + player.getName() + " attacked entity while beeing dead";
+                  }
+                  authenticatedPlayer.sendMessage(message);
+                }
+              }
+            }
+          });
         }
         if (!invalid && !violationLevelData.isInActiveTeleportBundle && remainingAttack.shouldResend) {
           receiveExcludedPacket(player, remainingAttack.packet);
