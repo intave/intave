@@ -1,5 +1,6 @@
 package de.jpx3.intave.detect.checks.combat.heuristics.detection;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.adapter.MinecraftVersions;
@@ -46,6 +47,7 @@ public class SameRotationHeuristic extends IntaveMetaCheckPart<Heuristics, SameR
     UserMetaMovementData movementData = user.meta().movementData();
 
     if (movementData.lastTeleport == 0) {
+      meta.rotationsSinceTeleport = 0;
       return;
     }
 
@@ -58,7 +60,7 @@ public class SameRotationHeuristic extends IntaveMetaCheckPart<Heuristics, SameR
     boolean isPartner = (UserMetaClientData.VERSION_DETAILS & 0x100) != 0;
 //    boolean isEnterprise = (UserMetaClientData.VERSION_DETAILS & 0x200) != 0;
 
-    if(movementData.lastTeleport > 5 && isPartner) {
+    if(movementData.lastTeleport > 5 && isPartner && meta.rotationsSinceTeleport > 5) {
       if (meta.lastLastTick.yawMotion < 10 && meta.lastTick.yawMotion > 45 && currentTick.yawMotion < 10) {
         checkSameRotationYaw(meta, player);
         checkExactRotationMotionYaw(meta, player);
@@ -78,7 +80,7 @@ public class SameRotationHeuristic extends IntaveMetaCheckPart<Heuristics, SameR
       meta.pitchRotations.add(meta.lastLastTick.pitch);
     }
 
-    prepareNextTick(user, currentTick);
+    prepareNextTick(user, currentTick, event.getPacketType());
   }
 
   private void checkExactRotationYaw(SameRotationHeuristicMeta meta, Player player) {
@@ -165,7 +167,7 @@ public class SameRotationHeuristic extends IntaveMetaCheckPart<Heuristics, SameR
     return options;
   }
 
-  private void prepareNextTick(User user, Tick currentTick) {
+  private void prepareNextTick(User user, Tick currentTick, PacketType packetType) {
     SameRotationHeuristicMeta meta = metaOf(user);
 
     meta.lastLastTick = meta.lastTick;
@@ -175,10 +177,15 @@ public class SameRotationHeuristic extends IntaveMetaCheckPart<Heuristics, SameR
       meta.yawRotations.remove(0);
     if (meta.pitchRotations.size() > 40)
       meta.pitchRotations.remove(0);
+
+    if(packetType == PacketType.Play.Client.LOOK || packetType == PacketType.Play.Client.POSITION_LOOK) {
+      meta.rotationsSinceTeleport++;
+    }
   }
 
 
   public static final class SameRotationHeuristicMeta extends UserCustomCheckMeta {
+    private int rotationsSinceTeleport;
     private Set<Float> yawRotations = new HashSet<>();
     private Set<Float> pitchRotations = new HashSet<>();
     private Tick lastLastTick = new Tick();
