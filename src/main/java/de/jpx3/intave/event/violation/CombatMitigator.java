@@ -68,7 +68,7 @@ public final class CombatMitigator implements BukkitEventSubscriber {
     }
 
     Player player = user.player();
-    String message = ChatColor.RED + "[CM] Applied " + attackNerfer.name() + " combat nerfer on " + player.getName() + " (dmc" + checkId + ")";
+    String message = ChatColor.RED + "[CM] Applied " + attackNerfer.name() + " combat nerfer on " + player.getName() + " (" + checkId + ")";
 
     if (IntaveControl.DEBUG_HEURISTICS && !plugin.sibylIntegrationService().isAuthenticated(player)) {
       player.sendMessage(message);
