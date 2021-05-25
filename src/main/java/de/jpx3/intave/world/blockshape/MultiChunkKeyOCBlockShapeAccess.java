@@ -190,18 +190,18 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
   @Override
   public void override(World world, int posX, int posY, int posZ, Material type, int blockState) {
     invalidateOverride(posX, posY, posZ);
-    BlockShape BlockShape;
+    BlockShape blockShape;
     if(type == Material.AIR) {
-      BlockShape = EMPTY_CACHE_ENTRY;
+      blockShape = EMPTY_CACHE_ENTRY;
     } else {
-      BlockShape = new BlockShape(
+      blockShape = new BlockShape(
         constructBlock(world, posX, posY, posZ, type, blockState),
         type, blockState
       );
     }
     long key = bigKey(posX, posY, posZ);
-    indexedReplacements.put(key, BlockShape);
-    locatedReplacements.put(new Location(world, posX, posY, posZ), BlockShape);
+    indexedReplacements.put(key, blockShape);
+    locatedReplacements.put(new Location(world, posX, posY, posZ), blockShape);
   }
 
   @Override

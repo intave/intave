@@ -233,7 +233,7 @@ public final class PacketSubscriptionLinker {
     ListenerPriority priority, PacketType[] translatePacketTypes,
     String methodName, PacketSubscriptionMethodExecutor executor
   ) {
-    if(translatePacketTypes.length == 0) {
+    if (translatePacketTypes.length == 0) {
       return;
     }
     LocalPacketAdapter adapter = new LocalPacketAdapter(plugin, subscriber, priority, translatePacketTypes, methodName, executor);

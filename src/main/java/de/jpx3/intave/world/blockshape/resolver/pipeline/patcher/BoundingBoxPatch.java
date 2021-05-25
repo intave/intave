@@ -20,7 +20,7 @@ public abstract class BoundingBoxPatch {
     return bbs;
   }
 
-  protected List<WrappedAxisAlignedBB> patch(World world, Player player, Material type, int blockState, List<WrappedAxisAlignedBB> bbs) {
+  protected List<WrappedAxisAlignedBB> patch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, List<WrappedAxisAlignedBB> bbs) {
     return bbs;
   }
 

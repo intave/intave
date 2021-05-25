@@ -18,7 +18,7 @@ public final class BlockTrapdoorPatch extends BoundingBoxPatch {
    makes state-control constrain redundant
    */
   @Override
-  public List<WrappedAxisAlignedBB> patch(World world, Player player, Material type, int blockState, List<WrappedAxisAlignedBB> bbs) {
+  public List<WrappedAxisAlignedBB> patch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, List<WrappedAxisAlignedBB> bbs) {
     BoundingBoxBuilder boundingBoxBuilder = BoundingBoxBuilder.create();
     boolean isTop = (blockState & 8) != 0;
     boolean isOpen = (blockState & 4) != 0;

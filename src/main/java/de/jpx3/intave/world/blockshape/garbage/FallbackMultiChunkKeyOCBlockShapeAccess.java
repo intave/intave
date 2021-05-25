@@ -253,7 +253,7 @@ public final class FallbackMultiChunkKeyOCBlockShapeAccess implements OCBlockSha
           BoundingBoxAccessFlowStudy.incremRedLookups();
           resolve = lookup(world, block, posX, posY, posZ);
         } else if(!lookup){
-          resolve.successfullFallbackLookup();
+          resolve.successfulFallbackLookup();
           BoundingBoxAccessFlowStudy.incremGreenLookups();
         }
         return resolve;

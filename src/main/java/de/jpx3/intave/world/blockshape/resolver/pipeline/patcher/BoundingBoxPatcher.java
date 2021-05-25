@@ -20,6 +20,7 @@ public final class BoundingBoxPatcher {
     add(BlockFenceGatePatch.class);
     add(BlockFarmlandPatch.class);
     add(BlockThinPatch.class);
+//    add(BlockDoorPatch.class);
   }
 
   private static void add(Class<? extends BoundingBoxPatch> patchClass) {
@@ -42,7 +43,7 @@ public final class BoundingBoxPatcher {
 
   public static List<WrappedAxisAlignedBB> patch(World world, Player player, int blockX, int blockY, int blockZ, Material type, int blockState, List<WrappedAxisAlignedBB> boxes) {
     BoundingBoxPatch patch = patches.get(type);
-    return patch == null ? boxes : transpose(patch.patch(world, player, type, blockState, reposeIfRequired(patch, boxes, blockX, blockY, blockZ)), blockX, blockY, blockZ);
+    return patch == null ? boxes : transpose(patch.patch(world, player, blockX, blockY, blockZ, type, blockState, reposeIfRequired(patch, boxes, blockX, blockY, blockZ)), blockX, blockY, blockZ);
   }
 
   public static boolean requiresPatch(Material material) {

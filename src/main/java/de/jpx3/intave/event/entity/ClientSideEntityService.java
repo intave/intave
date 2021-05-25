@@ -416,7 +416,7 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
       if (entityTypeData != null) {
         entity.entityTypeData = entityTypeData;
       } else {
-        IntaveLogger.logger().info("Unable to update enttiy by EntityMetaData packet.");
+        IntaveLogger.logger().info("Unable to update entity metadata of entity " + entityId + " of type " + entityTypeId);
       }
 
       Float health = readHealthOf(watchableObjects);

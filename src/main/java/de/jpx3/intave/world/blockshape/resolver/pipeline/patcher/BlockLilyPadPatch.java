@@ -15,11 +15,11 @@ import java.util.List;
 public final class BlockLilyPadPatch extends BoundingBoxPatch {
   @Override
   public List<WrappedAxisAlignedBB> patch(World world, Player player, Block block, List<WrappedAxisAlignedBB> bbs) {
-    return patch(world, player, block.getType(), BlockDataAccess.dataIndexOf(block), bbs);
+    return patch(world, player, block.getX(), block.getY(), block.getZ(), block.getType(), BlockDataAccess.dataIndexOf(block), bbs);
   }
 
   @Override
-  public List<WrappedAxisAlignedBB> patch(World world, Player player, Material type, int blockState, List<WrappedAxisAlignedBB> bbs) {
+  public List<WrappedAxisAlignedBB> patch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, List<WrappedAxisAlignedBB> bbs) {
     User user = UserRepository.userOf(player);
     BoundingBoxBuilder builder = BoundingBoxBuilder.create();
     if (user.meta().clientData().combatUpdate()) {

@@ -1,5 +1,6 @@
 package de.jpx3.intave.world.blockshape;
 
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import org.bukkit.Material;
@@ -47,10 +48,10 @@ public final class BlockShape {
   }
 
   public boolean expired() {
-    return AccessHelper.now() - creation > 10000;
+    return !IntaveControl.IGNORE_CACHE_REFRESH_ON_DETECTION && AccessHelper.now() - creation > 10000;
   }
 
-  public void successfullFallbackLookup() {
+  public void successfulFallbackLookup() {
     lookups++;
   }
 

@@ -73,6 +73,10 @@ public class TinyProtocol {
     // Compute handler name
     this.handlerName = handlerName();
 
+//    if (MinecraftVersions.VER1_12_0.atOrAbove()) {
+//      return;
+//    }
+
     // Prepare existing players
     registerBukkitEvents();
 

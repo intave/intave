@@ -399,16 +399,18 @@ public final class Physics extends IntaveCheck {
         boolean currentlyInOverride = blockShapeAccess.currentlyInOverride(WrappedMathHelper.floor(blockPositionX), WrappedMathHelper.floor(blockPositionY), WrappedMathHelper.floor(blockPositionZ));
 
         String colliderName;
-        if(!Collision.blockInsideBorder(player.getWorld(), blockPositionX, blockPositionZ)) {
+        if (!Collision.blockInsideBorder(player.getWorld(), blockPositionX, blockPositionZ)) {
           colliderName = "world border";
         } else {
-          colliderName = (currentlyInOverride ? "emulated " : "") + shortenTypeName(block.getType()) + " block";
+          colliderName = (currentlyInOverride ? "emulated " : "") + shortenTypeName(currentlyInOverride ? BukkitBlockAccess.cacheAppliedTypeAccess(user, block.getLocation()) : block.getType()) + " block";
         }
         String message = "moved into " + colliderName;
         boolean multipleBoxes = intersectionBoundingBoxesCurrent.size() > 1;
         String details = (multipleBoxes ? intersectionBoundingBoxesCurrent.size() : "one") + " box" + (multipleBoxes ? "es" : "");
 
-        blockShapeAccess.identityInvalidate();
+        if(!IntaveControl.IGNORE_CACHE_REFRESH_ON_DETECTION) {
+          blockShapeAccess.identityInvalidate();
+        }
 
         Violation violation = Violation.builderFor(Physics.class)
           .forPlayer(player).withMessage(message).withDetails(details).withVL(0).build();
@@ -435,7 +437,9 @@ public final class Physics extends IntaveCheck {
 
         if (!startBoundingBoxInList) {
           movementData.invalidMovement = true;
-          blockShapeAccess.identityInvalidate();
+          if(!IntaveControl.IGNORE_CACHE_REFRESH_ON_DETECTION) {
+            blockShapeAccess.identityInvalidate();
+          }
 
           WrappedAxisAlignedBB boundingBox = intersectionBoundingBoxesCurrent.get(0);
           double blockPositionX = (boundingBox.minX + boundingBox.maxX) / 2.0;
@@ -447,8 +451,7 @@ public final class Physics extends IntaveCheck {
           boolean multipleBoxes = intersectionBoundingBoxesCurrent.size() > 1;
           String details = (multipleBoxes ? intersectionBoundingBoxesCurrent.size() : "one") + " box" + (multipleBoxes ? "es" : "");
           Violation violation = Violation.builderFor(Physics.class)
-            .forPlayer(player).withMessage(message).withDetails(details)
-            .withVL(0)
+            .forPlayer(player).withMessage(message).withDetails(details).withVL(0)
             .build();
           plugin.violationProcessor().processViolation(violation);
           WrappedAxisAlignedBB startPhaseBoundingBox = WrappedAxisAlignedBB.createFromPosition(user, movementData.verifiedLocation());
@@ -472,7 +475,9 @@ public final class Physics extends IntaveCheck {
       violationLevelIncrease = Math.max(1, violationLevelIncrease);
       violationLevelData.physicsVL = MathHelper.minmax(0, violationLevelData.physicsVL + violationLevelIncrease, 200);
       violationLevelData.physicsInvalidMovementsInRow++;
-      blockShapeAccess.identityInvalidate();
+      if(!IntaveControl.IGNORE_CACHE_REFRESH_ON_DETECTION) {
+        blockShapeAccess.identityInvalidate();
+      }
       statisticApply(user, CheckStatistics::increaseFails);
     } else {
       violationLevelData.physicsInvalidMovementsInRow = 0;
@@ -499,7 +504,7 @@ public final class Physics extends IntaveCheck {
       boolean highPitchViolationOverflow = violationLevelData.physicsVL > trustFactorSetting("pa-override-threshold", player);
 
       boolean setback = deepPitchViolationOverflow || (!highToleranceMode && highPitchViolationOverflow);
-      if(distance > 0.75 && !user.trustFactor().atLeast(TrustFactor.BYPASS)) {
+      if (distance > 0.75 && !user.trustFactor().atLeast(TrustFactor.BYPASS)) {
         setback = true;
       }
 
@@ -868,7 +873,7 @@ public final class Physics extends IntaveCheck {
 
     if (movedTooQuickly && movedTooQuicklyCheckable && !movementData.physicsUnpredictableVelocityExpected) {
       //noinspection UnnecessaryLocalVariable
-      double vl = abuseHorizontally > 0.2 ? 1000 : Math.max(0.1, abuseHorizontally) * 100;
+      double vl = abuseHorizontally > 0.2 ? 1000 : Math.max(0.1, abuseHorizontally) * 300;
 //      Bukkit.broadcastMessage(user.player().getName() + " moved too quickly: vl+" + vl + " abuse:" + abuseHorizontally + " | un:" + movementData.physicsUnpredictableVelocityExpected);
       return vl;
     }

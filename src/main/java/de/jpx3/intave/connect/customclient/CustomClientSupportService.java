@@ -52,7 +52,7 @@ public final class CustomClientSupportService implements EventProcessor {
     PacketContainer packet = event.getPacket();
     String tag;
     if (packet.getStrings().getValues().isEmpty()) {
-      Object minecraftKey = packet.getSpecificModifier(ReflectiveAccess.lookupServerClass("MinecraftKey")).getValues().get(0);
+      Object minecraftKey = packet.getMinecraftKeys().getValues().get(0);
       try {
         tag = (String) minecraftKey.getClass().getMethod("toString").invoke(minecraftKey);
       } catch (Exception exception) {
@@ -73,12 +73,12 @@ public final class CustomClientSupportService implements EventProcessor {
       bytes.markReaderIndex();
       String messageKey = LabyModChannelHelper.readString(bytes, 100);
       if(messageKey.equalsIgnoreCase("clientconfig")) {
+        IntaveLogger.logger().pushPrintln("[Intave] " + player.getName() + " has sent a custom client configuration (client has special Intave support)");
         String messageContent = LabyModChannelHelper.readString(bytes, 32767);
         JsonElement jsonElement = jsonParser.parse(messageContent);
         CustomClientSupport customClientSupport = CustomClientSupport.createFrom(jsonElement);
         UserRepository.userOf(player).setCustomClientSupport(customClientSupport);
         sendCustomDataPacket(player, "clientconfig","received");
-        IntaveLogger.logger().pushPrintln("[Intave] " + player.getName() + " has sent a custom client configuration (client has special Intave support)");
       }
     } catch (RuntimeException exception) {
       exception.printStackTrace();
@@ -91,7 +91,7 @@ public final class CustomClientSupportService implements EventProcessor {
   private void sendCustomDataPacket(Player player, String channel, String data) {
     PacketContainer packetContainer = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.CUSTOM_PAYLOAD);
     if (MinecraftVersions.VER1_13_0.atOrAbove()) {
-      packetContainer.getSpecificModifier(MinecraftKey.class).write(0, new MinecraftKey("minecraft", "intave"));
+      packetContainer.getMinecraftKeys().write(0, new MinecraftKey("intave"));
     } else {
       packetContainer.getStrings().write(0, "minecraft:intave");
     }

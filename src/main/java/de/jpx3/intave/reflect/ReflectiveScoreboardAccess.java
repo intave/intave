@@ -12,8 +12,6 @@ import java.util.UUID;
 
 @PatchyAutoTranslation
 public final class ReflectiveScoreboardAccess {
-  private static Object scoreboardTeam;
-
   @PatchyAutoTranslation
   public static void applyNoCollisionRule(
     Player player,
@@ -21,8 +19,7 @@ public final class ReflectiveScoreboardAccess {
     String teamContent
   ) {
     teamName = teamName + "-" + findTeamName();
-    ScoreboardTeam team = scoreboardTeam == null ? new ScoreboardTeam(new Scoreboard(), teamName) : (ScoreboardTeam) scoreboardTeam;
-    ReflectiveScoreboardAccess.scoreboardTeam = team;
+    ScoreboardTeam team = new ScoreboardTeam(new Scoreboard(), teamName);
     team.setCollisionRule(ScoreboardTeamBase.EnumTeamPush.NEVER);
     PlayerConnection connection = ((CraftPlayer) player).getHandle().playerConnection;
     connection.sendPacket(new PacketPlayOutScoreboardTeam(team, ImmutableList.of(teamContent), 3));

@@ -218,6 +218,7 @@ public class AirClickLimitHeuristic extends IntaveMetaCheckPart<Heuristics, AirC
         if(meta.flaggCounter > 20 && meta.maxCPS > 18) {
           //dmc27
           user.applyAttackNerfer(AttackNerfStrategy.GARBAGE_HITS, "27");
+          user.applyAttackNerfer(AttackNerfStrategy.BLOCKING, "27");
         }
 
         meta.lastFlagTimeStamp = System.currentTimeMillis();

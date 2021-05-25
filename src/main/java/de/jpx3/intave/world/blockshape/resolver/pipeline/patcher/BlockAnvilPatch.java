@@ -17,11 +17,11 @@ public final class BlockAnvilPatch extends BoundingBoxPatch {
 
   @Override
   public List<WrappedAxisAlignedBB> patch(World world, Player player, Block block, List<WrappedAxisAlignedBB> bbs) {
-    return patch(world, player, block.getType(), BlockDataAccess.dataIndexOf(block), bbs);
+    return patch(world, player, block.getX(), block.getY(), block.getZ(), block.getType(), BlockDataAccess.dataIndexOf(block), bbs);
   }
 
   @Override
-  public List<WrappedAxisAlignedBB> patch(World world, Player player, Material type, int blockState, List<WrappedAxisAlignedBB> bbs) {
+  public List<WrappedAxisAlignedBB> patch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, List<WrappedAxisAlignedBB> bbs) {
     BoundingBoxBuilder boundingBoxBuilder = BoundingBoxBuilder.create();
 
     if((blockState & 3) % 2 == 0) {

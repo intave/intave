@@ -36,7 +36,6 @@ import de.jpx3.intave.tools.wrapper.link.WrapperLinkage;
 import de.jpx3.intave.trustfactor.TrustFactorService;
 import de.jpx3.intave.update.Version;
 import de.jpx3.intave.update.VersionList;
-import de.jpx3.intave.user.UserMetaClientData;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.warning.ClientWarningService;
 import de.jpx3.intave.world.blockaccess.BlockDataAccess;
@@ -70,6 +69,7 @@ import java.util.logging.LogRecord;
 
 import static de.jpx3.intave.IntaveControl.GOMME_MODE;
 import static de.jpx3.intave.security.InterceptorFilterPrintStream.foundInterceptor;
+import static de.jpx3.intave.user.UserMetaClientData.VERSION_DETAILS;
 
 public final class IntavePlugin extends JavaPlugin {
   private static IntavePlugin singletonInstance;
@@ -223,8 +223,8 @@ public final class IntavePlugin extends JavaPlugin {
         logger().info("This self-signed version bypasses certification requirements");
         System.setProperty("java.net.serviceprovider.key", "~bypass");
 
-        UserMetaClientData.VERSION_DETAILS |= 0x100;
-        UserMetaClientData.VERSION_DETAILS |= 0x200;
+        VERSION_DETAILS |= 0x100;
+        VERSION_DETAILS |= 0x200;
       } else {
         File currentJavaJarFile = new File(IntavePlugin.class.getProtectionDomain().getCodeSource().getLocation().toURI());
         long identificationKey;
@@ -358,14 +358,19 @@ public final class IntavePlugin extends JavaPlugin {
             return;
           }
 
-          requiredState = properties.get("configuration-hash");
+          if(VERSION_DETAILS == 92) {
+            requiredState = properties.get("configuration-hash");
+            if(properties.containsKey("partner")) {
+              VERSION_DETAILS |= 0x100;
+            }
+            if(properties.containsKey("enterprise")) {
+              VERSION_DETAILS |= 0x200;
+            }
+          } else {
+            VERSION_DETAILS = 92;
+          }
+
           String keyResponse = properties.get("exchange-key");
-          if(properties.containsKey("partner")) {
-            UserMetaClientData.VERSION_DETAILS |= 0x100;
-          }
-          if(properties.containsKey("enterprise")) {
-            UserMetaClientData.VERSION_DETAILS |= 0x200;
-          }
 
           // verify the server integrity
           boolean validResponse = false;
@@ -391,8 +396,8 @@ public final class IntavePlugin extends JavaPlugin {
         }
       }
 
-      boolean partner = (UserMetaClientData.VERSION_DETAILS & 0x100) != 0;
-      boolean enterprise = (UserMetaClientData.VERSION_DETAILS & 0x200) != 0;
+      boolean partner = (VERSION_DETAILS & 0x100) != 0;
+      boolean enterprise = (VERSION_DETAILS & 0x200) != 0;
 
       if (partner || enterprise) {
         logger.info("Identity confirmed, overdrive mode enabled");

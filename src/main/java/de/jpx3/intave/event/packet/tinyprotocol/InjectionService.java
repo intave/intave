@@ -23,6 +23,9 @@ public final class InjectionService implements EventProcessor {
   public InjectionService(IntavePlugin plugin) {
     this.plugin = plugin;
     this.pipelineInjector = new EventTinyProtocol(plugin, this);
+//    if (MinecraftVersions.VER1_12_0.atOrAbove()) {
+//      return;
+//    }
     injectAll();
     this.plugin.eventLinker().registerEventsIn(this);
   }

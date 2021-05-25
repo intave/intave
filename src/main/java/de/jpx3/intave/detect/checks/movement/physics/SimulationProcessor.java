@@ -59,7 +59,10 @@ public final class SimulationProcessor {
       movementData.ignoredAttackReduce = true;
     }
     if (inventoryData.handActive() && !iterativeResult.handActive()) {
-      releaseHandOf(user);
+      boolean releaseHandConditions = Math.hypot(movementData.motionX(), movementData.motionZ()) > 0.2 || movementData.lastTeleport >= 2;
+      if (releaseHandConditions) {
+        releaseHandOf(user);
+      }
     }
     movementData.keyForward = iterativeResult.forward();
     movementData.keyStrafe = iterativeResult.strafe();
@@ -89,6 +92,12 @@ public final class SimulationProcessor {
   public ComplexColliderSimulationResult simulateMovementWithoutKeyPress(
     User user
   ) {
+    return simulateMovementWithKeyPress(user, 0, 0);
+  }
+
+  public ComplexColliderSimulationResult simulateMovementWithKeyPress(
+    User user, int forward, int strafe
+  ) {
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     Pose movementPoseType = movementData.movementPoseType();
@@ -96,7 +105,7 @@ public final class SimulationProcessor {
     motionVector.resetTo(movementData);
     return movementPoseType.simulator().performSimulation(
       user, motionVector,
-      0, 0, false, false,
+      forward, strafe, false, false,
       meta.inventoryData().handActive()
     );
   }

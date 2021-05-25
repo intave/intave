@@ -21,6 +21,8 @@ import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.world.blockshape.OCBlockShapeAccess;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import java.util.*;
@@ -365,6 +367,20 @@ public final class IntaveRootStage extends CommandStage {
   @Native
   public void asyncMessageInNetty(User user) {
     user.meta().connectionData().sendAsyncMessage = true;
+  }
+
+  @SubCommand(
+    selectors = "invisibleBlock",
+    usage = "",
+    description = "",
+    permission = "sibyl"
+  )
+  @Native
+  public void invisibleBlock(User user) {
+    Player player = user.player();
+    Location location = player.getLocation();
+    user.blockShapeAccess().override(player.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), Material.OBSIDIAN, 0);
+    player.sendMessage(ChatColor.GREEN + "Block summoned");
   }
 
   public static IntaveRootStage singletonInstance() {

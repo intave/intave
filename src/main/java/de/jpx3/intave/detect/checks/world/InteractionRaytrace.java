@@ -244,6 +244,7 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
       raycastResult = Raytracer.blockRayTrace(player, playerLocation);
       raycastResultmdf = Raytracer.blockRayTrace(player, playerLocationmdf);
     } catch (Exception exception) {
+      exception.printStackTrace();
       if(interaction.targetBlock.toLocation(world).distance(player.getLocation()) < 6) {
         emulatePacket(interaction, null, interaction.targetBlock.toLocation(world), interaction.targetBlock.toLocation(world), false, false, false);
       }
@@ -467,8 +468,34 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
     OCBlockShapeAccess blockShapeAccess = userOf(player).blockShapeAccess();
     Material clickedType = block.getType();
     switch (clickedType) {
+      case ACACIA_DOOR:
+      case DARK_OAK_DOOR:
+      case BIRCH_DOOR:
+      case JUNGLE_DOOR:
+      case WOOD_DOOR:
       case WOODEN_DOOR: {
-        //TODO
+        int upperData = BlockDataAccess.dataIndexOf(block);
+        int lowerData;
+
+        boolean isUpper = (upperData & 8) != 0;
+        if(isUpper) {
+          lowerData = BlockDataAccess.dataIndexOf(block = block.getRelative(BlockFace.DOWN));
+        } else {
+          lowerData = upperData;
+          upperData = BlockDataAccess.dataIndexOf(block.getRelative(BlockFace.UP));
+        }
+
+        // toggle close
+        lowerData = (lowerData & 4) != 0 ? lowerData ^ 4 : lowerData | 4;
+
+        blockShapeAccess.override(world, block.getX(), block.getY(), block.getZ(), clickedType, lowerData);
+        blockShapeAccess.override(world, block.getX(), block.getY() + 1, block.getZ(), clickedType, upperData);
+
+        Block finalBlock = block;
+        Synchronizer.packetSynchronize(() -> {
+          blockShapeAccess.invalidateOverride(finalBlock.getX(), finalBlock.getY(), finalBlock.getZ());
+          blockShapeAccess.invalidateOverride(finalBlock.getX(), finalBlock.getY() + 1, finalBlock.getZ());
+        });
         break;
       }
       case ACACIA_FENCE_GATE:
@@ -481,13 +508,14 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
         break;
       }
       case TRAP_DOOR: {
-        int data = BlockDataAccess.dataIndexOf(block);//BlockDataAccess.dataIndexOf(block);
+        int data = BlockDataAccess.dataIndexOf(block);
         boolean newOpen = (data & 4) != 0;
         int bitMask = 4;
         byte newData = (byte) (!newOpen ? (data | bitMask) : (data & ~bitMask));
         Material material = block.getType();
         blockShapeAccess.override(world, block.getX(), block.getY(), block.getZ(), material, newData);
-        Synchronizer.packetSynchronize(() -> blockShapeAccess.invalidateOverride(block.getX(), block.getY(), block.getZ()));
+        Block finalBlock1 = block;
+        Synchronizer.packetSynchronize(() -> blockShapeAccess.invalidateOverride(finalBlock1.getX(), finalBlock1.getY(), finalBlock1.getZ()));
         break;
       }
     }
@@ -587,10 +615,8 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
             }
           }
           writeEnumDirection(packet, raycastResult.sideHit);
-          packet.getBlockPositionModifier().write(
-            0,
-            new BlockPosition(raycastLocation.getBlockX(), raycastLocation.getBlockY(), raycastLocation.getBlockZ())
-          );
+          BlockPosition value = new BlockPosition(raycastLocation.getBlockX(), raycastLocation.getBlockY(), raycastLocation.getBlockZ());
+          writeBlockPosition(packet, value);
         }
         receiveExcludedPacket(player, packet);
         if (canRefreshBlocks && punishment) {
@@ -750,6 +776,15 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
       return movingObjectPositionBlock == null ? null : movingObjectPositionBlock.getBlockPosition();
     } else {
       return packet.getBlockPositionModifier().readSafely(0);
+    }
+  }
+
+  private void writeBlockPosition(PacketContainer packet, BlockPosition blockPosition) {
+    if(BLOCK_DATA_WRAPPED_IN_MOVING_OBJECT_POSITION) {
+      MovingObjectPositionBlock movingObjectPositionBlock = packet.getMovingBlockPositions().readSafely(0);
+      movingObjectPositionBlock.setBlockPosition(blockPosition);
+    } else {
+      packet.getBlockPositionModifier().write(0, blockPosition);
     }
   }
 

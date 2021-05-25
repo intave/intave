@@ -31,6 +31,7 @@ import static de.jpx3.intave.event.transaction.TransactionFeedbackService.Transa
 
 public final class BlockActionDispatcher implements EventProcessor {
   private final IntavePlugin plugin;
+  private final static boolean ignoreDataInBlockChangePackets = MinecraftVersions.VER1_14_0.atOrAbove();
 
   public BlockActionDispatcher(IntavePlugin plugin) {
     this.plugin = plugin;
@@ -213,7 +214,7 @@ public final class BlockActionDispatcher implements EventProcessor {
           BlockPosition blockPosition = blockPositions.get(i);
           WrappedBlockData blockData = blockDataList.get(i);
           Material material = blockData.getType();
-          blockShapeAccess.override(world, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ(), material, blockData.getData());
+          blockShapeAccess.override(world, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ(), material, ignoreDataInBlockChangePackets ? 0 : blockData.getData());
           blockShapeAccess.invalidate(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
         }
       }, OPTIONAL);
@@ -221,7 +222,7 @@ public final class BlockActionDispatcher implements EventProcessor {
       for (int i = 0; i < blockPositions.size(); i++) {
         BlockPosition blockPosition = blockPositions.get(i);
         WrappedBlockData blockData = blockDataList.get(i);
-        blockShapeAccess.override(world, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ(), blockData.getType(), blockData.getData());
+        blockShapeAccess.override(world, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ(), blockData.getType(), ignoreDataInBlockChangePackets ? 0 : blockData.getData());
         blockShapeAccess.invalidate(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
       }
     }

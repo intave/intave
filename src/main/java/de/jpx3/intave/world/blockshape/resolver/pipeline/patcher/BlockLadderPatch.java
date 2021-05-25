@@ -20,11 +20,11 @@ public final class BlockLadderPatch extends BoundingBoxPatch {
 
   @Override
   public List<WrappedAxisAlignedBB> patch(World world, Player player, Block block, List<WrappedAxisAlignedBB> bbs) {
-    return patch(world, player, block.getType(), BlockDataAccess.dataIndexOf(block), bbs);
+    return patch(world, player, block.getX(), block.getY(), block.getZ(), block.getType(), BlockDataAccess.dataIndexOf(block), bbs);
   }
 
   @Override
-  public List<WrappedAxisAlignedBB> patch(World world, Player player, Material type, int blockState, List<WrappedAxisAlignedBB> bbs) {
+  public List<WrappedAxisAlignedBB> patch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, List<WrappedAxisAlignedBB> bbs) {
     User user = UserRepository.userOf(player);
     BoundingBoxBuilder builder = BoundingBoxBuilder.create();
     WrappedEnumDirection direction = WrappedEnumDirection.getFront(blockState);
@@ -54,19 +54,18 @@ public final class BlockLadderPatch extends BoundingBoxPatch {
   }
 
   private void emulateLegacy(BoundingBoxBuilder builder, WrappedEnumDirection direction) {
-    float var4 = 0.125F;
     switch (direction) {
       case NORTH:
-        builder.shape(0.0F, 0.0F, 1.0F - var4, 1.0F, 1.0F, 1.0F);
+        builder.shape(0.0F, 0.0F, 0.875f, 1.0F, 1.0F, 1.0F);
         break;
       case SOUTH:
-        builder.shape(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, var4);
+        builder.shape(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 0.125F);
         break;
       case WEST:
-        builder.shape(1.0F - var4, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+        builder.shape(0.875f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
         break;
       case EAST: {
-        builder.shape(0.0F, 0.0F, 0.0F, var4, 1.0F, 1.0F);
+        builder.shape(0.0F, 0.0F, 0.0F, 0.125F, 1.0F, 1.0F);
         break;
       }
     }

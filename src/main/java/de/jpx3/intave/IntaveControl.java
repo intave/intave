@@ -15,6 +15,7 @@ public final class IntaveControl {
   public final static boolean DISABLE_AUTOCLICKER_CHECK = true;
   public final static boolean USE_BOAT_COLLISIONS = false;
   public final static boolean RESET_HURT_TIME_ON_JOIN = true;
+  public final static boolean IGNORE_CACHE_REFRESH_ON_DETECTION = false;
 
   public final static boolean USE_EXTERNAL_CONFIGURATION_FILE = true;
   public final static boolean GOMME_MODE = false;

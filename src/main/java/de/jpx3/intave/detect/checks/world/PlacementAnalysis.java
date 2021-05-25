@@ -7,7 +7,9 @@ import de.jpx3.intave.detect.checks.world.placementanalysis.PlacementPacketOrder
 import de.jpx3.intave.detect.checks.world.placementanalysis.PlacementRotationSpeedAnalyzer;
 import de.jpx3.intave.detect.checks.world.placementanalysis.PlacementSpeedAnalyzer;
 import de.jpx3.intave.event.violation.AttackNerfStrategy;
+import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserMetaClientData;
 
 public final class PlacementAnalysis extends IntaveCheck {
   private final IntavePlugin plugin;
@@ -19,11 +21,16 @@ public final class PlacementAnalysis extends IntaveCheck {
     this.setupSubChecks();
   }
 
+  @Native
   public void setupSubChecks() {
-    appendCheckPart(new PlacementFacingAnalyzer(this));
-    appendCheckPart(new PlacementSpeedAnalyzer(this));
-    appendCheckPart(new PlacementRotationSpeedAnalyzer(this));
+    boolean enterprise = (UserMetaClientData.VERSION_DETAILS & 0x200) != 0;
+    boolean partner = (UserMetaClientData.VERSION_DETAILS & 0x100) != 0;
+    if(enterprise || partner) {
+      appendCheckPart(new PlacementSpeedAnalyzer(this));
+      appendCheckPart(new PlacementRotationSpeedAnalyzer(this));
+    }
     appendCheckPart(new PlacementPacketOrderAnalyzer(this));
+    appendCheckPart(new PlacementFacingAnalyzer(this));
   }
 
   public void applyPlacementAnalysisDamageCancel(User user, String checkId) {

@@ -40,7 +40,7 @@ public final class LabymodClientListener implements PacketEventSubscriber {
     PacketContainer packet = event.getPacket();
     String tag;
     if (packet.getStrings().getValues().isEmpty()) {
-      Object minecraftKey = packet.getSpecificModifier(ReflectiveAccess.lookupServerClass("MinecraftKey")).getValues().get(0);
+      Object minecraftKey = packet.getMinecraftKeys().getValues().get(0);
       try {
         tag = (String) minecraftKey.getClass().getMethod("toString").invoke(minecraftKey);
       } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
