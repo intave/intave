@@ -184,6 +184,12 @@ public final class BlockingHeuristic extends IntaveMetaCheckPart<Heuristics, Blo
       return;
     }
 
+    boolean flyingPackets = user.meta().clientData().flyingPacketStream();
+    UserMetaMovementData movementData = user.meta().movementData();
+    if (!flyingPackets && movementData.recentlyEncounteredFlyingPacket(20) || movementData.inWeb) {
+      return;
+    }
+
     if(meta.heldItemOperations > 0) {
       PacketContainer clonedPacket = event.getPacket().deepClone();
       meta.unsendPackets.add(clonedPacket);
