@@ -10,7 +10,6 @@ import de.jpx3.intave.detect.checks.combat.Heuristics;
 import de.jpx3.intave.detect.checks.combat.heuristics.Anomaly;
 import de.jpx3.intave.detect.checks.combat.heuristics.Confidence;
 import de.jpx3.intave.event.packet.ListenerPriority;
-import de.jpx3.intave.event.packet.PacketId;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.annotate.Native;
@@ -33,7 +32,7 @@ public class SameRotationHeuristic extends IntaveMetaCheckPart<Heuristics, SameR
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsIn = {
-      LOOK, PacketId.Client.FLYING, POSITION, POSITION_LOOK
+      FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
   public void receiveMovementPacket(PacketEvent event) {

@@ -62,7 +62,7 @@ public final class NoSwingHeuristic extends IntaveMetaCheckPart<Heuristics, NoSw
   @PacketSubscription(
     priority = ListenerPriority.NORMAL,
     packetsIn = {
-      FLYING, LOOK, POSITION, POSITION, VEHICLE_MOVE
+      FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
     }
   )
   public void receiveMovementPacket(PacketEvent event) {

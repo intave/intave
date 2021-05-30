@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.detect.IntaveMetaCheckPart;
 import de.jpx3.intave.detect.checks.world.PlacementAnalysis;
-import de.jpx3.intave.event.packet.PacketId;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.violation.Violation;
 import de.jpx3.intave.event.violation.ViolationContext;
@@ -32,7 +31,7 @@ public final class PlacementPacketOrderAnalyzer extends IntaveMetaCheckPart<Plac
 
   @PacketSubscription(
     packetsIn = {
-      PacketId.Client.FLYING, POSITION, POSITION_LOOK, LOOK, BLOCK_PLACE
+      FLYING, POSITION, POSITION_LOOK, LOOK, BLOCK_PLACE
     }
   )
   public void checkPlacementPacketOrder(PacketEvent event) {

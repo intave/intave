@@ -188,7 +188,7 @@ public final class MovementDispatcher implements EventProcessor {
   @PacketSubscription(
     priority = ListenerPriority.LOWEST,
     packetsIn = {
-      POSITION, POSITION_LOOK, LOOK, FLYING, VEHICLE_MOVE
+      FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
     }
   )
   public void receiveMovement(PacketEvent event) {
@@ -309,7 +309,7 @@ public final class MovementDispatcher implements EventProcessor {
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsIn = {
-      POSITION, POSITION_LOOK, LOOK, FLYING, VEHICLE_MOVE
+      FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
     }
   )
   public void receiveFinalMovement(PacketEvent event) {

@@ -5,7 +5,6 @@ import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.patchy.PatchyLoadingInjector;
 import de.jpx3.intave.reflect.hitbox.ReflectiveEntityHitBoxAccess;
-import de.jpx3.intave.reflect.hitbox.typeaccess.DualEntityTypeAccess;
 import org.bukkit.Bukkit;
 
 import java.lang.reflect.Field;
