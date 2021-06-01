@@ -97,6 +97,10 @@ public final class ProtocolScanner extends IntaveMetaCheck<ProtocolScanner.Proto
     int keyStrafe = movementData.keyStrafe;
     double distanceMoved = Math.hypot(movementData.motionX(), movementData.motionZ());
 
+    if (movementData.inWeb || movementData.recentlyEncounteredFlyingPacket(2)) {
+      return;
+    }
+
     if ((keyForward != 0 || keyStrafe != 0) && distanceMoved > 0.1) {
       Violation violation = Violation.builderFor(ProtocolScanner.class)
         .forPlayer(player)

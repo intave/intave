@@ -39,9 +39,7 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
     if (posY < 0 || 255 < posY) {
       return Collections.emptyList();
     }
-
     BoundingBoxAccessFlowStudy.requests++;
-
     if ((chunkX != this.chunkX || chunkZ != this.chunkZ)) {
       this.chunkX = chunkX;
       this.chunkZ = chunkZ;
@@ -53,14 +51,11 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
       }
       purgeOverrides();
     }
-
     long key = bigKey(posX, posY, posZ);
-
     BlockShape blockShape = indexedReplacements.get(key);
     if (blockShape != null) {
       return blockShape.boundingBoxes();
     }
-
     blockShape = blockCache.get(key);
     if (blockShape == null) {
       World world = player.getWorld();
@@ -78,9 +73,7 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
     if (posY < 0 || 255 < posY) {
       return Material.AIR;
     }
-
     BoundingBoxAccessFlowStudy.requests++;
-
     if ((chunkX != this.chunkX || chunkZ != this.chunkZ)) {
       this.chunkX = chunkX;
       this.chunkZ = chunkZ;
@@ -92,14 +85,11 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
       }
       purgeOverrides();
     }
-
     long key = bigKey(posX, posY, posZ);
-
     BlockShape blockShape = indexedReplacements.get(key);
     if (blockShape != null) {
       return blockShape.type();
     }
-
     blockShape = blockCache.get(key);
     if (blockShape == null) {
       World world = player.getWorld();
@@ -117,9 +107,7 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
     if (posY < 0 || 255 < posY) {
       return 0;
     }
-
     BoundingBoxAccessFlowStudy.requests++;
-
     if ((chunkX != this.chunkX || chunkZ != this.chunkZ)) {
       this.chunkX = chunkX;
       this.chunkZ = chunkZ;
@@ -131,14 +119,11 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
       }
       purgeOverrides();
     }
-
     long key = bigKey(posX, posY, posZ);
-
     BlockShape blockShape = indexedReplacements.get(key);
     if (blockShape != null) {
       return blockShape.data();
     }
-
     blockShape = blockCache.get(key);
     if (blockShape == null) {
       World world = player.getWorld();

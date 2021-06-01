@@ -76,6 +76,7 @@ public final class TransactionResponseEnforcingProcessor implements PacketEventS
         });
       }
 
+      synchronizeData.lastSynchronization = transactionResponse.requested();
       synchronizeData.lastReceivedTransactionNum = transactionResponse.num();
       transactionResponse.callback().success(
         player, convertInstanceOfObject(transactionResponse.lock())

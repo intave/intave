@@ -53,7 +53,7 @@ public final class Raytracer {
    * Calculates the reach with and without mouse delay fix and returns the smallest calculated reach
    * @return
    */
-  public static  EntityInteractionRaytrace distanceOfCombo(
+  public static EntityInteractionRaytrace distanceOfCombo(
     Player player, WrappedEntity entity, boolean alternativePositionY,
     double lastPositionX, double lastPositionY, double lastPositionZ,
     float lastRotationYaw,

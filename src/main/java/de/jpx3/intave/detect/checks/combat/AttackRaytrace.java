@@ -220,7 +220,7 @@ public final class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackR
 
   private boolean validReachStanding(User user, WrappedEntity entity) {
     Player player = user.player();
-    double minReach = getMinimalIterativeReach(user, entity, false, true);
+    double minReach = findLowestPossibleReachIterative(user, entity, false, true);
     double blockReachDistance = Raytracer.reachDistance(player.getGameMode() == GameMode.CREATIVE);
 
     return minReach > blockReachDistance;
@@ -378,7 +378,7 @@ public final class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackR
 
     double blockReachDistance = Raytracer.reachDistance(player.getGameMode() == GameMode.CREATIVE);
     boolean hasAlwaysMouseDelayFix = clientData.protocolVersion() >= 314;
-    double minReach = getMinimalIterativeReach(user, attackedEntity, hasAlwaysMouseDelayFix, false);
+    double minReach = findLowestPossibleReachIterative(user, attackedEntity, hasAlwaysMouseDelayFix, false);
     // TODO: 01/07/21 clear after last possible position
     if (minReach > blockReachDistance) {
       String entityName = attackedEntity.entityName();
@@ -412,7 +412,7 @@ public final class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackR
     return false;
   }
 
-  private double getMinimalIterativeReach(
+  private double findLowestPossibleReachIterative(
     User user, WrappedEntity entity, boolean hasAlwaysMouseDelayFix, boolean stopOnFound
   ) {
     WrappedEntity clonedEntity = entity.clone();
@@ -427,7 +427,6 @@ public final class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackR
 
     double minReach = 10;
     for (WrappedEntity.EntityPositionContext possiblePosition : clonedEntity.positionHistory) {
-      // TODO: 01/07/21 add trust-factor based length tolerance
       clonedEntity.position = possiblePosition.clone();
       // mouse delay fix
       Raytracer.EntityInteractionRaytrace resultWithoutIncrement = Raytracer.distanceOfCombo(

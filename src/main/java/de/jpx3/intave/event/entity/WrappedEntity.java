@@ -5,6 +5,7 @@ import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.reflect.hitbox.typeaccess.EntityTypeData;
+import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 
@@ -66,6 +67,8 @@ public class WrappedEntity implements Cloneable {
     public double posX, posY, posZ;
     public double newPosX, newPosY, newPosZ;
     public int newPosRotationIncrements;
+
+    public final long created = AccessHelper.now();
 
     @Override
     public EntityPositionContext clone()  {
@@ -253,7 +256,6 @@ public class WrappedEntity implements Cloneable {
       if (positionHistory.size() > 25) {
         positionHistory.remove(0);
       }
-
       positionHistory.add(position.clone());
     }
   }

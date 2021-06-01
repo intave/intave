@@ -34,7 +34,7 @@ public final class CombatMitigator implements BukkitEventSubscriber {
     }
     Player player = (Player) attacker;
     UserMetaPunishmentData punishmentData = UserRepository.userOf(player).meta().punishmentData();
-    for (AttackNerfer attackNerfer : punishmentData.availableAttackNervers()) {
+    for (AttackNerfer attackNerfer : punishmentData.availableAttackNerfer()) {
       if (attackNerfer.active() && !attackNerfer.inverseEvent()) {
         attackNerfer.executor().accept(event);
       }
@@ -45,7 +45,7 @@ public final class CombatMitigator implements BukkitEventSubscriber {
     }
     Player attackedPlayer = (Player) attacked;
     punishmentData = UserRepository.userOf(attackedPlayer).meta().punishmentData();
-    for (AttackNerfer attackNerfer : punishmentData.availableAttackNervers()) {
+    for (AttackNerfer attackNerfer : punishmentData.availableAttackNerfer()) {
       if (attackNerfer.active() && attackNerfer.inverseEvent()) {
         attackNerfer.executor().accept(event);
       }

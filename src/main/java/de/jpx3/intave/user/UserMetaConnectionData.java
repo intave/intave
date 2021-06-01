@@ -31,11 +31,12 @@ public final class UserMetaConnectionData {
   public short transactionCounter = Short.MIN_VALUE;
   public long transactionNumCounter = 0;
   public long lastReceivedTransactionNum = -1;
+  public long lastSynchronization = AccessHelper.now();
 
   // Lag identification
   private long lastMovementTimestamps;
   private final List<Long> movementLagSpikeHistory = new ArrayList<>();
-
+  
   public UserMetaConnectionData(Player player) {
     this.player = player;
   }

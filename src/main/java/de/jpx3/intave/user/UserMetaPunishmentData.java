@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import de.jpx3.intave.event.violation.AttackNerfStrategy;
 import de.jpx3.intave.event.violation.EntityNoDamageTickChanger;
 import de.jpx3.intave.tools.AccessHelper;
+import de.jpx3.intave.tools.CubicBezierCurve;
 import de.jpx3.intave.tools.annotate.Relocate;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -16,9 +17,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 @Relocate
 public final class UserMetaPunishmentData {
+  private final static Function<Double, Double> GARBAGE_HITS_RANDOM_DISTRIBUTION_CURVE = CubicBezierCurve.identityCurve(0,.8,1,.2).functional(.005);
+
   public final static long DAMAGE_CANCEL_LIGHT_DURATION = 40_000;
   private final static long DAMAGE_CANCEL_MEDIUM_DURATION = 40_000;
   private final static long DAMAGE_CANCEL_HEAVY_DURATION = 5_000;
@@ -82,7 +86,8 @@ public final class UserMetaPunishmentData {
         if (lastValidAttack < delay) {
           event.setCancelled(true);
         } else {
-          delay = ThreadLocalRandom.current().nextInt(550, 600);
+          double random = ThreadLocalRandom.current().nextDouble();
+          delay = (long) projectDistribution(GARBAGE_HITS_RANDOM_DISTRIBUTION_CURVE.apply(random), 0, 1, 550, 700);
           lastTimeValidHurttimeAttack.put(entityId, AccessHelper.now());
         }
       })
@@ -90,6 +95,10 @@ public final class UserMetaPunishmentData {
     for (AttackNerfer attackNerfer : attackNerfers) {
       this.attackNerfersMap.put(attackNerfer.type, attackNerfer);
     }
+  }
+
+  private double projectDistribution(double value, double fromLower, double fromHigher, double toLower, double toHigher) {
+    return (value - fromLower) / (fromHigher - fromLower) * (toHigher - toLower) + toLower;
   }
 
   private void performEntityHurtTimeChange(Entity entity) {
@@ -101,7 +110,7 @@ public final class UserMetaPunishmentData {
     EntityNoDamageTickChanger.applyHurtTimeChangeTo(player, (int) (ENTITY_HURT_TIME_CHANGE_DURATION / 50), increase);
   }
 
-  public List<AttackNerfer> availableAttackNervers() {
+  public List<AttackNerfer> availableAttackNerfer() {
     return attackNerfers;
   }
 
