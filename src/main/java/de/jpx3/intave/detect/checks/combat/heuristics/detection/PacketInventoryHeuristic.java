@@ -97,7 +97,7 @@ public final class PacketInventoryHeuristic extends IntaveMetaCheckPart<Heuristi
       meta.performedInventoryOpenOperation = false;
     }
 
-    if (inventoryOpen && hasRotation && movementData.lastTeleport > 20) {
+    if (inventoryOpen && hasRotation && movementData.lastTeleport > 20 && !player.isInsideVehicle()) {
       if (meta.rotationsInInventory++ > 1) {
         int options = SUGGEST_MINING | DELAY_32s | SUGGEST_MINING;
         String details = "sent rotations in inventory (" + meta.rotationsInInventory + " rotations)";

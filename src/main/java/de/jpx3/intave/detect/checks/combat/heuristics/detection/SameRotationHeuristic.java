@@ -36,10 +36,10 @@ public class SameRotationHeuristic extends IntaveMetaCheckPart<Heuristics, SameR
     }
   )
   public void receiveMovementPacket(PacketEvent event) {
-    if (ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0)) {
+    Player player = event.getPlayer();
+    if (ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0) && player.isInsideVehicle()) {
       return;
     }
-    Player player = event.getPlayer();
     User user = userOf(player);
     SameRotationHeuristicMeta meta = metaOf(user);
     UserMetaMovementData movementData = user.meta().movementData();
