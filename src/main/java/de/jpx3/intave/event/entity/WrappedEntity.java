@@ -38,7 +38,7 @@ public class WrappedEntity implements Cloneable {
   public float health;
   public int ticksAlive;
   private int deathTime;
-
+  private WrappedEntity mountedOnEntity;
   private WrappedAxisAlignedBB boundingBox;
   private boolean enabledResponseTracing;
 
@@ -293,6 +293,18 @@ public class WrappedEntity implements Cloneable {
   public boolean moving(double distance) {
     EntityPositionContext positions = this.position;
     return Math.hypot(positions.newPosX - positions.posX, positions.newPosZ - positions.posZ) >= distance;
+  }
+
+  public void mountToEntity(WrappedEntity mountedOnEntity) {
+    this.mountedOnEntity = mountedOnEntity;
+  }
+
+  public void unmountFromEntity() {
+    mountedOnEntity = null;
+  }
+
+  public WrappedEntity mountedEntity() {
+    return mountedOnEntity;
   }
 
   public boolean tracingEnabled() {

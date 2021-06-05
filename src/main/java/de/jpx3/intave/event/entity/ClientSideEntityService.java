@@ -4,6 +4,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
@@ -92,6 +93,73 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
 
   @PacketSubscription(
     packetsOut = {
+      MOUNT
+    }
+  )
+  public void sendMountEntityPacket(PacketEvent event) {
+    //1.9+ servers
+    PacketContainer packet = event.getPacket();
+    Player player = event.getPlayer();
+
+    int[] entityIDs = event.getPacket().getIntegerArrays().read(0);
+    int mountedOnEntityID = packet.getIntegers().read(0);
+
+    for (int entityID : entityIDs) {
+      processAttachEntity(player, entityID, mountedOnEntityID);
+    }
+  }
+
+  @PacketSubscription(
+    packetsOut = {
+      ATTACH_ENTITY
+    }
+  )
+  public void sendAttachEntityPacket(PacketEvent event) {
+    if(!NEW_POSITION_PROCESSING_1_9) {
+      // 1.8
+      Player player = event.getPlayer();
+      PacketContainer packet = event.getPacket();
+      int type = packet.getIntegers().read(0);
+      if (type == 0) {
+        int entityID = packet.getIntegers().read(1);
+        int mountedOnEntityID = packet.getIntegers().read(2);
+
+        processAttachEntity(player, entityID, mountedOnEntityID);
+      }
+    }
+  }
+
+  private void processAttachEntity(Player player, int entityID, int mountedOnEntityID) {
+    User user = UserRepository.userOf(player);
+    UserMetaConnectionData synchronizeData = user.meta().connectionData();
+    Map<Integer, WrappedEntity> synchronizedEntityMap = synchronizeData.synchronizedEntityMap();
+    WrappedEntity sittingEntity = synchronizedEntityMap.get(entityID);
+
+    if (sittingEntity != null) {
+      if (mountedOnEntityID == -1) {
+        // when a entity dismounts
+        sittingEntity.unmountFromEntity();
+      } else {
+        // mounts on entity
+        WrappedEntity sittingOnEntity = synchronizedEntityMap.get(mountedOnEntityID);
+        if (sittingOnEntity != null) {
+          sittingEntity.mountToEntity(sittingOnEntity);
+        } else {
+          if(IntaveControl.DISABLE_LICENSE_CHECK) {
+            IntaveLogger.logger().error("mounted On Entity could not be found");
+          }
+        }
+      }
+    } else {
+      if (IntaveControl.DISABLE_LICENSE_CHECK) {
+        IntaveLogger.logger().error("sittingEntity could not be found");
+      }
+    }
+  }
+
+
+  @PacketSubscription(
+    packetsOut = {
       SPAWN_ENTITY_LIVING, SPAWN_ENTITY, NAMED_ENTITY_SPAWN
     }
   )
@@ -131,7 +199,7 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
 
       HitBoxBoundaries hitBoxBoundaries = HitBoxBoundaries.player();
       livingEntity = true;
-      entityTypeData = new EntityTypeData(entityName, hitBoxBoundaries, 105);
+      entityTypeData = new EntityTypeData(entityName, hitBoxBoundaries, 105, true);
     }
     processPacketSpawnMob(user, event.getPacketType(), entityTypeData, packet, livingEntity, entityId);
   }
@@ -214,12 +282,14 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     int entityId = packet.getIntegers().read(0);
     WrappedEntity entity = entityByIdentifier(user, entityId);
     if (entity == null) {
-      entity = createEntityByMovePacket(event);
-    }
-    if (entity == null) {
+      Entity bukkitEntity = serverEntityByIdentifier(player, entityId);
+      if (bukkitEntity != null) {
+        entity = spawnMobByBukkitEntity(user, bukkitEntity);
+      } else {
 //      IntaveLogger.logger().info("Unable to create entity (id " + entityId + ")");
 //        throw new NullPointerException("entity could not be created");
-      return;
+        return;
+      }
     }
     if (entity.isEntityLiving && entity.tracingEnabled()) {
       WrappedEntity finalEntity = entity;
@@ -241,17 +311,6 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     } else {
       entity.handleEntityMovement(event.getPacket());
     }
-  }
-
-  private WrappedEntity createEntityByMovePacket(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
-    int entityId = event.getPacket().getIntegers().read(0);
-    Entity serverEntity = serverEntityByIdentifier(player, entityId);
-    if (serverEntity != null) {
-      return spawnMobByBukkitEntity(user, serverEntity);
-    }
-    return null;
   }
 
   private WrappedEntity spawnMobByBukkitEntity(User user, Entity bukkitEntity) {

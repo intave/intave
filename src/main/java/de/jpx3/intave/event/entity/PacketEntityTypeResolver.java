@@ -79,7 +79,7 @@ public final class PacketEntityTypeResolver {
         int deadEntityType = packet.getIntegers().read(9);
         String name = nameByDeadEntityType(deadEntityType);
         HitBoxBoundaries boundaries = hitboxBoundariesByDeadEntityType(deadEntityType);
-        return new EntityTypeData(name, boundaries, -1);
+        return new EntityTypeData(name, boundaries, -1, false);
       } else {
         EntityType entityType = packet.getEntityTypeModifier().read(0);
         Class<? extends Entity> entityClass = entityType.getEntityClass();
@@ -87,7 +87,7 @@ public final class PacketEntityTypeResolver {
         if (IntaveControl.DISABLE_LICENSE_CHECK) {
           IntaveLogger.logger().info("Zero BoundingBox 2");
         }
-        return new EntityTypeData(entityClassName, HitBoxBoundaries.zero(), -2);
+        return new EntityTypeData(entityClassName, HitBoxBoundaries.zero(), -2, false);
       }
     }
   }
@@ -108,7 +108,7 @@ public final class PacketEntityTypeResolver {
           return entityTypeDataOfDataWatcher(dataWatcher);
         } else {
           int entityTypeId = packet.getIntegers().read(1);
-          return entityTypeDataOfEntityType(entityTypeId);
+          return DualEntityTypeAccess.resolveFromId(entityTypeId);
         }
       } else {
         int entityTypeId = packet.getIntegers().read(1);
@@ -188,7 +188,7 @@ public final class PacketEntityTypeResolver {
     if (entity != null) {
       return entityTypeDataOfBukkitEntity(entity);
     } else {
-      EntityTypeData entityTypeData = entityTypeDataOfEntityType(entityTypeId);
+      EntityTypeData entityTypeData = DualEntityTypeAccess.resolveFromId(entityTypeId);
 
       if (isChild == null) {
         return null;
@@ -202,7 +202,7 @@ public final class PacketEntityTypeResolver {
 
   private EntityTypeData convertHitboxBoundariesToBaby(EntityTypeData entityTypeData) {
     HitBoxBoundaries hitBoxBoundaries = HitBoxBoundaries.of(entityTypeData.hitBoxBoundaries().width() * 0.5f, entityTypeData.hitBoxBoundaries().length() * 0.5f);
-    return new EntityTypeData(entityTypeData.entityName(), hitBoxBoundaries, entityTypeData.entityTypeId());
+    return new EntityTypeData(entityTypeData.entityName(), hitBoxBoundaries, entityTypeData.entityTypeId(), entityTypeData.isLivingEntity());
   }
 
   public HitBoxBoundaries hitBoxBoundariesByBukkitEntity(Entity bukkitEntity) {
@@ -216,13 +216,7 @@ public final class PacketEntityTypeResolver {
   public EntityTypeData entityTypeDataOfBukkitEntity(Entity entity) {
     HitBoxBoundaries hitBoxBoundaries = hitBoxBoundariesByBukkitEntity(entity);
     String name = entityNameByBukkitEntity(entity);
-    return new EntityTypeData(name, hitBoxBoundaries, entity.getType().getTypeId());
-  }
-
-  public EntityTypeData entityTypeDataOfEntityType(int entityTypeId) {
-    HitBoxBoundaries hitBoxBoundaries = DualEntityTypeAccess.boundariesFromId(entityTypeId);
-    String name = DualEntityTypeAccess.nameFromID(entityTypeId);
-    return new EntityTypeData(name, hitBoxBoundaries, entityTypeId);
+    return new EntityTypeData(name, hitBoxBoundaries, entity.getType().getTypeId(), !entity.isDead());
   }
 
   private EntityTypeData entityTypeDataOfDataWatcher(WrappedDataWatcher dataWatcher) {
