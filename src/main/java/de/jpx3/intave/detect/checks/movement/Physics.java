@@ -555,7 +555,8 @@ public final class Physics extends IntaveCheck {
 //      debug += "handActive=" + inventoryData.handActive();
 //      debug += inventoryData.heldItem().getType().name();
 //      debug += " flying:" + movementData.pastFlyingPacketAccurate;
-      debug += " gliding:" + movementData.elytraFlying;
+//      debug += " gliding:" + movementData.elytraFlying;
+      debug += " y:" + movementData.motionY();
 
       List<String> tags = new ArrayList<>();
 
@@ -742,6 +743,10 @@ public final class Physics extends IntaveCheck {
       multiplier = 100;
     }
 
+    if (movementData.elytraFlying && movementData.motionY() >= 0 && movementData.onGround) {
+      multiplier *= 0.1;
+    }
+
     if (criticalWeb) {
       multiplier *= 40;
     }
@@ -876,6 +881,10 @@ public final class Physics extends IntaveCheck {
 
     if (inLiquid) {
       movedTooQuickly = movedTooQuickly && distanceMoved > baseMoveSpeed;
+    }
+
+    if (movementData.elytraFlying && movementData.motionY() >= 0 && movementData.onGround) {
+      abuseHorizontally *= 0.3;
     }
 
     boolean movedTooQuicklyCheckable = distanceMoved > 0.3 || violationLevelData.physicsInvalidMovementsInRow >= 8;

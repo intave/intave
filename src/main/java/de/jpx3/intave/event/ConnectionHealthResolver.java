@@ -9,7 +9,6 @@ import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.MathHelper;
-import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaConnectionData;
 import de.jpx3.intave.user.UserRepository;
@@ -32,10 +31,8 @@ public final class ConnectionHealthResolver implements PacketEventSubscriber {
         User user = UserRepository.userOf(player);
         long dur = AccessHelper.now() - lastKeepAliveResponse(user);
         if (TIMEOUT_DURATION < dur) {
-          Synchronizer.synchronize(() -> {
-            IntaveLogger.logger().pushPrintln("[Intave] " + player.getName() + " was not responding to keep-alive packets for at least 30 seconds");
-            player.kickPlayer("Timed out");
-          });
+          IntaveLogger.logger().pushPrintln("[Intave] " + player.getName() + " was not responding to keep-alive packets for at least 30 seconds");
+          user.synchronizedDisconnect("Timed out");
         }
       }
     }, 0, (TIMEOUT_DURATION / 50) / 2);
@@ -91,7 +88,7 @@ public final class ConnectionHealthResolver implements PacketEventSubscriber {
 
     if (!remainingPingPackets.containsKey(id)) {
       IntaveLogger.logger().pushPrintln("[Intave] Player " + player + " sent kai " + id + ", but expected " + remainingPingPackets);
-      Synchronizer.synchronize(() -> player.kickPlayer("Unknown keep-alive identifier"));
+      user.synchronizedDisconnect("Unknown keep-alive identifier");
       return;
     }
 

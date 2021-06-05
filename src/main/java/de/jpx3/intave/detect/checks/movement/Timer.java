@@ -121,7 +121,7 @@ public final class Timer extends IntaveMetaCheck<Timer.TimerData> {
     if (delta > 500) {
       timerData.lastLagSpike = AccessHelper.now();
       Synchronizer.synchronize(() -> {
-        plugin.eventService().feedback().clientSynchronize(player, null, (player1, target) -> {
+        plugin.eventService().feedback().singleSynchronize(player, null, (player1, target) -> {
           // Lag spike - requesting feedback to reset balance
           timerData.timerBalance = Math.max(0, timerData.timerBalance);
         });

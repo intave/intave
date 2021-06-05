@@ -10,6 +10,7 @@ import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketEventSubscriber;
 import de.jpx3.intave.event.packet.PacketSubscription;
+import de.jpx3.intave.event.transaction.TFCallback;
 import de.jpx3.intave.fakeplayer.FakePlayer;
 import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.reflect.hitbox.HitBoxBoundaries;
@@ -24,7 +25,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 
 import static de.jpx3.intave.event.packet.PacketId.Client.POSITION;
 import static de.jpx3.intave.event.packet.PacketId.Client.*;
@@ -60,6 +64,7 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
 
   private final static int REQUIRED_DISTANCE = 16;
   private final static int MAX_TRACED_ENTITIES = 4;
+  private final static int MAX_DOUBLE_TRACED_ENTITIES = 1;
 
   private void reevaluteTracingEntitiesFor(Player player) {
     User user = UserRepository.userOf(player);
@@ -78,6 +83,7 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
         if (distance <= REQUIRED_DISTANCE) {
           validEntities.add(entity);
           entity.distanceToPlayerCache = distance;
+          entity.doubleVerification = false;
           firstSurvive = true;
         }
       }
@@ -86,7 +92,9 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     validEntities.sort(Comparator.comparingDouble(entity -> entity.distanceToPlayerCache));
     int count = 0;
     for (WrappedEntity entity : validEntities) {
-      entity.setResponseTracingEnabled(count++ < MAX_TRACED_ENTITIES);
+      entity.doubleVerification = count < MAX_DOUBLE_TRACED_ENTITIES;
+      entity.setResponseTracingEnabled(count < MAX_TRACED_ENTITIES);
+      count++;
     }
   }
 
@@ -157,12 +165,8 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     for (int entityID : entityIDs) {
       WrappedEntity wrappedEntity = synchronizedEntityMap.get(entityID);
       if(wrappedEntity instanceof WrappedEntityFirework) {
-        plugin.eventService().feedback().clientSynchronize(
-          player,
-          entityID,
-          this::processEntityDestroy,
-          OPTIONAL
-        );
+        TFCallback<Integer> task = this::processEntityDestroy;
+        plugin.eventService().feedback().singleSynchronize(player, entityID, task, OPTIONAL);
       } else {
         processEntityDestroy(player, entityID);
       }
@@ -223,12 +227,19 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     }
     if (entity.isEntityLiving && entity.tracingEnabled()) {
       WrappedEntity finalEntity = entity;
-      plugin.eventService().feedback().clientSynchronize(player, event, (player1, event1) -> {
+      TFCallback<PacketEvent> task = (player1, event1) -> {
+        finalEntity.verifiedPosition = false;
         processEntityMovement(event1, finalEntity);
         if (event1.getPacketType() == PacketType.Play.Server.ENTITY_TELEPORT) {
           finalEntity.clientSynchronized = true;
         }
-      });
+      };
+      if (entity.doubleVerification) {
+        TFCallback<PacketEvent> verificationTask = (x, theEvent) -> finalEntity.verifiedPosition = true;
+        plugin.eventService().feedback().doubleSynchronize(player, event, event, task, verificationTask);
+      } else {
+        plugin.eventService().feedback().singleSynchronize(player, event, task);
+      }
     } else {
       processEntityMovement(event, entity);
       entity.clientSynchronized = false;
@@ -400,7 +411,8 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     }
     boolean synchronize = entity.clientSynchronized && entity.tracingEnabled();
     if (synchronize) {
-      plugin.eventService().feedback().clientSynchronize(player, entity, (p, e) -> updateDeadState(e));
+      TFCallback<WrappedEntity> task = (p, e) -> updateDeadState(e);
+      plugin.eventService().feedback().singleSynchronize(player, entity, task);
     } else {
       updateDeadState(entity);
     }
@@ -448,7 +460,7 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
       if (health != null) {
         boolean synchronize = entity.clientSynchronized && entity.tracingEnabled();
         if (synchronize) {
-          plugin.eventService().feedback().clientSynchronize(player, entity, (p, e) -> updateHealthState(e, health));
+          plugin.eventService().feedback().singleSynchronize(player, entity, (p, e) -> updateHealthState(e, health));
         } else {
           updateHealthState(entity, health);
         }
@@ -459,7 +471,7 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
   private void synchronizePlayerHealth(Player player, PacketContainer packet) {
     Float health = readHealthOf(packet.getWatchableCollectionModifier().read(0));
     if (health != null) {
-      plugin.eventService().feedback().clientSynchronize(player, health, (p, retrievedHealth) -> {
+      plugin.eventService().feedback().singleSynchronize(player, health, (p, retrievedHealth) -> {
         UserMetaAbilityData abilityData = UserRepository.userOf(p).meta().abilityData();
         abilityData.health = retrievedHealth;
         abilityData.ticksToLastHealthUpdate = 0;

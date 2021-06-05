@@ -14,6 +14,7 @@ import de.jpx3.intave.connect.proxy.ProxyMessenger;
 import de.jpx3.intave.connect.shadow.LabymodShadowIntegration;
 import de.jpx3.intave.connect.sibyl.SibylIntegrationService;
 import de.jpx3.intave.detect.CheckService;
+import de.jpx3.intave.diagnostics.report.RuntimeDiagnostics;
 import de.jpx3.intave.event.CustomEventService;
 import de.jpx3.intave.event.EventService;
 import de.jpx3.intave.event.bukkit.BukkitEventLinker;
@@ -558,6 +559,8 @@ public final class IntavePlugin extends JavaPlugin {
     BackgroundExecutor.execute(this::clearSaveFolderGarbage);
     IntaveLogger.logger().performCompression();
 
+    RuntimeDiagnostics.applicationBoot();
+
     packetSubscriptionLinker.refreshLinkages();
     displayVersionInformation();
     logger.info("Intave booted successfully");
@@ -765,6 +768,7 @@ public final class IntavePlugin extends JavaPlugin {
     if (proxyMessenger != null) {
       proxyMessenger.closeChannel();
     }
+    RuntimeDiagnostics.applicationShutdown();
     try {
       // mark caches as deletable
       Class<?> relocator = Class.forName("de.jpx3.relocator.Relocator");

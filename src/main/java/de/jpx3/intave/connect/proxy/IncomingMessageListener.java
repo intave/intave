@@ -6,7 +6,8 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.connect.proxy.protocol.IntavePacket;
 import de.jpx3.intave.connect.proxy.protocol.IntavePacketDeserializer;
 import de.jpx3.intave.executor.BackgroundExecutor;
-import de.jpx3.intave.tools.sync.Synchronizer;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 
@@ -62,7 +63,8 @@ public final class IncomingMessageListener implements PluginMessageListener {
           }
         } catch (Exception exception) {
           exception.printStackTrace();
-          Synchronizer.synchronize(() -> player.kickPlayer("Something went wrong processing an incoming packet"));
+          User user = UserRepository.userOf(player);
+          user.synchronizedDisconnect("Something went wrong processing an incoming packet");
         }
       });
     } catch (Exception exception) {

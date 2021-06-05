@@ -155,7 +155,7 @@ public final class MovementDispatcher implements EventProcessor {
     User user = UserRepository.userOf(player);
     plugin.eventService()
       .feedback()
-      .clientSynchronize(player, user.meta().movementData(), (p, movementData) -> {
+      .singleSynchronize(player, user.meta().movementData(), (p, movementData) -> {
         movementData.sneaking = false;
         movementData.sprinting = false;
         movementData.physicsMotionX = 0;
@@ -175,7 +175,7 @@ public final class MovementDispatcher implements EventProcessor {
   public void sentExplosion(PacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
-    plugin.eventService().feedback().clientSynchronize(player, packet.getFloat(), (player1, floats) -> {
+    plugin.eventService().feedback().singleSynchronize(player, packet.getFloat(), (player1, floats) -> {
       User user = UserRepository.userOf(player1);
       UserMetaMovementData movementData = user.meta().movementData();
       Float motionX = floats.read(1);
@@ -512,7 +512,7 @@ public final class MovementDispatcher implements EventProcessor {
       }
 
       movementData.emulationVelocity = velocity.clone();
-      plugin.eventService().feedback().clientSynchronize(player, velocity, this::receiveVelocity);
+      plugin.eventService().feedback().singleSynchronize(player, velocity, this::receiveVelocity);
     }
   }
 
@@ -578,14 +578,12 @@ public final class MovementDispatcher implements EventProcessor {
         boolean canUseElytra = !movementData.onGround && !movementData.elytraFlying && !movementData.inWater && !EffectLogic.isPotionLevitationActive(player);
         ItemStack chestplate = player.getInventory().getChestplate();
 
-        if(canUseElytra) {
-          if(chestplate != null && chestplate.getType() == Material.ELYTRA) {
+        if (canUseElytra) {
+          if (chestplate != null && chestplate.getType() == Material.ELYTRA) {
             movementData.elytraFlying = true;
-            player.sendMessage("Elytra enabled");
           }
         } else {
           movementData.elytraFlying = false;
-          player.sendMessage("Elytra disabled");
         }
     }
   }

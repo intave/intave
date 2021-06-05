@@ -279,7 +279,7 @@ public final class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackR
     attackData.setLastReach(distanceOfResult.reach);
     String message, details, thresholdKey, special;
     AttackRaytraceResult attackRaytraceResult = AttackRaytrace.AttackRaytraceResult.of(distanceOfResult.reach, blockReachDistance);
-    final int vl = applicableViolationPoints(attackRaytraceResult, distanceOfResult, user, expandHitbox);
+    final int vl = applicableViolationPoints(attackRaytraceResult, distanceOfResult, entity, user, expandHitbox);
     String entityName = entity.entityName();
 
     switch (attackRaytraceResult) {
@@ -323,9 +323,13 @@ public final class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackR
     });
 
     attackRaytraceMeta.lastHitVec = distanceOfResult.hitVec;
-    if (movementData.inVehicle()) {
-      message += " (vehicle)";
-    }
+//    if (movementData.inVehicle()) {
+//      message += " (vehicle)";
+//    }
+
+//    if (entity.verifiedPosition) {
+//      message += " (verified)";
+//    }
 
     Violation violation = Violation.builderFor(AttackRaytrace.class)
       .forPlayer(player).withMessage(message).withDetails(details)
@@ -342,6 +346,7 @@ public final class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackR
   private int applicableViolationPoints(
     AttackRaytraceResult attackRaytraceResult,
     Raytracer.EntityInteractionRaytrace distanceOfResult,
+    WrappedEntity entity,
     User user, double expandHitbox
   ) {
     AttackRaytraceMeta attackRaytraceMeta = metaOf(user);
@@ -362,6 +367,9 @@ public final class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackR
     }
     if (expandHitbox > 0.1f) {
       vl /= 2;
+    }
+    if (entity.verifiedPosition) {
+      vl *= 2.5;
     }
     if (movementData.inVehicle()) {
       vl = 0;

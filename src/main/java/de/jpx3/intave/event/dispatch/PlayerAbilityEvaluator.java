@@ -41,7 +41,7 @@ public final class PlayerAbilityEvaluator implements PacketEventSubscriber {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     Integer entityID = packet.getIntegers().read(0);
-    plugin.eventService().feedback().clientSynchronize(player, entityID, this::synchronizeCameraUpdate);
+    plugin.eventService().feedback().singleSynchronize(player, entityID, this::synchronizeCameraUpdate);
   }
 
   private void synchronizeCameraUpdate(Player player, int entityID) {
@@ -93,17 +93,17 @@ public final class PlayerAbilityEvaluator implements PacketEventSubscriber {
 
     Float walkingSpeed = packet.getFloat().readSafely(1);
     if (walkingSpeed != null) {
-      plugin.eventService().feedback().clientSynchronize(player, walkingSpeed, this::retrieveWalkingSpeed);
+      plugin.eventService().feedback().singleSynchronize(player, walkingSpeed, this::retrieveWalkingSpeed);
     }
 
     Float flySpeed = packet.getFloat().readSafely(0);
     if (flySpeed != null) {
-      plugin.eventService().feedback().clientSynchronize(player, flySpeed, this::retrieveFlyingSpeed);
+      plugin.eventService().feedback().singleSynchronize(player, flySpeed, this::retrieveFlyingSpeed);
     }
 
     Boolean allowedFlight = packet.getBooleans().read(2);
     if (allowedFlight != null) {
-      plugin.eventService().feedback().clientSynchronize(player, allowedFlight, this::retrieveAllowedFlight);
+      plugin.eventService().feedback().singleSynchronize(player, allowedFlight, this::retrieveAllowedFlight);
     }
   }
 
@@ -143,7 +143,7 @@ public final class PlayerAbilityEvaluator implements PacketEventSubscriber {
     int gameTypeIdentifier = WrappedMathHelper.floor_float(value + 0.5F);
     GameMode gameMode = gameModeOf(gameTypeIdentifier);
     abilityData.setPendingGameMode(gameMode);
-    plugin.eventService().feedback().clientSynchronize(
+    plugin.eventService().feedback().singleSynchronize(
       player, gameMode,
       ((player1, target) -> UserRepository.userOf(player1).meta().abilityData().setGameMode(target))
     );

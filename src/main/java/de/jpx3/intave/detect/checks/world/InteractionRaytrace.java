@@ -600,7 +600,7 @@ public final class InteractionRaytrace extends IntaveMetaCheck<InteractionRaytra
             int dat = 0;
             boolean replace = BlockDataAccess.replacementPlace(world, player, new BlockPosition(raycastLocation.toVector()));
             Location placementLocation = replace ? raycastLocation : raycastLocation.clone().add(raycastResult.sideHit.getDirectionVec().convertToBukkitVec());
-            boolean raytraceCollidesWithPosition = Collision.playerInImaginaryBlock(
+            boolean raytraceCollidesWithPosition = material.isBlock() && Collision.playerInImaginaryBlock(
               user, world, placementLocation.getBlockX(), placementLocation.getBlockY(), placementLocation.getBlockZ(),
               material, dat
             );

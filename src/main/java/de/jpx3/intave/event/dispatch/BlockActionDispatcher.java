@@ -30,8 +30,8 @@ import java.util.List;
 import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.*;
 import static de.jpx3.intave.event.packet.PacketId.Client.*;
 import static de.jpx3.intave.event.packet.PacketId.Server.*;
-import static de.jpx3.intave.event.transaction.TransactionFeedbackService.TransactionOptions.ENFORCE_SYNCHRONIZATION;
 import static de.jpx3.intave.event.transaction.TransactionFeedbackService.TransactionOptions.OPTIONAL;
+import static de.jpx3.intave.event.transaction.TransactionFeedbackService.TransactionOptions.SELF_SYNCHRONIZATION;
 
 public final class BlockActionDispatcher implements EventProcessor {
   private final IntavePlugin plugin;
@@ -57,22 +57,22 @@ public final class BlockActionDispatcher implements EventProcessor {
       StructureModifier<int[]> integerArrays = packet.getIntegerArrays();
       int[] xArr = integerArrays.read(0).clone();
       int[] zArr = integerArrays.read(1).clone();
-      plugin.eventService().feedback().clientSynchronize(
+      plugin.eventService().feedback().singleSynchronize(
         player, null,
         (player1, target) -> {
           for (int i = 0; i < xArr.length; i++) {
             chunkInvalidate(player, xArr[i], zArr[i]);
           }
         },
-        OPTIONAL | ENFORCE_SYNCHRONIZATION
+        OPTIONAL | SELF_SYNCHRONIZATION
       );
     } else {
       int x = packet.getIntegers().read(0);
       int z = packet.getIntegers().read(1);
-      plugin.eventService().feedback().clientSynchronize(
+      plugin.eventService().feedback().singleSynchronize(
         player, null,
         (player1, target) -> chunkInvalidate(player, x, z),
-        OPTIONAL | ENFORCE_SYNCHRONIZATION
+        OPTIONAL | SELF_SYNCHRONIZATION
       );
     }
   }
@@ -208,7 +208,7 @@ public final class BlockActionDispatcher implements EventProcessor {
 
     World world = player.getWorld();
     if (transactionSynchronize) {
-      plugin.eventService().feedback().clientSynchronize(player, null, (player1, target) -> {
+      plugin.eventService().feedback().singleSynchronize(player, null, (player1, target) -> {
         for (int i = 0; i < blockPositions.size(); i++) {
           BlockPosition blockPosition = blockPositions.get(i);
           WrappedBlockData blockData = blockDataList.get(i);

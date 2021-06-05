@@ -13,14 +13,19 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Relocate
 public final class UserMetaConnectionData {
   private final Player player;
-  private final Map<Short, TFRequest<?>> transactionFeedBackMap = Maps.newConcurrentMap();
+  private final Map<Short, TFRequest<?>> transactionShortMap = Maps.newConcurrentMap();
+  private final Map<Long, TFRequest<?>> transactionGlobalKeyMap = Maps.newConcurrentMap();
+  private final Map<Long, Queue<TFRequest<?>>> transactionOptionalAppendixMap = Maps.newConcurrentMap();
   private final Map<Integer, WrappedEntity> synchronizedEntityMap = Maps.newConcurrentMap();
   private final Map<Long, Long> remainingPingPacketTimestamps = Maps.newConcurrentMap();
   private final List<Long> latencyDifferenceBalance = Lists.newCopyOnWriteArrayList();
+  public final ReentrantLock transactionLock = new ReentrantLock(false);
   public long lastCCCInfoMessageSent = 0;
   public boolean sendAsyncMessage = false;
 
@@ -58,8 +63,16 @@ public final class UserMetaConnectionData {
     return RotationMathHelper.averageOf(movementLagSpikeHistory);
   }
 
-  public Map<Short, TFRequest<?>> transactionFeedBackMap() {
-    return transactionFeedBackMap;
+  public Map<Short, TFRequest<?>> transactionShortKeyMap() {
+    return transactionShortMap;
+  }
+
+  public Map<Long, TFRequest<?>> transactionGlobalKeyMap() {
+    return transactionGlobalKeyMap;
+  }
+
+  public Map<Long, Queue<TFRequest<?>>> transactionAppendixMap() {
+    return transactionOptionalAppendixMap;
   }
 
   public Map<Integer, WrappedEntity> synchronizedEntityMap() {

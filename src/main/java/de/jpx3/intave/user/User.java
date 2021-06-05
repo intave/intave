@@ -9,6 +9,7 @@ import de.jpx3.intave.connect.shadow.ShadowPacketDataLink;
 import de.jpx3.intave.event.violation.AttackNerfStrategy;
 import de.jpx3.intave.event.violation.EntityNoDamageTickChanger;
 import de.jpx3.intave.fakeplayer.FakePlayer;
+import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.permission.BukkitPermissionCache;
 import de.jpx3.intave.permission.BukkitPermissionCheck;
 import de.jpx3.intave.reflect.ReflectiveHandleAccess;
@@ -257,6 +258,18 @@ public final class User {
 
   public PlayerContext userPlaceholderContext() {
     return playerPlaceholderContext;
+  }
+
+  public void synchronizedDisconnect(String reason) {
+    if (!hasOnlinePlayer()) {
+      return;
+    }
+    IntaveLogger.logger().info("Performed manual disconnect of player " + player().getName() + " with reason \"" + reason + "\"");
+    Synchronizer.synchronize(() -> {
+      if(player().isOnline()) {
+        player().kickPlayer(reason);
+      }
+    });
   }
 
   private IntavePlugin plugin() {

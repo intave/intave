@@ -117,7 +117,7 @@ public final class PlayerInventoryEvaluator implements PacketEventSubscriber, Bu
     if (!clientDoesNotSendCloseWindow) {
       plugin.eventService()
         .feedback()
-        .clientSynchronize(player, user, this::openInventory);
+        .singleSynchronize(player, user, this::openInventory);
       inventoryData.forceInventoryOnClickOpen = true;
     } else {
       inventoryData.forceInventoryOnClickOpen = false;
@@ -163,7 +163,7 @@ public final class PlayerInventoryEvaluator implements PacketEventSubscriber, Bu
     User user = UserRepository.userOf(player);
     plugin.eventService()
       .feedback()
-      .clientSynchronize(player, user, this::closeInventory);
+      .singleSynchronize(player, user, this::closeInventory);
   }
 
   @PacketSubscription(

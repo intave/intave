@@ -72,12 +72,10 @@ public final class EncryptedResource {
     if (file.exists()) {
       file.delete();
     }
-//    IntaveLogger.logger().globalPrintLn(file.getAbsolutePath());
-
     try {
       file.createNewFile();
-    } catch (IOException e) {
-      e.printStackTrace();
+    } catch (IOException exception) {
+      exception.printStackTrace();
       return false;
     }
     try {

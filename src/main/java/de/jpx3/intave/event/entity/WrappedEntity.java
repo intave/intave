@@ -26,6 +26,11 @@ public class WrappedEntity implements Cloneable {
   public volatile boolean clientSynchronized = true;
 
   /**
+   * Indicates that the entity should endure double-verification
+   */
+  public volatile boolean doubleVerification = false;
+
+  /**
    * This value is used to interpolate the positions of the Entity
    */
   public long serverPosX, serverPosY, serverPosZ;
@@ -35,6 +40,7 @@ public class WrappedEntity implements Cloneable {
   public EntityPositionContext alternativePosition;
   public List<EntityPositionContext> positionHistory = new CopyOnWriteArrayList<>();
   public boolean dead, fakeDead;
+  public boolean verifiedPosition;
   public float health;
   public int ticksAlive;
   private int deathTime;
