@@ -3,6 +3,7 @@ package de.jpx3.intave.event.dispatch;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketEventSubscriber;
 import de.jpx3.intave.event.packet.PacketSubscription;
@@ -11,6 +12,7 @@ import de.jpx3.intave.user.UserMetaPotionData;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.Objects;
 
@@ -41,12 +43,18 @@ public final class PotionEffectEvaluator implements PacketEventSubscriber {
     if (!Objects.equals(entity, player)) {
       return;
     }
-
-    Integer potionEffectType = packet.getIntegers().readSafely(1);
-    if (potionEffectType == null) {
-      potionEffectType = 0;
-    }
+    PotionEffectType potionEffectType = effectIdOf(packet);
     plugin.eventService().feedback().singleSynchronize(player, potionEffectType, this::receiveEffectRemoval);
+  }
+
+  private final static boolean EFFECT_ACCESS = MinecraftVersions.VER1_9_0.atOrAbove();
+
+  private PotionEffectType effectIdOf(PacketContainer packet) {
+    if (EFFECT_ACCESS) {
+      return packet.getEffectTypes().read(0);
+    } else {
+      return PotionEffectType.getById(packet.getIntegers().read(1));
+    }
   }
 
   @PacketSubscription(
@@ -85,25 +93,18 @@ public final class PotionEffectEvaluator implements PacketEventSubscriber {
     plugin.eventService().feedback().singleSynchronize(player, effectOutput, this::receiveEffect);
   }
 
-  private void receiveEffectRemoval(Player player, int potionEffectType) {
+  private void receiveEffectRemoval(Player player, PotionEffectType potionEffectType) {
     User user = UserRepository.userOf(player);
     UserMetaPotionData potionData = user.meta().potionData();
-    switch (potionEffectType) {
-      case POTION_EFFECT_SPEED: {
-        potionData.potionEffectSpeedAmplifier(0);
-        potionData.potionEffectSpeedDuration = 0;
-        break;
-      }
-      case POTION_EFFECT_SLOWNESS: {
-        potionData.potionEffectSlownessAmplifier(0);
-        potionData.potionEffectSlownessDuration = 0;
-        break;
-      }
-      case POTION_EFFECT_JUMP_BOOST: {
-        potionData.potionEffectJumpAmplifier(0);
-        potionData.potionEffectJumpDuration = 0;
-        break;
-      }
+    if (potionEffectType.equals(PotionEffectType.SPEED)) {
+      potionData.potionEffectSpeedAmplifier(0);
+      potionData.potionEffectSpeedDuration = 0;
+    } else if (potionEffectType.equals(PotionEffectType.SLOW)) {
+      potionData.potionEffectSlownessAmplifier(0);
+      potionData.potionEffectSlownessDuration = 0;
+    } else if (potionEffectType.equals(PotionEffectType.JUMP)) {
+      potionData.potionEffectJumpAmplifier(0);
+      potionData.potionEffectJumpDuration = 0;
     }
   }
 
