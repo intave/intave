@@ -28,8 +28,6 @@ import de.jpx3.intave.user.*;
 import de.jpx3.intave.world.collision.Collision;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Particle;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -121,20 +119,6 @@ public final class MovementDispatcher implements EventProcessor {
     User user = UserRepository.userOf(player);
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
-    if (player.isSneaking()) {
-      equip(player);
-    }
-    Location to = event.getTo();
-    Location from = event.getFrom();
-    if (to == null)
-      return;
-    if ((from.getBlockX() == to.getBlockX() && from.getBlockY() == to.getBlockY() && from.getBlockZ() == to.getBlockZ()))
-      return;
-
-    if (player.isGliding()) {
-      Vector unitVector = new Vector(0.0D, player.getLocation().getDirection().getY(), 0.0D);
-      player.setVelocity(player.getVelocity().add(unitVector.multiply(0.02D)));
-    }
     if (!movementData.inVehicle()) {
       return;
     }
@@ -153,23 +137,6 @@ public final class MovementDispatcher implements EventProcessor {
     movementData.lastRotationPitch = movementData.rotationPitch;
     movementData.rotationYaw = location.getYaw();
     movementData.rotationPitch = location.getPitch();
-  }
-
-  public void equip(Player player) {
-    player.setAllowFlight(false);
-    player.setFlying(false);
-    ItemStack elytra = new ItemStack(Material.ELYTRA);
-    elytra.addUnsafeEnchantment(Enchantment.DURABILITY, 10);
-    player.getInventory().setChestplate(elytra);
-    for (Player po : player.getWorld().getPlayers()) {
-      if (player.canSee(po)) {
-        po.spawnParticle(Particle.DRAGON_BREATH, player.getLocation(), 50, 0.5, 0.5, 0.5, 0.3);
-//        po.playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_SHOOT, 1, 0);
-      }
-    }
-    player.setGliding(true);
-    UserRepository.userOf(player).meta().movementData().elytraFlying = true;
-    player.setVelocity(player.getLocation().getDirection().setY(1.2));
   }
 
   @PacketSubscription(
