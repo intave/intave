@@ -1,5 +1,6 @@
 package de.jpx3.intave.world.blockshape.resolver.pipeline.patcher;
 
+import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.tools.wrapper.WrappedEnumDirection;
 import de.jpx3.intave.user.User;
@@ -14,6 +15,8 @@ import org.bukkit.entity.Player;
 import java.util.List;
 
 public final class BlockLadderPatch extends BoundingBoxPatch {
+  private static final boolean EMULATE_NEW_REQUIRED = MinecraftVersions.VER1_13_0.atOrAbove();
+
   protected BlockLadderPatch() {
     super(Material.LADDER);
   }
@@ -29,7 +32,9 @@ public final class BlockLadderPatch extends BoundingBoxPatch {
     BoundingBoxBuilder builder = BoundingBoxBuilder.create();
     WrappedEnumDirection direction = WrappedEnumDirection.getFront(blockState);
     if (user.meta().clientData().combatUpdate()) {
-      emulateNew(builder, direction);
+      if (EMULATE_NEW_REQUIRED) {
+        emulateNew(builder, direction);
+      }
     } else {
       emulateLegacy(builder, direction);
     }
