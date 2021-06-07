@@ -324,7 +324,7 @@ public final class PacketEntityTypeResolver {
       case 51:
         return HitBoxBoundaries.of(2.0F, 2.0F);
       case 63:
-        return HitBoxBoundaries.of(1.0F, 1.0F);
+        return HitBoxBoundaries.of(3.0F, 3.0F);
       case 64:
       case 66:
         return HitBoxBoundaries.of(0.3125F, 0.3125F);

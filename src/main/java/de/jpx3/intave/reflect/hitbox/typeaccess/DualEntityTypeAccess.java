@@ -19,7 +19,7 @@ public final class DualEntityTypeAccess {
     entityTypeMap.put(9, new EntityTypeData("Painting", HitBoxBoundaries.of(0.5F, 0.5F), 9, false));
     entityTypeMap.put(10, new EntityTypeData("Arrow", HitBoxBoundaries.of(0.5F, 0.5F), 10, false));
     entityTypeMap.put(11, new EntityTypeData("Snowball", HitBoxBoundaries.of(0.25F, 0.25F), 11, false));
-    entityTypeMap.put(12, new EntityTypeData("Fireball", HitBoxBoundaries.of(1.0F, 1.0F),12, false));
+    entityTypeMap.put(12, new EntityTypeData("Fireball", HitBoxBoundaries.of(3.0F, 3.0F),12, false));
     entityTypeMap.put(13, new EntityTypeData("SmallFireball", HitBoxBoundaries.of(1.0F, 1.0F),13, false));
     entityTypeMap.put(14, new EntityTypeData("ThrownEnderpearl", HitBoxBoundaries.of(0.25F, 0.25F),14, false));
     entityTypeMap.put(15, new EntityTypeData("EyeOfEnderSignal", HitBoxBoundaries.of(0.25F, 0.25F),15, false));
