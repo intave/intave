@@ -34,7 +34,7 @@ public final class InventoryClickNotOpenCheck extends IntaveCheckPart<InventoryC
     UserMetaInventoryData inventoryData = meta.inventoryData();
 
     // This check does only work on 1.8 or below
-    if (clientData.combatUpdate()) {
+    if (clientData.combatUpdate() || clientData.clientVersionBehindServerVersion()) {
       return;
     }
 

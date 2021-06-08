@@ -395,14 +395,18 @@ public final class Physics extends IntaveCheck {
         double blockPositionZ = (boundingBox.minZ + boundingBox.maxZ) / 2.0;
         Block block = BukkitBlockAccess.blockAccess(player.getWorld(), blockPositionX, blockPositionY, blockPositionZ);
         boolean currentlyInOverride = blockShapeAccess.currentlyInOverride(WrappedMathHelper.floor(blockPositionX), WrappedMathHelper.floor(blockPositionY), WrappedMathHelper.floor(blockPositionZ));
+        boolean altered = BlockTypeAccess.hasTranslation(user, block.getType());
 
         String colliderName;
         if (!Collision.blockInsideBorder(player.getWorld(), blockPositionX, blockPositionZ)) {
           colliderName = "world border";
         } else {
-          colliderName = (currentlyInOverride ? "emulated " : "") + shortenTypeName(currentlyInOverride ? BukkitBlockAccess.cacheAppliedTypeAccess(user, block.getLocation()) : BlockTypeAccess.typeAccess(block, player)) + " block";
+          String prefix = (currentlyInOverride ? "emulated" : "") + " " + (altered ? "altered" : "") + " ";
+          Material type = currentlyInOverride ? BukkitBlockAccess.cacheAppliedTypeAccess(user, block.getLocation()) : BlockTypeAccess.typeAccess(block, player);
+          String typeName = shortenTypeName(type);
+          colliderName = prefix + typeName + " block";
         }
-        String message = "moved into " + colliderName;
+        String message = "moved into " + colliderName.trim();
         boolean multipleBoxes = intersectionBoundingBoxesCurrent.size() > 1;
         String details = (multipleBoxes ? intersectionBoundingBoxesCurrent.size() : "one") + " box" + (multipleBoxes ? "es" : "");
 
