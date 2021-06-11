@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import de.jpx3.intave.event.entity.WrappedEntity;
 import de.jpx3.intave.event.transaction.TFRequest;
+import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.RotationMathHelper;
 import de.jpx3.intave.tools.annotate.DispatchCrossCall;
@@ -38,6 +39,8 @@ public final class UserMetaConnectionData {
   public long lastReceivedTransactionNum = -1;
   public long lastSynchronization = AccessHelper.now();
 
+  public long hardTransactionResponse = 0;
+
   // Lag identification
   private long lastMovementTimestamps;
   private final List<Long> movementLagSpikeHistory = new ArrayList<>();
@@ -57,6 +60,13 @@ public final class UserMetaConnectionData {
       }
     }
     this.lastMovementTimestamps = now;
+  }
+
+  public void noteHardTransactionResponse() {
+    if (hardTransactionResponse++ > 100 && player != null) {
+      IntaveLogger.logger().error(player.getName() + " has been removed for repeated validation faults");
+      UserRepository.userOf(player).synchronizedDisconnect("Timed out");
+    }
   }
 
   public double averageMovementPacketTimestamp() {

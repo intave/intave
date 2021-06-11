@@ -37,7 +37,7 @@ public final class TransactionResponseEnforcingProcessor implements PacketEventS
   private void checkTransactionTimeoutFor(Player player) {
     User user = userOf(player);
     if (oldestPendingTransaction(user) > TRANSACTION_TIMEOUT_KICK) {
-      IntaveLogger.logger().pushPrintln("[Intave] " + player.getName() + " is not responding to validation packets");
+      IntaveLogger.logger().error(player.getName() + " was not responding to validation packets, and therefore removed");
       user.synchronizedDisconnect("Timed out");
     }
   }
@@ -70,6 +70,7 @@ public final class TransactionResponseEnforcingProcessor implements PacketEventS
         long received = transactionResponse.num();
         if (received != expected) {
           IntaveLogger.logger().pushPrintln("[Intave] " + player.getName() + " sent invalid validation response (received " + received + ", but expected " + expected + ")");
+          synchronizeData.noteHardTransactionResponse();
           long from = Math.min(expected, received);
           long to = Math.max(expected, received);
           for (long i = from; i < to; i++) {
