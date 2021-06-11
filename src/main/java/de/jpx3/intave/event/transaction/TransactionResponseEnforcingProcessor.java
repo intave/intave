@@ -70,7 +70,9 @@ public final class TransactionResponseEnforcingProcessor implements PacketEventS
         long received = transactionResponse.num();
         if (received != expected) {
           IntaveLogger.logger().pushPrintln("[Intave] " + player.getName() + " sent invalid validation response (received " + received + ", but expected " + expected + ")");
-          for (long i = expected; i < received; i++) {
+          long from = Math.min(expected, received);
+          long to = Math.max(expected, received);
+          for (long i = from; i < to; i++) {
             TFRequest<?> request = transactionGlobalKeyMap.remove(i);
             if (request == null) continue;
             transactionShortKeyMap.remove(request.key());

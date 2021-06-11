@@ -81,7 +81,7 @@ public final class ViolationProcessor {
     }
     Violation violation = violationContext.violation();
     Player player = violation.findPlayer().orElseThrow(IllegalStateException::new);
-    String checkName = violation.check().name().toLowerCase(Locale.ROOT).toLowerCase(Locale.ROOT);
+    String checkName = violation.check().name().toLowerCase(Locale.ROOT);
     String thresholdsKey = violation.threshold();
     double violationLevelAdded = violation.addedViolationPoints();
     double violationLevelBeforeViolation = violationMapOf(player).computeIfAbsent(checkName, s -> new HashMap<>()).computeIfAbsent(thresholdsKey, s -> 0d);

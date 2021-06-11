@@ -42,6 +42,9 @@ public final class BlockDataAccess {
     if (MinecraftVersions.VER1_14_0.atOrAbove()) {
       resolverName = "de.jpx3.intave.world.blockaccess.v14BlockAccessor";
     }
+    if (MinecraftVersions.VER1_17_0.atOrAbove()) {
+      resolverName = "de.jpx3.intave.world.blockaccess.v17BlockAccessor";
+    }
     ClassLoader classLoader = IntavePlugin.class.getClassLoader();
     PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, resolverName);
     blockAccessor = instanceOf(resolverName);

@@ -17,7 +17,10 @@ public final class BoundingBoxResolverFactory {
     String className = "de.jpx3.intave.world.blockshape.resolver.server.v8BoundingBoxResolver";
     String acClass = "de.jpx3.intave.world.blockshape.resolver.acbbs.v8AlwaysCollidingBoundingBox";
 
-    if (MinecraftVersions.VER1_14_0.atOrAbove()) {
+    if (MinecraftVersions.VER1_17_0.atOrAbove()) {
+      className = "de.jpx3.intave.world.blockshape.resolver.server.v17BoundingBoxResolver";
+      acClass = "";
+    } else if (MinecraftVersions.VER1_14_0.atOrAbove()) {
       className = "de.jpx3.intave.world.blockshape.resolver.server.v14BoundingBoxResolver";
       acClass = "";
     } else if (MinecraftVersions.VER1_13_0.atOrAbove()) {
