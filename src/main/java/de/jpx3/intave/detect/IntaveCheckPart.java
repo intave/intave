@@ -20,6 +20,6 @@ public abstract class IntaveCheckPart<P extends IntaveCheck> implements EventPro
   }
 
   public boolean enabled() {
-    return true;
+    return parentCheck.enabled();
   }
 }

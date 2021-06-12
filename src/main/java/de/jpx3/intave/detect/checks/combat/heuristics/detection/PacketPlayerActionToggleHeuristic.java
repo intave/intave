@@ -22,6 +22,7 @@ import static de.jpx3.intave.reflect.ReflectiveDataWatcherAccess.DATA_WATCHER_SN
 
 public final class PacketPlayerActionToggleHeuristic extends IntaveMetaCheckPart<Heuristics, PacketPlayerActionToggleHeuristic.PacketSprintToggleHeuristicMeta> {
   private final IntavePlugin plugin;
+  private boolean enabled;
 
   public PacketPlayerActionToggleHeuristic(Heuristics parentCheck) {
     super(parentCheck, PacketSprintToggleHeuristicMeta.class);
@@ -82,11 +83,13 @@ public final class PacketPlayerActionToggleHeuristic extends IntaveMetaCheckPart
         if (!flyingPacketStream) {
           description += " (last flying: " + movementData.pastFlyingPacketAccurate() + ")";
         }
-        // could be CERTAIN on 1.8
-        Confidence confidence = flyingPacketStream ? Confidence.PROBABLE : Confidence.MAYBE;
-        int options = Anomaly.AnomalyOption.DELAY_128s | Anomaly.AnomalyOption.REQUIRES_HEAVY_COMBAT;
-        Anomaly anomaly = Anomaly.anomalyOf("41", confidence, Anomaly.Type.KILLAURA, description, options);
-        parentCheck().saveAnomaly(player, anomaly);
+        if (this.enabled) {
+          // could be CERTAIN on 1.8
+          Confidence confidence = flyingPacketStream ? Confidence.PROBABLE : Confidence.MAYBE;
+          int options = Anomaly.AnomalyOption.DELAY_128s | Anomaly.AnomalyOption.REQUIRES_HEAVY_COMBAT;
+          Anomaly anomaly = Anomaly.anomalyOf("41", confidence, Anomaly.Type.KILLAURA, description, options);
+          parentCheck().saveAnomaly(player, anomaly);
+        }
         if (sprint) {
           //dmc12
           user.applyAttackNerfer(AttackNerfStrategy.CANCEL, "12");
@@ -96,6 +99,12 @@ public final class PacketPlayerActionToggleHeuristic extends IntaveMetaCheckPart
         }
       }
     }
+  }
+
+  @Override
+  public boolean enabled() {
+    this.enabled = super.enabled();
+    return true;
   }
 
   public static final class PacketSprintToggleHeuristicMeta extends UserCustomCheckMeta {

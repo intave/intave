@@ -105,15 +105,13 @@ public final class CheckService {
   public void linkPacketEventSubscriptions() {
     PacketSubscriptionLinker packetSubscriptionLinker = plugin.packetSubscriptionLinker();
     for (IntaveCheck check : checks) {
-      if (!check.enabled()) {
-        continue;
+      if (check.enabled()) {
+        packetSubscriptionLinker.linkSubscriptionsIn(check);
       }
-      packetSubscriptionLinker.linkSubscriptionsIn(check);
       for (IntaveCheckPart<?> checkPart : check.checkParts()) {
-        if (!checkPart.enabled()) {
-          continue;
+        if (checkPart.enabled()) {
+          packetSubscriptionLinker.linkSubscriptionsIn(checkPart);
         }
-        packetSubscriptionLinker.linkSubscriptionsIn(checkPart);
       }
     }
   }
@@ -121,15 +119,13 @@ public final class CheckService {
   public void removePacketEventSubscriptions() {
     PacketSubscriptionLinker packetSubscriptionLinker = plugin.packetSubscriptionLinker();
     for (IntaveCheck check : checks) {
-      if (!check.enabled()) {
-        continue;
+      if (check.enabled()) {
+        packetSubscriptionLinker.removeSubscriptionsOf(check);
       }
-      packetSubscriptionLinker.removeSubscriptionsOf(check);
       for (IntaveCheckPart<?> checkPart : check.checkParts()) {
-        if (!checkPart.enabled()) {
-          continue;
+        if (checkPart.enabled()) {
+          packetSubscriptionLinker.removeSubscriptionsOf(checkPart);
         }
-        packetSubscriptionLinker.removeSubscriptionsOf(checkPart);
       }
     }
   }
@@ -137,15 +133,13 @@ public final class CheckService {
   public void linkBukkitEventSubscriptions() {
     BukkitEventLinker bukkitEventLinker = plugin.eventLinker();
     for (IntaveCheck check : checks) {
-      if (!check.enabled()) {
-        continue;
+      if (check.enabled()) {
+        bukkitEventLinker.registerEventsIn(check);
       }
-      bukkitEventLinker.registerEventsIn(check);
       for (IntaveCheckPart<?> checkPart : check.checkParts()) {
-        if (!checkPart.enabled()) {
-          continue;
+        if (checkPart.enabled()) {
+          bukkitEventLinker.registerEventsIn(checkPart);
         }
-        bukkitEventLinker.registerEventsIn(checkPart);
       }
     }
   }
@@ -153,15 +147,13 @@ public final class CheckService {
   public void removeBukkitEventSubscriptions() {
     BukkitEventLinker bukkitEventLinker = plugin.eventLinker();
     for (IntaveCheck check : checks) {
-      if (!check.enabled()) {
-        continue;
+      if (check.enabled()) {
+        bukkitEventLinker.unregisterEventsIn(check);
       }
-      bukkitEventLinker.unregisterEventsIn(check);
       for (IntaveCheckPart<?> checkPart : check.checkParts()) {
-        if (!checkPart.enabled()) {
-          continue;
+        if (checkPart.enabled()) {
+          bukkitEventLinker.unregisterEventsIn(checkPart);
         }
-        bukkitEventLinker.unregisterEventsIn(checkPart);
       }
     }
   }
