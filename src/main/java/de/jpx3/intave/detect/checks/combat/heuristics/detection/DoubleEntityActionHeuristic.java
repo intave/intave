@@ -36,28 +36,27 @@ public class DoubleEntityActionHeuristic extends IntaveMetaCheckPart<Heuristics,
     String message = null;
     if(action == EnumWrappers.PlayerAction.START_SNEAKING) {
       if(movementData.sneaking) {
-        message = "player sent start_sneak packet twice";
+        message = "sent start_sneak packet twice";
       }
     }
     if(action == EnumWrappers.PlayerAction.STOP_SNEAKING) {
       if(!movementData.sneaking) {
-        message = "player sent stop_sneak packet twice";
+        message = "sent stop_sneak packet twice";
       }
     }
     if(action == EnumWrappers.PlayerAction.START_SPRINTING) {
       if(movementData.sprinting) {
-        message = "player sent start_sprint packet twice";
+        message = "sent start_sprint packet twice";
       }
     }
     if(action == EnumWrappers.PlayerAction.STOP_SPRINTING) {
       if(!movementData.sprinting) {
-        message = "player sent stop_sprint packet twice";
+        message = "sent stop_sprint packet twice";
       }
     }
 
     if(message != null) {
-      Anomaly anomaly = Anomaly.anomalyOf(
-        "190",
+      Anomaly anomaly = Anomaly.anomalyOf("190",
         Confidence.NONE,
         Anomaly.Type.KILLAURA,
         message, Anomaly.AnomalyOption.DELAY_16s
