@@ -112,6 +112,7 @@ public final class MovementDispatcher implements EventProcessor {
     UserMetaMovementData movementData = user.meta().movementData();
     movementData.updateWorld();
     user.blockShapeAccess().identityInvalidate();
+    user.refreshSprintState();
   }
 
   @BukkitEventSubscription
@@ -228,7 +229,7 @@ public final class MovementDispatcher implements EventProcessor {
 
     // garbage fix
     if (
-      clientData.cavesAndCliffsUpdate() && hasMovement && !movementData.awaitTeleport
+      clientData.cavesAndCliffsUpdate() && hasMovement && !movementData.awaitTeleport && !movementData.awaitOutgoingTeleport
     ) {
       StructureModifier<Double> modifier = packet.getDoubles();
       double positionX = round(modifier.read(0));

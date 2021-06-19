@@ -1,11 +1,15 @@
 package de.jpx3.intave.user;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.events.PacketContainer;
 import com.google.common.collect.Maps;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.connect.customclient.CustomClientSupport;
 import de.jpx3.intave.connect.shadow.ShadowPacketDataLink;
+import de.jpx3.intave.event.transaction.TransactionFeedbackService;
 import de.jpx3.intave.event.violation.AttackNerfStrategy;
 import de.jpx3.intave.event.violation.EntityNoDamageTickChanger;
 import de.jpx3.intave.fakeplayer.FakePlayer;
@@ -28,11 +32,14 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
+
+import static de.jpx3.intave.event.transaction.TransactionFeedbackService.TransactionOptions.SELF_SYNCHRONIZATION;
 
 @Relocate
 public final class User {
@@ -326,6 +333,35 @@ public final class User {
       fakePlayer.despawn();
     }
     EntityNoDamageTickChanger.removeNoDamageTickChangeOf(this);
+  }
+
+  public void refreshSprintState() {
+    if (!hasPlayer) {
+      return;
+    }
+    Player player = player();
+    TransactionFeedbackService feedback = plugin().eventService().feedback();
+    feedback.singleSynchronize(player, null, (player1, target) -> {
+      sendStatsUpdate(player, 0, 0);
+      feedback.singleSynchronize(player, null, (player2, target1) -> {
+        feedback.singleSynchronize(player, null, (player3, target2) -> {
+          sendStatsUpdate(player, player.getFoodLevel(), player.getSaturation());
+        }, SELF_SYNCHRONIZATION);
+      }, SELF_SYNCHRONIZATION);
+    }, SELF_SYNCHRONIZATION);
+  }
+
+  private void sendStatsUpdate(Player player, int foodLevel, float saturationLevel) {
+    float healthScale = (float)(player.isHealthScaled() ? player.getHealth() * player.getHealthScale() / player.getMaxHealth() : player.getHealth());
+    PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.UPDATE_HEALTH);
+    packet.getFloat().write(0, healthScale);
+    packet.getFloat().write(1, saturationLevel);
+    packet.getIntegers().write(0, foodLevel);
+    try {
+      ProtocolLibrary.getProtocolManager().sendServerPacket(player, packet);
+    } catch (InvocationTargetException e) {
+      e.printStackTrace();
+    }
   }
 
   private IntavePlugin plugin() {

@@ -2,9 +2,6 @@ package de.jpx3.intave.event.entity;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.PlayerInfoData;
-import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.event.packet.ListenerPriority;
@@ -14,9 +11,7 @@ import de.jpx3.intave.reflect.ReflectiveScoreboardAccess;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import org.bukkit.entity.Player;
 
-import java.util.List;
-
-import static de.jpx3.intave.event.packet.PacketId.Server.*;
+import static de.jpx3.intave.event.packet.PacketId.Server.SCOREBOARD_TEAM;
 
 public final class EntityNoCollisionService implements PacketEventSubscriber {
   private final static String SCOREBOARD_NAME = "INTAVE";
