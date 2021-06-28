@@ -85,13 +85,13 @@ public final class SprintResetHeuristic extends IntaveMetaCheckPart<Heuristics, 
       }
     }
     if(meta.startSprint) {
-      playerStartSprinting( meta);
+      playerStartSprinting(meta);
     }
 
-    prepareNextTick(meta, user);
+    prepareNextTick(meta);
   }
 
-  private void prepareNextTick(SprintResetHeuristicMeta meta, User user) {
+  private void prepareNextTick(SprintResetHeuristicMeta meta) {
     meta.lastAttack++;
     meta.startSprint = false;
     meta.stopSprint = false;
@@ -115,17 +115,10 @@ public final class SprintResetHeuristic extends IntaveMetaCheckPart<Heuristics, 
 
     // can false flag if a player collides with a wall some times
 
-    UserMetaClientData clientData = user.meta().clientData();
-    boolean attacked;
-    if (clientData.protocolVersion() >= UserMetaClientData.VER_1_8) {
-      attacked = meta.lastAttack == 0;
-    } else {
-      attacked = meta.lastAttack == 1;
-    }
+    boolean attacked = meta.lastAttack <= 1;
     UserMetaAbilityData abilityData = user.meta().abilityData();
 
-    if(
-      !attacked
+    if(!attacked
       && player.getFoodLevel() > 6
       && abilityData.unsynchroniszedHealth > 0
       && meta.sprintingTicksLeft != 0
@@ -143,7 +136,8 @@ public final class SprintResetHeuristic extends IntaveMetaCheckPart<Heuristics, 
         collided = canCollideHorizontally(user, movementData);
       }
       if(!collided) {
-        String details = "unsprinted and pressed W " + clientData.versionString();
+        UserMetaClientData clientData = user.meta().clientData();
+        String details = "unsprinted and pressed W " + clientData.versionString() + " " + meta.lastAttack;
         Anomaly anomaly = Anomaly.anomalyOf("210",
           Confidence.NONE,
           Anomaly.Type.KILLAURA,
