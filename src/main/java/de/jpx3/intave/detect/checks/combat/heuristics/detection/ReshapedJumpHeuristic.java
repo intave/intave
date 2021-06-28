@@ -76,9 +76,9 @@ public final class ReshapedJumpHeuristic extends IntaveMetaCheckPart<Heuristics,
         double postDistance = Math.hypot(motion.getX() - movementData.motionX(), motion.getZ() - movementData.motionZ());
         if (Math.abs(postDistance - 0.2) < leniency) {
           if (heuristicMeta.balance++ >= 1) {
-            String description = "xz-motion not corrected with jump";
-            int options = Anomaly.AnomalyOption.LIMIT_8 | Anomaly.AnomalyOption.SUGGEST_MINING;
-            Anomaly anomaly = Anomaly.anomalyOf("61", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
+            String description = "horizontal motion not corrected with jump";
+            int options = Anomaly.AnomalyOption.LIMIT_2 | Anomaly.AnomalyOption.SUGGEST_MINING;
+            Anomaly anomaly = Anomaly.anomalyOf("61", Confidence.NONE, Anomaly.Type.KILLAURA, description, options);
             parentCheck().saveAnomaly(player, anomaly);
             //dmc15
             user.applyAttackNerfer(AttackNerfStrategy.HT_MEDIUM, "15");
