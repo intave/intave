@@ -132,7 +132,7 @@ public final class AttackRaytrace extends IntaveMetaCheck<AttackRaytrace.AttackR
       if (unsynchroniszedHealth > 0) {
         // bypass when the entity is null or on entities which are riding and players which are mounted on entities
         if(entity != null) {
-          if (entity.mountedEntity() == null && !player.isInsideVehicle() && entity.isEntityLiving) {
+          if (entity.mountedEntity() == null && !player.isInsideVehicle() && entity.isEntityLiving && !abilityData.ignoringMovementPackets()) {
             if (clientData.protocolVersion() >= VER_1_9) {
               // >= 1.9.x
               if (entity.clientSynchronized
