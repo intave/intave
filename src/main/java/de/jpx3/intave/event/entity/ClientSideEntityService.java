@@ -37,6 +37,12 @@ import static de.jpx3.intave.event.packet.PacketId.Server.*;
 import static de.jpx3.intave.event.transaction.TransactionFeedbackService.TransactionOptions.OPTIONAL;
 
 public final class ClientSideEntityService implements PacketEventSubscriber {
+  /*
+  TODO: when a entity gets spawned and the spawn packet gets send to the client and the entity gets teleported right after,
+   the check will try to create the entity by the teleport packet bevor the entity spawn packet can be executed
+
+   TODO: maybe remove entities when their live gets below 0 for 20 ticks. Or debug if entities gets really removed in some kind of root command
+   */
   private final IntavePlugin plugin;
   private final PacketEntityTypeResolver entityTypeResolver;
 
@@ -101,38 +107,30 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
 
   @PacketSubscription(
     packetsOut = {
-      MOUNT
-    }
-  )
-  public void sendMountEntityPacket(PacketEvent event) {
-    //1.9+ servers
-    PacketContainer packet = event.getPacket();
-    Player player = event.getPlayer();
-
-    int[] entityIDs = event.getPacket().getIntegerArrays().read(0);
-    int mountedOnEntityID = packet.getIntegers().read(0);
-
-    for (int entityID : entityIDs) {
-      processAttachEntity(player, entityID, mountedOnEntityID);
-    }
-  }
-
-  @PacketSubscription(
-    packetsOut = {
-      ATTACH_ENTITY
+      MOUNT, ATTACH_ENTITY
     }
   )
   public void sendAttachEntityPacket(PacketEvent event) {
-    if (!NEW_POSITION_PROCESSING_1_9) {
-      // 1.8
-      Player player = event.getPlayer();
-      PacketContainer packet = event.getPacket();
+    PacketContainer packet = event.getPacket();
+    Player player = event.getPlayer();
+
+    if(event.getPacketType() == PacketType.Play.Server.MOUNT) {
+      //1.9+ servers
+      int[] entityIDs = event.getPacket().getIntegerArrays().read(0);
+      int vehicleEntityID = packet.getIntegers().read(0);
+
+      for (int entityID : entityIDs) {
+        processAttachEntity(player, entityID, vehicleEntityID);
+      }
+    } else if(event.getPacketType() == PacketType.Play.Server.ATTACH_ENTITY && !NEW_POSITION_PROCESSING_1_9) {
+      // TODO: check if "&& !NEW_POSITION_PROCESSING_1_9" is useless
+      // 1.8 servers
       int type = packet.getIntegers().read(0);
       if (type == 0) {
         int entityID = packet.getIntegers().read(1);
-        int mountedOnEntityID = packet.getIntegers().read(2);
+        int vehicleEntityID = packet.getIntegers().read(2);
 
-        processAttachEntity(player, entityID, mountedOnEntityID);
+        processAttachEntity(player, entityID, vehicleEntityID);
       }
     }
   }
@@ -172,7 +170,6 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
       }
     }
   }
-
 
   @PacketSubscription(
     packetsOut = {
@@ -236,24 +233,17 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
   public void receiveEntityDestroy(PacketEvent event) {
     Player player = event.getPlayer();
     int[] entityIDs = event.getPacket().getIntegerArrays().read(0);
-
-    User user = UserRepository.userOf(player);
-    UserMetaConnectionData synchronizeData = user.meta().connectionData();
-    Map<Integer, WrappedEntity> synchronizedEntityMap = synchronizeData.synchronizedEntityMap();
     /*
     Important: When the destroy entity packet is synchronised the spawn entity packet needs also be synchronized because:
     When you respawn the server sends a destroy entity packet and a spawn entity packet pretty fast one after another and if the
     destroy entity packet gets executed after the spawn packet the entity will be destroyed right after it gets spawned
      */
-    for (int entityID : entityIDs) {
-      WrappedEntity wrappedEntity = synchronizedEntityMap.get(entityID);
-      if (wrappedEntity instanceof WrappedEntityFirework) {
-        TFCallback<Integer> task = this::processEntityDestroy;
-        plugin.eventService().feedback().singleSynchronize(player, entityID, task, OPTIONAL);
-      } else {
+    TFCallback<Object> task = (player1, object) -> {
+      for (int entityID : entityIDs) {
         processEntityDestroy(player, entityID);
       }
-    }
+    };
+    plugin.eventService().feedback().singleSynchronize(player, null, task, OPTIONAL);
   }
 
   private void processEntityDestroy(Player player, int entityId) {
@@ -300,51 +290,85 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsOut = {
-      ENTITY_TELEPORT, REL_ENTITY_MOVE, REL_ENTITY_MOVE_LOOK, ENTITY_LOOK
+      ENTITY_TELEPORT
     }
   )
-  public void receiveUpstreamEntityMovement(PacketEvent event) {
+  public void receiveEntityTeleport(PacketEvent event) {
     Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
-    int entityId = packet.getIntegers().read(0);
-    WrappedEntity entity = entityByIdentifier(user, entityId);
-    if (entity == null) {
-      Entity bukkitEntity = serverEntityByIdentifier(player, entityId);
-      if (bukkitEntity != null) {
-        entity = spawnMobByBukkitEntity(user, bukkitEntity);
-      } else {
-//      IntaveLogger.logger().info("Unable to create entity (id " + entityId + ")");
-//        throw new NullPointerException("entity could not be created");
-        return;
-      }
-    }
+    final WrappedEntity entity = wrappedEntityByEntityTeleportPacket(event);
+
+    if(entity == null) return;
+
     if (entity.isEntityLiving && entity.tracingEnabled()) {
-      WrappedEntity finalEntity = entity;
       TFCallback<PacketEvent> task = (player1, event1) -> {
-        finalEntity.verifiedPosition = false;
-        processEntityMovement(event1, finalEntity);
-        if (event1.getPacketType() == PacketType.Play.Server.ENTITY_TELEPORT) {
-          finalEntity.clientSynchronized = true;
-        }
+        entity.verifiedPosition = false;
+        entity.handleEntityTeleport(packet);
+        entity.clientSynchronized = true;
       };
+
       if (entity.doubleVerification) {
-        TFCallback<PacketEvent> verificationTask = (x, theEvent) -> finalEntity.verifiedPosition = true;
+        TFCallback<PacketEvent> verificationTask = (x, theEvent) -> entity.verifiedPosition = true;
         plugin.eventService().feedback().doubleSynchronize(player, event, event, task, verificationTask);
       } else {
         plugin.eventService().feedback().singleSynchronize(player, event, task);
       }
     } else {
-      processEntityMovement(event, entity);
+      entity.handleEntityTeleport(packet);
       entity.clientSynchronized = false;
     }
   }
 
-  private void processEntityMovement(PacketEvent event, WrappedEntity entity) {
-    if (event.getPacketType() == PacketType.Play.Server.ENTITY_TELEPORT) {
-      entity.handleEntityTeleport(event.getPacket());
+  private WrappedEntity wrappedEntityByEntityTeleportPacket(PacketEvent event) {
+    Player player = event.getPlayer();
+    User user = UserRepository.userOf(player);
+    PacketContainer packet = event.getPacket();
+    int entityId = packet.getIntegers().read(0);
+    WrappedEntity entity = entityByIdentifier(user, entityId);
+
+    if (entity == null) {
+      Entity bukkitEntity = serverEntityByIdentifier(player, entityId);
+      if (bukkitEntity != null) {
+        return spawnMobByBukkitEntity(user, bukkitEntity);
+      } else {
+//      IntaveLogger.logger().info("Unable to create entity (id " + entityId + ")");
+//      throw new NullPointerException("entity could not be created");
+      }
+    }
+    return entity;
+  }
+
+  @PacketSubscription(
+    priority = ListenerPriority.HIGH,
+    packetsOut = {
+      REL_ENTITY_MOVE, REL_ENTITY_MOVE_LOOK, ENTITY_LOOK
+    }
+  )
+  public void receiveEntityMovement(PacketEvent event) {
+    Player player = event.getPlayer();
+    User user = UserRepository.userOf(player);
+    PacketContainer packet = event.getPacket();
+    int entityId = packet.getIntegers().read(0);
+    /* NOTE: An entity can't be created by the entityID when the entity doesn't
+     gets teleported afterwards because the Bukkit location isn't specific enough */
+    WrappedEntity entity = entityByIdentifier(user, entityId);
+
+    if(entity == null) return;
+
+    if (entity.isEntityLiving && entity.tracingEnabled()) {
+      TFCallback<PacketEvent> task = (player1, event1) -> {
+        entity.verifiedPosition = false;
+        entity.handleEntityMovement(packet);
+      };
+      if (entity.doubleVerification) {
+        TFCallback<PacketEvent> verificationTask = (x, theEvent) -> entity.verifiedPosition = true;
+        plugin.eventService().feedback().doubleSynchronize(player, event, event, task, verificationTask);
+      } else {
+        plugin.eventService().feedback().singleSynchronize(player, event, task);
+      }
     } else {
-      entity.handleEntityMovement(event.getPacket());
+      entity.handleEntityMovement(packet);
+      entity.clientSynchronized = false;
     }
   }
 
