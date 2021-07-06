@@ -27,12 +27,12 @@ public final class ProtocolLibraryAdapter {
       throw new InvalidDependencyException("Your version of ProtocolLib is outdated (atOrAbove check missing)");
     }
 
-    if (!methodExists(PacketContainer.class.getName(), "getMinecraftKeys")) {
+    if (!methodExistsInClassHierarchy(PacketContainer.class.getName(), "getMinecraftKeys")) {
       throw new InvalidDependencyException("Your version of ProtocolLib is outdated (missing minecraft key access)");
     }
 
     if (MinecraftVersions.VER1_14_0.atOrAbove()) {
-      if (!methodExists("com.comphenix.protocol.events.PacketContainer", "getMovingBlockPositions")) {
+      if (!methodExistsInClassHierarchy("com.comphenix.protocol.events.PacketContainer", "getMovingBlockPositions")) {
         throw new InvalidDependencyException("Your version of ProtocolLib is outdated (missing moving-object-position packet access)");
       }
     }
@@ -43,6 +43,20 @@ public final class ProtocolLibraryAdapter {
   }
 
   public static void setup() {
+  }
+
+  private static boolean methodExistsInClassHierarchy(String className, String methodName) {
+    try {
+      Class<?> rootClass = Class.forName(className);
+      do {
+        if(methodExists(rootClass.getName(), methodName)) {
+          return true;
+        }
+      } while ((rootClass = rootClass.getSuperclass()) != Object.class);
+      return false;
+    } catch (ClassNotFoundException e) {
+      return false;
+    }
   }
 
   private static boolean methodExists(String className, String methodName) {
