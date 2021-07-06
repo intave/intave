@@ -151,12 +151,7 @@ public final class SprintResetHeuristic extends IntaveMetaCheckPart<Heuristics, 
   private boolean canCollideHorizontally(User user, UserMetaMovementData movementData) {
     WrappedAxisAlignedBB entityBoundingBox = movementData.boundingBox().expand(0.031d, 0, 0.031d);
     List<WrappedAxisAlignedBB> collisionBoxes = Collision.resolve(user.player(), entityBoundingBox);
-    for (WrappedAxisAlignedBB collisionBox : collisionBoxes) {
-      if(collisionBox.intersectsWith(entityBoundingBox)) {
-        return true;
-      }
-    }
-    return false;
+    return !collisionBoxes.isEmpty();
   }
 
   public static class SprintResetHeuristicMeta extends UserCustomCheckMeta {

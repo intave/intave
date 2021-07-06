@@ -35,6 +35,8 @@ public final class UserMetaConnectionData {
   public long transactionNumCounter = 0;
   public long lastReceivedTransactionNum = -1;
   public long lastSynchronization = AccessHelper.now();
+  public long transactionPacketCounter;
+  public long transactionPacketCounterReset;
 
   public long hardTransactionResponse = 0;
 

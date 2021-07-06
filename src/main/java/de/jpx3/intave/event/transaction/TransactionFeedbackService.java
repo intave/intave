@@ -8,6 +8,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.event.packet.PacketEventSubscriber;
 import de.jpx3.intave.logging.IntaveLogger;
+import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaConnectionData;
@@ -20,15 +21,15 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingDeque;
 
-import static de.jpx3.intave.event.transaction.TransactionFeedbackService.TransactionOptions.OPTIONAL;
-import static de.jpx3.intave.event.transaction.TransactionFeedbackService.TransactionOptions.SELF_SYNCHRONIZATION;
+import static de.jpx3.intave.event.transaction.TransactionFeedbackService.TransactionOptions.*;
 
 public final class TransactionFeedbackService implements PacketEventSubscriber {
   public final static long TRANSACTION_TIMEOUT = 3000;
   public final static long TRANSACTION_TIMEOUT_KICK = 20000;
   public final static short TRANSACTION_MIN_CODE = -32768;
   public final static short TRANSACTION_MAX_CODE = -16370;
-  public final static long OPTIONAL_LIMIT = 20;
+  public final static long OPTIONAL_PENDING_LIMIT = 20;
+  public final static long OPTIONAL_SENT_LIMIT = 100;
 
   private final static ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
   private final TransactionResponseEnforcingProcessor responseLocker;
@@ -101,12 +102,20 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
     if (user == null || !user.hasOnlinePlayer()) {
       return;
     }
-    if (TransactionOptions.matches(OPTIONAL, options)) {
-      if (pendingTransactions(userOf(player)) > OPTIONAL_LIMIT) {
-        appendRequestToContext(player, target, callback);
-        return;
-      }
+    boolean append = false;
+    if (TransactionOptions.matches(APPEND_ON_OVERFLOW, options)) {
+      boolean tooManyPending = pendingTransactions(userOf(player)) > OPTIONAL_PENDING_LIMIT;
+      boolean sentTooManyRecently = user.meta().connectionData().transactionPacketCounter > OPTIONAL_SENT_LIMIT;
+      append = tooManyPending || sentTooManyRecently;
     }
+    if (TransactionOptions.matches(APPEND, options)) {
+      append = pendingTransactions(userOf(player)) > 0;
+    }
+    if (append) {
+      appendRequestToContext(player, target, callback);
+      return;
+    }
+    countTransactionPacket(player);
     sendTransactionPacket(player, acquireNewId(player, target, callback));
   }
 
@@ -159,6 +168,18 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
     return counter;
   }
 
+  private void countTransactionPacket(Player receiver) {
+    User user = userOf(receiver);
+    UserMetaConnectionData connectionData = user.meta().connectionData();
+    connectionData.transactionPacketCounter++;
+
+    if (AccessHelper.now() - connectionData.transactionPacketCounterReset > 3000) {
+      System.out.println(connectionData.transactionPacketCounter + " transactions last 3 seconds");
+      connectionData.transactionPacketCounter = 0;
+      connectionData.transactionPacketCounterReset = AccessHelper.now();
+    }
+  }
+
   private void sendTransactionPacket(Player receiver, short id) {
     PacketContainer transactionPacket = protocolManager.createPacket(PacketType.Play.Server.TRANSACTION);
     transactionPacket.getIntegers().write(0, 0);
@@ -185,8 +206,8 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
 
   public static class TransactionOptions {
     public static int SELF_SYNCHRONIZATION = 1;
-    public static int OPTIONAL = 2;
-    public static int DONT_ENFORCE_LOCKING = 4;
+    public static int APPEND_ON_OVERFLOW = 2;
+    public static int APPEND = 4;
 
     public static boolean matches(int option, int options) {
       return (options & option) != 0;

@@ -25,13 +25,12 @@ import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.*;
 import static de.jpx3.intave.event.packet.PacketId.Client.*;
 import static de.jpx3.intave.event.packet.PacketId.Server.*;
-import static de.jpx3.intave.event.transaction.TransactionFeedbackService.TransactionOptions.OPTIONAL;
+import static de.jpx3.intave.event.transaction.TransactionFeedbackService.TransactionOptions.APPEND_ON_OVERFLOW;
 import static de.jpx3.intave.event.transaction.TransactionFeedbackService.TransactionOptions.SELF_SYNCHRONIZATION;
 
 public final class BlockActionDispatcher implements EventProcessor {
@@ -64,7 +63,7 @@ public final class BlockActionDispatcher implements EventProcessor {
             chunkInvalidate(player, xArr[i], zArr[i]);
           }
         },
-        OPTIONAL | SELF_SYNCHRONIZATION
+        APPEND_ON_OVERFLOW | SELF_SYNCHRONIZATION
       );
     } else {
       int x = packet.getIntegers().read(0);
@@ -72,7 +71,7 @@ public final class BlockActionDispatcher implements EventProcessor {
       plugin.eventService().feedback().singleSynchronize(
         player, null,
         (player1, target) -> chunkInvalidate(player, x, z),
-        OPTIONAL | SELF_SYNCHRONIZATION
+        APPEND_ON_OVERFLOW | SELF_SYNCHRONIZATION
       );
     }
   }
@@ -192,9 +191,8 @@ public final class BlockActionDispatcher implements EventProcessor {
         }
       }
     } else {
-      BlockPosition position = packet.getBlockPositionModifier().readSafely(0);
-      blockPositions = Lists.newArrayList(position);
-      blockDataList = Collections.singletonList(packet.getBlockData().read(0));
+      blockPositions = Lists.newArrayList(packet.getBlockPositionModifier().readSafely(0));
+      blockDataList = Lists.newArrayList(packet.getBlockData().read(0));
     }
 
     boolean transactionSynchronize = false;
@@ -216,7 +214,7 @@ public final class BlockActionDispatcher implements EventProcessor {
           blockShapeAccess.override(world, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ(), material, BlockDataAccess.dataAccess(blockData));
           blockShapeAccess.invalidate(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
         }
-      }, OPTIONAL);
+      }, APPEND_ON_OVERFLOW);
     } else {
       for (int i = 0; i < blockPositions.size(); i++) {
         BlockPosition blockPosition = blockPositions.get(i);

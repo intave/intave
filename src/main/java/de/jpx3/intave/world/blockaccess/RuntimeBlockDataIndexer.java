@@ -1,6 +1,5 @@
 package de.jpx3.intave.world.blockaccess;
 
-import com.google.common.collect.ImmutableList;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.logging.IntaveLogger;
@@ -66,11 +65,10 @@ public final class RuntimeBlockDataIndexer {
     ) {
       CraftBlockData blockData = CraftBlockData.newData(type, null);
       Block block = blockData.getState().getBlock();
-      ImmutableList<IBlockData> nativeStates = block.getStates().a();
       Map<Object, Integer> index = new HashMap<>();
       Map<Integer, Object> register = new HashMap<>();
       int id = 0;
-      for (IBlockData nativeState : nativeStates) {
+      for (IBlockData nativeState : block.getStates().a()) {
 //        int id = Block.getCombinedId(nativeState);
         index.put(nativeState, id);
         register.put(id, nativeState);
