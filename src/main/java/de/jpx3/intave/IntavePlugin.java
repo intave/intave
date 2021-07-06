@@ -179,9 +179,9 @@ public final class IntavePlugin extends JavaPlugin {
       String configurationKey = configurationService.configurationKey();
 
       if (IntaveControl.USE_EXTERNAL_CONFIGURATION_FILE || configurationKey.equalsIgnoreCase("file")) {
-        logger.info("Using the file configuration");
+//        logger.info("Using the file configuration");
       } else {
-        logger.info("Using the \"" + configurationKey + "\" configuration");
+//        logger.info("Using the \"" + configurationKey + "\" configuration");
       }
 
       // causes interceptor output
@@ -223,7 +223,7 @@ public final class IntavePlugin extends JavaPlugin {
 
       // ja das muss so krebsig hier hin
       if (IntaveControl.DISABLE_LICENSE_CHECK) {
-        logger().info("This self-signed version bypasses certification requirements");
+        logger().info(ChatColor.DARK_RED + "This self-signed version bypasses certification requirements");
         System.setProperty("java.net.serviceprovider.key", "~bypass");
         VERSION_DETAILS |= 0x100;
         VERSION_DETAILS |= 0x200;
@@ -569,26 +569,13 @@ public final class IntavePlugin extends JavaPlugin {
 
     RuntimeDiagnostics.applicationBoot();
 
-    if (javaVersion() < 16) {
-      logger.info(ChatColor.RED + "We recommend upgrading Java to version 16");
-    }
+//    if (javaVersion() < 16) {
+//      logger.info(ChatColor.RED + "We recommend upgrading Java to version 16");
+//    }
 
     packetSubscriptionLinker.refreshLinkages();
     displayVersionInformation();
     logger.info( "Intave booted successfully");
-  }
-
-  @Native
-  public static int javaVersion() {
-    String version = System.getProperty("java.version");
-    if (version.startsWith("1.")) {
-      version = version.substring(2, 3);
-    } else {
-      int dot = version.indexOf(".");
-      if (dot != -1) {
-        version = version.substring(0, dot);
-      }
-    } return Integer.parseInt(version);
   }
 
   public void manifestDataFolder() {

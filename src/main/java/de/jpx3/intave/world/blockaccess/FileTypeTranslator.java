@@ -5,5 +5,5 @@ package de.jpx3.intave.world.blockaccess;
  * Created by Richard Strunk 2021
  */
 
-public interface FileTypeTranslator extends LineListStreamFunctionProvider<TypeTranslations> {
+public interface FileTypeTranslator extends CompilerStreamFunctionProvider<TypeTranslations> {
 }

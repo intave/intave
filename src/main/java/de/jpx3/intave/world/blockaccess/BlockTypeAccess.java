@@ -35,7 +35,7 @@ public final class BlockTypeAccess {
   private static final FileTypeTranslator translator = new VerTraFileTypeTranslator();
   private static final TypeTranslations typeTranslations;
   static {
-    typeTranslations = translator.fromResource("/mappings/block-backwards-mappings");
+    typeTranslations = translator.fromResource("/mappings/bb-mappings");
   }
 
   public static void setupTranslationsFor(User user) {

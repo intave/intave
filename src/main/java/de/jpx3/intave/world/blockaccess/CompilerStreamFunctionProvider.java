@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.function.Function;
 
-public interface LineListStreamFunctionProvider<O> extends Function<List<String>, O> {
+public interface CompilerStreamFunctionProvider<O> extends Function<List<String>, O> {
   default O fromFile(File file) throws FileNotFoundException {
     return fromStream(new FileInputStream(file));
   }
 
   default O fromResource(String path) {
-    return fromStream(LineListStreamFunctionProvider.class.getResourceAsStream(path));
+    return fromStream(CompilerStreamFunctionProvider.class.getResourceAsStream(path));
   }
 
   default O fromStream(InputStream inputStream) {

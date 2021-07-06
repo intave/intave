@@ -5,6 +5,7 @@ import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.patchy.PatchyLoadingInjector;
 import de.jpx3.intave.reflect.hitbox.ReflectiveEntityHitBoxAccess;
+import de.jpx3.intave.reflect.locate.ClassLocator;
 import org.bukkit.Bukkit;
 
 import java.lang.reflect.Field;
@@ -23,6 +24,7 @@ public final class ReflectiveAccess {
   public final static Class<?> NMS_AABB_CLASS = lookupServerClass("AxisAlignedBB");
 
   public static void setup() {
+    new ClassLocator();
     ReflectiveBlockAccess.setup();
     ReflectiveEntityHitBoxAccess.setup();
     PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), "de.jpx3.intave.reflect.ReflectiveHandleAccess");
@@ -65,6 +67,7 @@ public final class ReflectiveAccess {
     return NMS_PACKAGE_NAME;
   }
 
+  @Deprecated
   public static Class<?> lookupServerClass(String className) {
     return classByName(appendNMSPrefixToClass(className));
   }

@@ -4,6 +4,7 @@ import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.executor.BackgroundExecutor;
 import de.jpx3.intave.tools.AccessHelper;
+import de.jpx3.intave.tools.JavaVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 
@@ -21,7 +22,7 @@ public final class IntaveLogger {
 
   public static boolean FILE_OUTPUT = true;
   public static final boolean VIOLATION_CONSOLE_OUTPUT = IntaveControl.GOMME_MODE;
-  public static final boolean DISABLE_COLOR_OUTPUT = IntaveControl.GOMME_MODE || IntavePlugin.javaVersion() > 8;
+  public static final boolean DISABLE_COLOR_OUTPUT = IntaveControl.GOMME_MODE || JavaVersion.current() > 8;
 
   private final static String LOG_PATH = "plugins" + File.separator + "Intave" + File.separator + "logs";
   private final IntavePlugin plugin;

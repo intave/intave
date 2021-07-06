@@ -1,0 +1,4 @@
+DataWatcher -> {
+  [8-16] -> [nms-default]
+  17 -> "net/minecraft/network/syncher/DataWatcher"
+}
