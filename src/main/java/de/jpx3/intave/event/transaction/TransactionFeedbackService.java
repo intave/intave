@@ -21,8 +21,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingDeque;
 
-import static de.jpx3.intave.event.transaction.TransactionFeedbackService.TransactionOptions.OPTIONAL;
-import static de.jpx3.intave.event.transaction.TransactionFeedbackService.TransactionOptions.SELF_SYNCHRONIZATION;
+import static de.jpx3.intave.event.transaction.TransactionFeedbackService.TransactionOptions.*;
 
 public final class TransactionFeedbackService implements PacketEventSubscriber {
   public final static long TRANSACTION_TIMEOUT = 3000;
@@ -103,13 +102,18 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
     if (user == null || !user.hasOnlinePlayer()) {
       return;
     }
-    if (TransactionOptions.matches(OPTIONAL, options)) {
+    boolean append = false;
+    if (TransactionOptions.matches(APPEND_ON_OVERFLOW, options)) {
       boolean tooManyPending = pendingTransactions(userOf(player)) > OPTIONAL_PENDING_LIMIT;
       boolean sentTooManyRecently = user.meta().connectionData().transactionPacketCounter > OPTIONAL_SENT_LIMIT;
-      if (tooManyPending || sentTooManyRecently) {
-        appendRequestToContext(player, target, callback);
-        return;
-      }
+      append = tooManyPending || sentTooManyRecently;
+    }
+    if (TransactionOptions.matches(APPEND, options)) {
+      append = pendingTransactions(userOf(player)) > 0;
+    }
+    if (append) {
+      appendRequestToContext(player, target, callback);
+      return;
     }
     countTransactionPacket(player);
     sendTransactionPacket(player, acquireNewId(player, target, callback));
@@ -170,6 +174,7 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
     connectionData.transactionPacketCounter++;
 
     if (AccessHelper.now() - connectionData.transactionPacketCounterReset > 3000) {
+      System.out.println(connectionData.transactionPacketCounter + " transactions last 3 seconds");
       connectionData.transactionPacketCounter = 0;
       connectionData.transactionPacketCounterReset = AccessHelper.now();
     }
@@ -201,8 +206,8 @@ public final class TransactionFeedbackService implements PacketEventSubscriber {
 
   public static class TransactionOptions {
     public static int SELF_SYNCHRONIZATION = 1;
-    public static int OPTIONAL = 2;
-    public static int DONT_ENFORCE_LOCKING = 4;
+    public static int APPEND_ON_OVERFLOW = 2;
+    public static int APPEND = 4;
 
     public static boolean matches(int option, int options) {
       return (options & option) != 0;
