@@ -4,7 +4,6 @@ import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.User;
 import org.bukkit.Material;
-import org.bukkit.util.Vector;
 
 import java.util.Collections;
 import java.util.List;
@@ -18,18 +17,12 @@ public final class BambooCollisionModifier extends CollisionModifier {
     if (boxes.isEmpty()) {
       return boxes;
     }
-    Vector offset = offsetOf(posX, posZ);
-    WrappedAxisAlignedBB translate = COLLISION_BOX.offset(offset.getX(), offset.getY(), offset.getZ());
+    long randomCoordinate = WrappedMathHelper.getCoordinateRandom(posX, 0, posZ);
+    double offsetX = ((double) ((float) (randomCoordinate & 15L) / 15.0F) - 0.5D) * 0.5D;
+    double offsetZ = ((double) ((float) (randomCoordinate >> 8 & 15L) / 15.0F) - 0.5D) * 0.5D;
+    double offsetY = 0.0;
+    WrappedAxisAlignedBB translate = COLLISION_BOX.offset(offsetX, offsetY, offsetZ);
     return Collections.singletonList(translate.offset(posX, posY, posZ));
-  }
-
-  private Vector offsetOf(int posX, int posZ) {
-    long i = WrappedMathHelper.getCoordinateRandom(posX, 0, posZ);
-    return new Vector(
-      ((double) ((float) (i & 15L) / 15.0F) - 0.5D) * 0.5D,
-      0.0D,
-      ((double) ((float) (i >> 8 & 15L) / 15.0F) - 0.5D) * 0.5D
-    );
   }
 
   @Override
