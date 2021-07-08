@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class WrappedEntity implements Cloneable {
+  private final static WrappedEntity DEAD_ENTITY = new DeadWrappedEntity();
   private final static boolean NEW_POSITION_PROCESSING_1_9 = ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0);
   private final static boolean NEW_POSITION_PROCESSING_1_14 = ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_14_0);
   public EntityTypeData entityTypeData;
@@ -370,5 +371,9 @@ public class WrappedEntity implements Cloneable {
       x - halfWidth, y, z - halfWidth,
       x + halfWidth, y + length, z + halfWidth
     );
+  }
+
+  public static WrappedEntity deadEntity() {
+    return DEAD_ENTITY;
   }
 }
