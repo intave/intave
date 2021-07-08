@@ -2,7 +2,7 @@ package de.jpx3.intave.detect.checks.movement.physics;
 
 import de.jpx3.intave.detect.checks.movement.Physics;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.world.collider.result.ComplexColliderSimulationResult;
+import de.jpx3.intave.world.collider.complex.ComplexColliderSimulationResult;
 
 public abstract class PoseSimulator {
   private Physics physics;

@@ -3,7 +3,7 @@ package de.jpx3.intave.detect.checks.movement.physics.simulator;
 import de.jpx3.intave.detect.checks.movement.physics.MotionVector;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaMovementData;
-import de.jpx3.intave.world.collider.result.ComplexColliderSimulationResult;
+import de.jpx3.intave.world.collider.complex.ComplexColliderSimulationResult;
 
 public final class HorsePoseSimulator extends DefaultPoseSimulator {
   private final static double MAXIMUM_HORSE_MOVEMENT_SPEED = 0.22499999403953552D;//0.3374999970197678;

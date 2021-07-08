@@ -13,7 +13,7 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaClientData;
 import de.jpx3.intave.user.UserMetaInventoryData;
 import de.jpx3.intave.user.UserMetaMovementData;
-import de.jpx3.intave.world.collider.result.ComplexColliderSimulationResult;
+import de.jpx3.intave.world.collider.complex.ComplexColliderSimulationResult;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 

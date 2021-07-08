@@ -1,16 +1,15 @@
-package de.jpx3.intave.world.collider.processor;
+package de.jpx3.intave.world.collider.complex;
 
 import de.jpx3.intave.detect.checks.movement.physics.MotionVector;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaMovementData;
-import de.jpx3.intave.world.collider.result.ComplexColliderSimulationResult;
 import de.jpx3.intave.world.collision.Collision;
 import org.bukkit.entity.Player;
 
 import java.util.List;
 
-public final class NewComplexColliderProcessor implements ComplexColliderProcessor {
+public final class ModernComplexColliderProcessor implements ComplexColliderProcessor {
   @Override
   public ComplexColliderSimulationResult simulateCollision(User user, MotionVector context, boolean inWeb, double positionX, double positionY, double positionZ) {
     Player player = user.player();

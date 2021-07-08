@@ -28,8 +28,8 @@ import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
 import de.jpx3.intave.world.blockshape.OCBlockShapeAccess;
 import de.jpx3.intave.world.collider.Collider;
-import de.jpx3.intave.world.collider.result.ComplexColliderSimulationResult;
-import de.jpx3.intave.world.collider.result.QuickColliderSimulationResult;
+import de.jpx3.intave.world.collider.complex.ComplexColliderSimulationResult;
+import de.jpx3.intave.world.collider.simple.SimpleColliderSimulationResult;
 import de.jpx3.intave.world.collision.Collision;
 import de.jpx3.intave.world.fluid.Fluids;
 import de.jpx3.intave.world.fluid.LegacyWaterflow;
@@ -214,7 +214,7 @@ public final class Physics extends IntaveCheck {
     double motionX = physicsMotionX * 0.91f;
     double motionY = (physicsMotionY - 0.08) * 0.98f;
     double motionZ = physicsMotionZ * 0.91f;
-    QuickColliderSimulationResult colliderResult = Collider.simulateQuickCollision(
+    SimpleColliderSimulationResult colliderResult = Collider.simulateSimpleCollision(
       user.player(),
       movementData.verifiedPositionX, movementData.verifiedPositionY, movementData.verifiedPositionZ,
       motionX, motionY, motionZ
@@ -231,7 +231,7 @@ public final class Physics extends IntaveCheck {
     double motionY = (movementData.physicsMotionYBeforeVelocity - 0.08) * 0.98f;
     double motionZ = movementData.physicsMotionZBeforeVelocity * 0.91f;
     if (motionX != 0 && motionY != 0 && motionZ != 0) {
-      QuickColliderSimulationResult colliderResult = Collider.simulateQuickCollision(
+      SimpleColliderSimulationResult colliderResult = Collider.simulateSimpleCollision(
         user.player(),
         movementData.verifiedPositionX, movementData.verifiedPositionY, movementData.verifiedPositionZ,
         motionX, motionY, motionZ
@@ -672,7 +672,7 @@ public final class Physics extends IntaveCheck {
     }
 
     //TODO: Bad fix
-    if (clientData.applyNewEntityCollisions() && Math.abs(differenceY - 0.2) < 1e-5 && movementData.lastOnGround && !movementData.onGround) {
+    if (clientData.applyModernCollider() && Math.abs(differenceY - 0.2) < 1e-5 && movementData.lastOnGround && !movementData.onGround) {
       if (!Collision.isNotInsideBlocks(player, movementData.boundingBox().addCoord(movementData.motionX(), 0.201, movementData.motionZ()))) {
         differenceY = 0;
       }

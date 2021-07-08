@@ -19,7 +19,7 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserCustomCheckMeta;
 import de.jpx3.intave.user.UserMetaMovementData;
 import de.jpx3.intave.user.UserMetaViolationLevelData;
-import de.jpx3.intave.world.collider.result.ComplexColliderSimulationResult;
+import de.jpx3.intave.world.collider.complex.ComplexColliderSimulationResult;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;

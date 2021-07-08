@@ -1,10 +1,10 @@
-package de.jpx3.intave.world.collider.result;
+package de.jpx3.intave.world.collider.simple;
 
-public class QuickColliderSimulationResult {
+public class SimpleColliderSimulationResult {
   private final double motionX, motionY, motionZ;
   private final boolean onGround, collidedVertically;
 
-  public QuickColliderSimulationResult(double motionX, double motionY, double motionZ, boolean onGround, boolean collidedVertically) {
+  public SimpleColliderSimulationResult(double motionX, double motionY, double motionZ, boolean onGround, boolean collidedVertically) {
     this.motionX = motionX;
     this.motionY = motionY;
     this.motionZ = motionZ;

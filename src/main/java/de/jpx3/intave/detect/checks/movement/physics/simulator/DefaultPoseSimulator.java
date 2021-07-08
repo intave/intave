@@ -17,8 +17,8 @@ import de.jpx3.intave.user.UserMetaViolationLevelData;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
 import de.jpx3.intave.world.blockphysic.BlockPhysics;
 import de.jpx3.intave.world.collider.Collider;
-import de.jpx3.intave.world.collider.result.ComplexColliderSimulationResult;
-import de.jpx3.intave.world.collider.result.QuickColliderSimulationResult;
+import de.jpx3.intave.world.collider.complex.ComplexColliderSimulationResult;
+import de.jpx3.intave.world.collider.simple.SimpleColliderSimulationResult;
 import de.jpx3.intave.world.fluid.Fluids;
 import de.jpx3.intave.world.fluid.LegacyWaterflow;
 import org.bukkit.Location;
@@ -221,7 +221,7 @@ public class DefaultPoseSimulator extends PoseSimulator {
     double interpolateZ = context.motionZ;
 
     for (; interpolations <= 2; interpolations++) {
-      QuickColliderSimulationResult colliderResult = Collider.simulateQuickCollision(
+      SimpleColliderSimulationResult colliderResult = Collider.simulateSimpleCollision(
         player, positionX, positionY, positionZ,
         interpolateX, interpolateY, interpolateZ
       );
@@ -291,7 +291,7 @@ public class DefaultPoseSimulator extends PoseSimulator {
     double positionX, double positionY, double positionZ,
     double motionX, double motionY, double motionZ
   ) {
-    QuickColliderSimulationResult colliderResult = Collider.simulateQuickCollision(player, positionX, positionY, positionZ, motionX, motionY, motionZ);
+    SimpleColliderSimulationResult colliderResult = Collider.simulateSimpleCollision(player, positionX, positionY, positionZ, motionX, motionY, motionZ);
     context.motionX = colliderResult.motionX();
     context.motionY = colliderResult.motionY();
     context.motionZ = colliderResult.motionZ();

@@ -130,7 +130,7 @@ public final class UserMetaClientData {
     return protocolVersion <= VER_1_8;
   }
 
-  public boolean applyNewEntityCollisions() {
+  public boolean applyModernCollider() {
     // >= 1.14
     return protocolVersion >= VER_1_14;
   }

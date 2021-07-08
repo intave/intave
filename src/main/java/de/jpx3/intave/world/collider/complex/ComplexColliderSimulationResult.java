@@ -1,9 +1,9 @@
-package de.jpx3.intave.world.collider.result;
+package de.jpx3.intave.world.collider.complex;
 
 import de.jpx3.intave.detect.checks.movement.physics.MotionVector;
 import de.jpx3.intave.tools.MathHelper;
 
-public final class ComplexColliderSimulationResult {
+public class ComplexColliderSimulationResult {
   private final MotionVector context;
   private final boolean onGround, collidedHorizontally, collidedVertically;
   private final boolean resetMotionX, resetMotionZ;

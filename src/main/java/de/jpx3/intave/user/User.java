@@ -27,7 +27,8 @@ import de.jpx3.intave.world.blockshape.MultiChunkKeyOCBlockShapeAccess;
 import de.jpx3.intave.world.blockshape.OCBlockShapeAccess;
 import de.jpx3.intave.world.blockshape.resolver.BoundingBoxResolverFactory;
 import de.jpx3.intave.world.collider.Collider;
-import de.jpx3.intave.world.collider.processor.ComplexColliderProcessor;
+import de.jpx3.intave.world.collider.complex.ComplexColliderProcessor;
+import de.jpx3.intave.world.collider.simple.SimpleColliderProcessor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
@@ -49,7 +50,8 @@ public final class User {
   private final WeakReference<Object> nmsEntity;
   private final UserMeta userMeta;
   private final BukkitPermissionCache permissionCache;
-  private final ComplexColliderProcessor colliderProcessor;
+  private final ComplexColliderProcessor complexColliderProcessor;
+  private final SimpleColliderProcessor simpleColliderProcessor;
   private final boolean hasPlayer;
   private final List<UserMessageChannel> receivingUserChannels = new ArrayList<>();
   private final Map<UserMessageChannel, Predicate<Player>> receiveWhitelist = Maps.newEnumMap(UserMessageChannel.class);
@@ -77,7 +79,8 @@ public final class User {
     } else {
       useDefaultBlockShapeAccess();
     }
-    this.colliderProcessor = Collider.suitableComplexColliderProcessorFor(this);
+    this.complexColliderProcessor = Collider.suitableComplexColliderProcessorFor(this);
+    this.simpleColliderProcessor = Collider.suitableSimpleColliderProcessorFor(this);
     if (hasPlayer) {
       Synchronizer.synchronize(this::setDefaultMessagingChannel);
     }
@@ -210,8 +213,12 @@ public final class User {
     return blockShapeAccess;
   }
 
-  public ComplexColliderProcessor colliderProcessor() {
-    return colliderProcessor;
+  public ComplexColliderProcessor complexColliderProcessor() {
+    return complexColliderProcessor;
+  }
+
+  public SimpleColliderProcessor simpleColliderProcessor() {
+    return simpleColliderProcessor;
   }
 
   public TrustFactor trustFactor() {

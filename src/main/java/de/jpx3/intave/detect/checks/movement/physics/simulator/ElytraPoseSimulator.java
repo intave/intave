@@ -5,7 +5,7 @@ import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserMetaMovementData;
 import de.jpx3.intave.world.collider.Collider;
-import de.jpx3.intave.world.collider.result.ComplexColliderSimulationResult;
+import de.jpx3.intave.world.collider.complex.ComplexColliderSimulationResult;
 import org.bukkit.util.Vector;
 
 public final class ElytraPoseSimulator extends DefaultPoseSimulator {

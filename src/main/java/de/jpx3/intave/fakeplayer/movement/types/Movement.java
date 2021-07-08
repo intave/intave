@@ -3,8 +3,6 @@ package de.jpx3.intave.fakeplayer.movement.types;
 import de.jpx3.intave.fakeplayer.movement.HeadRotationMovement;
 import de.jpx3.intave.fakeplayer.movement.LocationUtils;
 import de.jpx3.intave.tools.AccessHelper;
-import de.jpx3.intave.world.collider.Collider;
-import de.jpx3.intave.world.collider.result.QuickColliderSimulationResult;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
@@ -56,21 +54,21 @@ public abstract class Movement extends HeadRotationMovement {
     move(parentLocation);
     double startMotionX = this.motionX;
     double startMotionZ = this.motionZ;
-    QuickColliderSimulationResult result = Collider.simulateQuickCollision(
-      location.getWorld(),
-      location.getX(), location.getY(), location.getZ(),
-      motionX, motionY, motionZ
-    );
-    if (doBlockCollisions()) {
-//      this.motionX = result.motionX();
-      this.motionY = result.motionY();
-//      this.motionZ = result.motionZ();
-      if (this.velocityChanged) {
-        this.velocityChanged = false;
-      }
-      this.collidedHorizontally = result.motionX() != motionX || result.motionZ() != motionZ;
-    }
-    this.onGround = result.onGround();
+//    QuickColliderSimulationResult result = Collider.simulateQuickCollision(
+//      location.getWorld(),
+//      location.getX(), location.getY(), location.getZ(),
+//      motionX, motionY, motionZ
+//    );
+//    if (doBlockCollisions()) {
+////      this.motionX = result.motionX();
+//      this.motionY = result.motionY();
+////      this.motionZ = result.motionZ();
+//      if (this.velocityChanged) {
+//        this.velocityChanged = false;
+//      }
+//      this.collidedHorizontally = result.motionX() != motionX || result.motionZ() != motionZ;
+//    }
+//    this.onGround = result.onGround();
 
     // Renew location
     this.prevLocation = this.location.clone();
