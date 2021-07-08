@@ -1,11 +1,11 @@
-package de.jpx3.intave.world.blockphysics;
+package de.jpx3.intave.world.blockphysic;
 
 import org.bukkit.Material;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public final class ClimbableBlocks {
+public final class Climbables {
   private static final List<Material> registry = new ArrayList<>();
 
   public static void setup() {

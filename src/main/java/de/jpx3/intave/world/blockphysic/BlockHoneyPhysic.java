@@ -1,4 +1,4 @@
-package de.jpx3.intave.world.blockphysics;
+package de.jpx3.intave.world.blockphysic;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.ImmutableList;
@@ -10,7 +10,7 @@ import org.bukkit.util.Vector;
 
 import java.util.List;
 
-final class BlockPhysicHoney implements BlockPhysic {
+final class BlockHoneyPhysic implements BlockPhysic {
   private Material honeyBlock;
 
   @Override

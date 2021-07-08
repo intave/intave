@@ -1,4 +1,4 @@
-package de.jpx3.intave.world.blockphysics;
+package de.jpx3.intave.world.blockphysic;
 
 import org.bukkit.Material;
 

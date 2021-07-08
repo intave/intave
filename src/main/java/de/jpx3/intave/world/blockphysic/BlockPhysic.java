@@ -1,4 +1,4 @@
-package de.jpx3.intave.world.blockphysics;
+package de.jpx3.intave.world.blockphysic;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.tools.annotate.Nullable;

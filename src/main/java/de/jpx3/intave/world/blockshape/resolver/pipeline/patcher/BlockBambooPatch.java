@@ -26,7 +26,7 @@ public final class BlockBambooPatch extends BoundingBoxPatch {
     if (bbs.isEmpty()) {
       return bbs;
     }
-    long randomCoordinate = WrappedMathHelper.getCoordinateRandom(posX, 0, posZ);
+    long randomCoordinate = WrappedMathHelper.coordinateRandom(posX, 0, posZ);
     double offsetX = ((double) ((float) (randomCoordinate & 15L) / 15.0F) - 0.5D) * 0.5D;
     double offsetZ = ((double) ((float) (randomCoordinate >> 8 & 15L) / 15.0F) - 0.5D) * 0.5D;
     double offsetY = 0.0;

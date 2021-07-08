@@ -321,7 +321,7 @@ public final class WrappedMathHelper {
     return p_181162_0_ - Math.floor(p_181162_0_);
   }
 
-  public static long getCoordinateRandom(int x, int y, int z) {
+  public static long coordinateRandom(int x, int y, int z) {
     long i = (x * 3129871L) ^ (long) z * 116129781L ^ (long) y;
     i = i * i * 42317861L + i * 11L;
     return i >> 16;

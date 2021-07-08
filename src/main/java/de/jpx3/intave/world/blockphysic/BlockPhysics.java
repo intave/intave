@@ -1,4 +1,4 @@
-package de.jpx3.intave.world.blockphysics;
+package de.jpx3.intave.world.blockphysic;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.Lists;
@@ -19,15 +19,15 @@ public final class BlockPhysics {
   private final static Map<Material, BlockPhysic> blockAccessCache = new HashMap<>();
 
   public static void setup() {
-    loadBlock(BlockPhysicBed.class);
-    loadBlock(BlockPhysicSlime.class);
-    loadBlock(BlockPhysicWeb.class);
-    loadBlock(BlockPhysicSoulSand.class);
-    loadBlock(BlockPhysicBerryBush.class);
-    loadBlock(BlockPhysicHoney.class);
-    loadBlock(BlockPhysicWeb.class);
-    loadBlock(BlockPhysicFlowingFluid.class);
-    loadBlock(BlockPhysicBubbleColumn.class);
+    loadBlock(BlockBedPhysic.class);
+    loadBlock(BlockSlimePhysic.class);
+    loadBlock(BlockWebPhysic.class);
+    loadBlock(BlockSoulSandPhysic.class);
+    loadBlock(BlockBerryBushPhysic.class);
+    loadBlock(BlockHoneyPhysic.class);
+    loadBlock(BlockWebPhysic.class);
+    loadBlock(FlowingFluidPhysic.class);
+    loadBlock(BlockBubbleColumnPhysic.class);
   }
 
   private static void loadBlock(Class<? extends BlockPhysic> blockClass) {

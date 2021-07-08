@@ -1,8 +1,10 @@
-package de.jpx3.intave.world.blockphysics;
+package de.jpx3.intave.world.blockphysic;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserMetaClientData;
 import de.jpx3.intave.user.UserMetaMovementData;
+import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.util.Vector;
@@ -10,28 +12,28 @@ import org.bukkit.util.Vector;
 import java.util.Collections;
 import java.util.List;
 
-final class BlockPhysicBerryBush implements BlockPhysic {
+import static de.jpx3.intave.user.UserMetaClientData.VER_1_15;
+
+final class BlockWebPhysic implements BlockPhysic {
   private List<Material> material;
-  private boolean supported;
 
   @Override
   public void setup(MinecraftVersion serverVersion) {
-    Material sweetBerryBush = Material.getMaterial("SWEET_BERRY_BUSH");
-    material = Collections.singletonList(sweetBerryBush);
-    supported = sweetBerryBush != null;
+    material = Collections.singletonList(BlockTypeAccess.WEB);
   }
 
   @Override
   public Vector entityCollidedWithBlock(User user, Location location, Location from, double motionX, double motionY, double motionZ) {
+    UserMetaClientData clientData = user.meta().clientData();
     UserMetaMovementData movementData = user.meta().movementData();
-    movementData.setMotionMultiplier(new Vector(0.8f, 0.75, 0.8f));
+    movementData.inWeb = true;
+    movementData.artificialFallDistance = 0;
+    if (clientData.protocolVersion() >= VER_1_15) {
+      return new Vector(motionX * 0.25, motionY * 0.05f, motionZ * 0.25);
+    }
     return null;
   }
 
-  @Override
-  public boolean supportedOnServerVersion() {
-    return supported;
-  }
 
   @Override
   public List<Material> materials() {

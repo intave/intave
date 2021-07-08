@@ -1,4 +1,4 @@
-package de.jpx3.intave.world.blockphysics;
+package de.jpx3.intave.world.blockphysic;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.user.User;
@@ -9,7 +9,7 @@ import org.bukkit.util.Vector;
 import java.util.Collections;
 import java.util.List;
 
-final class BlockPhysicSlime implements BlockPhysic {
+final class BlockSlimePhysic implements BlockPhysic {
   private List<Material> material;
 
   @Override

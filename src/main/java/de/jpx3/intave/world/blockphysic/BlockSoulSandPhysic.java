@@ -1,4 +1,4 @@
-package de.jpx3.intave.world.blockphysics;
+package de.jpx3.intave.world.blockphysic;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.user.User;
@@ -12,7 +12,7 @@ import java.util.List;
 
 import static de.jpx3.intave.user.UserMetaClientData.VER_1_15;
 
-final class BlockPhysicSoulSand implements BlockPhysic {
+final class BlockSoulSandPhysic implements BlockPhysic {
   private List<Material> material;
 
   @Override

@@ -1,4 +1,4 @@
-package de.jpx3.intave.world.blockphysics;
+package de.jpx3.intave.world.blockphysic;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 import static de.jpx3.intave.user.UserMetaClientData.VER_1_12;
 
-final class BlockPhysicBed implements BlockPhysic {
+final class BlockBedPhysic implements BlockPhysic {
   private List<Material> materials;
 
   @Override

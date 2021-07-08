@@ -10,8 +10,6 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
-import java.util.Map;
-
 @Relocate
 public final class BlockTypeAccess {
   public static final Material WEB = resolveFrom("WEB", "COBWEB");
@@ -43,8 +41,7 @@ public final class BlockTypeAccess {
     MinecraftVersion serverVersion = MinecraftVersion.getCurrentVersion();
     MinecraftVersion clientVersion = new MinecraftVersion(user.meta().clientData().versionString());
     user.clearTypeTranslations();
-    Map<Material, Material> translations = typeTranslations.specifiedTo(serverVersion, clientVersion).asMap();
-    translations.forEach(user::applyTypeTranslation);
+    typeTranslations.specifiedTo(serverVersion, clientVersion).asMap().forEach(user::applyTypeTranslation);
   }
 
   /**

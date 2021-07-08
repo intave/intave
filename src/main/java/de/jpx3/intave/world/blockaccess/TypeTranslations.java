@@ -27,7 +27,7 @@ public final class TypeTranslations {
     return serverVersion.isAtLeast(typeTranslation.versionTo()) && !clientVersion.isAtLeast(typeTranslation.versionFrom()) && clientVersion.isAtLeast(typeTranslation.versionTo());
   }
 
-  private TypeTranslations filtered(Predicate<TypeTranslation> keepConstraint) {
+  public TypeTranslations filtered(Predicate<TypeTranslation> keepConstraint) {
     return ofCollection(translations.stream().filter(keepConstraint).collect(Collectors.toList()));
   }
 

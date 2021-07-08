@@ -12,7 +12,7 @@ import de.jpx3.intave.tools.client.*;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
-import de.jpx3.intave.world.blockphysics.BlockPhysics;
+import de.jpx3.intave.world.blockphysic.BlockPhysics;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;

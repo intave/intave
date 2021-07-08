@@ -5,8 +5,8 @@ import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.*;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
-import de.jpx3.intave.world.blockphysics.ClimbableBlocks;
-import de.jpx3.intave.world.blockphysics.Slipperiness;
+import de.jpx3.intave.world.blockphysic.Climbables;
+import de.jpx3.intave.world.blockphysic.Slipperiness;
 import de.jpx3.intave.world.collision.Collision;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -142,7 +142,7 @@ public final class MovementContext {
     if (clientData.combatUpdate() && type.name().contains("TRAP_DOOR") && canGoThroughTrapDoorOnLadder(block)) {
       return true;
     }
-    return ClimbableBlocks.canBeClimbed(type);
+    return Climbables.canBeClimbed(type);
   }
 
   private static boolean canGoThroughTrapDoorOnLadder(Block block) {

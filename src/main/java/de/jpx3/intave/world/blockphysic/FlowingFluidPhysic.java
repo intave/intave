@@ -1,4 +1,4 @@
-package de.jpx3.intave.world.blockphysics;
+package de.jpx3.intave.world.blockphysic;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.ImmutableList;
@@ -16,7 +16,7 @@ import org.bukkit.util.Vector;
 import java.util.ArrayList;
 import java.util.List;
 
-final class BlockPhysicFlowingFluid implements BlockPhysic {
+final class FlowingFluidPhysic implements BlockPhysic {
   private List<Material> materials;
 
   @Override

@@ -15,7 +15,7 @@ import de.jpx3.intave.user.UserMetaClientData;
 import de.jpx3.intave.user.UserMetaMovementData;
 import de.jpx3.intave.user.UserMetaViolationLevelData;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
-import de.jpx3.intave.world.blockphysics.BlockPhysics;
+import de.jpx3.intave.world.blockphysic.BlockPhysics;
 import de.jpx3.intave.world.collider.Collider;
 import de.jpx3.intave.world.collider.result.ComplexColliderSimulationResult;
 import de.jpx3.intave.world.collider.result.QuickColliderSimulationResult;

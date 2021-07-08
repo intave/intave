@@ -43,9 +43,9 @@ import de.jpx3.intave.warning.ClientWarningService;
 import de.jpx3.intave.world.blockaccess.BlockDataAccess;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
 import de.jpx3.intave.world.blockaccess.RuntimeBlockDataIndexer;
-import de.jpx3.intave.world.blockphysics.BlockPhysics;
-import de.jpx3.intave.world.blockphysics.ClimbableBlocks;
-import de.jpx3.intave.world.blockphysics.Slipperiness;
+import de.jpx3.intave.world.blockphysic.BlockPhysics;
+import de.jpx3.intave.world.blockphysic.Climbables;
+import de.jpx3.intave.world.blockphysic.Slipperiness;
 import de.jpx3.intave.world.blockshape.resolver.BoundingBoxResolverFactory;
 import de.jpx3.intave.world.blockshape.resolver.pipeline.patcher.BoundingBoxPatcher;
 import de.jpx3.intave.world.collider.Collider;
@@ -501,7 +501,7 @@ public final class IntavePlugin extends JavaPlugin {
       WorldPermission.setup();
       BlockPhysics.setup();
       Slipperiness.setup();
-      ClimbableBlocks.setup();
+      Climbables.setup();
       InventoryUseItemHelper.setup();
       BoundingBoxPatcher.setup();
 
