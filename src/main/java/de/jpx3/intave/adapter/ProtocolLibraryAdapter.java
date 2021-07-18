@@ -53,9 +53,6 @@ public final class ProtocolLibraryAdapter {
     }
   }
 
-  public static void setup() {
-  }
-
   private static boolean methodExistsInClassHierarchy(String className, String methodName) {
     try {
       Class<?> rootClass = Class.forName(className);

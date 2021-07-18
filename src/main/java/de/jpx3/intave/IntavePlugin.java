@@ -118,7 +118,8 @@ public final class IntavePlugin extends JavaPlugin {
     version = getDescription().getVersion();
     manifestDataFolder();
     this.logger = new IntaveLogger(this);
-    redirectOfficialLogger();
+    this.logger.checkColorAvailability();
+    redirectPluginLogger();
   }
 
   @Native
@@ -133,10 +134,6 @@ public final class IntavePlugin extends JavaPlugin {
   @Native
   @Override
   public void onEnable() {
-    if (ProtocolLibraryAdapter.protocolLibAlreadyAvailable()) {
-      IntaveLogger.logger().protocolLibSetup();
-    }
-
     logger.info("Please stand by..");
     // stage 4
 
@@ -160,9 +157,10 @@ public final class IntavePlugin extends JavaPlugin {
       componentLoader.loadComponents();
 
       ProtocolLibraryAdapter.checkIfOutdated();
-//      ProtocolLibraryAdapter.setup();
 
-      IntaveLogger.logger().protocolLibSetup();
+      // check again, after ProtocolLibs availability is guaranteed
+      logger.checkColorAvailability();
+
       // version mambo jumbo
       // stage 5
 
@@ -573,7 +571,7 @@ public final class IntavePlugin extends JavaPlugin {
     GarbageCollector.setup();
     BackgroundExecutor.execute(this::clearIntegrityGarbage);
     BackgroundExecutor.execute(this::clearSaveFolderGarbage);
-    IntaveLogger.logger().performCompression();
+    logger.performCompression();
 
     RuntimeDiagnostics.applicationBoot();
 
@@ -600,7 +598,7 @@ public final class IntavePlugin extends JavaPlugin {
     }
   }
 
-  public void redirectOfficialLogger() {
+  public void redirectPluginLogger() {
     PluginLogger pluginLogger = new PluginLogger(this) {
       @Override
       public void log(LogRecord logRecord) {

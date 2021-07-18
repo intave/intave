@@ -35,7 +35,10 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.player.*;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
@@ -283,9 +286,9 @@ public final class MovementDispatcher implements EventProcessor {
       clientData.cavesAndCliffsUpdate() && !movementData.awaitTeleport && !movementData.awaitOutgoingTeleport
     ) {
       StructureModifier<Double> modifier = packet.getDoubles();
-      double positionX = round(modifier.read(0));
-      double positionY = round(modifier.read(1));
-      double positionZ = round(modifier.read(2));
+      double positionX = modifier.read(0);
+      double positionY = modifier.read(1);
+      double positionZ = modifier.read(2);
       double motionX = positionX - movementData.verifiedPositionX;
       double motionY = positionY - movementData.verifiedPositionY;
       double motionZ = positionZ - movementData.verifiedPositionZ;
@@ -397,9 +400,9 @@ public final class MovementDispatcher implements EventProcessor {
   }
 
   private double round(double input) {
-    double factor = 100000000000000d;
-    return Math.round(input * factor) / factor;
-//    return input;
+//    double factor = 100000000000000d;
+//    return Math.round(input * factor) / factor;
+    return input;
   }
 
   @PacketSubscription(

@@ -3,6 +3,7 @@ package de.jpx3.intave.logging;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.executor.BackgroundExecutor;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.JavaVersion;
@@ -42,7 +43,10 @@ public final class IntaveLogger {
     setup();
   }
 
-  public void protocolLibSetup() {
+  public void checkColorAvailability() {
+    if (!ProtocolLibraryAdapter.protocolLibAlreadyAvailable()) {
+      return;
+    }
     if (JavaVersion.current() > 8 && MinecraftVersions.VER1_16_2.atOrAbove() && !IntaveControl.GOMME_MODE) {
       DISABLE_COLOR_OUTPUT = false;
     }

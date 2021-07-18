@@ -60,7 +60,13 @@ public final class IntaveViolationEvent extends IntaveEvent implements Cancellab
   }
 
   public double addedViolationPoints() {
-    return vlAfter - vlBefore;
+    return reducePrecision(vlAfter - vlBefore);
+  }
+
+  private final static double REDUCE_APPLIER = 1000d;
+
+  private double reducePrecision(double input) {
+    return Math.round(input * REDUCE_APPLIER) / REDUCE_APPLIER;
   }
 
   public double violationLevelBeforeViolation() {
