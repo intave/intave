@@ -2,6 +2,7 @@ package de.jpx3.intave.detect.checks.movement.physics.simulator;
 
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.detect.checks.movement.physics.MotionVector;
+import de.jpx3.intave.detect.checks.movement.physics.Pose;
 import de.jpx3.intave.detect.checks.movement.physics.PoseSimulator;
 import de.jpx3.intave.event.entity.WrappedEntity;
 import de.jpx3.intave.tools.client.EffectLogic;
@@ -43,18 +44,19 @@ public class DefaultPoseSimulator extends PoseSimulator {
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();
+    Pose pose = movementData.pose();
     float yawSine = movementData.yawSine();
     float yawCosine = movementData.yawCosine();
     double positionX = movementData.verifiedPositionX;
     double positionY = movementData.verifiedPositionY;
     double positionZ = movementData.verifiedPositionZ;
     boolean inWater = movementData.inWater;
-    boolean elytraFlying = movementData.elytraFlying;
     boolean inLava = movementData.inLava();
-    boolean swimming = movementData.swimming;
+    boolean elytraFlying = pose == Pose.FALL_FLYING;
+    boolean swimming = pose == Pose.SWIMMING;
     boolean waterUpdate = clientData.waterUpdate();
     boolean ignoreSneakingInput = swimming && clientData.beeUpdate();
-    if (movementData.actualSneaking() && !ignoreSneakingInput) {
+    if (pose == Pose.CROUCHING && !ignoreSneakingInput) {
       strafe = (float) ((double) strafe * 0.3);
       forward = (float) ((double) forward * 0.3);
     }
@@ -327,8 +329,9 @@ public class DefaultPoseSimulator extends PoseSimulator {
     UserMetaClientData clientData = meta.clientData();
     MotionVector motionVector = movementData.motionProcessorContext;
     motionVector.reset(motionX, motionY, motionZ);
+    Pose pose = movementData.pose();
 
-    boolean elytraFlying = movementData.elytraFlying;//PoseHelper.flyingWithElytra(player);
+    boolean elytraFlying = pose == Pose.FALL_FLYING;
     boolean inWater = movementData.inWater;
     boolean inLava = movementData.inLava();
     boolean collidedHorizontally = movementData.collidedHorizontally;
@@ -492,7 +495,7 @@ public class DefaultPoseSimulator extends PoseSimulator {
       }
     }
 
-    if (clientData.protocolVersion() >= VER_1_14) {
+    if (clientData.protocolVersion() >= VER_1_14 && movementData.pose() != Pose.FALL_FLYING) {
       int soulSandModifier = PlayerEnchantmentHelper.resolveSoulSpeedModifier(player);
       if (soulSandModifier == 0 || !movementData.blockOnPositionSoulSpeedAffected()) {
         Block blockAccess = BukkitBlockAccess.blockAccess(world, positionX, positionY - 0.5000001, positionZ);

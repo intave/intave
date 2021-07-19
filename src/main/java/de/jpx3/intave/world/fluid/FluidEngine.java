@@ -11,6 +11,10 @@ import org.bukkit.Material;
 import org.bukkit.World;
 
 public abstract class FluidEngine {
+  public final WrappedFluid fluidAt(User user, double x, double y, double z) {
+    return fluidAt(user, WrappedMathHelper.floor(x), WrappedMathHelper.floor(y), WrappedMathHelper.floor(z));
+  }
+
   protected abstract WrappedFluid fluidAt(User user, int x, int y, int z);
 
   protected abstract WrappedVector flowVectorAt(User user, int x, int y, int z);
@@ -67,16 +71,5 @@ public abstract class FluidEngine {
     }
 
     return inWater;
-  }
-
-  public boolean areEyesInFluid(User user, double positionX, double positionY, double positionZ) {
-    UserMetaMovementData movementData = user.meta().movementData();
-    double eyeHeight = movementData.eyeHeight();
-    double playerViewPositionY = positionY + eyeHeight - 0.2f;
-    int blockPlayerViewPositionY = WrappedMathHelper.floor(playerViewPositionY);
-    int blockX = WrappedMathHelper.floor(positionX);
-    int blockZ = WrappedMathHelper.floor(positionZ);
-    WrappedFluid wrappedFluid = fluidAt(user, blockX, blockPlayerViewPositionY, blockZ);
-    return wrappedFluid.fluidTag() == FluidTag.WATER;
   }
 }

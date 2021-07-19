@@ -9,6 +9,7 @@ import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.connect.customclient.CustomClientSupport;
 import de.jpx3.intave.connect.shadow.ShadowPacketDataLink;
+import de.jpx3.intave.detect.checks.movement.physics.Pose;
 import de.jpx3.intave.event.feedback.FeedbackService;
 import de.jpx3.intave.event.violation.AttackNerfStrategy;
 import de.jpx3.intave.event.violation.EntityNoDamageTickChanger;
@@ -17,6 +18,7 @@ import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.permission.BukkitPermissionCache;
 import de.jpx3.intave.permission.BukkitPermissionCheck;
 import de.jpx3.intave.reflect.ReflectiveHandleAccess;
+import de.jpx3.intave.reflect.hitbox.HitBoxBoundaries;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.annotate.Relocate;
 import de.jpx3.intave.tools.placeholder.PlayerContext;
@@ -44,6 +46,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 import static de.jpx3.intave.event.feedback.FeedbackService.TransactionOptions.SELF_SYNCHRONIZATION;
+import static de.jpx3.intave.user.UserMetaClientData.VER_1_13;
+import static de.jpx3.intave.user.UserMetaClientData.VER_1_9;
 
 @Relocate
 public final class User {
@@ -60,6 +64,7 @@ public final class User {
   private final List<UserMessageChannel> receivingUserChannels = new ArrayList<>();
   private final Map<UserMessageChannel, Predicate<Player>> receiveWhitelist = Maps.newEnumMap(UserMessageChannel.class);
   private final Map<Material, Material> typeTranslations = Maps.newHashMap();
+  private final Map<Pose, HitBoxBoundaries> poseSizes;
   private OCBlockShapeAccess blockShapeAccess;
   private boolean ignoreNextPacket;
   private boolean ignoreNextOutboundPacket;
@@ -78,7 +83,6 @@ public final class User {
     this.nmsEntity = new WeakReference<>(hasPlayer ? ReflectiveHandleAccess.handleOf(player) : null);
     this.playerConnection = new WeakReference<>(hasPlayer ? ReflectiveHandleAccess.playerConnectionOf(player) : null);
     this.userMeta = new UserMeta(player, this);
-    this.userMeta.setup();
     this.permissionCache = new BukkitPermissionCache();
     if (!hasPlayer) {
       useBlankBlockShapeAccess();
@@ -96,6 +100,15 @@ public final class User {
     } else {
       playerIdentificationContext = new PlayerIdentificationContext("", new UUID(0,0), InetAddress.getLoopbackAddress());
     }
+    int version = userMeta.clientData.protocolVersion();
+    if (version >= VER_1_13) {
+      this.poseSizes = Pose.AT_LEAST_1_13_POSE;
+    } else if (version >= VER_1_9) {
+      this.poseSizes = Pose.AT_LEAST_1_9_POSE;
+    } else {
+      this.poseSizes = Pose.AT_LEAST_1_8_POSE;
+    }
+    this.userMeta.setup();
   }
 
   public void delayedRefresh() {
@@ -321,6 +334,10 @@ public final class User {
 
   public PlayerContext playerAttributeContext() {
     return playerPlaceholderContext;
+  }
+
+  public Map<Pose, HitBoxBoundaries> poseSizes() {
+    return poseSizes;
   }
 
   public void clearTypeTranslations() {

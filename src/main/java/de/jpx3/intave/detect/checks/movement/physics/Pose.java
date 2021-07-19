@@ -1,27 +1,70 @@
 package de.jpx3.intave.detect.checks.movement.physics;
 
-import de.jpx3.intave.detect.checks.movement.physics.simulator.DefaultPoseSimulator;
-import de.jpx3.intave.detect.checks.movement.physics.simulator.ElytraPoseSimulator;
-import de.jpx3.intave.detect.checks.movement.physics.simulator.HorsePoseSimulator;
+import com.google.common.collect.ImmutableMap;
+import de.jpx3.intave.reflect.hitbox.HitBoxBoundaries;
+import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserMetaMovementData;
+
+import java.util.Map;
 
 public enum Pose {
-  PLAYER(new DefaultPoseSimulator(), ""),
-  ELYTRA(new ElytraPoseSimulator(), "ELYTRA"),
-  HORSE(new HorsePoseSimulator(), "HORSE");
+  STANDING,
+  FALL_FLYING,
+  SWIMMING,
+  SLEEPING,
+  CROUCHING,
 
-  private final PoseSimulator calculationPart;
-  private final String debug;
+  ;
 
-  Pose(PoseSimulator calculationPart, String debug) {
-    this.calculationPart = calculationPart;
-    this.debug = debug;
+  private static final Map<Pose, HitBoxBoundaries> SIZE_BY_POSE = ImmutableMap.<Pose, HitBoxBoundaries>builder()
+    .put(STANDING, HitBoxBoundaries.player())
+    .put(SLEEPING, HitBoxBoundaries.of(0.2f, 0.2f))
+    .put(FALL_FLYING, HitBoxBoundaries.of(0.6f, 0.6f))
+    .put(SWIMMING, HitBoxBoundaries.of(0.6f, 0.6f))
+    .build();
+
+  public static final Map<Pose, HitBoxBoundaries> AT_LEAST_1_8_POSE = ImmutableMap.<Pose, HitBoxBoundaries>builder()
+    .putAll(SIZE_BY_POSE)
+    .put(CROUCHING, HitBoxBoundaries.of(0.6f, 1.8f))
+    .build();
+
+  public static final Map<Pose, HitBoxBoundaries> AT_LEAST_1_9_POSE = ImmutableMap.<Pose, HitBoxBoundaries>builder()
+    .putAll(SIZE_BY_POSE)
+    .put(CROUCHING, HitBoxBoundaries.of(0.6f, 1.65f))
+    .build();
+
+  public static final Map<Pose, HitBoxBoundaries> AT_LEAST_1_13_POSE = ImmutableMap.<Pose, HitBoxBoundaries>builder()
+    .putAll(SIZE_BY_POSE)
+    .put(CROUCHING, HitBoxBoundaries.of(0.6f, 1.5f))
+    .build();
+
+  Pose() {
   }
 
-  public PoseSimulator simulator() {
-    return calculationPart;
+  public WrappedAxisAlignedBB boundingBoxOf(User user) {
+    UserMetaMovementData movementData = user.meta().movementData();
+    return boundingBoxOf(user, movementData.positionX, movementData.positionY, movementData.positionZ);
   }
 
-  public String debugPrefix() {
-    return debug;
+  public WrappedAxisAlignedBB boundingBoxOf(User user, double x, double y, double z) {
+    float halfWidth = width(user) / 2.0F;
+    float height = height(user);
+    return new WrappedAxisAlignedBB(
+      x - (double) halfWidth, y, z - (double) halfWidth,
+      x + (double) halfWidth, y + (double) height, z + (double) halfWidth
+    );
+  }
+
+  public float width(User user) {
+    return size(user).width();
+  }
+
+  public float height(User user) {
+    return size(user).length();
+  }
+
+  private HitBoxBoundaries size(User user) {
+    return user.poseSizes().get(this);
   }
 }

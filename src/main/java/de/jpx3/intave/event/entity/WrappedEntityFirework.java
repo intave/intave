@@ -1,5 +1,6 @@
 package de.jpx3.intave.event.entity;
 
+import de.jpx3.intave.detect.checks.movement.physics.Pose;
 import de.jpx3.intave.reflect.hitbox.typeaccess.EntityTypeData;
 import de.jpx3.intave.tools.client.RotationHelper;
 import de.jpx3.intave.user.User;
@@ -21,7 +22,7 @@ public final class WrappedEntityFirework extends WrappedEntity {
   @Override
   public void entityPlayerMoveUpdate() {
     UserMetaMovementData movementData = this.attachedUser.meta().movementData();
-    if (movementData.elytraFlying) {
+    if (movementData.pose() == Pose.FALL_FLYING) {
       if (this.ticksAlive <= 1) {
         movementData.fireworkTolerant = true;
       }

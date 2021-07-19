@@ -12,6 +12,7 @@ import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.detect.EventProcessor;
 import de.jpx3.intave.detect.checks.movement.Physics;
 import de.jpx3.intave.detect.checks.movement.Timer;
+import de.jpx3.intave.detect.checks.movement.physics.Pose;
 import de.jpx3.intave.detect.checks.world.InteractionRaytrace;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.event.entity.WrappedEntity;
@@ -31,7 +32,6 @@ import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.user.*;
 import de.jpx3.intave.world.collision.Collision;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -39,7 +39,6 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import java.util.List;
@@ -399,10 +398,25 @@ public final class MovementDispatcher implements EventProcessor {
     }
   }
 
-  private double round(double input) {
-//    double factor = 100000000000000d;
-//    return Math.round(input * factor) / factor;
-    return input;
+  private void updatePotionEffects(User user) {
+    UserMetaPotionData potionData = user.meta().potionData();
+    if (potionData.potionEffectSpeedAmplifier() > 0) {
+      if (--potionData.potionEffectSpeedDuration <= 0) {
+        potionData.potionEffectSpeedAmplifier(0);
+      }
+    }
+
+    if (potionData.potionEffectSlownessAmplifier() > 0) {
+      if (--potionData.potionEffectSlownessDuration <= 0) {
+        potionData.potionEffectSlownessAmplifier(0);
+      }
+    }
+
+    if (potionData.potionEffectJumpAmplifier() > 0) {
+      if (--potionData.potionEffectJumpDuration <= 0) {
+        potionData.potionEffectJumpAmplifier(0);
+      }
+    }
   }
 
   @PacketSubscription(
@@ -453,7 +467,7 @@ public final class MovementDispatcher implements EventProcessor {
     movementData.isTeleportConfirmationPacket = false;
     movementData.dropPostTickMotionProcessing = false;
 
-    boolean flyingWithElytra = movementData.elytraFlying;//PoseHelper.flyingWithElytra(player);
+    boolean flyingWithElytra = movementData.pose() == Pose.FALL_FLYING;
     if (flyingWithElytra) {
       movementData.pastElytraFlying = 0;
     } else {
@@ -515,25 +529,12 @@ public final class MovementDispatcher implements EventProcessor {
     movementData.applyClientKeys = false;
   }
 
-  private void updatePotionEffects(User user) {
-    UserMetaPotionData potionData = user.meta().potionData();
-    if (potionData.potionEffectSpeedAmplifier() > 0) {
-      if (--potionData.potionEffectSpeedDuration <= 0) {
-        potionData.potionEffectSpeedAmplifier(0);
-      }
-    }
-
-    if (potionData.potionEffectSlownessAmplifier() > 0) {
-      if (--potionData.potionEffectSlownessDuration <= 0) {
-        potionData.potionEffectSlownessAmplifier(0);
-      }
-    }
-
-    if (potionData.potionEffectJumpAmplifier() > 0) {
-      if (--potionData.potionEffectJumpDuration <= 0) {
-        potionData.potionEffectJumpAmplifier(0);
-      }
-    }
+  private void updateSize(User user) {
+    User.UserMeta meta = user.meta();
+    UserMetaMovementData movementData = meta.movementData();
+    Pose pose = movementData.pose();
+    movementData.width = pose.width(user);
+    movementData.height = pose.width(user);;
   }
 
   @PacketSubscription(
@@ -579,11 +580,19 @@ public final class MovementDispatcher implements EventProcessor {
     if (watchableObject == null) {
       return;
     }
+    User user = UserRepository.userOf(player);
+    User.UserMeta meta = user.meta();
+    UserMetaMovementData movementData = meta.movementData();
+    if (!meta.clientData().canUseElytra()) {
+      return;
+    }
     byte data = (byte) watchableObject.getValue();
     boolean gliding = (data & 1 << 7) != 0;
-    plugin.eventService()
-      .feedback()
-      .singleSynchronize(player, gliding, (player1, gliding2) -> UserRepository.userOf(player1).meta().movementData().elytraFlying = gliding2);
+    Callback<Boolean> callback = (p, g) -> {
+      movementData.elytraFlying = g;
+      movementData.updatePose();
+    };
+    plugin.eventService().feedback().singleSynchronize(player, gliding, callback);
   }
 
   @BukkitEventSubscription(priority = EventPriority.LOWEST)
@@ -595,40 +604,6 @@ public final class MovementDispatcher implements EventProcessor {
     UserMetaMovementData movementData = user.meta().movementData();
     if (event.getCause() == EntityDamageEvent.DamageCause.FALL && !movementData.allowFallDamage) {
       event.setCancelled(true);
-    }
-  }
-
-  private void updateSize(User user) {
-    Player player = user.player();
-    User.UserMeta meta = user.meta();
-    UserMetaMovementData movementData = meta.movementData();
-    float width;
-    float height;
-    if (movementData.elytraFlying) {
-      width = 0.6F;
-      height = 0.6F;
-    } else if (player.isSleeping()) {
-      width = 0.2F;
-      height = 0.2F;
-    } else if (!movementData.swimming) {
-      width = 0.6F;
-      if (movementData.sneaking) {
-        height = meta.clientData().hitBoxHeightWhenSneaking();
-      } else {
-        height = 1.8F;
-      }
-    } else {
-      width = 0.6F;
-      height = 0.6F;
-    }
-    if (width != movementData.width || height != movementData.height) {
-      WrappedAxisAlignedBB boundingBox = movementData.boundingBox();
-      boundingBox = new WrappedAxisAlignedBB(boundingBox.minX, boundingBox.minY, boundingBox.minZ, boundingBox.minX + (double) width, boundingBox.minY + (double) height, boundingBox.minZ + (double) width);
-      if (Collision.resolve(user.player(), boundingBox).isEmpty()) {
-        movementData.width = width;
-        movementData.height = height;
-        movementData.applySizeUpdate();
-      }
     }
   }
 
@@ -732,10 +707,9 @@ public final class MovementDispatcher implements EventProcessor {
         movementData.sneaking = false;
         break;
       case START_FALL_FLYING:
-        ItemStack plate = player.getInventory().getChestplate();
-
-        if (plate != null /* kann null sein, bitte null-check nicht wieder entfernen */ && plate.getType() == Material.ELYTRA && clientData.canUseElytra()) {
+        if (movementData.hasElytraEquipped() && clientData.canUseElytra()) {
           movementData.elytraFlying = true;
+          movementData.setPose(Pose.FALL_FLYING);
         }
     }
   }

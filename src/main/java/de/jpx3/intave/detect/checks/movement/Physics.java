@@ -8,10 +8,7 @@ import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.detect.CheckStatistics;
 import de.jpx3.intave.detect.CheckViolationLevelDecrementer;
 import de.jpx3.intave.detect.IntaveCheck;
-import de.jpx3.intave.detect.checks.movement.physics.MotionVector;
-import de.jpx3.intave.detect.checks.movement.physics.Pose;
-import de.jpx3.intave.detect.checks.movement.physics.PoseSimulator;
-import de.jpx3.intave.detect.checks.movement.physics.SimulationProcessor;
+import de.jpx3.intave.detect.checks.movement.physics.*;
 import de.jpx3.intave.diagnostics.timings.Timings;
 import de.jpx3.intave.event.violation.Violation;
 import de.jpx3.intave.event.violation.ViolationContext;
@@ -107,8 +104,8 @@ public final class Physics extends IntaveCheck {
   }
 
   private void linkCheckToPoseSimulators() {
-    for (Pose pose : Pose.values()) {
-      pose.simulator().checkLinkage(this);
+    for (SimulationService simulationService : SimulationService.values()) {
+      simulationService.simulator().checkLinkage(this);
     }
   }
 
@@ -160,7 +157,7 @@ public final class Physics extends IntaveCheck {
 
     Timings.CHECK_PHYSICS_PROC_TOT.start();
     predictFlyingPacketBeforeVelocity(user);
-    ComplexColliderSimulationResult predictedMovement = simulationProcessor.simulate(user, movementData.movementPoseType());
+    ComplexColliderSimulationResult predictedMovement = simulationProcessor.simulate(user, movementData.simulationService());
     movementData.onGround = predictedMovement.onGround();
     movementData.collidedHorizontally = predictedMovement.collidedHorizontally();
     movementData.collidedVertically = predictedMovement.collidedVertically();
@@ -176,18 +173,19 @@ public final class Physics extends IntaveCheck {
     movementData.pastRiptideSpin++;
   }
 
-  private Pose poseOf(User user) {
+  private SimulationService poseOf(User user) {
     UserMetaMovementData movementData = user.meta().movementData();
     if (movementData.hasRidingEntity()) {
-      return Pose.HORSE;
+      return SimulationService.HORSE;
     } else {
       boolean inLava = movementData.inLava();
       boolean inWater = movementData.inWater;
-      if (/*PoseHelper.flyingWithElytra(player)*/movementData.elytraFlying && !inWater && !inLava) {
-        return Pose.ELYTRA;
+      Pose pose = movementData.pose();
+      if (pose == Pose.FALL_FLYING && !inWater && !inLava) {
+        return SimulationService.ELYTRA;
       }
     }
-    return Pose.PLAYER;
+    return SimulationService.PLAYER;
   }
 
   @DispatchCrossCall
@@ -197,8 +195,8 @@ public final class Physics extends IntaveCheck {
     double motionY = movementData.motionY();
     double motionZ = movementData.motionZ();
     if (hasMovement) {
-      Pose movementPoseType = movementData.movementPoseType();
-      PoseSimulator simulator = movementPoseType.simulator();
+      SimulationService movementSimulationServiceType = movementData.simulationService();
+      PoseSimulator simulator = movementSimulationServiceType.simulator();
       if (movementData.pastVelocity == 0) {
         if (movementData.physicsJumped && movementData.lastVelocityApplicableForJumpDenial()) {
           movementData.physicsJumpedOverrideVL++;
@@ -265,18 +263,14 @@ public final class Physics extends IntaveCheck {
   }
 
   public void updateAquatics(User user) {
+    UserMetaMovementData movementData = user.meta().movementData();
     updateInWater(user);
-    updateEyesInWater(user);
+    movementData.updateEyesInWater();
   }
 
   private void handleSneakInWater(User user) {
     UserMetaMovementData movementData = user.meta().movementData();
     movementData.physicsMotionY -= 0.04F;
-  }
-
-  private void updateEyesInWater(User user) {
-    UserMetaMovementData movementData = user.meta().movementData();
-    movementData.eyesInWater = Fluids.areEyesInFluid(user, movementData.positionX, movementData.positionY, movementData.positionZ);
   }
 
   private void updateInWater(User user) {
@@ -371,7 +365,7 @@ public final class Physics extends IntaveCheck {
     }
 
     double violationLevelIncrease = horizontalViolationIncrease + verticalViolationIncrease;
-    if (movementData.movementPoseType() == Pose.HORSE && !IntaveControl.GOMME_MODE) {
+    if (movementData.simulationService() == SimulationService.HORSE && !IntaveControl.GOMME_MODE) {
       violationLevelIncrease = 0;
     }
     if (distance > 1e-3) {
@@ -545,7 +539,8 @@ public final class Physics extends IntaveCheck {
 
     violationLevelData.physicsVL = MathHelper.minmax(0, violationLevelData.physicsVL, 100);
 
-    if (movementData.onLadderLast || movementData.elytraFlying || flying) {
+    Pose pose = movementData.pose();
+    if (movementData.onLadderLast || pose == Pose.FALL_FLYING || flying) {
       movementData.artificialFallDistance = 0;
     }
 
@@ -555,7 +550,7 @@ public final class Physics extends IntaveCheck {
 
     if (IntaveControl.DEBUG_MOVEMENT) {
       ChatColor chatColor = violationLevelIncrease == 0 ? ChatColor.GRAY : ChatColor.YELLOW;
-      String motion = MathHelper.formatPositionAsInt(positionX, positionY, positionZ);
+      String motion = movementData.pose().name() + " ";//MathHelper.formatPositionAsInt(positionX, positionY, positionZ);
       String displayPhysicsVL = formatDouble(violationLevelData.physicsVL, 4);
       String displayHorizontalVL = formatDouble(horizontalViolationIncrease, 3);
       String displayVerticalVL = formatDouble(verticalViolationIncrease, 3);
@@ -603,7 +598,6 @@ public final class Physics extends IntaveCheck {
       }
 
       debug += " " + String.join(" ", tags);
-
       String finalDebug = debug;
       player.sendMessage(finalDebug);
 //      Synchronizer.synchronize(() -> player.sendMessage(finalDebug));
@@ -660,8 +654,7 @@ public final class Physics extends IntaveCheck {
       movementData.positionX, movementData.positionZ,
       movementData.verifiedPositionX, movementData.verifiedPositionZ
     );
-    boolean swimming = movementData.swimming;
-    boolean elytraFlying = movementData.elytraFlying;
+    Pose pose = movementData.pose();
     double receivedMotionX = movementData.motionX();
     double receivedMotionY = movementData.motionY();
     double receivedMotionZ = movementData.motionZ();
@@ -669,7 +662,8 @@ public final class Physics extends IntaveCheck {
     boolean accountedSkippedMovement = movementData.recentlyEncounteredFlyingPacket(2);
     double legitimateDeviation = accountedSkippedMovement ? 1e-2 : 1e-5;
     // MotionY calculations with sin/cos (FastMath affected)
-    if (swimming || elytraFlying) {
+    boolean fastMathAffected = pose == Pose.SWIMMING || pose == Pose.FALL_FLYING;
+    if (fastMathAffected) {
       legitimateDeviation = 0.001;
     }
 
@@ -756,7 +750,7 @@ public final class Physics extends IntaveCheck {
     }
 
     double abuseVertically = Math.max(0, differenceY - legitimateDeviation);
-    boolean allowDeviation = movementData.elytraFlying || movementData.swimming || movementData.inLava();
+    boolean allowDeviation = fastMathAffected || movementData.inLava();
     double multiplier;
 
     if (abuseVertically > 0.1 && !allowDeviation) {
@@ -768,7 +762,7 @@ public final class Physics extends IntaveCheck {
       multiplier = 100;
     }
 
-    if (movementData.elytraFlying && movementData.motionY() >= 0 && movementData.onGround) {
+    if (pose == Pose.FALL_FLYING && movementData.motionY() >= 0 && movementData.onGround) {
       multiplier *= 0.1;
     }
 
@@ -803,7 +797,7 @@ public final class Physics extends IntaveCheck {
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
     UserMetaMovementData movementData = meta.movementData();
 
-    Pose movementPoseType = movementData.movementPoseType();
+    SimulationService movementSimulationServiceType = movementData.simulationService();
     double motionX = movementData.motionX();
     double motionZ = movementData.motionZ();
     double distanceMoved = MathHelper.resolveHorizontalDistance(
@@ -812,7 +806,7 @@ public final class Physics extends IntaveCheck {
     );
     double predictedDistanceMoved = Math.hypot(predictedX, predictedZ);
 
-    if (movementPoseType == Pose.HORSE) {
+    if (movementSimulationServiceType == SimulationService.HORSE) {
 
 //      user.player().sendMessage(distanceMoved + " " + predictedDistanceMoved);
 
@@ -912,7 +906,8 @@ public final class Physics extends IntaveCheck {
       movedTooQuickly = movedTooQuickly && distanceMoved > baseMoveSpeed;
     }
 
-    if (movementData.elytraFlying && movementData.motionY() >= 0 && movementData.onGround) {
+    Pose pose = movementData.pose();
+    if (pose == Pose.FALL_FLYING && movementData.motionY() >= 0 && movementData.onGround) {
       abuseHorizontally *= 0.3;
     }
 

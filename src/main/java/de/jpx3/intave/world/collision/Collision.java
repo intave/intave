@@ -161,6 +161,10 @@ public final class Collision {
     return resolvedBoundingBoxes;
   }
 
+  public static boolean hasNoCollisions(User user, WrappedAxisAlignedBB boundingBox) {
+    return resolve(user.player(), boundingBox).isEmpty();
+  }
+
   public static boolean blockInsideBorder(World world, double positionX, double positionZ) {
     WorldBorder worldBorder = world.getWorldBorder();
     Location center = worldBorder.getCenter();

@@ -6,6 +6,7 @@ import de.jpx3.intave.access.IntaveException;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.detect.checks.movement.Physics;
+import de.jpx3.intave.detect.checks.movement.physics.Pose;
 import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.reflect.caller.CallerResolver;
@@ -277,7 +278,7 @@ public final class MovementEmulationEngine {
     double motionZ = lastMotion.getZ();
 
     if (applyPhysics) {
-      if (movementData.elytraFlying) {
+      if (movementData.pose() == Pose.FALL_FLYING) {
         float f = rotationPitch * 0.017453292F;
         double rotationVectorDistance = Math.sqrt(lookVector.getX() * lookVector.getX() + lookVector.getZ() * lookVector.getZ());
         double dist2 = Math.sqrt(motionX * motionX + motionZ * motionZ);
@@ -333,7 +334,7 @@ public final class MovementEmulationEngine {
     boolean onGround = motionY != collisionVector.getY() && motionY < 0.0;
     motionY = collisionVector.getY();
     double multiplier;
-    if (applyPhysics && !movementData.elytraFlying) {
+    if (applyPhysics && movementData.pose() != Pose.FALL_FLYING) {
       if (movementData.inWater) {
         multiplier = 0.8f;
       } else {

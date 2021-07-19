@@ -137,6 +137,10 @@ public final class UserMetaClientData {
     return protocolVersion >= VER_1_14;
   }
 
+  public boolean swimmingMechanics() {
+    return protocolVersion >= VER_1_13;
+  }
+
   public boolean canUseElytra() {
     return protocolVersion >= VER_1_9;
   }

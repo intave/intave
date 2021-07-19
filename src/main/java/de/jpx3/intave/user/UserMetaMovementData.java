@@ -5,19 +5,26 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import de.jpx3.intave.detect.checks.movement.physics.MotionVector;
 import de.jpx3.intave.detect.checks.movement.physics.Pose;
 import de.jpx3.intave.detect.checks.movement.physics.SimulationProcessor;
+import de.jpx3.intave.detect.checks.movement.physics.SimulationService;
 import de.jpx3.intave.event.entity.WrappedEntity;
 import de.jpx3.intave.reflect.ReflectiveDataWatcherAccess;
 import de.jpx3.intave.reflect.ReflectiveHandleAccess;
 import de.jpx3.intave.tools.annotate.Nullable;
 import de.jpx3.intave.tools.client.*;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
 import de.jpx3.intave.world.blockphysic.BlockProperties;
+import de.jpx3.intave.world.collision.Collision;
+import de.jpx3.intave.world.fluid.FluidTag;
+import de.jpx3.intave.world.fluid.Fluids;
+import de.jpx3.intave.world.fluid.WrappedFluid;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import java.util.List;
@@ -37,7 +44,10 @@ public final class UserMetaMovementData {
   public double widthRounded, heightRounded;
   private double resetMotion, frictionPosSubtraction;
 
-  public boolean swimming, elytraFlying, fireworkTolerant;
+  @Deprecated
+  // Use #pose for checking a player's pose
+  public boolean elytraFlying;
+  public boolean fireworkTolerant;
 
   public boolean onGround, lastOnGround, step;
   public boolean collidedHorizontally, collidedVertically;
@@ -53,11 +63,12 @@ public final class UserMetaMovementData {
   public double positionX, positionY, positionZ;
   private double motionX, motionY, motionZ;
   public boolean sprinting, lastSprinting, sneaking, lastSneaking;
-  private boolean sprintingAllowed, actualSneaking;
+  private boolean sprintingAllowed;
   private float yawSine, yawCosine, friction;
   public float rotationYaw, rotationPitch;
   public float lastRotationYaw, lastRotationPitch;
-  private Pose movementPoseType = Pose.PLAYER;
+  private Pose pose = Pose.STANDING;
+  private SimulationService simulationService = SimulationService.PLAYER;
   private final SimulationProcessor.IterativeSimulationContext iterativeSimulation = new SimulationProcessor.IterativeSimulationContext();
   private Material blockOnPosition = Material.AIR;
 
@@ -75,8 +86,11 @@ public final class UserMetaMovementData {
   private int pastClientFlyingPacket, pastFlyingPacketAccurate;
   private float aiMoveSpeed, jumpMovementFactor;
   public float genericMovementSpeedAttribute;
-  public boolean inWater, eyesInWater;
+  @Nullable
+  public WrappedFluid interactingFluid;
+  public boolean inWater;
   public boolean inWeb;
+  private boolean eyesInWater;
   public int pastPushedByWaterFlow = 100;
   public int pastElytraFlying = 100, pastVelocity = 100, pastExternalVelocity = 100, pastInWeb = 100, pastWaterMovement = 100;
   public int pastLongTeleport = 100;
@@ -146,7 +160,6 @@ public final class UserMetaMovementData {
     applyPlayerStats();
     updateWorld();
     applyPlayerLocation();
-    applySizeUpdate();
   }
 
   private void setupDefaults() {
@@ -173,6 +186,7 @@ public final class UserMetaMovementData {
     verifiedPositionX = positionX;
     verifiedPositionY = positionY;
     verifiedPositionZ = positionZ;
+    updateSize();
   }
 
   private void applyPlayerStats() {
@@ -181,18 +195,6 @@ public final class UserMetaMovementData {
     }
     sprinting = player.isSprinting();
     sneaking = player.isSneaking();
-  }
-
-  public void applySizeUpdate() {
-    widthRounded = Math.round(width * 50d) / 100d;
-    heightRounded = Math.round(height * 100d) / 100d;
-//    if (user.meta().clientData().roundEnvironmentNumbers()) {
-//      widthRounded = Math.round(width * 500d) / 1000d;
-//      heightRounded = Math.round(height * 10000d) / 10000d;
-//    } else {
-//      widthRounded = Math.round(width * 500000000000000d) / 1000000000000000d;
-//      heightRounded = Math.round(height * 100000000000000d) / 100000000000000d;
-//    }
   }
 
   public void updateWorld() {
@@ -207,6 +209,7 @@ public final class UserMetaMovementData {
     PacketContainer packet,
     boolean hasMovement, boolean hasRotation
   ) {
+    UserMetaClientData clientData = user.meta().clientData();
     if (boundingBox == null) {
       setupDefaults();
     }
@@ -223,16 +226,15 @@ public final class UserMetaMovementData {
 
     if (hasMovement) {
       StructureModifier<Double> modifier = packet.getDoubles();
-      positionX = round(modifier.read(0));
-      positionY = round(modifier.read(1));
-      positionZ = round(modifier.read(2));
+      positionX = modifier.read(0);
+      positionY = modifier.read(1);
+      positionZ = modifier.read(2);
       blockOnPosition = BukkitBlockAccess.cacheAppliedTypeAccess(user, player.getWorld(), positionX, positionY - frictionPosSubtraction, positionZ);
 
       motionX = positionX - verifiedPositionX;
       motionY = positionY - verifiedPositionY;
       motionZ = positionZ - verifiedPositionZ;
 
-      swimming = PoseHelper.isSwimming(player);
       boolean falling = motionY() <= 0.0D;
       if (falling && EffectLogic.isPotionSlowFallingActive(player)) {
         artificialFallDistance = 0f;
@@ -255,8 +257,25 @@ public final class UserMetaMovementData {
       yawSine = SinusCache.sin(rotationYaw * (float) Math.PI / 180.0F, false);
       yawCosine = SinusCache.cos(rotationYaw * (float) Math.PI / 180.0F, false);
     }
-    // I could not find a better solution :(
     updateEntityMovement();
+    if (clientData.canUseElytra()) {
+      updateElytra();
+    }
+    updatePose();
+  }
+
+  private void updateElytra() {
+    if (elytraFlying && !this.onGround && !this.inWater && !EffectLogic.isPotionLevitationActive(player)) {
+      elytraFlying = hasElytraEquipped();
+    } else {
+      elytraFlying = false;
+    }
+  }
+
+  public boolean hasElytraEquipped() {
+    ItemStack plate = player.getInventory().getChestplate();
+    //TODO: Check durability
+    return plate != null && plate.getType() == Material.ELYTRA;
   }
 
   private void updateEntityMovement() {
@@ -268,10 +287,72 @@ public final class UserMetaMovementData {
     }
   }
 
-  private double round(double input) {
-    double factor = 100000000000000d;
-    return Math.round(input * factor) / factor;
-//    return input;
+  public void updateEyesInWater() {
+    double yPos = positionY + eyeHeight() - (double) 0.2f;
+    this.eyesInWater = interactingFluid != null && interactingFluid.isIn(FluidTag.WATER);
+    this.interactingFluid = null;
+
+    WrappedFluid fluid = Fluids.fluidAt(user, positionX, yPos, positionZ);
+    if (fluid.isIn(FluidTag.WATER)) {
+      double d1 = (float) WrappedMathHelper.floor(yPos) + 1.0f;
+      if (d1 > yPos) {
+        this.interactingFluid = fluid;
+      }
+    }
+  }
+
+  public boolean areEyesInWater() {
+    return this.eyesInWater;
+  }
+
+  public void updatePose() {
+    // Beautiful
+    if (this.isPoseClear(Pose.SWIMMING)) {
+      Pose pose;
+      if (PoseHelper.isSwimming(user)) {
+        pose = Pose.SWIMMING;
+      } else if (player.isSleeping()) {
+        pose = Pose.SLEEPING;
+      } else if (elytraFlying) {
+        pose = Pose.FALL_FLYING;
+      } else if (PoseHelper.poseSneaking(user)) {
+        pose = Pose.CROUCHING;
+      } else {
+        pose = Pose.STANDING;
+      }
+
+      Pose pose1;
+      if (!this.isPoseClear(pose)) {
+        if (this.isPoseClear(Pose.CROUCHING)) {
+          pose1 = Pose.CROUCHING;
+        } else {
+          pose1 = Pose.SWIMMING;
+        }
+      } else {
+        pose1 = pose;
+      }
+
+      this.pose = pose1;
+    }
+
+    updateSize();
+  }
+
+  public void setPose(Pose pose) {
+    this.pose = pose;
+    updatePose();
+  }
+
+  private void updateSize() {
+    Pose pose = pose();
+    width = pose.width(user);
+    height = pose.height(user);
+    widthRounded = Math.round(width * 50d) / 100d;
+    heightRounded = Math.round(height * 100d) / 100d;
+  }
+
+  protected boolean isPoseClear(Pose pose) {
+    return Collision.hasNoCollisions(user, pose.boundingBoxOf(user).shrink(1.0E-7D));
   }
 
   private float jumpUpwardsMotion() {
@@ -301,15 +382,16 @@ public final class UserMetaMovementData {
   }
 
   public float eyeHeight() {
-    if (player.isSleeping()) {
-      return 0.2f;
-    }
-    if (swimming || elytraFlying /*|| spinAttack */) {
-      return 0.4f;
-    } else if (lastSneaking) {
-      return 1.62f - user.meta().clientData().cameraSneakOffset();
-    } else {
-      return 1.62f;
+    switch (pose) {
+      case SWIMMING:
+      case FALL_FLYING:
+        return 0.4f;
+      case SLEEPING:
+        return 0.2f;
+      case CROUCHING:
+        return 1.62f - user.meta().clientData().cameraSneakOffset();
+      default:
+        return 1.62f;
     }
   }
 
@@ -356,14 +438,6 @@ public final class UserMetaMovementData {
     }
     if (player.getFoodLevel() <= 5) {
       sprintingAllowed = false;
-    }
-    boolean sneakingAllowed = sneaking && !inventoryData.inventoryOpen();
-    if (clientData.delayedSneak()) {
-      actualSneaking = lastSneaking;
-    } else if (clientData.alternativeSneak()) {
-      actualSneaking = lastSneaking || sneakingAllowed;
-    } else {
-      actualSneaking = sneakingAllowed;
     }
   }
 
@@ -515,16 +589,16 @@ public final class UserMetaMovementData {
     return pastFlyingPacketAccurate;
   }
 
-  public Pose movementPoseType() {
-    return movementPoseType;
+  public SimulationService simulationService() {
+    return simulationService;
+  }
+
+  public Pose pose() {
+    return pose;
   }
 
   public boolean sprintingAllowed() {
     return sprintingAllowed;
-  }
-
-  public boolean actualSneaking() {
-    return actualSneaking;
   }
 
   public float friction() {
@@ -572,8 +646,8 @@ public final class UserMetaMovementData {
     this.verifiedLocation = verifiedLocation;
   }
 
-  public void setMovementPoseType(Pose movementPoseType) {
-    this.movementPoseType = movementPoseType;
+  public void setMovementPoseType(SimulationService movementSimulationServiceType) {
+    this.simulationService = movementSimulationServiceType;
   }
 
   public void setPastFlyingPacketAccurate(int pastFlyingPacketAccurate) {
