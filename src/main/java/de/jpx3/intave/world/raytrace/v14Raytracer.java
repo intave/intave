@@ -3,20 +3,20 @@ package de.jpx3.intave.world.raytrace;
 import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
 import de.jpx3.intave.tools.wrapper.WrappedMovingObjectPosition;
 import de.jpx3.intave.tools.wrapper.WrappedVector;
-import net.minecraft.server.v1_16_R3.MovingObjectPositionBlock;
-import net.minecraft.server.v1_16_R3.RayTrace;
-import net.minecraft.server.v1_16_R3.Vec3D;
+import net.minecraft.server.v1_14_R1.MovingObjectPositionBlock;
+import net.minecraft.server.v1_14_R1.RayTrace;
+import net.minecraft.server.v1_14_R1.Vec3D;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_16_R3.CraftWorld;
-import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
 @PatchyAutoTranslation
-public final class v16Raytracer implements Raytracer {
+public final class v14Raytracer implements Raytracer {
   @Override
   @PatchyAutoTranslation
   public WrappedMovingObjectPosition raytrace(World world, Player player, WrappedVector eyeVector, WrappedVector targetVector) {
-    net.minecraft.server.v1_16_R3.World minecraftWorld = ((CraftWorld) world).getHandle().getMinecraftWorld();
+    net.minecraft.server.v1_14_R1.World minecraftWorld = ((CraftWorld) world).getHandle().getMinecraftWorld();
     RayTrace raytraceConfiguration = new RayTrace(
       (Vec3D) eyeVector.convertToNativeVec3(),
       (Vec3D) targetVector.convertToNativeVec3(),
