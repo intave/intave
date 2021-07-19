@@ -4,10 +4,7 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.patchy.PatchyLoadingInjector;
-import de.jpx3.intave.world.blockshape.resolver.pipeline.DynamicCorruptedBlockFilter;
-import de.jpx3.intave.world.blockshape.resolver.pipeline.DynamicCubePreFilter;
-import de.jpx3.intave.world.blockshape.resolver.pipeline.DynamicEmptyBlockPreFilter;
-import de.jpx3.intave.world.blockshape.resolver.pipeline.DynamicPatcherReshaper;
+import de.jpx3.intave.world.blockshape.resolver.pipeline.*;
 
 public final class BoundingBoxResolverFactory {
   private static BoundingBoxResolvePipeline resolver;
@@ -17,10 +14,7 @@ public final class BoundingBoxResolverFactory {
     String className = "de.jpx3.intave.world.blockshape.resolver.server.v8BoundingBoxResolver";
     String acClass = "de.jpx3.intave.world.blockshape.resolver.acbbs.v8AlwaysCollidingBoundingBox";
 
-    if (MinecraftVersions.VER1_17_0.atOrAbove()) {
-      className = "de.jpx3.intave.world.blockshape.resolver.server.v17BoundingBoxResolver";
-      acClass = "";
-    } else if (MinecraftVersions.VER1_14_0.atOrAbove()) {
+    if (MinecraftVersions.VER1_14_0.atOrAbove()) {
       className = "de.jpx3.intave.world.blockshape.resolver.server.v14BoundingBoxResolver";
       acClass = "";
     } else if (MinecraftVersions.VER1_13_0.atOrAbove()) {
@@ -42,6 +36,10 @@ public final class BoundingBoxResolverFactory {
 
     // server resolver
     resolver = instanceOf(className);
+    if (MinecraftVersions.VER1_14_0.atOrAbove()) {
+      // cache
+      resolver = new DynamicVariantCache(resolver);
+    }
     // corrupted filter
     resolver = new DynamicCorruptedBlockFilter(resolver);
     // empty prefilter

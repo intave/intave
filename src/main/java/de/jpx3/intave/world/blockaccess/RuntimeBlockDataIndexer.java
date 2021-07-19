@@ -41,6 +41,10 @@ public final class RuntimeBlockDataIndexer {
 //    IntaveLogger.logger().info(message);
   }
 
+  public static int variantsOfType(Material material) {
+    return blockDataIndex.get(material).size();
+  }
+
   public static int indexOfModernState(Material type, Object rawBlockData) {
     return blockDataIndex.get(type).get(rawBlockData);
   }

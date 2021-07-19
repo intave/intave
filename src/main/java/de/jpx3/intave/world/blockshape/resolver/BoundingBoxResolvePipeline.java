@@ -12,4 +12,8 @@ public interface BoundingBoxResolvePipeline {
   List<WrappedAxisAlignedBB> nativeResolve(World world, Player player, Material type, int blockState, int posX, int posY, int posZ);
 
   List<WrappedAxisAlignedBB> customResolve(World world, Player player, Material type, int blockState, int posX, int posY, int posZ);
+
+  default void flushTypeCache(Material type) {
+
+  }
 }

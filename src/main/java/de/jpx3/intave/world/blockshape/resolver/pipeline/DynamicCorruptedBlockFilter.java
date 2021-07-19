@@ -11,22 +11,27 @@ import org.bukkit.entity.Player;
 import java.util.List;
 
 public final class DynamicCorruptedBlockFilter implements BoundingBoxResolvePipeline {
-  private final BoundingBoxResolvePipeline parent;
+  private final BoundingBoxResolvePipeline forward;
 
-  public DynamicCorruptedBlockFilter(BoundingBoxResolvePipeline parent) {
-    this.parent = parent;
+  public DynamicCorruptedBlockFilter(BoundingBoxResolvePipeline forward) {
+    this.forward = forward;
   }
 
   @Override
   public List<WrappedAxisAlignedBB> nativeResolve(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
     List<WrappedAxisAlignedBB> corrupted = resolveCorrupted(type, blockState);
-    return corrupted != null ? corrupted : parent.nativeResolve(world, player, type, blockState, posX, posY, posZ);
+    return corrupted != null ? corrupted : forward.nativeResolve(world, player, type, blockState, posX, posY, posZ);
   }
 
   @Override
   public List<WrappedAxisAlignedBB> customResolve(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
     List<WrappedAxisAlignedBB> corrupted = resolveCorrupted(type, blockState);
-    return corrupted != null ? corrupted : parent.customResolve(world, player, type, blockState, posX, posY, posZ);
+    return corrupted != null ? corrupted : forward.customResolve(world, player, type, blockState, posX, posY, posZ);
+  }
+
+  @Override
+  public void flushTypeCache(Material type) {
+    forward.flushTypeCache(type);
   }
 
   public List<WrappedAxisAlignedBB> resolveCorrupted(Material type, int data) {

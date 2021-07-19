@@ -9,6 +9,7 @@ import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.patchy.PatchyLoadingInjector;
 import de.jpx3.intave.reflect.ReflectiveAccess;
 import de.jpx3.intave.reflect.ReflectiveBlockAccess;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -79,6 +80,12 @@ public final class BlockDataAccess {
     }
   }
 
+  /**
+   * This method performs a direct type lookup, which will be quite heavy if the underlying chunk has not been loaded yet.
+   * To avoid this performance-bottleneck, use {@link BukkitBlockAccess#cacheAppliedDataAccess(User, World, double, double, double)} instead,
+   * providing fast performance, a robust cache implementation and stable chunk fallback
+   */
+  @Deprecated
   public static int dataAccess(Block block) {
     Material type = BlockTypeAccess.typeAccess(block);
     if (!MODERN_MATERIAL_PROCESSING) {

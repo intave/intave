@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.event.violation.EntityNoDamageTickChanger;
 import de.jpx3.intave.tools.AccessHelper;
+import de.jpx3.intave.tools.MemoryWatchdog;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -11,7 +12,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class UserRepository {
-  private final static Map<UUID, User> repository = Maps.newConcurrentMap();
+  private final static Map<UUID, User> repository = MemoryWatchdog.watch("users", Maps.newConcurrentMap());
   private final static User deadUser = User.empty();
 //  private final static Lock lock = new ReentrantLock();
   private static boolean closed;

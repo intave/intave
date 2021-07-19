@@ -91,6 +91,10 @@ EnumMainHand -> {
   17 -> "net/minecraft/world/entity/EnumMainHand"
 }
 
+IBlockAccess -> {
+  17 -> "net/minecraft/world/level/IBlockAccess"
+}
+
 IBlockData -> {
   17 -> "net/minecraft/world/level/block/state/IBlockData"
 }
@@ -226,6 +230,10 @@ Vec3D -> {
       "z" -> "d"
     }
   }
+}
+
+VoxelShape -> {
+  17 -> "net/minecraft/world/phys/shapes/VoxelShape"
 }
 
 WorldServer -> {

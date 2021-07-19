@@ -36,6 +36,11 @@ public final class DynamicEmptyBlockPreFilter implements BoundingBoxResolvePipel
     return forward.customResolve(world, player, type, blockState, posX, posY, posZ);
   }
 
+  @Override
+  public void flushTypeCache(Material type) {
+    forward.flushTypeCache(type);
+  }
+
   private boolean isEmpty(Material type) {
     if (Materials.isLiquid(type)) {
       return true;

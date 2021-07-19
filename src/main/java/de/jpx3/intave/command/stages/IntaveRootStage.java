@@ -15,6 +15,7 @@ import de.jpx3.intave.diagnostics.KeyPressStudy;
 import de.jpx3.intave.diagnostics.timings.Timing;
 import de.jpx3.intave.diagnostics.timings.Timings;
 import de.jpx3.intave.tools.MathHelper;
+import de.jpx3.intave.tools.MemoryWatchdog;
 import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -25,6 +26,8 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -311,29 +314,6 @@ public final class IntaveRootStage extends CommandStage {
     }
   }
 
-  public <K extends Comparable<? super K>, V extends Comparable<? super V>> Map<K, V> sortHashMapByValues(
-    Map<K, V> passedMap
-  ) {
-    List<K> mapKeys = new ArrayList<>(passedMap.keySet());
-    List<V> mapValues = new ArrayList<>(passedMap.values());
-    Collections.sort(mapValues);
-    Collections.reverse(mapValues);
-    Collections.sort(mapKeys);
-    Map<K, V> sortedMap = new LinkedHashMap<>();
-    for (V val : mapValues) {
-      Iterator<K> keyIt = mapKeys.iterator();
-      while (keyIt.hasNext()) {
-        K key = keyIt.next();
-        if (passedMap.get(key).equals(val)) {
-          keyIt.remove();
-          sortedMap.put(key, val);
-          break;
-        }
-      }
-    }
-    return sortedMap;
-  }
-
   @SubCommand(
     selectors = "settrust",
     usage = "<trustfactor> [<target>]",
@@ -387,6 +367,75 @@ public final class IntaveRootStage extends CommandStage {
     Location location = player.getLocation();
     user.blockShapeAccess().override(player.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), Material.OBSIDIAN, 0);
     player.sendMessage(ChatColor.GREEN + "Block summoned");
+  }
+
+  @SubCommand(
+    selectors = "memtrace",
+    usage = "",
+    description = "",
+    permission = "sibyl"
+  )
+  @Native
+  public void memtrace(User user) {
+    Player player = user.player();
+
+    if (!MemoryWatchdog.supported()) {
+      player.sendMessage(ChatColor.RED + "An Agent is required to perform a memory trace");
+    }
+
+    player.sendMessage(ChatColor.RED + "Computing memory trace..");
+    Map<String, Long> trace = new HashMap<>();
+    MemoryWatchdog.memoryTraceOf(IntavePlugin.singletonInstance(), trace, new HashSet<>());
+    trace = sortHashMapByValues(trace);
+    trace.forEach((s, aLong) -> {
+      if (aLong > 200) {
+        player.sendMessage( humanReadableByteCount(aLong) + " by " + (s.contains("intave") ? ChatColor.GRAY : ChatColor.DARK_GRAY) + s);
+      }
+    });
+    player.sendMessage(ChatColor.RED + "Computing memory usage..");
+    player.sendMessage(ChatColor.YELLOW + "Intave plugin obj memtrace: " + humanReadableByteCount(MemoryWatchdog.memoryUsageOf(IntavePlugin.singletonInstance(), new HashSet<>())));
+    MemoryWatchdog.memoryUsage(stringLongMapx -> {
+      Map<String, Long> stringLongMap = sortHashMapByValues(stringLongMapx);
+      for (Map.Entry<String, Long> stringLongEntry : stringLongMap.entrySet()) {
+        player.sendMessage(stringLongEntry.getKey() + " requires " +  humanReadableByteCount(stringLongEntry.getValue()));
+      }
+    });
+  }
+
+  // stolen from https://stackoverflow.com/questions/3758606/how-can-i-convert-byte-size-into-a-human-readable-format-in-java
+  private static String humanReadableByteCount(long bytes) {
+    if (-1000 < bytes && bytes < 1000) {
+      return bytes + "B";
+    }
+    CharacterIterator ci = new StringCharacterIterator("kMGTPE");
+    while (bytes <= -999_950 || bytes >= 999_950) {
+      bytes /= 1000;
+      ci.next();
+    }
+    return String.format("%.1f%cB", bytes / 1000.0, ci.current());
+  }
+
+  public <K extends Comparable<? super K>, V extends Comparable<? super V>> Map<K, V> sortHashMapByValues(
+    Map<K, V> passedMap
+  ) {
+    List<K> mapKeys = new ArrayList<>(passedMap.keySet());
+    List<V> mapValues = new ArrayList<>(passedMap.values());
+    Collections.sort(mapValues);
+    Collections.reverse(mapValues);
+    Collections.sort(mapKeys);
+    Map<K, V> sortedMap = new LinkedHashMap<>();
+    for (V val : mapValues) {
+      Iterator<K> keyIt = mapKeys.iterator();
+      while (keyIt.hasNext()) {
+        K key = keyIt.next();
+        if (passedMap.get(key).equals(val)) {
+          keyIt.remove();
+          sortedMap.put(key, val);
+          break;
+        }
+      }
+    }
+    return sortedMap;
   }
 
   public static IntaveRootStage singletonInstance() {

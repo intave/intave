@@ -28,4 +28,9 @@ public final class DynamicPatcherReshaper implements BoundingBoxResolvePipeline 
     List<WrappedAxisAlignedBB> original = forward.customResolve(world, player, type, blockState, posX, posY, posZ);
     return player == null ? original : BoundingBoxPatcher.patch(world, player, posX, posY, posZ, type, blockState, original);
   }
+
+  @Override
+  public void flushTypeCache(Material type) {
+    forward.flushTypeCache(type);
+  }
 }
