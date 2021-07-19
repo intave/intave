@@ -35,7 +35,7 @@ public final class PoseHelper {
     if (swimming) {
       return sprinting && movementData.inWater;
     } else {
-      return sprinting && movementData.areEyesInWater();
+      return sprinting && (movementData.pose() == Pose.FALL_FLYING && movementData.inWater) || movementData.areEyesInWater();
     }
   }
 

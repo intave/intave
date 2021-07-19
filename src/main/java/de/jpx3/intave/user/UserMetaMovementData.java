@@ -288,7 +288,7 @@ public final class UserMetaMovementData {
   }
 
   public void updateEyesInWater() {
-    double yPos = positionY + eyeHeight() - (double) 0.2f;
+    double yPos = positionY + eyeHeight() - (double) 0.11111f;
     this.eyesInWater = interactingFluid != null && interactingFluid.isIn(FluidTag.WATER);
     this.interactingFluid = null;
 
