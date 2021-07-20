@@ -1,7 +1,6 @@
 package de.jpx3.intave.event.entity;
 
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.detect.checks.movement.Physics;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.user.User;
@@ -19,11 +18,7 @@ public final class LazyEntityCollisionService implements BukkitEventSubscriber {
   private static final double DISTANCE_TO_ENTITY = 1.5f * 1.2;
 
   public LazyEntityCollisionService(IntavePlugin plugin) {
-    Physics physicsCheck = plugin.checkService().searchCheck(Physics.class);
-    boolean entityCollisions = physicsCheck.configuration().settings().boolBy("vehicle-collisions", false);
-    if (entityCollisions) {
-      plugin.eventLinker().registerEventsIn(this);
-    }
+    plugin.eventLinker().registerEventsIn(this);
   }
 
   @BukkitEventSubscription

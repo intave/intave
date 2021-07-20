@@ -486,7 +486,6 @@ public final class Physics extends IntaveCheck {
     if (violationLevelIncrease > 0) {
       boolean uncommonArea = movementData.pastWaterMovement < 20
         || movementData.collidedHorizontally
-        || movementData.collidedVertically
         || movementData.collidedWithBoat()
         || movementData.inWeb
         || movementData.pastElytraFlying < 20;

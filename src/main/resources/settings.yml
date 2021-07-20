@@ -12,10 +12,6 @@ check:
     # Trustfactor mappings and high-tolerance modes are supported throughout all of them
     mitigation: AGGRESSIVE
 
-    # Do you want Intave to encounter vehicles in a player's movement?
-    # Keep deactivated, when your players don't collide with Boats/Minecarts
-    vehicle-collisions: false
-
     thresholds:
       50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is moving incorrectly"
       100:
