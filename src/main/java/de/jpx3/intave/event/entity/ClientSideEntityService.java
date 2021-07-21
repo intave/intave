@@ -626,8 +626,16 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
   private Float readHealthOf(List<WrappedWatchableObject> watchableObjects) {
     for (WrappedWatchableObject watchableObject : watchableObjects) {
       int index = watchableObject.getIndex();
-
-      int requiredIndex = HEALTH_PROCESSING_1_14 ? 8 : (HEALTH_PROCESSING_1_10 ? 7 : 6);
+      int requiredIndex;
+      if (MinecraftVersions.VER1_17_0.atOrAbove()) {
+        requiredIndex = 9;
+      } else if (HEALTH_PROCESSING_1_14) {
+        requiredIndex = 8;
+      } else if (HEALTH_PROCESSING_1_10) {
+        requiredIndex = 7;
+      } else {
+        requiredIndex = 6;
+      }
       if (index == requiredIndex) {
         Object rawValue = watchableObject.getRawValue();
         return ((Number) rawValue).floatValue();
