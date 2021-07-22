@@ -4,6 +4,7 @@ import de.jpx3.intave.command.translator.*;
 import org.bukkit.command.CommandSender;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class TypeTranslators {
   private final static Map<Class<?>, TypeTranslator<?>> typeTranslatorMap = new HashMap<>();
@@ -34,7 +35,10 @@ public final class TypeTranslators {
           return enumConstant;
         }
       }
-      return "Could not find " + type + " in " + type.getSimpleName();
+      String types = Arrays.stream(enumConstants).map(enumConstant -> niceifyEnumName(enumConstant.name())).collect(Collectors.joining(", "));
+      int indexOfLastComma = types.lastIndexOf(", ");
+      types = types.substring(0, indexOfLastComma - 1) + " or " + types.substring(indexOfLastComma);
+      return "Unknown type \"" + type + "\": Expected " + types;
     }
     TypeTranslator<?> typeTranslator = typeTranslatorMap.get(type);
     if (typeTranslator == null) {

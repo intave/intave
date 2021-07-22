@@ -323,7 +323,7 @@ public final class IntavePlugin extends JavaPlugin {
         }
         if (bad) {
           contextStatusResource.write(new ByteArrayInputStream(("failure-"+response).getBytes(StandardCharsets.UTF_8)));
-          boolFailure();
+          bootFailure();
           performShutdown();
           return;
         }
@@ -349,7 +349,7 @@ public final class IntavePlugin extends JavaPlugin {
           if (properties.isEmpty()) {
             logger.error("Invalid server response " + response);
             contextStatusResource.write(new ByteArrayInputStream(("failure-"+response).getBytes(StandardCharsets.UTF_8)));
-            boolFailure();
+            bootFailure();
             performShutdown();
             return;
           }
@@ -382,7 +382,7 @@ public final class IntavePlugin extends JavaPlugin {
           if (!validResponse || foundInterceptor) {
             logger.error("Unable to boot: Authentication response not trustworthy");
             contextStatusResource.write(new ByteArrayInputStream(("failure-"+response).getBytes(StandardCharsets.UTF_8)));
-            boolFailure();
+            bootFailure();
             performShutdown();
             return;
           }
@@ -453,14 +453,14 @@ public final class IntavePlugin extends JavaPlugin {
 
         if (allowLeniency && !configurationService().loader().configurationCacheExists()) {
           logger().error("Unable to boot: Intave requires an internet connection for first-time startup");
-          boolFailure();
+          bootFailure();
           performShutdown();
           return;
         }
 
         if (!allowLeniency) {
           logger().error("Unable to boot: Internet connection required to proceed");
-          boolFailure();
+          bootFailure();
           performShutdown();
           return;
         }
@@ -561,7 +561,7 @@ public final class IntavePlugin extends JavaPlugin {
       exception.printStackTrace();
 
       clearCacheFiles();
-      boolFailure();
+      bootFailure();
       performShutdown();
       return;
     }
@@ -637,7 +637,7 @@ public final class IntavePlugin extends JavaPlugin {
         case DISABLED:
         case INVALID:
           logger().error("Unable to boot: This version has been deactivated");
-          boolFailure();
+          bootFailure();
           performShutdown();
           throw new IntaveInternalException("Escape exception");
       }
@@ -751,7 +751,7 @@ public final class IntavePlugin extends JavaPlugin {
   }
 
   @Native
-  public void boolFailure() {
+  public void bootFailure() {
     getCommand("intave").setExecutor((commandSender, command, s, strings) -> {
       commandSender.sendMessage(prefix() + ChatColor.RED + "Intave couldn't boot properly");
       return false;
@@ -766,7 +766,7 @@ public final class IntavePlugin extends JavaPlugin {
 
   @Native
   public void performShutdown() {
-    logger().info("Stopping Intave");
+    logger.info("Stopping Intave");
     BackgroundExecutor.stopBlocking();
     GarbageCollector.die();
     UserRepository.die();
@@ -786,13 +786,17 @@ public final class IntavePlugin extends JavaPlugin {
       proxyMessenger.closeChannel();
     }
     RuntimeDiagnostics.applicationShutdown();
+    deleteIntegrityCache();
+    logger.info("Intave offline");
+    logger.shutdown();
+  }
+
+  private void deleteIntegrityCache() {
     try {
       // mark caches as deletable
       Class<?> relocator = Class.forName("de.jpx3.relocator.Relocator");
       relocator.getMethod("i").invoke(null);
     } catch (Exception ignored) {}
-    logger().info("Intave offline");
-    logger.shutdown();
   }
 
   public IntaveAccess access() {
