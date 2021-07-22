@@ -10,16 +10,14 @@ import de.jpx3.intave.event.dispatch.AttackDispatcher;
 import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.violation.AttackNerfStrategy;
-import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserCustomCheckMeta;
-import de.jpx3.intave.user.UserMetaInventoryData;
-import de.jpx3.intave.user.UserMetaMovementData;
+import de.jpx3.intave.user.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import static de.jpx3.intave.event.packet.PacketId.Client.POSITION;
 import static de.jpx3.intave.event.packet.PacketId.Client.POSITION_LOOK;
+import static de.jpx3.intave.user.UserMetaClientData.VER_1_17;
 
 public final class AttackReduceIgnoreHeuristic extends IntaveMetaCheckPart<Heuristics, AttackReduceIgnoreHeuristic.AttackReduceMeta> {
   private final IntavePlugin plugin;
@@ -41,8 +39,9 @@ public final class AttackReduceIgnoreHeuristic extends IntaveMetaCheckPart<Heuri
     UserMetaMovementData movementData = user.meta().movementData();
     UserMetaInventoryData inventoryData = user.meta().inventoryData();
     AttackReduceMeta heuristicMeta = metaOf(user);
+    UserMetaClientData clientData = user.meta().clientData();
 
-    if (AttackDispatcher.REDUCING_DISABLED) {
+    if (clientData.protocolVersion() >= VER_1_17 || AttackDispatcher.REDUCING_DISABLED) {
       return;
     }
 
