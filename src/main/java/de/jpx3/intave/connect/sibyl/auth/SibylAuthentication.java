@@ -148,9 +148,9 @@ public final class SibylAuthentication implements BukkitEventSubscriber {
     }
     internalWhitelist.add(UUID.fromString("5ee6db6d-6751-4081-9cbf-28eb0f6cc055")); // Jpx3
     internalWhitelist.add("Jpx3");
-    internalWhitelist.add(UUID.fromString("3fef889a-fb68-4dfb-bcee-38d56637f6f6")); // Klaus
-    internalWhitelist.add(UUID.fromString("31eee66d-d818-40ad-b58a-7467f09a6a2c")); // Henriks9
-    internalWhitelist.add("Henriks9");
+//    internalWhitelist.add(UUID.fromString("3fef889a-fb68-4dfb-bcee-38d56637f6f6")); // Klaus
+//    internalWhitelist.add(UUID.fromString("31eee66d-d818-40ad-b58a-7467f09a6a2c")); // Henriks9
+//    internalWhitelist.add("Henriks9");
     internalWhitelist.add(UUID.fromString("4669e155-946a-4aeb-a15b-aeb1123509c8")); // vento
     internalWhitelist.add("vento");
     internalWhitelist.add(UUID.fromString("9bcc67cb-febb-42e2-9fd0-63ea3912be41")); // DarkAndBlue

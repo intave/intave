@@ -238,6 +238,10 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     processPacketSpawnMob(user, event.getPacketType(), entityTypeData, packet, livingEntity, entityId);
   }
 
+  private final static boolean INT_LIST_ENTITY_DESTROY = MinecraftVersions.VER1_17_1.atOrAbove();;
+  private final static boolean SINGLE_INT_ENTITY_DESTROY = !INT_LIST_ENTITY_DESTROY && MinecraftVersions.VER1_17_0.atOrAbove();;
+  private final static boolean INT_ARRAY_ENTITY_DESTROY = !SINGLE_INT_ENTITY_DESTROY;;
+
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsOut = {
@@ -248,7 +252,11 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
   public void receiveEntityDestroy(PacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
-    if (packet.getIntegers().size() == 0) {
+
+    if (INT_LIST_ENTITY_DESTROY) {
+      List<Integer> entityIDs = packet.getIntLists().read(0);
+      entityIDs.forEach(entityID -> enterEntityDestroy(player, entityID));
+    } else if (INT_ARRAY_ENTITY_DESTROY) {
       int[] entityIDs = packet.getIntegerArrays().read(0);
       for (int entityID : entityIDs) {
         enterEntityDestroy(player, entityID);

@@ -46,6 +46,12 @@ public final class ProtocolLibraryAdapter {
       if (!methodExistsInClassHierarchy(PacketContainer.class.getName(), "getEnumEntityUseActions")) {
         throw new InvalidDependencyException("Your version of ProtocolLib is outdated (missing enum entity use action access)");
       }
+
+      if (MinecraftVersions.VER1_17_1.atOrAbove()) {
+        if (!methodExistsInClassHierarchy(PacketContainer.class.getName(), "getIntLists")) {
+          throw new InvalidDependencyException("Your version of ProtocolLib is outdated (missing int list access)");
+        }
+      }
     }
 
     if (!temporaryPlayer) {

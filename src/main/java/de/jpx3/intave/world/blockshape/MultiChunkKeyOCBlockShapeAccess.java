@@ -140,6 +140,9 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
   private final static BlockShape EMPTY_CACHE_ENTRY = new BlockShape(Collections.emptyList(), Material.AIR, 0);
 
   private BlockShape lookup(World world, Block block, int posX, int posY, int posZ) {
+    if (block.getY() < 0) {
+      return EMPTY_CACHE_ENTRY;
+    }
     Material type = BlockTypeAccess.typeAccess(block, player);
     if (type == Material.AIR) {
       return EMPTY_CACHE_ENTRY;
