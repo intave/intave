@@ -248,13 +248,27 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
   public void receiveEntityDestroy(PacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
-    if (packet.getIntegers().size() == 0) {
-      int[] entityIDs = packet.getIntegerArrays().read(0);
-      for (int entityID : entityIDs) {
-        enterEntityDestroy(player, entityID);
+    if (MinecraftVersions.VER1_17_0.atOrAbove()) {
+      // 1.17
+      Integer entityId = packet.getIntegers().readSafely(0);
+      if (entityId != null) {
+        enterEntityDestroy(player, entityId);
+      } else {
+        // 1.17.1
+        List<Integer> integers = packet.getIntLists().read(0);
+        for (Integer id : integers) {
+          enterEntityDestroy(player, id);
+        }
       }
     } else {
-      enterEntityDestroy(player, packet.getIntegers().read(0));
+      if (packet.getIntegers().size() == 0) {
+        int[] entityIDs = packet.getIntegerArrays().read(0);
+        for (int entityID : entityIDs) {
+          enterEntityDestroy(player, entityID);
+        }
+      } else {
+        enterEntityDestroy(player, packet.getIntegers().read(0));
+      }
     }
   }
 

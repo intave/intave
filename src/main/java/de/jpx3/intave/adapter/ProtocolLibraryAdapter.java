@@ -46,6 +46,9 @@ public final class ProtocolLibraryAdapter {
       if (!methodExistsInClassHierarchy(PacketContainer.class.getName(), "getEnumEntityUseActions")) {
         throw new InvalidDependencyException("Your version of ProtocolLib is outdated (missing enum entity use action access)");
       }
+      if (!methodExistsInClassHierarchy(PacketContainer.class.getName(), "getIntLists")) {
+        throw new InvalidDependencyException("Your version of ProtocolLib is outdated (missing IntList converter)");
+      }
     }
 
     if (!temporaryPlayer) {
