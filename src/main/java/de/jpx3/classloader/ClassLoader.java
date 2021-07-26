@@ -9,12 +9,13 @@ import java.util.Arrays;
 public final class ClassLoader {
   public final static boolean USE_NATIVE_ACCESS = JavaVersion.current() > 15;
 
-  private static NativeLibrary nativeLibrary;
   private static boolean loaded;
 
   public static void setupEnvironment(File parentTempDirectory) {
-    nativeLibrary = new NativeLibrary("classloader", 0, parentTempDirectory, Arrays.asList("EDA34D4D1003958D62DA21A4D86D05740A3CD2D81D7B3A23A7643C957F8144BB", "EC32DA5F0FC58DEA075C1B4F8562A369684264CA051D892BC97F70115A3607EA"));
-    nativeLibrary.load();
+    if (USE_NATIVE_ACCESS) {
+      NativeLibrary nativeLibrary = new NativeLibrary("classloader", 0, parentTempDirectory, Arrays.asList("EDA34D4D1003958D62DA21A4D86D05740A3CD2D81D7B3A23A7643C957F8144BB", "EC32DA5F0FC58DEA075C1B4F8562A369684264CA051D892BC97F70115A3607EA"));
+      nativeLibrary.load();
+    }
     loaded = true;
   }
 
