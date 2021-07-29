@@ -11,6 +11,7 @@ import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.detect.EventProcessor;
 import de.jpx3.intave.detect.checks.combat.Heuristics;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.event.entity.WrappedEntity;
 import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.fakeplayer.FakePlayer;
@@ -64,6 +65,7 @@ public final class AttackDispatcher implements EventProcessor {
     User user = UserRepository.userOf(player);
     User.UserMeta meta = user.meta();
     UserMetaAttackData attackData = meta.attackData();
+    UserMetaConnectionData connectionData = meta.connectionData();
     UserMetaMovementData movementData = meta.movementData();
 
     PacketContainer packet = event.getPacket();
@@ -77,9 +79,14 @@ public final class AttackDispatcher implements EventProcessor {
     ItemStack itemStack = inventoryData.heldItem();
     boolean knockbackEnchantment = itemStack != null && itemStack.containsEnchantment(Enchantment.KNOCKBACK);
 
+    WrappedEntity entity = connectionData.synchronizedEntityMap().get(entityId);
+    if (entity == null) {
+      return;
+    }
+
     if (action == EnumWrappers.EntityUseAction.ATTACK) {
       attackData.setLastAttackedEntityID(entityId);
-      if (playerAttack(entityId)) {
+      if (entity.player) {
         movementData.pastPlayerAttackPhysics = 0;
         if (knockbackEnchantment) {
           movementData.physicsMotionX *= 0.6;
@@ -196,18 +203,5 @@ public final class AttackDispatcher implements EventProcessor {
     } catch (InvocationTargetException e) {
       e.printStackTrace();
     }
-  }
-
-  /*
-    This is not a good idea ~Richy
-   */
-  @Deprecated
-  private boolean playerAttack(Integer entityId) {
-    for (Player player : Bukkit.getOnlinePlayers()) {
-      if (player.getEntityId() == entityId) {
-        return true;
-      }
-    }
-    return false;
   }
 }

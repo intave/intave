@@ -21,6 +21,7 @@ import de.jpx3.intave.user.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -206,6 +207,7 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     PacketContainer packet = event.getPacket();
     EntityTypeData entityTypeData;
     boolean livingEntity;
+    boolean entityIsPlayer = false;
     Integer entityId = packet.getIntegers().read(0);
     if (packetType == PacketType.Play.Server.SPAWN_ENTITY) {
       // dead entities
@@ -227,6 +229,7 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
 
       HitBoxBoundaries hitBoxBoundaries = HitBoxBoundaries.player();
       livingEntity = true;
+      entityIsPlayer = true;
       entityTypeData = new EntityTypeData(entityName, hitBoxBoundaries, 105, true);
     }
     if (entityTypeData == null) {
@@ -235,7 +238,7 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
       }
       return;
     }
-    processPacketSpawnMob(user, event.getPacketType(), entityTypeData, packet, livingEntity, entityId);
+    processPacketSpawnMob(user, event.getPacketType(), entityTypeData, packet, livingEntity, entityId, entityIsPlayer);
   }
 
   private final static boolean INT_LIST_ENTITY_DESTROY = MinecraftVersions.VER1_17_1.atOrAbove();;
@@ -440,7 +443,8 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     WrappedEntity entity = processEntitySpawn(
       user,
       isEntityLiving, entityID, entityTypeData,
-      serverPosX, serverPosY, serverPosZ
+      serverPosX, serverPosY, serverPosZ,
+      bukkitEntity.getType() == EntityType.PLAYER
     );
 
     if (bukkitEntity instanceof LivingEntity) {
@@ -455,7 +459,7 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     User user,
     PacketType packetType,
     EntityTypeData entityTypeData, PacketContainer packet,
-    boolean isEntityLiving, int entityId
+    boolean isEntityLiving, int entityId, boolean player
   ) {
     if (NEW_POSITION_PROCESSING_1_9) {
       double posX = packet.getDoubles().read(0);
@@ -464,7 +468,8 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
 
       processEntitySpawnNewVersion(
         user, entityTypeData, isEntityLiving, entityId,
-        posX, posY, posZ
+        posX, posY, posZ,
+        player
       );
     } else {
       // 1.8.x
@@ -486,7 +491,8 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
 
       processEntitySpawn(
         user, isEntityLiving, entityId, entityTypeData,
-        serverPosX, serverPosY, serverPosZ
+        serverPosX, serverPosY, serverPosZ,
+        player
       );
 
 //      WrappedEntity wrappedEntity = entityByIdentifier(user, entityID);
@@ -498,11 +504,12 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
   private void processEntitySpawnNewVersion(
     User user, EntityTypeData entityTypeData,
     boolean isEntityLiving, int entityId,
-    double posX, double posY, double posZ
+    double posX, double posY, double posZ,
+    boolean player
   ) {
     UserMetaConnectionData synchronizeData = user.meta().connectionData();
     Map<Integer, WrappedEntity> synchronizedEntityMap = synchronizeData.synchronizedEntityMap();
-    WrappedEntity entity = createEntityOf(user, entityId, isEntityLiving, entityTypeData);
+    WrappedEntity entity = createEntityOf(user, entityId, isEntityLiving, entityTypeData, player);
     entity.serverPosX = WrappedMathHelper.getPositionLong(posX);
     entity.serverPosY = WrappedMathHelper.getPositionLong(posY);
     entity.serverPosZ = WrappedMathHelper.getPositionLong(posZ);
@@ -513,14 +520,15 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
   private WrappedEntity processEntitySpawn(
     User user,
     boolean isEntityLiving, int entityId, EntityTypeData entityTypeData,
-    long serverPosX, long serverPosY, long serverPosZ
+    long serverPosX, long serverPosY, long serverPosZ,
+    boolean player
   ) {
     UserMetaConnectionData synchronizeData = user.meta().connectionData();
     Map<Integer, WrappedEntity> synchronizedEntityMap = synchronizeData.synchronizedEntityMap();
     double posX = serverPosX / 32d;
     double posY = serverPosY / 32d;
     double posZ = serverPosZ / 32d;
-    WrappedEntity entity = createEntityOf(user, entityId, isEntityLiving, entityTypeData);
+    WrappedEntity entity = createEntityOf(user, entityId, isEntityLiving, entityTypeData, player);
     entity.serverPosX = serverPosX;
     entity.serverPosY = serverPosY;
     entity.serverPosZ = serverPosZ;
@@ -534,13 +542,14 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
     User user,
     int entityId,
     boolean isEntityLiving,
-    EntityTypeData entityTypeData
+    EntityTypeData entityTypeData,
+    boolean player
   ) {
     WrappedEntity entity;
     if (entityTypeData.entityName() != null && entityTypeData.entityName().contains("Firework")) {
       entity = new WrappedEntityFirework(user, entityId, entityTypeData);
     } else {
-      entity = new WrappedEntity(entityId, entityTypeData, isEntityLiving);
+      entity = new WrappedEntity(entityId, entityTypeData, isEntityLiving, player);
     }
     return entity;
   }

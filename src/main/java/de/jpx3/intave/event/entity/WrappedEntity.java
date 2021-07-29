@@ -44,6 +44,7 @@ public class WrappedEntity implements Cloneable {
   public boolean verifiedPosition;
   public float health;
   public int ticksAlive;
+  public final boolean player;
   private int deathTime;
   private WrappedEntity mountedOnEntity;
   private WrappedAxisAlignedBB boundingBox;
@@ -58,8 +59,10 @@ public class WrappedEntity implements Cloneable {
   public WrappedEntity(
     int entityId,
     EntityTypeData entityTypeData,
-    boolean isEntityLiving
+    boolean isEntityLiving,
+    boolean player
   ) {
+    this.player = player;
     this.entityId = entityId;
     this.entityTypeData = entityTypeData;
     this.isEntityLiving = isEntityLiving;
@@ -352,7 +355,7 @@ public class WrappedEntity implements Cloneable {
 
   @Override
   public WrappedEntity clone()  {
-    WrappedEntity clone = new WrappedEntity(entityId, entityTypeData, isEntityLiving);
+    WrappedEntity clone = new WrappedEntity(entityId, entityTypeData, isEntityLiving, player);
     clone.isClone = true;
     clone.position = position.clone();
     clone.alternativePosition = alternativePosition.clone();
