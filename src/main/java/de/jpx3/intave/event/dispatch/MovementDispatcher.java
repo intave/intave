@@ -49,6 +49,7 @@ import static de.jpx3.intave.event.packet.PacketId.Client.POSITION;
 import static de.jpx3.intave.event.packet.PacketId.Client.VEHICLE_MOVE;
 import static de.jpx3.intave.event.packet.PacketId.Client.*;
 import static de.jpx3.intave.event.packet.PacketId.Server.*;
+import static de.jpx3.intave.user.UserMetaClientData.VER_1_17;
 import static de.jpx3.intave.user.UserMetaClientData.VER_1_9;
 
 @Relocate
@@ -213,13 +214,14 @@ public final class MovementDispatcher implements EventProcessor {
     User user = UserRepository.userOf(player);
     User.UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
+    UserMetaClientData clientData = meta.clientData();
     UserMetaAbilityData abilityData = meta.abilityData();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
     violationLevelData.physicsVelocityVL = 0;
     violationLevelData.physicsVL = Math.max(0, violationLevelData.physicsVL - 10);
     // check for gui screen
-    if (abilityData.health <= 0f) {
-      Synchronizer.synchronize(movementData::sprintReset);
+    if (abilityData.health <= 0f || clientData.protocolVersion() >= VER_1_17) {
+      Synchronizer.synchronizeDelayed(movementData::sprintReset, 1);
     }
     synchronizeRespawn(player);
   }
