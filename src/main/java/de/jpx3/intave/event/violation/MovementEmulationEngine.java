@@ -380,6 +380,7 @@ public final class MovementEmulationEngine {
     WrappedAxisAlignedBB entityBoundingBox = WrappedAxisAlignedBB.createFromPosition(
       user, teleportLocation.getX(), teleportLocation.getY(), teleportLocation.getZ()
     );
+    // experimental
     if (Collision.isInsideBlocks(player, entityBoundingBox)) {
       return;
     }

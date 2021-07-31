@@ -30,8 +30,8 @@ import java.util.Map;
  */
 
 public final class ProxyMessenger {
-  public final static int PROTOCOL_VERSION = 4;
-  public final static String INCOMING_CHANNEL = "IPC-P2S";
+  public final static int PROTOCOL_VERSION = 5;
+  public final static String INCOMING_CHANNEL = "intave:proxy";
   public final static String OUTGOING_CHANNEL = "BungeeCord";
 
   private final IntavePlugin plugin;

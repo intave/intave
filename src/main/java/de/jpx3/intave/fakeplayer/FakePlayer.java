@@ -228,8 +228,8 @@ public final class FakePlayer extends FakePlayerBody {
 
   public void movementUpdate(Location to, Location prevLocation, boolean onGround) {
     super.movementUpdate(to, prevLocation, onGround);
-    IntavePlugin.singletonInstance().eventService()
-      .feedback()
+    IntavePlugin.singletonInstance()
+      .eventService().feedback()
       .singleSynchronize(observer, to, (player, target) -> {
         User user = UserRepository.userOf(player);
         UserMetaAttackData attackData = user.meta().attackData();
@@ -351,12 +351,12 @@ public final class FakePlayer extends FakePlayerBody {
     }
 
     public Builder visible() {
-      this.attributes ^= INVISIBLE;
+      this.attributes &= ~INVISIBLE;
       return this;
     }
 
     public Builder invisibleInTabList() {
-      this.attributes ^= IN_TABLIST;
+      this.attributes &= ~IN_TABLIST;
       return this;
     }
 

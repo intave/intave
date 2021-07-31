@@ -148,6 +148,7 @@ public final class IntavePlugin extends JavaPlugin {
     SecurityManager securityManager = System.getSecurityManager();
     if (securityManager != null) {
       logger.error("A security manager of class " + securityManager.getClass().getName() + " is present, unable to start");
+      bootFailure();
       return;
     }
 
@@ -186,12 +187,6 @@ public final class IntavePlugin extends JavaPlugin {
       configurationService = new ConfigurationService(this);
       String configurationKey = configurationService.configurationKey();
 
-      if (IntaveControl.USE_EXTERNAL_CONFIGURATION_FILE || configurationKey.equalsIgnoreCase("file")) {
-//        logger.info("Using the file configuration");
-      } else {
-//        logger.info("Using the \"" + configurationKey + "\" configuration");
-      }
-
       // causes interceptor output
       for (int i = 0; i < 3; i++) {
         URL url = new URL("https://intave.de/api/versions.json");
@@ -204,25 +199,6 @@ public final class IntavePlugin extends JavaPlugin {
       }
 
       InterceptorDetection.revert();
-
-      // search for debuggers
-//      boolean debuggerFound = false;
-//      for (String string : ManagementFactory.getRuntimeMXBean().getInputArguments()) {
-//        if (string.contains("-agentlib:jdwp")) {
-//          debuggerFound = true;
-//        }
-//        if (string.contains("-Xdebug")) {
-//          debuggerFound = true;
-//        }
-//        if (string.contains("-Xrunjdwp:")) {
-//          debuggerFound = true;
-//        }
-//      }
-//
-//      if (debuggerFound) {
-//        System.exit(1);
-//        return;
-//      }
 
       EncryptedResource contextStatusResource = new EncryptedResource("context-status", false);
 
@@ -395,9 +371,7 @@ public final class IntavePlugin extends JavaPlugin {
       boolean enterprise = (VERSION_DETAILS & 0x200) != 0;
 
       if (partner || enterprise) {
-//        logger.info("Identity confirmed, overdrive mode enabled");
-      } else {
-        logger.info(ChatColor.RED + "Identity verification missing");
+        logger.info("Identity confirmed");
       }
 
       if (offlineMode) {

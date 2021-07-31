@@ -10,7 +10,10 @@ import de.jpx3.intave.tools.annotate.Relocate;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventException;
 import org.bukkit.event.HandlerList;
-import org.bukkit.plugin.*;
+import org.bukkit.plugin.AuthorNagException;
+import org.bukkit.plugin.EventExecutor;
+import org.bukkit.plugin.IllegalPluginAccessException;
+import org.bukkit.plugin.RegisteredListener;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -47,27 +50,13 @@ public final class BukkitEventLinker {
     HandlerList.unregisterAll(listener);
   }
 
-  public final void fireEvent(Event event) {
+  public void fireEvent(Event event) {
     for (RegisteredListener registration : event.getHandlers().getRegisteredListeners()) {
       if (registration.getPlugin().isEnabled()) {
         try {
           registration.callEvent(event);
-        } catch (AuthorNagException | EventException var10) {
-          var10.printStackTrace();
-        }
-      }
-    }
-  }
-
-  public final void fireExternalEvent(Event event) {
-    for (RegisteredListener registration : event.getHandlers().getRegisteredListeners()) {
-      Plugin plugin = registration.getPlugin();
-      String pluginName = plugin.getName();
-      if (!pluginName.equalsIgnoreCase("Intave") && plugin.isEnabled()) {
-        try {
-          registration.callEvent(event);
         } catch (AuthorNagException | EventException exception) {
-          throw new IntaveInternalException(exception);
+          exception.printStackTrace();
         }
       }
     }
@@ -112,8 +101,8 @@ public final class BukkitEventLinker {
         EventExecutor executor;
         try {
           executor = executorClass.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
-          throw new IntaveInternalException(e);
+        } catch (InstantiationException | IllegalAccessException exception) {
+          throw new IntaveInternalException(exception);
         }
         IntaveRegisteredListener registeredListener = new IntaveRegisteredListener(
           plugin, listener, executor,
