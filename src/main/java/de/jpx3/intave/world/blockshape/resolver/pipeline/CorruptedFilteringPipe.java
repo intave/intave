@@ -2,36 +2,29 @@ package de.jpx3.intave.world.blockshape.resolver.pipeline;
 
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
-import de.jpx3.intave.world.blockshape.resolver.BoundingBoxBuilder;
-import de.jpx3.intave.world.blockshape.resolver.BoundingBoxResolvePipeline;
+import de.jpx3.intave.world.blockshape.resolver.pipeline.patcher.BoundingBoxBuilder;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import java.util.List;
 
-public final class DynamicCorruptedBlockFilter implements BoundingBoxResolvePipeline {
-  private final BoundingBoxResolvePipeline forward;
+public final class CorruptedFilteringPipe implements ResolverPipeline {
+  private final ResolverPipeline forward;
 
-  public DynamicCorruptedBlockFilter(BoundingBoxResolvePipeline forward) {
+  public CorruptedFilteringPipe(ResolverPipeline forward) {
     this.forward = forward;
   }
 
   @Override
-  public List<WrappedAxisAlignedBB> nativeResolve(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
+  public List<WrappedAxisAlignedBB> resolve(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
     List<WrappedAxisAlignedBB> corrupted = resolveCorrupted(type, blockState);
-    return corrupted != null ? corrupted : forward.nativeResolve(world, player, type, blockState, posX, posY, posZ);
+    return corrupted != null ? corrupted : forward.resolve(world, player, type, blockState, posX, posY, posZ);
   }
 
   @Override
-  public List<WrappedAxisAlignedBB> customResolve(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
-    List<WrappedAxisAlignedBB> corrupted = resolveCorrupted(type, blockState);
-    return corrupted != null ? corrupted : forward.customResolve(world, player, type, blockState, posX, posY, posZ);
-  }
-
-  @Override
-  public void flushTypeCache(Material type) {
-    forward.flushTypeCache(type);
+  public void downstreamTypeReset(Material type) {
+    forward.downstreamTypeReset(type);
   }
 
   public List<WrappedAxisAlignedBB> resolveCorrupted(Material type, int data) {

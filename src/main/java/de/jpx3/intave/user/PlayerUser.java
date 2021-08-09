@@ -31,7 +31,6 @@ import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
 import de.jpx3.intave.world.blockshape.MultiChunkKeyOCBlockShapeAccess;
 import de.jpx3.intave.world.blockshape.OCBlockShapeAccess;
-import de.jpx3.intave.world.blockshape.resolver.BoundingBoxResolverFactory;
 import de.jpx3.intave.world.collider.Collider;
 import de.jpx3.intave.world.collider.complex.ComplexColliderProcessor;
 import de.jpx3.intave.world.collider.simple.SimpleColliderProcessor;
@@ -83,7 +82,7 @@ public final class PlayerUser implements User {
     this.playerConnection = new WeakReference<>(ReflectiveHandleAccess.playerConnectionOf(player));
     this.metadata = new MetadataBundle(player, this);
     this.permissionCache = new BukkitPermissionCache();
-    setBlockShapeAccess(new MultiChunkKeyOCBlockShapeAccess(player(), BoundingBoxResolverFactory.resolver()));
+    setBlockShapeAccess(MultiChunkKeyOCBlockShapeAccess.ofDefaultResolver(player()));
     this.complexColliderProcessor = Collider.suitableComplexColliderProcessorFor(this);
     this.simpleColliderProcessor = Collider.suitableSimpleColliderProcessorFor(this);
     Synchronizer.synchronize(this::setDefaultMessagingChannel);
@@ -272,7 +271,7 @@ public final class PlayerUser implements User {
 
   @Override
   public int trustFactorSetting(String key) {
-    return IntavePlugin.singletonInstance().trustFactorService().trustFactorSetting(key, player());
+    return plugin().trustFactorService().trustFactorSetting(key, player());
   }
 
   @Override
@@ -425,8 +424,8 @@ public final class PlayerUser implements User {
     packet.getIntegers().write(0, foodLevel);
     try {
       ProtocolLibrary.getProtocolManager().sendServerPacket(player, packet);
-    } catch (InvocationTargetException e) {
-      e.printStackTrace();
+    } catch (InvocationTargetException exception) {
+      exception.printStackTrace();
     }
   }
 

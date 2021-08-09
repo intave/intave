@@ -7,7 +7,6 @@ import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.world.blockaccess.BlockDataAccess;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
-import de.jpx3.intave.world.blockshape.resolver.BoundingBoxBuilder;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -15,7 +14,7 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 
-public final class BlockDoorPatch extends BoundingBoxPatch {
+final class DoorBlockPatch extends BoundingBoxPatch {
   private static final ThreadLocal<Boolean> topAcquire = ThreadLocal.withInitial(() -> false);
 
   @Override

@@ -9,7 +9,7 @@ import java.util.List;
 
 public final class UniversalSimpleColliderProcessor implements SimpleColliderProcessor {
   @Override
-  public SimpleColliderSimulationResult simulateCollision(User user, WrappedAxisAlignedBB boundingBox, double motionX, double motionY, double motionZ) {
+  public SimpleColliderSimulationResult collide(User user, WrappedAxisAlignedBB boundingBox, double motionX, double motionY, double motionZ) {
     Player player = user.player();
     List<WrappedAxisAlignedBB> collisionBoxes = Collision.resolve(
       player, boundingBox.addCoord(motionX, motionY, motionZ)

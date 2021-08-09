@@ -2,15 +2,14 @@ package de.jpx3.intave.world.blockshape.resolver.pipeline.patcher;
 
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
-import de.jpx3.intave.world.blockshape.resolver.BoundingBoxBuilder;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import java.util.List;
 
-public final class BlockTrapdoorPatch extends BoundingBoxPatch {
-  protected BlockTrapdoorPatch() {
+final class TrapdoorBlockPatch extends BoundingBoxPatch {
+  public TrapdoorBlockPatch() {
     super(BlockTypeAccess.TRAP_DOOR);
   }
 

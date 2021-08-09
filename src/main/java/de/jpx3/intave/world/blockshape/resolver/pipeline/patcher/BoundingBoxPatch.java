@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 import java.util.Arrays;
 import java.util.List;
 
-public abstract class BoundingBoxPatch {
+abstract class BoundingBoxPatch {
   private final Material[] material;
 
   protected BoundingBoxPatch(Material... materials) {

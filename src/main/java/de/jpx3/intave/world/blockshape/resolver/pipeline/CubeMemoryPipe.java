@@ -2,7 +2,6 @@ package de.jpx3.intave.world.blockshape.resolver.pipeline;
 
 import de.jpx3.intave.diagnostics.BoundingBoxAccessFlowStudy;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
-import de.jpx3.intave.world.blockshape.resolver.BoundingBoxResolvePipeline;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -12,12 +11,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public final class DynamicCubePreFilter implements BoundingBoxResolvePipeline {
-  private final BoundingBoxResolvePipeline forward;
+public final class CubeMemoryPipe implements ResolverPipeline {
+  private final ResolverPipeline forward;
   private final Set<Material> solidMaterials = new HashSet<>();
   private final Set<Material> otherMaterials = new HashSet<>();
 
-  public DynamicCubePreFilter(BoundingBoxResolvePipeline forward) {
+  public CubeMemoryPipe(ResolverPipeline forward) {
     this.forward = forward;
     this.preloadBlocks();
   }
@@ -32,34 +31,18 @@ public final class DynamicCubePreFilter implements BoundingBoxResolvePipeline {
   }
 
   @Override
-  @Deprecated
-  public List<WrappedAxisAlignedBB> nativeResolve(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
+  public List<WrappedAxisAlignedBB> resolve(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
     if (solidMaterials.contains(type)) {
       BoundingBoxAccessFlowStudy.incremDynamic();
       return Collections.singletonList(new WrappedAxisAlignedBB(posX, posY, posZ, posX + 1, posY + 1, posZ + 1));
     } else if (otherMaterials.contains(type)) {
-      return forward.nativeResolve(world, player, type, blockState, posX, posY, posZ);
+      return forward.resolve(world, player, type, blockState, posX, posY, posZ);
     }
-    List<WrappedAxisAlignedBB> resolve = forward.nativeResolve(world, player, type, blockState, posX, posY, posZ);
-    if (isInLoadedChunk(world, posX, posZ)) {
-      (isSolid(resolve, posX, posY, posZ) ? solidMaterials : otherMaterials).add(type);
-    }
-    return resolve;
-  }
-
-  @Override
-  public List<WrappedAxisAlignedBB> customResolve(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
-    if (solidMaterials.contains(type)) {
-      BoundingBoxAccessFlowStudy.incremDynamic();
-      return Collections.singletonList(new WrappedAxisAlignedBB(posX, posY, posZ, posX + 1, posY + 1, posZ + 1));
-    } else if (otherMaterials.contains(type)) {
-      return forward.customResolve(world, player, type, blockState, posX, posY, posZ);
-    }
-    List<WrappedAxisAlignedBB> resolve = forward.customResolve(world, player, type, blockState, posX, posY, posZ);
+    List<WrappedAxisAlignedBB> resolve = forward.resolve(world, player, type, blockState, posX, posY, posZ);
     if (isInLoadedChunk(world, posX, posZ)) {
       boolean solid = isSolid(resolve, posX, posY, posZ);
       if (solid) {
-        flushTypeCache(type); // flush downstream type save
+        downstreamTypeReset(type); // flush downstream type save
       }
       (solid ? solidMaterials : otherMaterials).add(type);
     }
@@ -67,10 +50,10 @@ public final class DynamicCubePreFilter implements BoundingBoxResolvePipeline {
   }
 
   @Override
-  public void flushTypeCache(Material type) {
+  public void downstreamTypeReset(Material type) {
     solidMaterials.remove(type);
     otherMaterials.remove(type);
-    forward.flushTypeCache(type);
+    forward.downstreamTypeReset(type);
   }
 
   public static boolean isInLoadedChunk(World world, int x, int z) {

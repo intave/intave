@@ -7,7 +7,6 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.world.blockaccess.BlockDataAccess;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
-import de.jpx3.intave.world.blockshape.resolver.BoundingBoxBuilder;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -15,10 +14,10 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 
-public final class BlockLadderPatch extends BoundingBoxPatch {
+final class LadderBlockPatch extends BoundingBoxPatch {
   private static final boolean EMULATE_NEW_REDUNDANT = MinecraftVersions.VER1_13_0.atOrAbove();
 
-  protected BlockLadderPatch() {
+  public LadderBlockPatch() {
     super(Material.LADDER);
   }
 

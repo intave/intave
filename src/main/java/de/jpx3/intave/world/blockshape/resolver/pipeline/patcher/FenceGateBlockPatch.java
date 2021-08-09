@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 
-public final class BlockFenceGatePatch extends BoundingBoxPatch {
+final class FenceGateBlockPatch extends BoundingBoxPatch {
   @Override
   public List<WrappedAxisAlignedBB> patch(World world, Player player, Block block, List<WrappedAxisAlignedBB> bbs) {
     return bbs;

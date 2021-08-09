@@ -14,14 +14,14 @@ public final class BoundingBoxPatcher {
   private final static Map<Material, BoundingBoxPatch> patches = new HashMap<>();
 
   public static void setup() {
-    add(BlockTrapdoorPatch.class);
-    add(BlockAnvilPatch.class);
-    add(BlockLadderPatch.class);
-    add(BlockLilyPadPatch.class);
-    add(BlockFenceGatePatch.class);
-    add(BlockFarmlandPatch.class);
-    add(BlockBambooPatch.class);
-    add(BlockThinPatch.class);
+    add(TrapdoorBlockPatch.class);
+    add(AnvilBlockPatch.class);
+    add(LadderBlockPatch.class);
+    add(LilyPadBlockPatch.class);
+    add(FenceGateBlockPatch.class);
+    add(FarmlandBlockPatch.class);
+    add(BambooBlockPatch.class);
+    add(ThinBlockPatch.class);
 //    add(BlockDoorPatch.class);
   }
 

@@ -4,7 +4,7 @@ import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.user.User;
 
 public interface SimpleColliderProcessor {
-  SimpleColliderSimulationResult simulateCollision(
+  SimpleColliderSimulationResult collide(
     User user, WrappedAxisAlignedBB boundingBox,
     double motionX, double motionY, double motionZ
   );

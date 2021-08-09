@@ -1,21 +1,17 @@
-package de.jpx3.intave.world.blockshape.resolver;
+package de.jpx3.intave.world.blockshape.resolver.pipeline.patcher;
 
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public final class MultiBoundingBoxBuilder {
+public final class ApplyOnShapeBoundingBoxBuilder {
   private final List<WrappedAxisAlignedBB> boundingBoxes;
 
-  private MultiBoundingBoxBuilder(int capacity) {
-    this.boundingBoxes = new ArrayList<>(capacity);
+  private ApplyOnShapeBoundingBoxBuilder() {
+    this.boundingBoxes = new ArrayList<>();
   }
   
-  public static MultiBoundingBoxBuilder create(int capacity) {
-    return new MultiBoundingBoxBuilder(capacity);
-  }
-
   public void shape(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
     WrappedAxisAlignedBB boundingBox = WrappedAxisAlignedBB.fromBounds(minX, minY, minZ, maxX, maxY, maxZ);
     boundingBox.setOriginBox();
@@ -27,8 +23,12 @@ public final class MultiBoundingBoxBuilder {
     boundingBox.setOriginBox();
     boundingBoxes.add(boundingBox);
   }
-  
+
   public List<WrappedAxisAlignedBB> resolve() {
     return boundingBoxes;
+  }
+
+  public static ApplyOnShapeBoundingBoxBuilder create() {
+    return new ApplyOnShapeBoundingBoxBuilder();
   }
 }

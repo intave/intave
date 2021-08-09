@@ -41,7 +41,7 @@ public final class Collider {
     User user, MotionVector context, boolean inWeb,
     double positionX, double positionY, double positionZ
   ) {
-    return user.complexColliderProcessor().simulateCollision(user, context, inWeb, positionX, positionY, positionZ);
+    return user.complexColliderProcessor().collide(user, context, inWeb, positionX, positionY, positionZ);
   }
 
   public static SimpleColliderSimulationResult simulateSimpleCollision(
@@ -51,6 +51,6 @@ public final class Collider {
   ) {
     User user = UserRepository.userOf(player);
     WrappedAxisAlignedBB boundingBox = WrappedAxisAlignedBB.createFromPosition(positionX, positionY, positionZ);
-    return user.simpleColliderProcessor().simulateCollision(user, boundingBox, motionX, motionY, motionZ);
+    return user.simpleColliderProcessor().collide(user, boundingBox, motionX, motionY, motionZ);
   }
 }

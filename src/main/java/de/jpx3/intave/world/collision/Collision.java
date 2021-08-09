@@ -12,8 +12,8 @@ import de.jpx3.intave.world.blockaccess.BlockDataAccess;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
 import de.jpx3.intave.world.blockshape.OCBlockShapeAccess;
-import de.jpx3.intave.world.blockshape.resolver.BoundingBoxResolvePipeline;
-import de.jpx3.intave.world.blockshape.resolver.BoundingBoxResolverFactory;
+import de.jpx3.intave.world.blockshape.resolver.BoundingBoxResolver;
+import de.jpx3.intave.world.blockshape.resolver.pipeline.ResolverPipeline;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -29,8 +29,6 @@ import java.util.function.Function;
 @Relocate
 @DoNotFlowObfuscate
 public final class Collision {
-  private final static BoundingBoxResolvePipeline boundingBoxResolver = BoundingBoxResolverFactory.resolver();
-
   public static List<WrappedAxisAlignedBB> resolve(Player player, WrappedAxisAlignedBB playerBoundingBox) {
     int minX = WrappedMathHelper.floor(playerBoundingBox.minX);
     int maxX = WrappedMathHelper.floor(playerBoundingBox.maxX + 1.0D);
@@ -103,6 +101,8 @@ public final class Collision {
     return resolvedBoundingBoxes;
   }
 
+  private final static ResolverPipeline boundingBoxResolver = BoundingBoxResolver.pipelineHead();
+
   @Deprecated
   // this is not really performant - please remove me ~richy
   public static List<WrappedAxisAlignedBB> resolve(
@@ -132,7 +132,7 @@ public final class Collision {
                 Block block = BukkitBlockAccess.blockAccess(world, x, y, z);
                 Material type = BlockTypeAccess.typeAccess(block);
                 int data = BlockDataAccess.dataAccess(block);
-                List<WrappedAxisAlignedBB> resolve = boundingBoxResolver.customResolve(world, null, type, data, x, y, z);
+                List<WrappedAxisAlignedBB> resolve = boundingBoxResolver.resolve(world, null, type, data, x, y, z);
                 boolean blockIsOutsideBorder = !blockInsideBorder(world, x, z);
                 if (blockIsOutsideBorder) {
                   if (resolvedBoundingBoxes == null) {

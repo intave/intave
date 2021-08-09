@@ -1,4 +1,4 @@
-package de.jpx3.intave.world.blockshape.resolver;
+package de.jpx3.intave.world.blockshape.resolver.pipeline.patcher;
 
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 
@@ -7,12 +7,12 @@ import java.util.List;
 
 public final class BoundingBoxBuilder {
   private final List<WrappedAxisAlignedBB> boundingBoxes = new ArrayList<>(1);
-  protected double minX;
-  protected double minY;
-  protected double minZ;
-  protected double maxX;
-  protected double maxY;
-  protected double maxZ;
+  private double minX;
+  private double minY;
+  private double minZ;
+  private double maxX;
+  private double maxY;
+  private double maxZ;
 
   private BoundingBoxBuilder() {
   }

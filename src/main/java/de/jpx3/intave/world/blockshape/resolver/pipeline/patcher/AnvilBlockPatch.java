@@ -8,8 +8,6 @@ import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.world.blockaccess.BlockDataAccess;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
-import de.jpx3.intave.world.blockshape.resolver.BoundingBoxBuilder;
-import de.jpx3.intave.world.blockshape.resolver.MultiBoundingBoxBuilder;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -17,8 +15,8 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 
-public final class BlockAnvilPatch extends BoundingBoxPatch {
-  protected BlockAnvilPatch() {
+final class AnvilBlockPatch extends BoundingBoxPatch {
+  public AnvilBlockPatch() {
     super(Material.ANVIL);
   }
 
@@ -41,7 +39,7 @@ public final class BlockAnvilPatch extends BoundingBoxPatch {
       }
       return boundingBoxBuilder.applyAndResolve();
     }
-    MultiBoundingBoxBuilder boundingBoxBuilder = MultiBoundingBoxBuilder.create(4);
+    ApplyOnShapeBoundingBoxBuilder boundingBoxBuilder = ApplyOnShapeBoundingBoxBuilder.create();
     if (axis == WrappedEnumDirection.Axis.X) {
       boundingBoxBuilder.shapeX16(2.0D, 0.0D, 2.0D, 14.0D, 4.0D, 14.0D);
       boundingBoxBuilder.shapeX16(3.0D, 4.0D, 4.0D, 13.0D, 5.0D, 12.0D);

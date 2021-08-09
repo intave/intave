@@ -12,7 +12,7 @@ import java.util.List;
 
 public final class LegacyComplexColliderProcessor implements ComplexColliderProcessor {
   @Override
-  public ComplexColliderSimulationResult simulateCollision(User user, MotionVector context, boolean inWeb, double positionX, double positionY, double positionZ) {
+  public ComplexColliderSimulationResult collide(User user, MotionVector context, boolean inWeb, double positionX, double positionY, double positionZ) {
     Player player = user.player();
     MetadataBundle meta = user.meta();
     MovementMetadata movementData = meta.movementData();

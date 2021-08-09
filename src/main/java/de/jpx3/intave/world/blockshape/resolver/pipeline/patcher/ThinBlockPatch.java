@@ -15,8 +15,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public final class BlockThinPatch extends BoundingBoxPatch {
-  protected static final WrappedAxisAlignedBB[] STATES_8 = new WrappedAxisAlignedBB[] {
+final class ThinBlockPatch extends BoundingBoxPatch {
+  private static final WrappedAxisAlignedBB[] STATES_8 = new WrappedAxisAlignedBB[] {
     new WrappedAxisAlignedBB(0.0F, 0.0F, 0.4375F, 1.0F, 1.0F, 0.5625F), // full ew connection
     new WrappedAxisAlignedBB(0.4375F, 0.0F, 0.0F, 0.5625F, 1.0F, 1.0F), // full ns connection
     new WrappedAxisAlignedBB(0.4375F, 0.0F, 0.0F, 0.5625F, 1.0F, 0.5F), // north
@@ -25,7 +25,7 @@ public final class BlockThinPatch extends BoundingBoxPatch {
     new WrappedAxisAlignedBB(0.0F, 0.0F, 0.4375F, 0.5F, 1.0F, 0.5625F), // west
   };
 
-  protected static final WrappedAxisAlignedBB[] STATES_9 = new WrappedAxisAlignedBB[] {
+  private static final WrappedAxisAlignedBB[] STATES_9 = new WrappedAxisAlignedBB[] {
     new WrappedAxisAlignedBB(0.4375D, 0.0D, 0.4375D, 0.5625D, 1.0D, 0.5625D), // base
     new WrappedAxisAlignedBB(0.4375D, 0.0D, 0.0D, 0.5625D, 1.0D, 0.5625D), // north
     new WrappedAxisAlignedBB(0.4375D, 0.0D, 0.4375D, 1.0D, 1.0D, 0.5625D), // east
@@ -33,7 +33,7 @@ public final class BlockThinPatch extends BoundingBoxPatch {
     new WrappedAxisAlignedBB(0.0D, 0.0D, 0.4375D, 0.5625D, 1.0D, 0.5625D), // west
   };
 
-  public BlockThinPatch() {
+  public ThinBlockPatch() {
     Arrays.stream(STATES_8).forEach(WrappedAxisAlignedBB::setOriginBox);
     Arrays.stream(STATES_9).forEach(WrappedAxisAlignedBB::setOriginBox);
   }

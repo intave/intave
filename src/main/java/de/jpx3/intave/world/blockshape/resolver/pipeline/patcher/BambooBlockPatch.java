@@ -1,11 +1,9 @@
 package de.jpx3.intave.world.blockshape.resolver.pipeline.patcher;
 
-import com.google.common.collect.Lists;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.world.blockaccess.BlockDataAccess;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
-import de.jpx3.intave.world.blockshape.resolver.BoundingBoxBuilder;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -13,7 +11,7 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 
-public final class BlockBambooPatch extends BoundingBoxPatch {
+final class BambooBlockPatch extends BoundingBoxPatch {
   private final static WrappedAxisAlignedBB COLLISION_BOX = new WrappedAxisAlignedBB(6.5D / 16.0, 0.0D, 6.5D / 16.0, 9.5D / 16.0, 1.0, 9.5D / 16.0);
 
   @Override
@@ -39,7 +37,6 @@ public final class BlockBambooPatch extends BoundingBoxPatch {
   @Override
   public boolean appliesTo(Material material) {
     String name = material.name();
-    Lists.newArrayList(new String[0]);
     return name.contains("BAMBOO");
   }
 }

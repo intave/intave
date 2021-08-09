@@ -1,20 +1,20 @@
-package de.jpx3.intave.world.blockshape.resolver.acbbs;
+package de.jpx3.intave.world.blockshape.resolver.pipeline.drill.acbbs;
 
 import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
 import de.jpx3.intave.patchy.annotate.PatchyTranslateParameters;
-import net.minecraft.server.v1_9_R2.AxisAlignedBB;
+import net.minecraft.server.v1_12_R1.AxisAlignedBB;
 
 @PatchyAutoTranslation
-public final class v9AlwaysCollidingBoundingBox extends AxisAlignedBB {
+public final class v12AlwaysCollidingBoundingBox extends AxisAlignedBB {
   @PatchyAutoTranslation
-  public v9AlwaysCollidingBoundingBox() {
+  public v12AlwaysCollidingBoundingBox() {
     super(0,0,0,1,1,1);
   }
 
   @Override
   @PatchyAutoTranslation
   @PatchyTranslateParameters
-  public boolean b(AxisAlignedBB axisAlignedBB) {
+  public boolean c(AxisAlignedBB axisAlignedBB) {
     return true;
   }
 }

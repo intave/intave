@@ -5,7 +5,8 @@ import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.world.blockaccess.BlockDataAccess;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
-import de.jpx3.intave.world.blockshape.resolver.BoundingBoxResolvePipeline;
+import de.jpx3.intave.world.blockshape.resolver.BoundingBoxResolver;
+import de.jpx3.intave.world.blockshape.resolver.pipeline.ResolverPipeline;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -21,7 +22,7 @@ import static de.jpx3.intave.IntaveControl.DISABLE_BLOCK_CACHING_ENTIRELY;
 
 public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess {
   private final Player player;
-  private final BoundingBoxResolvePipeline boundingBoxResolver;
+  private final ResolverPipeline boundingBoxResolver;
   private final Map<Long, BlockShape> blockCache = new ConcurrentHashMap<>(4096);
   private final Map<Location, BlockShape> locatedReplacements = new ConcurrentHashMap<>(64);
   private final Map<Long, BlockShape> indexedReplacements = new ConcurrentHashMap<>(64);
@@ -30,7 +31,7 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
   private int chunkX;
   private int chunkZ;
 
-  public MultiChunkKeyOCBlockShapeAccess(Player player, BoundingBoxResolvePipeline resolver) {
+  private MultiChunkKeyOCBlockShapeAccess(Player player, ResolverPipeline resolver) {
     this.player = player;
     this.boundingBoxResolver = resolver;
   }
@@ -149,7 +150,7 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
     } else {
       BoundingBoxAccessFlowStudy.incremLookups();
       int data = BlockDataAccess.dataAccess(block);
-      List<WrappedAxisAlignedBB> boundingBoxes = boundingBoxResolver.customResolve(world, player, type, data, posX, posY, posZ);
+      List<WrappedAxisAlignedBB> boundingBoxes = boundingBoxResolver.resolve(world, player, type, data, posX, posY, posZ);
       return new BlockShape(boundingBoxes, type, data);
     }
   }
@@ -215,7 +216,7 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
   @Override
   public List<WrappedAxisAlignedBB> constructBlock(World world, int posX, int posY, int posZ, Material type, int blockState) {
     BoundingBoxAccessFlowStudy.incremLookups();
-    return boundingBoxResolver.customResolve(world, player, type, blockState, posX, posY, posZ);
+    return boundingBoxResolver.resolve(world, player, type, blockState, posX, posY, posZ);
   }
 
   @Override
@@ -245,6 +246,14 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
   }
 
   private long bigKey(int posX, int posY, int posZ) {
-    return (posX & 0x3fffffL) << 42 | (posY & 0xfffffL) | (posZ & 0x3fffffL) << 20;
+    return (posX & 0x3f_ffffL) << 42 | (posY & 0xf_ffffL) | (posZ & 0x3f_ffffL) << 20;
+  }
+
+  public static MultiChunkKeyOCBlockShapeAccess ofDefaultResolver(Player player) {
+    return ofCustomResolver(player, BoundingBoxResolver.pipelineHead());
+  }
+
+  public static MultiChunkKeyOCBlockShapeAccess ofCustomResolver(Player player, ResolverPipeline resolver) {
+    return new MultiChunkKeyOCBlockShapeAccess(player, resolver);
   }
 }

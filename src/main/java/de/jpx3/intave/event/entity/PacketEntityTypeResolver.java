@@ -17,7 +17,6 @@ import de.jpx3.intave.reflect.hitbox.HitBoxBoundaries;
 import de.jpx3.intave.reflect.hitbox.ReflectiveEntityHitBoxAccess;
 import de.jpx3.intave.reflect.hitbox.typeaccess.DualEntityTypeAccess;
 import de.jpx3.intave.reflect.hitbox.typeaccess.EntityTypeData;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Zombie;
