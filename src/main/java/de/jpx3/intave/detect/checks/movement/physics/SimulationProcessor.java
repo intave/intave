@@ -9,10 +9,7 @@ import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.annotate.Relocate;
 import de.jpx3.intave.tools.items.InventoryUseItemHelper;
 import de.jpx3.intave.tools.sync.Synchronizer;
-import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserMetaClientData;
-import de.jpx3.intave.user.UserMetaInventoryData;
-import de.jpx3.intave.user.UserMetaMovementData;
+import de.jpx3.intave.user.*;
 import de.jpx3.intave.world.collider.complex.ComplexColliderSimulationResult;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -82,7 +79,7 @@ public final class SimulationProcessor {
   }
 
   private void applyIterativeSimulationTo(User user, IterativeSimulationContext iterativeResult) {
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaInventoryData inventoryData = meta.inventoryData();
     if (movementData.pastPlayerAttackPhysics == 0 && movementData.sprinting && !iterativeResult.reduced()) {
@@ -100,7 +97,7 @@ public final class SimulationProcessor {
   }
 
   private void releaseHandOf(User user) {
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaInventoryData inventoryData = meta.inventoryData();
     UserMetaMovementData movementData = meta.movementData();
     inventoryData.setHandActive(false);
@@ -128,7 +125,7 @@ public final class SimulationProcessor {
   public ComplexColliderSimulationResult simulateMovementWithKeyPress(
     User user, int forward, int strafe, boolean jumped
   ) {
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     MotionVector motionVector = MotionVector.from(movementData.motionProcessorContext);
     motionVector.resetTo(movementData);
@@ -299,7 +296,7 @@ public final class SimulationProcessor {
 
   private IterativeSimulationContext simulateMovementIterative(User user) {
     Timings.CHECK_PHYSICS_PROC_ITR.start();
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaInventoryData inventoryData = meta.inventoryData();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();

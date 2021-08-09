@@ -67,7 +67,7 @@ public final class Physics extends Check {
     this.simulationProcessor = new SimulationProcessor();
 
     highToleranceMode = configuration().settings().boolBy("high-tolerance", false);
-    setDefaultMitigationStrategy(MitigationStrategy.AGGRESSIVE);
+    setDefaultMitigationStrategy(MitigationStrategy.CAREFUL);
 
     searchFallDamageApplier();
     linkCheckToPoseSimulators();
@@ -111,6 +111,9 @@ public final class Physics extends Check {
   }
 
   public void applyFallDamageUpdate(User user) {
+    if (!user.hasPlayer()) {
+      return;
+    }
     UserMetaMovementData movementData = user.meta().movementData();
     if (movementData.artificialFallDistance > 3.0F) {
       float fallDistance = movementData.artificialFallDistance;
@@ -143,7 +146,7 @@ public final class Physics extends Check {
 
   @DispatchTarget
   public void receiveMovement(User user) {
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();
 
@@ -274,7 +277,7 @@ public final class Physics extends Check {
   }
 
   private void updateInWater(User user) {
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaClientData clientData = meta.clientData();
     UserMetaMovementData movementData = meta.movementData();
     if (clientData.waterUpdate()) {
@@ -294,7 +297,7 @@ public final class Physics extends Check {
 
   private void evaluateBestSimulation(User user, ComplexColliderSimulationResult expectedMovement) {
     Player player = user.player();
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     boolean spectator = player.getGameMode() == GameMode.SPECTATOR;
 
     UserMetaMovementData movementData = meta.movementData();
@@ -687,7 +690,7 @@ public final class Physics extends Check {
     boolean collidedWithBoat
   ) {
     Player player = user.player();
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaClientData clientData = meta.clientData();
     UserMetaMovementData movementData = meta.movementData();
     double distanceMoved = MathHelper.resolveHorizontalDistance(
@@ -833,7 +836,7 @@ public final class Physics extends Check {
     boolean collidedWithBoat
   ) {
     Player player = user.player();
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
     UserMetaMovementData movementData = meta.movementData();
 

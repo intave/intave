@@ -89,7 +89,7 @@ public final class MovementDispatcher implements EventProcessor {
   public void worldChange(PlayerChangedWorldEvent worldChange) {
     Player player = worldChange.getPlayer();
     User user = UserRepository.userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     movementData.dismountRidingEntity();
   }
@@ -98,7 +98,7 @@ public final class MovementDispatcher implements EventProcessor {
   public void receiveRespawn(PlayerRespawnEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     movementData.artificialFallDistance = 0;
     movementData.dismountRidingEntity();
@@ -135,7 +135,7 @@ public final class MovementDispatcher implements EventProcessor {
   public void receiveVehicleMove(PlayerMoveEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     if (!movementData.hasRidingEntity()) {
       return;
@@ -166,7 +166,7 @@ public final class MovementDispatcher implements EventProcessor {
   public void sentRespawn(PacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();
     UserMetaAbilityData abilityData = meta.abilityData();
@@ -230,7 +230,7 @@ public final class MovementDispatcher implements EventProcessor {
     PacketContainer packet = event.getPacket();
     User user = UserRepository.userOf(player);
 
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaAttackData attackData = meta.attackData();
     UserMetaInventoryData inventoryData = meta.inventoryData();
@@ -404,7 +404,7 @@ public final class MovementDispatcher implements EventProcessor {
     PacketContainer packet = event.getPacket();
     User user = UserRepository.userOf(player);
 
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaAbilityData abilityData = meta.abilityData();
     UserMetaInventoryData inventoryData = meta.inventoryData();
@@ -501,7 +501,7 @@ public final class MovementDispatcher implements EventProcessor {
   }
 
   private void updateSize(User user) {
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     Pose pose = movementData.pose();
     movementData.width = pose.width(user);
@@ -552,7 +552,7 @@ public final class MovementDispatcher implements EventProcessor {
       return;
     }
     User user = UserRepository.userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     if (!meta.clientData().canUseElytra()) {
       return;
@@ -597,7 +597,7 @@ public final class MovementDispatcher implements EventProcessor {
       );
 
       User user = UserRepository.userOf(player);
-      User.UserMeta meta = user.meta();
+      UserMeta meta = user.meta();
       UserMetaMovementData movementData = meta.movementData();
 
       if (movementData.willReceiveSetbackVelocity && velocity.length() < 0.001) {
@@ -616,7 +616,7 @@ public final class MovementDispatcher implements EventProcessor {
 
   private void receiveVelocity(Player player, Vector velocity) {
     User user = UserRepository.userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
     UserMetaMovementData movementData = meta.movementData();
     if (!violationLevelData.isInActiveTeleportBundle) {
@@ -646,7 +646,7 @@ public final class MovementDispatcher implements EventProcessor {
   public void receiveEntityActionPacket(PacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();
     UserMetaPunishmentData punishmentData = meta.punishmentData();
@@ -687,7 +687,7 @@ public final class MovementDispatcher implements EventProcessor {
 
   private boolean allowSprinting(Player player) {
     User user = UserRepository.userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaInventoryData inventoryData = meta.inventoryData();
     return !inventoryData.inventoryOpen();
   }

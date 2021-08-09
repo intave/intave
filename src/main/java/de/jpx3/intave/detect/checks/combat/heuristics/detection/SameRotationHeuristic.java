@@ -39,7 +39,7 @@ public final class SameRotationHeuristic extends MetaCheckPart<Heuristics, SameR
     }
     User user = userOf(player);
     SameRotationHeuristicMeta meta = metaOf(user);
-    User.UserMeta userMeta = user.meta();
+    UserMeta userMeta = user.meta();
     UserMetaMovementData movementData = userMeta.movementData();
     UserMetaViolationLevelData violationLevelData = userMeta.violationLevelData();
     UserMetaAbilityData userMetaAbilityData = userMeta.abilityData();

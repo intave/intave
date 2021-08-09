@@ -32,6 +32,8 @@ check:
 
     enabled: true
 
+    combat-sampling: true
+
     disable-reducing: false
 
     confidence-thresholds:

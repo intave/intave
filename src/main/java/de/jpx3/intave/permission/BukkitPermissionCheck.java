@@ -29,7 +29,7 @@ public final class BukkitPermissionCheck {
       return nativePermissionCheck(player, permission);
     }
     User user = UserRepository.userOf(player);
-    if (!user.hasOnlinePlayer()) {
+    if (!user.hasPlayer()) {
       return false;
     }
     BukkitPermissionCache permissionCache = user.permissionCache();

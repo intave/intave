@@ -145,7 +145,7 @@ public final class AttackRequiredHeuristic extends MetaCheckPart<Heuristics, Att
     User user,
     WrappedEntity entity
   ) {
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();
     float expandHitbox = 0.05f;

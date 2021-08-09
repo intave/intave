@@ -111,7 +111,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     User user = userOf(player);
     AttackRaytraceMeta attackRaytraceMeta = metaOf(user);
     PacketContainer packet = event.getPacket();
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaClientData clientData = meta.clientData();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
@@ -242,7 +242,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
    */
   private boolean processReachCheck(Player player, WrappedEntity entity, double expandHitbox) {
     User user = userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     AttackRaytraceMeta attackRaytraceMeta = metaOf(user);
     UserMetaAttackData attackData = meta.attackData();
     UserMetaMovementData movementData = meta.movementData();
@@ -370,7 +370,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 
   private boolean processIterativeReachCheck(Player player, WrappedEntity attackedEntity) {
     User user = userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = user.meta().clientData();
 
@@ -415,7 +415,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
   ) {
     WrappedEntity clonedEntity = entity.clone();
     Player player = user.player();
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaClientData clientData = meta.clientData();
     boolean alternativePositionY = clientData.protocolVersion() == UserMetaClientData.VER_1_8;
     UserMetaMovementData movementData = meta.movementData();

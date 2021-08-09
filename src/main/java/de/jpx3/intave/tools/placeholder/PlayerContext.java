@@ -16,7 +16,7 @@ public final class PlayerContext extends PlaceholderContext {
 
   @Override
   public Map<String, String> replacements() {
-    if (!user.hasOnlinePlayer()) {
+    if (!user.hasPlayer()) {
       return ImmutableMap.of();
     }
     Player player = user.player();

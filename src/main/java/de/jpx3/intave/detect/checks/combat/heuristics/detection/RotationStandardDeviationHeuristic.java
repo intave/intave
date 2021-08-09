@@ -13,10 +13,7 @@ import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.event.violation.AttackNerfStrategy;
 import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.Rotation;
-import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserCustomCheckMeta;
-import de.jpx3.intave.user.UserMetaAttackData;
-import de.jpx3.intave.user.UserMetaMovementData;
+import de.jpx3.intave.user.*;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -43,7 +40,7 @@ public final class RotationStandardDeviationHeuristic extends MetaCheckPart<Heur
   public void receiveMovement(PacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaAttackData attackData = meta.attackData();
     RotationStandardDeviationMeta heuristicMeta = metaOf(player);

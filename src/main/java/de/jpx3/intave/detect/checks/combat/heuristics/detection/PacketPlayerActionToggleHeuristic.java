@@ -48,7 +48,7 @@ public final class PacketPlayerActionToggleHeuristic extends MetaCheckPart<Heuri
   public void receiveEntityAction(PacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaAbilityData abilityData = meta.abilityData();
     UserMetaClientData clientData = meta.clientData();

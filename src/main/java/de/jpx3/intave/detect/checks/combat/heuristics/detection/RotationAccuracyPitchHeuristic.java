@@ -8,10 +8,7 @@ import de.jpx3.intave.detect.checks.combat.heuristics.Confidence;
 import de.jpx3.intave.event.entity.WrappedEntity;
 import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketSubscription;
-import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserCustomCheckMeta;
-import de.jpx3.intave.user.UserMetaAttackData;
-import de.jpx3.intave.user.UserMetaMovementData;
+import de.jpx3.intave.user.*;
 import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.detect.checks.combat.heuristics.Anomaly.AnomalyOption.DELAY_128s;
@@ -33,7 +30,7 @@ public final class RotationAccuracyPitchHeuristic extends MetaCheckPart<Heuristi
   public void receiveMovement(PacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaAttackData attackData = meta.attackData();
     WrappedEntity attackedEntity = attackData.lastAttackedEntity();

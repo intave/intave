@@ -18,13 +18,13 @@ public final class PoseHelper {
       return true;
     }
     User user = UserRepository.userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaClientData clientData = meta.clientData();
     return clientData.canUseElytra();
   }
 
   public static boolean isSwimming(User user) {
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();
     if (!clientData.swimmingMechanics()) {
@@ -40,7 +40,7 @@ public final class PoseHelper {
   }
 
   public static boolean poseSneaking(User user) {
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();
     UserMetaInventoryData inventoryData = meta.inventoryData();

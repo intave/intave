@@ -10,10 +10,7 @@ import de.jpx3.intave.event.entity.WrappedEntity;
 import de.jpx3.intave.event.packet.ListenerPriority;
 import de.jpx3.intave.event.packet.PacketSubscription;
 import de.jpx3.intave.tools.MathHelper;
-import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserCustomCheckMeta;
-import de.jpx3.intave.user.UserMetaAttackData;
-import de.jpx3.intave.user.UserMetaMovementData;
+import de.jpx3.intave.user.*;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -37,7 +34,7 @@ public final class RotationUnlikelyAccuracyHeuristic extends MetaCheckPart<Heuri
     Player player = event.getPlayer();
     User user = userOf(player);
     ULMeta heuristicMeta = metaOf(user);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaAttackData attackData = meta.attackData();
     UserMetaMovementData movementData = meta.movementData();
     if (!attackData.recentlyAttacked(1000)) {

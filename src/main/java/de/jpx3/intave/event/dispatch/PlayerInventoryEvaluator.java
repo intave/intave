@@ -249,7 +249,7 @@ public final class PlayerInventoryEvaluator implements PacketEventSubscriber, Bu
   public void receiveBlockPlace(PacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaInventoryData inventoryData = meta.inventoryData();
     UserMetaPunishmentData punishmentData = meta.punishmentData();
 

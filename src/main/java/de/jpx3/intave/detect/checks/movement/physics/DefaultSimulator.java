@@ -8,10 +8,7 @@ import de.jpx3.intave.tools.client.MovementContext;
 import de.jpx3.intave.tools.items.PlayerEnchantmentHelper;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
-import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserMetaClientData;
-import de.jpx3.intave.user.UserMetaMovementData;
-import de.jpx3.intave.user.UserMetaViolationLevelData;
+import de.jpx3.intave.user.*;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
 import de.jpx3.intave.world.blockphysic.BlockPhysics;
 import de.jpx3.intave.world.blockphysic.BlockProperties;
@@ -38,7 +35,7 @@ public class DefaultSimulator extends Simulator {
     float forward, float strafe,
     boolean attackReduce, boolean jumped, boolean handActive
   ) {
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();
     Pose pose = movementData.pose();
@@ -319,7 +316,7 @@ public class DefaultSimulator extends Simulator {
   ) {
     Player player = user.player();
     World world = player.getWorld();
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();
@@ -409,7 +406,7 @@ public class DefaultSimulator extends Simulator {
   ) {
     Player player = user.player();
     World world = player.getWorld();
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();
 
@@ -507,7 +504,7 @@ public class DefaultSimulator extends Simulator {
     boolean collidedHorizontally, double gravity
   ) {
     Player player = user.player();
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();
     double positionY = movementData.positionY;

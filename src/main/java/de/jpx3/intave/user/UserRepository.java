@@ -13,8 +13,7 @@ import java.util.UUID;
 
 public final class UserRepository {
   private final static Map<UUID, User> repository = MemoryWatchdog.watch("users", Maps.newConcurrentMap());
-  private final static User deadUser = User.empty();
-//  private final static Lock lock = new ReentrantLock();
+  private final static User fallbackUser = UserFactory.newFallback();
   private static boolean closed;
 
   // used to load the class on startup
@@ -23,7 +22,7 @@ public final class UserRepository {
   }
 
   public static void registerUser(Player player) {
-    repository.put(player.getUniqueId(), User.userFor(player));
+    repository.put(player.getUniqueId(), UserFactory.newFor(player));
     if (IntaveControl.RESET_HURT_TIME_ON_JOIN) {
       EntityNoDamageTickChanger.setNoDamageTicksOf(player, 20);
     }
@@ -42,10 +41,13 @@ public final class UserRepository {
   }
 
   public static User userOf(Player player) {
+    if (player == null) {
+      return fallbackUser;
+    }
     User user = repository.get(player.getUniqueId());
     if (user == null) {
       if (closed) {
-        return deadUser;
+        return fallbackUser;
       }
       // check if player is offline
       boolean isOnline = AccessHelper.isOnline(player);
@@ -55,7 +57,7 @@ public final class UserRepository {
         return repository.get(player.getUniqueId());
       } else {
         // offline -> return dead user
-        return deadUser;
+        return fallbackUser;
       }
     }
     return user;

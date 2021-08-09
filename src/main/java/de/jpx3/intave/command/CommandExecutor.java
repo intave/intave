@@ -4,7 +4,7 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.permission.BukkitPermissionCheck;
 import de.jpx3.intave.tools.annotate.Native;
-import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.PlayerUser;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -67,7 +67,7 @@ public final class CommandExecutor {
 
     for (Class<?> parameterType : targetMethod.getParameterTypes()) {
       if (i == 0) {
-        requiresUserParameter = parameterType == User.class;
+        requiresUserParameter = parameterType == PlayerUser.class;
         requiresCommandSenderParameter = parameterType == CommandSender.class;
         if (!requiresUserParameter && !requiresCommandSenderParameter) {
           throw new IllegalStateException();

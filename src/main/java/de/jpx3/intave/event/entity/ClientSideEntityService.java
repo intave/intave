@@ -564,7 +564,7 @@ public final class ClientSideEntityService implements PacketEventSubscriber {
   public void receiveEntityStatus(PacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    if (user == null || !user.hasOnlinePlayer()) {
+    if (user == null || !user.hasPlayer()) {
       return;
     }
     PacketContainer packet = event.getPacket();

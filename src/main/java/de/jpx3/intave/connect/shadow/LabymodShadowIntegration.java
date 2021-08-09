@@ -72,7 +72,7 @@ public final class LabymodShadowIntegration {
     }
 
     user.setShadow(false);
-    user.setShadowRepo(null);
+    user.setShadowLinkage(null);
     performShadowUpdate(player, ShadowStatus.DISABLE);
   }
 
@@ -105,7 +105,7 @@ public final class LabymodShadowIntegration {
 
   public void pushPacket(Player player, Object packet, ShadowContext movementData) {
     User user = UserRepository.userOf(player);
-    ShadowPacketDataLink shadowPacketDataLink = user.shadowRepo();
+    ShadowPacketDataLink shadowPacketDataLink = user.shadowLinkage();
     if (shadowPacketDataLink != null) {
       shadowPacketDataLink.save(packet, movementData);
     }

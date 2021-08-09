@@ -3,6 +3,7 @@ package de.jpx3.intave.world.blockphysic;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserMeta;
 import de.jpx3.intave.user.UserMetaClientData;
 import de.jpx3.intave.user.UserMetaMovementData;
 import org.bukkit.Material;
@@ -29,7 +30,7 @@ final class BlockBedPhysic implements BlockPhysic {
 
   @Override
   public Vector landed(User user, double motionX, double motionY, double motionZ) {
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData userMetaClientData = meta.clientData();
     if (userMetaClientData.protocolVersion() < VER_1_12) {

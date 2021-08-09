@@ -22,7 +22,7 @@ public final class UserRepositoryEventListener implements BukkitEventSubscriber 
         UserRepository.registerUser(player);
       }
       User user = UserRepository.userOf(player);
-      user.delayedRefresh();
+      user.delayedSetup();
     }
   }
 
@@ -31,7 +31,7 @@ public final class UserRepositoryEventListener implements BukkitEventSubscriber 
     Player player = event.getPlayer();
     UserRepository.registerUser(player);
     User user = UserRepository.userOf(player);
-    Synchronizer.synchronizeDelayed(user::delayedRefresh, 10);
+    Synchronizer.synchronizeDelayed(user::delayedSetup, 10);
   }
 
   @BukkitEventSubscription(priority = EventPriority.HIGHEST)

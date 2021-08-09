@@ -4,6 +4,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
+import de.jpx3.intave.access.UnsupportedFallbackOperationException;
 import de.jpx3.intave.diagnostics.timings.Timing;
 import de.jpx3.intave.diagnostics.timings.Timings;
 import de.jpx3.intave.logging.IntaveLogger;
@@ -66,10 +67,8 @@ public final class LocalPacketAdapter extends IntavePacketAdapter implements Com
     }
     try {
       executor.invoke(subscriber, event);
-    } catch (IntaveInternalException internalException) {
-      if (!internalException.getMessage().contains("Unable to reference player")) {
-        processException(event.getPacketType(), internalException);
-      }
+    } catch (UnsupportedFallbackOperationException ignored) {
+      // ignored
     } catch (RuntimeException exception) {
       exception.getStackTrace();
       processException(event.getPacketType(), exception);

@@ -10,6 +10,7 @@ import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.tools.wrapper.WrappedMovingObjectPosition;
 import de.jpx3.intave.tools.wrapper.WrappedVector;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserMeta;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -51,7 +52,7 @@ public final class Raytracing {
     return reachDistance(user.meta());
   }
 
-  public static float reachDistance(User.UserMeta meta) {
+  public static float reachDistance(UserMeta meta) {
     return meta.abilityData().inGameMode(GameMode.CREATIVE) ? 5.0F : 3.0F;
   }
 

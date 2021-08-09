@@ -5,6 +5,7 @@ import de.jpx3.intave.executor.BackgroundExecutor;
 import de.jpx3.intave.fakeplayer.FakePlayer;
 import de.jpx3.intave.fakeplayer.movement.PositionRotationLookup;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserMeta;
 import de.jpx3.intave.user.UserMetaAttackData;
 import de.jpx3.intave.user.UserMetaMovementData;
 import org.bukkit.Location;
@@ -18,7 +19,7 @@ public final class EmulationLight extends MiningStrategyExecutor {
 
   @Override
   protected void setup() {
-    User.UserMeta meta = user().meta();
+    UserMeta meta = user().meta();
     UserMetaAttackData attackData = meta.attackData();
     if (attackData.fakePlayer() != null) {
       return;

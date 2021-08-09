@@ -402,7 +402,7 @@ public final class UserMetaMovementData {
   }
 
   private void updateMovementMetaData() {
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaAbilityData abilityData = meta.abilityData();
 //    UserMetaPotionData potionData = meta.potionData();
 

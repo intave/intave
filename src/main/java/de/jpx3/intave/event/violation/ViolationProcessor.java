@@ -50,7 +50,7 @@ public final class ViolationProcessor {
       return violationContext.ignoreThreatBecause("Check is disabled").complete();
     }
 
-    if (user.justJoined() || !user.hasOnlinePlayer()) {
+    if (user.justJoined() || !user.hasPlayer()) {
       return violationContext.counterThreatBecause("Player just joined or is not reachable").complete();
     }
 

@@ -78,7 +78,7 @@ public final class RotationModuloResetHeuristic extends MetaCheckPart<Heuristics
   }
 
   private boolean entityInLineOfSight(User user) {
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaAttackData attackData = meta.attackData();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaClientData clientData = meta.clientData();

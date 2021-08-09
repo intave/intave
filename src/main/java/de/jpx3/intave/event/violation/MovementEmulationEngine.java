@@ -18,10 +18,7 @@ import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.tools.wrapper.WrappedBlockPosition;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
-import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserMetaMovementData;
-import de.jpx3.intave.user.UserMetaViolationLevelData;
-import de.jpx3.intave.user.UserRepository;
+import de.jpx3.intave.user.*;
 import de.jpx3.intave.world.collision.Collision;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -84,7 +81,7 @@ public final class MovementEmulationEngine {
     boolean cancellable
   ) {
     User user = UserRepository.userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
     if (violationLevelData.isInActiveTeleportBundle) {
@@ -133,10 +130,10 @@ public final class MovementEmulationEngine {
     }
 
     User user = UserRepository.userOf(player);
-    if (!user.hasOnlinePlayer()) {
+    if (!user.hasPlayer()) {
       return;
     }
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
     WrappedAxisAlignedBB boundingBox = movementData.boundingBox();
@@ -177,11 +174,11 @@ public final class MovementEmulationEngine {
     }
 
     User user = UserRepository.userOf(player);
-    if (!user.hasOnlinePlayer()) {
+    if (!user.hasPlayer()) {
       return;
     }
 
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaMovementData movementData = meta.movementData();
     UserMetaViolationLevelData violationLevelData = meta.violationLevelData();
 
@@ -409,8 +406,12 @@ public final class MovementEmulationEngine {
     }
     if (!event.isCancelled()) {
       try {
-        Object playerHandle = UserRepository.userOf(player).playerHandle();
-        Object playerConnection = ReflectiveAccess.lookupServerField("EntityPlayer", "playerConnection").get(playerHandle);
+        User user = UserRepository.userOf(player);
+        if (!user.hasPlayer()) {
+          return;
+        }
+        Object playerHandle = user.playerHandle();
+//        Object playerConnection = ReflectiveAccess.lookupServerField("EntityPlayer", "playerConnection").get(playerHandle);
 
         Location dest = event.getTo();
         if (dest == null) {
@@ -439,7 +440,11 @@ public final class MovementEmulationEngine {
 
   private void internalTeleportExecution(Player player, Location dest, float yaw, float pitch, boolean rotationFlags) {
     try {
-      Object playerConnection = UserRepository.userOf(player).playerConnection();
+      User user = UserRepository.userOf(player);
+      if (!user.hasPlayer()) {
+        return;
+      }
+      Object playerConnection = user.playerConnection();
       Set<Object> rFlags = rotationFlags ? teleportFlags : Collections.emptySet();
       double posX = dest.getX();
       double posY = dest.getY();

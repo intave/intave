@@ -84,7 +84,7 @@ public final class FeedbackService implements PacketEventSubscriber {
       return;
     }
     User user = UserRepository.userOf(player);
-    if (user == null || !user.hasOnlinePlayer()) {
+    if (user == null || !user.hasPlayer()) {
       return;
     }
     singleSynchronize(player, target, firstCallback, options);
@@ -114,7 +114,7 @@ public final class FeedbackService implements PacketEventSubscriber {
       return;
     }
     User user = UserRepository.userOf(player);
-    if (user == null || !user.hasOnlinePlayer()) {
+    if (user == null || !user.hasPlayer()) {
       return;
     }
     boolean append = false;
@@ -140,7 +140,7 @@ public final class FeedbackService implements PacketEventSubscriber {
     Player player, T obj, Callback<T> callback
   ) {
     User user = UserRepository.userOf(player);
-    if (user == null || !user.hasOnlinePlayer()) {
+    if (user == null || !user.hasPlayer()) {
       return;
     }
     UserMetaConnectionData synchronizeData = user.meta().connectionData();

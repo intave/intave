@@ -65,7 +65,7 @@ public final class AttackDispatcher implements EventProcessor {
       return;
     }
     User user = UserRepository.userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaAttackData attackData = meta.attackData();
     UserMetaConnectionData connectionData = meta.connectionData();
     UserMetaMovementData movementData = meta.movementData();

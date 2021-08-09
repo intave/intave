@@ -5,6 +5,7 @@ import de.jpx3.intave.detect.CheckPart;
 import de.jpx3.intave.detect.checks.other.InventoryClickAnalysis;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserMeta;
 import de.jpx3.intave.user.UserMetaClientData;
 import de.jpx3.intave.user.UserMetaInventoryData;
 import org.bukkit.entity.HumanEntity;
@@ -28,7 +29,7 @@ public final class InventoryClickNotOpenCheck extends CheckPart<InventoryClickAn
     }
     Player player = ((Player) whoClicked).getPlayer();
     User user = userOf(player);
-    User.UserMeta meta = user.meta();
+    UserMeta meta = user.meta();
     UserMetaClientData clientData = meta.clientData();
     UserMetaInventoryData inventoryData = meta.inventoryData();
 
