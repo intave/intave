@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class PlayerIdentificationContext extends PlaceholderContext {
-
   private final String playerName;
   private final UUID uuid;
   private final InetAddress address;

@@ -39,8 +39,10 @@ public final class v14BlockAccessor implements BlockAccessor {
   public Material typeAccess(Block block) {
     WorldServer worldServer = ((CraftWorld) block.getWorld()).getHandle();
     IBlockAccess blockAccess = worldServer.getChunkProvider().c(block.getX() >> 4, block.getZ() >> 4);
-    net.minecraft.server.v1_14_R1.BlockPosition blockPosition = ofBlock(block);
-    return blockAccess == null ? Material.AIR : CraftMagicNumbers.getMaterial(blockAccess.getType(blockPosition).getBlock());
+    if (blockAccess == null) {
+      return Material.AIR;
+    }
+    return CraftMagicNumbers.getMaterial(blockAccess.getType(positionOfBlock(block)).getBlock());
   }
 
   @Override
@@ -57,7 +59,7 @@ public final class v14BlockAccessor implements BlockAccessor {
     if (blockAccess == null) {
       return 0.0f;
     }
-    net.minecraft.server.v1_14_R1.BlockPosition blockPosition = ofNative(nativeBlockPosition);
+    net.minecraft.server.v1_14_R1.BlockPosition blockPosition = positionOfNative(nativeBlockPosition);
     IBlockData blockData = blockAccess.getType(blockPosition);
     return blockData.getBlock().getDamage(blockData, ((CraftPlayer) player).getHandle(), worldServer, blockPosition);
   }
@@ -74,7 +76,7 @@ public final class v14BlockAccessor implements BlockAccessor {
     }
     User user = UserRepository.userOf(player);
     int heldItemType = user.meta().inventory().handSlot();
-    net.minecraft.server.v1_14_R1.BlockPosition blockPosition = ofNative(nativeBlockPosition);
+    net.minecraft.server.v1_14_R1.BlockPosition blockPosition = positionOfNative(nativeBlockPosition);
     IBlockData blockData = blockAccess.getType(blockPosition);
     Object heldItem;
     if(INVENTORY_VIA_GETTER) {
@@ -87,13 +89,13 @@ public final class v14BlockAccessor implements BlockAccessor {
 
   @PatchyAutoTranslation
   @PatchyTranslateParameters
-  private net.minecraft.server.v1_14_R1.BlockPosition ofBlock(Block block) {
+  private net.minecraft.server.v1_14_R1.BlockPosition positionOfBlock(Block block) {
     return new net.minecraft.server.v1_14_R1.BlockPosition(block.getX(), block.getY(), block.getZ());
   }
 
   @PatchyAutoTranslation
   @PatchyTranslateParameters
-  private net.minecraft.server.v1_14_R1.BlockPosition ofNative(BlockPosition blockPosition) {
+  private net.minecraft.server.v1_14_R1.BlockPosition positionOfNative(BlockPosition blockPosition) {
     return new net.minecraft.server.v1_14_R1.BlockPosition(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
   }
 }

@@ -52,6 +52,9 @@ public final class IntaveViolationEvent extends IntaveEvent implements Cancellab
   }
 
   public String message() {
+    if (details.isEmpty()) {
+      return message;
+    }
     return message + " (" + details.trim() + ")";
   }
 

@@ -31,7 +31,7 @@ public final class Synchronizer {
     } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException exception) {
       throw new IllegalStateException(exception);
     } catch (NoSuchFieldException exception) {
-      IntavePlugin.singletonInstance().logger().error("Your version of spigot has removed support for task-queueing. We will switch to bukkit's scheduling service");
+      IntavePlugin.singletonInstance().logger().error("Your version of spigot has removed support for task-queueing. We will switch to bukkits scheduling service");
       useScheduler = true;
     }
 
@@ -83,9 +83,9 @@ public final class Synchronizer {
       try {
         Timings.EXE_SERVER.start();
         runnable.run();
-      } catch (Exception | Error exception) {
+      } catch (Exception | Error throwable) {
         IntaveLogger.logger().error("Failed to execute server task " + runnable);
-        exception.printStackTrace();
+        throwable.printStackTrace();
       } finally {
         Timings.EXE_SERVER.stop();
       }

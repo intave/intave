@@ -32,7 +32,7 @@ test {
 task compileIntave(dependsOn: build) {
   doLast {
     copy {
-      from "build/libs/" + fileName /*+ "-" + project.version*/ + ".jar"
+      from "build/libs/" + fileName + ".jar"
       into outputDirectory
     }
   }

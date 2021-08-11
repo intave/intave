@@ -7,6 +7,7 @@ import de.jpx3.intave.detect.checks.movement.physics.Pose;
 import de.jpx3.intave.event.violation.AttackNerfStrategy;
 import de.jpx3.intave.permission.BukkitPermissionCache;
 import de.jpx3.intave.reflect.hitbox.HitBoxBoundaries;
+import de.jpx3.intave.tools.annotate.Relocate;
 import de.jpx3.intave.tools.placeholder.PlayerContext;
 import de.jpx3.intave.tools.placeholder.PlayerIdentificationContext;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
@@ -25,6 +26,7 @@ import java.util.function.Predicate;
  * Created by Richard Strunk 2021
  */
 
+@Relocate
 public interface User {
   Object playerHandle();
 
@@ -83,8 +85,6 @@ public interface User {
   void setTrustFactor(TrustFactor trustFactor);
 
   int trustFactorSetting(String key);
-
-  void setDefaultMessagingChannel();
 
   boolean receives(MessageChannel channel);
 

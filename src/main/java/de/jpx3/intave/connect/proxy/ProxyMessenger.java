@@ -12,6 +12,7 @@ import de.jpx3.intave.executor.BackgroundExecutor;
 import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.tools.sync.Synchronizer;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.messaging.Messenger;
 import org.spigotmc.SpigotConfig;
@@ -53,15 +54,15 @@ public final class ProxyMessenger {
     }
     if (spigotExpectingProxyConnections) {
       if (serverInOnlineMode) {
-        logger.info("Spigot expecting proxy connections in online mode?");
-        logger.info("Proxy connection offline");
+        logger.info(ChatColor.RED + "Spigot expecting proxy connections in online mode?");
+        logger.info(ChatColor.RED + "Proxy connection offline");
         return;
       } else {
         logger.info("Proxy connection online");
       }
     } else {
-      logger.info("Spigot is not in bungee mode");
-      logger.info("Proxy connection offline");
+      logger.info(ChatColor.RED + "Spigot is not in bungee mode");
+      logger.info(ChatColor.RED + "Proxy connection offline");
       return;
     }
     openChannel();

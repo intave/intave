@@ -21,7 +21,6 @@ public final class BlockTypeAccess {
   public static final Material SKULL = resolveFrom("SKULL", "LEGACY_SKULL");
 
   public static void setup() {
-
   }
 
   private static Material resolveFrom(String name, String alternativeName) {
@@ -51,9 +50,9 @@ public final class BlockTypeAccess {
   }
 
   /**
-   * This method performs a direct type lookup, which will be quite heavy if the underlying chunk has not been loaded yet.
-   * To avoid this performance-bottleneck, use {@link BukkitBlockAccess#cacheAppliedTypeAccess(User, World, int, int, int)} instead,
-   * providing fast performance, a robust cache implementation and stable chunk fallback
+   * This method performs a direct type lookup, which will be incorrect if the underlying chunk has not been loaded yet.
+   * To avoid this, use {@link BukkitBlockAccess#cacheAppliedTypeAccess(User, World, int, int, int)} instead,
+   * providing fast performance, a robust cache implementation and stable fallback
    */
   @Deprecated
   public static Material typeAccess(Block block) {
@@ -66,9 +65,9 @@ public final class BlockTypeAccess {
   }
 
   /**
-   * This method performs a direct type lookup, which will be quite heavy if the underlying chunk has not been loaded yet.
-   * To avoid this performance-bottleneck, use {@link BukkitBlockAccess#cacheAppliedTypeAccess(User, World, int, int, int)} instead,
-   * providing fast performance, a robust cache implementation and stable chunk fallback
+   * This method performs a direct type lookup, which will be incorrect if the underlying chunk has not been loaded yet.
+   * To avoid this, use {@link BukkitBlockAccess#cacheAppliedTypeAccess(User, World, int, int, int)} instead,
+   * providing fast performance, a robust cache implementation and stable fallback
    */
   @Deprecated
   public static Material typeAccess(Block block, Player player) {

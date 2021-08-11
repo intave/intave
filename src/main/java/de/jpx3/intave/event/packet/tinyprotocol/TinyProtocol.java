@@ -330,7 +330,12 @@ public class TinyProtocol {
       // Inject our packet interceptor
       if (interceptor == null) {
         interceptor = new PacketInterceptor();
-        channel.pipeline().addBefore("packet_handler", handlerName, interceptor);
+        try {
+          channel.pipeline().addBefore("packet_handler", handlerName, interceptor);
+        } catch (Exception exception) {
+          System.out.println("Available channel: " + channel.pipeline().names());
+          throw new IllegalStateException("Unable to find packet_handler", exception);
+        }
         uninjectedChannels.remove(channel);
       }
       return interceptor;

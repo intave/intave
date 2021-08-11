@@ -3,18 +3,24 @@ package de.jpx3.intave.event.packet;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.UnsupportedFallbackOperationException;
 import de.jpx3.intave.diagnostics.timings.Timing;
 import de.jpx3.intave.diagnostics.timings.Timings;
 import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.user.UserRepository;
 
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class LocalPacketAdapter extends IntavePacketAdapter implements Comparable<LocalPacketAdapter> {
+  private final static boolean TEMP_PLAYER_CHECK;
+  static {
+    TEMP_PLAYER_CHECK = Arrays.stream(PacketEvent.class.getMethods())
+      .anyMatch(method -> method.getName().equalsIgnoreCase("isPlayerTemporary"));
+  }
+
   private final String methodName;
   private final ListenerPriority priority;
   private final PacketEventSubscriber subscriber;
@@ -46,10 +52,8 @@ public final class LocalPacketAdapter extends IntavePacketAdapter implements Com
       Timings.EXE_NETTY.start();
       timing.start();
       executor.invoke(subscriber, event);
-    } catch (IntaveInternalException internalException) {
-      if (!internalException.getMessage().contains("Unable to reference player")) {
-        processException(event.getPacketType(), internalException);
-      }
+    } catch (UnsupportedFallbackOperationException ignored) {
+      // ignored
     } catch (RuntimeException exception) {
       processException(event.getPacketType(), exception);
     } catch (Error error) {
@@ -78,6 +82,12 @@ public final class LocalPacketAdapter extends IntavePacketAdapter implements Com
   }
 
   private boolean validateEvent(PacketEvent event) {
+    if (TEMP_PLAYER_CHECK) {
+      // perform temporary check
+      if (event.isPlayerTemporary()) {
+        return false;
+      }
+    }
     return event.getPlayer() != null && (ignoreCancelled || !event.isCancelled()) && UserRepository.hasUser(event.getPlayer());
   }
 

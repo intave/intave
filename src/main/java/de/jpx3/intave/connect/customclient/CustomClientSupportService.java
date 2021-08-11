@@ -38,9 +38,10 @@ public final class CustomClientSupportService implements EventProcessor {
 
   public void setup() {
     try {
+      Bukkit.getServer().getMessenger().registerOutgoingPluginChannel(plugin, "intave:customclient");
       Bukkit.getServer().getMessenger().registerOutgoingPluginChannel(plugin, "minecraft:intave");
     } catch (Exception exception) {
-      IntaveLogger.logger().info("Failed to register output channel: " + exception.getClass().getSimpleName());
+//      IntaveLogger.logger().info("Failed to register output channel: " + exception.getClass().getSimpleName());
     }
     plugin.packetSubscriptionLinker().linkSubscriptionsIn(this);
   }
@@ -86,7 +87,8 @@ public final class CustomClientSupportService implements EventProcessor {
         JsonElement jsonElement = jsonParser.parse(messageContent);
         CustomClientSupport customClientSupport = CustomClientSupport.createFrom(jsonElement);
         user.setCustomClientSupport(customClientSupport);
-        sendCustomDataPacket(player, "clientconfig","received");
+        sendCustomDataPacket(player, "clientconfig","received", "minecraft", "intave");
+        sendCustomDataPacket(player, "clientconfig","received", "intave", "customclient");
       }
     } catch (RuntimeException exception) {
       exception.printStackTrace();
@@ -96,12 +98,12 @@ public final class CustomClientSupportService implements EventProcessor {
     }
   }
 
-  private void sendCustomDataPacket(Player player, String channel, String data) {
+  private void sendCustomDataPacket(Player player, String channel, String data, String prefix, String key) {
     PacketContainer packetContainer = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.CUSTOM_PAYLOAD);
     if (MinecraftVersions.VER1_13_0.atOrAbove()) {
-      packetContainer.getMinecraftKeys().write(0, new MinecraftKey("intave"));
+      packetContainer.getMinecraftKeys().write(0, new MinecraftKey(prefix, key));
     } else {
-      packetContainer.getStrings().write(0, "minecraft:intave");
+      packetContainer.getStrings().write(0, prefix + ":" + key);
     }
     try {
       //noinspection unchecked

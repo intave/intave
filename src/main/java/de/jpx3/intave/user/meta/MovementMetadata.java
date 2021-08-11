@@ -8,6 +8,7 @@ import de.jpx3.intave.reflect.ReflectiveDataWatcherAccess;
 import de.jpx3.intave.reflect.ReflectiveHandleAccess;
 import de.jpx3.intave.tools.annotate.DispatchTarget;
 import de.jpx3.intave.tools.annotate.Nullable;
+import de.jpx3.intave.tools.annotate.Relocate;
 import de.jpx3.intave.tools.client.*;
 import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
@@ -32,6 +33,7 @@ import java.util.Map;
 
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_15;
 
+@Relocate
 public final class MovementMetadata {
   private final Player player;
   private final User user;

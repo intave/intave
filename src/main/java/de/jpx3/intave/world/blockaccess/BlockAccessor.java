@@ -1,7 +1,6 @@
 package de.jpx3.intave.world.blockaccess;
 
 import com.comphenix.protocol.wrappers.BlockPosition;
-import de.jpx3.intave.tools.annotate.Nullable;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -14,7 +13,6 @@ import org.bukkit.inventory.ItemStack;
  */
 
 public interface BlockAccessor {
-  @Nullable
   Material typeAccess(Block block);
 
   int dataAccess(Block block);

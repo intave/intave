@@ -9,6 +9,7 @@ import de.jpx3.intave.event.violation.AttackNerfStrategy;
 import de.jpx3.intave.fakeplayer.FakePlayer;
 import de.jpx3.intave.permission.BukkitPermissionCache;
 import de.jpx3.intave.reflect.hitbox.HitBoxBoundaries;
+import de.jpx3.intave.tools.annotate.Relocate;
 import de.jpx3.intave.tools.placeholder.PlayerContext;
 import de.jpx3.intave.tools.placeholder.PlayerIdentificationContext;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
@@ -28,6 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
+@Relocate
 public final class FallbackUser implements User {
   private final Map<Class<? extends CheckCustomMetadata>, CheckCustomMetadata> customMetaPool = new ConcurrentHashMap<>();
 
@@ -194,10 +196,6 @@ public final class FallbackUser implements User {
   @Override
   public int trustFactorSetting(String key) {
     return 0;
-  }
-
-  @Override
-  public void setDefaultMessagingChannel() {
   }
 
   @Override

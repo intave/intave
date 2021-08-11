@@ -28,7 +28,7 @@ public final class CheckAccessor {
 
   public synchronized CheckAccess checkMirrorOf(String name) {
     Preconditions.checkNotNull(name);
-    return checkAccessCache.computeIfAbsent(name, x -> newCheckMirrorOf(tryGetCheck(name)));
+    return checkAccessCache.computeIfAbsent(name, checkName -> newCheckMirrorOf(tryGetCheck(checkName)));
   }
 
   private Check tryGetCheck(String name) {
@@ -43,7 +43,6 @@ public final class CheckAccessor {
 
   private CheckAccess newCheckMirrorOf(Check check) {
     return new CheckAccess() {
-
       @Override
       public String name() {
         return check.name();
@@ -59,7 +58,6 @@ public final class CheckAccessor {
         if (!UserRepository.hasUser(player)) {
           throw new UnknownPlayerException("Player " + player.getName() + " couldn't be found");
         }
-
         Map<String, Map<String, Double>> violationLevel = UserRepository.userOf(player).meta().violationLevel().violationLevel;
         return violationLevel.getOrDefault(check.name().toLowerCase(), DEFAULT_RETURN).getOrDefault(threshold, 0d);
       }

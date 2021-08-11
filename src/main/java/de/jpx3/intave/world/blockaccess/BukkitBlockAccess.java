@@ -1,6 +1,5 @@
 package de.jpx3.intave.world.blockaccess;
 
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.event.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.tools.annotate.Relocate;
 import de.jpx3.intave.tools.wrapper.WrappedBlockPosition;
@@ -15,7 +14,7 @@ import org.bukkit.block.Block;
 @Relocate
 public final class BukkitBlockAccess implements BukkitEventSubscriber {
   public static void setup() {
-    IntavePlugin.singletonInstance().eventLinker().registerEventsIn(new BukkitBlockAccess());
+//    IntavePlugin.singletonInstance().eventLinker().registerEventsIn(new BukkitBlockAccess());
   }
 
   public static Block blockAccess(Location location) {

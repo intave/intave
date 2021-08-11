@@ -8,12 +8,10 @@ import org.bukkit.event.Cancellable;
 public final class IntaveCommandExecutionEvent extends IntaveEvent implements Cancellable {
   private Player punished;
   private String command;
-
   private String check;
   private String violationMessage;
   private String violationDetails;
   private double activationVL;
-
   private boolean delayedExecution;
   private boolean cancelled;
 
@@ -33,7 +31,6 @@ public final class IntaveCommandExecutionEvent extends IntaveEvent implements Ca
     this.command = command;
     this.check = check;
     this.violationMessage = violationMessage;
-    this.violationDetails = violationDetails;
     this.violationDetails = violationDetails;
     this.activationVL = activationVL;
     this.delayedExecution = delayedExecute;

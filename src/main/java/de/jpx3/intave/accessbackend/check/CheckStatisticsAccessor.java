@@ -36,7 +36,7 @@ public final class CheckStatisticsAccessor {
   private CheckStatisticsAccess newStatisticsMirror(Check check) {
     return new CheckStatisticsAccess() {
       @Override
-      public final long totalViolations() {
+      public long totalViolations() {
         return check.baseStatistics().totalViolations();
       }
 

@@ -5,7 +5,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 public final class ClassLoader {
-  public final static boolean USE_NATIVE_ACCESS = currentJavaVersion() > 15;
+  public final static boolean USE_NATIVE_ACCESS = currentJavaVersion() >= 15;
 
   private static boolean loaded;
 

@@ -127,7 +127,7 @@ public final class IntavePlugin extends JavaPlugin {
   public void onLoad() {
     // stage 3
 
-    // event links must be available throughout the onEnable call
+    // event links must be available throughout the entire onEnable call
     eventLinker = new BukkitEventLinker(this);
   }
 
@@ -186,7 +186,7 @@ public final class IntavePlugin extends JavaPlugin {
       String configurationKey = configurationService.configurationKey();
 
       // causes interceptor output
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < 1; i++) {
         URL url = new URL("https://intave.de/api/versions.json");
         url.getDefaultPort();
       }
@@ -479,7 +479,7 @@ public final class IntavePlugin extends JavaPlugin {
       BlockTypeAccess.setup();
       CollisionModifiers.setup();
       ViaVersionAdapter.setup();
-      BoundingBoxResolver.createNew();
+      BoundingBoxResolver.setup();
       WorldPermission.setup();
       BlockPhysics.setup();
       BlockProperties.setup();
@@ -554,7 +554,7 @@ public final class IntavePlugin extends JavaPlugin {
     RuntimeDiagnostics.applicationBoot();
 
     if (JavaVersion.current() < 16) {
-      logger.info(ChatColor.RED + "Upgrading to Java 16 has great performance benefits");
+      logger.info(ChatColor.RED + "Upgrading to Java 16 has incredible performance benefits for the entire server");
     }
 
     packetSubscriptionLinker.refreshLinkages();

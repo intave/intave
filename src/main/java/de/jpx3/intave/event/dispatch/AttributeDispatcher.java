@@ -15,12 +15,11 @@ import de.jpx3.intave.user.meta.AbilityMetadata;
 import org.bukkit.entity.Player;
 
 import java.util.List;
-import java.util.UUID;
 
 import static de.jpx3.intave.event.packet.PacketId.Server.UPDATE_ATTRIBUTES;
 
 public final class AttributeDispatcher implements EventProcessor {
-  private static final UUID SPEED_MODIFIER_SPRINTING_UUID = UUID.fromString("662A6B8D-DA3E-4C1C-8813-96EA6097278D");
+//  private static final UUID SPEED_MODIFIER_SPRINTING_UUID = UUID.fromString("662A6B8D-DA3E-4C1C-8813-96EA6097278D");
   private final IntavePlugin plugin;
 
   public AttributeDispatcher(IntavePlugin plugin) {

@@ -98,6 +98,14 @@ public final class PlayerUser implements User {
     this.metadata.setup();
   }
 
+  public void setDefaultMessagingChannel() {
+    for (MessageChannel channel : MessageChannel.values()) {
+      if (channel.enabledByDefault && BukkitPermissionCheck.permissionCheck(player(), channel.permission())) {
+        toggleReceive(channel);
+      }
+    }
+  }
+
   @Override
   public void delayedSetup() {
     Player player = player();
@@ -272,15 +280,6 @@ public final class PlayerUser implements User {
   @Override
   public int trustFactorSetting(String key) {
     return plugin().trustFactorService().trustFactorSetting(key, player());
-  }
-
-  @Override
-  public void setDefaultMessagingChannel() {
-    for (MessageChannel channel : MessageChannel.values()) {
-      if (channel.enabledByDefault && BukkitPermissionCheck.permissionCheck(player(), channel.permission())) {
-        toggleReceive(channel);
-      }
-    }
   }
 
   @Override

@@ -55,14 +55,10 @@ public final class MovementEmulationEngine {
 
   private void setup() {
     try {
-//      Class<?> teleportFlagsClass = ReflectiveAccess.lookupServerClass("PacketPlayOutPosition$EnumPlayerTeleportFlags");
       if (teleportFlags.isEmpty()) {
         teleportFlags.add(ReflectiveAccess.lookupServerField("PacketPlayOutPosition$EnumPlayerTeleportFlags", "X_ROT").get(null));
         teleportFlags.add(ReflectiveAccess.lookupServerField("PacketPlayOutPosition$EnumPlayerTeleportFlags", "Y_ROT").get(null));
-//        teleportFlags.add(teleportFlagsClass.getField("X_ROT").get(null));
-//        teleportFlags.add(teleportFlagsClass.getField("Y_ROT").get(null));
       }
-
       Class<?> playerConnectionClass = ReflectiveAccess.lookupServerClass("PlayerConnection");
       if (WEIRD_BOOLEAN_IN_INVOKE) {
         internalTeleportMethod = playerConnectionClass.getDeclaredMethod("internalTeleport", Double.TYPE, Double.TYPE, Double.TYPE, Float.TYPE, Float.TYPE, Set.class, Boolean.TYPE);
@@ -72,7 +68,6 @@ public final class MovementEmulationEngine {
       if (!internalTeleportMethod.isAccessible()) {
         internalTeleportMethod.setAccessible(true);
       }
-
     } catch (IllegalAccessException | NoSuchMethodException exception) {
       throw new IntaveInternalException(exception);
     }
@@ -203,7 +198,9 @@ public final class MovementEmulationEngine {
       movementData.artificialFallDistance += -motion.getY();
     }
 
-    futurePosition = futurePosition.clone().add(motion);
+    if (!Collision.isInsideBlocks(player, WrappedAxisAlignedBB.createFromPosition(user, futurePosition.clone().add(motion)))) {
+      futurePosition = futurePosition.clone().add(motion);
+    }
     futurePosition.setYaw(movementData.rotationYaw);
     futurePosition.setPitch(movementData.rotationPitch);
 
@@ -378,13 +375,7 @@ public final class MovementEmulationEngine {
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
 
-    WrappedAxisAlignedBB entityBoundingBox = WrappedAxisAlignedBB.createFromPosition(
-      user, teleportLocation.getX(), teleportLocation.getY(), teleportLocation.getZ()
-    );
-    // experimental
-    if (Collision.isInsideBlocks(player, entityBoundingBox)) {
-      return;
-    }
+    WrappedAxisAlignedBB entityBoundingBox = WrappedAxisAlignedBB.createFromPosition(user, teleportLocation);
     movementData.setBoundingBox(entityBoundingBox);
     movementData.setVerifiedLocation(teleportLocation.clone(), "Emulation-Setback");
 //    player.teleport(teleportLocation);
@@ -415,14 +406,11 @@ public final class MovementEmulationEngine {
           return;
         }
         Object playerHandle = user.playerHandle();
-//        Object playerConnection = ReflectiveAccess.lookupServerField("EntityPlayer", "playerConnection").get(playerHandle);
-
         Location dest = event.getTo();
         if (dest == null) {
           throw new IntaveException("Setback location cannot be null");
         }
         if (Math.abs(nativeYaw) > 360f) {
-//          internalTeleportMethod.invoke(playerConnection, dest.getX(), dest.getY(), dest.getZ(), nativeYaw % 360f, nativePitch, Collections.emptySet());
           internalTeleportExecution(player, dest,  nativeYaw % 360f, nativePitch, false);
         } else {
           Field yawField = ReflectiveAccess.lookupServerField("Entity", "yaw");
@@ -431,7 +419,6 @@ public final class MovementEmulationEngine {
           float pitch = (float) pitchField.get(playerHandle);
           yawField.set(playerHandle, 0f);
           pitchField.set(playerHandle, 0f);
-//          internalTeleportMethod.invoke(playerConnection, dest.getX(), dest.getY(), dest.getZ(), 0, 0, teleportFlags);
           internalTeleportExecution(player, dest, 0, 0, true);
           yawField.set(playerHandle, yaw);
           pitchField.set(playerHandle, pitch);
