@@ -6,7 +6,7 @@ import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import org.bukkit.entity.Player;
 
 /**
- * An extension of the default {@link Check} class, providing a user-specific metadata holder.
+ * An extension of the default {@link Check} class, providing a {@link User}-specific metadata holder.
  * This feature was originally proposed by Richy, as a trade-off between the one-check-instance-per-user policy
  * and a totalitarian common-pool policy.
  * It aims to reluctantly offer a fast, limited, secure and uncomplicated per-user custom field pool without huge memory compromises.
@@ -25,7 +25,7 @@ import org.bukkit.entity.Player;
  *      meta.imUniqueForEveryPlayer++;
  *   }
  *
- *   // every player will hold his own instance of this ExampleClass
+ *   // every user will hold his own instance of this ExampleClass
  *   public static class ExampleMeta extends CheckCustomMetadata {
  *     public int imUniqueForEveryPlayer = 0;
  *   }
@@ -38,8 +38,7 @@ import org.bukkit.entity.Player;
  * empty constructor.
  * <br>
  * <br>
- * Now to access a user-bound meta class, call the {@link MetaCheck#metaOf(User)} or the {@link MetaCheck#metaOf(Player)}
- * methods.
+ * The {@link MetaCheck#metaOf(User)} or the {@link MetaCheck#metaOf(Player)} method are used to access the metadata holder.
  *
  * @param <M> the meta class
  * @see Check
