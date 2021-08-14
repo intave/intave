@@ -199,6 +199,11 @@ public final class Timer extends MetaCheck<Timer.TimerData> {
     return true;
   }
 
+  @Override
+  public boolean performLinkage() {
+    return true;
+  }
+
   public static class TimerData extends CheckCustomMetadata {
     public double timerBalance;
     public long lastFlyingPacket;

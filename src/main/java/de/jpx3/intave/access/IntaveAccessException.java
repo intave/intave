@@ -1,6 +1,9 @@
 package de.jpx3.intave.access;
 
-public class IntaveAccessException extends IntaveException {
+/**
+ * An IntaveAccessException states that an error is caused in access of Intave by a non-Intave system
+ */
+public class IntaveAccessException extends IntaveInternalException {
   public IntaveAccessException() {
     super();
   }

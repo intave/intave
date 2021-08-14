@@ -5,11 +5,13 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Mitigation strategy
+ */
 public enum MitigationStrategy {
   AGGRESSIVE("AGGRESSIVE"),
   CAREFUL("CAREFUL"),
   LENIENT("LENIENT"),
-  @Deprecated
   SILENT("SILENT"),
 
   NOT_SUPPORTED("");

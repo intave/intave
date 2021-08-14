@@ -2,7 +2,7 @@ package de.jpx3.intave.event.violation;
 
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.access.IntaveException;
+import de.jpx3.intave.access.IntaveBootFailureException;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.detect.checks.movement.Physics;
@@ -408,7 +408,7 @@ public final class MovementEmulationEngine {
         Object playerHandle = user.playerHandle();
         Location dest = event.getTo();
         if (dest == null) {
-          throw new IntaveException("Setback location cannot be null");
+          throw new IntaveBootFailureException("Setback location cannot be null");
         }
         if (Math.abs(nativeYaw) > 360f) {
           internalTeleportExecution(player, dest,  nativeYaw % 360f, nativePitch, false);

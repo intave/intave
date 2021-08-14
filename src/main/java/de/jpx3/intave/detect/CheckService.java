@@ -14,14 +14,15 @@ import de.jpx3.intave.detect.checks.other.ProtocolScanner;
 import de.jpx3.intave.detect.checks.world.BreakSpeedLimiter;
 import de.jpx3.intave.detect.checks.world.InteractionRaytrace;
 import de.jpx3.intave.detect.checks.world.PlacementAnalysis;
-import de.jpx3.intave.event.bukkit.BukkitEventLinker;
-import de.jpx3.intave.event.packet.PacketSubscriptionLinker;
 import de.jpx3.intave.tools.annotate.Relocate;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.util.*;
 
+/**
+ * A {@link CheckService} that initializes,
+ */
 @Relocate
 public final class CheckService {
   private final IntavePlugin plugin;
@@ -30,8 +31,11 @@ public final class CheckService {
   private Map<Class<?>, Check> classRequestCache = new HashMap<>();
   private Map<String, Check> nameRequestCache = new HashMap<>();
 
+  private final CheckLinker checkLinker;
+
   public CheckService(IntavePlugin plugin) {
     this.plugin = plugin;
+    checkLinker = new CheckLinker(this.plugin);
   }
 
   public void setup() {
@@ -48,18 +52,17 @@ public final class CheckService {
 //    addCheck(WorkspaceCheck.class);
 
     bakeQuickAccess();
-    linkBukkitEventSubscriptions();
-    linkPacketEventSubscriptions();
+    checkLinker.linkBukkitEventSubscriptions(checks);
+    checkLinker.linkPacketEventSubscriptions(checks);
   }
 
   public void reset() {
+    checkLinker.removeBukkitEventSubscriptions(checks);
+    checkLinker.removePacketEventSubscriptions(checks);
+    resetQuickAccess();
     checks.clear();
     classRequestCache.clear();
     nameRequestCache.clear();
-
-    resetQuickAccess();
-    removeBukkitEventSubscriptions();
-    removePacketEventSubscriptions();
   }
 
   public void addCheck(Class<? extends Check> checkClass) {
@@ -102,61 +105,6 @@ public final class CheckService {
     checkNames = new ArrayList<>();
   }
 
-  public void linkPacketEventSubscriptions() {
-    PacketSubscriptionLinker packetSubscriptionLinker = plugin.packetSubscriptionLinker();
-    for (Check check : checks) {
-      if (check.enabled()) {
-        packetSubscriptionLinker.linkSubscriptionsIn(check);
-      }
-      for (CheckPart<?> checkPart : check.checkParts()) {
-        if (checkPart.enabled()) {
-          packetSubscriptionLinker.linkSubscriptionsIn(checkPart);
-        }
-      }
-    }
-  }
-
-  public void removePacketEventSubscriptions() {
-    PacketSubscriptionLinker packetSubscriptionLinker = plugin.packetSubscriptionLinker();
-    for (Check check : checks) {
-      if (check.enabled()) {
-        packetSubscriptionLinker.removeSubscriptionsOf(check);
-      }
-      for (CheckPart<?> checkPart : check.checkParts()) {
-        if (checkPart.enabled()) {
-          packetSubscriptionLinker.removeSubscriptionsOf(checkPart);
-        }
-      }
-    }
-  }
-
-  public void linkBukkitEventSubscriptions() {
-    BukkitEventLinker bukkitEventLinker = plugin.eventLinker();
-    for (Check check : checks) {
-      if (check.enabled()) {
-        bukkitEventLinker.registerEventsIn(check);
-      }
-      for (CheckPart<?> checkPart : check.checkParts()) {
-        if (checkPart.enabled()) {
-          bukkitEventLinker.registerEventsIn(checkPart);
-        }
-      }
-    }
-  }
-
-  public void removeBukkitEventSubscriptions() {
-    BukkitEventLinker bukkitEventLinker = plugin.eventLinker();
-    for (Check check : checks) {
-      if (check.enabled()) {
-        bukkitEventLinker.unregisterEventsIn(check);
-      }
-      for (CheckPart<?> checkPart : check.checkParts()) {
-        if (checkPart.enabled()) {
-          bukkitEventLinker.unregisterEventsIn(checkPart);
-        }
-      }
-    }
-  }
 
   public <T extends Check> T searchCheck(Class<T> checkClass) {
     Check check = classRequestCache.get(checkClass);

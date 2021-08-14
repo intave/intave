@@ -1,6 +1,10 @@
 package de.jpx3.intave.access;
 
-public final class InvalidDependencyException extends IntaveException {
+/**
+ * An exception describing an issue with Intaves dependencies.
+ * This usually occurs when a resouce is outdated
+ */
+public final class InvalidDependencyException extends IntaveBootFailureException {
   public InvalidDependencyException() {
     super();
   }
@@ -15,9 +19,5 @@ public final class InvalidDependencyException extends IntaveException {
 
   public InvalidDependencyException(Throwable cause) {
     super(cause);
-  }
-
-  protected InvalidDependencyException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-    super(message, cause, enableSuppression, writableStackTrace);
   }
 }

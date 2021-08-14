@@ -1,6 +1,9 @@
 package de.jpx3.intave.access;
 
-public final class IntaveResourceCompilationException extends IntaveException {
+/**
+ * An exception describing issues related to resource-complication faults.
+ */
+public final class IntaveResourceCompilationException extends IntaveBootFailureException {
   public IntaveResourceCompilationException() {
   }
 

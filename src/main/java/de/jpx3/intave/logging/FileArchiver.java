@@ -1,7 +1,7 @@
 package de.jpx3.intave.logging;
 
 import com.google.common.base.Preconditions;
-import de.jpx3.intave.access.IntaveException;
+import de.jpx3.intave.access.IntaveBootFailureException;
 import de.jpx3.intave.access.IntaveInternalException;
 
 import java.io.File;
@@ -69,7 +69,7 @@ public final class FileArchiver {
         out.write(buffer, 0, count);
       }
     } catch (IOException exception) {
-      throw new IntaveException(exception);
+      throw new IntaveBootFailureException(exception);
     }
   }
 

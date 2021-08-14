@@ -1,21 +1,19 @@
 package de.jpx3.intave.access.check;
 
 /**
- * Class generated using IntelliJ IDEA
- * Created by Richard Strunk 2021
+ * An alphabetically-sorted enumerator of the names of all checks in Intave
  */
-
 public enum Check {
-  ATTACK_RAYTRACE("attackRaytrace"),
-  BREAK_SPEED_LIMITER("breakSpeedLimiter"),
-  CLICK_SPEED_LIMITER("clickSpeedLimiter"),
-  HEURISTICS("heuristics"),
-  INTERACTION_RAYTRACE("interactionRaytrace"),
-  INVENTORY_CLICK_ANALYSIS("inventoryClickAnalysis"),
-  PHYSICS("physics"),
-  PROTOCOL_SCANNER("protocolScanner"),
-  PLACEMENT_ANALYSIS("placementAnalysis"),
-  TIMER("timer"),
+  ATTACK_RAYTRACE("AttackRaytrace"),
+  BREAK_SPEED_LIMITER("BreakSpeedLimiter"),
+  CLICK_SPEED_LIMITER("ClickSpeedLimiter"),
+  HEURISTICS("Heuristics"),
+  INTERACTION_RAYTRACE("InteractionRaytrace"),
+  INVENTORY_CLICK_ANALYSIS("InventoryClickAnalysis"),
+  PHYSICS("Physics"),
+  PROTOCOL_SCANNER("ProtocolScanner"),
+  PLACEMENT_ANALYSIS("PlacementAnalysis"),
+  TIMER("Timer"),
 
   ;
 
