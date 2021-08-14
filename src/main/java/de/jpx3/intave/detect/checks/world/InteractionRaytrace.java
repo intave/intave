@@ -60,8 +60,6 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
   private final CheckViolationLevelDecrementer decrementer;
   private final InteractionEmulator interactionEmulator;
 
-  private boolean enabled;
-
   public InteractionRaytrace(IntavePlugin plugin) {
     super("InteractionRaytrace", "interactionraytrace", InteractionMeta.class);
     this.plugin = plugin;
@@ -320,7 +318,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       Location location = estimateMouseDelayFix ? playerLocationmdf : playerLocation;
       boolean atLeastLookingAtBlock = movingObjectPosition != null && atLeastLookingAtBlock(user, location, targetLocation, movingObjectPosition);
       boolean isAbortDestroyBlock = interaction.digType() == ABORT_DESTROY_BLOCK;
-      flag = enabled && !isAbortDestroyBlock && performFlag(interaction, raycastResult, targetLocation, raycastLocation, hitMiss, atLeastLookingAtBlock);
+      flag = enabled() && !isAbortDestroyBlock && performFlag(interaction, raycastResult, targetLocation, raycastLocation, hitMiss, atLeastLookingAtBlock);
       flagEnforce = false;
     }
 
@@ -574,8 +572,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
   }
 
   @Override
-  public boolean enabled() {
-    this.enabled = super.enabled();
+  public boolean performLinkage() {
     return true;
   }
 

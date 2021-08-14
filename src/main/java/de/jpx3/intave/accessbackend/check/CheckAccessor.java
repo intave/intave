@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static de.jpx3.intave.access.check.Check.fromString;
+
 public final class CheckAccessor {
   private final Map<String, CheckAccess> checkAccessCache = Maps.newConcurrentMap();
   private final IntavePlugin plugin;
@@ -46,6 +48,11 @@ public final class CheckAccessor {
       @Override
       public String name() {
         return check.name();
+      }
+
+      @Override
+      public de.jpx3.intave.access.check.Check enumCheck() {
+        return fromString(name());
       }
 
       @Override

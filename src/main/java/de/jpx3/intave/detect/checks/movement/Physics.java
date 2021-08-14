@@ -712,4 +712,9 @@ public final class Physics extends Check {
   public boolean enabled() {
     return true;
   }
+
+  @Override
+  public boolean performLinkage() {
+    return true;
+  }
 }

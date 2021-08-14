@@ -2,7 +2,7 @@ package de.jpx3.intave.config;
 
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.access.IntaveException;
+import de.jpx3.intave.access.IntaveBootFailureException;
 import de.jpx3.intave.security.ContextSecrets;
 import de.jpx3.intave.security.LicenseVerification;
 import de.jpx3.intave.security.SSLConnectionVerifier;
@@ -178,7 +178,7 @@ public final class ConfigurationLoader {
           if (plugin.getResource("settings.yml") != null) {
             plugin.saveResource("settings.yml", false);
           } else {
-            throw new IntaveException("Please download Intave again to use file configurations");
+            throw new IntaveBootFailureException("Please download Intave again to use file configurations");
           }
         }
         inputStream = new FileInputStream(settingFile);

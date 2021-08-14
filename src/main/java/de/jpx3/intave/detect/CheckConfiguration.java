@@ -1,7 +1,7 @@
 package de.jpx3.intave.detect;
 
 import com.google.common.collect.ImmutableMap;
-import de.jpx3.intave.access.IntaveException;
+import de.jpx3.intave.access.IntaveBootFailureException;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.check.MitigationStrategy;
 import de.jpx3.intave.tools.MathHelper;
@@ -97,7 +97,7 @@ public final class CheckConfiguration {
       try {
         return (boolean) uncheckedResolveOrDefault(key, def);
       } catch (ClassCastException exception) {
-        throw new IntaveException(new InvalidConfigurationException("Expected " + key + " in check " + configurationCache.check().name() + " to be a boolean expression", exception));
+        throw new IntaveBootFailureException(new InvalidConfigurationException("Expected " + key + " in check " + configurationCache.check().name() + " to be a boolean expression", exception));
       }
     }
 
@@ -157,7 +157,7 @@ public final class CheckConfiguration {
       try {
         return (int) uncheckedResolveOrDefault(key, def);
       } catch (ClassCastException exception) {
-        throw new IntaveException(new InvalidConfigurationException("Expected " + key + " in check " + configurationCache.check().name() + " to be a numeric expression", exception));
+        throw new IntaveBootFailureException(new InvalidConfigurationException("Expected " + key + " in check " + configurationCache.check().name() + " to be a numeric expression", exception));
       }
     }
 

@@ -1,6 +1,9 @@
 package de.jpx3.intave.access;
 
-public final class IntaveInternalException extends RuntimeException {
+/**
+ * An exception describing a medium issue within Intave.
+ */
+public class IntaveInternalException extends RuntimeException {
   public IntaveInternalException() {
     super();
   }

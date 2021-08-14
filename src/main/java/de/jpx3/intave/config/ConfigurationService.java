@@ -2,7 +2,7 @@ package de.jpx3.intave.config;
 
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.access.IntaveException;
+import de.jpx3.intave.access.IntaveBootFailureException;
 import de.jpx3.intave.tools.AccessHelper;
 import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
@@ -40,13 +40,13 @@ public final class ConfigurationService {
       reader.close();
       String configurationIdentifier = configuration.getString("config-identifier");
       if (configurationIdentifier == null) {
-        throw new IntaveException("It seems like you are using an old/invalid configuration");
+        throw new IntaveBootFailureException("It seems like you are using an old/invalid configuration");
       }
       return configurationIdentifier;
     } catch (FileNotFoundException exception) {
-      throw new IntaveException("It seems like we are unable to create the default configuration file");
+      throw new IntaveBootFailureException("It seems like we are unable to create the default configuration file");
     } catch (InvalidConfigurationException | IOException exception) {
-      throw new IntaveException("It seems like your configuration is invalid", exception);
+      throw new IntaveBootFailureException("It seems like your configuration is invalid", exception);
     }
   }
 
