@@ -21,10 +21,8 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 /**
- * Class generated using IntelliJ IDEA
- * Created by Richard Strunk 2021
+ * A {@link Player}-association oriented
  */
-
 public interface User {
   Object playerHandle();
 

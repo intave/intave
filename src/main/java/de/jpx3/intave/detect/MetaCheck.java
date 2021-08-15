@@ -8,14 +8,13 @@ import org.bukkit.entity.Player;
 
 /**
  * An extension of the default {@link Check} class, providing a {@link User}-specific metadata holder.
- * This feature was originally proposed by Richy, as a trade-off between the one-check-instance-per-user policy
+ * This approach was chosen as a trade-off between the one-check-instance-per-user policy
  * and a full-common-pool policy.
- * It aims to reluctantly offer a fast, secure, scalable and easy-to-use per-{@link User} meta pool, aside from
- * the common-pools in the {@link MetadataBundle}.
+ * It aims to reluctantly offer a fast, secure, scalable and easy-to-use per-{@link User} meta pool, outside
+ * the {@link MetadataBundle}.
  * <br>
  * <br>
  * A quick example on how this would look:
- *
  * <pre>{@code
  * public class Example extends MetaCheck<ExampleMeta> {
  *   public Example() {
@@ -33,7 +32,6 @@ import org.bukkit.entity.Player;
  *   }
  * }
  * }</pre>
- *
  * The meta class must be declared as type parameter M,
  * its {@code class} must be passed in the {@link MetaCheck#MetaCheck(String, String, Class)} constructor,
  * and it must be a subclass of {@link CheckCustomMetadata}. Make sure it either has no constructor (best) or a public,
@@ -43,10 +41,10 @@ import org.bukkit.entity.Player;
  * The {@link MetaCheck#metaOf(User)} or the {@link MetaCheck#metaOf(Player)} method are used to access the metadata holder.
  *
  * @param <M> the meta type
+ * @see MetaCheckPart
  * @see Check
  * @see CheckCustomMetadata
  * @see User#checkMetadata(Class)
- * @see MetaCheckPart
  */
 public abstract class MetaCheck<M extends CheckCustomMetadata> extends Check {
   private final Class<? extends CheckCustomMetadata> metaClass;
