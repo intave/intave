@@ -7,6 +7,7 @@ import de.jpx3.intave.adapter.ComponentLoader;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.adapter.ViaVersionAdapter;
 import de.jpx3.intave.agent.AgentAccessor;
+import de.jpx3.intave.annotate.Native;
 import de.jpx3.intave.command.CommandProcessor;
 import de.jpx3.intave.config.ConfigurationService;
 import de.jpx3.intave.connect.customclient.CustomClientSupportService;
@@ -19,33 +20,31 @@ import de.jpx3.intave.event.CustomEventService;
 import de.jpx3.intave.event.EventService;
 import de.jpx3.intave.event.violation.ViolationProcessor;
 import de.jpx3.intave.executor.BackgroundExecutor;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.fakeplayer.event.FakePlayerEventService;
 import de.jpx3.intave.filter.Filters;
 import de.jpx3.intave.lib.asm.Frame;
-import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.metrics.Metrics;
 import de.jpx3.intave.module.BootSegment;
 import de.jpx3.intave.module.Modules;
-import de.jpx3.intave.module.dispatch.entity.WrappedEntity;
-import de.jpx3.intave.module.linker.bukkit.BukkitEventLinker;
+import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
 import de.jpx3.intave.module.linker.packet.PacketSubscriptionLinker;
-import de.jpx3.intave.reflect.ReflectiveAccess;
+import de.jpx3.intave.module.tracker.entity.WrappedEntity;
+import de.jpx3.intave.reflect.access.ReflectiveAccess;
 import de.jpx3.intave.reflect.hitbox.typeaccess.DualEntityTypeAccess;
 import de.jpx3.intave.reflect.locate.Locator;
+import de.jpx3.intave.resource.EncryptedResource;
 import de.jpx3.intave.security.*;
 import de.jpx3.intave.security.blacklist.BlackListService;
 import de.jpx3.intave.tools.Shutdown;
 import de.jpx3.intave.tools.*;
-import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.tools.client.SinusCache;
-import de.jpx3.intave.tools.items.InventoryUseItemHelper;
-import de.jpx3.intave.tools.sync.Synchronizer;
-import de.jpx3.intave.tools.wrapper.link.WrapperLinkage;
+import de.jpx3.intave.tools.items.ItemProperties;
+import de.jpx3.intave.tools.version.DurationTranslator;
+import de.jpx3.intave.tools.version.Version;
+import de.jpx3.intave.tools.version.VersionList;
 import de.jpx3.intave.trustfactor.TrustFactorService;
-import de.jpx3.intave.update.Version;
-import de.jpx3.intave.update.VersionList;
 import de.jpx3.intave.user.UserRepository;
-import de.jpx3.intave.warning.ClientWarningService;
 import de.jpx3.intave.world.blockaccess.*;
 import de.jpx3.intave.world.blockphysic.BlockPhysics;
 import de.jpx3.intave.world.blockphysic.BlockProperties;
@@ -56,6 +55,7 @@ import de.jpx3.intave.world.collision.CollisionModifiers;
 import de.jpx3.intave.world.fluid.Fluids;
 import de.jpx3.intave.world.permission.WorldPermission;
 import de.jpx3.intave.world.raytrace.Raytracing;
+import de.jpx3.intave.world.wrapper.link.WrapperLinkage;
 import org.bukkit.ChatColor;
 import org.bukkit.plugin.PluginLogger;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -94,7 +94,7 @@ public final class IntavePlugin extends JavaPlugin {
   private SibylIntegrationService sibylIntegrationService;
   private ConfigurationService configurationService;
   private ComponentLoader componentLoader;
-  private BukkitEventLinker eventLinker;
+  private BukkitEventSubscriptionLinker eventLinker;
   private PacketSubscriptionLinker packetSubscriptionLinker;
   private EventService eventService;
   private FakePlayerEventService fakePlayerEventService;
@@ -105,7 +105,6 @@ public final class IntavePlugin extends JavaPlugin {
   private TrustFactorService trustFactorService;
   private VersionList versionList;
   private LabymodShadowIntegration shadowIntegration;
-  private ClientWarningService clientWarningService;
   private CustomClientSupportService customClientSupportService;
   private IntaveAccessService accessService;
   private IntaveAccess access;
@@ -138,7 +137,7 @@ public final class IntavePlugin extends JavaPlugin {
 
     modules.proceedBoot(BootSegment.STAGE_3);
     // event links must be available throughout the entire onEnable call
-    eventLinker = new BukkitEventLinker(this);
+    eventLinker = new BukkitEventSubscriptionLinker(this);
   }
 
   @Native
@@ -499,7 +498,7 @@ public final class IntavePlugin extends JavaPlugin {
       WorldPermission.setup();
       BlockPhysics.setup();
       BlockProperties.setup();
-      InventoryUseItemHelper.setup();
+      ItemProperties.setup();
       BoundingBoxPatcher.setup();
 
       versionList = new VersionList();
@@ -526,8 +525,6 @@ public final class IntavePlugin extends JavaPlugin {
       shadowIntegration.setup();
       accessService = new IntaveAccessService(this);
       accessService.setup();
-      clientWarningService = new ClientWarningService(this);
-      clientWarningService.setup();
       customClientSupportService = new CustomClientSupportService(this);
       customClientSupportService.setup();
       customEventService = new CustomEventService(this);
@@ -849,7 +846,7 @@ public final class IntavePlugin extends JavaPlugin {
   }
 
   @Deprecated
-  public BukkitEventLinker eventLinker() {
+  public BukkitEventSubscriptionLinker eventLinker() {
     return modules().bukkitEventLinker();
   }
 
@@ -865,10 +862,6 @@ public final class IntavePlugin extends JavaPlugin {
 
   public SibylIntegrationService sibylIntegrationService() {
     return sibylIntegrationService;
-  }
-
-  public ClientWarningService clientWarningService() {
-    return clientWarningService;
   }
 
   public VersionList versionList() {

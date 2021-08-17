@@ -2,13 +2,13 @@ package de.jpx3.intave.world.blockphysic;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.ImmutableList;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.world.fluid.FluidTag;
 import de.jpx3.intave.world.fluid.Fluids;
 import de.jpx3.intave.world.fluid.WrappedFluid;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.util.Vector;

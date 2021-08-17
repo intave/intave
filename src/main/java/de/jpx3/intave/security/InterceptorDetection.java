@@ -1,6 +1,6 @@
 package de.jpx3.intave.security;
 
-import de.jpx3.intave.tools.annotate.Relocate;
+import de.jpx3.intave.annotate.Relocate;
 
 import java.io.PrintStream;
 

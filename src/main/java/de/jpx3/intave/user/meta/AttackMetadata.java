@@ -1,14 +1,14 @@
 package de.jpx3.intave.user.meta;
 
+import de.jpx3.intave.annotate.Nullable;
+import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.detect.checks.combat.heuristics.MiningStrategy;
 import de.jpx3.intave.detect.checks.combat.heuristics.mining.MiningStrategyContainer;
 import de.jpx3.intave.fakeplayer.FakePlayer;
-import de.jpx3.intave.module.dispatch.entity.ClientSideEntityService;
-import de.jpx3.intave.module.dispatch.entity.WrappedEntity;
-import de.jpx3.intave.module.dispatch.entity.WrappedEntity.EntityPositionContext;
+import de.jpx3.intave.module.tracker.entity.ClientEntityTracker;
+import de.jpx3.intave.module.tracker.entity.WrappedEntity;
+import de.jpx3.intave.module.tracker.entity.WrappedEntity.EntityPositionContext;
 import de.jpx3.intave.tools.AccessHelper;
-import de.jpx3.intave.tools.annotate.Nullable;
-import de.jpx3.intave.tools.annotate.Relocate;
 import de.jpx3.intave.tools.client.RotationHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -112,7 +112,7 @@ public final class AttackMetadata {
     this.lastAttackedEntityID = lastAttackedEntityID;
 
     WrappedEntity lastAttackedEntity = this.lastAttackedEntity;
-    WrappedEntity attackedEntity = ClientSideEntityService.entityByIdentifier(UserRepository.userOf(player), lastAttackedEntityID);
+    WrappedEntity attackedEntity = ClientEntityTracker.entityByIdentifier(UserRepository.userOf(player), lastAttackedEntityID);
     if (attackedEntity != null && attackedEntity != lastAttackedEntity) {
       this.lastEntitySwitch = AccessHelper.now();
     }

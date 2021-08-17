@@ -1,8 +1,8 @@
 package de.jpx3.intave.tools.client;
 
-import de.jpx3.intave.module.dispatch.entity.WrappedEntity;
-import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
-import de.jpx3.intave.tools.wrapper.WrappedVector;
+import de.jpx3.intave.module.tracker.entity.WrappedEntity;
+import de.jpx3.intave.world.wrapper.WrappedMathHelper;
+import de.jpx3.intave.world.wrapper.WrappedVector;
 import org.bukkit.util.Vector;
 
 public final class RotationHelper {

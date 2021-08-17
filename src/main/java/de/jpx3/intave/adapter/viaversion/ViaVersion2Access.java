@@ -1,6 +1,6 @@
 package de.jpx3.intave.adapter.viaversion;
 
-import de.jpx3.intave.logging.IntaveLogger;
+import de.jpx3.intave.IntaveLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 

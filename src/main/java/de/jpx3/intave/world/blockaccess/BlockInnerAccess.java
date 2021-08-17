@@ -1,10 +1,10 @@
 package de.jpx3.intave.world.blockaccess;
 
 import com.comphenix.protocol.wrappers.BlockPosition;
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.logging.IntaveLogger;
-import de.jpx3.intave.reflect.ReflectiveBlockAccess;
+import de.jpx3.intave.reflect.access.ReflectiveBlockAccess;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;

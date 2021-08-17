@@ -2,6 +2,7 @@ package de.jpx3.intave.tools.client;
 
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
+import de.jpx3.intave.annotate.refactoring.IdoNotBelongHere;
 import de.jpx3.intave.detect.checks.movement.physics.Pose;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -11,6 +12,7 @@ import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.entity.Player;
 
+@IdoNotBelongHere
 public final class PoseHelper {
   private final static boolean ELYTRA_ENABLED = ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0);
 

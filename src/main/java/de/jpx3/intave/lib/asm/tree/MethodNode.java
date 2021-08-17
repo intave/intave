@@ -27,8 +27,8 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 package de.jpx3.intave.lib.asm.tree;
 
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.lib.asm.*;
-import de.jpx3.intave.logging.IntaveLogger;
 
 import java.util.ArrayList;
 import java.util.List;

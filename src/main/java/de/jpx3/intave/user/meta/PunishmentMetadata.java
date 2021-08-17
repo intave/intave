@@ -1,10 +1,10 @@
 package de.jpx3.intave.user.meta;
 
 import com.google.common.collect.Lists;
+import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.event.violation.AttackNerfStrategy;
 import de.jpx3.intave.event.violation.EntityNoDamageTickChanger;
 import de.jpx3.intave.tools.AccessHelper;
-import de.jpx3.intave.tools.annotate.Relocate;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;

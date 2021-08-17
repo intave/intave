@@ -1,10 +1,10 @@
 package de.jpx3.intave.world.blockaccess;
 
+import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriber;
-import de.jpx3.intave.tools.annotate.Relocate;
-import de.jpx3.intave.tools.wrapper.WrappedBlockPosition;
-import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.world.wrapper.WrappedBlockPosition;
+import de.jpx3.intave.world.wrapper.WrappedMathHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;

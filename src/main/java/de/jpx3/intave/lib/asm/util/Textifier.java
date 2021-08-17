@@ -27,9 +27,9 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 package de.jpx3.intave.lib.asm.util;
 
+import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.lib.asm.*;
 import de.jpx3.intave.lib.asm.signature.SignatureReader;
-import de.jpx3.intave.tools.annotate.Relocate;
 
 import java.io.IOException;
 import java.io.PrintWriter;

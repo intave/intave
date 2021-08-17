@@ -1,10 +1,6 @@
 package de.jpx3.intave.world.fluid.resolver;
 
 import de.jpx3.intave.tools.client.Materials;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
-import de.jpx3.intave.tools.wrapper.WrappedBlockPosition;
-import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
-import de.jpx3.intave.tools.wrapper.WrappedVector;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.world.blockaccess.BlockDataAccess;
@@ -14,6 +10,10 @@ import de.jpx3.intave.world.fluid.FluidEngine;
 import de.jpx3.intave.world.fluid.FluidTag;
 import de.jpx3.intave.world.fluid.LegacyWaterflow;
 import de.jpx3.intave.world.fluid.WrappedFluid;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.world.wrapper.WrappedBlockPosition;
+import de.jpx3.intave.world.wrapper.WrappedMathHelper;
+import de.jpx3.intave.world.wrapper.WrappedVector;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;

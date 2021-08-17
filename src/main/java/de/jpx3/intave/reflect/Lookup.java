@@ -14,8 +14,8 @@ public final class Lookup {
     return Locator.fieldByKey(serverClassName, fieldName);
   }
 
-  public static Class<?> serverClass(String className) {
-    return Locator.classByKey(className);
+  public static Class<?> serverClass(String key) {
+    return Locator.classByKey(key);
   }
 
   public static Class<?> craftBukkitClass(String className) {
@@ -45,9 +45,5 @@ public final class Lookup {
 
   public static String version() {
     return NMS_PACKAGE_NAME;
-  }
-
-  public static String appendNMSPrefixToClass(String className) {
-    return ReflectiveAccess.NMS_PREFIX + "." + className;
   }
 }

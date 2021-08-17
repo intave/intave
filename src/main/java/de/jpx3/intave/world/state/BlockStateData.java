@@ -1,7 +1,7 @@
 package de.jpx3.intave.world.state;
 
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
+import de.jpx3.intave.reflect.patchy.annotate.PatchyAutoTranslation;
 import net.minecraft.server.v1_16_R3.BlockStateBoolean;
 import net.minecraft.server.v1_16_R3.BlockStateInteger;
 import net.minecraft.server.v1_16_R3.IBlockData;

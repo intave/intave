@@ -1,6 +1,6 @@
 package de.jpx3.intave.executor;
 
-import de.jpx3.intave.logging.IntaveLogger;
+import de.jpx3.intave.IntaveLogger;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;

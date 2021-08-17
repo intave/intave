@@ -1,7 +1,6 @@
 package de.jpx3.intave.tools.client;
 
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
-import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
+import de.jpx3.intave.annotate.refactoring.IdoNotBelongHere;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.EffectMetadata;
@@ -10,6 +9,8 @@ import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
 import de.jpx3.intave.world.blockphysic.BlockProperties;
 import de.jpx3.intave.world.collision.Collision;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.world.wrapper.WrappedMathHelper;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -23,6 +24,7 @@ import org.bukkit.material.Openable;
 
 import java.util.List;
 
+@IdoNotBelongHere
 public final class MovementContext {
   public static double jumpMotionFor(Player player, float jumpUpwardsMotion) {
     User user = UserRepository.userOf(player);

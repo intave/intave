@@ -27,7 +27,7 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 package de.jpx3.intave.lib.asm;
 
-import de.jpx3.intave.tools.annotate.Relocate;
+import de.jpx3.intave.annotate.Relocate;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

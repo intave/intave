@@ -1,8 +1,8 @@
 package de.jpx3.intave.trustfactor;
 
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.logging.IntaveLogger;
-import de.jpx3.intave.tools.CachedResource;
+import de.jpx3.intave.resource.CachedResource;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.InputStreamReader;

@@ -1,6 +1,6 @@
 package de.jpx3.intave.reflect.datawatcher;
 
-import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
+import de.jpx3.intave.reflect.patchy.annotate.PatchyAutoTranslation;
 import net.minecraft.server.v1_8_R3.DataWatcher;
 import net.minecraft.server.v1_8_R3.Entity;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftEntity;

@@ -1,8 +1,8 @@
 package de.jpx3.intave.reflect.datawatcher;
 
 import de.jpx3.intave.access.IntaveInternalException;
-import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
 import de.jpx3.intave.reflect.Lookup;
+import de.jpx3.intave.reflect.patchy.annotate.PatchyAutoTranslation;
 import net.minecraft.server.v1_9_R2.DataWatcher;
 import net.minecraft.server.v1_9_R2.DataWatcherObject;
 import net.minecraft.server.v1_9_R2.Entity;

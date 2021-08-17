@@ -2,8 +2,8 @@ package de.jpx3.intave.reflect.hitbox.typeaccess;
 
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.patchy.PatchyLoadingInjector;
 import de.jpx3.intave.reflect.hitbox.HitBoxBoundaries;
+import de.jpx3.intave.reflect.patchy.PatchyLoadingInjector;
 
 import java.util.HashMap;
 import java.util.Map;

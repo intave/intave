@@ -3,7 +3,7 @@ package de.jpx3.intave.world.blockaccess;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.patchy.PatchyLoadingInjector;
+import de.jpx3.intave.reflect.patchy.PatchyLoadingInjector;
 
 public final class BlockAccessProvider {
   private static BlockAccessor blockAccessor;

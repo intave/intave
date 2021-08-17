@@ -1,10 +1,10 @@
 package de.jpx3.intave.security.blacklist;
 
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
-import de.jpx3.intave.tools.CachedResource;
-import de.jpx3.intave.tools.sync.Synchronizer;
+import de.jpx3.intave.resource.CachedResource;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;

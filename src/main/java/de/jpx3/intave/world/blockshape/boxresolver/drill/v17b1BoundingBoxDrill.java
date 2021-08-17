@@ -1,9 +1,9 @@
 package de.jpx3.intave.world.blockshape.boxresolver.drill;
 
-import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.reflect.patchy.annotate.PatchyAutoTranslation;
 import de.jpx3.intave.world.blockaccess.RuntimeBlockDataIndexer;
 import de.jpx3.intave.world.blockshape.boxresolver.ResolverPipeline;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.level.block.state.IBlockData;

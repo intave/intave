@@ -1,7 +1,7 @@
 package de.jpx3.intave.security;
 
-import de.jpx3.intave.tools.annotate.Native;
-import de.jpx3.intave.tools.annotate.refactoring.WhyMustIExist;
+import de.jpx3.intave.annotate.Native;
+import de.jpx3.intave.annotate.refactoring.WhyMustIExist;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;

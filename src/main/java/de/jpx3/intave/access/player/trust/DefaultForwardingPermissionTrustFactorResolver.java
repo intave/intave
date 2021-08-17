@@ -1,6 +1,6 @@
 package de.jpx3.intave.access.player.trust;
 
-import de.jpx3.intave.permission.BukkitPermissionCheck;
+import de.jpx3.intave.user.permission.BukkitPermissionCheck;
 import org.bukkit.entity.Player;
 
 import java.util.Arrays;

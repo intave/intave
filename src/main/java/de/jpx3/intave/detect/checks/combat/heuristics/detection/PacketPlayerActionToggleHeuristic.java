@@ -8,18 +8,18 @@ import de.jpx3.intave.detect.checks.combat.Heuristics;
 import de.jpx3.intave.detect.checks.combat.heuristics.Anomaly;
 import de.jpx3.intave.detect.checks.combat.heuristics.Confidence;
 import de.jpx3.intave.event.violation.AttackNerfStrategy;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.reflect.ReflectiveDataWatcherAccess;
+import de.jpx3.intave.reflect.access.ReflectiveDataWatcherAccess;
+import de.jpx3.intave.reflect.converters.PlayerAction;
+import de.jpx3.intave.reflect.converters.PlayerActionResolver;
 import de.jpx3.intave.tools.AccessHelper;
-import de.jpx3.intave.tools.packet.PlayerAction;
-import de.jpx3.intave.tools.packet.PlayerActionResolver;
-import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
 import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
-import static de.jpx3.intave.reflect.ReflectiveDataWatcherAccess.WATCHER_SNEAK_ID;
+import static de.jpx3.intave.reflect.access.ReflectiveDataWatcherAccess.WATCHER_SNEAK_ID;
 
 public final class PacketPlayerActionToggleHeuristic extends MetaCheckPart<Heuristics, PacketPlayerActionToggleHeuristic.PacketSprintToggleHeuristicMeta> {
   private final IntavePlugin plugin;

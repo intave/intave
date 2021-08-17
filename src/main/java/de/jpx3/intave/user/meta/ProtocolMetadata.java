@@ -2,7 +2,7 @@ package de.jpx3.intave.user.meta;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.adapter.ViaVersionAdapter;
-import de.jpx3.intave.tools.annotate.Relocate;
+import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.user.User;
 import org.bukkit.entity.Player;
 

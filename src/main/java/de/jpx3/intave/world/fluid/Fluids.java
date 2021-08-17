@@ -3,10 +3,10 @@ package de.jpx3.intave.world.fluid;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.patchy.PatchyLoadingInjector;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
-import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
+import de.jpx3.intave.reflect.patchy.PatchyLoadingInjector;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.world.wrapper.WrappedMathHelper;
 import org.bukkit.Location;
 
 public final class Fluids {

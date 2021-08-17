@@ -1,7 +1,7 @@
 package de.jpx3.intave.diagnostics.report;
 
-import de.jpx3.intave.logging.IntaveLogger;
-import de.jpx3.intave.tools.EncryptedResource;
+import de.jpx3.intave.IntaveLogger;
+import de.jpx3.intave.resource.EncryptedResource;
 import de.jpx3.intave.tools.Shutdown;
 
 import java.io.ByteArrayInputStream;

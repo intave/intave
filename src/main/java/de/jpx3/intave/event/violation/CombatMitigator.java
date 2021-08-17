@@ -1,12 +1,12 @@
 package de.jpx3.intave.event.violation;
 
 import de.jpx3.intave.IntaveControl;
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.logging.IntaveLogger;
+import de.jpx3.intave.annotate.Native;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
-import de.jpx3.intave.tools.annotate.Native;
-import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.user.MessageChannelSubscriptions;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;

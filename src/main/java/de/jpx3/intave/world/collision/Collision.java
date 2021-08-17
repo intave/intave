@@ -1,10 +1,8 @@
 package de.jpx3.intave.world.collision;
 
-import de.jpx3.intave.tools.annotate.DoNotFlowObfuscate;
-import de.jpx3.intave.tools.annotate.Relocate;
+import de.jpx3.intave.annotate.DoNotFlowObfuscate;
+import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.tools.client.Materials;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
-import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -14,6 +12,8 @@ import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
 import de.jpx3.intave.world.blockshape.OCBlockShapeAccess;
 import de.jpx3.intave.world.blockshape.boxresolver.BoundingBoxResolver;
 import de.jpx3.intave.world.blockshape.boxresolver.ResolverPipeline;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.world.wrapper.WrappedMathHelper;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;

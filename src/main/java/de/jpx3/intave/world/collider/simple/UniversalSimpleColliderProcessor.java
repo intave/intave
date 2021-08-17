@@ -1,8 +1,8 @@
 package de.jpx3.intave.world.collider.simple;
 
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.world.collision.Collision;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
 import org.bukkit.entity.Player;
 
 import java.util.List;

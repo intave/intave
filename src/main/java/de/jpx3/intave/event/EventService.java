@@ -9,19 +9,19 @@ import de.jpx3.intave.event.feedback.FeedbackService;
 import de.jpx3.intave.event.violation.CombatMitigator;
 import de.jpx3.intave.event.violation.MovementEmulationEngine;
 import de.jpx3.intave.event.violation.ReconDelayLimiter;
-import de.jpx3.intave.module.dispatch.entity.EntityNoCollisionService;
-import de.jpx3.intave.module.dispatch.entity.LazyEntityCollisionService;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
-import de.jpx3.intave.permission.BukkitPermissionCheck;
-import de.jpx3.intave.reflect.caller.CallerResolver;
-import de.jpx3.intave.reflect.caller.PluginInvocation;
+import de.jpx3.intave.module.tracker.entity.EntityNoCollisionService;
+import de.jpx3.intave.module.tracker.entity.LazyEntityCollisionService;
 import de.jpx3.intave.tools.AccessHelper;
-import de.jpx3.intave.tools.DurationTranslator;
 import de.jpx3.intave.tools.GarbageCollector;
-import de.jpx3.intave.tools.sync.Synchronizer;
-import de.jpx3.intave.update.Version;
+import de.jpx3.intave.tools.caller.CallerResolver;
+import de.jpx3.intave.tools.caller.PluginInvocation;
+import de.jpx3.intave.tools.version.DurationTranslator;
+import de.jpx3.intave.tools.version.Version;
 import de.jpx3.intave.user.UserLifetimeService;
+import de.jpx3.intave.user.permission.BukkitPermissionCheck;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -53,13 +53,12 @@ public final class EventService implements BukkitEventSubscriber {
     this.reconDelayLimiter = new ReconDelayLimiter(plugin);
     new UserLifetimeService(plugin);
     new AttackDispatcher(plugin);
-    new AttributeDispatcher(plugin);
+    new AttributeTracker(plugin);
     new BlockActionDispatcher(plugin);
     new MovementDispatcher(plugin);
-    new PotionEffectEvaluator(plugin);
-    new PlayerAbilityEvaluator(plugin);
-    new PlayerInventoryEvaluator(plugin);
-//    new ClientSideEntityService(plugin);
+    new PotionEffectTracker(plugin);
+    new PlayerAbilityTracker(plugin);
+    new PlayerInventoryTracker(plugin);
     new LazyEntityCollisionService(plugin);
     new ConnectionHealthTelemetry(plugin);
     new PacketResynchronizer(plugin);
@@ -118,7 +117,7 @@ public final class EventService implements BukkitEventSubscriber {
     GarbageCollector.clear(player.getUniqueId());
   }
 
-  public void sendPrefixedMessage(String message, CommandSender target) {
+  private void sendPrefixedMessage(String message, CommandSender target) {
     if (!Bukkit.isPrimaryThread()) {
       Synchronizer.synchronize(() -> sendPrefixedMessage(message, target));
       return;

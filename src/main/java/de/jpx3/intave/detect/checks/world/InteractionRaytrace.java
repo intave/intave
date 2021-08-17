@@ -11,21 +11,20 @@ import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.detect.CheckViolationLevelDecrementer;
 import de.jpx3.intave.detect.MetaCheck;
 import de.jpx3.intave.detect.checks.world.interaction.Interaction;
 import de.jpx3.intave.detect.checks.world.interaction.InteractionEmulator;
 import de.jpx3.intave.detect.checks.world.interaction.InteractionType;
-import de.jpx3.intave.event.dispatch.PlayerAbilityEvaluator;
+import de.jpx3.intave.event.dispatch.PlayerAbilityTracker;
 import de.jpx3.intave.event.violation.Violation;
 import de.jpx3.intave.event.violation.ViolationContext;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.tools.annotate.DispatchTarget;
-import de.jpx3.intave.tools.items.InventoryUseItemHelper;
-import de.jpx3.intave.tools.sync.Synchronizer;
-import de.jpx3.intave.tools.wrapper.*;
+import de.jpx3.intave.tools.items.ItemProperties;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.AbilityMetadata;
@@ -39,6 +38,7 @@ import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
 import de.jpx3.intave.world.blockshape.OCBlockShapeAccess;
 import de.jpx3.intave.world.collision.Collision;
 import de.jpx3.intave.world.raytrace.Raytracing;
+import de.jpx3.intave.world.wrapper.*;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -133,14 +133,14 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     }
 
     ItemStack heldItemStack = inventoryData.heldItem();
-    if (InventoryUseItemHelper.isSwordItem(player, heldItemStack) && player.getGameMode() == GameMode.CREATIVE) {
+    if (ItemProperties.isSwordItem(player, heldItemStack) && player.getGameMode() == GameMode.CREATIVE) {
       event.setCancelled(true);
       return;
     }
 
     EnumWrappers.PlayerDigType playerDigType = packet.getPlayerDigTypes().readSafely(0);
     float blockDamage = BlockInnerAccess.blockDamage(player, user.meta().inventory().heldItem(), blockPosition);
-    boolean instantBreak = blockDamage >= 1.0f || abilityData.inGameMode(PlayerAbilityEvaluator.GameMode.CREATIVE);
+    boolean instantBreak = blockDamage >= 1.0f || abilityData.inGameMode(PlayerAbilityTracker.GameMode.CREATIVE);
     boolean breakBlock = instantBreak || playerDigType == STOP_DESTROY_BLOCK;
 
     EnumWrappers.Direction direction = packet.getDirections().readSafely(0);
@@ -443,7 +443,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         vl = longBreakDuration ? 20 : 15;
       }
       float blockDamage = BlockInnerAccess.blockDamage(player, user.meta().inventory().heldItem(), interaction.targetBlock());
-      boolean instantBreak = blockDamage >= 1.0f || user.meta().abilities().inGameMode(PlayerAbilityEvaluator.GameMode.CREATIVE);
+      boolean instantBreak = blockDamage >= 1.0f || user.meta().abilities().inGameMode(PlayerAbilityTracker.GameMode.CREATIVE);
       if (instantBreak) {
         vl = 0;
       }

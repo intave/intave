@@ -1,7 +1,6 @@
 package de.jpx3.intave.world.collider;
 
 import de.jpx3.intave.detect.checks.movement.physics.MotionVector;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
@@ -12,6 +11,7 @@ import de.jpx3.intave.world.collider.complex.ModernComplexColliderProcessor;
 import de.jpx3.intave.world.collider.simple.SimpleColliderProcessor;
 import de.jpx3.intave.world.collider.simple.SimpleColliderSimulationResult;
 import de.jpx3.intave.world.collider.simple.UniversalSimpleColliderProcessor;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
 import org.bukkit.entity.Player;
 
 public final class Collider {

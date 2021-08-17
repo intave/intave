@@ -2,16 +2,15 @@ package de.jpx3.intave.user.meta;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.StructureModifier;
+import de.jpx3.intave.annotate.DispatchTarget;
+import de.jpx3.intave.annotate.Nullable;
+import de.jpx3.intave.annotate.Relocate;
+import de.jpx3.intave.annotate.refactoring.IdoNotBelongHere;
 import de.jpx3.intave.detect.checks.movement.physics.*;
-import de.jpx3.intave.module.dispatch.entity.WrappedEntity;
-import de.jpx3.intave.reflect.ReflectiveDataWatcherAccess;
-import de.jpx3.intave.reflect.ReflectiveHandleAccess;
-import de.jpx3.intave.tools.annotate.DispatchTarget;
-import de.jpx3.intave.tools.annotate.Nullable;
-import de.jpx3.intave.tools.annotate.Relocate;
+import de.jpx3.intave.module.tracker.entity.WrappedEntity;
+import de.jpx3.intave.reflect.access.ReflectiveDataWatcherAccess;
+import de.jpx3.intave.reflect.access.ReflectiveHandleAccess;
 import de.jpx3.intave.tools.client.*;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
-import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
 import de.jpx3.intave.world.blockphysic.BlockProperties;
@@ -19,6 +18,8 @@ import de.jpx3.intave.world.collision.Collision;
 import de.jpx3.intave.world.fluid.FluidTag;
 import de.jpx3.intave.world.fluid.Fluids;
 import de.jpx3.intave.world.fluid.WrappedFluid;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.world.wrapper.WrappedMathHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -214,6 +215,7 @@ public final class MovementMetadata {
   }
 
   @DispatchTarget
+  @IdoNotBelongHere
   public void updateMovement(
     PacketContainer packet,
     boolean hasMovement, boolean hasRotation
@@ -268,6 +270,7 @@ public final class MovementMetadata {
     updatePose();
   }
 
+  @IdoNotBelongHere
   private void updateElytra() {
     if (elytraFlying && !this.onGround && !this.inWater && !EffectLogic.isPotionLevitationActive(player)) {
       elytraFlying = hasElytraEquipped();
@@ -282,6 +285,7 @@ public final class MovementMetadata {
     return plate != null && plate.getType() == Material.ELYTRA;
   }
 
+  @IdoNotBelongHere
   private void updateEntityMovement() {
     ConnectionMetadata connectionMetadata = user.meta().connection();
     Map<Integer, WrappedEntity> entityMap = connectionMetadata.synchronizedEntityMap();
@@ -291,6 +295,7 @@ public final class MovementMetadata {
     }
   }
 
+  @IdoNotBelongHere
   public void updateEyesInWater() {
     double yPos = positionY + eyeHeight() - (double) 0.11111f;
     this.eyesInWater = interactingFluid != null && interactingFluid.isIn(FluidTag.WATER);
@@ -309,6 +314,7 @@ public final class MovementMetadata {
     return this.eyesInWater;
   }
 
+  @IdoNotBelongHere
   public void updatePose() {
     // Beautiful
     if (this.isPoseClear(Pose.SWIMMING)) {
@@ -342,11 +348,13 @@ public final class MovementMetadata {
     updateSize();
   }
 
+  @IdoNotBelongHere
   public void setPose(Pose pose) {
     this.pose = pose;
     updatePose();
   }
 
+  @IdoNotBelongHere
   private void updateSize() {
     Pose pose = pose();
     width = pose.width(user);
@@ -359,10 +367,12 @@ public final class MovementMetadata {
     return Collision.hasNoCollisions(user, pose.boundingBoxOf(user).shrink(1.0E-7D));
   }
 
+  @IdoNotBelongHere
   private float jumpUpwardsMotion() {
     return hasJumpFactor ? 0.42f * jumpFactor() : 0.42f;
   }
 
+  @IdoNotBelongHere
   private float jumpFactor() {
     World world = player.getWorld();
     float f = jumpFactorOf(BukkitBlockAccess.cacheAppliedTypeAccess(user, world, positionX, positionY, positionZ));
@@ -370,14 +380,17 @@ public final class MovementMetadata {
     return (double) f == 1.0D ? f1 : f;
   }
 
+  @IdoNotBelongHere
   private float jumpFactorOf(Material material) {
     return BlockProperties.ofType(material).jumpFactor();
   }
 
+  @IdoNotBelongHere
   public boolean collidedWithBoat() {
     return nearestBoatLocation != null && distanceToVerifiedLocation(nearestBoatLocation) < 2;
   }
 
+  @IdoNotBelongHere
   public double distanceToVerifiedLocation(Location location) {
     double xDiff = Math.abs(verifiedPositionX - location.getX());
     double yDiff = Math.abs(verifiedPositionY - location.getY());
@@ -400,10 +413,12 @@ public final class MovementMetadata {
   }
 
   @DispatchTarget
+  @IdoNotBelongHere
   public void applyGroundInformationToPacket(PacketContainer packet) {
     packet.getBooleans().write(0, onGround);
   }
 
+  @IdoNotBelongHere
   private void updateMovementMetaData() {
     MetadataBundle meta = user.meta();
     AbilityMetadata abilityData = meta.abilities();
@@ -450,6 +465,7 @@ public final class MovementMetadata {
     }
   }
 
+  @IdoNotBelongHere
   public boolean inLava() {
     ProtocolMetadata clientData = user.meta().protocol();
     if (clientData.waterUpdate()) {
@@ -486,6 +502,7 @@ public final class MovementMetadata {
     return lastVelocity != null && lastVelocity.clone().setY(0).length() > 0.2;
   }
 
+  @IdoNotBelongHere
   public double baseMoveSpeed() {
     EffectMetadata potionData = user.meta().potions();
     int speedAmplifier = potionData.potionEffectSpeedAmplifier();
@@ -499,6 +516,7 @@ public final class MovementMetadata {
     return baseSpeed;
   }
 
+  @IdoNotBelongHere
   public void sprintReset() {
     InventoryMetadata inventoryData = user.meta().inventory();
     // really required

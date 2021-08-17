@@ -2,7 +2,7 @@ package de.jpx3.intave.fakeplayer;
 
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.google.common.collect.ImmutableList;
-import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
+import de.jpx3.intave.reflect.patchy.annotate.PatchyAutoTranslation;
 import net.minecraft.server.v1_8_R3.*;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;

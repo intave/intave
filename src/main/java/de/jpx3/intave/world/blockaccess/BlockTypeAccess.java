@@ -2,7 +2,7 @@ package de.jpx3.intave.world.blockaccess;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.access.IntaveInternalException;
-import de.jpx3.intave.tools.annotate.Relocate;
+import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Material;

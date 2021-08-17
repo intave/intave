@@ -2,7 +2,7 @@ package de.jpx3.intave.security;
 
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
-import de.jpx3.intave.tools.annotate.Native;
+import de.jpx3.intave.annotate.Native;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;

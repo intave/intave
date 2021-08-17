@@ -1,8 +1,10 @@
 package de.jpx3.intave.tools.client;
 
+import de.jpx3.intave.annotate.refactoring.IdoNotBelongHere;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
 import org.bukkit.Material;
 
+@IdoNotBelongHere
 public final class Materials {
   public static boolean blocksMovement(Material material) {
     // Liquids don't block movement

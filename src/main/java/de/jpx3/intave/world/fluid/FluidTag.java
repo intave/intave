@@ -1,8 +1,8 @@
 package de.jpx3.intave.world.fluid;
 
 import de.jpx3.intave.access.IntaveInternalException;
+import de.jpx3.intave.annotate.KeepEnumInternalNames;
 import de.jpx3.intave.reflect.Lookup;
-import de.jpx3.intave.tools.annotate.KeepEnumInternalNames;
 
 @KeepEnumInternalNames
 public enum FluidTag {

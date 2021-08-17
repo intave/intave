@@ -2,6 +2,7 @@ package de.jpx3.intave.command.stages;
 
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.trust.TrustFactor;
+import de.jpx3.intave.annotate.Native;
 import de.jpx3.intave.command.CommandStage;
 import de.jpx3.intave.command.Optional;
 import de.jpx3.intave.command.SubCommand;
@@ -16,7 +17,6 @@ import de.jpx3.intave.diagnostics.timings.Timing;
 import de.jpx3.intave.diagnostics.timings.Timings;
 import de.jpx3.intave.tools.MathHelper;
 import de.jpx3.intave.tools.MemoryWatchdog;
-import de.jpx3.intave.tools.annotate.Native;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.world.blockshape.OCBlockShapeAccess;

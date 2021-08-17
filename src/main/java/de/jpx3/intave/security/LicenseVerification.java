@@ -2,7 +2,7 @@ package de.jpx3.intave.security;
 
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.access.IntaveInternalException;
-import de.jpx3.intave.tools.annotate.Native;
+import de.jpx3.intave.annotate.Native;
 
 import java.io.InputStream;
 import java.util.Scanner;

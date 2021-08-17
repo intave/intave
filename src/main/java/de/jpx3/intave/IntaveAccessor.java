@@ -2,7 +2,7 @@ package de.jpx3.intave;
 
 import de.jpx3.intave.access.IntaveAccess;
 import de.jpx3.intave.access.IntaveColdException;
-import de.jpx3.intave.tools.annotate.Native;
+import de.jpx3.intave.annotate.Native;
 
 import java.lang.ref.WeakReference;
 

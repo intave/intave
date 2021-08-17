@@ -1,13 +1,13 @@
 package de.jpx3.intave.world.blockshape.boxresolver.patcher;
 
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
-import de.jpx3.intave.tools.wrapper.WrappedEnumDirection;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.world.blockaccess.BlockDataAccess;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.world.wrapper.WrappedEnumDirection;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;

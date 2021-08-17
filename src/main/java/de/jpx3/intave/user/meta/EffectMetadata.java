@@ -1,12 +1,12 @@
 package de.jpx3.intave.user.meta;
 
-import de.jpx3.intave.tools.annotate.Relocate;
+import de.jpx3.intave.annotate.Relocate;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 
 import java.util.Collection;
 
-import static de.jpx3.intave.event.dispatch.PotionEffectEvaluator.*;
+import static de.jpx3.intave.event.dispatch.PotionEffectTracker.*;
 
 @Relocate
 public final class EffectMetadata {

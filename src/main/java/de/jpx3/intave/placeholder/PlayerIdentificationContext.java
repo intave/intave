@@ -1,0 +1,30 @@
+package de.jpx3.intave.placeholder;
+
+import com.google.common.collect.ImmutableMap;
+
+import java.net.InetAddress;
+import java.util.Map;
+import java.util.UUID;
+
+public final class PlayerIdentificationContext extends PlaceholderContext {
+  private final String playerName;
+  private final UUID uuid;
+  private final InetAddress address;
+
+  public PlayerIdentificationContext(String playerName, UUID uuid, InetAddress address) {
+    this.playerName = playerName;
+    this.uuid = uuid;
+    this.address = address;
+  }
+
+  @Override
+  public Map<String, String> replacements() {
+    return ImmutableMap.of(
+      "player", String.valueOf(playerName),
+      "playername", String.valueOf(playerName),
+      "uuid", String.valueOf(uuid),
+      "ip", address.getHostAddress(),
+      "address", address.getHostAddress()
+    );
+  }
+}

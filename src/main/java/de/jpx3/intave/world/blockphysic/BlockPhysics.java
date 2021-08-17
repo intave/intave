@@ -2,7 +2,7 @@ package de.jpx3.intave.world.blockphysic;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
-import de.jpx3.intave.tools.annotate.Nullable;
+import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.user.User;
 import org.bukkit.Location;
 import org.bukkit.Material;

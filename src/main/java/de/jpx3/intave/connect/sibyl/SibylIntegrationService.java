@@ -1,14 +1,14 @@
 package de.jpx3.intave.connect.sibyl;
 
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.annotate.Native;
 import de.jpx3.intave.connect.sibyl.auth.SibylAuthentication;
 import de.jpx3.intave.connect.sibyl.data.SibylPacketTransmitter;
 import de.jpx3.intave.connect.sibyl.data.packet.SibylPacket;
 import de.jpx3.intave.connect.sibyl.data.packet.SibylPacketOutAttackCancel;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
-import de.jpx3.intave.tools.annotate.Native;
-import de.jpx3.intave.tools.sync.Synchronizer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;

@@ -1,13 +1,11 @@
 package de.jpx3.intave.detect.checks.movement.physics;
 
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.module.dispatch.entity.WrappedEntity;
+import de.jpx3.intave.module.tracker.entity.WrappedEntity;
 import de.jpx3.intave.tools.client.EffectLogic;
 import de.jpx3.intave.tools.client.Materials;
 import de.jpx3.intave.tools.client.MovementContext;
-import de.jpx3.intave.tools.items.PlayerEnchantmentHelper;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
-import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
+import de.jpx3.intave.tools.items.Enchantments;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -21,6 +19,8 @@ import de.jpx3.intave.world.collider.complex.ComplexColliderSimulationResult;
 import de.jpx3.intave.world.collider.simple.SimpleColliderSimulationResult;
 import de.jpx3.intave.world.fluid.Fluids;
 import de.jpx3.intave.world.fluid.LegacyWaterflow;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.world.wrapper.WrappedMathHelper;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -141,7 +141,7 @@ public class DefaultSimulator extends Simulator {
     Player player = user.player();
     MovementMetadata movementData = user.meta().movement();
     float f2 = 0.02F;
-    float f3 = (float) PlayerEnchantmentHelper.resolveDepthStriderModifier(player);
+    float f3 = Enchantments.resolveDepthStriderModifier(player);
     if (f3 > 3.0F) {
       f3 = 3.0F;
     }
@@ -492,7 +492,7 @@ public class DefaultSimulator extends Simulator {
     }
 
     if (clientData.protocolVersion() >= VER_1_14 && movementData.pose() != Pose.FALL_FLYING) {
-      int soulSandModifier = PlayerEnchantmentHelper.resolveSoulSpeedModifier(player);
+      int soulSandModifier = Enchantments.resolveSoulSpeedModifier(player);
       if (soulSandModifier == 0 || !movementData.blockOnPositionSoulSpeedAffected()) {
         Material type = BukkitBlockAccess.cacheAppliedTypeAccess(user, world, positionX, positionY - 0.5000001, positionZ);
         float speedFactor = BlockProperties.ofType(type).speedFactor();
@@ -517,7 +517,7 @@ public class DefaultSimulator extends Simulator {
     } else {
       f1 = 0.8f;
     }
-    float f3 = Math.min(3.0f, (float) PlayerEnchantmentHelper.resolveDepthStriderModifier(player));
+    float f3 = Math.min(3.0f, Enchantments.resolveDepthStriderModifier(player));
     if (!movementData.lastOnGround) {
       f3 *= 0.5F;
     }

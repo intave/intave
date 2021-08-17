@@ -1,8 +1,8 @@
 package de.jpx3.intave.world.blockshape.boxresolver.patcher;
 
-import de.jpx3.intave.logging.IntaveLogger;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;

@@ -1,6 +1,7 @@
 package de.jpx3.intave.accessbackend;
 
 import com.google.common.base.Preconditions;
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveAccess;
 import de.jpx3.intave.access.IntaveEvent;
@@ -15,8 +16,7 @@ import de.jpx3.intave.access.server.ServerAccess;
 import de.jpx3.intave.accessbackend.check.CheckAccessor;
 import de.jpx3.intave.accessbackend.player.PlayerAccessor;
 import de.jpx3.intave.accessbackend.server.ServerAccessor;
-import de.jpx3.intave.logging.IntaveLogger;
-import de.jpx3.intave.tools.annotate.Native;
+import de.jpx3.intave.annotate.Native;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.Player;
 

@@ -2,9 +2,9 @@ package de.jpx3.intave.detect.checks.movement.physics;
 
 import com.google.common.collect.ImmutableMap;
 import de.jpx3.intave.reflect.hitbox.HitBoxBoundaries;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
 
 import java.util.Map;
 

@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
+import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.detect.checks.combat.AttackRaytrace;
 import de.jpx3.intave.detect.checks.combat.ClickSpeedLimiter;
 import de.jpx3.intave.detect.checks.combat.Heuristics;
@@ -14,7 +15,6 @@ import de.jpx3.intave.detect.checks.other.ProtocolScanner;
 import de.jpx3.intave.detect.checks.world.BreakSpeedLimiter;
 import de.jpx3.intave.detect.checks.world.InteractionRaytrace;
 import de.jpx3.intave.detect.checks.world.PlacementAnalysis;
-import de.jpx3.intave.tools.annotate.Relocate;
 
 import java.util.*;
 

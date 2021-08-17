@@ -1,6 +1,6 @@
 package de.jpx3.intave.reflect.locate;
 
-import de.jpx3.intave.world.blockaccess.CompilerStreamFunctionProvider;
+import de.jpx3.intave.resource.CompilerStreamFunctionProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;

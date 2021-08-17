@@ -2,7 +2,7 @@ package de.jpx3.intave.world.blockshape;
 
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.tools.AccessHelper;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
 import org.bukkit.Material;
 
 import java.util.List;

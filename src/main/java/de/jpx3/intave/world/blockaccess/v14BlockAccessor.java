@@ -2,8 +2,8 @@ package de.jpx3.intave.world.blockaccess;
 
 import com.comphenix.protocol.wrappers.BlockPosition;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
-import de.jpx3.intave.patchy.annotate.PatchyTranslateParameters;
+import de.jpx3.intave.reflect.patchy.annotate.PatchyAutoTranslation;
+import de.jpx3.intave.reflect.patchy.annotate.PatchyTranslateParameters;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import net.minecraft.server.v1_14_R1.ChunkProviderServer;

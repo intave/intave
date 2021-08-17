@@ -1,9 +1,9 @@
 package de.jpx3.intave.fakeplayer.movement;
 
 import de.jpx3.intave.tools.AccessHelper;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.world.collider.simple.SimpleColliderSimulationResult;
 import de.jpx3.intave.world.collision.Collision;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 

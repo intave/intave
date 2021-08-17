@@ -2,8 +2,8 @@ package de.jpx3.intave.event.feedback;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.logging.IntaveLogger;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;

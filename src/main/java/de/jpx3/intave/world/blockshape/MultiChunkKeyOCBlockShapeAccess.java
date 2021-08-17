@@ -1,12 +1,12 @@
 package de.jpx3.intave.world.blockshape;
 
 import de.jpx3.intave.diagnostics.BoundingBoxAccessFlowStudy;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.world.blockaccess.BlockDataAccess;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
 import de.jpx3.intave.world.blockshape.boxresolver.BoundingBoxResolver;
 import de.jpx3.intave.world.blockshape.boxresolver.ResolverPipeline;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;

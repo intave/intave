@@ -1,11 +1,11 @@
 package de.jpx3.intave.world.blockaccess;
 
 import com.google.common.collect.ImmutableList;
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.logging.IntaveLogger;
-import de.jpx3.intave.patchy.PatchyLoadingInjector;
-import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
+import de.jpx3.intave.reflect.patchy.PatchyLoadingInjector;
+import de.jpx3.intave.reflect.patchy.annotate.PatchyAutoTranslation;
 import de.jpx3.intave.world.state.BlockState;
 import net.minecraft.server.v1_14_R1.Block;
 import net.minecraft.server.v1_14_R1.IBlockData;

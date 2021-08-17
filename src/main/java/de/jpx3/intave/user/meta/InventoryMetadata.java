@@ -1,9 +1,10 @@
 package de.jpx3.intave.user.meta;
 
-import de.jpx3.intave.tools.annotate.Relocate;
-import de.jpx3.intave.tools.items.InventoryUseItemHelper;
-import de.jpx3.intave.tools.items.PlayerEnchantmentHelper;
-import de.jpx3.intave.tools.sync.Synchronizer;
+import de.jpx3.intave.annotate.Relocate;
+import de.jpx3.intave.annotate.refactoring.IdoNotBelongHere;
+import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.tools.items.Enchantments;
+import de.jpx3.intave.tools.items.ItemProperties;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Material;
@@ -60,11 +61,12 @@ public final class InventoryMetadata {
     return inventoryOpen;
   }
 
+  @IdoNotBelongHere
   public void deactivateHand() {
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
     ItemStack heldItem = heldItem();
-    if (heldItem != null && PlayerEnchantmentHelper.tridentRiptideEnchanted(heldItem)) {
+    if (heldItem != null && Enchantments.tridentRiptideEnchanted(heldItem)) {
       movementData.pastRiptideSpin = 0;
     }
     this.handActive = false;
@@ -74,11 +76,12 @@ public final class InventoryMetadata {
 
   public void activateHand() {
     this.handActive = true;
-    this.foodItem = InventoryUseItemHelper.foodItemRegistry().foodConsumable(player, heldItemType());
+    this.foodItem = ItemProperties.foodConsumable(player, heldItemType());
     this.pastItemUsageTransition = 0;
     this.handActiveTicks = 0;
   }
 
+  @IdoNotBelongHere
   public void applySlotSwitch() {
     if (!necessarySlotSwitch(this.handSlot)) {
       return;
@@ -97,13 +100,14 @@ public final class InventoryMetadata {
     });
   }
 
+  @IdoNotBelongHere
   private boolean necessarySlotSwitch(int slot) {
     PlayerInventory inventory = player.getInventory();
     ItemStack item = inventory.getItem(slot);
     if (item == null) {
       return false;
     }
-    return InventoryUseItemHelper.isUseItem(player, item);
+    return ItemProperties.canItemBeUsed(player, item);
   }
 
   public void setHeldItemSlot(int slot) {

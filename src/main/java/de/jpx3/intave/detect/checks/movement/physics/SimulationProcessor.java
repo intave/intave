@@ -1,14 +1,14 @@
 package de.jpx3.intave.detect.checks.movement.physics;
 
 import de.jpx3.intave.adapter.ViaVersionAdapter;
+import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.diagnostics.KeyPressStudy;
 import de.jpx3.intave.diagnostics.timings.Timings;
 import de.jpx3.intave.event.dispatch.AttackDispatcher;
-import de.jpx3.intave.reflect.ReflectiveDataWatcherAccess;
+import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.reflect.access.ReflectiveDataWatcherAccess;
 import de.jpx3.intave.tools.MathHelper;
-import de.jpx3.intave.tools.annotate.Relocate;
-import de.jpx3.intave.tools.items.InventoryUseItemHelper;
-import de.jpx3.intave.tools.sync.Synchronizer;
+import de.jpx3.intave.tools.items.ItemProperties;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.InventoryMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
@@ -18,7 +18,7 @@ import de.jpx3.intave.world.collider.complex.ComplexColliderSimulationResult;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
-import static de.jpx3.intave.reflect.ReflectiveDataWatcherAccess.WATCHER_BLOCKING_ID;
+import static de.jpx3.intave.reflect.access.ReflectiveDataWatcherAccess.WATCHER_BLOCKING_ID;
 
 @Relocate
 public final class SimulationProcessor {
@@ -107,7 +107,7 @@ public final class SimulationProcessor {
     inventoryData.setHandActive(false);
     ItemStack itemStack = inventoryData.heldItem();
 
-    if (itemStack != null && !InventoryUseItemHelper.isSwordItem(user.player(), itemStack)) {
+    if (itemStack != null && !ItemProperties.isSwordItem(user.player(), itemStack)) {
       boolean ignoredItem = itemStack.getType() == Material.BOW;
       boolean combatUpdate = user.meta().protocol().combatUpdate();
       int threshold = combatUpdate ? 5 : 3;

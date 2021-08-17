@@ -2,12 +2,12 @@ package de.jpx3.intave.detect.checks.other.inventoryclickanalysis;
 
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.annotate.Native;
 import de.jpx3.intave.detect.MetaCheckPart;
 import de.jpx3.intave.detect.checks.other.InventoryClickAnalysis;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.tools.AccessHelper;
-import de.jpx3.intave.tools.annotate.Native;
-import de.jpx3.intave.tools.sync.Synchronizer;
 import de.jpx3.intave.user.MessageChannelSubscriptions;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;

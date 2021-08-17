@@ -1,6 +1,6 @@
 package de.jpx3.intave.world.blockshape.boxresolver.patcher;
 
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
 
 import java.util.ArrayList;
 import java.util.List;

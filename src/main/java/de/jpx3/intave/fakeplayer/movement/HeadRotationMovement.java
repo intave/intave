@@ -1,7 +1,7 @@
 package de.jpx3.intave.fakeplayer.movement;
 
 import de.jpx3.intave.tools.MathHelper;
-import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
+import de.jpx3.intave.world.wrapper.WrappedMathHelper;
 
 import java.util.concurrent.ThreadLocalRandom;
 

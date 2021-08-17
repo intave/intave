@@ -2,11 +2,11 @@ package de.jpx3.intave.adapter;
 
 import com.comphenix.protocol.ProtocolLibrary;
 import com.google.common.collect.Lists;
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.adapter.viaversion.ViaVersion2Access;
 import de.jpx3.intave.adapter.viaversion.ViaVersion3Access;
 import de.jpx3.intave.adapter.viaversion.ViaVersion4Access;
 import de.jpx3.intave.adapter.viaversion.ViaVersionAccess;
-import de.jpx3.intave.logging.IntaveLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;

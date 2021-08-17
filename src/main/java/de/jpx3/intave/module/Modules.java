@@ -1,7 +1,6 @@
 package de.jpx3.intave.module;
 
-import de.jpx3.intave.module.example.ExampleModule;
-import de.jpx3.intave.module.linker.bukkit.BukkitEventLinker;
+import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
 import de.jpx3.intave.module.linker.packet.PacketSubscriptionLinker;
 import de.jpx3.intave.tools.Shutdown;
 
@@ -27,16 +26,12 @@ public final class Modules {
 
   // quick accessors
 
-  public BukkitEventLinker bukkitEventLinker() {
-    return find(BukkitEventLinker.class);
+  public BukkitEventSubscriptionLinker bukkitEventLinker() {
+    return find(BukkitEventSubscriptionLinker.class);
   }
 
   public PacketSubscriptionLinker packetSubscriptionLinker() {
     return find(PacketSubscriptionLinker.class);
-  }
-
-  public ExampleModule exampleModule() {
-    return find(ExampleModule.class);
   }
 
   public <T extends Module> T find(Class<T> moduleClass) {

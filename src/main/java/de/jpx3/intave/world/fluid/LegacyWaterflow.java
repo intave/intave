@@ -1,10 +1,10 @@
 package de.jpx3.intave.world.fluid;
 
 import de.jpx3.intave.tools.client.Materials;
-import de.jpx3.intave.tools.wrapper.*;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
+import de.jpx3.intave.world.wrapper.*;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;

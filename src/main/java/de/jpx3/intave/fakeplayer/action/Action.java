@@ -3,8 +3,8 @@ package de.jpx3.intave.fakeplayer.action;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.fakeplayer.FakePlayer;
-import de.jpx3.intave.tools.sync.Synchronizer;
 import org.bukkit.entity.Player;
 
 import java.lang.reflect.InvocationTargetException;

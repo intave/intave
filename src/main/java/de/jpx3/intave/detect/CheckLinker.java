@@ -1,7 +1,7 @@
 package de.jpx3.intave.detect;
 
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.module.linker.bukkit.BukkitEventLinker;
+import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
 import de.jpx3.intave.module.linker.packet.PacketSubscriptionLinker;
 
 import java.util.Collection;
@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 /**
  * A {@link CheckLinker} is a utility class for the {@link CheckService}.
  * The methods {@link CheckLinker#linkBukkitEventSubscriptions(Collection)} and {@link CheckLinker#linkPacketEventSubscriptions(Collection)}
- * take {@link Collection}s of {@link Check}s and forward them to the {@link PacketSubscriptionLinker} and the {@link BukkitEventLinker}.
+ * take {@link Collection}s of {@link Check}s and forward them to the {@link PacketSubscriptionLinker} and the {@link BukkitEventSubscriptionLinker}.
  * The {@link CheckLinker#removeBukkitEventSubscriptions(Collection)} and {@link CheckLinker#removePacketEventSubscriptions(Collection)} undo this procedure again.
  * <br />
  * <br />
@@ -24,7 +24,7 @@ import java.util.function.Consumer;
  * @see MetaCheckPart
  * @see CheckService
  * @see PacketSubscriptionLinker
- * @see BukkitEventLinker
+ * @see BukkitEventSubscriptionLinker
  */
 public final class CheckLinker {
   private final IntavePlugin plugin;
@@ -62,7 +62,7 @@ public final class CheckLinker {
    * @param checks the collection of checks to perform linkage on
    */
   public void linkBukkitEventSubscriptions(Collection<Check> checks) {
-    BukkitEventLinker bukkitEventLinker = plugin.eventLinker();
+    BukkitEventSubscriptionLinker bukkitEventLinker = plugin.eventLinker();
     iterativeApply(checks, bukkitEventLinker::registerEventsIn);
   }
 
@@ -73,7 +73,7 @@ public final class CheckLinker {
    * @param checks the collection of checks to remove linkage
    */
   public void removeBukkitEventSubscriptions(Collection<Check> checks) {
-    BukkitEventLinker bukkitEventLinker = plugin.eventLinker();
+    BukkitEventSubscriptionLinker bukkitEventLinker = plugin.eventLinker();
     iterativeApply(checks, bukkitEventLinker::unregisterEventsIn);
   }
 

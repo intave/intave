@@ -1,12 +1,12 @@
 package de.jpx3.intave.world.fluid;
 
 import de.jpx3.intave.tools.client.Materials;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
-import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
-import de.jpx3.intave.tools.wrapper.WrappedVector;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.world.wrapper.WrappedMathHelper;
+import de.jpx3.intave.world.wrapper.WrappedVector;
 import org.bukkit.Material;
 import org.bukkit.World;
 

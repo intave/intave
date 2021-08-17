@@ -13,7 +13,7 @@ import java.lang.invoke.MethodType;
 
 public final class FallDamageContainerMethod extends ReducedContainerMethod {
   private final MethodHandle fallDamageInvokeMethod;
-  private final Object FALL_DAMAGE_SOURCE;
+  private final Object fallDamageSource;
 
   {
     Class<?> entityLivingClass = Lookup.serverClass("EntityLiving");
@@ -46,12 +46,12 @@ public final class FallDamageContainerMethod extends ReducedContainerMethod {
     }
     if (MinecraftVersions.VER1_17_0.atOrAbove()) {
       try {
-        FALL_DAMAGE_SOURCE = Lookup.serverClass("DamageSource").getField("k").get(null);
+        fallDamageSource = Lookup.serverClass("DamageSource").getField("k").get(null);
       } catch (Exception exception) {
         throw new IntaveInternalException(exception);
       }
     } else {
-      FALL_DAMAGE_SOURCE = null;
+      fallDamageSource = null;
     }
   }
 
@@ -60,7 +60,7 @@ public final class FallDamageContainerMethod extends ReducedContainerMethod {
     Object playerHandle = user.playerHandle();
     try {
       if (MinecraftVersions.VER1_17_0.atOrAbove()) {
-        fallDamageInvokeMethod.invoke(playerHandle, fallDistance, 1.0f, FALL_DAMAGE_SOURCE);
+        fallDamageInvokeMethod.invoke(playerHandle, fallDistance, 1.0f, fallDamageSource);
       } else {
         fallDamageInvokeMethod.invoke(playerHandle, fallDistance, 1.0f);
       }

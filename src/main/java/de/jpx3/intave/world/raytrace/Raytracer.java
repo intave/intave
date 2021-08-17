@@ -1,7 +1,7 @@
 package de.jpx3.intave.world.raytrace;
 
-import de.jpx3.intave.tools.wrapper.WrappedMovingObjectPosition;
-import de.jpx3.intave.tools.wrapper.WrappedVector;
+import de.jpx3.intave.world.wrapper.WrappedMovingObjectPosition;
+import de.jpx3.intave.world.wrapper.WrappedVector;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 

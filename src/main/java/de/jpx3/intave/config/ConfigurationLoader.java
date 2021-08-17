@@ -3,12 +3,12 @@ package de.jpx3.intave.config;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveBootFailureException;
+import de.jpx3.intave.annotate.Native;
+import de.jpx3.intave.resource.EncryptedResource;
 import de.jpx3.intave.security.ContextSecrets;
 import de.jpx3.intave.security.LicenseVerification;
 import de.jpx3.intave.security.SSLConnectionVerifier;
 import de.jpx3.intave.tools.AccessHelper;
-import de.jpx3.intave.tools.EncryptedResource;
-import de.jpx3.intave.tools.annotate.Native;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import javax.crypto.Cipher;

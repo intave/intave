@@ -2,10 +2,10 @@ package de.jpx3.intave.reflect.hitbox.typeaccess;
 
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
 import de.jpx3.intave.reflect.Lookup;
-import de.jpx3.intave.reflect.ReflectiveAccess;
+import de.jpx3.intave.reflect.access.ReflectiveAccess;
 import de.jpx3.intave.reflect.hitbox.HitBoxBoundaries;
+import de.jpx3.intave.reflect.patchy.annotate.PatchyAutoTranslation;
 import net.minecraft.server.v1_16_R1.EntitySize;
 import net.minecraft.server.v1_16_R1.EntityTypes;
 import net.minecraft.server.v1_16_R1.IChatBaseComponent;

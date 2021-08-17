@@ -1,7 +1,7 @@
 package de.jpx3.intave.world.collision;
 
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
 import org.bukkit.Material;
 
 import java.util.List;

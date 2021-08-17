@@ -1,7 +1,7 @@
 package de.jpx3.intave.user.meta;
 
 import com.google.common.collect.Maps;
-import de.jpx3.intave.tools.annotate.Relocate;
+import de.jpx3.intave.annotate.Relocate;
 
 import java.util.Map;
 

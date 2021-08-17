@@ -1,7 +1,7 @@
 package de.jpx3.intave.security;
 
-import de.jpx3.intave.tools.EncryptedResource;
-import de.jpx3.intave.tools.annotate.Native;
+import de.jpx3.intave.annotate.Native;
+import de.jpx3.intave.resource.EncryptedResource;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;

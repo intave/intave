@@ -2,10 +2,10 @@ package de.jpx3.intave.command.stages;
 
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.annotate.KeepEnumInternalNames;
 import de.jpx3.intave.command.CommandStage;
 import de.jpx3.intave.command.SubCommand;
 import de.jpx3.intave.detect.checks.combat.heuristics.MiningStrategy;
-import de.jpx3.intave.tools.annotate.KeepEnumInternalNames;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.ChatColor;

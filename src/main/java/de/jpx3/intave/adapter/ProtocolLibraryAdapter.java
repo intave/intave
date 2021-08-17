@@ -5,8 +5,8 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.EnumWrappers;
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.access.InvalidDependencyException;
-import de.jpx3.intave.logging.IntaveLogger;
 import org.bukkit.Bukkit;
 
 import java.util.Arrays;

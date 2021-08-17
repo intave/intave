@@ -1,6 +1,6 @@
 package de.jpx3.intave.module;
 
-import de.jpx3.intave.module.linker.bukkit.BukkitEventLinker;
+import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
 import de.jpx3.intave.module.linker.packet.PacketSubscriptionLinker;
 
 import java.util.ArrayList;
@@ -29,7 +29,7 @@ public final class ModulePool {
   public void enableModule(Module module) {
     if (module.settings().shouldLinkSubscriptions()) {
       PacketSubscriptionLinker packetSubscriptionLinker = lookup(PacketSubscriptionLinker.class);
-      BukkitEventLinker bukkitEventLinker = lookup(BukkitEventLinker.class);
+      BukkitEventSubscriptionLinker bukkitEventLinker = lookup(BukkitEventSubscriptionLinker.class);
       if (bukkitEventLinker != null) {
         bukkitEventLinker.registerEventsIn(module);
       }

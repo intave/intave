@@ -1,12 +1,12 @@
 package de.jpx3.intave.world.raytrace;
 
-import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
-import de.jpx3.intave.patchy.annotate.PatchyTranslateParameters;
-import de.jpx3.intave.tools.wrapper.WrappedMovingObjectPosition;
-import de.jpx3.intave.tools.wrapper.WrappedVector;
+import de.jpx3.intave.reflect.patchy.annotate.PatchyAutoTranslation;
+import de.jpx3.intave.reflect.patchy.annotate.PatchyTranslateParameters;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.world.blockshape.BlockShape;
 import de.jpx3.intave.world.blockshape.OCBlockShapeAccess;
+import de.jpx3.intave.world.wrapper.WrappedMovingObjectPosition;
+import de.jpx3.intave.world.wrapper.WrappedVector;
 import net.minecraft.server.v1_9_R2.*;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_9_R2.CraftWorld;

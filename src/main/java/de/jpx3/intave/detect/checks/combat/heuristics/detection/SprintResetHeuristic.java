@@ -10,13 +10,13 @@ import de.jpx3.intave.detect.checks.combat.heuristics.Anomaly;
 import de.jpx3.intave.detect.checks.combat.heuristics.Confidence;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.tools.items.InventoryUseItemHelper;
-import de.jpx3.intave.tools.packet.PlayerAction;
-import de.jpx3.intave.tools.packet.PlayerActionResolver;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.reflect.converters.PlayerAction;
+import de.jpx3.intave.reflect.converters.PlayerActionResolver;
+import de.jpx3.intave.tools.items.ItemProperties;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
 import de.jpx3.intave.world.collision.Collision;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -117,7 +117,7 @@ public final class SprintResetHeuristic extends MetaCheckPart<Heuristics, Sprint
     User user = userOf(player);
     InventoryMetadata inventoryData = user.meta().inventory();
     ItemStack heldItem = inventoryData.heldItem();
-    boolean useItem = InventoryUseItemHelper.isUseItem(player, heldItem);
+    boolean useItem = ItemProperties.canItemBeUsed(player, heldItem);
     MovementMetadata movementData = user.meta().movement();
 
     // can false flag if a player collides with a wall some times

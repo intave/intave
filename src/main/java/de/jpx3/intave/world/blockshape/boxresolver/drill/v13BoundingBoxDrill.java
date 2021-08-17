@@ -1,8 +1,8 @@
 package de.jpx3.intave.world.blockshape.boxresolver.drill;
 
-import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.reflect.patchy.annotate.PatchyAutoTranslation;
 import de.jpx3.intave.world.blockshape.boxresolver.ResolverPipeline;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
 import net.minecraft.server.v1_13_R2.*;
 import org.bukkit.Material;
 import org.bukkit.World;

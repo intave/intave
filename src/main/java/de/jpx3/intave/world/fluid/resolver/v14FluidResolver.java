@@ -1,14 +1,14 @@
 package de.jpx3.intave.world.fluid.resolver;
 
-import de.jpx3.intave.patchy.annotate.PatchyAutoTranslation;
-import de.jpx3.intave.patchy.annotate.PatchyTranslateParameters;
-import de.jpx3.intave.tools.wrapper.WrappedVector;
-import de.jpx3.intave.tools.wrapper.link.WrapperLinkage;
+import de.jpx3.intave.reflect.patchy.annotate.PatchyAutoTranslation;
+import de.jpx3.intave.reflect.patchy.annotate.PatchyTranslateParameters;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.world.fluid.FluidEngine;
 import de.jpx3.intave.world.fluid.FluidTag;
 import de.jpx3.intave.world.fluid.WrappedFluid;
+import de.jpx3.intave.world.wrapper.WrappedVector;
+import de.jpx3.intave.world.wrapper.link.WrapperLinkage;
 import net.minecraft.server.v1_14_R1.*;
 
 @PatchyAutoTranslation

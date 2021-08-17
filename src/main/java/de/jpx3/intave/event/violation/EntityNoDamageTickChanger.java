@@ -1,9 +1,9 @@
 package de.jpx3.intave.event.violation;
 
-import de.jpx3.intave.logging.IntaveLogger;
+import de.jpx3.intave.IntaveLogger;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.reflect.Lookup;
-import de.jpx3.intave.reflect.ReflectiveHandleAccess;
-import de.jpx3.intave.tools.sync.Synchronizer;
+import de.jpx3.intave.reflect.access.ReflectiveHandleAccess;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.PunishmentMetadata;

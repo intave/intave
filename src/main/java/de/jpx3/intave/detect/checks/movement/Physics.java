@@ -5,6 +5,10 @@ import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.check.MitigationStrategy;
 import de.jpx3.intave.access.player.trust.TrustFactor;
+import de.jpx3.intave.annotate.DispatchTarget;
+import de.jpx3.intave.annotate.Relocate;
+import de.jpx3.intave.annotate.refactoring.IdoNotBelongHere;
+import de.jpx3.intave.annotate.refactoring.ImVeryBigPleaseSplitMeUp;
 import de.jpx3.intave.detect.Check;
 import de.jpx3.intave.detect.CheckStatistics;
 import de.jpx3.intave.detect.CheckViolationLevelDecrementer;
@@ -12,16 +16,10 @@ import de.jpx3.intave.detect.checks.movement.physics.*;
 import de.jpx3.intave.diagnostics.timings.Timings;
 import de.jpx3.intave.event.violation.Violation;
 import de.jpx3.intave.event.violation.ViolationContext;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.reflect.method.FallDamageContainerMethod;
 import de.jpx3.intave.tools.MathHelper;
-import de.jpx3.intave.tools.annotate.DispatchTarget;
-import de.jpx3.intave.tools.annotate.Relocate;
-import de.jpx3.intave.tools.annotate.refactoring.IdoNotBelongHerePleaseRefactorMe;
-import de.jpx3.intave.tools.annotate.refactoring.ImVeryBigPleaseSplitMeUp;
 import de.jpx3.intave.tools.client.MovementContext;
-import de.jpx3.intave.tools.sync.Synchronizer;
-import de.jpx3.intave.tools.wrapper.WrappedAxisAlignedBB;
-import de.jpx3.intave.tools.wrapper.WrappedMathHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
@@ -33,6 +31,8 @@ import de.jpx3.intave.world.collider.simple.SimpleColliderSimulationResult;
 import de.jpx3.intave.world.collision.Collision;
 import de.jpx3.intave.world.fluid.Fluids;
 import de.jpx3.intave.world.fluid.LegacyWaterflow;
+import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
+import de.jpx3.intave.world.wrapper.WrappedMathHelper;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -620,7 +620,7 @@ public final class Physics extends Check {
     return key;
   }
 
-  @IdoNotBelongHerePleaseRefactorMe
+  @IdoNotBelongHere
   public void applyFallDamageUpdate(User user) {
     if (!user.hasPlayer()) {
       return;
