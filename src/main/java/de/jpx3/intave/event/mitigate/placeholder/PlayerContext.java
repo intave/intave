@@ -1,38 +1,39 @@
 package de.jpx3.intave.event.mitigate.placeholder;
 
 import com.google.common.collect.ImmutableMap;
-import de.jpx3.intave.access.player.trust.TrustFactor;
-import de.jpx3.intave.user.User;
 import org.bukkit.entity.Player;
 
+import java.net.InetAddress;
 import java.util.Map;
+import java.util.UUID;
 
 public final class PlayerContext extends PlaceholderContext {
-  private final User user;
+  private final String playerName;
+  private final UUID uuid;
+  private final InetAddress address;
 
-  public PlayerContext(User user) {
-    this.user = user;
+  public PlayerContext(String playerName, UUID uuid, InetAddress address) {
+    this.playerName = playerName;
+    this.uuid = uuid;
+    this.address = address;
   }
 
   @Override
   public Map<String, String> replacements() {
-    if (!user.hasPlayer()) {
-      return ImmutableMap.of();
-    }
-    Player player = user.player();
-    ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+    return ImmutableMap.of(
+      "player", String.valueOf(playerName),
+      "playername", String.valueOf(playerName),
+      "uuid", String.valueOf(uuid),
+      "ip", address.getHostAddress(),
+      "address", address.getHostAddress()
+    );
+  }
 
-    TrustFactor trustFactor = user.trustFactor();
-    builder.put("trust", trustFactor.baseName());
-    builder.put("trust-color", trustFactor.coloredBaseName());
+  public static PlayerContext empty() {
+    return new PlayerContext("", new UUID(0,0), InetAddress.getLoopbackAddress());
+  }
 
-    builder.put("latency", String.valueOf(user.latency()));
-    builder.put("jitter", String.valueOf(user.latencyJitter()));
-//    builder.put("player", player.getName());
-//    builder.put("uuid", player.getUniqueId().toString());
-    builder.put("version", user.meta().protocol().versionString());
-    builder.put("world", player.getWorld().getName());
-
-    return builder.build();
+  public static PlayerContext of(Player player) {
+    return new PlayerContext(player.getName(), player.getUniqueId(), player.getAddress().getAddress());
   }
 }

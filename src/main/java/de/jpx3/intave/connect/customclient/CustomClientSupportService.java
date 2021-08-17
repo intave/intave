@@ -85,8 +85,8 @@ public final class CustomClientSupportService implements EventProcessor {
         }
         String messageContent = LabyModChannelHelper.readString(bytes, 32767);
         JsonElement jsonElement = jsonParser.parse(messageContent);
-        CustomClientSupport customClientSupport = CustomClientSupport.createFrom(jsonElement);
-        user.setCustomClientSupport(customClientSupport);
+        CustomClientSupportConfig customClientSupportConfig = CustomClientSupportConfig.createFrom(jsonElement);
+        user.setCustomClientSupport(customClientSupportConfig);
         sendCustomDataPacket(player, "clientconfig","received", "minecraft", "intave");
         sendCustomDataPacket(player, "clientconfig","received", "intave", "customclient");
       }

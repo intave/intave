@@ -3,10 +3,10 @@ package de.jpx3.intave.connect.customclient;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-public final class CustomClientSupport {
+public final class CustomClientSupportConfig {
   private final boolean legacySneakHeight;
 
-  private CustomClientSupport(boolean legacySneakHeight) {
+  private CustomClientSupportConfig(boolean legacySneakHeight) {
     this.legacySneakHeight = legacySneakHeight;
   }
 
@@ -14,14 +14,14 @@ public final class CustomClientSupport {
     return legacySneakHeight;
   }
 
-  public static CustomClientSupport createDefault() {
-    return new CustomClientSupport(false);
+  public static CustomClientSupportConfig createDefault() {
+    return new CustomClientSupportConfig(false);
   }
 
-  public static CustomClientSupport createFrom(JsonElement jsonElement) {
+  public static CustomClientSupportConfig createFrom(JsonElement jsonElement) {
     JsonObject object = jsonElement.getAsJsonObject();
     boolean read = readBoolean(object, "legacySneakHeight", false);
-    return new CustomClientSupport(read);
+    return new CustomClientSupportConfig(read);
   }
 
   private static boolean readBoolean(JsonObject object, String key, boolean def) {

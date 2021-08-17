@@ -136,13 +136,14 @@ public final class CheckService {
   public <T extends Check> T searchCheck(Class<T> checkClass) {
     Check check = classRequestCache.get(checkClass);
     if (check == null) {
-      for (Check intaveCheck : checks) {
-        if (intaveCheck.getClass() == checkClass) {
-          //noinspection unchecked
-          return (T) intaveCheck;
+      for (Check checkSearch : checks) {
+        if (checkSearch.getClass() == checkClass) {
+          check = checkSearch;
         }
       }
-      throw new IllegalStateException("Unable to find check " + checkClass);
+      if (check == null) {
+        throw new IllegalStateException("Unable to find check " + checkClass);
+      }
     }
     //noinspection unchecked
     return (T) check;

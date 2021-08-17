@@ -2,7 +2,7 @@ package de.jpx3.intave.event.mitigate;
 
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.event.mitigate.placeholder.Placeholders;
-import de.jpx3.intave.event.mitigate.placeholder.PlayerIdentificationContext;
+import de.jpx3.intave.event.mitigate.placeholder.PlayerContext;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.tools.AccessHelper;
@@ -48,8 +48,8 @@ public final class ReconDelayLimiter implements BukkitEventSubscriber {
 
     if (ipDelayLeft < delay || accDelayLeft < delay) {
       String message = rawMessage;
-      PlayerIdentificationContext playerIdentificationContext = new PlayerIdentificationContext(login.getName(), login.getUniqueId(), login.getAddress());
-      message = Placeholders.replacePlaceholders(message, Placeholders.PLUGIN_CONTEXT, playerIdentificationContext);
+      PlayerContext playerContext = new PlayerContext(login.getName(), login.getUniqueId(), login.getAddress());
+      message = Placeholders.replacePlaceholders(message, Placeholders.PLUGIN_CONTEXT, playerContext);
       message = ChatColor.translateAlternateColorCodes('&', message);
       login.setKickMessage(message);
       login.setLoginResult(AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST);

@@ -1,16 +1,16 @@
 package de.jpx3.intave.user;
 
 import de.jpx3.intave.access.player.trust.TrustFactor;
-import de.jpx3.intave.connect.customclient.CustomClientSupport;
+import de.jpx3.intave.connect.customclient.CustomClientSupportConfig;
 import de.jpx3.intave.connect.shadow.ShadowPacketDataLink;
 import de.jpx3.intave.detect.checks.movement.physics.Pose;
 import de.jpx3.intave.event.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.event.mitigate.placeholder.PlayerContext;
-import de.jpx3.intave.event.mitigate.placeholder.PlayerIdentificationContext;
+import de.jpx3.intave.event.mitigate.placeholder.UserContext;
 import de.jpx3.intave.reflect.hitbox.HitBoxBoundaries;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
-import de.jpx3.intave.user.permission.BukkitPermissionCache;
+import de.jpx3.intave.user.permission.PermissionCache;
 import de.jpx3.intave.world.blockshape.OCBlockShapeAccess;
 import de.jpx3.intave.world.collider.complex.ComplexColliderProcessor;
 import de.jpx3.intave.world.collider.simple.SimpleColliderProcessor;
@@ -40,11 +40,11 @@ public interface User {
 
   CheckCustomMetadata checkMetadata(Class<? extends CheckCustomMetadata> classTarget);
 
-  CustomClientSupport customClientSupport();
+  CustomClientSupportConfig customClientSupport();
 
-  BukkitPermissionCache permissionCache();
+  PermissionCache permissionCache();
 
-  void setCustomClientSupport(CustomClientSupport customClientSupport);
+  void setCustomClientSupport(CustomClientSupportConfig customClientSupportConfig);
 
   boolean shouldIgnoreNextInboundPacket();
 
@@ -74,7 +74,9 @@ public interface User {
 
   SimpleColliderProcessor simpleColliderProcessor();
 
-  PlayerIdentificationContext identificationContext();
+  PlayerContext playerContext();
+
+  UserContext userContext();
 
   TrustFactor trustFactor();
 
@@ -99,8 +101,6 @@ public interface User {
   int latency();
 
   int latencyJitter();
-
-  PlayerContext playerAttributeContext();
 
   Map<Pose, HitBoxBoundaries> poseSizes();
 

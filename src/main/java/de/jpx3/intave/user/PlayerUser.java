@@ -9,14 +9,14 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.annotate.Relocate;
-import de.jpx3.intave.connect.customclient.CustomClientSupport;
+import de.jpx3.intave.connect.customclient.CustomClientSupportConfig;
 import de.jpx3.intave.connect.shadow.ShadowPacketDataLink;
 import de.jpx3.intave.detect.checks.movement.physics.Pose;
 import de.jpx3.intave.event.feedback.FeedbackService;
 import de.jpx3.intave.event.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.event.mitigate.EntityNoDamageTickChanger;
 import de.jpx3.intave.event.mitigate.placeholder.PlayerContext;
-import de.jpx3.intave.event.mitigate.placeholder.PlayerIdentificationContext;
+import de.jpx3.intave.event.mitigate.placeholder.UserContext;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.fakeplayer.FakePlayer;
 import de.jpx3.intave.reflect.access.ReflectiveHandleAccess;
@@ -26,8 +26,9 @@ import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
-import de.jpx3.intave.user.permission.BukkitPermissionCache;
 import de.jpx3.intave.user.permission.BukkitPermissionCheck;
+import de.jpx3.intave.user.permission.ExpiringPermissionCache;
+import de.jpx3.intave.user.permission.PermissionCache;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
 import de.jpx3.intave.world.blockshape.MultiChunkKeyOCBlockShapeAccess;
 import de.jpx3.intave.world.blockshape.OCBlockShapeAccess;
@@ -43,6 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 import static de.jpx3.intave.event.feedback.FeedbackService.TransactionOptions.SELF_SYNCHRONIZATION;
@@ -57,7 +59,7 @@ public final class PlayerUser implements User {
   private final WeakReference<Object> playerHandle;
   private final WeakReference<Object> playerConnection;
   private final MetadataBundle metadata;
-  private final BukkitPermissionCache permissionCache;
+  private final PermissionCache permissionCache;
   private final ComplexColliderProcessor complexColliderProcessor;
   private final SimpleColliderProcessor simpleColliderProcessor;
   private final List<MessageChannel> receivingUserChannels = new ArrayList<>();
@@ -68,12 +70,12 @@ public final class PlayerUser implements User {
   private boolean ignoreNextInboundPacket;
   private boolean ignoreNextOutboundPacket;
   private boolean hasShadow;
-  private CustomClientSupport customClientSupport = CustomClientSupport.createDefault();
+  private CustomClientSupportConfig customClientSupportConfig = CustomClientSupportConfig.createDefault();
   private ShadowPacketDataLink shadowRepo = null;
   private final long birthTimestamp = AccessHelper.now();
 
-  private final PlayerContext playerPlaceholderContext = new PlayerContext(this);
-  private final PlayerIdentificationContext identificationContext;
+  private final UserContext playerPlaceholderContext = new UserContext(this);
+  private final PlayerContext playerContext;
   private TrustFactor trustFactor = TrustFactor.DARK_RED;
 
   PlayerUser(Player player) {
@@ -81,12 +83,12 @@ public final class PlayerUser implements User {
     this.playerHandle = new WeakReference<>(ReflectiveHandleAccess.handleOf(player));
     this.playerConnection = new WeakReference<>(ReflectiveHandleAccess.playerConnectionOf(player));
     this.metadata = new MetadataBundle(player, this);
-    this.permissionCache = new BukkitPermissionCache();
+    this.permissionCache = new ExpiringPermissionCache(16, TimeUnit.SECONDS);
     setBlockShapeAccess(MultiChunkKeyOCBlockShapeAccess.ofDefaultResolver(player()));
     this.complexColliderProcessor = Collider.suitableComplexColliderProcessorFor(this);
     this.simpleColliderProcessor = Collider.suitableSimpleColliderProcessorFor(this);
     Synchronizer.synchronize(this::setDefaultMessagingChannel);
-    this.identificationContext = new PlayerIdentificationContext(player.getName(), player.getUniqueId(), player.getAddress().getAddress());
+    this.playerContext = PlayerContext.of(player);
     int version = metadata.protocol().protocolVersion();
     if (version >= VER_1_13) {
       this.poseSizes = Pose.AT_LEAST_1_13_POSE;
@@ -175,18 +177,18 @@ public final class PlayerUser implements User {
   }
 
   @Override
-  public BukkitPermissionCache permissionCache() {
+  public PermissionCache permissionCache() {
     return permissionCache;
   }
 
   @Override
-  public CustomClientSupport customClientSupport() {
-    return customClientSupport;
+  public CustomClientSupportConfig customClientSupport() {
+    return customClientSupportConfig;
   }
 
   @Override
-  public void setCustomClientSupport(CustomClientSupport customClientSupport) {
-    this.customClientSupport = customClientSupport;
+  public void setCustomClientSupport(CustomClientSupportConfig customClientSupportConfig) {
+    this.customClientSupportConfig = customClientSupportConfig;
   }
 
   @Override
@@ -263,8 +265,8 @@ public final class PlayerUser implements User {
   }
 
   @Override
-  public PlayerIdentificationContext identificationContext() {
-    return identificationContext;
+  public PlayerContext playerContext() {
+    return playerContext;
   }
 
   @Override
@@ -343,7 +345,7 @@ public final class PlayerUser implements User {
   }
 
   @Override
-  public PlayerContext playerAttributeContext() {
+  public UserContext userContext() {
     return playerPlaceholderContext;
   }
 

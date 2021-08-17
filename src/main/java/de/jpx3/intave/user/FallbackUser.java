@@ -3,17 +3,18 @@ package de.jpx3.intave.user;
 import de.jpx3.intave.access.UnsupportedFallbackOperationException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.annotate.Relocate;
-import de.jpx3.intave.connect.customclient.CustomClientSupport;
+import de.jpx3.intave.connect.customclient.CustomClientSupportConfig;
 import de.jpx3.intave.connect.shadow.ShadowPacketDataLink;
 import de.jpx3.intave.detect.checks.movement.physics.Pose;
 import de.jpx3.intave.event.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.event.mitigate.placeholder.PlayerContext;
-import de.jpx3.intave.event.mitigate.placeholder.PlayerIdentificationContext;
+import de.jpx3.intave.event.mitigate.placeholder.UserContext;
 import de.jpx3.intave.fakeplayer.FakePlayer;
 import de.jpx3.intave.reflect.hitbox.HitBoxBoundaries;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
-import de.jpx3.intave.user.permission.BukkitPermissionCache;
+import de.jpx3.intave.user.permission.ExpiringPermissionCache;
+import de.jpx3.intave.user.permission.PermissionCache;
 import de.jpx3.intave.world.blockshape.BlankUserOCBlockShapeAccess;
 import de.jpx3.intave.world.blockshape.OCBlockShapeAccess;
 import de.jpx3.intave.world.collider.Collider;
@@ -22,11 +23,10 @@ import de.jpx3.intave.world.collider.simple.SimpleColliderProcessor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
-import java.net.InetAddress;
 import java.util.Collections;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 @Relocate
@@ -34,22 +34,22 @@ public final class FallbackUser implements User {
   private final Map<Class<? extends CheckCustomMetadata>, CheckCustomMetadata> customMetaPool = new ConcurrentHashMap<>();
 
   private final MetadataBundle metadata;
-  private final BukkitPermissionCache permissionCache;
+  private final PermissionCache permissionCache;
   private final ComplexColliderProcessor complexColliderProcessor;
   private final SimpleColliderProcessor simpleColliderProcessor;
   private final Map<Pose, HitBoxBoundaries> poseSizes;
   private OCBlockShapeAccess blockShapeAccess;
-  private CustomClientSupport customClientSupport = CustomClientSupport.createDefault();
-  private final PlayerContext playerPlaceholderContext = new PlayerContext(this);
-  private final PlayerIdentificationContext identificationContext;
+  private CustomClientSupportConfig customClientSupportConfig = CustomClientSupportConfig.createDefault();
+
+  private final UserContext userContext = new UserContext(this);
+  private final PlayerContext playerContext = PlayerContext.empty();
 
   FallbackUser() {
     this.metadata = new MetadataBundle(null, this);
-    this.permissionCache = new BukkitPermissionCache();
+    this.permissionCache = new ExpiringPermissionCache(16, TimeUnit.SECONDS);
     setBlockShapeAccess(new BlankUserOCBlockShapeAccess());
     this.complexColliderProcessor = Collider.suitableComplexColliderProcessorFor(this);
     this.simpleColliderProcessor = Collider.suitableSimpleColliderProcessorFor(this);
-    this.identificationContext = new PlayerIdentificationContext("", new UUID(0,0), InetAddress.getLoopbackAddress());
     this.poseSizes = Pose.AT_LEAST_1_8_POSE;
     this.metadata.setup();
   }
@@ -98,18 +98,18 @@ public final class FallbackUser implements User {
   }
 
   @Override
-  public BukkitPermissionCache permissionCache() {
+  public PermissionCache permissionCache() {
     return permissionCache;
   }
 
   @Override
-  public CustomClientSupport customClientSupport() {
-    return customClientSupport;
+  public CustomClientSupportConfig customClientSupport() {
+    return customClientSupportConfig;
   }
 
   @Override
-  public void setCustomClientSupport(CustomClientSupport customClientSupport) {
-    this.customClientSupport = customClientSupport;
+  public void setCustomClientSupport(CustomClientSupportConfig customClientSupportConfig) {
+    this.customClientSupportConfig = customClientSupportConfig;
   }
 
   @Override
@@ -180,8 +180,13 @@ public final class FallbackUser implements User {
   }
 
   @Override
-  public PlayerIdentificationContext identificationContext() {
-    return identificationContext;
+  public PlayerContext playerContext() {
+    return playerContext;
+  }
+
+  @Override
+  public UserContext userContext() {
+    return userContext;
   }
 
   @Override
@@ -237,11 +242,6 @@ public final class FallbackUser implements User {
   @Override
   public int latencyJitter() {
     return 0;
-  }
-
-  @Override
-  public PlayerContext playerAttributeContext() {
-    return playerPlaceholderContext;
   }
 
   @Override

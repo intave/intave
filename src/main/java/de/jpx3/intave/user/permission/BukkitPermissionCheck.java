@@ -32,12 +32,12 @@ public final class BukkitPermissionCheck {
     if (!user.hasPlayer()) {
       return false;
     }
-    BukkitPermissionCache permissionCache = user.permissionCache();
-    if (permissionCache.inCache(permission)) {
-      return permissionCache.permissionCheck(permission);
+    PermissionCache permissionCache = user.permissionCache();
+    if (permissionCache.cached(permission)) {
+      return permissionCache.check(permission);
     } else {
       boolean access = nativePermissionCheck(player, permission);
-      permissionCache.permissionSave(permission, access);
+      permissionCache.save(permission, access);
       return access;
     }
   }
