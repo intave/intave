@@ -6,10 +6,7 @@ import de.jpx3.intave.reflect.patchy.annotate.PatchyAutoTranslation;
 import de.jpx3.intave.reflect.patchy.annotate.PatchyTranslateParameters;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
-import net.minecraft.server.v1_14_R1.ChunkProviderServer;
-import net.minecraft.server.v1_14_R1.IBlockAccess;
-import net.minecraft.server.v1_14_R1.IBlockData;
-import net.minecraft.server.v1_14_R1.WorldServer;
+import net.minecraft.server.v1_14_R1.*;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -22,6 +19,8 @@ import org.bukkit.inventory.ItemStack;
 
 @PatchyAutoTranslation
 public final class v14BlockAccessor implements BlockAccessor {
+  private final static boolean INVENTORY_VIA_GETTER = MinecraftVersions.VER1_17_0.atOrAbove();
+
   static {
     checkVersion();
   }
@@ -56,6 +55,16 @@ public final class v14BlockAccessor implements BlockAccessor {
   }
 
   @Override
+  public Object blockHandle(Block block) {
+    WorldServer worldServer = ((CraftWorld) block.getWorld()).getHandle();
+    IBlockAccess blockAccess = worldServer.getChunkProvider().c(block.getX() >> 4, block.getZ() >> 4);
+    if (blockAccess == null) {
+      return Blocks.AIR;
+    }
+    return blockAccess.getType(positionOfBlock(block)).getBlock();
+  }
+
+  @Override
   @PatchyAutoTranslation
   public float blockDamage(Player player, ItemStack itemInHand, BlockPosition nativeBlockPosition) {
     WorldServer worldServer = ((CraftWorld) player.getWorld()).getHandle();
@@ -67,8 +76,6 @@ public final class v14BlockAccessor implements BlockAccessor {
     IBlockData blockData = blockAccess.getType(blockPosition);
     return blockData.getBlock().getDamage(blockData, ((CraftPlayer) player).getHandle(), worldServer, blockPosition);
   }
-
-  private final static boolean INVENTORY_VIA_GETTER = MinecraftVersions.VER1_17_0.atOrAbove();
 
   @Override
   @PatchyAutoTranslation
@@ -83,7 +90,7 @@ public final class v14BlockAccessor implements BlockAccessor {
     net.minecraft.server.v1_14_R1.BlockPosition blockPosition = positionOfNative(nativeBlockPosition);
     IBlockData blockData = blockAccess.getType(blockPosition);
     Object heldItem;
-    if(INVENTORY_VIA_GETTER) {
+    if (INVENTORY_VIA_GETTER) {
       heldItem = ((org.bukkit.craftbukkit.v1_17_R1.entity.CraftPlayer) player).getHandle().getInventory().getItem(heldItemType).getItem();
     } else {
       heldItem = ((CraftPlayer) player).getHandle().inventory.getItem(heldItemType).getItem();

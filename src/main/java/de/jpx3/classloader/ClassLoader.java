@@ -1,9 +1,12 @@
 package de.jpx3.classloader;
 
+import de.jpx3.intave.annotate.NameIntrinsicallyImportant;
+
 import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
+@NameIntrinsicallyImportant
 public final class ClassLoader {
   public final static boolean USE_NATIVE_ACCESS = currentJavaVersion() >= 15;
 

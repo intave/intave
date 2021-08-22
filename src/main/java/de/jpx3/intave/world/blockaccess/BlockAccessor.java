@@ -17,6 +17,8 @@ public interface BlockAccessor {
 
   int variantOf(Block block);
 
+  Object blockHandle(Block block);
+
   float blockDamage(Player player, ItemStack itemInHand, BlockPosition blockPosition);
 
   boolean replacementPlace(World world, Player player, BlockPosition blockPosition);

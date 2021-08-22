@@ -7,6 +7,7 @@ import de.jpx3.intave.adapter.ComponentLoader;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.adapter.ViaVersionAdapter;
 import de.jpx3.intave.agent.AgentAccessor;
+import de.jpx3.intave.annotate.NameIntrinsicallyImportant;
 import de.jpx3.intave.annotate.Native;
 import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.cleanup.Shutdown;
@@ -80,6 +81,7 @@ import static de.jpx3.intave.IntaveControl.GOMME_MODE;
 import static de.jpx3.intave.security.InterceptorFilterPrintStream.foundInterceptor;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VERSION_DETAILS;
 
+@NameIntrinsicallyImportant
 public final class IntavePlugin extends JavaPlugin {
   private static IntavePlugin singletonInstance;
   private static String version = "UNKNOWN";
@@ -477,6 +479,7 @@ public final class IntavePlugin extends JavaPlugin {
       SSLConnectionVerifier.setup();
       BlockVariantRegister.prepareIndex();
 
+      BoundingBoxResolver.setup();
       WrappedEntity.setup();
       ReflectiveAccess.setup();
       UserRepository.setup();
@@ -491,7 +494,6 @@ public final class IntavePlugin extends JavaPlugin {
       BlockTypeAccess.setup();
       CollisionModifiers.setup();
       ViaVersionAdapter.setup();
-      BoundingBoxResolver.setup();
       WorldPermission.setup();
       BlockPhysics.setup();
       BlockProperties.setup();

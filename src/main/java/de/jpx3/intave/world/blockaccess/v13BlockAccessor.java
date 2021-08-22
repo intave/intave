@@ -12,6 +12,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_13_R2.block.CraftBlock;
 import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -29,6 +30,11 @@ public final class v13BlockAccessor implements BlockAccessor {
   }
 
   @Override
+  public Object blockHandle(Block block) {
+    return ((CraftBlock) block).getNMS();
+  }
+
+    @Override
   @PatchyAutoTranslation
   public float blockDamage(Player player, ItemStack itemInHand, BlockPosition blockPosition) {
     WorldServer worldServer = ((CraftWorld) player.getWorld()).getHandle();

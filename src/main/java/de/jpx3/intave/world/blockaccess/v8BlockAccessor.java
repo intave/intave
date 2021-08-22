@@ -9,6 +9,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_8_R3.util.CraftMagicNumbers;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -22,6 +23,11 @@ public final class v8BlockAccessor implements BlockAccessor {
   @Override
   public int variantOf(Block block) {
     return block.getData();
+  }
+
+  @Override
+  public Object blockHandle(Block block) {
+    return CraftMagicNumbers.getBlock(block);
   }
 
   @Override

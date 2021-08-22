@@ -10,6 +10,7 @@ import java.lang.annotation.Target;
  * Created by Richard Strunk 2020
  */
 
+@NameIntrinsicallyImportant
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Native {

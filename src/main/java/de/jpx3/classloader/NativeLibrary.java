@@ -1,5 +1,7 @@
 package de.jpx3.classloader;
 
+import de.jpx3.intave.annotate.NameIntrinsicallyImportant;
+
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
@@ -11,6 +13,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Locale;
 
+@NameIntrinsicallyImportant
 public final class NativeLibrary {
   private final String name;
   private final int version;

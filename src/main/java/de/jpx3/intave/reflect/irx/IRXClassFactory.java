@@ -3,6 +3,7 @@ package de.jpx3.intave.reflect.irx;
 import com.google.common.collect.Lists;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 public final class IRXClassFactory {
@@ -31,9 +32,9 @@ public final class IRXClassFactory {
   private static synchronized String findClassName() {
     String randomClassName;
     do {
-      randomClassName = UUID.randomUUID().toString().replaceAll("-", "").toUpperCase().substring(0, 8);
+      randomClassName = UUID.randomUUID().toString().replaceAll("-", "").toLowerCase(Locale.ROOT).substring(0, 8);
     } while (assembledClassNames.contains(randomClassName));
     assembledClassNames.add(randomClassName);
-    return "de/jpx3/intave/gen/irx/X" + randomClassName;
+    return "de/jpx3/intave/irx0x000000000054" + randomClassName;
   }
 }

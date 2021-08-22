@@ -5,5 +5,6 @@ package de.jpx3.intave.annotate;
  * Created by Richard Strunk 2020
  */
 
+@NameIntrinsicallyImportant
 public @interface Nullable {
 }

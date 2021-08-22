@@ -65,22 +65,6 @@ public final class BlockVariantAccess {
   }
 
   public static Object nativeBlockDataOf(Block bukkitBlock) {
-    try {
-      if (NEW_BLOCK_ACCESS) {
-        return nativeBlockDataAccess.invoke(bukkitBlock);
-      } else {
-        return blockDataFromNativeBlock(bukkitBlock, nativeBlockDataAccess.invoke(bukkitBlock));
-      }
-    } catch (Throwable throwable) {
-      throw new IntaveInternalException("Failed to access block data of " + bukkitBlock, throwable);
-    }
-  }
-
-  public static Object blockDataFromNativeBlock(Block block, Object nativeBlock) {
-    try {
-      return nativeBlockDataExtractionAccess.invoke(nativeBlock, variantAccess(block));
-    } catch (Throwable throwable) {
-      throw new IntaveInternalException("Failed to access block data of " + nativeBlock, throwable);
-    }
+    return BlockAccessProvider.accessor().blockHandle(bukkitBlock);
   }
 }

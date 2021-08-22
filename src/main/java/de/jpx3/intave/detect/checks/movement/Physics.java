@@ -329,7 +329,7 @@ public final class Physics extends Check {
     }
     if (distance > 1e-3) {
       movementData.suspiciousMovement = true;
-      ComplexColliderSimulationResult simulation = simulationProcessor.simulateMovementWithoutKeyPress(user, selectSimulator(user));
+      ComplexColliderSimulationResult simulation = simulationProcessor.simulateWithoutKeyPress(user, selectSimulator(user));
       MotionVector setbackMotion = simulation.motion();
       predictedX = setbackMotion.motionX;
       predictedY = setbackMotion.motionY;

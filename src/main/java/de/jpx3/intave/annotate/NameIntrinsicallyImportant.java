@@ -9,9 +9,7 @@ import java.lang.annotation.Target;
  * Class generated using IntelliJ IDEA
  * Created by Richard Strunk 2021
  */
-
-@NameIntrinsicallyImportant
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Relocate {
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
+@Retention(RetentionPolicy.SOURCE)
+public @interface NameIntrinsicallyImportant {
 }

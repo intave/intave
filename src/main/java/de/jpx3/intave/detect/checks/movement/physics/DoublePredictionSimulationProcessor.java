@@ -29,7 +29,7 @@ public final class DoublePredictionSimulationProcessor implements SimulationProc
   @Override
   public ComplexColliderSimulationResult simulate(User user, Simulator simulator) {
     boolean keyDependent = simulator.affectedByMovementKeys();
-    return keyDependent ? performKeySimulation(user, simulator) : simulateMovementWithoutKeyPress(user, simulator);
+    return keyDependent ? performKeySimulation(user, simulator) : simulateWithoutKeyPress(user, simulator);
   }
 
   private ComplexColliderSimulationResult performKeySimulation(User user, Simulator simulator) {
@@ -46,7 +46,7 @@ public final class DoublePredictionSimulationProcessor implements SimulationProc
     movementData.keyStrafe = clientStrafeKey;
     movementData.physicsJumped = jump;
     KeyPressStudy.enterKeyPress(movementData.keyForward, movementData.keyStrafe);
-    return simulateMovementWithKeyPress(user, simulator, clientInputKey, clientStrafeKey, jump);
+    return simulateWithKeyPress(user, simulator, clientInputKey, clientStrafeKey, jump);
   }
 
   private ComplexColliderSimulationResult performKeyComparisonSimulation(User user, Simulator simulator) {
@@ -125,7 +125,7 @@ public final class DoublePredictionSimulationProcessor implements SimulationProc
   }
 
   @Override
-  public ComplexColliderSimulationResult simulateMovementWithKeyPress(
+  public ComplexColliderSimulationResult simulateWithKeyPress(
     User user, Simulator simulator, int forward, int strafe, boolean jumped
   ) {
     MetadataBundle meta = user.meta();
