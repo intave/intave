@@ -423,4 +423,12 @@ final class PlayerUser implements User {
   private IntavePlugin plugin() {
     return IntavePlugin.singletonInstance();
   }
+
+  @Override
+  public String toString() {
+    return "PlayerUser{" +
+      "player=" + player +
+      ", birthTimestamp=" + birthTimestamp +
+      '}';
+  }
 }

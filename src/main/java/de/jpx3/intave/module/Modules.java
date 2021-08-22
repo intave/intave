@@ -12,14 +12,13 @@ public final class Modules {
   @Native
   public static void prepareModules() {
     loader.setup();
+    Shutdown.addTask(Modules::shutdown);
   }
 
   @Native
   public static void proceedBoot(BootSegment bootSegment) {
     loader.loadRequests().forEach(pool::loadModule);
     pool.bootRequests(bootSegment).forEach(pool::enableModule);
-
-    Shutdown.addTask(Modules::shutdown);
   }
 
   public static void shutdown() {

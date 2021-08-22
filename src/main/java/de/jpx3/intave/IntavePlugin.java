@@ -54,7 +54,6 @@ import de.jpx3.intave.world.blockphysic.BlockPhysics;
 import de.jpx3.intave.world.blockphysic.BlockProperties;
 import de.jpx3.intave.world.blockshape.boxresolver.BoundingBoxResolver;
 import de.jpx3.intave.world.blockshape.boxresolver.patcher.BoundingBoxPatcher;
-import de.jpx3.intave.world.collider.Collider;
 import de.jpx3.intave.world.collision.CollisionModifiers;
 import de.jpx3.intave.world.fluid.Fluids;
 import de.jpx3.intave.world.items.ItemProperties;
@@ -485,7 +484,6 @@ public final class IntavePlugin extends JavaPlugin {
       UserRepository.setup();
       WrapperLinkage.setup();
       Raytracing.setup();
-      Collider.setup();
       Fluids.setup();
       BukkitBlockAccess.setup();
       BlockAccessProvider.setup();

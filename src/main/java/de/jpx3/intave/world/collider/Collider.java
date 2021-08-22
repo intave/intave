@@ -15,14 +15,14 @@ import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
 import org.bukkit.entity.Player;
 
 public final class Collider {
-  private static ComplexColliderProcessor legacyComplexCollisionResolver;
-  private static ComplexColliderProcessor modernComplexCollisionResolver;
-  private static SimpleColliderProcessor universalSimpleColliderProcessor;
+  private static final ComplexColliderProcessor legacyComplexCollisionResolver;
+  private static final ComplexColliderProcessor modernComplexCollisionResolver;
+  private static final SimpleColliderProcessor universalSimpleColliderProcessor;
 
   private Collider() {
   }
 
-  public static void setup() {
+  static {
     legacyComplexCollisionResolver = new LegacyComplexColliderProcessor();
     modernComplexCollisionResolver = new ModernComplexColliderProcessor();
     universalSimpleColliderProcessor = new UniversalSimpleColliderProcessor();
@@ -51,6 +51,7 @@ public final class Collider {
   ) {
     User user = UserRepository.userOf(player);
     WrappedAxisAlignedBB boundingBox = WrappedAxisAlignedBB.createFromPosition(positionX, positionY, positionZ);
-    return user.simpleColliderProcessor().collide(user, boundingBox, motionX, motionY, motionZ);
+    SimpleColliderProcessor simpleColliderProcessor = user.simpleColliderProcessor();
+    return simpleColliderProcessor.collide(user, boundingBox, motionX, motionY, motionZ);
   }
 }
