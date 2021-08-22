@@ -202,9 +202,7 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
       String description = "rotation snap ["
         + MathHelper.formatDouble(meta.yawMotions[1], 2)
         + "/" + MathHelper.formatDouble(meta.yawMotions[0], 2)
-        + "/" + MathHelper.formatDouble(yawMotion, 2) + "]"
-        + " s:" + Math.min(meta.lastSwing, 9)
-        + "/" + Math.min(meta.lastAttack, 9);
+        + "/" + MathHelper.formatDouble(yawMotion, 2) + "]";
 
       if (meta.silentMovements[1] == KeyStates.SILENTMOVE) {
         description += " silent";
@@ -290,9 +288,10 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
         description += " " + user.meta().protocol().protocolVersion();
       }
 
+      description += " conf:" + confidence.level();
       Anomaly anomaly = Anomaly.anomalyOf(key, confidence, Anomaly.Type.KILLAURA, description, anomalyOptions(isPartner()));
       parentCheck().saveAnomaly(player, anomaly);
-    } else {
+    } else if(confidence.level() > 0) {
       description += " nonflag";
       Anomaly anomaly = Anomaly.anomalyOf(key, Confidence.NONE, Anomaly.Type.KILLAURA, description, anomalyOptions(isPartner()));
       parentCheck().saveAnomaly(player, anomaly);
