@@ -173,7 +173,7 @@ public final class ConfigurationLoader {
       boolean useExternalConfigurationFile = (configurationKey.equalsIgnoreCase("file")/* && enterprise*/) || IntaveControl.USE_EXTERNAL_CONFIGURATION_FILE;
       if (useExternalConfigurationFile) {
         IntavePlugin plugin = IntavePlugin.singletonInstance();
-        File settingFile = new File(plugin.getDataFolder(), "settings.yml");
+        File settingFile = new File(plugin.dataFolder(), "settings.yml");
         if (!settingFile.exists()) {
           if (plugin.getResource("settings.yml") != null) {
             plugin.saveResource("settings.yml", false);

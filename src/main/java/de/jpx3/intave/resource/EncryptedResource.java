@@ -50,7 +50,7 @@ public final class EncryptedResource implements Resource {
     }
     fileStore().setLastModified(AccessHelper.now());
     PluginInvocation pluginInvocation = CallerResolver.callerPluginInfo();
-    if (pluginInvocation == null || !pluginInvocation.pluginName().equals("Intave")) {
+    if (pluginInvocation != null && !pluginInvocation.pluginName().equals("Intave")) {
       throw new IllegalStateException("Unable to access resource file \"" + resourceId() + "\", is it corrupted?");
     }
     try {

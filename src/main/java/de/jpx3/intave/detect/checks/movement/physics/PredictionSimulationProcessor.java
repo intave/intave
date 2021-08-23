@@ -23,19 +23,17 @@ import static de.jpx3.intave.reflect.access.ReflectiveDataWatcherAccess.WATCHER_
 
 @Relocate
 public final class PredictionSimulationProcessor implements SimulationProcessor {
-  private final static double REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT = 0.001;
-  private final static double REQUIRED_PREDICTION_ACCURACY_FOR_PRED_BIAS_PROCEED = 0.1;
-
   @Override
   public ComplexColliderSimulationResult simulate(User user, Simulator simulator) {
     boolean keyDependent = simulator.affectedByMovementKeys();
     return keyDependent ? performKeySimulation(user, simulator) : simulateWithoutKeyPress(user, simulator);
   }
-
   private ComplexColliderSimulationResult performKeySimulation(User user, Simulator simulator) {
     MovementMetadata movementData = user.meta().movement();
     return movementData.applyClientKeys ? performKeySimulationFromInput(user, simulator) : performKeyComparisonSimulation(user, simulator);
   }
+
+  private final static double REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT = 0.001;
 
   private ComplexColliderSimulationResult performKeySimulationFromInput(User user, Simulator simulator) {
     MovementMetadata movementData = user.meta().movement();
@@ -139,6 +137,8 @@ public final class PredictionSimulationProcessor implements SimulationProcessor 
     );
   }
 
+  private final static double REQUIRED_PREDICTION_ACCURACY_FOR_PRED_BIAS_PROCEED = 0.1;
+
   private ComplexColliderSimulationResult simulateMovementKeyPredictionBiased(User user, Simulator simulator) {
     Timings.CHECK_PHYSICS_PROC_BIA.start();
     Timings.CHECK_PHYSICS_PROC_PRED_BIA.start();
@@ -178,7 +178,7 @@ public final class PredictionSimulationProcessor implements SimulationProcessor 
     int keyForward = forwardKeyFrom(directionPrediction);
     int keyStrafe = strafeKeyFrom(directionPrediction);
     boolean handActive = inventoryData.handActive();
-    boolean attackReduce = !AttackDispatcher.REDUCING_DISABLED && movementData.sprintingAllowed() && user.meta().movement().pastPlayerAttackPhysics == 0;
+    boolean attackReduce = !AttackDispatcher.REDUCING_DISABLED && movementData.sprintingAllowed() && movementData.pastPlayerAttackPhysics == 0;
     if (movementData.sprinting && keyForward != 1) {
       keyForward = 0;
       keyStrafe = 0;
@@ -193,11 +193,52 @@ public final class PredictionSimulationProcessor implements SimulationProcessor 
     motionVector.resetTo(movementData);
     movementData.keyForward = keyForward;
     movementData.keyStrafe = keyStrafe;
-    ComplexColliderSimulationResult simulationResult = simulator.performSimulation(user, motionVector, moveForward, moveStrafe, attackReduce, jumped, handActive);
-
+    ComplexColliderSimulationResult simulationResult =
+      simulator.performSimulation(user, motionVector, moveForward, moveStrafe, attackReduce, jumped, handActive);
     Timings.CHECK_PHYSICS_PROC_PRED_BIA.stop();
     Timings.CHECK_PHYSICS_PROC_BIA.stop();
     return simulationResult;
+  }
+
+  private int directionFrom(double differenceX, double differenceZ, float yaw) {
+    if (Math.hypot(differenceX, differenceZ) > 0.001) {
+      double direction;
+      direction = Math.toDegrees(Math.atan2(differenceZ, differenceX)) - 90d;
+      direction -= yaw;
+      direction %= 360d;
+      if (direction < 0)
+        direction += 360;
+      direction = Math.abs(direction);
+      direction /= 45d;
+      return (int) Math.round(direction);
+    }
+    return -1;
+  }
+
+  private double directionPredictionError(double differenceX, double differenceZ, float yaw) {
+    if (Math.hypot(differenceX, differenceZ) > 0.001) {
+      double direction;
+      direction = Math.toDegrees(Math.atan2(differenceZ, differenceX)) - 90d;
+      direction -= yaw;
+      direction %= 360d;
+      if (direction < 0)
+        direction += 360;
+      direction = Math.abs(direction);
+      direction /= 45d;
+      return Math.abs(direction - (int) Math.round(direction));
+    }
+    return 0;
+  }
+
+  private final static int[] forwardKeys = {1, 1, 0, -1, -1, -1, 0, 1, 1};
+
+  private final static int[] strafeKeys = {0, -1, -1, -1, 0, 1, 1, 1, 0};
+  private static int forwardKeyFrom(int direction) {
+    return direction == -1 ? 0 : forwardKeys[direction];
+  }
+
+  private static int strafeKeyFrom(int direction) {
+    return direction == -1 ? 0 : strafeKeys[direction];
   }
 
   private ComplexColliderSimulationResult simulateMovementLastKeyBiased(User user, Simulator simulator) {
@@ -249,49 +290,8 @@ public final class PredictionSimulationProcessor implements SimulationProcessor 
     return simulationResult;
   }
 
-  private int directionFrom(double differenceX, double differenceZ, float yaw) {
-    if (Math.hypot(differenceX, differenceZ) > 0.001) {
-      double direction;
-      direction = Math.toDegrees(Math.atan2(differenceZ, differenceX)) - 90d;
-      direction -= yaw;
-      direction %= 360d;
-      if (direction < 0)
-        direction += 360;
-      direction = Math.abs(direction);
-      direction /= 45d;
-      return (int) Math.round(direction);
-    }
-    return -1;
-  }
-
-  private double directionPredictionError(double differenceX, double differenceZ, float yaw) {
-    if (Math.hypot(differenceX, differenceZ) > 0.001) {
-      double direction;
-      direction = Math.toDegrees(Math.atan2(differenceZ, differenceX)) - 90d;
-      direction -= yaw;
-      direction %= 360d;
-      if (direction < 0)
-        direction += 360;
-      direction = Math.abs(direction);
-      direction /= 45d;
-      return Math.abs(direction - (int) Math.round(direction));
-    }
-    return 0;
-  }
-
-  private final int[] forwardKeys = {1, 1, 0, -1, -1, -1, 0, 1, 1};
-  private final int[] strafeKeys = {0, -1, -1, -1, 0, 1, 1, 1, 0};
-
-  private int forwardKeyFrom(int direction) {
-    return direction == -1 ? 0 : forwardKeys[direction];
-  }
-
-  private int strafeKeyFrom(int direction) {
-    return direction == -1 ? 0 : strafeKeys[direction];
-  }
-
-  private final static boolean[] BOOLEAN_STATES_TF = new boolean[]{true, false};
-  private final static boolean[] BOOLEAN_STATES_FT = new boolean[]{false, true};
+  private final static boolean[] OPTIMISTIC_BOOLEAN_ORDER = new boolean[]{true, false};
+  private final static boolean[] PESSIMISTIC_BOOLEAN_ORDER = new boolean[]{false, true};
 
   private final static int[][] KEYS_USAGE_ORDERED = {{1, 0}, {1, -1}, {1, 1}, {0, 0}, {0, -1}, {0, 1}, {-1, -1}, {-1, 0}, {-1, 1}};
 
@@ -309,15 +309,15 @@ public final class PredictionSimulationProcessor implements SimulationProcessor 
     boolean skipUseItem = !clientData.sprintWhenHandActive() && movementData.sprinting;
 
     SIMULATION:
-    for (boolean useItemState : inventoryData.handActive() ? BOOLEAN_STATES_TF : BOOLEAN_STATES_FT) {
+    for (boolean useItemState : inventoryData.handActive() ? OPTIMISTIC_BOOLEAN_ORDER : PESSIMISTIC_BOOLEAN_ORDER) {
       if (skipUseItem && useItemState) {
         continue;
       }
-      for (boolean attackReduce : BOOLEAN_STATES_FT) {
+      for (boolean attackReduce : PESSIMISTIC_BOOLEAN_ORDER) {
         if (attackReduce && (movementData.pastPlayerAttackPhysics >= 1 || AttackDispatcher.REDUCING_DISABLED)) {
           continue;
         }
-        for (boolean jumped : estimatedJump ? BOOLEAN_STATES_TF : BOOLEAN_STATES_FT) {
+        for (boolean jumped : estimatedJump ? OPTIMISTIC_BOOLEAN_ORDER : PESSIMISTIC_BOOLEAN_ORDER) {
           // Jumps are only allowed on the ground :(
           if (jumped && !lastOnGround && !inLava && !inWater) {
             continue;
@@ -333,11 +333,11 @@ public final class PredictionSimulationProcessor implements SimulationProcessor 
               continue;
             }
             simulateIterativeState(
+              simulator,
               user,
               movementData,
               inventoryData,
               iterativeSimulation,
-              simulator,
               keyForward,
               keyStrafe,
               attackReduce,
@@ -354,11 +354,11 @@ public final class PredictionSimulationProcessor implements SimulationProcessor 
     }
     if (iterativeSimulation.noMatch() || iterativeSimulation.collisionResult == null) {
       simulateIterativeState(
+        simulator,
         user,
         movementData,
         inventoryData,
         iterativeSimulation,
-        simulator,
         0,
         0,
         false,
@@ -395,11 +395,11 @@ public final class PredictionSimulationProcessor implements SimulationProcessor 
   }
 
   private void simulateIterativeState(
+    Simulator simulator,
     User user,
     MovementMetadata movementData,
     InventoryMetadata inventoryData,
     IterativeSimulationContext result,
-    Simulator simulator,
     int keyForward,
     int keyStrafe,
     boolean attackReduce,

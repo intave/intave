@@ -8,6 +8,7 @@ import de.jpx3.intave.tool.AccessHelper;
 import de.jpx3.intave.version.JavaVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.plugin.PluginLogger;
 
 import java.io.*;
 import java.text.Format;
@@ -18,8 +19,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 
-public final class IntaveLogger {
+public final class IntaveLogger extends PluginLogger {
 
   public static boolean FILE_OUTPUT = true;
   public static final boolean VIOLATION_CONSOLE_OUTPUT = IntaveControl.GOMME_MODE;
@@ -35,6 +38,7 @@ public final class IntaveLogger {
   private String activeFileName;
 
   public IntaveLogger(IntavePlugin plugin) {
+    super(plugin);
     singletonInstance = this;
     this.plugin = plugin;
     this.archiver = new FileArchiver();
@@ -48,6 +52,23 @@ public final class IntaveLogger {
     }
     if (JavaVersion.current() > 8 && MinecraftVersions.VER1_16_2.atOrAbove() && !IntaveControl.GOMME_MODE) {
       DISABLE_COLOR_OUTPUT = false;
+    }
+  }
+
+  @Override
+  public void log(LogRecord logRecord) {
+    Level level = logRecord.getLevel();
+    int levelInt = level.intValue();
+    String message = logRecord.getMessage();
+    if (levelInt == Integer.MAX_VALUE) {
+      return;
+    }
+    if (levelInt >= Level.SEVERE.intValue()) {
+      error(message);
+    } else if(levelInt >= Level.WARNING.intValue()) {
+      warn(message);
+    } else {
+      info(message);
     }
   }
 
@@ -132,7 +153,7 @@ public final class IntaveLogger {
   private final static DateTimeFormatter MESSAGE_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH.mm.ss.SSS");
 
   private synchronized void logToFile(String message) {
-    if (!FILE_OUTPUT || !plugin.getDataFolder().exists()) {
+    if (!FILE_OUTPUT || !plugin.dataFolder().exists()) {
       return;
     }
 

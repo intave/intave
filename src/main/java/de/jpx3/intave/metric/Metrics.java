@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.annotate.NameIntrinsicallyImportant;
 import de.jpx3.intave.executor.BackgroundExecutor;
 import de.jpx3.intave.executor.IntaveThreadFactory;
@@ -62,14 +63,14 @@ public final class Metrics {
    * @param pluginId The id of the plugin.
    *                 It can be found at <a href="https://bstats.org/what-is-my-plugin-id">What is my plugin id?</a>
    */
-  public Metrics(Plugin plugin, int pluginId) {
+  public Metrics(IntavePlugin plugin, int pluginId) {
     if (plugin == null) {
       throw new IllegalArgumentException("Plugin cannot be null!");
     }
     this.plugin = plugin;
     this.pluginId = pluginId;
     // Get the config file
-    File bStatsFolder = new File(plugin.getDataFolder().getParentFile(), "bStats");
+    File bStatsFolder = new File(plugin.dataFolder().getParentFile(), "bStats");
     File configFile = new File(bStatsFolder, "config.yml");
     YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
     // Check if the config file exists

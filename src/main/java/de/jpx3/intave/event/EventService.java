@@ -4,6 +4,7 @@ import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
+import de.jpx3.intave.adapter.ViaVersionAdapter;
 import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.event.dispatch.*;
 import de.jpx3.intave.event.feedback.FeedbackService;
@@ -15,23 +16,30 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.tracker.entity.EntityNoCollisionService;
 import de.jpx3.intave.module.tracker.entity.LazyEntityCollisionService;
+import de.jpx3.intave.reflect.access.ReflectiveDataWatcherAccess;
 import de.jpx3.intave.reflect.caller.CallerResolver;
 import de.jpx3.intave.reflect.caller.PluginInvocation;
 import de.jpx3.intave.tool.AccessHelper;
+import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLifetimeService;
+import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.permission.BukkitPermissionCheck;
 import de.jpx3.intave.version.DurationTranslator;
 import de.jpx3.intave.version.IntaveVersion;
+import de.jpx3.intave.world.items.ItemProperties;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
+
+import static de.jpx3.intave.reflect.access.ReflectiveDataWatcherAccess.WATCHER_BLOCKING_ID;
 
 public final class EventService implements BukkitEventSubscriber {
   private final static boolean DISABLE_ENTITY_COLLISIONS = ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0);
@@ -116,6 +124,18 @@ public final class EventService implements BukkitEventSubscriber {
     Player player = quit.getPlayer();
     GarbageCollector.clear(player);
     GarbageCollector.clear(player.getUniqueId());
+  }
+
+  /*
+   * fixes a bug where players drop their sword whilst blocking, tricking the server into letting them constantly block - even whilst attacking
+   */
+  @BukkitEventSubscription(ignoreCancelled = true)
+  public void on(PlayerDropItemEvent event) {
+    Player player = event.getPlayer();
+    User user = UserRepository.userOf(player);
+    if (user.meta().inventory().handActive() && ItemProperties.isSwordItem(player.getItemOnCursor()) && !ViaVersionAdapter.ignoreBlocking(user.player())) {
+      Synchronizer.synchronize(() -> ReflectiveDataWatcherAccess.setDataWatcherFlag(player, WATCHER_BLOCKING_ID, false));
+    }
   }
 
   private void sendPrefixedMessage(String message, CommandSender target) {

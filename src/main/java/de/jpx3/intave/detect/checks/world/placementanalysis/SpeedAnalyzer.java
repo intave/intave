@@ -105,7 +105,7 @@ public final class SpeedAnalyzer extends MetaCheckPart<PlacementAnalysis, SpeedA
             .forPlayer(player).withDefaultThreshold()
             .withMessage(COMMON_FLAG_MESSAGE)
             .withDetails(((int) average) + "ms/block, limit at " + ((int) minAverage) + "ms/block")
-            .withDefaultThreshold().withVL(average < 300 ? 5 : 4).build();
+            .withDefaultThreshold().withVL(average > 400 ? 3 : average < 300 ? 5 : 4).build();
 
           ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
           if (violationContext.violationLevelAfter() > 20) {

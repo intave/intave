@@ -61,7 +61,6 @@ import de.jpx3.intave.world.permission.WorldPermission;
 import de.jpx3.intave.world.raytrace.Raytracing;
 import de.jpx3.intave.world.wrapper.link.WrapperLinkage;
 import org.bukkit.ChatColor;
-import org.bukkit.plugin.PluginLogger;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
@@ -74,7 +73,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.LogRecord;
 
 import static de.jpx3.intave.IntaveControl.GOMME_MODE;
 import static de.jpx3.intave.security.InterceptorFilterPrintStream.foundInterceptor;
@@ -122,7 +120,7 @@ public final class IntavePlugin extends JavaPlugin {
   public void stage2() {
     singletonInstance = this;
     version = getDescription().getVersion();
-    manifestDataFolder();
+    createDataFolder();
     this.logger = new IntaveLogger(this);
     this.logger.checkColorAvailability();
     Modules.prepareModules();
@@ -590,33 +588,24 @@ public final class IntavePlugin extends JavaPlugin {
     });
   }
 
-  public void manifestDataFolder() {
-    try {
-      File dataFolder = new File(getServer().getUpdateFolderFile().getParentFile(), "Intave");
-      if (!(dataFolder.exists() || dataFolder.mkdirs())) {
-        logger.error("Failed to create Intave folder " + dataFolder.getAbsolutePath());
-      }
-      Field dataFolderField = JavaPlugin.class.getDeclaredField("dataFolder");
-      dataFolderField.setAccessible(true);
-      dataFolderField.set(this, dataFolder);
-    } catch (IllegalAccessException | NoSuchFieldException exception) {
-      exception.printStackTrace();
+  public void createDataFolder() {
+    File dataFolder = dataFolder();
+    if (!(dataFolder.exists() || dataFolder.mkdirs())) {
+      logger.error("Failed to create Intave folder " + dataFolder.getAbsolutePath());
     }
   }
 
+  public File dataFolder() {
+    return new File(getServer().getUpdateFolderFile().getParentFile(), "Intave");
+  }
+
   public void redirectPluginLogger() {
-    PluginLogger pluginLogger = new PluginLogger(this) {
-      @Override
-      public void log(LogRecord logRecord) {
-        logger().info(logRecord.getMessage());
-      }
-    };
     try {
       Field loggerField = JavaPlugin.class.getDeclaredField("logger");
       loggerField.setAccessible(true);
-      loggerField.set(this, pluginLogger);
+      loggerField.set(this, logger());
     } catch (Exception exception) {
-      exception.printStackTrace();
+      logger.error("[Intave] Failed to inject logger to bukkit");
     }
   }
 

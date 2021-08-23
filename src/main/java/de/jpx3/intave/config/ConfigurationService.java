@@ -23,7 +23,7 @@ public final class ConfigurationService {
   }
 
   private String resolveConfigurationKey() {
-    File dataFolder = plugin.getDataFolder();
+    File dataFolder = plugin.dataFolder();
     if (!dataFolder.exists()) {
       dataFolder.mkdirs();
     }

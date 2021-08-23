@@ -129,8 +129,6 @@ public abstract class CommandStage {
 
   @Native
   protected void showAllCommands(CommandSender sender) {
-    sender.sendMessage(IntavePlugin.prefix() + "Available subcommands:");
-
     List<String> messages = new ArrayList<>();
     for (CommandExecutor commandExecutor : subCommandList) {
       if (commandExecutor.hideInHelp()) {
@@ -144,6 +142,13 @@ public abstract class CommandStage {
       }
       messages.add(commandExecutor.selectors()[0] + ": " + commandExecutor.description());
     }
+
+    if (messages.isEmpty()) {
+      sender.sendMessage(IntavePlugin.prefix() + "No subcommands available");
+      return;
+    }
+
+    sender.sendMessage(IntavePlugin.prefix() + "Available subcommands:");
 
     if (messages.size() < COMMAND_SHOW_LIMIT) {
       for (String message : messages) {
@@ -184,7 +189,11 @@ public abstract class CommandStage {
       }
       availableSelectors.add(commandExecutor.selectors()[0]);
     }
-    sender.sendMessage(IntavePlugin.prefix() + "Did you mean " + describeListSelection(availableSelectors) + "?");
+    if (availableSelectors.isEmpty()) {
+      showAllCommands(sender);
+    } else {
+      sender.sendMessage(IntavePlugin.prefix() + "Did you mean " + describeListSelection(availableSelectors) + "?");
+    }
   }
 
   private static String describeListSelection(List<String> elements) {

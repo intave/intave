@@ -70,6 +70,19 @@ public final class BaseStage extends CommandStage {
     }
   }
 
+  @SubCommand(
+    selectors = {"alert", "alerts"},
+    hideInHelp = true,
+    description = ""
+  )
+  public void redirectToVerbose(CommandSender sender) {
+    if (!BukkitPermissionCheck.permissionCheck(sender, "intave.command.verbose")) {
+      showAllCommands(sender);
+    } else {
+      sender.sendMessage(IntavePlugin.prefix() + "Did you mean verbose or notify?");
+    }
+  }
+
   private static String describePlayerList(List<String> elements) {
     int size = elements.size();
     String defaultColor = IntavePlugin.defaultColor();

@@ -18,7 +18,7 @@ public final class ContextSecrets {
   public static void setup() {
     if (GOMME_MODE) {
       IntavePlugin plugin = IntavePlugin.singletonInstance();
-      File dataFolder = plugin.getDataFolder();
+      File dataFolder = plugin.dataFolder();
       if (!dataFolder.exists()) {
         dataFolder.mkdirs();
       }

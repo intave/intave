@@ -50,7 +50,7 @@ public final class ComponentLoader {
       return false;
     }
 
-    File componentPluginFile = new File(plugin.getDataFolder().getParentFile().getAbsolutePath() + "/" + componentName + ".jar");
+    File componentPluginFile = new File(plugin.dataFolder().getParentFile().getAbsolutePath() + "/" + componentName + ".jar");
     if (!componentPluginFile.exists()) {
       String downloadURL = this.essentialComponents.get(componentName);
       try {
