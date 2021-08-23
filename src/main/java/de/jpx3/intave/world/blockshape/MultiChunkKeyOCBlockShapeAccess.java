@@ -1,6 +1,5 @@
 package de.jpx3.intave.world.blockshape;
 
-import de.jpx3.intave.cleanup.ReferenceMap;
 import de.jpx3.intave.diagnostic.BoundingBoxAccessFlowStudy;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
 import de.jpx3.intave.world.blockaccess.BlockVariantAccess;
@@ -25,7 +24,7 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
   private final static int BUILD_LIMIT = 255;
   private final Player player;
   private final ResolverPipeline boundingBoxResolver;
-  private final Map<Long, BlockShape> blockCache = ReferenceMap.soft(new ConcurrentHashMap<>(4096));
+  private final Map<Long, BlockShape> blockCache = new ConcurrentHashMap<>(4096);
   private final Map<Location, BlockShape> locatedReplacements = new ConcurrentHashMap<>(64);
   private final Map<Long, BlockShape> indexedReplacements = new ConcurrentHashMap<>(64);
   private int originChunkX, originChunkZ;

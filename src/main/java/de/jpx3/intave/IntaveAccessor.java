@@ -15,7 +15,6 @@ public final class IntaveAccessor {
     return plugin != null && plugin.isEnabled() && uncheckedUnsafeAccess() != null;
   }
 
-  @Native
   public static synchronized WeakReference<IntaveAccess> weakAccess() {
     if (!loaded()) {
       throw new IntaveColdException("Intave offline");
@@ -26,7 +25,6 @@ public final class IntaveAccessor {
     return weakAccess;
   }
 
-  @Native
   public static synchronized IntaveAccess unsafeAccess() {
     if (!loaded()) {
       throw new IntaveColdException("Intave offline");

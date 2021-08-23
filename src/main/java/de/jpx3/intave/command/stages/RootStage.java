@@ -1,5 +1,6 @@
 package de.jpx3.intave.command.stages;
 
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.annotate.Native;
@@ -389,6 +390,11 @@ public final class RootStage extends CommandStage {
   @Native
   public void memtrace(User user) {
     Player player = user.player();
+    if (!IntaveControl.PERFORMANCE_RECORD) {
+      player.sendMessage(ChatColor.RED + "Please enable PERFORMANCE_RECORD to perform a type 1 memory trace");
+      return;
+    }
+
 
     Map<Class<?>, AtomicLong> traces = MemoryTraced.tracedClasses();
     Map<Class<?>, Long> memoryUsage = MemoryTraced.memoryUsage();

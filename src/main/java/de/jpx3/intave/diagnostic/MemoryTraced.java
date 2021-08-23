@@ -1,5 +1,6 @@
 package de.jpx3.intave.diagnostic;
 
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.world.blockshape.BlockShape;
 import de.jpx3.intave.world.wrapper.WrappedAxisAlignedBB;
 
@@ -18,7 +19,9 @@ public abstract class MemoryTraced {
   }
 
   public MemoryTraced() {
-    objectsLoaded.computeIfAbsent(getClass(), aClass -> new AtomicLong()).incrementAndGet();
+    if (IntaveControl.PERFORMANCE_RECORD) {
+      objectsLoaded.computeIfAbsent(getClass(), aClass -> new AtomicLong()).incrementAndGet();
+    }
   }
 
   public static Map<Class<?>, AtomicLong> tracedClasses() {
@@ -36,6 +39,8 @@ public abstract class MemoryTraced {
 
   @Override
   protected void finalize() throws Throwable {
-    objectsLoaded.computeIfAbsent(getClass(), aClass -> new AtomicLong()).decrementAndGet();
+    if (IntaveControl.PERFORMANCE_RECORD) {
+      objectsLoaded.computeIfAbsent(getClass(), aClass -> new AtomicLong()).decrementAndGet();
+    }
   }
 }

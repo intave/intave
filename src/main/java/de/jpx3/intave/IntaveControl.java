@@ -15,6 +15,7 @@ public final class IntaveControl {
   public final static boolean RESET_HURT_TIME_ON_JOIN = true;
   public final static boolean IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT = false;
   public final static boolean SIBYL_DEBUG = false;
+  public final static boolean PERFORMANCE_RECORD = false;
 
   public final static boolean USE_EXTERNAL_CONFIGURATION_FILE = true;
   public final static boolean GOMME_MODE = false;
