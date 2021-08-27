@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.linker.packet;
 
 import com.google.common.base.Objects;
-import com.google.common.collect.Iterables;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -120,8 +120,8 @@ public final class SCOWAList<T extends Comparable<T>> implements Collection<T>  
     return this.list.size();
   }
 
-  public Iterator<T> iterator() {
-    return Iterables.unmodifiableIterable(this.list).iterator();
+  public @NotNull Iterator<T> iterator() {
+    return this.list.iterator();//Iterables.unmodifiableIterable(this.list).iterator();
   }
 
   public void clear() {

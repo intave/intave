@@ -562,6 +562,7 @@ public final class Physics extends Check {
       debug += "(" + key + ")";
       debug += " " + violationLevelInfo;
 
+      debug += "(ai " + movementData.aiMoveSpeed()+ ")";
 //      debug += " (sprint " + movementData.sprinting + ")";
 //      debug += " (sneak " + movementData.sneaking + "/"+movementData.actualSneaking()+")";
 //      debug += " (size:" + movementData.width + "," + movementData.height + ")";

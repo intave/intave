@@ -33,7 +33,8 @@ public final class AbilityMetadata {
   private float flySpeed = 0.05f;
   private float walkSpeed = 0.1f;
 
-  private final Map<WrappedAttribute, List<WrappedAttributeModifier>> attributeModifiers = new ConcurrentHashMap<>();
+  private final Map<String, WrappedAttribute> attributes = new ConcurrentHashMap<>();
+  private final Map<String, List<WrappedAttributeModifier>> attributeModifiers = new ConcurrentHashMap<>();
 
   public float unsynchronizedHealth;
   public float health;
@@ -74,16 +75,17 @@ public final class AbilityMetadata {
   }
 
   public void setupAttributes() {
-    PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.UPDATE_ATTRIBUTES);
     boolean atLeastMinecraft16 = MinecraftVersions.VER1_16_0.atOrAbove();
-    WrappedAttribute attribute = reduceNumberPrecision(
-      WrappedAttribute.newBuilder()
-        .attributeKey(keyTranslation("generic.movementSpeed"))
-        .baseValue(atLeastMinecraft16 ? (double) 0.1F : 0.1)
-        .packet(packet)
-        .build()
-    );
-    attributeModifiers.put(attribute, new CopyOnWriteArrayList<>());
+    setupAttribute("generic.movementSpeed", atLeastMinecraft16 ? (double) 0.1F : 0.1);
+  }
+
+  private void setupAttribute(String name, double baseValue) {
+    name = keyTranslation(name);
+    PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.UPDATE_ATTRIBUTES);
+    WrappedAttribute attribute = WrappedAttribute.newBuilder()
+      .attributeKey(name).baseValue(baseValue).packet(packet).build();
+    attributes.put(name, reduceNumberPrecision(attribute));
+    attributeModifiers.put(name, new CopyOnWriteArrayList<>());
   }
 
   public double attributeValue(String key) {
@@ -92,8 +94,11 @@ public final class AbilityMetadata {
 
   public double attributeValue(String key, Predicate<WrappedAttributeModifier> filter) {
     key = keyTranslation(key);
-    for (Map.Entry<WrappedAttribute, List<WrappedAttributeModifier>> wrappedAttributeListEntry : attributeModifiers.entrySet()) {
-      WrappedAttribute attribute = wrappedAttributeListEntry.getKey();
+    for (Map.Entry<String, List<WrappedAttributeModifier>> wrappedAttributeListEntry : attributeModifiers.entrySet()) {
+      WrappedAttribute attribute = attributes.get(wrappedAttributeListEntry.getKey());
+      if (attribute == null) {
+        continue;
+      }
       if (keyTranslation(attribute.getAttributeKey()).equals(key)) {
         List<WrappedAttributeModifier> modifiers = wrappedAttributeListEntry.getValue();
         if (!modifiers.isEmpty()) {
@@ -108,8 +113,7 @@ public final class AbilityMetadata {
   }
 
   public List<WrappedAttributeModifier> modifiersOf(WrappedAttribute attribute) {
-    attribute = reduceNumberPrecision(attribute.withModifiers(Collections.emptyList()));
-    return attributeModifiers.computeIfAbsent(attribute, x -> new CopyOnWriteArrayList<>());
+    return attributeModifiers.get(keyTranslation(attribute.getAttributeKey()));
   }
 
   private WrappedAttribute reduceNumberPrecision(WrappedAttribute input) {
@@ -125,12 +129,7 @@ public final class AbilityMetadata {
 
   public WrappedAttribute findAttribute(String key) {
     key = keyTranslation(key);
-    for (WrappedAttribute wrappedAttribute : attributeModifiers.keySet()) {
-      if (wrappedAttribute.getAttributeKey().equals(key)) {
-        return wrappedAttribute;
-      }
-    }
-    return null;
+    return attributes.get(key);
   }
 
   private final static boolean KEY_WRAPPED;
@@ -157,12 +156,13 @@ public final class AbilityMetadata {
   }
 
   public void modifyBaseValue(String key, double baseValue) {
+    key = keyTranslation(key);
     WrappedAttribute attribute = findAttribute(key);
     if (attribute != null) {
+      attributes.put(key, WrappedAttribute.newBuilder(attribute).baseValue(baseValue).modifiers(Collections.emptyList()).build());
       List<WrappedAttributeModifier> modifiers = modifiersOf(attribute);
-      attributeModifiers.remove(attribute);
-      attribute = WrappedAttribute.newBuilder(attribute).baseValue(baseValue).build();
-      attributeModifiers.put(attribute, modifiers);
+      attributeModifiers.remove(key);
+      attributeModifiers.put(key, modifiers);
     }
   }
 

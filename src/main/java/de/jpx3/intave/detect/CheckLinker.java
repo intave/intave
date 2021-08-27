@@ -1,6 +1,6 @@
 package de.jpx3.intave.detect;
 
-import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
 import de.jpx3.intave.module.linker.packet.PacketSubscriptionLinker;
 
@@ -27,12 +27,6 @@ import java.util.function.Consumer;
  * @see BukkitEventSubscriptionLinker
  */
 public final class CheckLinker {
-  private final IntavePlugin plugin;
-
-  public CheckLinker(IntavePlugin plugin) {
-    this.plugin = plugin;
-  }
-
   /**
    * Iterate through the {@link Collection} of {@link Check}s -
    * constraint by {@link Check#performLinkage()} - and their check parts - constraint by {@link CheckPart#enabled()}
@@ -40,7 +34,7 @@ public final class CheckLinker {
    * @param checks the collection of checks to perform linkage on
    */
   public void linkPacketEventSubscriptions(Collection<Check> checks) {
-    PacketSubscriptionLinker packetSubscriptionLinker = plugin.packetSubscriptionLinker();
+    PacketSubscriptionLinker packetSubscriptionLinker = Modules.linker().packetEvents();
     iterativeApply(checks, packetSubscriptionLinker::linkSubscriptionsIn);
   }
 
@@ -51,7 +45,7 @@ public final class CheckLinker {
    * @param checks the collection of checks to remove linkage
    */
   public void removePacketEventSubscriptions(Collection<Check> checks) {
-    PacketSubscriptionLinker packetSubscriptionLinker = plugin.packetSubscriptionLinker();
+    PacketSubscriptionLinker packetSubscriptionLinker = Modules.linker().packetEvents();
     iterativeApply(checks, packetSubscriptionLinker::removeSubscriptionsOf);
   }
 
@@ -62,7 +56,7 @@ public final class CheckLinker {
    * @param checks the collection of checks to perform linkage on
    */
   public void linkBukkitEventSubscriptions(Collection<Check> checks) {
-    BukkitEventSubscriptionLinker bukkitEventLinker = plugin.eventLinker();
+    BukkitEventSubscriptionLinker bukkitEventLinker = Modules.linker().bukkitEvents();
     iterativeApply(checks, bukkitEventLinker::registerEventsIn);
   }
 
@@ -73,7 +67,7 @@ public final class CheckLinker {
    * @param checks the collection of checks to remove linkage
    */
   public void removeBukkitEventSubscriptions(Collection<Check> checks) {
-    BukkitEventSubscriptionLinker bukkitEventLinker = plugin.eventLinker();
+    BukkitEventSubscriptionLinker bukkitEventLinker = Modules.linker().bukkitEvents();
     iterativeApply(checks, bukkitEventLinker::unregisterEventsIn);
   }
 

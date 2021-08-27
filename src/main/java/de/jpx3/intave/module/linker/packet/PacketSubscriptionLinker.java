@@ -74,7 +74,12 @@ public final class PacketSubscriptionLinker extends Module {
 
   public void removeSubscriptionsOf(PacketEventSubscriber subscriber) {
     for (SCOWAList<FilteringPacketAdapter> value : internalPacketListenerMappings.values()) {
-      value.removeIf(localPacketAdapter -> localPacketAdapter.subscriber() == subscriber);
+      try {
+        value.removeIf(localPacketAdapter -> localPacketAdapter.subscriber() == subscriber);
+      } catch (Exception exception) {
+        exception.printStackTrace();
+        System.out.println(value.getClass().getSimpleName());
+      }
     }
     if (plugin.isEnabled()) {
       refreshLinkages();
@@ -292,8 +297,8 @@ public final class PacketSubscriptionLinker extends Module {
     if (translatePacketTypes.length == 0) {
       return;
     }
-    FilteringPacketAdapter adapter = new FilteringPacketAdapter(plugin, subscriber, priority, translatePacketTypes, methodName, executor, ignoreCancelled);
     for (PacketType translatePacketType : translatePacketTypes) {
+      FilteringPacketAdapter adapter = new FilteringPacketAdapter(plugin, subscriber, priority, new PacketType[] {translatePacketType}, methodName, executor, ignoreCancelled);
       internalPacketListenerMappings.computeIfAbsent(translatePacketType, x -> new SCOWAList<>()).add(adapter);
     }
   }

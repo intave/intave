@@ -19,6 +19,7 @@ import de.jpx3.intave.detect.checks.world.InteractionRaytrace;
 import de.jpx3.intave.detect.checks.world.PlacementAnalysis;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * A {@link CheckService} initializes, holds and links implementation classes of class {@link Check}.
@@ -53,7 +54,7 @@ public final class CheckService {
 
   public CheckService(IntavePlugin plugin) {
     this.plugin = plugin;
-    checkLinker = new CheckLinker(this.plugin);
+    checkLinker = new CheckLinker();
   }
 
   /**
@@ -85,9 +86,9 @@ public final class CheckService {
     checkLinker.removeBukkitEventSubscriptions(checks);
     checkLinker.removePacketEventSubscriptions(checks);
     resetQuickAccess();
-    checks.clear();
-    classRequestCache.clear();
-    nameRequestCache.clear();
+    checks = new CopyOnWriteArrayList<>();
+    classRequestCache = new HashMap<>();
+    nameRequestCache = new HashMap<>();
   }
 
   private void addCheck(Class<? extends Check> checkClass) {

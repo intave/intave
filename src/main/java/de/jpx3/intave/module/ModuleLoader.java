@@ -26,6 +26,7 @@ public final class ModuleLoader {
 
     // tracker
     prepareModule("de.jpx3.intave.module.tracker.player.AbilityTracker", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
+    prepareModule("de.jpx3.intave.module.tracker.player.AttributeTracker", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
     prepareModule("de.jpx3.intave.module.tracker.block.BlockUpdateTracker", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
     prepareModule("de.jpx3.intave.module.tracker.player.EffectTracker", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
     prepareModule("de.jpx3.intave.module.tracker.entity.EntityTracker", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());

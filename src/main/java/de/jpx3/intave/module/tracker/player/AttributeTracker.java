@@ -43,8 +43,10 @@ public final class AttributeTracker extends Module {
 
   private void receivedAttribute(User user, WrappedAttribute attribute) {
     AbilityMetadata abilityData = user.meta().abilities();
-    List<WrappedAttributeModifier> modifiers = abilityData.modifiersOf(attribute);
-    modifiers.clear();
-    modifiers.addAll(attribute.getModifiers());
+    if (abilityData.findAttribute(attribute.getAttributeKey()) != null) {
+      List<WrappedAttributeModifier> modifiers = abilityData.modifiersOf(attribute);
+      modifiers.clear();
+      modifiers.addAll(attribute.getModifiers());
+    }
   }
 }
