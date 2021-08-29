@@ -20,6 +20,7 @@ import de.jpx3.intave.reflect.entity.type.EntityTypeData;
 import de.jpx3.intave.reflect.entity.type.EntityTypeDataAccessor;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Zombie;
 
 import java.lang.reflect.Field;
@@ -113,7 +114,7 @@ public final class EntityTypeResolver {
         WrappedDataWatcher dataWatcher = packet.getDataWatcherModifier().read(0);
         // Guckt ob das Packet ein Datawatcher hat
         if (dataWatcher != null && dataWatchesIncludesEntity(dataWatcher)) {
-          return entityTypeDataOfDataWatcher(dataWatcher);
+          return entityTypeDataOfDataWatcher(dataWatcher, true);
         } else {
           int entityTypeId = packet.getIntegers().read(1);
           return EntityTypeDataAccessor.resolveFromId(entityTypeId, true);
@@ -233,20 +234,20 @@ public final class EntityTypeResolver {
         hitBoxSize = HitboxSize.player();
       }
     }
-
-    return new EntityTypeData(name, hitBoxSize, entity.getType().getTypeId(), !entity.isDead());
+    boolean isEntityLiving = entity instanceof LivingEntity;
+    return new EntityTypeData(name, hitBoxSize, entity.getType().getTypeId(), isEntityLiving);
   }
 
   public boolean dataWatchesIncludesEntity(WrappedDataWatcher dataWatcher) {
     return entityOfDataWatcher(dataWatcher) != null;
   }
 
-  private EntityTypeData entityTypeDataOfDataWatcher(WrappedDataWatcher dataWatcher) {
+  private EntityTypeData entityTypeDataOfDataWatcher(WrappedDataWatcher dataWatcher, boolean isLivingEntity) {
     Object entity = entityOfDataWatcher(dataWatcher);
     HitboxSize hitBoxSize = HitboxSizeAccess.dimensionsOf(entity);
     String name = entityNameOf(entity);
     int entityTypeId = entityTypeIdOfDataWatcher(dataWatcher);
-    return new EntityTypeData(name, hitBoxSize, entityTypeId);
+    return new EntityTypeData(name, hitBoxSize, entityTypeId, isLivingEntity);
   }
 
   private int entityTypeIdOfDataWatcher(WrappedDataWatcher dataWatcher) {

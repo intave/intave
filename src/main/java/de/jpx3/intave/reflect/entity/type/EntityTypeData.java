@@ -8,17 +8,6 @@ public final class EntityTypeData {
   private final int entityTypeId;
   private final boolean isLivingEntity;
 
-  /*
-  This Constructor will be removed in the future, so please don't make new usages with it.
-   */
-  @Deprecated
-  public EntityTypeData(String entityName, HitboxSize hitBoxSize, int entityTypeId) {
-    this.entityName = entityName;
-    this.hitBoxSize = hitBoxSize;
-    this.entityTypeId = entityTypeId;
-    this.isLivingEntity = true;
-  }
-
   public EntityTypeData(String entityName, HitboxSize hitBoxSize, int entityTypeId, boolean isLivingEntity) {
     this.entityName = entityName;
     this.hitBoxSize = hitBoxSize;
