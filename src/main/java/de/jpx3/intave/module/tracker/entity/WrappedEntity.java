@@ -6,6 +6,7 @@ import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.event.AccessHelper;
+import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.module.feedback.FeedbackTracker;
 import de.jpx3.intave.module.feedback.PendingCountingFeedbackTracker;
 import de.jpx3.intave.reflect.entity.size.HitboxSize;
@@ -314,7 +315,7 @@ public class WrappedEntity {
 
   public boolean moving(double distance) {
     EntityPositionContext positions = this.position;
-    return Math.hypot(positions.newPosX - positions.posX, positions.newPosZ - positions.posZ) >= distance;
+    return Hypot.fast(positions.newPosX - positions.posX, positions.newPosZ - positions.posZ) >= distance;
   }
 
   public boolean isEntityAlive() {

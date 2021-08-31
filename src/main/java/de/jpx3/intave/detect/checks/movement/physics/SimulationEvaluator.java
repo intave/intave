@@ -1,5 +1,6 @@
 package de.jpx3.intave.detect.checks.movement.physics;
 
+import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MetadataBundle;
@@ -63,7 +64,7 @@ public final class SimulationEvaluator {
 
     if (movementData.recentlyEncounteredFlyingPacket(3) && differenceY > 1e-3) {
       boolean inLiquid = movementData.pastWaterMovement <= 10 || movementData.inLava();
-      int allowedPackets = Math.hypot(movementData.motionX(), movementData.motionZ()) < 0.03 ? 3 : 1;
+      int allowedPackets = Hypot.fast(movementData.motionX(), movementData.motionZ()) < 0.03 ? 3 : 1;
       if (inLiquid || movementData.physicsPacketRelinkFlyVL++ <= allowedPackets) {
         legitimateDeviation = Math.max(legitimateDeviation, inLiquid ? 0.1 : 0.03);
       }
@@ -153,7 +154,7 @@ public final class SimulationEvaluator {
 
     // Long teleport
     if (movementData.pastLongTeleport <= 10 && movementData.motionY() < -0.097 && movementData.motionY() > -0.099) {
-      double horizontalDistance = Math.hypot(receivedMotionX, receivedMotionZ);
+      double horizontalDistance = Hypot.fast(receivedMotionX, receivedMotionZ);
       if (horizontalDistance < 0.2) {
         abuseVertically = 0;
       }
@@ -180,12 +181,10 @@ public final class SimulationEvaluator {
       movementData.positionX, movementData.positionZ,
       movementData.verifiedPositionX, movementData.verifiedPositionZ
     );
-    double predictedDistanceMoved = Math.hypot(predictedX, predictedZ);
+    double predictedDistanceMoved = Hypot.fast(predictedX, predictedZ);
 
     if (movementData.simulator() == Simulators.HORSE) {
-
 //      user.player().sendMessage(distanceMoved + " " + predictedDistanceMoved);
-
       if (distanceMoved < predictedDistanceMoved) {
         return 0;
       }
@@ -260,7 +259,7 @@ public final class SimulationEvaluator {
 
     if (movementData.physicsUnpredictableVelocityExpected) {
       Vector lastVelocity = movementData.lastVelocity;
-      double velocityDistance = Math.hypot(lastVelocity.getX(), lastVelocity.getZ());
+      double velocityDistance = Hypot.fast(lastVelocity.getX(), lastVelocity.getZ());
       distance -= velocityDistance;
       legitimateDeviation = Math.max(legitimateDeviation, velocityDistance * 1.2 - distanceMoved);
     }

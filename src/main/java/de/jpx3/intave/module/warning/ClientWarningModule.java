@@ -2,7 +2,6 @@ package de.jpx3.intave.module.warning;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.google.common.base.Charsets;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.annotate.Native;
 import de.jpx3.intave.cleanup.GarbageCollector;
@@ -10,8 +9,8 @@ import de.jpx3.intave.event.AccessHelper;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.reflect.Lookup;
-import io.netty.buffer.ByteBuf;
+import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.packet.reader.PayloadInReader;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -41,33 +40,15 @@ public final class ClientWarningModule extends Module {
   public void receivePayloadPacket(PacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
-    String tag;
-    if (packet.getStrings().getValues().isEmpty()) {
-      Object minecraftKey = packet.getMinecraftKeys().getValues().get(0);
-      try {
-        tag = (String) minecraftKey.getClass().getMethod("toString").invoke(minecraftKey);
-      } catch (Exception exception) {
-        exception.printStackTrace();
-        tag = "error";
-      }
-    } else {
-      tag = packet.getStrings().getValues().get(0);
-    }
-    if (tag.startsWith("minecraft:")) {
-      tag = tag.substring(10);
-    }
+
+    PayloadInReader reader = PacketReaders.readerOf(packet);
+    String tag = reader.tag();
+
     if (tag.endsWith("Brand")) {
-      ByteBuf bytes = (ByteBuf) packet.getSpecificModifier(Lookup.serverClass("PacketDataSerializer")).getValues().get(0);
-      try {
-        bytes.markReaderIndex();
-        int length = bytes.readByte();
-        String brandString = bytes.toString(Charsets.UTF_8);
-        ClientData clientData = clientDataOfBrand(brandString);
-        if (clientData != null) {
-          Synchronizer.synchronize(() -> warn(player, clientData));
-        }
-      } catch (Exception exception) {
-        exception.printStackTrace();
+      String brand = reader.readString();
+      ClientData clientData = clientDataOfBrand(brand);
+      if (clientData != null) {
+        Synchronizer.synchronize(() -> warn(player, clientData));
       }
     } else {
       ClientData clientData = clientDataOfPayload(tag);
@@ -75,6 +56,7 @@ public final class ClientWarningModule extends Module {
         Synchronizer.synchronize(() -> warn(player, clientData));
       }
     }
+    reader.close();
   }
 
   @Native

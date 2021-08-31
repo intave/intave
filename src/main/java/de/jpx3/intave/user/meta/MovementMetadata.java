@@ -304,11 +304,14 @@ public final class MovementMetadata {
   @IdoNotBelongHere
   private void updateEntityMovement() {
     ConnectionMetadata connectionMetadata = user.meta().connection();
-    Map<Integer, WrappedEntity> entityMap = connectionMetadata.synchronizedEntityMap();
-    for (Map.Entry<Integer, WrappedEntity> entry : entityMap.entrySet()) {
-      WrappedEntity entity = entry.getValue();
-      entity.entityPlayerMoveUpdate();
+    Map<Integer, WrappedEntity> entityMap = connectionMetadata.entities();
+    for (WrappedEntity value : entityMap.values()) {
+      value.entityPlayerMoveUpdate();
     }
+//    for (Map.Entry<Integer, WrappedEntity> entry : entityMap.entrySet()) {
+//      WrappedEntity entity = entry.getValue();
+//      entity.entityPlayerMoveUpdate();
+//    }
   }
 
   @IdoNotBelongHere

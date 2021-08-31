@@ -1,6 +1,7 @@
 package de.jpx3.intave.world.blockshape;
 
 import de.jpx3.intave.diagnostic.BoundingBoxAccessFlowStudy;
+import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.world.blockaccess.BlockTypeAccess;
 import de.jpx3.intave.world.blockaccess.BlockVariantAccess;
 import de.jpx3.intave.world.blockaccess.BukkitBlockAccess;
@@ -46,7 +47,7 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
     if ((chunkX != this.chunkX || chunkZ != this.chunkZ)) {
       this.chunkX = chunkX;
       this.chunkZ = chunkZ;
-      double distance = Math.hypot(chunkX - originChunkX, chunkZ - originChunkZ);
+      double distance = Hypot.fast(chunkX - originChunkX, chunkZ - originChunkZ);
       if (distance > 2 || blockCache.size() > 4096) {
         this.originChunkX = chunkX;
         this.originChunkZ = chunkZ;
@@ -80,7 +81,7 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
     if ((chunkX != this.chunkX || chunkZ != this.chunkZ)) {
       this.chunkX = chunkX;
       this.chunkZ = chunkZ;
-      double distance = Math.hypot(chunkX - originChunkX, chunkZ - originChunkZ);
+      double distance = Hypot.fast(chunkX - originChunkX, chunkZ - originChunkZ);
       if (distance > 2 || blockCache.size() > 4096) {
         this.originChunkX = chunkX;
         this.originChunkZ = chunkZ;
@@ -114,7 +115,7 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
     if ((chunkX != this.chunkX || chunkZ != this.chunkZ)) {
       this.chunkX = chunkX;
       this.chunkZ = chunkZ;
-      double distance = Math.hypot(chunkX - originChunkX, chunkZ - originChunkZ);
+      double distance = Hypot.fast(chunkX - originChunkX, chunkZ - originChunkZ);
       if (distance > 2 || blockCache.size() > 4096) {
         this.originChunkX = chunkX;
         this.originChunkZ = chunkZ;

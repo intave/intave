@@ -10,10 +10,11 @@ import de.jpx3.intave.detect.checks.combat.heuristics.Confidence;
 import de.jpx3.intave.event.AccessHelper;
 import de.jpx3.intave.event.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.packet.converter.PlayerAction;
+import de.jpx3.intave.packet.converter.PlayerActionResolver;
 import de.jpx3.intave.reflect.access.ReflectiveDataWatcherAccess;
-import de.jpx3.intave.reflect.converter.PlayerAction;
-import de.jpx3.intave.reflect.converter.PlayerActionResolver;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
 import org.bukkit.entity.Player;
@@ -92,7 +93,7 @@ public final class PacketPlayerActionToggleHeuristic extends MetaCheckPart<Heuri
           parentCheck().saveAnomaly(player, anomaly);
         }
 
-        boolean cancel = flyingPacketStream || heuristicMeta.threshold++ > 2 && Math.hypot(movementData.motionX(), movementData.motionZ()) > 0.2;
+        boolean cancel = flyingPacketStream || heuristicMeta.threshold++ > 2 && Hypot.fast(movementData.motionX(), movementData.motionZ()) > 0.2;
         if (cancel) {
           if (sprint) {
             //dmc12

@@ -172,9 +172,9 @@ public final class InteractionEmulator implements EventProcessor {
   ) {
     OCBlockShapeAccess blockShapeAccess = userOf(player).blockShapeAccess();
     World world = player.getWorld();
-    Material placementType = placementLocation.getBlock().getType();
     switch (itemTypeInHand) {
       case BUCKET: {
+        Material placementType = BukkitBlockAccess.cacheAppliedTypeAccess(UserRepository.userOf(player), placementLocation);//placementLocation.getBlock().getType();
         // remove liquid on location if exists
         if (MaterialMagic.isLiquid(placementType)) {
           // emulate

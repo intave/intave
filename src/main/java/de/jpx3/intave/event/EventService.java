@@ -132,7 +132,10 @@ public final class EventService implements BukkitEventSubscriber {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     if (/*user.meta().inventory().handActive() && */ItemProperties.isSwordItem(player.getItemOnCursor()) && !ViaVersionAdapter.ignoreBlocking(user.player())) {
-      Synchronizer.synchronize(() -> ReflectiveDataWatcherAccess.setDataWatcherFlag(player, WATCHER_BLOCKING_ID, false));
+      Synchronizer.synchronize(() -> {
+        ReflectiveDataWatcherAccess.setDataWatcherFlag(player, WATCHER_BLOCKING_ID, false);
+//        player.sendMessage(ReflectiveDataWatcherAccess.getDataWatcherFlag(player, WATCHER_BLOCKING_ID) + "");
+      });
     }
   }
 

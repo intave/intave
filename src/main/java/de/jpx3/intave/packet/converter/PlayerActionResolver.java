@@ -1,4 +1,4 @@
-package de.jpx3.intave.reflect.converter;
+package de.jpx3.intave.packet.converter;
 
 import com.comphenix.protocol.events.PacketContainer;
 import de.jpx3.intave.reflect.Lookup;

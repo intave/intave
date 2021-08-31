@@ -1,5 +1,6 @@
 package de.jpx3.intave.fakeplayer.movement;
 
+import de.jpx3.intave.math.Hypot;
 import org.bukkit.Location;
 
 /**
@@ -50,7 +51,7 @@ public final class WalkingMovement extends Movement {
       this.motionX *= 0.6;
       this.motionZ *= 0.6;
     }
-    boolean movedEnoughForJump = Math.hypot(startMotionX - motionX, startMotionZ - motionZ) > 0.1;
+    boolean movedEnoughForJump = Hypot.fast(startMotionX - motionX, startMotionZ - motionZ) > 0.1;
     if (moveOnTopOfPlayer()) {
       this.motionY = (expectedLocation.getY() - this.location.getY());
     } else {

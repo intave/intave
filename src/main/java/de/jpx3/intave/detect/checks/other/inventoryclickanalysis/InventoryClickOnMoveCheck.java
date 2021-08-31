@@ -5,6 +5,7 @@ import de.jpx3.intave.detect.CheckPart;
 import de.jpx3.intave.detect.checks.movement.physics.Simulators;
 import de.jpx3.intave.detect.checks.other.InventoryClickAnalysis;
 import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MetadataBundle;
@@ -51,7 +52,7 @@ public final class InventoryClickOnMoveCheck extends CheckPart<InventoryClickAna
       return;
     }
 
-    double distanceMoved = Math.hypot(movementData.motionX(), movementData.motionZ());
+    double distanceMoved = Hypot.fast(movementData.motionX(), movementData.motionZ());
     if ((keyForward != 0 || keyStrafe != 0) && distanceMoved > 0.1) {
       String message = "performed inventory-click whilst walking";
       Violation violation = Violation.builderFor(InventoryClickAnalysis.class)

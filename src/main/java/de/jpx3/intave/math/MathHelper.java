@@ -107,6 +107,6 @@ public final class MathHelper {
   }
 
   public static double resolveHorizontalDistance(double x1, double z1, double x2, double z2) {
-    return Math.hypot(x1 - x2, z1 - z2);
+    return Hypot.fast(x1 - x2, z1 - z2);
   }
 }

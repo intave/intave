@@ -58,6 +58,6 @@ public final class v14FluidResolver extends FluidEngine {
       return WrappedVector.ZERO;
     }
     BlockPosition blockPosition = new BlockPosition(x, y, z);
-    return WrapperLinkage.vectorOf(world.getFluid(blockPosition).c(world, blockPosition));
+    return WrapperLinkage.vectorOf(world.getFluid(blockPosition).c(blockAccess, blockPosition));
   }
 }

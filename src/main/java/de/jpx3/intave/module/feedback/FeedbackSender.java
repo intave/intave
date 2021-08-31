@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingDeque;
 
-import static de.jpx3.intave.module.feedback.FeedbackSender.TransactionOptions.*;
+import static de.jpx3.intave.module.feedback.TransactionOptions.*;
 
 public final class FeedbackSender extends Module {
   public final static short TRANSACTION_MIN_CODE = -32768;
@@ -101,8 +101,16 @@ public final class FeedbackSender extends Module {
     tracedSingleSynchronize(player, target, secondCallback, secondTracker, options);
   }
 
+  public <T> void synchronize(Player player, FeedbackCallback<Object> callback) {
+    tracedSingleSynchronize(player, null, callback, null, 0);
+  }
+
   public <T> void synchronize(Player player, T target, FeedbackCallback<T> callback) {
     synchronize(player, target, callback, 0);
+  }
+
+  public <T> void synchronize(Player player, FeedbackCallback<Object> callback, int options) {
+    tracedSingleSynchronize(player, null, callback, null, options);
   }
 
   public <T> void synchronize(Player player, T target, FeedbackCallback<T> callback, int options) {
@@ -242,14 +250,4 @@ public final class FeedbackSender extends Module {
     return UserRepository.userOf(player);
   }
 
-  public static class TransactionOptions {
-    public static int SELF_SYNCHRONIZATION = 1;
-    public static int APPEND_ON_OVERFLOW = 2;
-    @Deprecated
-    public static int APPEND = 4;
-
-    public static boolean matches(int option, int options) {
-      return (options & option) != 0;
-    }
-  }
 }

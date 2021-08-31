@@ -85,13 +85,12 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     if (blockPosition == null || event.isCancelled() || movementData.hasRidingEntity()) {
       return;
     }
-
     int enumDirection = readEnumDirectionFromInteraction(packet);
     if (enumDirection == 255) {
       return;
     }
 
-    Material clickedType = BukkitBlockAccess.blockAccess(blockPosition.toLocation(player.getWorld())).getType();
+    Material clickedType = BukkitBlockAccess.cacheAppliedTypeAccess(user, blockPosition.toLocation(player.getWorld()));
     boolean clickableInteraction = BlockInnerAccess.isClickable(clickedType);
     Material heldItemType = user.meta().inventory().heldItemType();
     boolean interactionIsPlacement = heldItemType != Material.AIR && heldItemType.isBlock() && !clickableInteraction && !abilityMetadata.inGameMode(GameMode.ADVENTURE);

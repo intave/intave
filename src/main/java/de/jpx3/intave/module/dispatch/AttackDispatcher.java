@@ -82,7 +82,7 @@ public final class AttackDispatcher extends Module {
     ItemStack itemStack = inventoryData.heldItem();
     boolean knockbackEnchantment = itemStack != null && itemStack.containsEnchantment(Enchantment.KNOCKBACK);
 
-    WrappedEntity entity = connectionData.synchronizedEntityMap().get(entityId);
+    WrappedEntity entity = connectionData.entities().get(entityId);
     if (entity == null) {
       return;
     }

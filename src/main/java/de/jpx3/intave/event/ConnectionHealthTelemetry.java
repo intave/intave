@@ -64,7 +64,7 @@ public final class ConnectionHealthTelemetry implements PacketEventSubscriber {
 
   private long lastKeepAliveResponse(User user) {
     ConnectionMetadata synchronizeData = user.meta().connection();
-    Map<Long, Long> remainingPingPackets = synchronizeData.remainingPingPacketTimestamps();
+    Map<Long, Long> remainingPingPackets = synchronizeData.pingPackets();
     long last = AccessHelper.now();
     for (Long value : remainingPingPackets.values()) {
       last = Math.min(value, last);
@@ -87,7 +87,7 @@ public final class ConnectionHealthTelemetry implements PacketEventSubscriber {
     } else {
       id = packet.getIntegers().read(0);
     }
-    user.meta().connection().remainingPingPacketTimestamps().put(id, AccessHelper.now());
+    user.meta().connection().pingPackets().put(id, AccessHelper.now());
   }
 
   @PacketSubscription(
@@ -100,15 +100,15 @@ public final class ConnectionHealthTelemetry implements PacketEventSubscriber {
     User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
     ConnectionMetadata synchronizeData = user.meta().connection();
-    Map<Long, Long> remainingPingPackets = synchronizeData.remainingPingPacketTimestamps();
-    Long id;
+    Map<Long, Long> remainingPingPackets = synchronizeData.pingPackets();
+    long id;
     if (packet.getLongs().size() > 0) {
       id = packet.getLongs().read(0);
     } else {
       id = Long.valueOf(packet.getIntegers().read(0));
     }
     if (!remainingPingPackets.containsKey(id)) {
-      IntaveLogger.logger().error(player.getName() + " sent KAI " + id + ", but expected one of " + remainingPingPackets.keySet());
+      IntaveLogger.logger().error(player.getName() + " sent keep-alive id " + id + ", but expected one of " + remainingPingPackets.keySet());
       user.synchronizedDisconnect("Unknown keep-alive identifier");
       return;
     }

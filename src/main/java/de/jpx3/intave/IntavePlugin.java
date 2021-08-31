@@ -35,6 +35,7 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
 import de.jpx3.intave.module.linker.packet.PacketSubscriptionLinker;
 import de.jpx3.intave.module.tracker.entity.WrappedEntity;
+import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.reflect.access.ReflectiveAccess;
 import de.jpx3.intave.reflect.access.ReflectiveTPSAccess;
 import de.jpx3.intave.reflect.entity.type.EntityTypeDataAccessor;
@@ -481,6 +482,7 @@ public final class IntavePlugin extends JavaPlugin {
       SSLConnectionVerifier.setup();
       BlockVariantRegister.prepareIndex();
 
+      PacketReaders.setup();
       BlockEmitter.setup();
       WorldBorders.setup();
       BoundingBoxResolver.setup();
@@ -585,12 +587,12 @@ public final class IntavePlugin extends JavaPlugin {
     }
 
     if (IntaveControl.NETTY_DUMP_ON_TIMEOUT) {
-      logger.info("This version will dump netty threads when a player times out");
+      logger.info(ChatColor.YELLOW + "This version will dump netty threads when a player times out");
     }
 
     Modules.linker().packetEvents().refreshLinkages();
     displayVersionInformation();
-    logger.info( "Intave booted successfully");
+    logger.info("Intave booted successfully");
 
     Synchronizer.synchronize(() -> {
       // stage 11

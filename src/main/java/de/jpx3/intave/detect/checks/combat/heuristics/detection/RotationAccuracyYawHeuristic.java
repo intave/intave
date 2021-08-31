@@ -8,6 +8,7 @@ import de.jpx3.intave.detect.checks.combat.heuristics.Anomaly;
 import de.jpx3.intave.detect.checks.combat.heuristics.Confidence;
 import de.jpx3.intave.event.AccessHelper;
 import de.jpx3.intave.event.mitigate.AttackNerfStrategy;
+import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -128,7 +129,7 @@ public final class RotationAccuracyYawHeuristic extends MetaCheckPart<Heuristics
       }
     }
     if (
-      Math.hypot(movementData.motionX(), movementData.motionZ()) < 0.05
+      Hypot.fast(movementData.motionX(), movementData.motionZ()) < 0.05
       || attackData.lastReach() < 1
       || !entity.moving(0.05)
     ) {

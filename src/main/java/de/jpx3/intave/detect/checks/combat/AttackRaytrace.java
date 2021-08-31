@@ -13,6 +13,7 @@ import de.jpx3.intave.detect.CheckViolationLevelDecrementer;
 import de.jpx3.intave.detect.MetaCheck;
 import de.jpx3.intave.event.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -321,7 +322,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         hitboxDecrementer.decrement(user, VL_DECREMENT_PER_ATTACK);
         reachDecrementer.decrement(user, VL_DECREMENT_PER_ATTACK);
         if (punishmentData.nerferOfType(AttackNerfStrategy.CANCEL_FIRST_HIT).active()) {
-          double moved = Math.hypot(movementData.motionX(), movementData.motionZ());
+          double moved = Hypot.fast(movementData.motionX(), movementData.motionZ());
           return moved > 0.1 && distanceOfResult.reach > 2.8;
         }
         return false;

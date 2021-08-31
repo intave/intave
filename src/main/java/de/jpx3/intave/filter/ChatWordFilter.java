@@ -27,7 +27,7 @@ public final class ChatWordFilter extends Filter {
   }
 
   @PacketSubscription(
-    engine = Engine.INTERNAL,
+    engine = Engine.ASYNC_INTERNAL,
     packetsOut = {
       CHAT
     }

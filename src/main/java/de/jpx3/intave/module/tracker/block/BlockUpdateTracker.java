@@ -3,15 +3,16 @@ package de.jpx3.intave.module.tracker.block;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.wrappers.*;
-import com.google.common.collect.Lists;
-import de.jpx3.intave.adapter.MinecraftVersions;
+import com.comphenix.protocol.wrappers.BlockPosition;
+import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.feedback.FeedbackCallback;
 import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.packet.reader.*;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -24,48 +25,43 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.*;
-import static de.jpx3.intave.module.feedback.FeedbackSender.TransactionOptions.APPEND_ON_OVERFLOW;
-import static de.jpx3.intave.module.feedback.FeedbackSender.TransactionOptions.SELF_SYNCHRONIZATION;
+import static de.jpx3.intave.module.feedback.TransactionOptions.APPEND_ON_OVERFLOW;
+import static de.jpx3.intave.module.feedback.TransactionOptions.SELF_SYNCHRONIZATION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
 
 public final class BlockUpdateTracker extends Module {
   @PacketSubscription(
-    engine = Engine.INTERNAL,
+    engine = Engine.ASYNC_INTERNAL,
     packetsOut = {
       MAP_CHUNK, MAP_CHUNK_BULK
     }
   )
   public void chunkUpdate(PacketEvent event) {
     PacketContainer packet = event.getPacket();
-    PacketType type = packet.getType();
     Player player = event.getPlayer();
-    if (type == PacketType.Play.Server.MAP_CHUNK_BULK) {
-      StructureModifier<int[]> integerArrays = packet.getIntegerArrays();
-      int[] xArr = integerArrays.read(0).clone();
-      int[] zArr = integerArrays.read(1).clone();
-      Modules.feedback().synchronize(
-        player, null,
-        (player1, target) -> {
-          for (int i = 0; i < xArr.length; i++) {
-            chunkInvalidate(player, xArr[i], zArr[i]);
-          }
-        },
-        APPEND_ON_OVERFLOW | SELF_SYNCHRONIZATION
-      );
-    } else {
-      int x = packet.getIntegers().read(0);
-      int z = packet.getIntegers().read(1);
-      Modules.feedback().synchronize(
-        player, null,
-        (player1, target) -> chunkInvalidate(player, x, z),
-        APPEND_ON_OVERFLOW | SELF_SYNCHRONIZATION
-      );
+
+    ChunkCoordinateReader coordinates = PacketReaders.readerOf(packet);
+    int[] xCoordinates = coordinates.xCoordinates();
+    int[] zCoordinates = coordinates.zCoordinates();
+    coordinates.close();
+
+    if (xCoordinates.length != zCoordinates.length) {
+      throw new IllegalStateException();
     }
+
+    Modules.feedback().synchronize(
+      player, (player1, target) -> {
+        for (int k = 0; k < xCoordinates.length; k++) {
+          chunkInvalidate(player, xCoordinates[k], zCoordinates[k]);
+        }
+      },
+      APPEND_ON_OVERFLOW | SELF_SYNCHRONIZATION
+    );
   }
 
   private void chunkInvalidate(Player player, int chunkX, int chunkZ) {
@@ -85,29 +81,28 @@ public final class BlockUpdateTracker extends Module {
     Player player = event.getPlayer();
     PacketType packetType = event.getPacketType();
     PacketContainer packet = event.getPacket();
+    BlockPositionReader reader = PacketReaders.readerOf(packet);
 
     boolean check = true;
-
     if (packetType == PacketType.Play.Client.BLOCK_DIG) {
       EnumWrappers.PlayerDigType playerDigType = packet.getPlayerDigTypes().read(0);
       check = playerDigType == START_DESTROY_BLOCK || playerDigType == STOP_DESTROY_BLOCK || playerDigType == ABORT_DESTROY_BLOCK;
     } else if (packetType == PacketType.Play.Client.BLOCK_PLACE) {
-      Integer enumDirection = packet.getIntegers().readSafely(0);
-      BlockPosition blockPosition = readBlockPositionFrom(packet);
+      BlockPosition blockPosition = reader.blockPosition();
       if (blockPosition == null) {
+        reader.close();
         return;
       }
-      if (enumDirection == null) {
-        enumDirection = packet.getDirections().readSafely(0).ordinal();
-      }
-      if (enumDirection == 255 || event.isCancelled()) {
+      BlockPlaceReader placeInterpreter = (BlockPlaceReader) reader;
+      if (placeInterpreter.enumDirection() == 255 || event.isCancelled()) {
         check = false;
       }
     }
 
     if (check) {
-      BlockPosition blockPosition = readBlockPositionFrom(packet);
+      BlockPosition blockPosition = reader.blockPosition();
       if (blockPosition == null) {
+        reader.close();
         return;
       }
       Vector targetBlock = blockPosition.toVector();
@@ -118,20 +113,8 @@ public final class BlockUpdateTracker extends Module {
         event.setCancelled(true);
       }
     }
+    reader.close();
   }
-
-  private final boolean USE_MBP_FOR_BC = MinecraftVersions.VER1_14_0.atOrAbove();
-
-  private BlockPosition readBlockPositionFrom(PacketContainer container) {
-    if (USE_MBP_FOR_BC) {
-      MovingObjectPositionBlock movingObjectPositionBlock = container.getMovingBlockPositions().readSafely(0);
-      return movingObjectPositionBlock == null ? null : movingObjectPositionBlock.getBlockPosition();
-    } else {
-      return container.getBlockPositionModifier().readSafely(0);
-    }
-  }
-
-  private final boolean USE_SELECTION_POSITION_TO_READ_MBC_PACKET = MinecraftVersions.VER1_16_2.atOrAbove();
 
   @PacketSubscription(
     packetsOut = {
@@ -141,80 +124,44 @@ public final class BlockUpdateTracker extends Module {
   public void sentBlockUpdate(PacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
-    PacketType packetType = event.getPacketType();
 
-    OCBlockShapeAccess blockShapeAccess = UserRepository.userOf(player).blockShapeAccess();
-
-    List<BlockPosition> blockPositions;
-    List<WrappedBlockData> blockDataList;
-
-    if (packetType == PacketType.Play.Server.MULTI_BLOCK_CHANGE) {
-      if (USE_SELECTION_POSITION_TO_READ_MBC_PACKET) {
-        BlockPosition blockPosition = packet.getSectionPositions().readSafely(0);
-        int chunkXBase = blockPosition.getX() << 4;
-        int chunkYBase = blockPosition.getY() << 4;
-        int chunkZBase = blockPosition.getZ() << 4;
-        short[] relativePositions = packet.getShortArrays().read(0);
-        WrappedBlockData[] blockInfos = packet.getBlockDataArrays().read(0);
-        int expectedOutputLength = blockInfos.length;
-        blockPositions = new ArrayList<>(expectedOutputLength);
-        blockDataList = new ArrayList<>(expectedOutputLength);
-        for (int i = 0; i < relativePositions.length; i++) {
-          short relativePosition = relativePositions[i];
-          int posX = chunkXBase + (relativePosition >>> 8 & 0xF);
-          int posY = chunkYBase + (relativePosition & 0xF);
-          int posZ = chunkZBase + (relativePosition >>> 4 & 0xF);
-          blockPositions.add(new BlockPosition(posX, posY, posZ));
-          blockDataList.add(blockInfos[i]);
-        }
-      } else {
-        MultiBlockChangeInfo[] multiBlockChangeInfos = packet.getMultiBlockChangeInfoArrays().readSafely(0);
-        int expectedOutputLength = multiBlockChangeInfos.length;
-        blockPositions = new ArrayList<>(expectedOutputLength);
-        blockDataList = new ArrayList<>(expectedOutputLength);
-        for (MultiBlockChangeInfo changeInfo : multiBlockChangeInfos) {
-          blockPositions.add(new BlockPosition(changeInfo.getAbsoluteX(), changeInfo.getY(), changeInfo.getAbsoluteZ()));
-          blockDataList.add(changeInfo.getData());
-        }
-      }
-    } else {
-      blockPositions = Lists.newArrayList(packet.getBlockPositionModifier().readSafely(0));
-      blockDataList = Lists.newArrayList(packet.getBlockData().read(0));
-    }
-
-    boolean transactionSynchronize = false;
-    Location location = player.getLocation();
-    for (BlockPosition blockPosition : blockPositions) {
-      if (distance(location, blockPosition) < 8) {
-        transactionSynchronize = true;
-        break;
-      }
-    }
+    BlockChanges changes = PacketReaders.readerOf(packet);
+    List<BlockPosition> blockPositions = changes.blockPositions();
+    List<WrappedBlockData> blockDataList = changes.blockDataList();
+    changes.close();
 
     World world = player.getWorld();
-    if (transactionSynchronize) {
-      Modules.feedback().synchronize(player, null, (player1, target) -> {
-        for (int i = 0; i < blockPositions.size(); i++) {
-          BlockPosition blockPosition = blockPositions.get(i);
-          WrappedBlockData blockData = blockDataList.get(i);
-          Material material = blockData.getType();
-          blockShapeAccess.override(world, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ(), material, BlockVariantAccess.variantAccess(blockData));
-          blockShapeAccess.invalidate(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
-        }
-      }, APPEND_ON_OVERFLOW);
-    } else {
+    FeedbackCallback<Void> process = (player1, target) -> {
+      OCBlockShapeAccess blockShapeAccess = UserRepository.userOf(player1).blockShapeAccess();
       for (int i = 0; i < blockPositions.size(); i++) {
         BlockPosition blockPosition = blockPositions.get(i);
         WrappedBlockData blockData = blockDataList.get(i);
-        Material type = blockData.getType();
+        Material material = blockData.getType();
         int variant = BlockVariantAccess.variantAccess(blockData);
-        blockShapeAccess.override(world, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ(), type, variant);
+        blockShapeAccess.override(world, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ(), material, variant);
         blockShapeAccess.invalidate(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
       }
+    };
+
+    Location location = player.getLocation();
+    boolean transactionSynchronize = inDistance(blockPositions, location, 8);
+    if (transactionSynchronize) {
+      Modules.feedback().synchronize(player, null, process, APPEND_ON_OVERFLOW);
+    } else {
+      process.success(player, null);
     }
   }
 
-  private double distance(Location playerLocation, BlockPosition blockPosition) {
+  private static boolean inDistance(Collection<BlockPosition> blockPositions, Location playerLocation, int requiredDistance) {
+    for (BlockPosition blockPosition : blockPositions) {
+      if (distance(playerLocation, blockPosition) < requiredDistance) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static double distance(Location playerLocation, BlockPosition blockPosition) {
     return Math.sqrt(
       NumberConversions.square(playerLocation.getBlockX() - blockPosition.getX()) +
       NumberConversions.square(playerLocation.getBlockY() - blockPosition.getY()) +

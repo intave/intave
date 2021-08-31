@@ -67,22 +67,11 @@ public final class PacketSubscriptionLinker extends Module {
         linkSubscription(subscriber, method);
       }
     }
-    if (plugin.isEnabled()) {
-      refreshLinkages();
-    }
   }
 
   public void removeSubscriptionsOf(PacketEventSubscriber subscriber) {
     for (SCOWAList<FilteringPacketAdapter> value : internalPacketListenerMappings.values()) {
-      try {
-        value.removeIf(localPacketAdapter -> localPacketAdapter.subscriber() == subscriber);
-      } catch (Exception exception) {
-        exception.printStackTrace();
-        System.out.println(value.getClass().getSimpleName());
-      }
-    }
-    if (plugin.isEnabled()) {
-      refreshLinkages();
+      value.removeIf(localPacketAdapter -> localPacketAdapter.subscriber() == subscriber);
     }
   }
 
@@ -136,7 +125,7 @@ public final class PacketSubscriptionLinker extends Module {
     ListenerPriority priority = metadata.priority();
     PacketType[] packetTypes = translatePacketTypes(metadata.packetsIn(), metadata.packetsOut());
     boolean ignoreCancelled = metadata.ignoreCancelled();
-    if(metadata.engine() == Engine.INTERNAL) {
+    if(metadata.engine() == Engine.ASYNC_INTERNAL) {
       performCustomLinkage(subscriber, priority, packetTypes, ignoreCancelled, methodName, executor);
     } else {
       if(metadata.prioritySlot() == PrioritySlot.INTERNAL) {

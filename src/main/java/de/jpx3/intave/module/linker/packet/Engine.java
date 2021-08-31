@@ -6,6 +6,6 @@ package de.jpx3.intave.module.linker.packet;
  */
 
 public enum Engine {
-  PROTOCOL,
-  INTERNAL
+  SYNC_PROTOCOL,
+  ASYNC_INTERNAL
 }

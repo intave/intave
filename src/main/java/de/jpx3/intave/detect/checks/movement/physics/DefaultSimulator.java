@@ -581,7 +581,7 @@ public class DefaultSimulator extends Simulator {
   }
 
   private void performGlobalEntityPush(User user, MotionVector context, WrappedAxisAlignedBB boundingBox) {
-    Collection<WrappedEntity> entities = user.meta().connection().synchronizedEntityMap().values();
+    Collection<WrappedEntity> entities = user.meta().connection().tracedEntities();//.values();
     MovementMetadata movementData = user.meta().movement();
     movementData.pushedByEntity = false;
     for (WrappedEntity entity : entities) {

@@ -25,8 +25,8 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.linker.packet.PrioritySlot;
 import de.jpx3.intave.module.tracker.entity.WrappedEntity;
-import de.jpx3.intave.reflect.converter.PlayerAction;
-import de.jpx3.intave.reflect.converter.PlayerActionResolver;
+import de.jpx3.intave.packet.converter.PlayerAction;
+import de.jpx3.intave.packet.converter.PlayerActionResolver;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.*;
@@ -45,6 +45,7 @@ import org.bukkit.util.Vector;
 
 import java.util.List;
 
+import static de.jpx3.intave.module.feedback.TransactionOptions.SELF_SYNCHRONIZATION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.VEHICLE_MOVE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
@@ -522,7 +523,7 @@ public final class MovementDispatcher extends Module {
   }
 
   @PacketSubscription(
-    engine = Engine.INTERNAL,
+    engine = Engine.ASYNC_INTERNAL,
     packetsOut = {
       UPDATE_HEALTH
     }
@@ -530,15 +531,15 @@ public final class MovementDispatcher extends Module {
   public void catchFoodUpdate(PacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    FeedbackCallback<PacketContainer> callback = (x, packet) -> {
+    Integer originalFoodLevel = event.getPacket().getIntegers().read(0);
+    FeedbackCallback<Integer> callback = (x, foodLevel) -> {
       MetadataBundle meta = user.meta();
-      Integer foodLevel = packet.getIntegers().read(0);
       if (foodLevel <= 6) {
         meta.movement().sprinting = false;
       }
       meta.abilities().foodLevel = foodLevel;
     };
-    Modules.feedback().synchronize(player, event.getPacket(), callback);
+    Modules.feedback().synchronize(player, originalFoodLevel, callback, SELF_SYNCHRONIZATION);
   }
 
   private final boolean ELYTRA_SUPPORTED = MinecraftVersions.VER1_9_0.atOrAbove();

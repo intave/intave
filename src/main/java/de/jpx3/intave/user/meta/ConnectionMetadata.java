@@ -20,7 +20,8 @@ public final class ConnectionMetadata {
   private final Map<Short, FeedbackRequest<?>> transactionShortMap = Maps.newConcurrentMap();
   private final Map<Long, FeedbackRequest<?>> transactionGlobalKeyMap = Maps.newConcurrentMap();
   private final Map<Long, Queue<FeedbackRequest<?>>> transactionOptionalAppendixMap = Maps.newConcurrentMap();
-  private final Map<Integer, WrappedEntity> synchronizedEntityMap = Maps.newConcurrentMap();
+  private final Map<Integer, WrappedEntity> entities = Maps.newConcurrentMap();
+  private final List<WrappedEntity> synchronizedEntities = Lists.newCopyOnWriteArrayList();
   private final Map<Long, Long> remainingPingPacketTimestamps = Maps.newConcurrentMap();
   private final List<Long> latencyDifferenceBalance = Lists.newCopyOnWriteArrayList();
   public long lastCCCInfoMessageSent = 0;
@@ -88,11 +89,15 @@ public final class ConnectionMetadata {
     return transactionOptionalAppendixMap;
   }
 
-  public Map<Integer, WrappedEntity> synchronizedEntityMap() {
-    return synchronizedEntityMap;
+  public Map<Integer, WrappedEntity> entities() {
+    return entities;
   }
 
-  public Map<Long, Long> remainingPingPacketTimestamps() {
+  public List<WrappedEntity> tracedEntities() {
+    return synchronizedEntities;
+  }
+
+  public Map<Long, Long> pingPackets() {
     return remainingPingPacketTimestamps;
   }
 

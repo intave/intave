@@ -5,6 +5,7 @@ import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.diagnostic.KeyPressStudy;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.dispatch.AttackDispatcher;
 import de.jpx3.intave.reflect.access.ReflectiveDataWatcherAccess;
@@ -90,7 +91,7 @@ public final class PredictionSimulationProcessor implements SimulationProcessor 
       movementData.ignoredAttackReduce = true;
     }
     if (inventoryData.handActive() && !iterativeResult.handActive()) {
-      boolean releaseHandConditions = Math.hypot(movementData.motionX(), movementData.motionZ()) > 0.2 || movementData.lastTeleport >= 2;
+      boolean releaseHandConditions = Hypot.fast(movementData.motionX(), movementData.motionZ()) > 0.2 || movementData.lastTeleport >= 2;
       if (releaseHandConditions) {
         releaseHandOf(user);
       }
@@ -201,7 +202,7 @@ public final class PredictionSimulationProcessor implements SimulationProcessor 
   }
 
   private int directionFrom(double differenceX, double differenceZ, float yaw) {
-    if (Math.hypot(differenceX, differenceZ) > 0.001) {
+    if (Hypot.fast(differenceX, differenceZ) > 0.001) {
       double direction;
       direction = Math.toDegrees(Math.atan2(differenceZ, differenceX)) - 90d;
       direction -= yaw;
@@ -216,7 +217,7 @@ public final class PredictionSimulationProcessor implements SimulationProcessor 
   }
 
   private double directionPredictionError(double differenceX, double differenceZ, float yaw) {
-    if (Math.hypot(differenceX, differenceZ) > 0.001) {
+    if (Hypot.fast(differenceX, differenceZ) > 0.001) {
       double direction;
       direction = Math.toDegrees(Math.atan2(differenceZ, differenceX)) - 90d;
       direction -= yaw;

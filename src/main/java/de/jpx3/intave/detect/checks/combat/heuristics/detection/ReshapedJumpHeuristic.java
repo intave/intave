@@ -6,6 +6,7 @@ import de.jpx3.intave.detect.MetaCheckPart;
 import de.jpx3.intave.detect.checks.combat.Heuristics;
 import de.jpx3.intave.detect.checks.combat.heuristics.Anomaly;
 import de.jpx3.intave.detect.checks.combat.heuristics.Confidence;
+import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.math.SinusCache;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
@@ -68,13 +69,13 @@ public final class ReshapedJumpHeuristic extends MetaCheckPart<Heuristics, Resha
 
       physicsApplyJumpTo(yawSine, yawCosine, motion);
       physicsCalculateRelativeMovement(motion, friction, yawSine, yawCosine, moveForward, moveStrafe);
-      double preDistance = Math.hypot(motion.getX() - movementData.motionX(), motion.getZ() - movementData.motionZ());
+      double preDistance = Hypot.fast(motion.getX() - movementData.motionX(), motion.getZ() - movementData.motionZ());
 
       double leniency = 0.001;
       if (preDistance > leniency) {
         motion = new Vector(physicsMotionX, 0.0, physicsMotionZ);
         physicsCalculateRelativeMovement(motion, friction, yawSine, yawCosine, moveForward, moveStrafe);
-        double alternativeDistance = Math.hypot(motion.getX() - movementData.motionX(), motion.getZ() - movementData.motionZ());
+        double alternativeDistance = Hypot.fast(motion.getX() - movementData.motionX(), motion.getZ() - movementData.motionZ());
         if (Math.abs(alternativeDistance - 0.2) < leniency * 2) {
           heuristicMeta.balance++;
           String description = "horizontal motion not correlated with jump vl:" + MathHelper.formatDouble(heuristicMeta.balance, 1);

@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
-import static de.jpx3.intave.module.feedback.FeedbackSender.TransactionOptions.SELF_SYNCHRONIZATION;
+import static de.jpx3.intave.module.feedback.TransactionOptions.SELF_SYNCHRONIZATION;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_13;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_9;
 

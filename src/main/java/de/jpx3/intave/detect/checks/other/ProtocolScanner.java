@@ -6,6 +6,7 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.KeepEnumInternalNames;
 import de.jpx3.intave.detect.MetaCheck;
+import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.reflect.Lookup;
@@ -95,7 +96,7 @@ public final class ProtocolScanner extends MetaCheck<ProtocolScanner.ProtocolSca
     MovementMetadata movementData = user.meta().movement();
     int keyForward = movementData.keyForward;
     int keyStrafe = movementData.keyStrafe;
-    double distanceMoved = Math.hypot(movementData.motionX(), movementData.motionZ());
+    double distanceMoved = Hypot.fast(movementData.motionX(), movementData.motionZ());
     if (movementData.inWeb || movementData.recentlyEncounteredFlyingPacket(2)) {
       return;
     }
