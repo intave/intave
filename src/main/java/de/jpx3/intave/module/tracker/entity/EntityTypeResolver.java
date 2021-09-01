@@ -83,11 +83,11 @@ public final class EntityTypeResolver {
           int deadEntityType = packet.getIntegers().read(9);
           String name = nameByDeadEntityType(deadEntityType);
           HitboxSize boundaries = hitboxBoundariesByDeadEntityType(deadEntityType);
-          return new EntityTypeData(name, boundaries, -1, false);
+          return new EntityTypeData(name, boundaries, -1, false, 2);
         } catch (FieldAccessException exception) {
           IntaveLogger.logger().info("unknown entity entityID: " + entityId);
         }
-        return new EntityTypeData("could not be created", HitboxSize.zero(), -2, false);
+        return new EntityTypeData("could not be created", HitboxSize.zero(), -2, false, 3);
       } else {
         EntityType entityType = packet.getEntityTypeModifier().read(0);
         Class<? extends Entity> entityClass = entityType.getEntityClass();
@@ -96,7 +96,7 @@ public final class EntityTypeResolver {
           // still necessary?
           IntaveLogger.logger().info("Zero BoundingBox 2 (Entity " + entityClassName+ ")");
         }
-        return new EntityTypeData(entityClassName, HitboxSize.zero(), -2, false);
+        return new EntityTypeData(entityClassName, HitboxSize.zero(), -2, false, 4);
       }
     }
   }
@@ -212,7 +212,7 @@ public final class EntityTypeResolver {
 
   private EntityTypeData convertHitboxBoundariesToBaby(EntityTypeData entityTypeData) {
     HitboxSize hitBoxSize = HitboxSize.of(entityTypeData.size().width() * 0.5f, entityTypeData.size().length() * 0.5f);
-    return new EntityTypeData(entityTypeData.name(), hitBoxSize, entityTypeData.identifier(), entityTypeData.isLivingEntity());
+    return new EntityTypeData(entityTypeData.name(), hitBoxSize, entityTypeData.identifier(), entityTypeData.isLivingEntity(), 5);
   }
 
   public HitboxSize hitBoxBoundariesByBukkitEntity(Entity bukkitEntity) {
@@ -235,7 +235,7 @@ public final class EntityTypeResolver {
       }
     }
     boolean isEntityLiving = entity instanceof LivingEntity;
-    return new EntityTypeData(name, hitBoxSize, entity.getType().getTypeId(), isEntityLiving);
+    return new EntityTypeData(name, hitBoxSize, entity.getType().getTypeId(), isEntityLiving, 6);
   }
 
   public boolean dataWatchesIncludesEntity(WrappedDataWatcher dataWatcher) {
@@ -247,7 +247,7 @@ public final class EntityTypeResolver {
     HitboxSize hitBoxSize = HitboxSizeAccess.dimensionsOf(entity);
     String name = entityNameOf(entity);
     int entityTypeId = entityTypeIdOfDataWatcher(dataWatcher);
-    return new EntityTypeData(name, hitBoxSize, entityTypeId, isLivingEntity);
+    return new EntityTypeData(name, hitBoxSize, entityTypeId, isLivingEntity, 7);
   }
 
   private int entityTypeIdOfDataWatcher(WrappedDataWatcher dataWatcher) {
