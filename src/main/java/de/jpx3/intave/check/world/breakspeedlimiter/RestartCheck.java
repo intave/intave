@@ -1,11 +1,18 @@
 package de.jpx3.intave.check.world.breakspeedlimiter;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.block.access.BlockVariantAccess;
+import de.jpx3.intave.block.access.BukkitBlockAccess;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.BreakSpeedLimiter;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.user.User;
@@ -14,7 +21,11 @@ import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.violation.Violation;
 import de.jpx3.intave.violation.ViolationContext;
 import de.jpx3.intave.violation.ViolationProcessor;
+import org.bukkit.Location;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+
+import java.lang.reflect.InvocationTargetException;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
@@ -56,8 +67,8 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
         if (clientData.flyingPacketStream()) {
           int ticksBetween = meta.ticks - meta.blockBreakTick;
           if (ticksBetween < 5) {
-            String message = "started block-break too quickly";
-            String details = ticksBetween + " " + (ticksBetween == 1 ? "tick" : "ticks") + " between";
+            String message = "started breaking too quickly";
+            String details = (ticksBetween == 1 ? "one tick" : ticksBetween + " ticks");
             ViolationProcessor violationProcessor = IntavePlugin.singletonInstance().violationProcessor();
             Violation violation = Violation.builderFor(BreakSpeedLimiter.class)
               .forPlayer(player).withMessage(message).withDetails(details).withVL(5)
@@ -65,13 +76,14 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
             ViolationContext violationContext = violationProcessor.processViolation(violation);
             if (violationContext.shouldCounterThreat()) {
               event.setCancelled(true);
+              meta.cancelNextStop = true;
             }
           }
         } else {
           long milliseconds = System.currentTimeMillis() - meta.blockBreakTimestamp;
           if (milliseconds < 200) {
             if (meta.blockBreakStartVL++ > 5) {
-              String message = "started block-break too quickly";
+              String message = "started breaking too quickly";
               String details = milliseconds + "ms between";
               ViolationProcessor violationProcessor = IntavePlugin.singletonInstance().violationProcessor();
               Violation violation = Violation.builderFor(BreakSpeedLimiter.class)
@@ -80,6 +92,7 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
               ViolationContext violationContext = violationProcessor.processViolation(violation);
               if (violationContext.shouldCounterThreat()) {
                 event.setCancelled(true);
+                meta.cancelNextStop = true;
               }
               meta.blockBreakStartVL--;
             }
@@ -92,8 +105,44 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
       case STOP_DESTROY_BLOCK: {
         meta.blockBreakTick = meta.ticks;
         meta.blockBreakTimestamp = System.currentTimeMillis();
+        if (meta.cancelNextStop) {
+          meta.cancelNextStop = false;
+          event.setCancelled(true);
+          BlockPosition blockPosition = packet.getBlockPositionModifier().read(0);
+          refreshBlocksAround(player, blockPosition.toLocation(player.getWorld()));
+        }
         break;
       }
+    }
+  }
+
+  private void refreshBlocksAround(Player player, Location targetLocation) {
+    Synchronizer.synchronize(() -> {
+      player.updateInventory();
+      refreshBlock(player, targetLocation);
+//      for (EnumDirection direction : EnumDirection.values()) {
+//        Location placedBlock = targetLocation.clone().add(direction.getDirectionVec().convertToBukkitVec());
+//        refreshBlock(player, placedBlock);
+//      }
+    });
+  }
+
+  private void refreshBlock(Player player, Location location) {
+    PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.BLOCK_CHANGE);
+    if (!BukkitBlockAccess.isInLoadedChunk(location.getWorld(), location.getBlockX(), location.getBlockZ())) {
+      return;
+    }
+    Block block = BukkitBlockAccess.blockAccess(location);
+    Object handle = BlockVariantAccess.nativeVariantAccess(block);
+    WrappedBlockData blockData = WrappedBlockData.fromHandle(handle);
+    packet.getBlockData().write(0, blockData);
+
+    BlockPosition position = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    packet.getBlockPositionModifier().write(0, position);
+    try {
+      ProtocolLibrary.getProtocolManager().sendServerPacket(player, packet);
+    } catch (InvocationTargetException exception) {
+      exception.printStackTrace();
     }
   }
 
@@ -102,5 +151,6 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
     private int blockBreakTick;
     private long blockBreakTimestamp;
     private double blockBreakStartVL;
+    private boolean cancelNextStop;
   }
 }

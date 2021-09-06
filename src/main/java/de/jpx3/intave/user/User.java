@@ -4,9 +4,9 @@ import de.jpx3.intave.access.UnsupportedFallbackOperationException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.access.player.trust.TrustFactorResolver;
 import de.jpx3.intave.block.shape.BlockShapeAccess;
-import de.jpx3.intave.block.shape.CachedBlockShapeAccess;
-import de.jpx3.intave.block.shape.OCBlockShapeAccess;
-import de.jpx3.intave.block.shape.OverrideBlockShapeAccess;
+import de.jpx3.intave.block.shape.BlockShapeCache;
+import de.jpx3.intave.block.shape.BlockShapeLookup;
+import de.jpx3.intave.block.shape.BlockShapeOverrides;
 import de.jpx3.intave.check.MetaCheck;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.movement.physics.Pose;
@@ -161,11 +161,11 @@ public interface User {
   /**
    * Retrieve the player's block shape cache
    * @return the player's block shape cache
-   * @see BlockShapeAccess
-   * @see CachedBlockShapeAccess
-   * @see OverrideBlockShapeAccess
+   * @see BlockShapeLookup
+   * @see BlockShapeCache
+   * @see BlockShapeOverrides
    */
-  OCBlockShapeAccess blockShapeAccess();
+  BlockShapeAccess blockShapeAccess();
 
   /**
    * Retrieve the {@link User}-associated {@link ComplexColliderProcessor}

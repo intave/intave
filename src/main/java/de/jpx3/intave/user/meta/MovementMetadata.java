@@ -35,6 +35,7 @@ import org.bukkit.util.Vector;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_15;
 
@@ -107,6 +108,7 @@ public final class MovementMetadata {
   public boolean onLadderLast;
   public boolean aquaticUpdateInLava;
   public boolean sprintResetNextTick;
+  public AtomicInteger pendingVelocityPackets = new AtomicInteger();
 
   public int physicsPacketRelinkFlyVL; // In Air
   public boolean invalidMovement, suspiciousMovement;

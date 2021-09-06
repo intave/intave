@@ -14,15 +14,13 @@ import de.jpx3.intave.block.access.BukkitBlockAccess;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.BreakSpeedLimiter;
 import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.reflect.access.ReflectiveEntityAccess;
-import de.jpx3.intave.shade.EnumDirection;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.InventoryMetadata;
-import de.jpx3.intave.user.meta.MovementMetadata;
-import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.violation.Violation;
 import de.jpx3.intave.violation.ViolationContext;
 import de.jpx3.intave.violation.ViolationProcessor;
@@ -51,24 +49,37 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
     User user = userOf(player);
     BreakSpeedFinishMeta meta = metaOf(user);
 
-    ProtocolMetadata clientData = user.meta().protocol();
-    InventoryMetadata inventoryData = user.meta().inventory();
-
-    if (meta.breakProcess) {
-      ItemStack itemInHand = inventoryData.heldItem();
-      BlockPosition blockPosition = meta.targetBlockPosition;
-
-      float blockDamage = clientData.flyingPacketStream()
-        ? BlockInnerAccess.blockDamage(player, itemInHand, blockPosition)
-        : resolveBlockDamageOnGround(player, itemInHand, blockPosition);
-      meta.curBlockDamageMP += blockDamage;
-      meta.maximumBlockDamage = Math.max(meta.maximumBlockDamage, blockDamage);
-    }
-
     if (meta.balance > 0 && !event.isCancelled()) {
       meta.balance -= 0.005;
     }
   }
+
+//  @PacketSubscription(
+//    priority = ListenerPriority.LOW,
+//    packetsIn = {
+//      ARM_ANIMATION
+//    }
+//  )
+//  public void actualTickUpdate(PacketEvent event) {
+//    Player player = event.getPlayer();
+//    User user = userOf(player);
+//    BreakSpeedFinishMeta meta = metaOf(user);
+//
+//    ProtocolMetadata clientData = user.meta().protocol();
+//    InventoryMetadata inventoryData = user.meta().inventory();
+//
+//    if (meta.breakProcess) {
+//      ItemStack itemInHand = inventoryData.heldItem();
+//      BlockPosition blockPosition = meta.targetBlockPosition;
+//
+//      float blockDamage = clientData.flyingPacketStream()
+//        ? BlockInnerAccess.blockDamage(player, itemInHand, blockPosition)
+//        : resolveBlockDamageOnGround(player, itemInHand, blockPosition);
+//      player.sendMessage("block damage in tick: " + blockDamage);
+//      meta.curBlockDamageMP += blockDamage;
+//      meta.maximumBlockDamage = Math.max(meta.maximumBlockDamage, blockDamage);
+//    }
+//  }
 
   @PacketSubscription(
     priority = ListenerPriority.LOW,
@@ -80,9 +91,8 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
     Player player = event.getPlayer();
     User user = userOf(player);
     BreakSpeedFinishMeta meta = metaOf(user);
-    ProtocolMetadata clientData = user.meta().protocol();
+//    ProtocolMetadata clientData = user.meta().protocol();
     InventoryMetadata inventoryData = user.meta().inventory();
-    MovementMetadata movementData = user.meta().movement();
 
     ItemStack heldItem = inventoryData.heldItem();
     PacketContainer packet = event.getPacket();
@@ -100,45 +110,44 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
         break;
       }
       case STOP_DESTROY_BLOCK: {
-        if (clientData.flyingPacketStream()) {
-          float blockDamageDealt = meta.curBlockDamageMP;
-          if (blockDamageDealt < 0.79 && meta.balance++ >= 2) { // ~79%
-            String message = "finished breaking-process too quickly";
-            String percentage = (int)(blockDamageDealt * 100d) + "%";
-            String details = "at " + percentage;
-
-            ViolationProcessor violationProcessor = IntavePlugin.singletonInstance().violationProcessor();
-            Violation violation = Violation.builderFor(BreakSpeedLimiter.class)
-              .forPlayer(player).withMessage(message).withDetails(details)
-              .withVL(10)
-              .build();
-            ViolationContext violationContext = violationProcessor.processViolation(violation);
-            if (violationContext.shouldCounterThreat()) {
-              event.setCancelled(true);
-              refreshBlocksAround(player, blockPosition.toLocation(player.getWorld()));
-            }
-          }
-        } else {
-          long milliseconds = resolveMillisecondsOf(meta.maximumBlockDamage);
-          long receivedMilliseconds = System.currentTimeMillis() - meta.breakProcessStartTime;
-          long exceeded = milliseconds - receivedMilliseconds;
+//        if (clientData.flyingPacketStream()) {
+//          float blockDamageDealt = BlockInnerAccess.blockDamage(player, heldItem, blockPosition);
+//          if (blockDamageDealt < 0.79 && meta.balance++ >= 2) { // ~79%
+//            String message = "broke block too quickly";
+//            String percentage = (int)(blockDamageDealt * 100d) + "%";
+//            String details = "at " + percentage;
+//
+//            ViolationProcessor violationProcessor = IntavePlugin.singletonInstance().violationProcessor();
+//            Violation violation = Violation.builderFor(BreakSpeedLimiter.class)
+//              .forPlayer(player).withMessage(message).withDetails(details)
+//              .withVL(10).build();
+//            ViolationContext violationContext = violationProcessor.processViolation(violation);
+//            if (violationContext.shouldCounterThreat()) {
+//              event.setCancelled(true);
+//              refreshBlocksAround(player, blockPosition.toLocation(player.getWorld()));
+//            }
+//          }
+//        } else {
+          long requiredDuration = resolveMillisecondsOf(resolveBlockDamageOnGround(player, heldItem, blockPosition));
+          long actualDuration = System.currentTimeMillis() - meta.breakProcessStartTime;
+          long exceeded = Math.max(0, requiredDuration - actualDuration);
 
           if (exceeded > 100 && meta.balance++ >= 2) {
-            String message = "finished breaking-process too quickly";
-            String details = exceeded + "ms faster than expected";
+            String message = "broke block too quickly";
+            String details = MathHelper.formatDouble(exceeded / 50d, 2) + " ticks faster than expected";
             ViolationProcessor violationProcessor = IntavePlugin.singletonInstance().violationProcessor();
             Violation violation = Violation.builderFor(BreakSpeedLimiter.class)
               .forPlayer(player).withMessage(message).withDetails(details)
-              .withVL(10)
-              .build();
+              .withVL(10).build();
             ViolationContext violationContext = violationProcessor.processViolation(violation);
             if (violationContext.shouldCounterThreat()) {
               event.setCancelled(true);
               refreshBlocksAround(player, blockPosition.toLocation(player.getWorld()));
             }
           }
-        }
+//        }
 
+        meta.breakProcessStartTime = System.currentTimeMillis();
         meta.curBlockDamageMP = 0f;
         meta.targetBlockPosition = null;
         meta.breakProcess = false;
@@ -152,10 +161,10 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
     Synchronizer.synchronize(() -> {
       player.updateInventory();
       refreshBlock(player, targetLocation);
-      for (EnumDirection direction : EnumDirection.values()) {
-        Location placedBlock = targetLocation.clone().add(direction.getDirectionVec().convertToBukkitVec());
-        refreshBlock(player, placedBlock);
-      }
+//      for (EnumDirection direction : EnumDirection.values()) {
+//        Location placedBlock = targetLocation.clone().add(direction.getDirectionVec().convertToBukkitVec());
+//        refreshBlock(player, placedBlock);
+//      }
     });
   }
 
@@ -167,8 +176,9 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
     Block block = BukkitBlockAccess.blockAccess(location);
     Object handle = BlockVariantAccess.nativeVariantAccess(block);
     WrappedBlockData blockData = WrappedBlockData.fromHandle(handle);
-    BlockPosition position = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     packet.getBlockData().write(0, blockData);
+
+    BlockPosition position = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     packet.getBlockPositionModifier().write(0, position);
     try {
       ProtocolLibrary.getProtocolManager().sendServerPacket(player, packet);

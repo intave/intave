@@ -137,10 +137,27 @@ public final class PacketSubscriptionLinker extends Module {
   }
 
   private PacketType[] translatePacketTypes(PacketId.Client[] clientPackets, PacketId.Server[] serverPackets) {
-    PacketType[] serverPacketTypes = Arrays.stream(clientPackets).map(this::translateClientPacketType).toArray(PacketType[]::new);
-    PacketType[] clientPacketTypes = Arrays.stream(serverPackets).map(this::translateServerPacketType).toArray(PacketType[]::new);
-    PacketType[] packetTypes = merge(serverPacketTypes, clientPacketTypes);
-    return distinct(excludeProblematic(packetTypes), PacketType[]::new);
+    return distinct(excludeProblematic(translate(clientPackets, serverPackets)), PacketType[]::new);
+  }
+
+  private PacketType[] translate(PacketId.Client[] clientPackets, PacketId.Server[] serverPackets) {
+    PacketType[] serverPacketTypes = clientTranslate(clientPackets);
+    PacketType[] clientPacketTypes = serverTranslate(serverPackets);
+    return merge(serverPacketTypes, clientPacketTypes);
+  }
+
+  private PacketType[] clientTranslate(PacketId.Client[] clientPackets) {
+    if (clientPackets.length == 1 && clientPackets[0].lookupName().equals("*")) {
+      return PacketRegistry.getClientPacketTypes().toArray(new PacketType[0]);
+    }
+    return Arrays.stream(clientPackets).map(this::translateClientPacketType).toArray(PacketType[]::new);
+  }
+
+  private PacketType[] serverTranslate(PacketId.Server[] serverPackets) {
+    if (serverPackets.length == 1 && serverPackets[0].lookupName().equals("*")) {
+      return PacketRegistry.getClientPacketTypes().toArray(new PacketType[0]);
+    }
+    return Arrays.stream(serverPackets).map(this::translateServerPacketType).toArray(PacketType[]::new);
   }
 
   private <T> T[] distinct(T[] input, IntFunction<T[]> generator) {

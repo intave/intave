@@ -20,7 +20,7 @@ public final class TPSAccess {
       tpsAccess = (double[]) recentTps.get(minecraftServer);
     } catch (IllegalAccessException | NoSuchFieldException exception) {
       try {
-        Server.Spigot serverSpigot = Bukkit.getServer().spigot();
+        Server serverSpigot = Bukkit.getServer();
         tpsAccess = (double[]) serverSpigot.getClass().getMethod("getTPS").invoke(serverSpigot);
         return;
       } catch (Exception exception1) {

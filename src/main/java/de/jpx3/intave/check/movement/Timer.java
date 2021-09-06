@@ -210,6 +210,7 @@ public final class Timer extends MetaCheck<Timer.TimerData> {
     public long lastTimerFlag;
     public long lastLagSpike;
     public long lastRespawn;
+    public boolean receivedMovingPacket;
     public boolean flagTick;
   }
 }

@@ -3,8 +3,8 @@ package de.jpx3.intave.block.shape.boxresolver;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.block.shape.MultiChunkKeyOCBlockShapeAccess;
-import de.jpx3.intave.block.shape.OCBlockShapeAccess;
+import de.jpx3.intave.block.shape.BlockShapeAccess;
+import de.jpx3.intave.block.shape.MultiChunkKeyBlockShapeAccess;
 import de.jpx3.intave.block.shape.boxresolver.drill.AbstractBoundingBoxDrill;
 import de.jpx3.intave.clazz.rewrite.PatchyLoadingInjector;
 
@@ -27,8 +27,8 @@ import static de.jpx3.intave.adapter.MinecraftVersions.VER1_14_0;
  * Use {@link BoundingBoxResolver#pipelineHead()} to retrieve the pipelines head.
  *
  * @see ResolverPipeline
- * @see OCBlockShapeAccess
- * @see MultiChunkKeyOCBlockShapeAccess
+ * @see BlockShapeAccess
+ * @see MultiChunkKeyBlockShapeAccess
  */
 public final class BoundingBoxResolver {
   private static ResolverPipeline resolver;

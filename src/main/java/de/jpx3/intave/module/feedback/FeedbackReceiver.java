@@ -174,7 +174,7 @@ public final class FeedbackReceiver extends Module {
     }
   }
 
-  private static long oldestPendingTransaction(User user) {
+  public long oldestPendingTransaction(User user) {
     ConnectionMetadata synchronizeData = user.meta().connection();
     Map<Short, FeedbackRequest<?>> transactionFeedBackMap = synchronizeData.transactionShortKeyMap();
     long duration = System.currentTimeMillis();

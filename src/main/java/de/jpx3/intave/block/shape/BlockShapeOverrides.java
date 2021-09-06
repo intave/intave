@@ -7,16 +7,16 @@ import org.bukkit.World;
 import java.util.Map;
 
 /**
- * The {@link OverrideBlockShapeAccess} extends the {@link BlockShapeAccess} in the definition of additional functions for overrides.
+ * The {@link BlockShapeOverrides} extends the {@link BlockShapeLookup} in the definition of additional functions for overrides.
  * A override temporarily replaces a block cache, making the cache ignore the resolved type.
- * The {@link BlockShapeAccess} is eligible to delete overrides after 5 seconds after their initialization.
+ * The {@link BlockShapeLookup} is eligible to delete overrides after 5 seconds after their initialization.
  *
+ * @see BlockShapeLookup
+ * @see BlockShapeCache
  * @see BlockShapeAccess
- * @see CachedBlockShapeAccess
- * @see OCBlockShapeAccess
  */
 
-public interface OverrideBlockShapeAccess extends BlockShapeAccess {
+public interface BlockShapeOverrides extends BlockShapeLookup {
   /**
    * Retrieves if this position is currently being overridden
    * @param posX the x coordinate of the selected block

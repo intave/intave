@@ -14,7 +14,7 @@ import de.jpx3.intave.block.access.BukkitBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.fluid.LegacyWaterflow;
-import de.jpx3.intave.block.shape.OCBlockShapeAccess;
+import de.jpx3.intave.block.shape.BlockShapeAccess;
 import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckStatistics;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
@@ -253,7 +253,7 @@ public final class Physics extends Check {
     MovementMetadata movementData = meta.movement();
     ViolationMetadata violationLevelData = meta.violationLevel();
     AbilityMetadata abilityData = meta.abilities();
-    OCBlockShapeAccess blockShapeAccess = user.blockShapeAccess();
+    BlockShapeAccess blockShapeAccess = user.blockShapeAccess();
     MotionVector context = expectedMovement.motion();
 
     int keyForward = movementData.keyForward;

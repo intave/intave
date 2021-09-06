@@ -74,7 +74,7 @@ public final class v14BlockAccessor implements BlockAccessor {
     }
     net.minecraft.server.v1_14_R1.BlockPosition blockPosition = positionOfNative(nativeBlockPosition);
     IBlockData blockData = blockAccess.getType(blockPosition);
-    return blockData.getBlock().getDamage(blockData, ((CraftPlayer) player).getHandle(), worldServer, blockPosition);
+    return blockData.getBlock().getDamage(blockData, ((CraftPlayer) player).getHandle(), blockAccess, blockPosition);
   }
 
   @Override

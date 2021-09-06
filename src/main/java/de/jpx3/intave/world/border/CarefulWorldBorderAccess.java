@@ -1,6 +1,5 @@
 package de.jpx3.intave.world.border;
 
-import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.clazz.rewrite.PatchyAutoTranslation;
 import net.minecraft.server.v1_8_R3.EnumWorldBorderState;
 import net.minecraft.server.v1_8_R3.WorldBorder;
@@ -17,9 +16,6 @@ public final class CarefulWorldBorderAccess implements WorldBorderAccess {
     long remainingMillis = worldBorder.i();
     if (worldBorder.getState() != EnumWorldBorderState.STATIONARY) {
       if (remainingMillis <= 500) {
-        if (IntaveControl.GOMME_MODE) {
-          System.out.println("Skipped moving world border access (" + remainingMillis + " ms remaining)");
-        }
         return 0;
       }
     }

@@ -82,6 +82,7 @@ public final class ItemProperties {
 
   private static void loadPotions() {
     materialPotionItems.add(Material.POTION);
+    materialPotionItems.add(materialByName("SPLASH_POTION"));
   }
 
   public static boolean canItemBeUsed(Player player, @Nullable ItemStack itemStack) {
@@ -99,6 +100,10 @@ public final class ItemProperties {
     boolean useItem = materialUseItems.contains(type);
     boolean potion = materialPotionItems.contains(type);
     return useItem || potion || foodConsumable(player, type);
+  }
+
+  public static boolean isPotion(Material type) {
+    return materialPotionItems.contains(type);
   }
 
   public static boolean foodConsumable(Player player, Material type) {

@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public final class BlankUserOCBlockShapeAccess implements OCBlockShapeAccess {
+public final class BlankUserBlockShapeAccess implements BlockShapeAccess {
   @Override
   public @NotNull List<BoundingBox> resolveBoxes(int chunkX, int chunkZ, int posX, int posY, int posZ) {
     return Collections.emptyList();

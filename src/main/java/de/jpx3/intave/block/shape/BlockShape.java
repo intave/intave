@@ -15,7 +15,7 @@ import java.util.Objects;
  * the type and variant index of a block. It is primarily used for block-caching and
  * block-overrides.
  *
- * @see BlockShapeAccess
+ * @see BlockShapeLookup
  * @see BoundingBox
  * @see Material
  * @see BlockVariantRegister
@@ -58,8 +58,8 @@ public final class BlockShape extends MemoryTraced {
   }
 
   /**
-   * Check if the entry effectively expired.
-   * Expires don't have to be acknowledged or followed - this only serves as a basic indicator
+   * Indicates if this entry effectively expired.
+   * Expiries neither have to be acknowledged nor followed - this only serves as a possible indicator
    * @return whether the shape is expired
    */
   public boolean expired() {

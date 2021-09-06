@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static de.jpx3.intave.IntaveControl.DISABLE_BLOCK_CACHING_ENTIRELY;
 
-public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess {
+public final class MultiChunkKeyBlockShapeAccess implements BlockShapeAccess {
   private final static int BUILD_LIMIT = 255;
   private final Player player;
   private final ResolverPipeline boundingBoxResolver;
@@ -32,7 +32,7 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
   private int originChunkX, originChunkZ;
   private int chunkX, chunkZ;
 
-  private MultiChunkKeyOCBlockShapeAccess(
+  private MultiChunkKeyBlockShapeAccess(
     Player player, ResolverPipeline resolver
   ) {
     this.player = player;
@@ -246,11 +246,11 @@ public final class MultiChunkKeyOCBlockShapeAccess implements OCBlockShapeAccess
     return (posX & 0x3fffffL) << 42 | (posY & 0xfffffL) | (posZ & 0x3fffffL) << 20;
   }
 
-  public static MultiChunkKeyOCBlockShapeAccess withDefaultResolverOf(Player player) {
+  public static MultiChunkKeyBlockShapeAccess withDefaultResolverOf(Player player) {
     return ofCustomResolver(player, BoundingBoxResolver.pipelineHead());
   }
 
-  public static MultiChunkKeyOCBlockShapeAccess ofCustomResolver(Player player, ResolverPipeline resolver) {
-    return new MultiChunkKeyOCBlockShapeAccess(player, resolver);
+  public static MultiChunkKeyBlockShapeAccess ofCustomResolver(Player player, ResolverPipeline resolver) {
+    return new MultiChunkKeyBlockShapeAccess(player, resolver);
   }
 }

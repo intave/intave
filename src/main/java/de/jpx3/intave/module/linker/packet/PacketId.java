@@ -2,6 +2,8 @@ package de.jpx3.intave.module.linker.packet;
 
 public final class PacketId {
   public enum Client {
+    @Deprecated
+    ALL("*"),
     ABILITIES("ABILITIES"),
     ADVANCEMENTS("ADVANCEMENTS"),
     ARM_ANIMATION("ARM_ANIMATION"),
@@ -66,6 +68,8 @@ public final class PacketId {
   }
 
   public enum Server {
+    @Deprecated
+    ALL("*"),
     ABILITIES("ABILITIES"),
     ADVANCEMENTS("ADVANCEMENTS"),
     ANIMATION("ANIMATION"),

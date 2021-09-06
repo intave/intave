@@ -3,8 +3,8 @@ package de.jpx3.intave.user;
 import de.jpx3.intave.access.UnsupportedFallbackOperationException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.annotate.Relocate;
-import de.jpx3.intave.block.shape.BlankUserOCBlockShapeAccess;
-import de.jpx3.intave.block.shape.OCBlockShapeAccess;
+import de.jpx3.intave.block.shape.BlankUserBlockShapeAccess;
+import de.jpx3.intave.block.shape.BlockShapeAccess;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.connect.customclient.CustomClientSupportConfig;
 import de.jpx3.intave.connect.shadow.ShadowPacketDataLink;
@@ -34,7 +34,7 @@ final class FallbackUser implements User {
   private final ComplexColliderProcessor complexColliderProcessor;
   private final SimpleColliderProcessor simpleColliderProcessor;
   private final Map<Pose, HitboxSize> poseSizes;
-  private OCBlockShapeAccess blockShapeAccess;
+  private BlockShapeAccess blockShapeAccess;
   private CustomClientSupportConfig customClientSupportConfig = CustomClientSupportConfig.createDefault();
 
   private final UserContext userContext = new UserContext(this);
@@ -43,7 +43,7 @@ final class FallbackUser implements User {
   FallbackUser() {
     this.metadata = new MetadataBundle(null, this);
     this.permissionCache = new ExpiringPermissionCache(16, TimeUnit.SECONDS);
-    this.blockShapeAccess = new BlankUserOCBlockShapeAccess();
+    this.blockShapeAccess = new BlankUserBlockShapeAccess();
     this.complexColliderProcessor = Collider.suitableComplexColliderProcessorFor(this);
     this.simpleColliderProcessor = Collider.suitableSimpleColliderProcessorFor(this);
     this.poseSizes = Pose.AT_LEAST_1_8_POSE;
@@ -152,7 +152,7 @@ final class FallbackUser implements User {
   }
 
   @Override
-  public OCBlockShapeAccess blockShapeAccess() {
+  public BlockShapeAccess blockShapeAccess() {
     return blockShapeAccess;
   }
 

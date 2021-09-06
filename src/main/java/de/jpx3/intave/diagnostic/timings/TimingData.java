@@ -12,11 +12,11 @@ public class TimingData implements Cloneable {
 
   private volatile boolean immutable = false;
 
-  public synchronized void addTime(long durationToAdd) {
+  public void addTime(long durationToAdd) {
     setTotalDuration(getTotalDuration() + durationToAdd);
   }
 
-  public synchronized void increaseCallCount() {
+  public void increaseCallCount() {
     setCalls(getCalls() + 1);
   }
 

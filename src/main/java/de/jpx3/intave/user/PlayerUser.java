@@ -10,8 +10,8 @@ import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.block.access.BlockTypeAccess;
-import de.jpx3.intave.block.shape.MultiChunkKeyOCBlockShapeAccess;
-import de.jpx3.intave.block.shape.OCBlockShapeAccess;
+import de.jpx3.intave.block.shape.BlockShapeAccess;
+import de.jpx3.intave.block.shape.MultiChunkKeyBlockShapeAccess;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.connect.customclient.CustomClientSupportConfig;
 import de.jpx3.intave.connect.shadow.ShadowPacketDataLink;
@@ -68,7 +68,7 @@ final class PlayerUser implements User {
   private final Map<MessageChannel, Predicate<Player>> channelConstraints = Maps.newEnumMap(MessageChannel.class);
   private final Map<Material, Material> typeTranslations = Maps.newHashMap();
   private final Map<Pose, HitboxSize> poseSizes;
-  private final OCBlockShapeAccess blockShapeAccess;
+  private final BlockShapeAccess blockShapeAccess;
   private boolean ignoreNextInboundPacket;
   private boolean ignoreNextOutboundPacket;
   private boolean hasShadow;
@@ -86,7 +86,7 @@ final class PlayerUser implements User {
     this.playerConnection = new WeakReference<>(ReflectiveHandleAccess.playerConnectionOf(player));
     this.metadata = new MetadataBundle(player, this);
     this.permissionCache = new ExpiringPermissionCache(16, TimeUnit.SECONDS);
-    this.blockShapeAccess = MultiChunkKeyOCBlockShapeAccess.withDefaultResolverOf(player());
+    this.blockShapeAccess = MultiChunkKeyBlockShapeAccess.withDefaultResolverOf(player());
     this.complexColliderProcessor = Collider.suitableComplexColliderProcessorFor(this);
     this.simpleColliderProcessor = Collider.suitableSimpleColliderProcessorFor(this);
     Synchronizer.synchronize(this::setDefaultMessagingChannel);
@@ -246,7 +246,7 @@ final class PlayerUser implements User {
   }
 
   @Override
-  public OCBlockShapeAccess blockShapeAccess() {
+  public BlockShapeAccess blockShapeAccess() {
     return blockShapeAccess;
   }
 

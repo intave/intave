@@ -1,7 +1,7 @@
 package de.jpx3.intave.world.raytrace;
 
 import de.jpx3.intave.block.access.BlockVariantRegister;
-import de.jpx3.intave.block.shape.OCBlockShapeAccess;
+import de.jpx3.intave.block.shape.BlockShapeAccess;
 import de.jpx3.intave.clazz.rewrite.PatchyAutoTranslation;
 import de.jpx3.intave.clazz.rewrite.PatchyTranslateParameters;
 import de.jpx3.intave.shade.BoundingBox;
@@ -134,7 +134,7 @@ public final class v14Raytracer implements Raytracer {
   @PatchyAutoTranslation
   @PatchyTranslateParameters
   private MovingObjectPositionBlock dualRaytrace(User user, RayTrace var0x, BlockPosition var1) {
-    OCBlockShapeAccess blockShapeAccess = user.blockShapeAccess();
+    BlockShapeAccess blockShapeAccess = user.blockShapeAccess();
     WorldServer worldServer = ((CraftWorld) user.player().getWorld()).getHandle();
     IBlockAccess blockAccess = worldServer.getChunkProvider().c(var1.getX() >> 4, var1.getZ() >> 4);
     if (blockAccess == null) {

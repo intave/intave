@@ -6,7 +6,7 @@ import de.jpx3.intave.block.access.BlockTypeAccess;
 import de.jpx3.intave.block.access.BlockVariantAccess;
 import de.jpx3.intave.block.access.BukkitBlockAccess;
 import de.jpx3.intave.block.physics.MaterialMagic;
-import de.jpx3.intave.block.shape.OCBlockShapeAccess;
+import de.jpx3.intave.block.shape.BlockShapeAccess;
 import de.jpx3.intave.block.shape.boxresolver.BoundingBoxResolver;
 import de.jpx3.intave.block.shape.boxresolver.ResolverPipeline;
 import de.jpx3.intave.shade.BoundingBox;
@@ -52,7 +52,7 @@ public final class Collision {
       movementData.outsideBorder = true;
     }
 
-    OCBlockShapeAccess blockShapeAccess = user.blockShapeAccess();
+    BlockShapeAccess blockShapeAccess = user.blockShapeAccess();
     World world = player.getWorld();
 
     // this looks 1000x slower than it actually is

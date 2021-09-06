@@ -623,6 +623,26 @@ public final class MovementDispatcher extends Module {
         return;
       }
 
+      /*
+        Some players abuse "velocity buffering", giving them the ability to jump up to 40 - 50 blocks (provided they have external help).
+        This fix is an attempt to decrease this bugs effectiveness, neither perfect nor sustainable, but at least working to a certain degree
+       */
+      int pendingVelocityPackets = movementData.pendingVelocityPackets.get();
+      if(pendingVelocityPackets > 1) {
+        if (pendingVelocityPackets < 6) {
+          velocity.setX(velocity.getX() / pendingVelocityPackets);
+          velocity.setY(Math.min(0, velocity.getY()));
+          velocity.setZ(velocity.getZ() / pendingVelocityPackets);
+          integers.writeSafely(1, (int) (velocity.getX() * 8000d));
+          integers.writeSafely(2, (int) (velocity.getY() * 8000d));
+          integers.writeSafely(3, (int) (velocity.getZ() * 8000d));
+        } else {
+          event.setCancelled(true);
+          return;
+        }
+      }
+
+      movementData.pendingVelocityPackets.incrementAndGet();
       movementData.emulationVelocity = velocity.clone();
       Modules.feedback().synchronize(player, velocity, this::receiveVelocity);
     }
@@ -641,7 +661,6 @@ public final class MovementDispatcher extends Module {
       movementData.physicsMotionY = velocity.getY();
       movementData.physicsMotionZ = velocity.getZ();
       movementData.lastVelocity = velocity.clone();
-
       if (!movementData.willReceiveSetbackVelocity) {
         movementData.pastExternalVelocity = 0;
       }
@@ -649,6 +668,7 @@ public final class MovementDispatcher extends Module {
     }
     Synchronizer.synchronize(() -> movementData.emulationVelocity = null);
     movementData.pastVelocity = 0;
+    movementData.pendingVelocityPackets.decrementAndGet();
   }
 
   @PacketSubscription(

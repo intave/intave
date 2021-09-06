@@ -1,15 +1,15 @@
 package de.jpx3.intave.block.shape;
 
 /**
- * The {@link CachedBlockShapeAccess} extends the functionality of the
- * {@link BlockShapeAccess} by adding methods related to cache invalidation.
+ * The {@link BlockShapeCache} extends the functionality of the
+ * {@link BlockShapeLookup} by adding methods related to cache invalidation.
  *
+ * @see BlockShapeLookup
+ * @see BlockShapeOverrides
  * @see BlockShapeAccess
- * @see OverrideBlockShapeAccess
- * @see OCBlockShapeAccess
  */
 
-public interface CachedBlockShapeAccess extends BlockShapeAccess {
+public interface BlockShapeCache extends BlockShapeLookup {
   /**
    * Invalidate all caches
    */

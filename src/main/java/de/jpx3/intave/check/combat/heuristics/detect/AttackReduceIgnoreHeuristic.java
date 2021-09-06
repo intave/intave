@@ -64,7 +64,7 @@ public final class AttackReduceIgnoreHeuristic extends MetaCheckPart<Heuristics,
       if (movementData.ignoredAttackReduce) {
         if (heuristicMeta.vl++ > 5) {
           String description = "did not reduce when attacking a player";
-          int options = LIMIT_2 | LIMIT_1 | SUGGEST_MINING | DELAY_16s;
+          int options = LIMIT_2 | SUGGEST_MINING | DELAY_16s;
           Anomaly anomaly = Anomaly.anomalyOf("21", Confidence.LIKELY, Anomaly.Type.KILLAURA, description, options);
           parentCheck().saveAnomaly(player, anomaly);
           heuristicMeta.vl = 0;
