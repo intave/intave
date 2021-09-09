@@ -88,7 +88,7 @@ public final class RotationSensitivityHeuristic extends MetaCheckPart<Heuristics
           double violationLevel = heuristicMeta.decimalSpeedVL / 200.0;
           Anomaly anomaly = Anomaly.anomalyOf(
             "113",
-            violationLevel > 4 ? Confidence.PROBABLE : Confidence.NONE,
+            Confidence.NONE,
             Anomaly.Type.KILLAURA,
             "rotations have too few decimals, vl:" + violationLevel,
             LIMIT_2 | DELAY_16s | SUGGEST_MINING
