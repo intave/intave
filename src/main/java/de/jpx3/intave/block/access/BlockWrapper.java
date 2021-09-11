@@ -98,6 +98,7 @@ public final class BlockWrapper {
     }
 
     @Override
+    @PatchyAutoTranslation
     @PatchyTranslateParameters
     public @NotNull BlockData getBlockData() {
       return CraftBlockData.fromData(getNMS());
