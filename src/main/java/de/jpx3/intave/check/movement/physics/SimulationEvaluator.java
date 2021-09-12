@@ -57,7 +57,7 @@ public final class SimulationEvaluator {
 
     //TODO: Bad fix
     if (clientData.applyModernCollider() && Math.abs(differenceY - 0.2) < 1e-5 && movementData.lastOnGround && !movementData.onGround) {
-      if (!Collision.isNotInsideBlocks(player, movementData.boundingBox().addCoord(movementData.motionX(), 0.201, movementData.motionZ()))) {
+      if (Collision.present(player, movementData.boundingBox().addCoord(movementData.motionX(), 0.201, movementData.motionZ()))) {
         differenceY = 0;
       }
     }

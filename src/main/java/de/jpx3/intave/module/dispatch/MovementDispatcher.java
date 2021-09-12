@@ -14,7 +14,6 @@ import de.jpx3.intave.check.movement.Timer;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.world.InteractionRaytrace;
 import de.jpx3.intave.executor.Synchronizer;
-import de.jpx3.intave.fakeplayer.FakePlayer;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
@@ -27,6 +26,7 @@ import de.jpx3.intave.module.linker.packet.PrioritySlot;
 import de.jpx3.intave.module.tracker.entity.WrappedEntity;
 import de.jpx3.intave.packet.converter.PlayerAction;
 import de.jpx3.intave.packet.converter.PlayerActionResolver;
+import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.shade.BoundingBox;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -110,7 +110,7 @@ public final class MovementDispatcher extends Module {
     User user = UserRepository.userOf(player);
     Location respawnLocation = respawn.getRespawnLocation().clone();
     BoundingBox bb = BoundingBox.fromPosition(user, respawnLocation);
-    while (respawnLocation.getY() < 256 && Collision.isInsideBlocks(player, bb)) {
+    while (respawnLocation.getY() < 256 && Collision.present(player, bb)) {
       respawnLocation.add(0, 1, 0);
       bb = BoundingBox.fromPosition(user, respawnLocation);
     }
@@ -340,7 +340,7 @@ public final class MovementDispatcher extends Module {
 
       attackData.updatePerfectRotation();
 
-      if (inventoryData.awaitingSlotSet != -1) {
+/*      if (inventoryData.awaitingSlotSet != -1) {
         Synchronizer.synchronize(() -> {
           int awaitingSlotSet = inventoryData.awaitingSlotSet;
           if (awaitingSlotSet != -1) {
@@ -348,7 +348,7 @@ public final class MovementDispatcher extends Module {
             inventoryData.awaitingSlotSet = -1;
           }
         });
-      }
+      }*/
       updatePotionEffects(user);
       movementData.canResetMotion = false;
     } else {

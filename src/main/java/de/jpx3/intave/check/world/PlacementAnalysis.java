@@ -24,10 +24,11 @@ public final class PlacementAnalysis extends Check {
     boolean partner = (ProtocolMetadata.VERSION_DETAILS & 0x100) != 0;
     if (enterprise || partner) {
       appendCheckPart(new SpeedAnalyzer(this));
-      appendCheckPart(new RotationSpeedAnalyzer(this));
       appendCheckPart(new SharpRotationAnalyzer(this));
       appendCheckPart(new SneakAnalyzer(this));
+      appendCheckPart(new BlockRotationAnalyzer(this));
     }
+    appendCheckPart(new RotationSpeedAnalyzer(this));
     appendCheckPart(new PacketOrderAnalyzer(this));
     appendCheckPart(new FacingAnalyzer(this));
   }

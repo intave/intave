@@ -23,7 +23,7 @@ import java.util.function.Consumer;
  * It is stored, linked, unlinked and deleted by a {@link CheckService}, where it is
  * made accessible to external modules. <br> All instances of implementation classes must be singleton,
  * only to be addressed and distinguished by their {@code class}.
- * They hold a unique name in {@link String} that must equal their original classname, a unique configuration key, an enabled state,
+ * They hold a unique name in {@link String} that must equal their original classname, a unique configuration key, an enabled variant,
  * a {@link CheckConfiguration} and {@link CheckStatistics}.
  * <br>
  * <br>

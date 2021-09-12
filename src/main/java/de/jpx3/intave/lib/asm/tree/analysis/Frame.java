@@ -86,7 +86,7 @@ public class Frame<V extends Value> {
   }
 
   /**
-   * Copies the state of the given frame into this frame.
+   * Copies the variant of the given frame into this frame.
    *
    * @param frame a frame.
    * @return this frame.

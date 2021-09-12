@@ -9,6 +9,7 @@ import de.jpx3.intave.annotate.refactoring.IdoNotBelongHere;
 import de.jpx3.intave.clazz.trace.Caller;
 import de.jpx3.intave.clazz.trace.PluginInvocation;
 import de.jpx3.intave.cleanup.GarbageCollector;
+import de.jpx3.intave.entity.datawatcher.DataWatcherAccess;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.feedback.FeedbackSender;
@@ -16,8 +17,8 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.tracker.entity.EntityCollisionDisabler;
 import de.jpx3.intave.module.tracker.entity.LazyEntityCollisionService;
-import de.jpx3.intave.player.item.ItemProperties;
-import de.jpx3.intave.reflect.access.ReflectiveDataWatcherAccess;
+import de.jpx3.intave.player.ItemProperties;
+import de.jpx3.intave.player.dmc.DamageController;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLifetimeService;
 import de.jpx3.intave.user.UserRepository;
@@ -44,7 +45,8 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 
-import static de.jpx3.intave.reflect.access.ReflectiveDataWatcherAccess.WATCHER_BLOCKING_ID;
+import static de.jpx3.intave.entity.datawatcher.DataWatcherAccess.WATCHER_BLOCKING_ID;
+import static org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BLOCKING;
 
 @Deprecated
 public final class EventService implements BukkitEventSubscriber {
@@ -139,7 +141,7 @@ public final class EventService implements BukkitEventSubscriber {
     User user = UserRepository.userOf(player);
     if (/*user.meta().inventory().handActive() && */ItemProperties.isSwordItem(player.getItemOnCursor()) && !ViaVersionAdapter.ignoreBlocking(user.player())) {
       Synchronizer.synchronize(() -> {
-        ReflectiveDataWatcherAccess.setDataWatcherFlag(player, WATCHER_BLOCKING_ID, false);
+        DataWatcherAccess.setDataWatcherFlag(player, WATCHER_BLOCKING_ID, false);
 //        player.sendMessage(ReflectiveDataWatcherAccess.getDataWatcherFlag(player, WATCHER_BLOCKING_ID) + "");
       });
     }
@@ -147,8 +149,7 @@ public final class EventService implements BukkitEventSubscriber {
 
   @BukkitEventSubscription
   public void on(EntityDamageByEntityEvent event) {
-    Entity attacker = event.getDamager();
-    if (!(attacker instanceof Player ) || event.getCause() != EntityDamageEvent.DamageCause.ENTITY_ATTACK) {
+    if (event.getCause() != EntityDamageEvent.DamageCause.ENTITY_ATTACK) {
       return;
     }
     Entity attacked = event.getEntity();
@@ -157,9 +158,9 @@ public final class EventService implements BukkitEventSubscriber {
     }
     Player attackedPlayer = (Player) attacked;
     User user = UserRepository.userOf(attackedPlayer);
-    double blockingDamageAbsorption = event.getDamage(EntityDamageEvent.DamageModifier.BLOCKING);
-    if (blockingDamageAbsorption != 0 && !user.meta().inventory().handActive()) {
-      event.setDamage(EntityDamageEvent.DamageModifier.BLOCKING, 0);
+    double blockingDamageAbsorption = event.getDamage(BLOCKING);
+    if (blockingDamageAbsorption < 0 && !user.meta().inventory().handActive()) {
+      DamageController.withNewDamageApplier(event, BLOCKING, current -> -0d);
     }
   }
 
@@ -170,7 +171,6 @@ public final class EventService implements BukkitEventSubscriber {
     }
     User user = UserRepository.userOf((Player) event.getEntity());
     InventoryMetadata inventory = user.meta().inventory();
-
     if (inventory.blockNextArrow && !inventory.handActive()) {
       event.setCancelled(true);
       inventory.blockNextArrow = false;

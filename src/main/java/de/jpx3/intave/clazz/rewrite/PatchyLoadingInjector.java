@@ -51,7 +51,7 @@ public final class PatchyLoadingInjector {
     className = className.replace('.', '/') + ".class";
     InputStream stream = classLoader.getResourceAsStream(className);
     if (stream == null) {
-      IntaveLogger.logger().pushPrintln("Unable to resolve class bytes for class " + className + ". Performing manual load attempt..");
+      IntaveLogger.logger().printLine("Unable to resolve class bytes for class " + className + ". Performing manual load attempt..");
       String path;
       try {
         path = PatchyLoadingInjector.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();

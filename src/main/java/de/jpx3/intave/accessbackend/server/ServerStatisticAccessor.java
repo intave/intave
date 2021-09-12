@@ -4,7 +4,7 @@ import com.google.common.collect.Maps;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.server.ServerHealthStatisticAccess;
 import de.jpx3.intave.cleanup.ShutdownTasks;
-import de.jpx3.intave.reflect.access.TPSAccess;
+import de.jpx3.intave.metric.ServerHealth;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +48,7 @@ public final class ServerStatisticAccessor {
   }
 
   private double tickAverageOf(ServerHealthStatisticAccess.TimeSpan span) {
-    return TPSAccess.recentTickAverage()[indexOf(span)];
+    return ServerHealth.recentTickAverage()[indexOf(span)];
   }
 
   private int indexOf(ServerHealthStatisticAccess.TimeSpan timeSpan) {

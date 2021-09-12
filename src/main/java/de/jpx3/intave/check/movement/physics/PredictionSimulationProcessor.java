@@ -2,6 +2,7 @@ package de.jpx3.intave.check.movement.physics;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
@@ -12,8 +13,8 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.dispatch.AttackDispatcher;
+import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.player.collider.complex.ComplexColliderSimulationResult;
-import de.jpx3.intave.player.item.ItemProperties;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
 import de.jpx3.intave.user.UserRepository;
@@ -21,7 +22,6 @@ import de.jpx3.intave.user.meta.InventoryMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import java.lang.reflect.InvocationTargetException;
@@ -109,28 +109,17 @@ public final class PredictionSimulationProcessor implements SimulationProcessor 
   }
 
   private void releaseHandOf(User user) {
-    MetadataBundle meta = user.meta();
-    InventoryMetadata inventoryData = meta.inventory();
-
-    inventoryData.setHandActive(false);
-    Material heldItemType = inventoryData.heldItemType();
-    sendStopUseItemPacketToServer(user, heldItemType);
-  }
-
-  private void sendStopUseItemPacketToServer(User user, Material type) {
     Player player = user.player();
     try {
+      ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
       InventoryMetadata inventory = user.meta().inventory();
-      inventory.blockNextArrow = ItemProperties.isBow(type);
-
-      PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Client.BLOCK_DIG);
+      inventory.blockNextArrow = ItemProperties.isBow(inventory.heldItemType()) || ItemProperties.isBow(inventory.activeItem());
+      PacketContainer packet = protocolManager.createPacket(PacketType.Play.Client.BLOCK_DIG);
       packet.getBlockPositionModifier().write(0, new BlockPosition(0,0,0));
       packet.getDirections().write(0, EnumWrappers.Direction.DOWN);
       packet.getPlayerDigTypes().write(0, EnumWrappers.PlayerDigType.RELEASE_USE_ITEM);
-
       user.ignoreNextInboundPacket();
-      ProtocolLibrary.getProtocolManager().recieveClientPacket(player, packet);
-
+      protocolManager.recieveClientPacket(player, packet);
       updatePlayerHandItem(player);
     } catch (InvocationTargetException | IllegalAccessException exception) {
       exception.printStackTrace();

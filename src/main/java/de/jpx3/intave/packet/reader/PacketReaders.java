@@ -21,9 +21,9 @@ public final class PacketReaders {
     setup(Server.MAP_CHUNK_BULK, MapChunkBulkReader::new);
 
     setup(Client.CUSTOM_PAYLOAD, PayloadInReader::new);
-    setup(Client.BLOCK_PLACE, BlockPlaceReader::new);
+    setup(Client.BLOCK_PLACE, BlockInteractionReader::new);
+    setup(Client.USE_ITEM, BlockInteractionReader::new);
     setup(Client.BLOCK_DIG, BlockPositionReader::new);
-    setup(Client.USE_ITEM, BlockPositionReader::new);
   }
 
   private static void setup(PacketType type, Supplier<? extends PacketReader> supplier) {

@@ -2,7 +2,7 @@ package de.jpx3.intave.block.fluid.resolver;
 
 import de.jpx3.intave.block.access.BlockTypeAccess;
 import de.jpx3.intave.block.access.BlockVariantAccess;
-import de.jpx3.intave.block.access.BukkitBlockAccess;
+import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.fluid.FluidEngine;
 import de.jpx3.intave.block.fluid.FluidTag;
 import de.jpx3.intave.block.fluid.LegacyWaterflow;
@@ -23,7 +23,7 @@ public final class v12FluidResolver extends FluidEngine {
   @Override
   protected WrappedFluid fluidAt(User user, int x, int y, int z) {
     Player player = user.player();
-    Block block = BukkitBlockAccess.blockAccess(user.player().getWorld(), x, y, z);
+    Block block = VolatileBlockAccess.unsafe__BlockAccess(user.player().getWorld(), x, y, z);
     if (block.getY() < 0) {
       return WrappedFluid.empty();
     }
@@ -65,8 +65,8 @@ public final class v12FluidResolver extends FluidEngine {
     for (int x = minX; x < maxX; ++x) {
       for (int y = minY; y < maxY; ++y) {
         for (int z = minZ; z < maxZ; ++z) {
-          Block block = BukkitBlockAccess.blockAccess(world, x, y, z);
-          Material clientSideBlock = BukkitBlockAccess.cacheAppliedTypeAccess(user, world, x, y, z);
+          Block block = VolatileBlockAccess.unsafe__BlockAccess(world, x, y, z);
+          Material clientSideBlock = VolatileBlockAccess.safeTypeAccess(user, world, x, y, z);
           boolean waterServerSide = MaterialMagic.isWater(BlockTypeAccess.typeAccess(block, player));
           boolean waterClientSide = MaterialMagic.isWater(clientSideBlock);
           if (waterServerSide) {

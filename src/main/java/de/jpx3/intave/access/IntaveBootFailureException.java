@@ -2,7 +2,7 @@ package de.jpx3.intave.access;
 
 /**
  * An exception describing a fatal issue within the boot procedure of Intave.
- * Issues of this type are usually caused by a users' mistake.
+ * Issues of this type are usually caused by a user's mistake.
  */
 public class IntaveBootFailureException extends RuntimeException {
   public IntaveBootFailureException() {

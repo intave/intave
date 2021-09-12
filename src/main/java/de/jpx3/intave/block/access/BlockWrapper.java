@@ -61,7 +61,7 @@ public final class BlockWrapper {
 
     @Override
     public Material getType() {
-      return BukkitBlockAccess.cacheAppliedTypeAccess(user, location);
+      return VolatileBlockAccess.safeTypeAccess(user, location);
     }
   }
 
@@ -83,7 +83,7 @@ public final class BlockWrapper {
 
     @Override
     public @NotNull Material getType() {
-      return BukkitBlockAccess.cacheAppliedTypeAccess(user, location);
+      return VolatileBlockAccess.safeTypeAccess(user, location);
     }
 
 
@@ -98,6 +98,7 @@ public final class BlockWrapper {
     }
 
     @Override
+    @PatchyAutoTranslation
     @PatchyTranslateParameters
     public @NotNull BlockData getBlockData() {
       return CraftBlockData.fromData(getNMS());
@@ -123,7 +124,7 @@ public final class BlockWrapper {
       if (MinecraftVersions.VER1_14_0.atOrAbove()) {
         return 0;
       }
-      return (byte) BukkitBlockAccess.cacheAppliedVariantAccess(
+      return (byte) VolatileBlockAccess.safeVariantAccess(
         user, location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ()
       );
     }

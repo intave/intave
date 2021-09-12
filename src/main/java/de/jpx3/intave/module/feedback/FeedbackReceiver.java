@@ -16,6 +16,7 @@ import de.jpx3.intave.user.meta.ConnectionMetadata;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
@@ -62,13 +63,13 @@ public final class FeedbackReceiver extends Module {
       if (thread.getName().contains("Netty")) {
         boolean containsIntave = false;
         for (StackTraceElement stackTraceElement : stackTraceElements) {
-          if (stackTraceElement.getClassName().contains("Intave")) {
+          if (stackTraceElement.getClassName().toLowerCase(Locale.ROOT).contains("intave")) {
             containsIntave = true;
             break;
           }
         }
         if (containsIntave) {
-          System.out.println("Thread:" + thread.getName());
+          System.out.println("Thread: " + thread.getName());
           Exception exception = new Exception();
           exception.setStackTrace(stackTraceElements);
           exception.printStackTrace();

@@ -3,7 +3,6 @@ package de.jpx3.intave.shade;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.KeepEnumInternalNames;
 import de.jpx3.intave.clazz.Lookup;
-import de.jpx3.intave.reflect.access.ReflectiveAccess;
 import de.jpx3.intave.shade.link.WrapperLinkage;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -121,7 +120,7 @@ public class MovingObjectPosition {
     try {
       Class<?> movingObjectPositionClass = Lookup.serverClass("MovingObjectPosition");
       Field eField = movingObjectPositionClass.getDeclaredField("e");
-      ReflectiveAccess.ensureAccessible(eField);
+      ensureAccessibility(eField);
       Object blockPosition = eField.get(movingObjectPosition);
       Object type = movingObjectPositionClass.getField("type").get(movingObjectPosition);
       Object direction = movingObjectPositionClass.getField("direction").get(movingObjectPosition);
@@ -141,6 +140,12 @@ public class MovingObjectPosition {
       }
     } catch (Exception exception) {
       throw new IllegalStateException(exception);
+    }
+  }
+
+  private static void ensureAccessibility(Field field) {
+    if (!field.isAccessible()) {
+      field.setAccessible(true);
     }
   }
 

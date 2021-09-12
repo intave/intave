@@ -1,6 +1,6 @@
 package de.jpx3.intave.block.fluid;
 
-import de.jpx3.intave.block.access.BukkitBlockAccess;
+import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.shade.*;
 import de.jpx3.intave.user.User;
@@ -25,9 +25,9 @@ public final class LegacyWaterflow {
     for (int x = minX; x < maxX; ++x) {
       for (int y = minY; y < maxY; ++y) {
         for (int z = minZ; z < maxZ; ++z) {
-          Material type = BukkitBlockAccess.cacheAppliedTypeAccess(user, world, x, y, z);
+          Material type = VolatileBlockAccess.safeTypeAccess(user, world, x, y, z);
           if (MaterialMagic.isWater(type)) {
-            int level = BukkitBlockAccess.cacheAppliedVariantAccess(user, world, x, y, z);
+            int level = VolatileBlockAccess.safeVariantAccess(user, world, x, y, z);
             double d0 = (float) (y + 1) - resolveLiquidHeightPercentage(level);
             if ((double) maxY >= d0) {
               inWater = true;
@@ -93,18 +93,18 @@ public final class LegacyWaterflow {
 
   private static int resolveLevel(User user, BlockPosition pos) {
     World world = user.player().getWorld();
-    Material clientSideBlock = BukkitBlockAccess.cacheAppliedTypeAccess(user, world, pos.xCoord, pos.yCoord, pos.zCoord);
-    return MaterialMagic.isWater(clientSideBlock) ? BukkitBlockAccess.cacheAppliedVariantAccess(user, world, pos.xCoord, pos.yCoord, pos.zCoord) : -1;
+    Material clientSideBlock = VolatileBlockAccess.safeTypeAccess(user, world, pos.xCoord, pos.yCoord, pos.zCoord);
+    return MaterialMagic.isWater(clientSideBlock) ? VolatileBlockAccess.safeVariantAccess(user, world, pos.xCoord, pos.yCoord, pos.zCoord) : -1;
   }
 
   private static boolean blocksMovement(User user, BlockPosition position) {
-    Material type = BukkitBlockAccess.cacheAppliedTypeAccess(user, user.player().getWorld(), position.xCoord, position.yCoord, position.zCoord);//blockAt(world, position).getType();
+    Material type = VolatileBlockAccess.safeTypeAccess(user, user.player().getWorld(), position.xCoord, position.yCoord, position.zCoord);//blockAt(world, position).getType();
     return MaterialMagic.blocksMovement(type);
   }
 
   private static boolean isBlockSolid(User user, BlockPosition pos, EnumDirection side) {
     World world = user.player().getWorld();
-    Material type = BukkitBlockAccess.cacheAppliedTypeAccess(user, world, pos.xCoord, pos.yCoord, pos.zCoord);
+    Material type = VolatileBlockAccess.safeTypeAccess(user, world, pos.xCoord, pos.yCoord, pos.zCoord);
     return !MaterialMagic.isLiquid(type) && (side == EnumDirection.UP || (type != Material.ICE && MaterialMagic.blockSolid(type)));
   }
 

@@ -106,13 +106,13 @@ public final class FilteringPacketAdapter extends WeakReferencePacketAdapter imp
 
   private void processException(PacketType packetType, RuntimeException exception) {
     String simpleName = exception.getClass().getSimpleName();
-    IntaveLogger.logger().pushPrintln("[Intave] " + resolveIndefArticle(simpleName) + " " + simpleName + " occurred while processing a "+packetType.name()+" packet ("+subscriber.getClass().getSimpleName()+"."+methodName+")");
+    IntaveLogger.logger().printLine("[Intave] " + resolveIndefArticle(simpleName) + " " + simpleName + " occurred while processing a "+packetType.name()+" packet ("+subscriber.getClass().getSimpleName()+"."+methodName+")");
     exception.printStackTrace();
   }
 
   private void processError(PacketType packetType, Error error) {
     String simpleName = error.getClass().getSimpleName();
-    IntaveLogger.logger().pushPrintln("[Intave] " + resolveIndefArticle(simpleName) + " " + simpleName + " occurred while processing a "+packetType.name()+" packet ("+subscriber.getClass().getSimpleName()+"."+methodName+")");
+    IntaveLogger.logger().printLine("[Intave] " + resolveIndefArticle(simpleName) + " " + simpleName + " occurred while processing a "+packetType.name()+" packet ("+subscriber.getClass().getSimpleName()+"."+methodName+")");
     error.printStackTrace();
   }
 

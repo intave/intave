@@ -1,9 +1,9 @@
 package de.jpx3.intave.block.collision;
 
-import de.jpx3.intave.block.access.BukkitBlockAccess;
-import de.jpx3.intave.block.state.BlockState;
-import de.jpx3.intave.block.state.BlockStateBoolean;
-import de.jpx3.intave.block.state.BlockStateInteger;
+import de.jpx3.intave.block.access.VolatileBlockAccess;
+import de.jpx3.intave.block.variant.BlockVariant;
+import de.jpx3.intave.block.variant.BlockVariantBoolean;
+import de.jpx3.intave.block.variant.BlockVariantInteger;
 import de.jpx3.intave.shade.BoundingBox;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -15,10 +15,10 @@ import java.util.Collections;
 import java.util.List;
 
 public final class ScaffoldingCollisionModifier extends CollisionModifier {
-  private final BlockStateInteger blockDistanceState = BlockStateInteger.of("distance", 0, 7);
-  private final BlockStateBoolean blockBottomState = BlockStateBoolean.of("bottom");
+  private final BlockVariantInteger blockDistanceState = BlockVariantInteger.of("distance", 0, 7);
+  private final BlockVariantBoolean blockBottomState = BlockVariantBoolean.of("bottom");
 
-  private final BlockState blockState = BlockState.builder()
+  private final BlockVariant blockVariant = BlockVariant.builder()
     .with(blockDistanceState)
     .with(blockBottomState)
     .build();
@@ -43,11 +43,11 @@ public final class ScaffoldingCollisionModifier extends CollisionModifier {
   }
 
   private boolean bottomProperty(User user, World world, int posX, int posY, int posZ) {
-    Block block = BukkitBlockAccess.blockAccess(world, posX, posY, posZ);
+    Block block = VolatileBlockAccess.unsafe__BlockAccess(world, posX, posY, posZ);
     if (block.getY() < 0) {
       return false;
     }
-    return blockState.valueOf(user, block, blockBottomState) && blockState.valueOf(user, block, blockDistanceState) != 0;
+    return blockVariant.valueOf(user, block, blockBottomState) && blockVariant.valueOf(user, block, blockDistanceState) != 0;
   }
 
   private boolean useCustomCollision(User user, double blockY) {

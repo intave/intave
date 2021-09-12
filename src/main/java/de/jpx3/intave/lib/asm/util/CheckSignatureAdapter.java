@@ -104,7 +104,7 @@ public class CheckSignatureAdapter extends SignatureVisitor {
   /** The type of the visited signature. */
   private final int type;
 
-  /** The current state of the automaton used to check the order of method calls. */
+  /** The current variant of the automaton used to check the order of method calls. */
   private State state;
 
   /** Whether the visited signature can be 'V'. */

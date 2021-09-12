@@ -232,7 +232,7 @@ public abstract class MethodVisitor {
   }
 
   /**
-   * Visits the current state of the local variables and operand stack elements. This method must(*)
+   * Visits the current variant of the local variables and operand stack elements. This method must(*)
    * be called <i>just before</i> any instruction <b>i</b> that follows an unconditional branch
    * instruction such as GOTO or THROW, that is the target of a jump instruction, or that starts an
    * exception handler block. The visited types must describe the values of the local variables and
@@ -247,7 +247,7 @@ public abstract class MethodVisitor {
    *
    * <ul>
    *   <li>In expanded form, all frames must have the F_NEW type.
-   *   <li>In compressed form, frames are basically "deltas" from the state of the previous frame:
+   *   <li>In compressed form, frames are basically "deltas" from the variant of the previous frame:
    *       <ul>
    *         <li>{@link Opcodes#F_SAME} representing frame with exactly the same locals as the
    *             previous frame and with the empty stack.

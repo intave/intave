@@ -33,9 +33,9 @@ package de.jpx3.intave.lib.asm;
  * <p>Stack map frames are computed in two steps:
  *
  * <ul>
- *   <li>During the visit of each instruction in MethodWriter, the state of the frame at the end of
+ *   <li>During the visit of each instruction in MethodWriter, the variant of the frame at the end of
  *       the current basic block is updated by simulating the action of the instruction on the
- *       previous state of this so called "output frame".
+ *       previous variant of this so called "output frame".
  *   <li>After all instructions have been visited, a fix point algorithm is used in MethodWriter to
  *       compute the "input frame" of each basic block (i.e. the stack map frame at the beginning of
  *       the basic block). See {@link MethodWriter#computeAllFrames}.

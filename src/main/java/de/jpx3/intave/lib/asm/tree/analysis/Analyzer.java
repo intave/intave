@@ -104,7 +104,7 @@ public class Analyzer<V extends Value> implements Opcodes {
    *
    * @param owner  the internal name of the class to which 'method' belongs.
    * @param method the method to be analyzed.
-   * @return the symbolic state of the execution stack frame at each bytecode instruction of the
+   * @return the symbolic variant of the execution stack frame at each bytecode instruction of the
    * method. The size of the returned array is equal to the number of instructions (and labels)
    * of the method. A given frame is {@literal null} if and only if the corresponding
    * instruction cannot be reached (dead code).
@@ -430,7 +430,7 @@ public class Analyzer<V extends Value> implements Opcodes {
   /**
    * Returns the symbolic execution stack frame for each instruction of the last analyzed method.
    *
-   * @return the symbolic state of the execution stack frame at each bytecode instruction of the
+   * @return the symbolic variant of the execution stack frame at each bytecode instruction of the
    * method. The size of the returned array is equal to the number of instructions (and labels)
    * of the method. A given frame is {@literal null} if the corresponding instruction cannot be
    * reached, or if an error occurred during the analysis of the method.

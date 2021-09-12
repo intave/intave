@@ -1,5 +1,6 @@
 package de.jpx3.intave.shade;
 
+import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.diagnostic.MemoryTraced;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.shade.link.WrapperLinkage;
@@ -8,7 +9,10 @@ import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.Location;
 
-public final class BoundingBox extends MemoryTraced {
+import java.util.Collections;
+import java.util.List;
+
+public final class BoundingBox extends MemoryTraced implements BlockShape {
   public final double minX, minY, minZ;
   public final double maxX, maxY, maxZ;
 
@@ -133,7 +137,7 @@ public final class BoundingBox extends MemoryTraced {
    * the X dimension.  return var2 if the bounding boxes do not overlap or if var2 is closer to 0 then the calculated
    * offset.  Otherwise return the calculated offset.
    */
-  public double calculateXOffset(BoundingBox other, double offsetX) {
+  public double allowedXOffset(BoundingBox other, double offsetX) {
     if (other.maxY > this.minY && other.minY < this.maxY && other.maxZ > this.minZ && other.minZ < this.maxZ) {
       if (offsetX > 0.0D && other.maxX <= this.minX) {
         double d1 = this.minX - other.maxX;
@@ -158,22 +162,19 @@ public final class BoundingBox extends MemoryTraced {
    * the Y dimension.  return var2 if the bounding boxes do not overlap or if var2 is closer to 0 then the calculated
    * offset.  Otherwise return the calculated offset.
    */
-  public double calculateYOffset(BoundingBox other, double offsetY) {
+  public double allowedYOffset(BoundingBox other, double offsetY) {
     if (other.maxX > this.minX && other.minX < this.maxX && other.maxZ > this.minZ && other.minZ < this.maxZ) {
       if (offsetY > 0.0D && other.maxY <= this.minY) {
         double d1 = this.minY - other.maxY;
-
         if (d1 < offsetY) {
           offsetY = d1;
         }
       } else if (offsetY < 0.0D && other.minY >= this.maxY) {
         double d0 = this.maxY - other.minY;
-
         if (d0 > offsetY) {
           offsetY = d0;
         }
       }
-
     }
     return offsetY;
   }
@@ -183,7 +184,7 @@ public final class BoundingBox extends MemoryTraced {
    * the Z dimension.  return var2 if the bounding boxes do not overlap or if var2 is closer to 0 then the calculated
    * offset.  Otherwise return the calculated offset.
    */
-  public double calculateZOffset(BoundingBox other, double offsetZ) {
+  public double allowedZOffset(BoundingBox other, double offsetZ) {
     if (other.maxX > this.minX && other.minX < this.maxX && other.maxY > this.minY && other.minY < this.maxY) {
       if (offsetZ > 0.0D && other.maxZ <= this.minZ) {
         double d1 = this.minZ - other.maxZ;
@@ -201,11 +202,35 @@ public final class BoundingBox extends MemoryTraced {
     return offsetZ;
   }
 
+  @Override
+  public BlockShape contextualized(int posX, int posY, int posZ) {
+    if (isOriginBox()) {
+      return offset(posX, posY, posZ);
+    }
+    return this;
+  }
+
+  @Override
+  public BlockShape normalized(int posX, int posY, int posZ) {
+    makeOriginBox();
+    return offset(-posX, -posY, -posZ);
+  }
+
+  @Override
+  public List<BoundingBox> boundingBoxes() {
+    return Collections.singletonList(this);
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return false;
+  }
+
   /**
    * Returns whether the given bounding box intersects with this one. Args: axisAlignedBB
    */
-  public boolean intersectsWith(BoundingBox other) {
-    return other.maxX > this.minX && other.minX < this.maxX && (other.maxY > this.minY && other.minY < this.maxY && other.maxZ > this.minZ && other.minZ < this.maxZ);
+  public boolean intersectsWith(BoundingBox boundingBox) {
+    return boundingBox.maxX > this.minX && boundingBox.minX < this.maxX && (boundingBox.maxY > this.minY && boundingBox.minY < this.maxY && boundingBox.maxZ > this.minZ && boundingBox.minZ < this.maxZ);
   }
 
   /**

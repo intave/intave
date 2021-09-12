@@ -33,7 +33,7 @@ public final class ConnectionHealthTelemetry implements PacketEventSubscriber {
         User user = UserRepository.userOf(player);
         long dur = System.currentTimeMillis() - lastKeepAliveResponse(user);
         if (TIMEOUT_DURATION < dur) {
-          IntaveLogger.logger().pushPrintln("[Intave] " + player.getName() + " was not responding to keep-alive packets for at least 30 seconds");
+          IntaveLogger.logger().printLine("[Intave] " + player.getName() + " was not responding to keep-alive packets for at least 30 seconds");
           user.synchronizedDisconnect("Timed out");
           if (IntaveControl.NETTY_DUMP_ON_TIMEOUT) {
             dumpNettyThreads();

@@ -2,8 +2,8 @@ package de.jpx3.intave.check.combat.heuristics.mine;
 
 import de.jpx3.intave.check.combat.heuristics.MiningStrategy;
 import de.jpx3.intave.executor.BackgroundExecutor;
-import de.jpx3.intave.fakeplayer.FakePlayer;
-import de.jpx3.intave.fakeplayer.movement.PositionRotationLookup;
+import de.jpx3.intave.player.fake.FakePlayer;
+import de.jpx3.intave.player.fake.movement.PositionRotationLookup;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AttackMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;

@@ -2,11 +2,11 @@ package de.jpx3.intave.check.movement.physics;
 
 import de.jpx3.intave.annotate.refactoring.IdoNotBelongHere;
 import de.jpx3.intave.block.access.BlockWrapper;
-import de.jpx3.intave.block.access.BukkitBlockAccess;
+import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.physics.BlockProperties;
 import de.jpx3.intave.block.physics.MaterialMagic;
-import de.jpx3.intave.player.item.ItemProperties;
+import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.shade.BoundingBox;
 import de.jpx3.intave.shade.WrappedMathHelper;
 import de.jpx3.intave.user.User;
@@ -24,8 +24,6 @@ import org.bukkit.material.Attachable;
 import org.bukkit.material.Directional;
 import org.bukkit.material.MaterialData;
 import org.bukkit.material.Openable;
-
-import java.util.List;
 
 public final class MovementHelper {
   @Deprecated
@@ -65,7 +63,7 @@ public final class MovementHelper {
   @Deprecated
   @IdoNotBelongHere
   public static float currentSlipperiness(User user, Location location) {
-    Material type = BukkitBlockAccess.cacheAppliedTypeAccess(user, location);
+    Material type = VolatileBlockAccess.safeTypeAccess(user, location);
     return BlockProperties.ofType(type).slipperiness() * 0.91f;
   }
 
@@ -82,8 +80,7 @@ public final class MovementHelper {
   @Deprecated
   @IdoNotBelongHere
   private static boolean isLiquidPresentInAABB(Player player, BoundingBox boundingBox) {
-    List<BoundingBox> collisionBoxes = Collision.resolve(player, boundingBox);
-    return collisionBoxes.isEmpty() && !isAnyLiquid(player.getWorld(), UserRepository.userOf(player), boundingBox);
+    return Collision.nonePresent(player, boundingBox) && !isAnyLiquid(player.getWorld(), UserRepository.userOf(player), boundingBox);
   }
 
   @Deprecated
@@ -98,7 +95,7 @@ public final class MovementHelper {
     for (int x = minX; x <= maxX; ++x) {
       for (int y = minY; y <= maxY; ++y) {
         for (int z = minZ; z <= maxZ; ++z) {
-          Material material = BukkitBlockAccess.cacheAppliedTypeAccess(user, world, x, y, z);
+          Material material = VolatileBlockAccess.safeTypeAccess(user, world, x, y, z);
           if (MaterialMagic.isLiquid(material)) {
             return true;
           }
@@ -120,7 +117,7 @@ public final class MovementHelper {
     for (int x = minX; x <= maxX; ++x) {
       for (int y = minY; y <= maxY; ++y) {
         for (int z = minZ; z <= maxZ; ++z) {
-          Material material = BukkitBlockAccess.cacheAppliedTypeAccess(user, world, x, y, z);
+          Material material = VolatileBlockAccess.safeTypeAccess(user, world, x, y, z);
           if (!MaterialMagic.isLiquid(material)) {
             return false;
           }
@@ -142,7 +139,7 @@ public final class MovementHelper {
     for (int x = minX; x < maxX; ++x) {
       for (int y = minY; y < maxY; ++y) {
         for (int z = minZ; z < maxZ; ++z) {
-          if (MaterialMagic.isLava(BukkitBlockAccess.cacheAppliedTypeAccess(user, world, x, y, z))) {
+          if (MaterialMagic.isLava(VolatileBlockAccess.safeTypeAccess(user, world, x, y, z))) {
             return true;
           }
         }
@@ -156,13 +153,13 @@ public final class MovementHelper {
   public static boolean isOnLadder(User user, double positionX, double positionY, double positionZ) {
     Player player = user.player();
     ProtocolMetadata clientData = user.meta().protocol();
-    Block block = BukkitBlockAccess.blockAccess(
+    Block block = VolatileBlockAccess.unsafe__BlockAccess(
       player.getWorld(),
       WrappedMathHelper.floor(positionX),
       WrappedMathHelper.floor(positionY),
       WrappedMathHelper.floor(positionZ)
     );
-    Material type = BukkitBlockAccess.cacheAppliedTypeAccess(
+    Material type = VolatileBlockAccess.safeTypeAccess(
       user, player.getWorld(),
       WrappedMathHelper.floor(positionX),
       WrappedMathHelper.floor(positionY),
@@ -187,13 +184,13 @@ public final class MovementHelper {
       if (!(trapDoorData instanceof Directional)) {
         return false;
       }
-      Block downBlock = BukkitBlockAccess.blockAccess(downLocation);
+      Block downBlock = VolatileBlockAccess.unsafe__BlockAccess(downLocation);
       MaterialData downBlockData = downBlock.getState().getData();
       if (!(downBlockData instanceof Directional)) {
         return false;
       }
       Directional downBlockDirectional = (Directional) downBlockData;
-      return BukkitBlockAccess.cacheAppliedTypeAccess(user, downLocation) == Material.LADDER && directional.getFacing() == downBlockDirectional.getFacing();
+      return VolatileBlockAccess.safeTypeAccess(user, downLocation) == Material.LADDER && directional.getFacing() == downBlockDirectional.getFacing();
     }
     return false;
   }

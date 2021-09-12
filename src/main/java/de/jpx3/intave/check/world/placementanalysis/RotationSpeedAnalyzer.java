@@ -33,7 +33,7 @@ public final class RotationSpeedAnalyzer extends MetaCheckPart<PlacementAnalysis
   }
 
   @PacketSubscription(
-    priority = ListenerPriority.HIGH,
+    priority = ListenerPriority.LOW,
     packetsIn = {
       POSITION_LOOK, LOOK
     }
@@ -44,11 +44,9 @@ public final class RotationSpeedAnalyzer extends MetaCheckPart<PlacementAnalysis
     MovementMetadata movementData = user.meta().movement();
     RotationSpeedMeta meta = metaOf(user);
     float rotationMovement = Math.min(MathHelper.distanceInDegrees(movementData.rotationYaw, movementData.lastRotationYaw), 360);
-
     if (System.currentTimeMillis() - meta.lastBlockPlacement > 2000 || movementData.lastTeleport <= 5) {
       return;
     }
-
     List<Float> rotationHistory = meta.rotationHistory;
     if (rotationHistory.size() > 5 * 20) {
       rotationHistory.remove(0);
@@ -61,9 +59,7 @@ public final class RotationSpeedAnalyzer extends MetaCheckPart<PlacementAnalysis
     Player player = place.getPlayer();
     User user = userOf(player);
     RotationSpeedMeta meta = metaOf(user);
-
     meta.lastBlockPlacement = System.currentTimeMillis();
-
     if (place.getBlock().getY() < player.getLocation().getBlockY() && blockAgainstWasPlaced(user, place.getBlockAgainst())) {
       List<Float> rotationHistory = meta.rotationHistory;
       double rotationSum = rotationHistory.stream().mapToDouble(value -> value).sum();

@@ -3,16 +3,16 @@ package de.jpx3.intave.user;
 import de.jpx3.intave.access.UnsupportedFallbackOperationException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.annotate.Relocate;
-import de.jpx3.intave.block.shape.BlankUserBlockShapeAccess;
-import de.jpx3.intave.block.shape.BlockShapeAccess;
+import de.jpx3.intave.block.state.BlockStateAccess;
+import de.jpx3.intave.block.state.EmptyBlockStateAccess;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.connect.customclient.CustomClientSupportConfig;
 import de.jpx3.intave.connect.shadow.ShadowPacketDataLink;
 import de.jpx3.intave.entity.size.HitboxSize;
-import de.jpx3.intave.fakeplayer.FakePlayer;
-import de.jpx3.intave.player.collider.Collider;
+import de.jpx3.intave.player.Collider;
 import de.jpx3.intave.player.collider.complex.ComplexColliderProcessor;
 import de.jpx3.intave.player.collider.simple.SimpleColliderProcessor;
+import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.permission.ExpiringPermissionCache;
@@ -34,7 +34,7 @@ final class FallbackUser implements User {
   private final ComplexColliderProcessor complexColliderProcessor;
   private final SimpleColliderProcessor simpleColliderProcessor;
   private final Map<Pose, HitboxSize> poseSizes;
-  private BlockShapeAccess blockShapeAccess;
+  private BlockStateAccess blockStateAccess;
   private CustomClientSupportConfig customClientSupportConfig = CustomClientSupportConfig.createDefault();
 
   private final UserContext userContext = new UserContext(this);
@@ -43,7 +43,7 @@ final class FallbackUser implements User {
   FallbackUser() {
     this.metadata = new MetadataBundle(null, this);
     this.permissionCache = new ExpiringPermissionCache(16, TimeUnit.SECONDS);
-    this.blockShapeAccess = new BlankUserBlockShapeAccess();
+    this.blockStateAccess = new EmptyBlockStateAccess();
     this.complexColliderProcessor = Collider.suitableComplexColliderProcessorFor(this);
     this.simpleColliderProcessor = Collider.suitableSimpleColliderProcessorFor(this);
     this.poseSizes = Pose.AT_LEAST_1_8_POSE;
@@ -152,8 +152,8 @@ final class FallbackUser implements User {
   }
 
   @Override
-  public BlockShapeAccess blockShapeAccess() {
-    return blockShapeAccess;
+  public BlockStateAccess blockShapeAccess() {
+    return blockStateAccess;
   }
 
   @Override

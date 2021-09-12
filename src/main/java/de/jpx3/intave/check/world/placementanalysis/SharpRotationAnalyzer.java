@@ -97,7 +97,7 @@ public final class SharpRotationAnalyzer extends MetaCheckPart<PlacementAnalysis
   public static class SharpRotationMeta extends CheckCustomMetadata {
     private long sharpRotations = 0;
     private long sharpRotationReset = System.currentTimeMillis();
-    private long lastBlockPlacement = System.currentTimeMillis();
+    private long lastBlockPlacement = 0;
 
     private final List<Vector> lastBlocksPlaced = new ArrayList<>();
   }

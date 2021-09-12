@@ -676,7 +676,7 @@ public class MethodNode extends MethodVisitor {
       try {
         accept(methodVisitor);
       } catch (Exception e) {
-        IntaveLogger.logger().pushPrintln("Exception in method " + name + " " + desc);
+        IntaveLogger.logger().printLine("Exception in method " + name + " " + desc);
         e.printStackTrace();
       }
     }

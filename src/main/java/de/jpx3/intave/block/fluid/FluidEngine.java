@@ -1,6 +1,6 @@
 package de.jpx3.intave.block.fluid;
 
-import de.jpx3.intave.block.access.BukkitBlockAccess;
+import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.shade.BoundingBox;
 import de.jpx3.intave.shade.NativeVector;
@@ -37,7 +37,7 @@ public abstract class FluidEngine {
     for (int x = minX; x < maxX; ++x) {
       for (int y = minY; y < maxY; ++y) {
         for (int z = minZ; z < maxZ; ++z) {
-          Material blockClientSide = BukkitBlockAccess.cacheAppliedTypeAccess(user, world, x, y, z);
+          Material blockClientSide = VolatileBlockAccess.safeTypeAccess(user, world, x, y, z);
           WrappedFluid wrappedFluid = fluidAt(user, x, y, z);
           if (wrappedFluid.isIn(FluidTag.WATER)) {
             double d1 = (float) y + wrappedFluid.height();

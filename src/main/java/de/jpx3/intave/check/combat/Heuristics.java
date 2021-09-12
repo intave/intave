@@ -131,7 +131,7 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
     }
 
     if (IntaveControl.GOMME_MODE) {
-      IntaveLogger.logger().pushPrintln(message);
+      IntaveLogger.logger().printLine(message);
     }
 
     for (Player authenticatedPlayer : MessageChannelSubscriptions.sibylReceiver()/*Bukkit.getOnlinePlayers()*/) {

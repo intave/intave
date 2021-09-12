@@ -112,29 +112,29 @@ public final class IntaveLogger extends PluginLogger {
 
   public void violation(String violation) {
     if (VIOLATION_CONSOLE_OUTPUT) {
-      pushPrintln("[Intave] Violation: " + violation);
+      printLine("[Intave] Violation: " + violation);
     }
     logToFile("(DET) " + violation);
   }
 
   public void commandExecution(String command) {
-    pushPrintln("[Intave] Issued server command /" + ChatColor.stripColor(command));
+    printLine("[Intave] Issued server command /" + ChatColor.stripColor(command));
     command = ChatColor.stripColor(command);
     logToFile("(EXE) " + command);
   }
 
   public void exception(Throwable throwable) {
-    pushPrintln("[Intave] Caught an "+throwable.getClass().getSimpleName()+" exception");
+    printLine("[Intave] Caught an "+throwable.getClass().getSimpleName()+" exception");
     for (PrintStream outputStream : outputStreams) {
       throwable.printStackTrace(outputStream);
     }
   }
 
-  public void pushPrintln(Object object) {
-    pushPrintln(object.toString());
+  public void printLine(Object object) {
+    printLine(object.toString());
   }
 
-  public void pushPrintln(String message) {
+  public void printLine(String message) {
     for (PrintStream outputStream : outputStreams) {
       outputStream.print(message);
     }

@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 import static de.jpx3.intave.diagnostic.timings.Timings.SERVICE_TYPE_LOOKUP;
 
 @Relocate
+@Deprecated
 public final class BlockTypeAccess {
   public static final Material WEB = resolveFrom("WEB", "COBWEB");
   public static final Material SNOW_LAYER = resolveFrom("SNOW", "SNOW_LAYER");
@@ -51,14 +52,14 @@ public final class BlockTypeAccess {
 
   /**
    * This method performs a direct type lookup, which will be incorrect if the underlying chunk has not been loaded yet.
-   * To avoid this, use {@link BukkitBlockAccess#cacheAppliedTypeAccess(User, World, int, int, int)} instead,
+   * To avoid this, use {@link VolatileBlockAccess#safeTypeAccess(User, World, int, int, int)} instead,
    * providing fast performance, a robust cache implementation and stable fallback
    */
   @Deprecated
   public static Material typeAccess(Block block) {
     try {
       SERVICE_TYPE_LOOKUP.start();
-      return BlockAccessProvider.accessor().typeOf(block);
+      return BlockAccess.global().typeOf(block);
     } finally {
       SERVICE_TYPE_LOOKUP.stop();
     }
@@ -66,7 +67,7 @@ public final class BlockTypeAccess {
 
   /**
    * This method performs a direct type lookup, which will be incorrect if the underlying chunk has not been loaded yet.
-   * To avoid this, use {@link BukkitBlockAccess#cacheAppliedTypeAccess(User, World, int, int, int)} instead,
+   * To avoid this, use {@link VolatileBlockAccess#safeTypeAccess(User, World, int, int, int)} instead,
    * providing fast performance, a robust cache implementation and stable fallback
    */
   @Deprecated

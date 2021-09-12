@@ -2,13 +2,13 @@ package de.jpx3.intave.check.combat.heuristics.mine;
 
 import de.jpx3.intave.check.combat.heuristics.MiningStrategy;
 import de.jpx3.intave.executor.BackgroundExecutor;
-import de.jpx3.intave.fakeplayer.FakePlayer;
+import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AttackMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
 
 import static de.jpx3.intave.check.combat.heuristics.mine.EmulationLight.locationBehind;
-import static de.jpx3.intave.fakeplayer.FakePlayerAttribute.*;
+import static de.jpx3.intave.player.fake.FakePlayerAttribute.*;
 
 public final class EmulationModerate extends MiningStrategyExecutor{
   public EmulationModerate(User user) {

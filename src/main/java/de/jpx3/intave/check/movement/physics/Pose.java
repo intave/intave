@@ -8,6 +8,9 @@ import de.jpx3.intave.user.meta.MovementMetadata;
 
 import java.util.Map;
 
+import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_13;
+import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_9;
+
 public enum Pose {
   STANDING,
   FALL_FLYING,
@@ -38,6 +41,16 @@ public enum Pose {
     .putAll(SIZE_BY_POSE)
     .put(CROUCHING, HitboxSize.of(0.6f, 1.5f))
     .build();
+
+  public static Map<Pose, HitboxSize> poseSizesByVersion(int version) {
+    if (version >= VER_1_13) {
+      return Pose.AT_LEAST_1_13_POSE;
+    } else if (version >= VER_1_9) {
+      return Pose.AT_LEAST_1_9_POSE;
+    } else {
+      return Pose.AT_LEAST_1_8_POSE;
+    }
+  }
 
   public BoundingBox boundingBoxOf(User user) {
     MovementMetadata movementData = user.meta().movement();

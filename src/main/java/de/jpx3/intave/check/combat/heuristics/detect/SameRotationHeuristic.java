@@ -103,8 +103,8 @@ public final class SameRotationHeuristic extends MetaCheckPart<Heuristics, SameR
     boolean yawExactNumber = meta.lastTick.yaw % 1 == 0;
 
     if (yawExactNumber && !lastYawMotionExactNumber) {
-      meta.violationLevel += transformViolation(20);
-      String description = "exact Yaw Rotation:" + meta.lastTick.yaw;
+      meta.violationLevel += transformViolation(30);
+      String description = "exact yaw rotation:" + meta.lastTick.yaw;
       Anomaly anomaly = anomalyOf("183", description, meta);
       parentCheck().saveAnomaly(player, anomaly);
     }
@@ -118,7 +118,7 @@ public final class SameRotationHeuristic extends MetaCheckPart<Heuristics, SameR
     boolean pitchExactNumber = meta.lastTick.pitch % 1 == 0;
 
     if (pitchExactNumber && Math.abs(meta.lastTick.pitch) != 90 && !lastPitchMotionExactNumber) {
-      meta.violationLevel += transformViolation(20);
+      meta.violationLevel += transformViolation(30);
       String description = "exact pitch rotation:" + meta.lastTick.pitch;
       Anomaly anomaly = anomalyOf("183", description, meta);
       parentCheck().saveAnomaly(player, anomaly);
@@ -130,7 +130,7 @@ public final class SameRotationHeuristic extends MetaCheckPart<Heuristics, SameR
     boolean containedYaw = meta.yawRotations.contains(meta.lastTick.yaw);
 
     if (containedYaw) {
-      meta.violationLevel += transformViolation(50);
+      meta.violationLevel += transformViolation(60);
       String description = "same rotation (Yaw:" + meta.lastTick.yaw + ", YawMotion:" + MathHelper.formatDouble(meta.lastTick.yawMotion, 2) + ")";
       Anomaly anomaly = anomalyOf("181", description, meta);
       parentCheck().saveAnomaly(player, anomaly);
@@ -147,7 +147,7 @@ public final class SameRotationHeuristic extends MetaCheckPart<Heuristics, SameR
     }
 
     if (containedPitch && Math.abs(meta.lastTick.pitch) != 90) {
-      meta.violationLevel += transformViolation(50);
+      meta.violationLevel += transformViolation(60);
       String description = "same rotation (Pitch:" + meta.lastTick.pitch + ", PitchMotion:" + MathHelper.formatDouble(meta.lastTick.pitchMotion, 2) + ")";
       Anomaly anomaly = anomalyOf("181", description, meta);
       parentCheck().saveAnomaly(player, anomaly);

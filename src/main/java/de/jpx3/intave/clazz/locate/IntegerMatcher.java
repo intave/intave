@@ -3,11 +3,11 @@ package de.jpx3.intave.clazz.locate;
 import java.util.function.BiFunction;
 
 public abstract class IntegerMatcher {
+  public abstract boolean matches(int integer);
+
   public static IntegerMatcher any() {
     return between(Integer.MIN_VALUE, Integer.MAX_VALUE);
   }
-
-  public abstract boolean matches(int integer);
 
   public static IntegerMatcher between(int from, int to) {
     return new IntegerMatchRange(from, to);

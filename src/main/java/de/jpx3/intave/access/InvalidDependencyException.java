@@ -2,7 +2,7 @@ package de.jpx3.intave.access;
 
 /**
  * An exception describing an issue with Intave's dependencies.
- * This usually occurs when a resouce is outdated
+ * This usually occurs when a resource is outdated
  */
 public final class InvalidDependencyException extends IntaveBootFailureException {
   public InvalidDependencyException() {

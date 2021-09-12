@@ -8,9 +8,9 @@ import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.block.access.BlockInnerAccess;
+import de.jpx3.intave.block.access.BlockInteractionAccess;
 import de.jpx3.intave.block.access.BlockVariantAccess;
-import de.jpx3.intave.block.access.BukkitBlockAccess;
+import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.BreakSpeedLimiter;
 import de.jpx3.intave.executor.Synchronizer;
@@ -101,7 +101,7 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
 
     switch (digType) {
       case START_DESTROY_BLOCK: {
-        float blockDamage = BlockInnerAccess.blockDamage(player, heldItem, blockPosition);
+        float blockDamage = BlockInteractionAccess.blockDamage(player, heldItem, blockPosition);
         meta.breakProcess = true;
         meta.breakProcessStartTime = System.currentTimeMillis();
         meta.curBlockDamageMP = blockDamage;
@@ -170,10 +170,10 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
 
   private void refreshBlock(Player player, Location location) {
     PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.BLOCK_CHANGE);
-    if (!BukkitBlockAccess.isInLoadedChunk(location.getWorld(), location.getBlockX(), location.getBlockZ())) {
+    if (!VolatileBlockAccess.isInLoadedChunk(location.getWorld(), location.getBlockX(), location.getBlockZ())) {
       return;
     }
-    Block block = BukkitBlockAccess.blockAccess(location);
+    Block block = VolatileBlockAccess.unsafe__BlockAccess(location);
     Object handle = BlockVariantAccess.nativeVariantAccess(block);
     WrappedBlockData blockData = WrappedBlockData.fromHandle(handle);
     packet.getBlockData().write(0, blockData);
@@ -211,7 +211,7 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
   ) {
     boolean onGroundBefore = ReflectiveEntityAccess.onGround(player);
     ReflectiveEntityAccess.setOnGround(player, true);
-    float blockDamage = BlockInnerAccess.blockDamage(player, itemInHand, blockPosition);
+    float blockDamage = BlockInteractionAccess.blockDamage(player, itemInHand, blockPosition);
     ReflectiveEntityAccess.setOnGround(player, onGroundBefore);
     return blockDamage;
   }

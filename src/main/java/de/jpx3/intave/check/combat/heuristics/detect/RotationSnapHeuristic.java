@@ -7,8 +7,8 @@ import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.Native;
-import de.jpx3.intave.block.access.BlockInnerAccess;
-import de.jpx3.intave.block.access.BukkitBlockAccess;
+import de.jpx3.intave.block.access.BlockInteractionAccess;
+import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
@@ -74,8 +74,8 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
 
     if (blockPosition != null) {
       if (blockPlaceDirection != 255) {
-        Material clickedType = BukkitBlockAccess.cacheAppliedTypeAccess(user, blockPosition.toLocation(player.getWorld()));
-        boolean clickable = BlockInnerAccess.isClickable(clickedType);
+        Material clickedType = VolatileBlockAccess.safeTypeAccess(user, blockPosition.toLocation(player.getWorld()));
+        boolean clickable = BlockInteractionAccess.isClickable(clickedType);
 
         if (!clickable) {
           RotationSnapHeuristicMeta meta = metaOf(user);

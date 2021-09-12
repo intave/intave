@@ -5,7 +5,6 @@ import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.clazz.Lookup;
 import de.jpx3.intave.clazz.rewrite.PatchyAutoTranslation;
 import de.jpx3.intave.entity.size.HitboxSize;
-import de.jpx3.intave.reflect.access.ReflectiveAccess;
 import net.minecraft.server.v1_16_R1.EntitySize;
 import net.minecraft.server.v1_16_R1.EntityTypes;
 import net.minecraft.server.v1_16_R1.IChatBaseComponent;
@@ -38,10 +37,17 @@ final class ServerEntityTypeDataLookup implements EntityTypeDataResolver {
       if (entitySizeField == null) {
         throw new IntaveInternalException("EntitySize field does not exist in " + entityTypesClass);
       }
-      ReflectiveAccess.ensureAccessible(entitySizeField);
+      ensureAccessibility(entitySizeField);
     } catch (Exception exception) {
       throw new IntaveInternalException(exception);
     }
+  }
+
+  private static Field ensureAccessibility(Field field) {
+    if (!field.isAccessible()) {
+      field.setAccessible(true);
+    }
+    return field;
   }
 
   @Override

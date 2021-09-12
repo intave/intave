@@ -455,7 +455,7 @@ public class TinyProtocol {
       try {
         msg = onPacketOutAsync(player, ctx.channel(), msg);
       } catch (Exception exception) {
-        IntaveLogger.logger().pushPrintln("[Intave] Exception in channel write handle");
+        IntaveLogger.logger().printLine("[Intave] Exception in channel write handle");
         exception.printStackTrace();
       }
       if (msg != null) {

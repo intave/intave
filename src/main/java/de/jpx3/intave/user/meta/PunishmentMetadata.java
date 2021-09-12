@@ -2,12 +2,12 @@ package de.jpx3.intave.user.meta;
 
 import com.google.common.collect.Lists;
 import de.jpx3.intave.annotate.Relocate;
+import de.jpx3.intave.player.dmc.DamageController;
 import de.jpx3.intave.violation.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.violation.mitigate.HurtimeModifier;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +15,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
+
+import static org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BASE;
+import static org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BLOCKING;
 
 @Relocate
 public final class PunishmentMetadata {
@@ -51,11 +54,11 @@ public final class PunishmentMetadata {
       ),
       new AttackNerfer(
         AttackNerfStrategy.DMG_MEDIUM, DAMAGE_CANCEL_MEDIUM_DURATION,
-        event -> event.setDamage(EntityDamageEvent.DamageModifier.BASE, event.getDamage(EntityDamageEvent.DamageModifier.BASE) * 0.7)
+        event -> DamageController.withNewDamageApplier(event, BASE, originalDamage -> -(originalDamage * 0.5))
       ),
       new AttackNerfer(
         AttackNerfStrategy.DMG_LIGHT, DAMAGE_CANCEL_LIGHT_DURATION,
-        event -> event.setDamage(EntityDamageEvent.DamageModifier.BASE, event.getDamage(EntityDamageEvent.DamageModifier.BASE) * 0.9)
+        event -> DamageController.withNewDamageApplier(event, BASE, originalDamage -> -(originalDamage * 0.2))
       ),
       new AttackNerfer(AttackNerfStrategy.HT_MEDIUM, DAMAGE_CANCEL_MEDIUM_DURATION, event -> {
         // Perform hurt-time change
@@ -70,10 +73,7 @@ public final class PunishmentMetadata {
         HurtimeModifier.applyHurtTimeChangeTo(player, (int) (DAMAGE_CANCEL_LIGHT_DURATION / 50), ticks);
       }),
       new AttackNerfer(AttackNerfStrategy.BLOCKING, BLOCKING_DAMAGE_CANCEL_DURATION, event -> {
-        double blockingDamageAbsorption = event.getDamage(EntityDamageEvent.DamageModifier.BLOCKING);
-        if (blockingDamageAbsorption != 0) {
-          event.setDamage(EntityDamageEvent.DamageModifier.BLOCKING, 0);
-        }
+        DamageController.withNewDamageApplier(event, BLOCKING, originalDamage -> 0d);
       }, true),
       new AttackNerfer(AttackNerfStrategy.GARBAGE_HITS, GARBAGE_HITS_DURATION, event -> {
         int entityId = event.getEntity().getEntityId();

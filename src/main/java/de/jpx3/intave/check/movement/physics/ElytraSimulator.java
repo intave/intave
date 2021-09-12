@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.movement.physics;
 
-import de.jpx3.intave.player.collider.Collider;
+import de.jpx3.intave.player.Collider;
 import de.jpx3.intave.player.collider.complex.ComplexColliderSimulationResult;
 import de.jpx3.intave.shade.WrappedMathHelper;
 import de.jpx3.intave.user.User;

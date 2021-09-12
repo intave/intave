@@ -130,7 +130,7 @@ public class Label {
   static final Label EMPTY_LIST = new Label();
 
   /**
-   * A user managed state associated with this label. Warning: this field is used by the ASM tree
+   * A user managed variant associated with this label. Warning: this field is used by the ASM tree
    * package. In order to use it with the ASM tree package you must override the getLabelNode method
    * in MethodNode.
    */
@@ -200,12 +200,12 @@ public class Label {
   //
   // The control flow analysis algorithms used to compute the maximum stack size or the stack map
   // frames are similar and use two steps. The first step, during the visit of each instruction,
-  // builds information about the state of the local variables and the operand stack at the end of
-  // each basic block, called the "output frame", <i>relatively</i> to the frame state at the
+  // builds information about the variant of the local variables and the operand stack at the end of
+  // each basic block, called the "output frame", <i>relatively</i> to the frame variant at the
   // beginning of the basic block, which is called the "input frame", and which is <i>unknown</i>
   // during this step. The second step, in {@link MethodWriter#computeAllFrames} and {@link
   // MethodWriter#computeMaxStackAndLocal}, is a fix point algorithm
-  // that computes information about the input frame of each basic block, from the input state of
+  // that computes information about the input frame of each basic block, from the input variant of
   // the first basic block (known from the method signature), and by the using the previously
   // computed relative output frames.
   //

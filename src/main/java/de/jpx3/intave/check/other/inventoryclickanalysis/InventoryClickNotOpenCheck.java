@@ -52,7 +52,7 @@ public final class InventoryClickNotOpenCheck extends CheckPart<InventoryClickAn
         Violation violation = Violation.builderFor(InventoryClickAnalysis.class)
           .forPlayer(player)
           .withMessage("clicked in closed inventory")
-          .withDetails(clickType.name().toLowerCase(Locale.ROOT) + " on s" + slot + "/" + "c" + container)
+          .withDetails(clickType.name().toLowerCase(Locale.ROOT) + " on " + slot + "s/" + container + "c")
           .withVL(5).build();
         plugin.violationProcessor().processViolation(violation);
         Synchronizer.synchronize(player::updateInventory);

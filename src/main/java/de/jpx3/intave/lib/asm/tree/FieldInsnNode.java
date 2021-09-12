@@ -95,7 +95,7 @@ public class FieldInsnNode extends AbstractInsnNode {
     try {
       methodVisitor.visitFieldInsn(opcode, owner, name, desc);
     } catch (Exception exception) {
-      IntaveLogger.logger().pushPrintln("Occurred in " + owner + " " + name + " " + desc);
+      IntaveLogger.logger().printLine("Occurred in " + owner + " " + name + " " + desc);
       exception.printStackTrace();
     }
     acceptAnnotations(methodVisitor);

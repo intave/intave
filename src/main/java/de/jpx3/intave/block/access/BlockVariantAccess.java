@@ -7,6 +7,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 
+@Deprecated
 public final class BlockVariantAccess {
   private final static boolean MODERN_MATERIAL_PROCESSING = MinecraftVersions.VER1_14_0.atOrAbove();
 
@@ -15,12 +16,12 @@ public final class BlockVariantAccess {
 
   /**
    * This method performs a direct type lookup, which will be quite heavy if the underlying chunk has not been loaded yet.
-   * To avoid this performance-bottleneck, use {@link BukkitBlockAccess#cacheAppliedVariantAccess(User, World, double, double, double)} instead,
+   * To avoid this performance-bottleneck, use {@link VolatileBlockAccess#safeVariantAccess(User, World, double, double, double)} instead,
    * providing fast performance, a robust cache implementation and stable chunk fallback
    */
   @Deprecated
   public static int variantAccess(Block block) {
-    return BlockAccessProvider.accessor().variantOf(block);
+    return BlockAccess.global().variantOf(block);
   }
 
   public static int variantAccess(WrappedBlockData blockData) {
@@ -37,6 +38,6 @@ public final class BlockVariantAccess {
   }
 
   public static Object nativeVariantAccess(Block bukkitBlock) {
-    return BlockAccessProvider.accessor().nativeVariantOf(bukkitBlock);
+    return BlockAccess.global().nativeVariantOf(bukkitBlock);
   }
 }

@@ -1207,10 +1207,10 @@ final class MethodWriter extends MethodVisitor {
     if (compute == COMPUTE_ALL_FRAMES) {
       if (currentBasicBlock != null) {
         if (label.bytecodeOffset == currentBasicBlock.bytecodeOffset) {
-          // We use {@link Label#getCanonicalInstance} to store the state of a basic block in only
+          // We use {@link Label#getCanonicalInstance} to store the variant of a basic block in only
           // one place, but this does not work for labels which have not been visited yet.
           // Therefore, when we detect here two labels having the same bytecode offset, we need to
-          // - consolidate the state scattered in these two instances into the canonical instance:
+          // - consolidate the variant scattered in these two instances into the canonical instance:
           currentBasicBlock.flags |= (label.flags & Label.FLAG_JUMP_TARGET);
           // - make sure the two instances share the same Frame instance (the implementation of
           // {@link Label#getCanonicalInstance} relies on this property; here label.frame should be

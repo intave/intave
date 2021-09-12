@@ -16,7 +16,6 @@ import de.jpx3.intave.entity.size.HitboxSize;
 import de.jpx3.intave.entity.size.HitboxSizeAccess;
 import de.jpx3.intave.entity.type.EntityTypeData;
 import de.jpx3.intave.entity.type.EntityTypeDataAccessor;
-import de.jpx3.intave.reflect.access.ReflectiveAccess;
 import de.jpx3.intave.reflect.access.ReflectiveHandleAccess;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -55,7 +54,7 @@ public final class EntityTypeResolver {
 
     // search field
 
-    Class<?> entityClass = ReflectiveAccess.NMS_ENTITY_CLASS;
+    Class<?> entityClass = Lookup.serverClass("Entity");
     Class<?> dataWatcherClass = Lookup.serverClass("DataWatcher");
 
     for (Field declaredField : dataWatcherClass.getDeclaredFields()) {
@@ -274,10 +273,16 @@ public final class EntityTypeResolver {
 
   private Object entityByHandle(Object handle, Field entityField) {
     try {
-      ReflectiveAccess.ensureAccessible(entityField);
+      ensureAccessibility(entityField);
       return entityField.get(handle);
     } catch (Exception e) {
       throw new IntaveInternalException(e);
+    }
+  }
+
+  private void ensureAccessibility(Field field) {
+    if (!field.isAccessible()) {
+      field.setAccessible(true);
     }
   }
 

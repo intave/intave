@@ -1,18 +1,18 @@
 package de.jpx3.intave.check.movement.physics;
 
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.block.access.BukkitBlockAccess;
+import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.fluid.LegacyWaterflow;
 import de.jpx3.intave.block.physics.BlockPhysics;
 import de.jpx3.intave.block.physics.BlockProperties;
 import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.module.tracker.entity.WrappedEntity;
-import de.jpx3.intave.player.collider.Collider;
+import de.jpx3.intave.player.Collider;
+import de.jpx3.intave.player.Effects;
+import de.jpx3.intave.player.Enchantments;
 import de.jpx3.intave.player.collider.complex.ComplexColliderSimulationResult;
 import de.jpx3.intave.player.collider.simple.SimpleColliderSimulationResult;
-import de.jpx3.intave.player.effect.Effects;
-import de.jpx3.intave.player.item.Enchantments;
 import de.jpx3.intave.shade.BoundingBox;
 import de.jpx3.intave.shade.WrappedMathHelper;
 import de.jpx3.intave.user.User;
@@ -67,11 +67,11 @@ public class DefaultSimulator extends Simulator {
       boolean allowJumpInWater = false;
       if (clientData.waterUpdate() && inWater) {
         // Geht nicht anders
-        Material material = BukkitBlockAccess.cacheAppliedTypeAccess(
+        Material material = VolatileBlockAccess.safeTypeAccess(
           user, user.player().getWorld(),
           movementData.lastPositionX, movementData.lastPositionY, movementData.lastPositionZ
         );
-        int blockData = BukkitBlockAccess.cacheAppliedVariantAccess(
+        int blockData = VolatileBlockAccess.safeVariantAccess(
           user, user.player().getWorld(),
           movementData.lastPositionX, movementData.lastPositionY, movementData.lastPositionZ
         );
@@ -419,10 +419,10 @@ public class DefaultSimulator extends Simulator {
     int blockCollisionPosX = WrappedMathHelper.floor(positionX);
     int blockCollisionPosY = WrappedMathHelper.floor(positionY - 0.2f);
     int blockCollisionPosZ = WrappedMathHelper.floor(positionZ);
-    Material block = BukkitBlockAccess.cacheAppliedTypeAccess(user, world, blockCollisionPosX, blockCollisionPosY, blockCollisionPosZ);
+    Material block = VolatileBlockAccess.safeTypeAccess(user, world, blockCollisionPosX, blockCollisionPosY, blockCollisionPosZ);
 
     if (block == Material.AIR) {
-      Material blockBelow = BukkitBlockAccess.cacheAppliedTypeAccess(user, world, blockCollisionPosX, blockCollisionPosY, blockCollisionPosZ);
+      Material blockBelow = VolatileBlockAccess.safeTypeAccess(user, world, blockCollisionPosX, blockCollisionPosY, blockCollisionPosZ);
       if (blockBelow.name().contains("FENCE") || blockBelow.name().contains("WALL")) {
         block = blockBelow;
       }
@@ -474,7 +474,7 @@ public class DefaultSimulator extends Simulator {
       for (int y = blockPositionStartY; y <= blockPositionEndY; y++) {
         for (int z = blockPositionStartZ; z <= blockPositionEndZ; z++) {
           Location location = new Location(world, x, y, z);
-          Material material = BukkitBlockAccess.cacheAppliedTypeAccess(user, world, x, y, z);
+          Material material = VolatileBlockAccess.safeTypeAccess(user, world, x, y, z);
           Vector collisionVector = BlockPhysics.entityCollision(
             user, material,
             location,
@@ -493,7 +493,7 @@ public class DefaultSimulator extends Simulator {
     if (clientData.protocolVersion() >= VER_1_14 && movementData.pose() != Pose.FALL_FLYING) {
       int soulSandModifier = Enchantments.resolveSoulSpeedModifier(player);
       if (soulSandModifier == 0 || !movementData.blockOnPositionSoulSpeedAffected()) {
-        Material type = BukkitBlockAccess.cacheAppliedTypeAccess(user, world, positionX, positionY - 0.5000001, positionZ);
+        Material type = VolatileBlockAccess.safeTypeAccess(user, world, positionX, positionY - 0.5000001, positionZ);
         float speedFactor = BlockProperties.ofType(type).speedFactor();
         context.motionX *= speedFactor;
         context.motionZ *= speedFactor;

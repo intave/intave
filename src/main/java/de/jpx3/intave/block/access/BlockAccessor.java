@@ -19,6 +19,9 @@ public interface BlockAccessor {
 
   Object nativeVariantOf(Block block);
 
+  @Deprecated
+  Object nativeVariantBy(int blockId);
+
   float blockDamage(Player player, ItemStack itemInHand, BlockPosition blockPosition);
 
   boolean replacementPlace(World world, Player player, BlockPosition blockPosition);

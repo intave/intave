@@ -60,6 +60,7 @@ public final class AttackInInvalidStateHeuristic extends MetaCheckPart<Heuristic
       parentCheck().saveAnomaly(player, anomaly);
       //dmc28
       user.applyAttackNerfer(AttackNerfStrategy.BLOCKING, "28");
+      user.applyAttackNerfer(AttackNerfStrategy.DMG_LIGHT, "28");
 
       sendStopUseItemPacketToServer(user);
     }

@@ -38,28 +38,28 @@ import de.jpx3.intave.lib.asm.*;
  */
 public final class ModuleResolutionAttribute extends Attribute {
   /**
-   * The resolution state of a module meaning that the module is not available from the class-path
+   * The resolution variant of a module meaning that the module is not available from the class-path
    * by default.
    */
   public static final int RESOLUTION_DO_NOT_RESOLVE_BY_DEFAULT = 1;
 
-  /** The resolution state of a module meaning the module is marked as deprecated. */
+  /** The resolution variant of a module meaning the module is marked as deprecated. */
   public static final int RESOLUTION_WARN_DEPRECATED = 2;
 
   /**
-   * The resolution state of a module meaning the module is marked as deprecated and will be removed
+   * The resolution variant of a module meaning the module is marked as deprecated and will be removed
    * in a future release.
    */
   public static final int RESOLUTION_WARN_DEPRECATED_FOR_REMOVAL = 4;
 
   /**
-   * The resolution state of a module meaning the module is not yet standardized, so in incubating
+   * The resolution variant of a module meaning the module is not yet standardized, so in incubating
    * mode.
    */
   public static final int RESOLUTION_WARN_INCUBATING = 8;
 
   /**
-   * The resolution state of the module. Must be one of {@link #RESOLUTION_WARN_DEPRECATED}, {@link
+   * The resolution variant of the module. Must be one of {@link #RESOLUTION_WARN_DEPRECATED}, {@link
    * #RESOLUTION_WARN_DEPRECATED_FOR_REMOVAL}, and {@link #RESOLUTION_WARN_INCUBATING}.
    */
   public int resolution;
@@ -67,7 +67,7 @@ public final class ModuleResolutionAttribute extends Attribute {
   /**
    * Constructs a new {@link ModuleResolutionAttribute}.
    *
-   * @param resolution the resolution state of the module. Must be one of {@link
+   * @param resolution the resolution variant of the module. Must be one of {@link
    *     #RESOLUTION_WARN_DEPRECATED}, {@link #RESOLUTION_WARN_DEPRECATED_FOR_REMOVAL}, and {@link
    *     #RESOLUTION_WARN_INCUBATING}.
    */

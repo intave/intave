@@ -75,7 +75,7 @@ public final class CombatMitigator implements BukkitEventSubscriber {
     }
 
     if (IntaveControl.GOMME_MODE) {
-      IntaveLogger.logger().pushPrintln("[Intave] " + ChatColor.stripColor(message));
+      IntaveLogger.logger().printLine("[Intave] " + ChatColor.stripColor(message));
     }
 
     for (Player authenticatedPlayer : MessageChannelSubscriptions.sibylReceiver()/*Bukkit.getOnlinePlayers()*/) {

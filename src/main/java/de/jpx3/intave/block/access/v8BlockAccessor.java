@@ -33,6 +33,12 @@ public final class v8BlockAccessor implements BlockAccessor {
 
   @Override
   @PatchyAutoTranslation
+  public Object nativeVariantBy(int blockId) {
+    return net.minecraft.server.v1_8_R3.Block.getById(blockId);
+  }
+
+  @Override
+  @PatchyAutoTranslation
   public float blockDamage(Player player, ItemStack itemInHand, BlockPosition blockPosition) {
     WorldServer worldServer = ((CraftWorld) player.getWorld()).getHandle();
     Chunk chunk = worldServer.getChunkIfLoaded(blockPosition.getX() >> 4, blockPosition.getZ() >> 4);

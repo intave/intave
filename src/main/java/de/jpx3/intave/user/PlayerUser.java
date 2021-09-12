@@ -10,19 +10,19 @@ import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.block.access.BlockTypeAccess;
-import de.jpx3.intave.block.shape.BlockShapeAccess;
-import de.jpx3.intave.block.shape.MultiChunkKeyBlockShapeAccess;
+import de.jpx3.intave.block.state.BlockStateAccess;
+import de.jpx3.intave.block.state.MultiChunkKeyBlockStateAccess;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.connect.customclient.CustomClientSupportConfig;
 import de.jpx3.intave.connect.shadow.ShadowPacketDataLink;
 import de.jpx3.intave.entity.size.HitboxSize;
 import de.jpx3.intave.executor.Synchronizer;
-import de.jpx3.intave.fakeplayer.FakePlayer;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.feedback.FeedbackSender;
-import de.jpx3.intave.player.collider.Collider;
+import de.jpx3.intave.player.Collider;
 import de.jpx3.intave.player.collider.complex.ComplexColliderProcessor;
 import de.jpx3.intave.player.collider.simple.SimpleColliderProcessor;
+import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.reflect.access.ReflectiveHandleAccess;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
@@ -50,8 +50,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 import static de.jpx3.intave.module.feedback.TransactionOptions.SELF_SYNCHRONIZATION;
-import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_13;
-import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_9;
 
 @Relocate
 final class PlayerUser implements User {
@@ -68,7 +66,7 @@ final class PlayerUser implements User {
   private final Map<MessageChannel, Predicate<Player>> channelConstraints = Maps.newEnumMap(MessageChannel.class);
   private final Map<Material, Material> typeTranslations = Maps.newHashMap();
   private final Map<Pose, HitboxSize> poseSizes;
-  private final BlockShapeAccess blockShapeAccess;
+  private final BlockStateAccess blockStateAccess;
   private boolean ignoreNextInboundPacket;
   private boolean ignoreNextOutboundPacket;
   private boolean hasShadow;
@@ -86,19 +84,12 @@ final class PlayerUser implements User {
     this.playerConnection = new WeakReference<>(ReflectiveHandleAccess.playerConnectionOf(player));
     this.metadata = new MetadataBundle(player, this);
     this.permissionCache = new ExpiringPermissionCache(16, TimeUnit.SECONDS);
-    this.blockShapeAccess = MultiChunkKeyBlockShapeAccess.withDefaultResolverOf(player());
+    this.blockStateAccess = MultiChunkKeyBlockStateAccess.withDefaultResolverOf(player());
     this.complexColliderProcessor = Collider.suitableComplexColliderProcessorFor(this);
     this.simpleColliderProcessor = Collider.suitableSimpleColliderProcessorFor(this);
     Synchronizer.synchronize(this::setDefaultMessagingChannel);
     this.playerContext = PlayerContext.of(player);
-    int version = metadata.protocol().protocolVersion();
-    if (version >= VER_1_13) {
-      this.poseSizes = Pose.AT_LEAST_1_13_POSE;
-    } else if (version >= VER_1_9) {
-      this.poseSizes = Pose.AT_LEAST_1_9_POSE;
-    } else {
-      this.poseSizes = Pose.AT_LEAST_1_8_POSE;
-    }
+    this.poseSizes = Pose.poseSizesByVersion(metadata.protocol().protocolVersion());
     this.metadata.setup();
   }
 
@@ -127,7 +118,7 @@ final class PlayerUser implements User {
     if (clientData.clientVersionOlderThanServerVersion()) {
       string += " (behind)";
     }
-    IntaveLogger.logger().pushPrintln(string);
+    IntaveLogger.logger().printLine(string);
   }
 
   @Override
@@ -246,8 +237,8 @@ final class PlayerUser implements User {
   }
 
   @Override
-  public BlockShapeAccess blockShapeAccess() {
-    return blockShapeAccess;
+  public BlockStateAccess blockShapeAccess() {
+    return blockStateAccess;
   }
 
   @Override
@@ -352,7 +343,7 @@ final class PlayerUser implements User {
   @Override
   public void clearTypeTranslations() {
     typeTranslations.clear();
-    blockShapeAccess.identityInvalidate();
+    blockStateAccess.identityInvalidate();
   }
 
   @Override

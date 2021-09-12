@@ -59,7 +59,7 @@ public final class RuntimeDiagnostics {
       reports.put(reportClass, report);
       encryptedResources.put(report, new EncryptedResource("report-" + report.name(), false));
     } catch (InstantiationException | IllegalAccessException exception) {
-      IntaveLogger.logger().pushPrintln("[Intave] Failed to load report " + reportClass.getSimpleName());
+      IntaveLogger.logger().printLine("[Intave] Failed to load report " + reportClass.getSimpleName());
       exception.printStackTrace();
     }
   }

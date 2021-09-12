@@ -8,18 +8,18 @@ import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.annotate.refactoring.IdoNotBelongHere;
-import de.jpx3.intave.block.access.BukkitBlockAccess;
+import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.fluid.FluidTag;
 import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.fluid.WrappedFluid;
 import de.jpx3.intave.block.physics.BlockProperties;
 import de.jpx3.intave.check.movement.physics.*;
+import de.jpx3.intave.entity.datawatcher.DataWatcherAccess;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.SinusCache;
 import de.jpx3.intave.module.tracker.entity.WrappedEntity;
-import de.jpx3.intave.player.effect.Effects;
-import de.jpx3.intave.reflect.access.ReflectiveDataWatcherAccess;
+import de.jpx3.intave.player.Effects;
 import de.jpx3.intave.reflect.access.ReflectiveHandleAccess;
 import de.jpx3.intave.shade.BoundingBox;
 import de.jpx3.intave.shade.WrappedMathHelper;
@@ -37,6 +37,7 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_14;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_15;
 
 @Relocate
@@ -236,7 +237,7 @@ public final class MovementMetadata {
     lastPositionY = positionY;
     lastPositionZ = positionZ;
     if (sprintResetNextTick) {
-      ReflectiveDataWatcherAccess.setDataWatcherFlag(player, ReflectiveDataWatcherAccess.WATCHER_SPRINT_ID, true);
+      DataWatcherAccess.setDataWatcherFlag(player, DataWatcherAccess.WATCHER_SPRINT_ID, true);
       sprintResetNextTick = false;
     }
     if (hasMovement) {
@@ -244,7 +245,7 @@ public final class MovementMetadata {
       positionX = modifier.read(0);
       positionY = modifier.read(1);
       positionZ = modifier.read(2);
-      blockOnPosition = BukkitBlockAccess.cacheAppliedTypeAccess(user, player.getWorld(), positionX, positionY - frictionPosSubtraction, positionZ);
+      blockOnPosition = VolatileBlockAccess.safeTypeAccess(user, player.getWorld(), positionX, positionY - frictionPosSubtraction, positionZ);
       motionX = positionX - verifiedPositionX;
       motionY = positionY - verifiedPositionY;
       motionZ = positionZ - verifiedPositionZ;
@@ -335,9 +336,36 @@ public final class MovementMetadata {
 
   @IdoNotBelongHere
   public void updatePose() {
-    // Beautiful
-    if (this.isPoseClear(Pose.SWIMMING)) {
-      Pose pose;
+    boolean modernPose = user.meta().protocol().protocolVersion() >= VER_1_14;
+    Pose pose;
+    if (modernPose) {
+      if (this.isPoseClear(Pose.SWIMMING)) {
+        if (isSwimming(user)) {
+          pose = Pose.SWIMMING;
+        } else if (player.isSleeping()) {
+          pose = Pose.SLEEPING;
+        } else if (elytraFlying) {
+          pose = Pose.FALL_FLYING;
+        } else if (poseSneaking(user)) {
+          pose = Pose.CROUCHING;
+        } else {
+          pose = Pose.STANDING;
+        }
+
+        Pose pose1;
+        if (!this.isPoseClear(pose)) {
+          if (this.isPoseClear(Pose.CROUCHING)) {
+            pose1 = Pose.CROUCHING;
+          } else {
+            pose1 = Pose.SWIMMING;
+          }
+        } else {
+          pose1 = pose;
+        }
+
+        this.pose = pose1;
+      }
+    } else {
       if (isSwimming(user)) {
         pose = Pose.SWIMMING;
       } else if (player.isSleeping()) {
@@ -349,19 +377,7 @@ public final class MovementMetadata {
       } else {
         pose = Pose.STANDING;
       }
-
-      Pose pose1;
-      if (!this.isPoseClear(pose)) {
-        if (this.isPoseClear(Pose.CROUCHING)) {
-          pose1 = Pose.CROUCHING;
-        } else {
-          pose1 = Pose.SWIMMING;
-        }
-      } else {
-        pose1 = pose;
-      }
-
-      this.pose = pose1;
+      this.pose = pose;
     }
 
     updateSize();
@@ -428,8 +444,8 @@ public final class MovementMetadata {
     heightRounded = Math.round(height * 100d) / 100d;
   }
 
-  protected boolean isPoseClear(Pose pose) {
-    return Collision.hasNoCollisions(user, pose.boundingBoxOf(user).shrink(1.0E-7D));
+  private boolean isPoseClear(Pose pose) {
+    return Collision.nonePresent(user.player(), pose.boundingBoxOf(user).shrink(0.0000001));
   }
 
   @IdoNotBelongHere
@@ -440,7 +456,7 @@ public final class MovementMetadata {
   @IdoNotBelongHere
   private float jumpFactor() {
     World world = player.getWorld();
-    float f = jumpFactorOf(BukkitBlockAccess.cacheAppliedTypeAccess(user, world, positionX, positionY, positionZ));
+    float f = jumpFactorOf(VolatileBlockAccess.safeTypeAccess(user, world, positionX, positionY, positionZ));
     float f1 = jumpFactorOf(blockOnPosition());
     return (double) f == 1.0D ? f1 : f;
   }
@@ -588,7 +604,7 @@ public final class MovementMetadata {
     InventoryMetadata inventoryData = user.meta().inventory();
     // really required
     if (player.getFoodLevel() >= 6 && !inventoryData.inventoryOpen()) {
-      ReflectiveDataWatcherAccess.setDataWatcherFlag(player, ReflectiveDataWatcherAccess.WATCHER_SPRINT_ID, false);
+      DataWatcherAccess.setDataWatcherFlag(player, DataWatcherAccess.WATCHER_SPRINT_ID, false);
       sprintResetNextTick = true;
     }
   }

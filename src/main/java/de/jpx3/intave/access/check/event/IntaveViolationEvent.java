@@ -135,7 +135,7 @@ public final class IntaveViolationEvent extends IntaveEvent implements Cancellab
 
   /**
    * Change whether we should ignore this violation
-   * @param cancelled the new cancelled state
+   * @param cancelled the new cancelled variant
    */
   @Override
   @Deprecated

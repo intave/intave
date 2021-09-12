@@ -3,8 +3,8 @@ package de.jpx3.intave.block.physics;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.block.fluid.FluidTag;
 import de.jpx3.intave.block.fluid.Fluids;
-import de.jpx3.intave.block.state.BlockState;
-import de.jpx3.intave.block.state.BlockStateBoolean;
+import de.jpx3.intave.block.variant.BlockVariant;
+import de.jpx3.intave.block.variant.BlockVariantBoolean;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
@@ -18,9 +18,9 @@ import java.util.List;
 
 final class BlockBubbleColumnPhysic implements BlockPhysic {
   private Material bubbleColumnBlock;
-  private final BlockStateBoolean blockDragState = BlockStateBoolean.of("drag");
+  private final BlockVariantBoolean blockDragState = BlockVariantBoolean.of("drag");
 
-  private final BlockState blockState = BlockState.builder()
+  private final BlockVariant blockVariant = BlockVariant.builder()
     .with(blockDragState)
     .build();
 
@@ -40,7 +40,7 @@ final class BlockBubbleColumnPhysic implements BlockPhysic {
     if (clientData.waterUpdate()) {
       boolean water = Fluids.fluidAt(user, location.clone().add(0,1,0)).isIn(FluidTag.WATER);
       Block block = location.getBlock();
-      boolean downwards = blockState.valueOf(user, block, blockDragState);
+      boolean downwards = blockVariant.valueOf(user, block, blockDragState);
       if (water) {
         return enterBubbleColumn(user, downwards, motionX, motionY, motionZ);
       } else {

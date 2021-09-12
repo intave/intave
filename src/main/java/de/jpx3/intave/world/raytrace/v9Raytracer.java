@@ -1,7 +1,7 @@
 package de.jpx3.intave.world.raytrace;
 
-import de.jpx3.intave.block.shape.BlockShape;
-import de.jpx3.intave.block.shape.BlockShapeAccess;
+import de.jpx3.intave.block.state.BlockState;
+import de.jpx3.intave.block.state.BlockStateAccess;
 import de.jpx3.intave.clazz.rewrite.PatchyAutoTranslation;
 import de.jpx3.intave.clazz.rewrite.PatchyTranslateParameters;
 import de.jpx3.intave.shade.MovingObjectPosition;
@@ -145,8 +145,8 @@ public final class v9Raytracer implements Raytracer {
   @PatchyAutoTranslation
   @PatchyTranslateParameters
   private IBlockData typeOf(Player player, WorldServer world, BlockPosition blockPosition) {
-    BlockShapeAccess blockShapeAccess = UserRepository.userOf(player).blockShapeAccess();
-    BlockShape shape = blockShapeAccess.overrideOf(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
+    BlockStateAccess blockStateAccess = UserRepository.userOf(player).blockShapeAccess();
+    BlockState shape = blockStateAccess.overrideOf(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
     return shape != null ? Block.getById(shape.type().getId()).fromLegacyData(shape.variant()) : world.getType(blockPosition);
   }
 

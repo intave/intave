@@ -13,15 +13,13 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.converter.PlayerAction;
 import de.jpx3.intave.packet.converter.PlayerActionResolver;
-import de.jpx3.intave.player.item.ItemProperties;
+import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.shade.BoundingBox;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-
-import java.util.List;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
@@ -168,8 +166,7 @@ public final class SprintResetHeuristic extends MetaCheckPart<Heuristics, Sprint
 
   private boolean canCollideHorizontally(User user, MovementMetadata movementData) {
     BoundingBox entityBoundingBox = movementData.boundingBox().expand(0.031d, 0, 0.031d);
-    List<BoundingBox> collisionBoxes = Collision.resolve(user.player(), entityBoundingBox);
-    return !collisionBoxes.isEmpty();
+    return Collision.nonePresent(user.player(), entityBoundingBox);
   }
 
   public static class SprintResetHeuristicMeta extends CheckCustomMetadata {
