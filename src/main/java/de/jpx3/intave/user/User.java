@@ -3,10 +3,10 @@ package de.jpx3.intave.user;
 import de.jpx3.intave.access.UnsupportedFallbackOperationException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.access.player.trust.TrustFactorResolver;
-import de.jpx3.intave.block.shape.BlockShapeAccess;
-import de.jpx3.intave.block.shape.BlockShapeCache;
-import de.jpx3.intave.block.shape.BlockShapeLookup;
-import de.jpx3.intave.block.shape.BlockShapeOverrides;
+import de.jpx3.intave.block.state.BlockStateAccess;
+import de.jpx3.intave.block.state.BlockStateCache;
+import de.jpx3.intave.block.state.BlockStateLookup;
+import de.jpx3.intave.block.state.BlockStateOverrides;
 import de.jpx3.intave.check.MetaCheck;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.movement.physics.Pose;
@@ -159,13 +159,13 @@ public interface User {
   void setShadowLinkage(ShadowPacketDataLink shadowRepo);
 
   /**
-   * Retrieve the player's block shape cache
-   * @return the player's block shape cache
-   * @see BlockShapeLookup
-   * @see BlockShapeCache
-   * @see BlockShapeOverrides
+   * Retrieve the player's block state cache
+   * @return the player's block state cache
+   * @see BlockStateLookup
+   * @see BlockStateCache
+   * @see BlockStateOverrides
    */
-  BlockShapeAccess blockShapeAccess();
+  BlockStateAccess blockShapeAccess();
 
   /**
    * Retrieve the {@link User}-associated {@link ComplexColliderProcessor}
@@ -325,7 +325,7 @@ public interface User {
   void unregister();
 
   /**
-   * Resets a players sprint state synchronously
+   * Resets a players sprint variant synchronously
    */
   void refreshSprintState();
 }

@@ -110,7 +110,7 @@ public final class MovementDispatcher extends Module {
     User user = UserRepository.userOf(player);
     Location respawnLocation = respawn.getRespawnLocation().clone();
     BoundingBox bb = BoundingBox.fromPosition(user, respawnLocation);
-    while (respawnLocation.getY() < 256 && Collision.isInsideBlocks(player, bb)) {
+    while (respawnLocation.getY() < 256 && Collision.present(player, bb)) {
       respawnLocation.add(0, 1, 0);
       bb = BoundingBox.fromPosition(user, respawnLocation);
     }

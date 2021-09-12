@@ -117,7 +117,7 @@ public final class IntaveCommandExecutionEvent extends IntaveEvent implements Ca
 
   /**
    * Cancels or uncancels the event
-   * @param cancelled the new cancel state
+   * @param cancelled the new cancel variant
    */
   @Override
   public void setCancelled(boolean cancelled) {

@@ -93,7 +93,7 @@ public final class SibylAuthentication implements BukkitEventSubscriber {
             verifyAuthKey(authkey, success -> {
               JsonObject object = new JsonObject();
               object.addProperty("action", "verify");
-              object.addProperty("state", success ? "success" : "rejected");
+              object.addProperty("variant", success ? "success" : "rejected");
               sendMessageToClient(player, "LMC", "sibyl-auth", object);
               setAuthState(player, success ? SibylAuthenticationState.ATH : SibylAuthenticationState.RGF);
             });

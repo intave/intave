@@ -20,7 +20,7 @@ public final class BlockAccess {
     }
     ClassLoader classLoader = IntavePlugin.class.getClassLoader();
     PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, resolverName);
-    PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, "de.jpx3.intave.block.state.BlockStateData$BlockStateServerBridge");
+    PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, "de.jpx3.intave.block.variant.BlockVariantData$BlockStateServerBridge");
     blockAccessor = instanceOf(resolverName);
   }
 

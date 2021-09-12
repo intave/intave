@@ -6,6 +6,7 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveBootFailureException;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.block.collision.Collision;
+import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.check.movement.Physics;
 import de.jpx3.intave.check.movement.physics.MovementHelper;
 import de.jpx3.intave.check.movement.physics.Pose;
@@ -32,7 +33,6 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.Field;
-import java.util.List;
 
 public final class MovementEmulator {
   private final IntavePlugin plugin;
@@ -109,7 +109,7 @@ public final class MovementEmulator {
     ViolationMetadata violationLevelData = meta.violationLevel();
     BoundingBox boundingBox = movementData.boundingBox();
 
-    boolean boundingBoxIntersection = Collision.checkBoundingBoxIntersection(user, boundingBox);
+    boolean boundingBoxIntersection = Collision.present(user.player(), boundingBox);
     if (boundingBoxIntersection) {
       double motionX = (boundingBox.minX + boundingBox.maxX) / 2.0;
       double motionY = (boundingBox.minY + boundingBox.maxY) / 2.0;
@@ -170,7 +170,7 @@ public final class MovementEmulator {
       movementData.artificialFallDistance += -motion.getY();
     }
 
-    if (!Collision.isInsideBlocks(player, BoundingBox.fromPosition(user, futurePosition.clone().add(motion)))) {
+    if (!Collision.present(player, BoundingBox.fromPosition(user, futurePosition.clone().add(motion)))) {
       futurePosition = futurePosition.clone().add(motion);
     }
     futurePosition.setYaw(movementData.rotationYaw);
@@ -182,7 +182,7 @@ public final class MovementEmulator {
       // fixes stuck in block below, please remove and fix me differently
       futurePosition.subtract(0, 0.02, 0);
       boundingBox = BoundingBox.fromPosition(user, futurePosition);
-      futurePosition.add(0, Collision.resolve(player, boundingBox).isEmpty() ? 0.03 : 0.02, 0);
+      futurePosition.add(0, Collision.nonePresent(player, boundingBox) ? 0.03 : 0.02, 0);
       boundingBox = BoundingBox.fromPosition(user, futurePosition);
 
       teleport(player, futurePosition);
@@ -423,24 +423,18 @@ public final class MovementEmulator {
     BoundingBox entityBoundingBox,
     double motionX, double motionY, double motionZ
   ) {
-    List<BoundingBox> collisionBoxes = Collision.resolve(player, entityBoundingBox.addCoord(motionX, motionY, motionZ));
+    BlockShape collisionBox = Collision.colliderShapeIn(player, entityBoundingBox.addCoord(motionX, motionY, motionZ));
 
     // motion y
-    for (BoundingBox collisionBox : collisionBoxes) {
-      motionY = collisionBox.calculateYOffset(entityBoundingBox, motionY);
-    }
+    motionY = collisionBox.allowedYOffset(entityBoundingBox, motionY);
     entityBoundingBox = (entityBoundingBox.offset(0.0D, motionY, 0.0D));
 
     // motion x
-    for (BoundingBox collisionBox : collisionBoxes) {
-      motionX = collisionBox.calculateXOffset(entityBoundingBox, motionX);
-    }
+    motionX = collisionBox.allowedXOffset(entityBoundingBox, motionX);
     entityBoundingBox = entityBoundingBox.offset(motionX, 0.0D, 0.0D);
 
     // motion z
-    for (BoundingBox collisionBox : collisionBoxes) {
-      motionZ = collisionBox.calculateZOffset(entityBoundingBox, motionZ);
-    }
+    motionZ = collisionBox.allowedZOffset(entityBoundingBox, motionZ);
 
     return new Vector(motionX, motionY, motionZ);
   }
@@ -491,6 +485,6 @@ public final class MovementEmulator {
   }
 
   private boolean hasEmptyCollisionBox(Player player, BlockPosition blockPosition) {
-    return Collision.resolve(player, BoundingBox.fromPosition(UserRepository.userOf(player), blockPosition)).isEmpty();
+    return Collision.nonePresent(player, BoundingBox.fromPosition(UserRepository.userOf(player), blockPosition));
   }
 }

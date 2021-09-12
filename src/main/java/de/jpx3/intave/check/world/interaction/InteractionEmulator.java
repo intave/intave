@@ -10,7 +10,7 @@ import de.jpx3.intave.block.access.BlockVariantAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.physics.MaterialMagic;
-import de.jpx3.intave.block.shape.BlockShapeAccess;
+import de.jpx3.intave.block.state.BlockStateAccess;
 import de.jpx3.intave.check.EventProcessor;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
@@ -45,9 +45,9 @@ public final class InteractionEmulator implements EventProcessor {
   public void onPre(BlockPlaceEvent place) {
     if (place.getClass().equals(BlockPlaceEvent.class)) {
       Block block = place.getBlock();
-      BlockShapeAccess blockShapeAccess = userOf(place.getPlayer()).blockShapeAccess();
-      blockShapeAccess.invalidate(block.getX(), block.getY(), block.getZ());
-      blockShapeAccess.invalidateOverride(block.getX(), block.getY(), block.getZ());
+      BlockStateAccess blockStateAccess = userOf(place.getPlayer()).blockShapeAccess();
+      blockStateAccess.invalidate(block.getX(), block.getY(), block.getZ());
+      blockStateAccess.invalidateOverride(block.getX(), block.getY(), block.getZ());
     }
   }
 
@@ -55,27 +55,27 @@ public final class InteractionEmulator implements EventProcessor {
   public void on(PlayerBucketFillEvent fill) {
     Player player = fill.getPlayer();
     Block block = fill.getBlockClicked().getRelative(fill.getBlockFace());
-    BlockShapeAccess blockShapeAccess = userOf(player).blockShapeAccess();
-    blockShapeAccess.invalidate(block.getX(), block.getY(), block.getZ());
-    blockShapeAccess.invalidateOverride(block.getX(), block.getY(), block.getZ());
+    BlockStateAccess blockStateAccess = userOf(player).blockShapeAccess();
+    blockStateAccess.invalidate(block.getX(), block.getY(), block.getZ());
+    blockStateAccess.invalidateOverride(block.getX(), block.getY(), block.getZ());
   }
 
   @BukkitEventSubscription
   public void on(PlayerBucketEmptyEvent empty) {
     Player player = empty.getPlayer();
     Block block = empty.getBlockClicked().getRelative(empty.getBlockFace());
-    BlockShapeAccess blockShapeAccess = userOf(player).blockShapeAccess();
-    blockShapeAccess.invalidate(block.getX(), block.getY(), block.getZ());
-    blockShapeAccess.invalidateOverride(block.getX(), block.getY(), block.getZ());
+    BlockStateAccess blockStateAccess = userOf(player).blockShapeAccess();
+    blockStateAccess.invalidate(block.getX(), block.getY(), block.getZ());
+    blockStateAccess.invalidateOverride(block.getX(), block.getY(), block.getZ());
   }
 
   @BukkitEventSubscription(ignoreCancelled = true)
   public void onPre(BlockBreakEvent breeak) {
     if (breeak.getClass().equals(BlockBreakEvent.class)) {
       Block block = breeak.getBlock();
-      BlockShapeAccess blockShapeAccess = userOf(breeak.getPlayer()).blockShapeAccess();
-      blockShapeAccess.invalidate(block.getX(), block.getY(), block.getZ());
-      blockShapeAccess.invalidateOverride(block.getX(), block.getY(), block.getZ());
+      BlockStateAccess blockStateAccess = userOf(breeak.getPlayer()).blockShapeAccess();
+      blockStateAccess.invalidate(block.getX(), block.getY(), block.getZ());
+      blockStateAccess.invalidateOverride(block.getX(), block.getY(), block.getZ());
     }
   }
 
@@ -107,8 +107,8 @@ public final class InteractionEmulator implements EventProcessor {
       int blockY = blockBreakLocation.getBlockY();
       int blockZ = blockBreakLocation.getBlockZ();
       // add to future bounding boxes
-      BlockShapeAccess blockShapeAccess = userOf(player).blockShapeAccess();
-      blockShapeAccess.override(world, blockX, blockY, blockZ, Material.AIR, (byte) 0);
+      BlockStateAccess blockStateAccess = userOf(player).blockShapeAccess();
+      blockStateAccess.override(world, blockX, blockY, blockZ, Material.AIR, (byte) 0);
     }
     return access ? EmulationResult.SUCCEEDED : EmulationResult.FAILED;
   }
@@ -141,11 +141,11 @@ public final class InteractionEmulator implements EventProcessor {
       variant
     );
     if (access) {
-      BlockShapeAccess blockShapeAccess = userOf(player).blockShapeAccess();
-      blockShapeAccess.override(world, blockX, blockY, blockZ, replacementType, variant);
+      BlockStateAccess blockStateAccess = userOf(player).blockShapeAccess();
+      blockStateAccess.override(world, blockX, blockY, blockZ, replacementType, variant);
       // enforce block reset later
       Synchronizer.packetSynchronize(() -> {
-        Synchronizer.synchronize(() -> blockShapeAccess.invalidateOverride(blockX, blockY, blockZ));
+        Synchronizer.synchronize(() -> blockStateAccess.invalidateOverride(blockX, blockY, blockZ));
       });
     } else {
       return EmulationResult.FAILED;
@@ -170,7 +170,7 @@ public final class InteractionEmulator implements EventProcessor {
     Location placementLocation,
     Material itemTypeInHand
   ) {
-    BlockShapeAccess blockShapeAccess = userOf(player).blockShapeAccess();
+    BlockStateAccess blockStateAccess = userOf(player).blockShapeAccess();
     World world = player.getWorld();
     switch (itemTypeInHand) {
       case BUCKET: {
@@ -179,7 +179,7 @@ public final class InteractionEmulator implements EventProcessor {
         if (MaterialMagic.isLiquid(placementType)) {
           // emulate
           if (WorldPermission.bukkitActionPermission(player, BucketAction.FILL_BUCKET, clickedBlock, BlockFace.SELF, itemTypeInHand, null)) {
-            blockShapeAccess.override(world, placementLocation.getBlockX(), placementLocation.getBlockY(), placementLocation.getBlockZ(), Material.AIR, 0);
+            blockStateAccess.override(world, placementLocation.getBlockX(), placementLocation.getBlockY(), placementLocation.getBlockZ(), Material.AIR, 0);
           }
         }
         break;
@@ -188,7 +188,7 @@ public final class InteractionEmulator implements EventProcessor {
       case LAVA_BUCKET: {
         // emulate
         if (WorldPermission.bukkitActionPermission(player, BucketAction.EMPTY_BUCKET, clickedBlock, BlockFace.SELF, itemTypeInHand, null)) {
-          blockShapeAccess.override(world, placementLocation.getBlockX(), placementLocation.getBlockY(), placementLocation.getBlockZ(), itemTypeInHand == Material.WATER_BUCKET ? Material.WATER : Material.LAVA, 15);
+          blockStateAccess.override(world, placementLocation.getBlockX(), placementLocation.getBlockY(), placementLocation.getBlockZ(), itemTypeInHand == Material.WATER_BUCKET ? Material.WATER : Material.LAVA, 15);
         }
         break;
       }
@@ -197,7 +197,7 @@ public final class InteractionEmulator implements EventProcessor {
 
   private void emulatePhysicalInteract(Player player, Block block) {
     World world = player.getWorld();
-    BlockShapeAccess blockShapeAccess = userOf(player).blockShapeAccess();
+    BlockStateAccess blockStateAccess = userOf(player).blockShapeAccess();
     Material clickedType = BlockTypeAccess.typeAccess(block, player);
     switch (clickedType) {
       case ACACIA_DOOR:
@@ -220,13 +220,13 @@ public final class InteractionEmulator implements EventProcessor {
         // toggle close
         lowerData = (lowerData & 4) != 0 ? lowerData ^ 4 : lowerData | 4;
 
-        blockShapeAccess.override(world, block.getX(), block.getY(), block.getZ(), clickedType, lowerData);
-        blockShapeAccess.override(world, block.getX(), block.getY() + 1, block.getZ(), clickedType, upperData);
+        blockStateAccess.override(world, block.getX(), block.getY(), block.getZ(), clickedType, lowerData);
+        blockStateAccess.override(world, block.getX(), block.getY() + 1, block.getZ(), clickedType, upperData);
 
         Block finalBlock = block;
         Synchronizer.packetSynchronize(() -> {
-          blockShapeAccess.invalidateOverride(finalBlock.getX(), finalBlock.getY(), finalBlock.getZ());
-          blockShapeAccess.invalidateOverride(finalBlock.getX(), finalBlock.getY() + 1, finalBlock.getZ());
+          blockStateAccess.invalidateOverride(finalBlock.getX(), finalBlock.getY(), finalBlock.getZ());
+          blockStateAccess.invalidateOverride(finalBlock.getX(), finalBlock.getY() + 1, finalBlock.getZ());
         });
         break;
       }
@@ -245,9 +245,9 @@ public final class InteractionEmulator implements EventProcessor {
         int bitMask = 4;
         byte newData = (byte) (!newOpen ? (data | bitMask) : (data & ~bitMask));
         Material material = BlockTypeAccess.typeAccess(block, player);
-        blockShapeAccess.override(world, block.getX(), block.getY(), block.getZ(), material, newData);
+        blockStateAccess.override(world, block.getX(), block.getY(), block.getZ(), material, newData);
         Block finalBlock1 = block;
-        Synchronizer.packetSynchronize(() -> blockShapeAccess.invalidateOverride(finalBlock1.getX(), finalBlock1.getY(), finalBlock1.getZ()));
+        Synchronizer.packetSynchronize(() -> blockStateAccess.invalidateOverride(finalBlock1.getX(), finalBlock1.getY(), finalBlock1.getZ()));
         break;
       }
     }

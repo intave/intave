@@ -1,14 +1,13 @@
 package de.jpx3.intave.player.collider.complex;
 
 import de.jpx3.intave.block.collision.Collision;
+import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.check.movement.physics.MotionVector;
 import de.jpx3.intave.shade.BoundingBox;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.entity.Player;
-
-import java.util.List;
 
 public final class LegacyComplexColliderProcessor implements ComplexColliderProcessor {
   @Override
@@ -28,7 +27,7 @@ public final class LegacyComplexColliderProcessor implements ComplexColliderProc
     if (movementData.onGround && movementData.sneaking) {
       BoundingBox boundingBox = movementData.boundingBox();
       double d6;
-      for (d6 = 0.05D; context.motionX != 0.0D && Collision.resolve(player, boundingBox.offset(context.motionX, -1.0D, 0.0D)).isEmpty(); startMotionX = context.motionX) {
+      for (d6 = 0.05D; context.motionX != 0.0D && Collision.nonePresent(player, boundingBox.offset(context.motionX, -1.0D, 0.0D)); startMotionX = context.motionX) {
         if (context.motionX < d6 && context.motionX >= -d6) {
           context.motionX = 0.0D;
         } else if (context.motionX > 0.0D) {
@@ -37,7 +36,7 @@ public final class LegacyComplexColliderProcessor implements ComplexColliderProc
           context.motionX += d6;
         }
       }
-      for (; context.motionZ != 0.0D && Collision.resolve(player, boundingBox.offset(0.0D, -1.0D, context.motionZ)).isEmpty(); startMotionZ = context.motionZ) {
+      for (; context.motionZ != 0.0D && Collision.nonePresent(player, boundingBox.offset(0.0D, -1.0D, context.motionZ)); startMotionZ = context.motionZ) {
         if (context.motionZ < d6 && context.motionZ >= -d6) {
           context.motionZ = 0.0D;
         } else if (context.motionZ > 0.0D) {
@@ -46,7 +45,7 @@ public final class LegacyComplexColliderProcessor implements ComplexColliderProc
           context.motionZ += d6;
         }
       }
-      for (; context.motionX != 0.0D && context.motionZ != 0.0D && Collision.resolve(player, boundingBox.offset(context.motionX, -1.0D, context.motionZ)).isEmpty(); startMotionZ = context.motionZ) {
+      for (; context.motionX != 0.0D && context.motionZ != 0.0D && Collision.nonePresent(player, boundingBox.offset(context.motionX, -1.0D, context.motionZ)); startMotionZ = context.motionZ) {
         if (context.motionX < d6 && context.motionX >= -d6) {
           context.motionX = 0.0D;
         } else if (context.motionX > 0.0D) {
@@ -64,21 +63,15 @@ public final class LegacyComplexColliderProcessor implements ComplexColliderProc
         }
       }
     }
-    List<BoundingBox> collisionBoxes = Collision.resolve(player, movementData.boundingBox().addCoord(context.motionX, context.motionY, context.motionZ));
+    BlockShape collisionShape = Collision.colliderShapeIn(player, movementData.boundingBox().addCoord(context.motionX, context.motionY, context.motionZ));
     BoundingBox startBoundingBox = movementData.boundingBox();
     BoundingBox entityBoundingBox = movementData.boundingBox();
-    for (BoundingBox collisionBox : collisionBoxes) {
-      context.motionY = collisionBox.calculateYOffset(entityBoundingBox, context.motionY);
-    }
+    context.motionY = collisionShape.allowedYOffset(entityBoundingBox, context.motionY);
     entityBoundingBox = (entityBoundingBox.offset(0.0D, context.motionY, 0.0D));
     boolean flag1 = movementData.onGround || startMotionY != context.motionY && startMotionY < 0.0D;
-    for (BoundingBox collisionBox : collisionBoxes) {
-      context.motionX = collisionBox.calculateXOffset(entityBoundingBox, context.motionX);
-    }
+    context.motionX = collisionShape.allowedXOffset(entityBoundingBox, context.motionX);
     entityBoundingBox = entityBoundingBox.offset(context.motionX, 0.0D, 0.0D);
-    for (BoundingBox collisionBox : collisionBoxes) {
-      context.motionZ = collisionBox.calculateZOffset(entityBoundingBox, context.motionZ);
-    }
+    context.motionZ = collisionShape.allowedZOffset(entityBoundingBox, context.motionZ);
     entityBoundingBox = entityBoundingBox.offset(0.0, 0.0, context.motionZ);
     if (flag1 && (startMotionX != context.motionX || startMotionZ != context.motionZ)) {
       double copyX = context.motionX;
@@ -87,39 +80,27 @@ public final class LegacyComplexColliderProcessor implements ComplexColliderProc
       BoundingBox axisalignedbb3 = entityBoundingBox;
       entityBoundingBox = startBoundingBox;
       context.motionY = STEP_HEIGHT;
-      List<BoundingBox> list = Collision.resolve(player, entityBoundingBox.addCoord(startMotionX, context.motionY, startMotionZ));
+      BlockShape collider = Collision.colliderShapeIn(player, entityBoundingBox.addCoord(startMotionX, context.motionY, startMotionZ));
       BoundingBox axisalignedbb4 = entityBoundingBox;
       BoundingBox axisalignedbb5 = axisalignedbb4.addCoord(startMotionX, 0.0D, startMotionZ);
       double d9 = context.motionY;
-      for (BoundingBox axisalignedbb6 : list) {
-        d9 = axisalignedbb6.calculateYOffset(axisalignedbb5, d9);
-      }
+      d9 = collider.allowedYOffset(axisalignedbb5, d9);
       axisalignedbb4 = axisalignedbb4.offset(0.0D, d9, 0.0D);
       double d15 = startMotionX;
-      for (BoundingBox axisalignedbb7 : list) {
-        d15 = axisalignedbb7.calculateXOffset(axisalignedbb4, d15);
-      }
+      d15 = collider.allowedXOffset(axisalignedbb4, d15);
       axisalignedbb4 = axisalignedbb4.offset(d15, 0.0D, 0.0D);
       double d16 = startMotionZ;
-      for (BoundingBox axisalignedbb8 : list) {
-        d16 = axisalignedbb8.calculateZOffset(axisalignedbb4, d16);
-      }
+      d16 = collider.allowedZOffset(axisalignedbb4, d16);
       axisalignedbb4 = axisalignedbb4.offset(0.0D, 0.0D, d16);
       BoundingBox axisalignedbb14 = entityBoundingBox;
       double d17 = context.motionY;
-      for (BoundingBox axisalignedbb9 : list) {
-        d17 = axisalignedbb9.calculateYOffset(axisalignedbb14, d17);
-      }
+      d17 = collider.allowedYOffset(axisalignedbb14, d17);
       axisalignedbb14 = axisalignedbb14.offset(0.0D, d17, 0.0D);
       double d18 = startMotionX;
-      for (BoundingBox axisalignedbb10 : list) {
-        d18 = axisalignedbb10.calculateXOffset(axisalignedbb14, d18);
-      }
+      d18 = collider.allowedXOffset(axisalignedbb14, d18);
       axisalignedbb14 = axisalignedbb14.offset(d18, 0.0D, 0.0D);
       double d19 = startMotionZ;
-      for (BoundingBox axisalignedbb11 : list) {
-        d19 = axisalignedbb11.calculateZOffset(axisalignedbb14, d19);
-      }
+      d19 = collider.allowedZOffset(axisalignedbb14, d19);
       axisalignedbb14 = axisalignedbb14.offset(0.0D, 0.0D, d19);
       double d20 = d15 * d15 + d16 * d16;
       double d10 = d18 * d18 + d19 * d19;
@@ -134,9 +115,7 @@ public final class LegacyComplexColliderProcessor implements ComplexColliderProc
         context.motionY = -d17;
         entityBoundingBox = axisalignedbb14;
       }
-      for (BoundingBox axisalignedbb12 : list) {
-        context.motionY = axisalignedbb12.calculateYOffset(entityBoundingBox, context.motionY);
-      }
+      context.motionY = collider.allowedYOffset(entityBoundingBox, context.motionY);
       entityBoundingBox = entityBoundingBox.offset(0.0, context.motionY, 0.0);
       if (copyX * copyX + copyZ * copyZ >= context.motionX * context.motionX + context.motionZ * context.motionZ) {
         context.motionX = copyX;

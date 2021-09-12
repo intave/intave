@@ -7,7 +7,7 @@ import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.block.access.BlockVariantAccess;
-import de.jpx3.intave.block.shape.BlockShapeAccess;
+import de.jpx3.intave.block.state.BlockStateAccess;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.feedback.FeedbackCallback;
@@ -67,8 +67,8 @@ public final class BlockUpdateTracker extends Module {
   private void chunkInvalidate(Player player, int chunkX, int chunkZ) {
     int chunkXMinPos = chunkX << 4, chunkXMaxPos = chunkXMinPos + 16;
     int chunkZMinPos = chunkZ << 4, chunkZMaxPos = chunkZMinPos + 16;
-    BlockShapeAccess blockShapeAccess = UserRepository.userOf(player).blockShapeAccess();
-    blockShapeAccess.invalidateOverridesInBounds(chunkXMinPos, chunkXMaxPos, chunkZMinPos, chunkZMaxPos);
+    BlockStateAccess blockStateAccess = UserRepository.userOf(player).blockShapeAccess();
+    blockStateAccess.invalidateOverridesInBounds(chunkXMinPos, chunkXMaxPos, chunkZMinPos, chunkZMaxPos);
   }
 
   @PacketSubscription(
@@ -132,14 +132,14 @@ public final class BlockUpdateTracker extends Module {
 
     World world = player.getWorld();
     FeedbackCallback<Object> process = (player1, target) -> {
-      BlockShapeAccess blockShapeAccess = UserRepository.userOf(player1).blockShapeAccess();
+      BlockStateAccess blockStateAccess = UserRepository.userOf(player1).blockShapeAccess();
       for (int i = 0; i < blockPositions.size(); i++) {
         BlockPosition blockPosition = blockPositions.get(i);
         WrappedBlockData blockData = blockDataList.get(i);
         Material material = blockData.getType();
         int variant = BlockVariantAccess.variantAccess(blockData);
-        blockShapeAccess.override(world, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ(), material, variant);
-        blockShapeAccess.invalidate(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
+        blockStateAccess.override(world, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ(), material, variant);
+        blockStateAccess.invalidate(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
       }
     };
 

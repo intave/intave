@@ -39,7 +39,7 @@ public final class ModuleLoader {
     // misc
     prepareModule("de.jpx3.intave.module.warning.ClientWarningModule", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
     prepareModule("de.jpx3.intave.module.patcher.PacketResynchronizer", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
-//    prepareModule("de.jpx3.intave.module.patcher.TimeoutHalter", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
+//    prepareModule("de.jpx3.intave.module.patch.TimeoutHalter", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
   }
 
   private void prepareModule(String moduleClass) {

@@ -25,8 +25,6 @@ import org.bukkit.material.Directional;
 import org.bukkit.material.MaterialData;
 import org.bukkit.material.Openable;
 
-import java.util.List;
-
 public final class MovementHelper {
   @Deprecated
   @IdoNotBelongHere
@@ -82,8 +80,7 @@ public final class MovementHelper {
   @Deprecated
   @IdoNotBelongHere
   private static boolean isLiquidPresentInAABB(Player player, BoundingBox boundingBox) {
-    List<BoundingBox> collisionBoxes = Collision.resolve(player, boundingBox);
-    return collisionBoxes.isEmpty() && !isAnyLiquid(player.getWorld(), UserRepository.userOf(player), boundingBox);
+    return Collision.nonePresent(player, boundingBox) && !isAnyLiquid(player.getWorld(), UserRepository.userOf(player), boundingBox);
   }
 
   @Deprecated

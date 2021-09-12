@@ -2000,7 +2000,7 @@ public class ClassReader {
       methodVisitor.visitFrame(Opcodes.F_NEW, maxLocals, null, 0, null);
     }
 
-    // Visit the bytecode instructions. First, introduce state variables for the incremental parsing
+    // Visit the bytecode instructions. First, introduce variant variables for the incremental parsing
     // of the type annotations.
 
     // Index of the next runtime visible type annotation to read (in the

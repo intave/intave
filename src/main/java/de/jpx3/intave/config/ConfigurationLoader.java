@@ -245,7 +245,7 @@ public final class ConfigurationLoader {
   private void saveConfiguration(Object configurationObj) {
     try {
       YamlConfiguration configuration = (YamlConfiguration) configurationObj;
-      int state = configuration.getInt("state");
+      int state = configuration.getInt("variant");
       if (state != latestState()) {
         saveState(state);
       }

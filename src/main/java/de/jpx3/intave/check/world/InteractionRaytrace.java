@@ -16,7 +16,7 @@ import de.jpx3.intave.block.access.BlockTypeAccess;
 import de.jpx3.intave.block.access.BlockVariantAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
-import de.jpx3.intave.block.shape.BlockShapeAccess;
+import de.jpx3.intave.block.state.BlockStateAccess;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.MetaCheck;
 import de.jpx3.intave.check.world.interaction.Interaction;
@@ -343,7 +343,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     Player player = interaction.player();
     User user = userOf(player);
     ResponseType response = interaction.type().response();
-    BlockShapeAccess blockShapeAccess = user.blockShapeAccess();
+    BlockStateAccess blockStateAccess = user.blockShapeAccess();
     if (enforceCancel) {
       response = ResponseType.CANCEL;
     }
@@ -356,7 +356,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       if (hitMiss || raycastResult == null) {
         if (refreshBlocks) {
           refreshBlocksAround(player, targetLocation);
-          blockShapeAccess.invalidateOverride(targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
+          blockStateAccess.invalidateOverride(targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
         }
       } else {
         PacketContainer packet = interaction.thePacket();
@@ -374,7 +374,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
             );
             if (raytraceCollidesWithPosition) {
               refreshBlocksAround(player, targetLocation);
-              blockShapeAccess.invalidateOverride(targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
+              blockStateAccess.invalidateOverride(targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
               return;
             }
           }

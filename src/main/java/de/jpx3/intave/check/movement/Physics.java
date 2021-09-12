@@ -14,7 +14,7 @@ import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.fluid.LegacyWaterflow;
-import de.jpx3.intave.block.shape.BlockShapeAccess;
+import de.jpx3.intave.block.state.BlockStateAccess;
 import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckStatistics;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
@@ -253,7 +253,7 @@ public final class Physics extends Check {
     MovementMetadata movementData = meta.movement();
     ViolationMetadata violationLevelData = meta.violationLevel();
     AbilityMetadata abilityData = meta.abilities();
-    BlockShapeAccess blockShapeAccess = user.blockShapeAccess();
+    BlockStateAccess blockStateAccess = user.blockShapeAccess();
     MotionVector context = expectedMovement.motion();
 
     int keyForward = movementData.keyForward;
@@ -342,12 +342,11 @@ public final class Physics extends Check {
     BoundingBox verifiedBoundingBox = BoundingBox.fromPosition(user, verifiedLocation);
     BoundingBox currentBoundingBox = BoundingBox.fromPosition(user, receivedPositionX, receivedPositionY, receivedPositionZ);
 
-    boolean boundingBoxIntersectionLast = Collision.isInsideBlocks(user.player(), verifiedBoundingBox);
-    List<BoundingBox> intersectionBoundingBoxesCurrent = Collision.resolve(user.player(), currentBoundingBox);
-    boolean boundingBoxIntersectionCurrent = !intersectionBoundingBoxesCurrent.isEmpty();
+    boolean boundingBoxIntersectionLast = Collision.present(user.player(), verifiedBoundingBox);
+    boolean boundingBoxIntersectionCurrent = Collision.present(user.player(), currentBoundingBox);
     boolean movedIntoBlock = !boundingBoxIntersectionLast && boundingBoxIntersectionCurrent;
-
     if (boundingBoxIntersectionCurrent && !spectator) {
+      List<BoundingBox> intersectionBoundingBoxesCurrent = Collision.resolveBoxes(user.player(), currentBoundingBox);
       if (movedIntoBlock) {
         movementData.invalidMovement = true;
 
@@ -356,7 +355,7 @@ public final class Physics extends Check {
         double blockPositionY = (boundingBox.minY + boundingBox.maxY) / 2.0;
         double blockPositionZ = (boundingBox.minZ + boundingBox.maxZ) / 2.0;
         Block block = VolatileBlockAccess.unsafe__BlockAccess(player.getWorld(), blockPositionX, blockPositionY, blockPositionZ);
-        boolean currentlyInOverride = blockShapeAccess.currentlyInOverride(WrappedMathHelper.floor(blockPositionX), WrappedMathHelper.floor(blockPositionY), WrappedMathHelper.floor(blockPositionZ));
+        boolean currentlyInOverride = blockStateAccess.currentlyInOverride(WrappedMathHelper.floor(blockPositionX), WrappedMathHelper.floor(blockPositionY), WrappedMathHelper.floor(blockPositionZ));
         boolean altered = BlockTypeAccess.hasTranslation(user, BlockTypeAccess.typeAccess(block));
 
         String colliderName;
@@ -373,7 +372,7 @@ public final class Physics extends Check {
         String details = (multipleBoxes ? intersectionBoundingBoxesCurrent.size() : "one") + " box" + (multipleBoxes ? "es" : "");
 
         if (!IntaveControl.IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT) {
-          blockShapeAccess.identityInvalidate();
+          blockStateAccess.identityInvalidate();
         }
 
         Violation violation = Violation.builderFor(Physics.class)
@@ -402,7 +401,7 @@ public final class Physics extends Check {
         if (!startBoundingBoxInList) {
           movementData.invalidMovement = true;
           if (!IntaveControl.IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT) {
-            blockShapeAccess.identityInvalidate();
+            blockStateAccess.identityInvalidate();
           }
 
           BoundingBox boundingBox = intersectionBoundingBoxesCurrent.get(0);
@@ -448,7 +447,7 @@ public final class Physics extends Check {
       violationLevelData.physicsVL = MathHelper.minmax(0, violationLevelData.physicsVL + violationLevelIncrease, 200);
       violationLevelData.physicsInvalidMovementsInRow++;
       if (!IntaveControl.IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT) {
-        blockShapeAccess.identityInvalidate();
+        blockStateAccess.identityInvalidate();
       }
       // resend attributes
       statisticApply(user, CheckStatistics::increaseFails);

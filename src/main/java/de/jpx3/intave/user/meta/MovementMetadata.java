@@ -444,8 +444,8 @@ public final class MovementMetadata {
     heightRounded = Math.round(height * 100d) / 100d;
   }
 
-  protected boolean isPoseClear(Pose pose) {
-    return Collision.hasNoCollisions(user, pose.boundingBoxOf(user).shrink(1.0E-7D));
+  private boolean isPoseClear(Pose pose) {
+    return Collision.nonePresent(user.player(), pose.boundingBoxOf(user).shrink(0.0000001));
   }
 
   @IdoNotBelongHere
