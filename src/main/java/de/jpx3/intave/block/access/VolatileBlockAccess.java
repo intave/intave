@@ -61,11 +61,11 @@ public final class VolatileBlockAccess implements BukkitEventSubscriber {
     return Material.AIR;
   }
 
-  public static BlockVariant blockVariantAccess(User user, Location location) {
-    return blockVariantAccess(user, location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
+  public static BlockVariant variantAccess(User user, Location location) {
+    return variantAccess(user, location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
   }
 
-  public static BlockVariant blockVariantAccess(User user, World blockAccess, int blockX, int blockY, int blockZ) {
+  public static BlockVariant variantAccess(User user, World blockAccess, int blockX, int blockY, int blockZ) {
     Material type = typeAccess(user, blockAccess, blockX, blockY, blockZ);
     int variantIndex = variantIndexAccess(user, blockAccess, blockX, blockY, blockZ);
     return BlockVariantRegister.variantOf(type, variantIndex);

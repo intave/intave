@@ -37,11 +37,14 @@ public final class BlockVariantConverter {
   @PatchyAutoTranslation
   public static class Bridge {
     private static final Map<Object, Setting<?>> settingCache = new ConcurrentHashMap<>();
-    private final static boolean MODERN_RESOLVE = MinecraftVersions.VER1_14_0.atOrAbove();
+    private final static boolean AQUATIC_RESOLVE = MinecraftVersions.VER1_14_0.atOrAbove();
+    private final static boolean MODERN_RESOLVE = MinecraftVersions.VER1_16_0.atOrAbove();
 
     private static Map<Setting<?>, Comparable<?>> settingsOf(Object blockData) {
       if (MODERN_RESOLVE) {
         return modernSettingsOf(blockData);
+      } else if (AQUATIC_RESOLVE) {
+        return aquaticSettingsOf(blockData);
       } else {
         return legacySettingsOf(blockData);
       }
@@ -49,10 +52,10 @@ public final class BlockVariantConverter {
 
     @PatchyAutoTranslation
     private static Map<Setting<?>, Comparable<?>> modernSettingsOf(Object blockData) {
-      IBlockData data = (IBlockData) blockData;
-      Set<IBlockState<?>> states = data.getStateMap().keySet();
+      net.minecraft.server.v1_16_R1.IBlockData data = (net.minecraft.server.v1_16_R1.IBlockData) blockData;
+      Set<net.minecraft.server.v1_16_R1.IBlockState<?>> states = data.getStateMap().keySet();
       Map<Setting<?>, Comparable<?>> configuration = new HashMap<>();
-      for (IBlockState<?> state : states) {
+      for (net.minecraft.server.v1_16_R1.IBlockState<?> state : states) {
         Setting<?> setting = settingCache.get(state);
         if (setting == null) {
           setting = modernConvertSetting(state);
@@ -65,6 +68,40 @@ public final class BlockVariantConverter {
 
     @PatchyAutoTranslation
     private static Setting<?> modernConvertSetting(Object blockState) {
+      net.minecraft.server.v1_16_R1.IBlockState<?> state = (net.minecraft.server.v1_16_R1.IBlockState<?>) blockState;
+      String name = state.getName();
+      if (state instanceof net.minecraft.server.v1_16_R1.BlockStateInteger) {
+        net.minecraft.server.v1_16_R1.BlockStateInteger blockStateInteger = (net.minecraft.server.v1_16_R1.BlockStateInteger) state;
+        Collection<Integer> values = blockStateInteger.getValues();
+        Integer min = values.stream().min(Integer::compare).orElse(0);
+        Integer max = values.stream().max(Integer::compare).orElse(0);
+        return new IntegerSetting(name, min, max);
+      } else if (state instanceof net.minecraft.server.v1_16_R1.BlockStateBoolean) {
+        return new BooleanSetting(name);
+      } else if (state instanceof net.minecraft.server.v1_16_R1.BlockStateEnum) {
+        return new UnknownEnumSetting(name, state.getType(), state.getValues());
+      }
+      throw new IllegalStateException("Unknown block state " + state + " (" + name +")");
+    }
+
+    @PatchyAutoTranslation
+    private static Map<Setting<?>, Comparable<?>> aquaticSettingsOf(Object blockData) {
+      IBlockData data = (IBlockData) blockData;
+      Set<IBlockState<?>> states = data.getStateMap().keySet();
+      Map<Setting<?>, Comparable<?>> configuration = new HashMap<>();
+      for (IBlockState<?> state : states) {
+        Setting<?> setting = settingCache.get(state);
+        if (setting == null) {
+          setting = aquaticConvertSetting(state);
+          settingCache.put(state, setting);
+        }
+        configuration.put(setting, convertData(data.get(state)));
+      }
+      return configuration;
+    }
+
+    @PatchyAutoTranslation
+    private static Setting<?> aquaticConvertSetting(Object blockState) {
       IBlockState<?> state = (IBlockState<?>) blockState;
       String name = state.a();
       if (state instanceof BlockStateInteger) {
