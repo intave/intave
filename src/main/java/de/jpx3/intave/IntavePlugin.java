@@ -176,6 +176,7 @@ public final class IntavePlugin extends JavaPlugin {
       ServerHealth.setup();
       Synchronizer.setup();
       ContextSecrets.setup();
+      ReflectiveAccess.setup();
       EntityTypeDataAccessor.setup();
 
       trustFactorService = new TrustFactorService(this);
@@ -469,20 +470,19 @@ public final class IntavePlugin extends JavaPlugin {
           contextStatusResource.write(new ByteArrayInputStream(("success/" + System.currentTimeMillis()).getBytes(StandardCharsets.UTF_8)));
         }
       }
-      
-      // stage 7
-      Modules.proceedBoot(BootSegment.STAGE_7);
 
-      SSLConnectionVerifier.setup();
       BlockVariantRegister.indexIfAvailable();
 
       PacketReaders.setup();
       BlockWrapper.setup();
       WorldBorders.setup();
       ShapeResolver.setup();
+
+      // stage 7
+      Modules.proceedBoot(BootSegment.STAGE_7);
+
       WrappedEntity.setup();
       HitboxSizeAccess.setup();
-      ReflectiveAccess.setup();
       UserRepository.setup();
       WrapperLinkage.setup();
       Raytracing.setup();

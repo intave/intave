@@ -558,7 +558,7 @@ public final class Physics extends Check {
       String debug = String.valueOf(chatColor);
 //      debug += poseName;
       debug += " ";
-//      debug += movementData.movementPoseType().debugPrefix();
+      debug += movementData.pose().name();
       if (movementData.recentlyEncounteredFlyingPacket(0)) {
         debug += "f";
       }
@@ -569,11 +569,11 @@ public final class Physics extends Check {
 //      debug += " (sprint " + movementData.sprinting + ")";
 //      debug += " (sneak " + movementData.sneaking + "/"+movementData.actualSneaking()+")";
 //      debug += " (size:" + movementData.width + "," + movementData.height + ")";
-      debug += " hand=" + shortenBoolean(meta.inventory().handActive());
+//      debug += " hand=" + shortenBoolean(meta.inventory().handActive());
 //      debug += inventoryData.heldItem().getType().name();
 //      debug += " flying:" + movementData.pastFlyingPacketAccurate;
-//      debug += " gliding:" + movementData.elytraFlying;
-//      debug += " y:" + formatDouble(movementData.motionY(),4);
+      debug += " gliding:" + shortenBoolean(movementData.elytraFlying);
+      debug += " y:" + formatDouble(movementData.motionY(),4);
 
       List<String> tags = new ArrayList<>();
 
