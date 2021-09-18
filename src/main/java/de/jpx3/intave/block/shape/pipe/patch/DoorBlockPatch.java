@@ -1,8 +1,8 @@
 package de.jpx3.intave.block.shape.pipe.patch;
 
-import de.jpx3.intave.block.access.BlockTypeAccess;
 import de.jpx3.intave.block.access.BlockVariantAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
+import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.shade.BoundingBox;
 import de.jpx3.intave.shade.EnumDirection;
 import de.jpx3.intave.user.User;
@@ -30,14 +30,14 @@ final class DoorBlockPatch extends BoundingBoxPatch {
     User user = UserRepository.userOf(player);
     boolean isUpper = (upperData & 8) != 0;
     if (isUpper) {
-      lowerData = VolatileBlockAccess.variantAccess(user, world, posX, posY - 1, posZ);
+      lowerData = VolatileBlockAccess.variantIndexAccess(user, world, posX, posY - 1, posZ);
     } else {
       lowerData = upperData;
       if (topAcquire.get()) {
         upperData = 0;
       } else {
         topAcquire.set(true);
-        upperData = VolatileBlockAccess.variantAccess(user, world, posX, posY + 1, posZ);
+        upperData = VolatileBlockAccess.variantIndexAccess(user, world, posX, posY + 1, posZ);
         topAcquire.set(false);
       }
     }

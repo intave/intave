@@ -1,12 +1,13 @@
 package de.jpx3.intave.block.state;
 
-import de.jpx3.intave.block.access.BlockTypeAccess;
+import com.google.common.collect.Lists;
 import de.jpx3.intave.block.access.BlockVariantAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.shape.ShapeResolver;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
+import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.diagnostic.ShapeAccessFlowStudy;
 import de.jpx3.intave.math.Hypot;
 import org.bukkit.Location;
@@ -16,6 +17,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,6 +30,7 @@ public final class MultiChunkKeyBlockStateAccess implements BlockStateAccess {
   private final Map<Long, BlockState> blockCache = new ConcurrentHashMap<>(4096);
   private final Map<Location, BlockState> locatedReplacements = new ConcurrentHashMap<>(64);
   private final Map<Long, BlockState> indexedReplacements = new ConcurrentHashMap<>(64);
+  private final List<Location> replacementLocations = Lists.newCopyOnWriteArrayList();
   private int originChunkX, originChunkZ;
   private int chunkX, chunkZ;
 
@@ -108,7 +111,7 @@ public final class MultiChunkKeyBlockStateAccess implements BlockStateAccess {
   }
 
   @Override
-  public int resolveVariant(int chunkX, int chunkZ, int posX, int posY, int posZ) {
+  public int resolveVariantIndex(int chunkX, int chunkZ, int posX, int posY, int posZ) {
     if (posY < 0 || BUILD_LIMIT < posY) {
       return 0;
     }
@@ -127,7 +130,7 @@ public final class MultiChunkKeyBlockStateAccess implements BlockStateAccess {
     long key = bigKey(posX, posY, posZ);
     BlockState blockState = indexedReplacements.get(key);
     if (blockState != null) {
-      return blockState.variant();
+      return blockState.variantIndex();
     }
     blockState = blockCache.get(key);
     if (blockState == null) {
@@ -138,7 +141,7 @@ public final class MultiChunkKeyBlockStateAccess implements BlockStateAccess {
         blockCache.put(key, blockState);
       }
     }
-    return blockState.variant();
+    return blockState.variantIndex();
   }
 
   private BlockState lookup(World world, Block block, int posX, int posY, int posZ) {
@@ -161,6 +164,7 @@ public final class MultiChunkKeyBlockStateAccess implements BlockStateAccess {
     invalidate();
     locatedReplacements.clear();
     indexedReplacements.clear();
+    replacementLocations.clear();
   }
 
   @Override
@@ -184,8 +188,10 @@ public final class MultiChunkKeyBlockStateAccess implements BlockStateAccess {
       blockState = new BlockState(shape, type, variant);
     }
     long key = bigKey(posX, posY, posZ);
+    Location position = new Location(null, posX, posY, posZ);
+    locatedReplacements.put(position, blockState);
+    replacementLocations.add(position);
     indexedReplacements.put(key, blockState);
-    locatedReplacements.put(new Location(world, posX, posY, posZ), blockState);
   }
 
   @Override
@@ -195,6 +201,7 @@ public final class MultiChunkKeyBlockStateAccess implements BlockStateAccess {
         location.getZ() >= chunkZMinPos && location.getZ() < chunkZMaxPos) {
         long key = bigKey(location);
         locatedReplacements.remove(location);
+        replacementLocations.remove(location);
         indexedReplacements.remove(key);
       }
     }
@@ -219,11 +226,14 @@ public final class MultiChunkKeyBlockStateAccess implements BlockStateAccess {
   }
 
   public void purgeOverrides() {
-    if (indexedReplacements.isEmpty()) {
-      return;
+    for (Location replacementLocation : replacementLocations) {
+      BlockState blockState = locatedReplacements.get(replacementLocation);
+      if (blockState == null || blockState.expired()) {
+        replacementLocations.remove(replacementLocation);
+        locatedReplacements.remove(replacementLocation);
+        indexedReplacements.remove(bigKey(replacementLocation));
+      }
     }
-    indexedReplacements.values().removeIf(BlockState::expired);
-    locatedReplacements.values().removeIf(BlockState::expired);
   }
 
   @Override

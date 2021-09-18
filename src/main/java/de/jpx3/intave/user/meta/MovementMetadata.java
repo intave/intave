@@ -22,7 +22,6 @@ import de.jpx3.intave.module.tracker.entity.WrappedEntity;
 import de.jpx3.intave.player.Effects;
 import de.jpx3.intave.reflect.access.ReflectiveHandleAccess;
 import de.jpx3.intave.shade.BoundingBox;
-import de.jpx3.intave.shade.WrappedMathHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Bukkit;
@@ -37,6 +36,7 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static de.jpx3.intave.shade.WrappedMathHelper.*;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_14;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_15;
 
@@ -281,10 +281,10 @@ public final class MovementMetadata {
   private Vector vectorForRotation(float yaw, float pitch) {
     float f = pitch * ((float) Math.PI / 180F);
     float f1 = -yaw * ((float) Math.PI / 180F);
-    float f2 = WrappedMathHelper.cos(f1);
-    float f3 = WrappedMathHelper.sin(f1);
-    float f4 = WrappedMathHelper.cos(f);
-    float f5 = WrappedMathHelper.sin(f);
+    float f2 = cos(f1);
+    float f3 = sin(f1);
+    float f4 = cos(f);
+    float f5 = sin(f);
     return new Vector(f3 * f4, -f5, (double) (f2 * f4));
   }
 
@@ -323,7 +323,7 @@ public final class MovementMetadata {
 
     WrappedFluid fluid = Fluids.fluidAt(user, positionX, yPos, positionZ);
     if (fluid.isIn(FluidTag.WATER)) {
-      double d1 = (float) WrappedMathHelper.floor(yPos) + 1.0f;
+      double d1 = (float) floor(yPos) + 1.0f;
       if (d1 > yPos) {
         this.interactingFluid = fluid;
       }

@@ -11,11 +11,11 @@ import de.jpx3.intave.entity.datawatcher.DataWatcherAccess;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.packet.converter.PlayerAction;
 import de.jpx3.intave.packet.converter.PlayerActionResolver;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
-import de.jpx3.intave.violation.mitigate.AttackNerfStrategy;
 import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.entity.datawatcher.DataWatcherAccess.WATCHER_SNEAK_ID;

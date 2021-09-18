@@ -1,9 +1,9 @@
 package de.jpx3.intave.block.shape.pipe.patch;
 
 import de.jpx3.intave.IntaveLogger;
-import de.jpx3.intave.block.access.BlockTypeAccess;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
+import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.shade.BoundingBox;
 import org.bukkit.Material;
 import org.bukkit.World;

@@ -22,7 +22,6 @@ public final class WrappedFluid {
   }
 
   public boolean isEmpty() {
-//    return fluidTag == FluidTag.EMPTY;
     return empty;
   }
 

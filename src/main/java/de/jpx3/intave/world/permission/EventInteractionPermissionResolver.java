@@ -2,6 +2,7 @@ package de.jpx3.intave.world.permission;
 
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.event.AsyncIntaveInteractionPermissionEvent;
+import de.jpx3.intave.module.Modules;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
@@ -17,7 +18,7 @@ public final class EventInteractionPermissionResolver implements BlockInteractio
 
   @Override
   public boolean hasPermission(Player player, Action action, ItemStack itemStack, Block block, BlockFace blockFace) {
-    AsyncIntaveInteractionPermissionEvent event = plugin.customEventService().invokeEvent(
+    AsyncIntaveInteractionPermissionEvent event = Modules.eventInvoker().invokeEvent(
       AsyncIntaveInteractionPermissionEvent.class,
       x -> x.copy(player, action, itemStack, block, blockFace)
     );

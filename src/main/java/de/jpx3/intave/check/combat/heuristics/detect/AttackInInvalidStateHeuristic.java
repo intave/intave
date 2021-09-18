@@ -15,11 +15,11 @@ import de.jpx3.intave.check.combat.heuristics.Confidence;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.tracker.entity.WrappedEntity;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.*;
-import de.jpx3.intave.violation.mitigate.AttackNerfStrategy;
 import org.bukkit.entity.Player;
 
 import java.lang.reflect.InvocationTargetException;

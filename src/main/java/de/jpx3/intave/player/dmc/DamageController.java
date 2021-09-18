@@ -5,10 +5,8 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageModifier;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
 import static org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BASE;
 
@@ -48,10 +46,6 @@ public final class DamageController {
         damageEvent.setDamage(damageModifier, apply);
       }
     }
-  }
-
-  private static String applierChain(EntityDamageEvent damageEvent) {
-    return Arrays.stream(DamageModifier.values()).map(value -> String.valueOf(damageEvent.getDamage(value))).map(s -> s + " ").collect(Collectors.joining("", "(", ")"));
   }
 
   private final static Field DAMAGE_MODIFIER_FUNCTION_FIELD;

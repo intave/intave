@@ -13,7 +13,7 @@ import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 public final class ClientDataList {
-  private final static CachedResource CACHED_RESOURCE = new CachedResource("clientdata", "https://intave.de/api/clientdata.json", TimeUnit.DAYS.toMillis(14));
+  private final static CachedResource CACHED_RESOURCE = new CachedResource("clientdata", "https://service.intave.de/clientdata", TimeUnit.DAYS.toMillis(14));
   private final List<ClientData> content;
 
   public ClientDataList(List<ClientData> content) {

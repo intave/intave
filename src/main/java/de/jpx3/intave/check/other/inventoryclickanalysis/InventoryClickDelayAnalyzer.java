@@ -10,12 +10,13 @@ import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.other.InventoryClickAnalysis;
 import de.jpx3.intave.clazz.Lookup;
 import de.jpx3.intave.math.MathHelper;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
-import de.jpx3.intave.violation.Violation;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -114,7 +115,7 @@ public final class InventoryClickDelayAnalyzer extends MetaCheckPart<InventoryCl
         .withDetails("moved from slot " + meta.lastClickedSlot + " to slot " + slot + " in " + MathHelper.formatDouble(time, 3) + " seconds")
         .withVL(5).build();
 
-      plugin.violationProcessor().processViolation(violation);
+      Modules.violationProcessor().processViolation(violation);
     }
 
     if (flag) {
@@ -134,7 +135,7 @@ public final class InventoryClickDelayAnalyzer extends MetaCheckPart<InventoryCl
         .withDetails(MathHelper.formatDouble(std, 2) + " deviation")
         .withVL(5).build();
 //
-      plugin.violationProcessor().processViolation(violation);
+      Modules.violationProcessor().processViolation(violation);
     }
   }
 

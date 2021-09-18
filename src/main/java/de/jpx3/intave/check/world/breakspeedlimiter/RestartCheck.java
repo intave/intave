@@ -7,20 +7,20 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.block.access.BlockVariantAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.BreakSpeedLimiter;
 import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.violation.Violation;
+import de.jpx3.intave.module.violation.ViolationContext;
+import de.jpx3.intave.module.violation.ViolationProcessor;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
-import de.jpx3.intave.violation.Violation;
-import de.jpx3.intave.violation.ViolationContext;
-import de.jpx3.intave.violation.ViolationProcessor;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -69,7 +69,7 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
           if (ticksBetween < 5) {
             String message = "started breaking too quickly";
             String details = (ticksBetween == 1 ? "one tick" : ticksBetween + " ticks");
-            ViolationProcessor violationProcessor = IntavePlugin.singletonInstance().violationProcessor();
+            ViolationProcessor violationProcessor = Modules.violationProcessor();
             Violation violation = Violation.builderFor(BreakSpeedLimiter.class)
               .forPlayer(player).withMessage(message).withDetails(details).withVL(5)
               .build();
@@ -85,7 +85,7 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
             if (meta.blockBreakStartVL++ > 5) {
               String message = "started breaking too quickly";
               String details = milliseconds + "ms between";
-              ViolationProcessor violationProcessor = IntavePlugin.singletonInstance().violationProcessor();
+              ViolationProcessor violationProcessor = Modules.violationProcessor();
               Violation violation = Violation.builderFor(BreakSpeedLimiter.class)
                 .forPlayer(player).withMessage(message).withDetails(details)
                 .withVL(1).build();

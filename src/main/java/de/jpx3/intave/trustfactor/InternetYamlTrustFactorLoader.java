@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 public final class InternetYamlTrustFactorLoader implements TrustFactorLoader {
   @Override
   public TrustFactorConfiguration fetch() {
-    CachedResource trustfactor = new CachedResource("trustfactor", "https://intave.de/api/trustfactor/" + IntavePlugin.version() + ".yml", TimeUnit.DAYS.toMillis(7));
+    CachedResource trustfactor = new CachedResource("trustfactor", "https://service.intave.de/trustfactor/" + IntavePlugin.version(), TimeUnit.DAYS.toMillis(7));
     trustfactor.prepareFile();
     InputStreamReader reader = new InputStreamReader(trustfactor.read());
     YamlConfiguration configuration = YamlConfiguration.loadConfiguration(reader);

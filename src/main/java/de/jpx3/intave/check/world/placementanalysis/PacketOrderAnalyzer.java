@@ -5,11 +5,12 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.violation.Violation;
+import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
-import de.jpx3.intave.violation.Violation;
-import de.jpx3.intave.violation.ViolationContext;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -68,7 +69,7 @@ public final class PacketOrderAnalyzer extends MetaCheckPart<PlacementAnalysis, 
               .withMessage(COMMON_FLAG_MESSAGE)
               .withVL(2)
               .build();
-            ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
+            ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
             if (violationContext.violationLevelAfter() > 5) {
               //dmc2
               parentCheck().applyPlacementAnalysisDamageCancel(user, "2");

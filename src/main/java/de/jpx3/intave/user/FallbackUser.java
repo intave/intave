@@ -9,6 +9,9 @@ import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.connect.customclient.CustomClientSupportConfig;
 import de.jpx3.intave.connect.shadow.ShadowPacketDataLink;
 import de.jpx3.intave.entity.size.HitboxSize;
+import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
+import de.jpx3.intave.module.violation.placeholder.PlayerContext;
+import de.jpx3.intave.module.violation.placeholder.UserContext;
 import de.jpx3.intave.player.Collider;
 import de.jpx3.intave.player.collider.complex.ComplexColliderProcessor;
 import de.jpx3.intave.player.collider.simple.SimpleColliderProcessor;
@@ -17,9 +20,6 @@ import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.permission.ExpiringPermissionCache;
 import de.jpx3.intave.user.permission.PermissionCache;
-import de.jpx3.intave.violation.mitigate.AttackNerfStrategy;
-import de.jpx3.intave.violation.placeholder.PlayerContext;
-import de.jpx3.intave.violation.placeholder.UserContext;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 @Relocate
-final class FallbackUser implements User {
+public final class FallbackUser implements User {
   private final MetadataBundle metadata;
   private final PermissionCache permissionCache;
   private final ComplexColliderProcessor complexColliderProcessor;

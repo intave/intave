@@ -12,21 +12,24 @@ import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.block.access.BlockInteractionAccess;
-import de.jpx3.intave.block.access.BlockTypeAccess;
 import de.jpx3.intave.block.access.BlockVariantAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.state.BlockStateAccess;
+import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.MetaCheck;
 import de.jpx3.intave.check.world.interaction.Interaction;
 import de.jpx3.intave.check.world.interaction.InteractionEmulator;
 import de.jpx3.intave.check.world.interaction.InteractionType;
 import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.player.AbilityTracker;
+import de.jpx3.intave.module.violation.Violation;
+import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.packet.reader.BlockInteractionReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.player.ItemProperties;
@@ -37,8 +40,6 @@ import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.InventoryMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import de.jpx3.intave.violation.Violation;
-import de.jpx3.intave.violation.ViolationContext;
 import de.jpx3.intave.world.raytrace.Raytracing;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -453,6 +454,10 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       if (instantBreak) {
         vl = 0;
       }
+      if (lookingAtBlock) {
+        double multiplier = trustFactorSetting("k-multiplier", player) / 100d;
+        vl *= multiplier;
+      }
       message = "performed invalid break";// +" -" + append;
       details = typeName + " block, " + append;
       mustFlag = true;
@@ -497,7 +502,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     Violation violation = Violation.builderFor(InteractionRaytrace.class)
       .forPlayer(player).withMessage(message).withDetails(details).withVL(vl)
       .build();
-    ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
+    ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
     return violationContext.shouldCounterThreat() || mustFlag;
   }
 

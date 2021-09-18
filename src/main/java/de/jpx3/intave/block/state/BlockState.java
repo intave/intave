@@ -1,9 +1,9 @@
 package de.jpx3.intave.block.state;
 
 import de.jpx3.intave.IntaveControl;
-import de.jpx3.intave.block.access.BlockVariantRegister;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
+import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.diagnostic.MemoryTraced;
 import de.jpx3.intave.shade.BoundingBox;
 import org.bukkit.Material;
@@ -53,7 +53,7 @@ public final class BlockState extends MemoryTraced {
    * Retrieve the blocks variant
    * @return the blocks variant
    */
-  public int variant() {
+  public int variantIndex() {
     return variant;
   }
 

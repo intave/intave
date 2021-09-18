@@ -21,6 +21,8 @@ public final class AttackMetadata {
   private long lastAttack = 0;
   private long lastEntitySwitch = 0;
 
+  private long lastTimeAttackedByEntity = 0;
+
   private WrappedEntity lastAttackedEntity;
   private float perfectYaw, perfectPitch;
   private float previousPerfectYaw, previousPerfectPitch;
@@ -137,6 +139,14 @@ public final class AttackMetadata {
 
     this.lastAttackedEntity = attackedEntity;
     this.lastAttack = System.currentTimeMillis();
+  }
+
+  public void noteExternalAttack() {
+    lastTimeAttackedByEntity = System.currentTimeMillis();
+  }
+
+  public boolean wasRecentlyAttackedByEntity() {
+    return System.currentTimeMillis() - lastTimeAttackedByEntity < 2000;
   }
 
   public void nullifyLastAttackedEntity() {

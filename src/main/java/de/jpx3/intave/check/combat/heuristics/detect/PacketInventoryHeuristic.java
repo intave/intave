@@ -10,9 +10,9 @@ import de.jpx3.intave.check.combat.heuristics.Anomaly;
 import de.jpx3.intave.check.combat.heuristics.Confidence;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
-import de.jpx3.intave.violation.mitigate.AttackNerfStrategy;
 import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.*;

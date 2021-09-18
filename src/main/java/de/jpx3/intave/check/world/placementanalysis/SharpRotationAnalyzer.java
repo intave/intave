@@ -5,13 +5,14 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.math.MathHelper;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import de.jpx3.intave.violation.Violation;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -70,7 +71,7 @@ public final class SharpRotationAnalyzer extends MetaCheckPart<PlacementAnalysis
         Violation violation = Violation.builderFor(PlacementAnalysis.class)
           .forPlayer(player).withMessage(COMMON_FLAG_MESSAGE).withDetails(details)
           .withDefaultThreshold().withVL(meta.sharpRotations > 10 ? 10 : 0).build();
-        plugin.violationProcessor().processViolation(violation);
+        Modules.violationProcessor().processViolation(violation);
         place.setCancelled(true);
       }
     }

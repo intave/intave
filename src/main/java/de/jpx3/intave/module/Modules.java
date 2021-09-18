@@ -2,10 +2,15 @@ package de.jpx3.intave.module;
 
 import de.jpx3.intave.annotate.Native;
 import de.jpx3.intave.cleanup.ShutdownTasks;
+import de.jpx3.intave.module.event.CustomEvents;
 import de.jpx3.intave.module.feedback.FeedbackReceiver;
 import de.jpx3.intave.module.feedback.FeedbackSender;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
 import de.jpx3.intave.module.linker.packet.PacketSubscriptionLinker;
+import de.jpx3.intave.module.mitigate.CombatMitigator;
+import de.jpx3.intave.module.mitigate.MovementEmulator;
+import de.jpx3.intave.module.mitigate.ReconDelayLimiter;
+import de.jpx3.intave.module.violation.ViolationProcessor;
 
 public final class Modules {
   private final static ModulePool pool = new ModulePool();
@@ -38,10 +43,16 @@ public final class Modules {
 
   // quick accessors
 
+  public static ViolationProcessor violationProcessor() {
+    return find(ViolationProcessor.class);
+  }
+  public static CustomEvents eventInvoker() {
+    return find(CustomEvents.class);
+  }
   public static FeedbackSender feedback() {
     return find(FeedbackSender.class);
   }
-
+  @Deprecated
   public static FeedbackReceiver feedbackReceiver() {
     return find(FeedbackReceiver.class);
   }
@@ -49,17 +60,19 @@ public final class Modules {
   private final static LinkerCategory LINKER_CATEGORY = new LinkerCategory();
   private final static DispatchCategory DISPATCH_CATEGORY = new DispatchCategory();
   private final static TrackerCategory TRACKER_CATEGORY = new TrackerCategory();
+  private final static MitigateCategory MITIGATE_CATEGORY = new MitigateCategory();
 
   public static LinkerCategory linker() {
     return LINKER_CATEGORY;
   }
-
   public static DispatchCategory dispatch() {
     return DISPATCH_CATEGORY;
   }
-
   public static TrackerCategory tracker() {
     return TRACKER_CATEGORY;
+  }
+  public static MitigateCategory mitigate() {
+    return MITIGATE_CATEGORY;
   }
 
   public static class TrackerCategory {
@@ -77,6 +90,20 @@ public final class Modules {
 
     public PacketSubscriptionLinker packetEvents() {
       return find(PacketSubscriptionLinker.class);
+    }
+  }
+
+  public static class MitigateCategory {
+    public CombatMitigator combat() {
+      return find(CombatMitigator.class);
+    }
+
+    public MovementEmulator movement() {
+      return find(MovementEmulator.class);
+    }
+
+    public ReconDelayLimiter reconnectionLimiter() {
+      return find(ReconDelayLimiter.class);
     }
   }
 }

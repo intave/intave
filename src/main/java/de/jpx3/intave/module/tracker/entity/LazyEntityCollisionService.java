@@ -1,7 +1,6 @@
 package de.jpx3.intave.module.tracker.entity;
 
-import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriber;
+import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -14,12 +13,8 @@ import org.bukkit.event.player.PlayerMoveEvent;
 
 import java.util.List;
 
-public final class LazyEntityCollisionService implements BukkitEventSubscriber {
+public final class LazyEntityCollisionService extends Module {
   private static final double DISTANCE_TO_ENTITY = 1.5f * 1.2;
-
-  public LazyEntityCollisionService(IntavePlugin plugin) {
-    plugin.eventLinker().registerEventsIn(this);
-  }
 
   @BukkitEventSubscription
   public void on(PlayerMoveEvent event) {

@@ -1,7 +1,6 @@
 package de.jpx3.intave.block.physics;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
-import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.user.User;
 import org.bukkit.Location;
@@ -12,22 +11,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 public final class BlockPhysics {
-  private final static MinecraftVersion MINECRAFT_VERSION = ProtocolLibraryAdapter.serverVersion();
+  private final static MinecraftVersion MINECRAFT_VERSION = MinecraftVersion.getCurrentVersion();
   private final static Map<Material, BlockPhysic> blockAccessCache = new HashMap<>();
 
   public static void setup() {
-    loadBlock(BlockBedPhysic.class);
-    loadBlock(BlockSlimePhysic.class);
-    loadBlock(BlockWebPhysic.class);
-    loadBlock(BlockSoulSandPhysic.class);
-    loadBlock(BlockBerryBushPhysic.class);
-    loadBlock(BlockHoneyPhysic.class);
-    loadBlock(BlockWebPhysic.class);
-    loadBlock(FlowingFluidPhysic.class);
-    loadBlock(BlockBubbleColumnPhysic.class);
+    setup(BedPhysics.class);
+    setup(SlimePhysics.class);
+    setup(WebPhysics.class);
+    setup(SoulSandPhysics.class);
+    setup(BerryBushPhysics.class);
+    setup(HoneyPhysics.class);
+    setup(WebPhysics.class);
+    setup(FluidPhysics.class);
+    setup(BubbleColumnPhysics.class);
   }
 
-  private static void loadBlock(Class<? extends BlockPhysic> blockClass) {
+  private static void setup(Class<? extends BlockPhysic> blockClass) {
     try {
       BlockPhysic block = blockClass.newInstance();
       block.setup(MINECRAFT_VERSION);

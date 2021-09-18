@@ -8,10 +8,10 @@ import java.util.Collections;
 import java.util.List;
 
 public final class ArrayBlockShape extends MemoryTraced implements BlockShape {
-  private final List<BlockShape> contents;
+  private final BlockShape[] contents;
 
   public ArrayBlockShape(List<BlockShape> contents) {
-    this.contents = contents;
+    this.contents = contents.toArray(new BlockShape[0]);
   }
 
   @Override
@@ -88,7 +88,7 @@ public final class ArrayBlockShape extends MemoryTraced implements BlockShape {
 
   @Override
   public boolean isEmpty() {
-    return contents.isEmpty();
+    return contents.length == 0;
   }
 
   @Override

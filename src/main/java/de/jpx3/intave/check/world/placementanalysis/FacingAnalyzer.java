@@ -6,10 +6,11 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.CheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
+import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.violation.Violation;
-import de.jpx3.intave.violation.mitigate.AttackNerfStrategy;
 import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.check.world.PlacementAnalysis.COMMON_FLAG_MESSAGE;
@@ -48,7 +49,7 @@ public final class FacingAnalyzer extends CheckPart<PlacementAnalysis> {
         .withMessage(COMMON_FLAG_MESSAGE)
         .withVL(5)
         .build();
-      plugin.violationProcessor().processViolation(violation);
+      Modules.violationProcessor().processViolation(violation);
       //dmc14
       user.applyAttackNerfer(AttackNerfStrategy.CANCEL_FIRST_HIT, "14");
       user.applyAttackNerfer(AttackNerfStrategy.HT_MEDIUM, "14");

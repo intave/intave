@@ -1,10 +1,10 @@
 package de.jpx3.intave.block.shape.pipe;
 
-import de.jpx3.intave.block.access.BlockTypeAccess;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.block.shape.pipe.patch.BoundingBoxBuilder;
+import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.shade.BoundingBox;
 import org.bukkit.Material;
 import org.bukkit.World;

@@ -133,6 +133,22 @@ IBlockState -> {
   17 -> "net/minecraft/world/level/block/state/properties/IBlockState"
 }
 
+BlockStateInteger -> {
+  17 -> "net/minecraft/world/level/block/state/properties/BlockStateInteger"
+}
+
+BlockStateBoolean -> {
+  17 -> "net/minecraft/world/level/block/state/properties/BlockStateBoolean"
+}
+
+BlockStateEnum -> {
+  17 -> "net/minecraft/world/level/block/state/properties/BlockStateEnum"
+}
+
+BlockStateDirection -> {
+  17 -> "net/minecraft/world/level/block/state/properties/BlockStateDirection"
+}
+
 IChatBaseComponent -> {
   17 -> "net/minecraft/network/chat/IChatBaseComponent"
 }

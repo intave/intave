@@ -27,10 +27,8 @@ public abstract class Module implements EventProcessor {
   }
 
   public void enable() {
-
   }
 
   public void disable() {
-
   }
 }

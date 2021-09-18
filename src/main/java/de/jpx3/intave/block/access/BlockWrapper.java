@@ -13,6 +13,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
 import org.bukkit.craftbukkit.v1_13_R2.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.v1_8_R3.CraftChunk;
 import org.jetbrains.annotations.NotNull;
 
 public final class BlockWrapper {
@@ -38,7 +39,8 @@ public final class BlockWrapper {
       if (MinecraftVersions.VER1_13_0.atOrAbove()) {
         return new v13WrappedBlock(user, x, y, z);
       } else {
-        return new v8WrappedBlock(user, (org.bukkit.craftbukkit.v1_8_R3.CraftChunk) world.getChunkAt(x << 4, z << 4), x, y, z);
+        CraftChunk chunkAt = (CraftChunk) world.getChunkAt(x >> 4, z >> 4);
+        return new v8WrappedBlock(user, chunkAt, x, y, z);
       }
     }
   }
@@ -86,6 +88,10 @@ public final class BlockWrapper {
       return VolatileBlockAccess.typeAccess(user, location);
     }
 
+    @Override
+    public byte getData() {
+      return (byte) VolatileBlockAccess.variantIndexAccess(user, location);
+    }
 
     @Override
     public @NotNull Location getLocation() {
@@ -117,16 +123,6 @@ public final class BlockWrapper {
     @Override
     public byte getLightFromBlocks() {
       return 0;
-    }
-
-    @Override
-    public byte getData() {
-      if (MinecraftVersions.VER1_14_0.atOrAbove()) {
-        return 0;
-      }
-      return (byte) VolatileBlockAccess.variantAccess(
-        user, location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ()
-      );
     }
 
     @PatchyAutoTranslation

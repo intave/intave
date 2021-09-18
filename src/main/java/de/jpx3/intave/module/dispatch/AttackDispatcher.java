@@ -15,6 +15,7 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.WrappedEntity;
+import de.jpx3.intave.player.dmc.DamageController;
 import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -22,7 +23,10 @@ import de.jpx3.intave.user.meta.*;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -38,6 +42,7 @@ import java.util.function.Consumer;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.USE_ENTITY;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.RESPAWN;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.SET_SLOT;
+import static org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BLOCKING;
 
 @SplitMeUp
 public final class AttackDispatcher extends Module {
@@ -184,6 +189,24 @@ public final class AttackDispatcher extends Module {
       }
     }
     return roman.toString();
+  }
+
+  @BukkitEventSubscription
+  public void on(EntityDamageByEntityEvent event) {
+    if (event.getCause() != EntityDamageEvent.DamageCause.ENTITY_ATTACK) {
+      return;
+    }
+    Entity attacked = event.getEntity();
+    if (!(attacked instanceof Player)) {
+      return;
+    }
+    Player attackedPlayer = (Player) attacked;
+    User user = UserRepository.userOf(attackedPlayer);
+    user.meta().attack().noteExternalAttack();
+    double blockingDamageAbsorption = event.getDamage(BLOCKING);
+    if (blockingDamageAbsorption < 0 && !user.meta().inventory().handActive()) {
+      DamageController.withNewDamageApplier(event, BLOCKING, current -> -0d);
+    }
   }
 
   @BukkitEventSubscription

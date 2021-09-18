@@ -6,11 +6,12 @@ import de.jpx3.intave.check.movement.physics.Simulators;
 import de.jpx3.intave.check.other.InventoryClickAnalysis;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.Hypot;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import de.jpx3.intave.violation.Violation;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -60,7 +61,7 @@ public final class InventoryClickOnMoveCheck extends CheckPart<InventoryClickAna
         .withMessage(message)
         .withVL(0)
         .build();
-      plugin.violationProcessor().processViolation(violation);
+      Modules.violationProcessor().processViolation(violation);
       Synchronizer.synchronize(player::closeInventory);
       event.setCancelled(true);
     }

@@ -7,7 +7,6 @@ import de.jpx3.intave.annotate.Native;
 import de.jpx3.intave.resource.EncryptedResource;
 import de.jpx3.intave.security.ContextSecrets;
 import de.jpx3.intave.security.LicenseAccess;
-import de.jpx3.intave.security.SSLConnectionVerifier;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import javax.crypto.Cipher;
@@ -16,7 +15,6 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
@@ -195,7 +193,6 @@ public final class ConfigurationLoader {
         urlConnection.setConnectTimeout(3000);
         urlConnection.setReadTimeout(3000);
         urlConnection.connect();
-        SSLConnectionVerifier.verifyURLConnection((HttpsURLConnection) urlConnection);
         inputStream = urlConnection.getInputStream();
       }
       return YamlConfiguration.loadConfiguration(new InputStreamReader(inputStream));

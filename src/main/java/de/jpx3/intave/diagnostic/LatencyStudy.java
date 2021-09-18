@@ -2,6 +2,7 @@ package de.jpx3.intave.diagnostic;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class LatencyStudy {
@@ -18,6 +19,19 @@ public final class LatencyStudy {
       score.addAndGet(aShort * atomicLong.get());
       count.addAndGet(atomicLong.get());
     });
-    return (double) score.get() / (double) count.get();
+    return (double) score.get() / Math.max((double) count.get(), 1);
+  }
+
+  private static double cachedAverage;
+  private static long lastCachedAverageReset;
+
+  private static final long CACHE_EXPIRY = TimeUnit.SECONDS.toMillis(5);
+
+  public static double cachedAverage() {
+    if (System.currentTimeMillis() - lastCachedAverageReset > CACHE_EXPIRY) {
+      cachedAverage = average();
+      lastCachedAverageReset = System.currentTimeMillis();
+    }
+    return cachedAverage;
   }
 }

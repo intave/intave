@@ -10,7 +10,7 @@ public final class AsyncIntaveBlockBreakPermissionEvent extends IntaveEvent impl
   private Block block;
   private boolean cancelled;
 
-  protected AsyncIntaveBlockBreakPermissionEvent() {
+  private AsyncIntaveBlockBreakPermissionEvent() {
   }
 
   public Player player() {

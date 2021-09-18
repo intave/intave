@@ -27,7 +27,7 @@ public final class LegacyWaterflow {
         for (int z = minZ; z < maxZ; ++z) {
           Material type = VolatileBlockAccess.typeAccess(user, world, x, y, z);
           if (MaterialMagic.isWater(type)) {
-            int level = VolatileBlockAccess.variantAccess(user, world, x, y, z);
+            int level = VolatileBlockAccess.variantIndexAccess(user, world, x, y, z);
             double d0 = (float) (y + 1) - resolveLiquidHeightPercentage(level);
             if ((double) maxY >= d0) {
               inWater = true;
@@ -94,7 +94,7 @@ public final class LegacyWaterflow {
   private static int resolveLevel(User user, BlockPosition pos) {
     World world = user.player().getWorld();
     Material clientSideBlock = VolatileBlockAccess.typeAccess(user, world, pos.xCoord, pos.yCoord, pos.zCoord);
-    return MaterialMagic.isWater(clientSideBlock) ? VolatileBlockAccess.variantAccess(user, world, pos.xCoord, pos.yCoord, pos.zCoord) : -1;
+    return MaterialMagic.isWater(clientSideBlock) ? VolatileBlockAccess.variantIndexAccess(user, world, pos.xCoord, pos.yCoord, pos.zCoord) : -1;
   }
 
   private static boolean blocksMovement(User user, BlockPosition position) {

@@ -9,12 +9,12 @@ import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.annotate.refactoring.IdoNotBelongHere;
 import de.jpx3.intave.annotate.refactoring.SplitMeUp;
-import de.jpx3.intave.block.access.BlockTypeAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.fluid.LegacyWaterflow;
 import de.jpx3.intave.block.state.BlockStateAccess;
+import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckStatistics;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
@@ -22,16 +22,16 @@ import de.jpx3.intave.check.movement.physics.*;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.MathHelper;
+import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.violation.Violation;
+import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.player.Collider;
 import de.jpx3.intave.player.collider.complex.ComplexColliderSimulationResult;
 import de.jpx3.intave.player.collider.simple.SimpleColliderSimulationResult;
-import de.jpx3.intave.reflect.method.FallDamageMethodContainer;
 import de.jpx3.intave.shade.BoundingBox;
 import de.jpx3.intave.shade.WrappedMathHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
-import de.jpx3.intave.violation.Violation;
-import de.jpx3.intave.violation.ViolationContext;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -55,7 +55,7 @@ public final class Physics extends Check {
   private final CheckViolationLevelDecrementer decrementer;
   private final SimulationProcessor simulationProcessor;
   private final SimulationEvaluator simulationEvaluator;
-  private final FallDamageMethodContainer fallDamageMethodContainer;
+  private final FallDamageApplier fallDamageApplier;
   private final boolean highToleranceMode;
 
   public Physics(IntavePlugin plugin) {
@@ -66,7 +66,7 @@ public final class Physics extends Check {
     this.simulationEvaluator = new SimulationEvaluator();
     this.highToleranceMode = configuration().settings().boolBy("high-tolerance", false);
     setDefaultMitigationStrategy(MitigationStrategy.CAREFUL);
-    this.fallDamageMethodContainer = new FallDamageMethodContainer();
+    this.fallDamageApplier = new FallDamageApplier();
     linkCheckToPoseSimulators();
   }
 
@@ -377,10 +377,10 @@ public final class Physics extends Check {
 
         Violation violation = Violation.builderFor(Physics.class)
           .forPlayer(player).withMessage(message).withDetails(details).withVL(0).build();
-        plugin.violationProcessor().processViolation(violation);
+        Modules.violationProcessor().processViolation(violation);
 
         Vector emulationMotion = new Vector(predictedX, predictedY, predictedZ);
-        plugin.eventService().emulationEngine().emulationSetBack(player, emulationMotion, 2, true);
+        Modules.mitigate().movement().emulationSetBack(player, emulationMotion, 2, true);
       } else {
         // Phase Check
         if (!movementData.currentlyInBlock) {
@@ -416,9 +416,9 @@ public final class Physics extends Check {
           Violation violation = Violation.builderFor(Physics.class)
             .forPlayer(player).withMessage(message).withDetails(details).withVL(0)
             .build();
-          plugin.violationProcessor().processViolation(violation);
+          Modules.violationProcessor().processViolation(violation);
           BoundingBox startPhaseBoundingBox = BoundingBox.fromPosition(user, movementData.verifiedLocation());
-          plugin.eventService().emulationEngine().emulationPushOutOfBlock(player, startPhaseBoundingBox, predictedX, predictedY, predictedZ);
+          Modules.mitigate().movement().emulationPushOutOfBlock(player, startPhaseBoundingBox, predictedX, predictedY, predictedZ);
         }
       }
     }
@@ -469,7 +469,7 @@ public final class Physics extends Check {
       double vl = violationLevelIncrease / (highToleranceMode ? 75 : (violationLevelData.physicsVL >= 100 ? 20 : 50));
       Violation violation = Violation.builderFor(Physics.class)
         .forPlayer(player).withMessage(message).withDetails(details).withVL(vl).build();
-      ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
+      ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
 
       // a few helpful states
       boolean isMidAir = !movementData.onGround && !movementData.collidedHorizontally && !movementData.collidedVertically;
@@ -519,7 +519,7 @@ public final class Physics extends Check {
       if (setback) {
         Vector emulationMotion = new Vector(predictedX, predictedY, predictedZ);
         int setbackTicks = (movementData.pastExternalVelocity <= 8) ? 8 : ((violationLevelData.physicsVL > 50) ? 3 : 2);
-        plugin.eventService().emulationEngine().emulationSetBack(player, emulationMotion, setbackTicks, true);
+        Modules.mitigate().movement().emulationSetBack(player, emulationMotion, setbackTicks, true);
         movementData.invalidMovement = true;
       }
     }
@@ -558,7 +558,7 @@ public final class Physics extends Check {
       String debug = String.valueOf(chatColor);
 //      debug += poseName;
       debug += " ";
-//      debug += movementData.movementPoseType().debugPrefix();
+      debug += movementData.pose().name();
       if (movementData.recentlyEncounteredFlyingPacket(0)) {
         debug += "f";
       }
@@ -569,11 +569,11 @@ public final class Physics extends Check {
 //      debug += " (sprint " + movementData.sprinting + ")";
 //      debug += " (sneak " + movementData.sneaking + "/"+movementData.actualSneaking()+")";
 //      debug += " (size:" + movementData.width + "," + movementData.height + ")";
-      debug += " hand=" + shortenBoolean(meta.inventory().handActive());
+//      debug += " hand=" + shortenBoolean(meta.inventory().handActive());
 //      debug += inventoryData.heldItem().getType().name();
 //      debug += " flying:" + movementData.pastFlyingPacketAccurate;
-//      debug += " gliding:" + movementData.elytraFlying;
-//      debug += " y:" + formatDouble(movementData.motionY(),4);
+      debug += " gliding:" + shortenBoolean(movementData.elytraFlying);
+      debug += " y:" + formatDouble(movementData.motionY(),4);
 
       List<String> tags = new ArrayList<>();
 
@@ -632,7 +632,7 @@ public final class Physics extends Check {
       Synchronizer.synchronize(() -> {
         Player player = user.player();
         movementData.allowFallDamage = true;
-        fallDamageMethodContainer.dealFallDamage(player, fallDistance);
+        fallDamageApplier.dealFallDamage(player, fallDistance);
         movementData.allowFallDamage = false;
       });
       movementData.artificialFallDistance = 0F;

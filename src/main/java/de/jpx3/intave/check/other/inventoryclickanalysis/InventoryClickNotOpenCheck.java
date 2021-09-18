@@ -10,10 +10,11 @@ import de.jpx3.intave.check.CheckPart;
 import de.jpx3.intave.check.other.InventoryClickAnalysis;
 import de.jpx3.intave.clazz.Lookup;
 import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.InventoryMetadata;
-import de.jpx3.intave.violation.Violation;
 import org.bukkit.entity.Player;
 
 import java.util.Locale;
@@ -54,7 +55,7 @@ public final class InventoryClickNotOpenCheck extends CheckPart<InventoryClickAn
           .withMessage("clicked in closed inventory")
           .withDetails(clickType.name().toLowerCase(Locale.ROOT) + " on " + slot + "s/" + container + "c")
           .withVL(5).build();
-        plugin.violationProcessor().processViolation(violation);
+        Modules.violationProcessor().processViolation(violation);
         Synchronizer.synchronize(player::updateInventory);
         event.setCancelled(true);
       } else if (forceInventoryOnClickOpen && isNativeInventoryClick) {

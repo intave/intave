@@ -6,14 +6,15 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheck;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.violation.Violation;
+import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
-import de.jpx3.intave.violation.Violation;
-import de.jpx3.intave.violation.ViolationContext;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -150,7 +151,7 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
         .forPlayer(player).withMessage("attacked too quickly").withDetails(sum + " c/s")
         .withVL(addedVL)
         .build();
-      ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
+      ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
       if (violationContext.shouldCounterThreat()) {
         meta.lastFlag = System.currentTimeMillis();
       }

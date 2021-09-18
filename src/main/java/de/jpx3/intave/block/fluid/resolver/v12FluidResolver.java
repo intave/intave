@@ -1,6 +1,5 @@
 package de.jpx3.intave.block.fluid.resolver;
 
-import de.jpx3.intave.block.access.BlockTypeAccess;
 import de.jpx3.intave.block.access.BlockVariantAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.fluid.FluidEngine;
@@ -8,6 +7,7 @@ import de.jpx3.intave.block.fluid.FluidTag;
 import de.jpx3.intave.block.fluid.LegacyWaterflow;
 import de.jpx3.intave.block.fluid.WrappedFluid;
 import de.jpx3.intave.block.physics.MaterialMagic;
+import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.shade.BlockPosition;
 import de.jpx3.intave.shade.BoundingBox;
 import de.jpx3.intave.shade.NativeVector;

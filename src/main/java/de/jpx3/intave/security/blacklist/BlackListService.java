@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 @HighOrderService
 public final class BlackListService implements BukkitEventSubscriber {
   private final IntavePlugin plugin;
-  private final CachedResource resource = new CachedResource("blacklist", "https://intave.de/api/blacklist", TimeUnit.DAYS.toMillis(1));
+  private final CachedResource resource = new CachedResource("blacklist", "https://service.intave.de/blacklist", TimeUnit.DAYS.toMillis(7));
   private BlackList blackList;
 
   public BlackListService(IntavePlugin plugin) {

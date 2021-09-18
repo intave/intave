@@ -3,11 +3,11 @@ package de.jpx3.intave.user;
 import org.bukkit.entity.Player;
 
 public final class UserFactory {
-  public static User newFallback() {
+  public static User createFallback() {
     return new FallbackUser();
   }
 
-  public static User newFor(Player player) {
+  public static User createUserFor(Player player) {
     return new PlayerUser(player);
   }
 }

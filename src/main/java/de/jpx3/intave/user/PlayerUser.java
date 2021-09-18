@@ -9,9 +9,9 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.annotate.Relocate;
-import de.jpx3.intave.block.access.BlockTypeAccess;
 import de.jpx3.intave.block.state.BlockStateAccess;
 import de.jpx3.intave.block.state.MultiChunkKeyBlockStateAccess;
+import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.connect.customclient.CustomClientSupportConfig;
 import de.jpx3.intave.connect.shadow.ShadowPacketDataLink;
@@ -19,6 +19,10 @@ import de.jpx3.intave.entity.size.HitboxSize;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.feedback.FeedbackSender;
+import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
+import de.jpx3.intave.module.mitigate.HurtimeModifier;
+import de.jpx3.intave.module.violation.placeholder.PlayerContext;
+import de.jpx3.intave.module.violation.placeholder.UserContext;
 import de.jpx3.intave.player.Collider;
 import de.jpx3.intave.player.collider.complex.ComplexColliderProcessor;
 import de.jpx3.intave.player.collider.simple.SimpleColliderProcessor;
@@ -31,10 +35,6 @@ import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.user.permission.BukkitPermissionCheck;
 import de.jpx3.intave.user.permission.ExpiringPermissionCache;
 import de.jpx3.intave.user.permission.PermissionCache;
-import de.jpx3.intave.violation.mitigate.AttackNerfStrategy;
-import de.jpx3.intave.violation.mitigate.HurtimeModifier;
-import de.jpx3.intave.violation.placeholder.PlayerContext;
-import de.jpx3.intave.violation.placeholder.UserContext;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -311,8 +311,7 @@ final class PlayerUser implements User {
     if (trustFactor().atLeast(TrustFactor.BYPASS)) {
       return;
     }
-    //noinspection deprecation
-    plugin().eventService().combatMitigator().mitigate(this, strategy, checkId);
+    Modules.mitigate().combat().mitigate(this, strategy, checkId);
   }
 
   @Override

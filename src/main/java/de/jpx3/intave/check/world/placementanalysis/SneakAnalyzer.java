@@ -4,14 +4,15 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.cleanup.GarbageCollector;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.module.violation.Violation;
+import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.EffectMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import de.jpx3.intave.violation.Violation;
-import de.jpx3.intave.violation.ViolationContext;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -71,7 +72,7 @@ public final class SneakAnalyzer extends MetaCheckPart<PlacementAnalysis, SneakA
             .withMessage(COMMON_FLAG_MESSAGE)
             .withDetails(((int) average) + "ms/block in a straight line without sneaking")
             .withDefaultThreshold().withVL(3).build();
-          ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
+          ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
           if (violationContext.violationLevelAfter() > 20) {
             //dmc79
             parentCheck().applyPlacementAnalysisDamageCancel(user, "79");

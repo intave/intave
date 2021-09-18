@@ -2,12 +2,12 @@ package de.jpx3.intave.block.collision;
 
 import de.jpx3.intave.annotate.DoNotFlowObfuscate;
 import de.jpx3.intave.annotate.Relocate;
-import de.jpx3.intave.block.access.BlockTypeAccess;
 import de.jpx3.intave.block.access.BlockVariantAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.block.shape.*;
 import de.jpx3.intave.block.state.BlockStateAccess;
+import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.shade.BoundingBox;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;

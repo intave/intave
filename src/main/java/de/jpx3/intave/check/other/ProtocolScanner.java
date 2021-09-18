@@ -9,12 +9,13 @@ import de.jpx3.intave.check.MetaCheck;
 import de.jpx3.intave.clazz.Lookup;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
-import de.jpx3.intave.violation.Violation;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.MainHand;
 
@@ -44,7 +45,7 @@ public final class ProtocolScanner extends MetaCheck<ProtocolScanner.ProtocolSca
         .forPlayer(player).withMessage(message).withDetails(details)
         .withVL(100)
         .build();
-      plugin.violationProcessor().processViolation(violation);
+      Modules.violationProcessor().processViolation(violation);
     }
   }
 
@@ -64,7 +65,7 @@ public final class ProtocolScanner extends MetaCheck<ProtocolScanner.ProtocolSca
         .forPlayer(player).withMessage("sent slot twice").withDetails("slot " + slot)
         .withVL(meta.slotPacketsSent > 4 ? 100 : 0)
         .build();
-      plugin.violationProcessor().processViolation(violation);
+      Modules.violationProcessor().processViolation(violation);
     }
     meta.lastSlot = slot;
     meta.slotPacketsSent++;
@@ -107,7 +108,7 @@ public final class ProtocolScanner extends MetaCheck<ProtocolScanner.ProtocolSca
 //        .withDetails("version " + clientData.versionString())
 //        .withVL(0)
 //        .build();
-//      plugin.violationProcessor().processViolation(violation);
+//      Modules.violationProcessor().processViolation(violation);
       event.setCancelled(true);
     }
   }

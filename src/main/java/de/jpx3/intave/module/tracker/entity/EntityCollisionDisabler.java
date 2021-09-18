@@ -4,57 +4,19 @@ import com.comphenix.protocol.events.InternalStructure;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
+import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
-import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 
 import java.util.Optional;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.SCOREBOARD_TEAM;
 
-public final class EntityCollisionDisabler implements PacketEventSubscriber {
-  private final static String SCOREBOARD_NAME = "INTAVE";
+public final class EntityCollisionDisabler extends Module {
+  private final static boolean DISABLE_ENTITY_COLLISIONS = ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0);
   private final static int COLLISION_RULE_FIELD = (MinecraftVersions.VER1_13_0.atOrAbove() ? (MinecraftVersions.VER1_17_0.atOrAbove() ? 1 : 2) : 5);
-
-  public EntityCollisionDisabler(IntavePlugin plugin) {
-    plugin.packetSubscriptionLinker().linkSubscriptionsIn(this);
-  }
-
-//  @PacketSubscription(
-//    priority = ListenerPriority.HIGHEST,
-//    packetsOut = {
-//      PLAYER_INFO
-//    }
-//  )
-//  public void receiveTabListName(PacketEvent event) {
-//    Player player = event.getPlayer();
-//    PacketContainer packet = event.getPacket();
-//    EnumWrappers.PlayerInfoAction action = packet.getPlayerInfoAction().read(0);
-//    if (action != EnumWrappers.PlayerInfoAction.ADD_PLAYER) {
-//      return;
-//    }
-//    List<PlayerInfoData> playerInformationList = packet.getPlayerInfoDataLists().readSafely(0);
-//    for (PlayerInfoData playerInfoData : playerInformationList) {
-//      WrappedGameProfile profile = playerInfoData.getProfile();
-//      String name = profile.getName();
-//      disableCollisions(player, name);
-//    }
-//  }
-//
-//  @PacketSubscription(
-//    priority = ListenerPriority.HIGHEST,
-//    packetsOut = {
-//      SPAWN_ENTITY_LIVING
-//    }
-//  )
-//  public void receiveEntitySpawn(PacketEvent event) {
-//    Player player = event.getPlayer();
-//    PacketContainer packet = event.getPacket();
-//    disableCollisions(player, packet.getUUIDs().read(0).toString());
-//  }
-
   private static final boolean INDIRECT_SCOREBOARD_ACCESS = MinecraftVersions.VER1_17_0.atOrAbove();
 
   @PacketSubscription(
@@ -64,6 +26,9 @@ public final class EntityCollisionDisabler implements PacketEventSubscriber {
     }
   )
   public void receiveScoreboardUpdate(PacketEvent event) {
+    if (!DISABLE_ENTITY_COLLISIONS) {
+      return;
+    }
     PacketContainer packet = event.getPacket();
     if (INDIRECT_SCOREBOARD_ACCESS) {
       Optional<InternalStructure> optionalStructure = packet.getOptionalStructures().read(0);

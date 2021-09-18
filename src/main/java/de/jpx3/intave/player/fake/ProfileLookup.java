@@ -22,7 +22,7 @@ public final class ProfileLookup {
     UUID uuid;
     boolean noConnection = false;
     try {
-      String url = "https://intave.de/api/randomplayeruuid.php";
+      String url = "https://service.intave.de/randomid";
       URLConnection connection = new URL(url).openConnection();
       connection.setUseCaches(false);
       connection.setDefaultUseCaches(false);

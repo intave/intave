@@ -1,5 +1,6 @@
 package de.jpx3.intave.entity.datawatcher;
 
+import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.clazz.rewrite.PatchyLoadingInjector;
 import org.bukkit.entity.Player;
@@ -14,13 +15,11 @@ public final class DataWatcherAccess {
   private static DataWatcherAccessor nativeDataWatcherAccessor;
 
   static {
-    String className;
+    ClassLoader classLoader = IntavePlugin.class.getClassLoader();
+    String className = "de.jpx3.intave.entity.datawatcher.LegacyDataWatcherAccessor";
     if (MODERN_ACCESS) {
       className = "de.jpx3.intave.entity.datawatcher.ModernDataWatcherAccessor";
-    } else {
-      className = "de.jpx3.intave.entity.datawatcher.LegacyDataWatcherAccessor";
     }
-    ClassLoader classLoader = DataWatcherAccess.class.getClassLoader();
     PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, className);
     try {
       nativeDataWatcherAccessor = (DataWatcherAccessor) Class.forName(className).newInstance();

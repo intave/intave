@@ -21,7 +21,7 @@ public final class IntaveVersionList {
   public void setup() {
     CachedResource cachedResource = new CachedResource(
       "versions",
-      "https://intave.de/api/versions.json",
+      "https://service.intave.de/versions",
       TimeUnit.DAYS.toMillis(2)
     );
     String raw = String.join("", cachedResource.readLines());

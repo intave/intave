@@ -71,7 +71,7 @@ public class DefaultSimulator extends Simulator {
           user, user.player().getWorld(),
           movementData.lastPositionX, movementData.lastPositionY, movementData.lastPositionZ
         );
-        int blockData = VolatileBlockAccess.variantAccess(
+        int blockData = VolatileBlockAccess.variantIndexAccess(
           user, user.player().getWorld(),
           movementData.lastPositionX, movementData.lastPositionY, movementData.lastPositionZ
         );
@@ -284,7 +284,7 @@ public class DefaultSimulator extends Simulator {
     }
   }
 
-  private void applyCollidedMotionsToContext(
+  void applyCollidedMotionsToContext(
     Player player, MotionVector context,
     double positionX, double positionY, double positionZ,
     double motionX, double motionY, double motionZ
@@ -305,7 +305,7 @@ public class DefaultSimulator extends Simulator {
 
   private final static double FLYING_DISTANCE = 0.0009;
 
-  private boolean flyingPacket(double diffX, double diffY, double diffZ) {
+  boolean flyingPacket(double diffX, double diffY, double diffZ) {
     double distance = diffX * diffX + diffY * diffY + diffZ * diffZ;
     return distance <= FLYING_DISTANCE;
   }

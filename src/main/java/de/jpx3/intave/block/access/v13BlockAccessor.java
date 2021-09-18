@@ -1,6 +1,7 @@
 package de.jpx3.intave.block.access;
 
 import com.comphenix.protocol.wrappers.BlockPosition;
+import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.clazz.rewrite.PatchyAutoTranslation;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -25,8 +26,11 @@ public final class v13BlockAccessor implements BlockAccessor {
   }
 
   @Override
-  public int variantOf(Block block) {
-    return block.getData();
+  public int variantIndexOf(Block block) {
+    Material type = typeOf(block);
+    net.minecraft.server.v1_13_R2.IBlockData blockData = (net.minecraft.server.v1_13_R2.IBlockData) nativeVariantOf(block);
+    int variantIndex = BlockVariantRegister.variantIndexOf(type, blockData);
+    return Math.max(variantIndex, 0);
   }
 
   @Override

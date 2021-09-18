@@ -20,25 +20,42 @@ public final class ModuleLoader {
     prepareModule("de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker", ModuleSettings.builder().doNotLinkSubscriptions().bootAt(BootSegment.STAGE_3).build());
     prepareModule("de.jpx3.intave.module.linker.packet.PacketSubscriptionLinker", ModuleSettings.builder().doNotLinkSubscriptions().requireProtocolLib().requires(Requirements.intaveEnabled()).bootAt(BootSegment.STAGE_6).build());
 
-    // feedback
-    prepareModule("de.jpx3.intave.module.feedback.FeedbackSender", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
-    prepareModule("de.jpx3.intave.module.feedback.FeedbackReceiver", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
+    ModuleSettings defaultBoot = ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build();
+    ModuleSettings lateBoot = ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_10).build();
+
+    // feedbacks
+    prepareModule("de.jpx3.intave.module.feedback.FeedbackSender", defaultBoot);
+    prepareModule("de.jpx3.intave.module.feedback.FeedbackReceiver", defaultBoot);
 
     // tracker
-    prepareModule("de.jpx3.intave.module.tracker.player.AbilityTracker", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
-    prepareModule("de.jpx3.intave.module.tracker.player.AttributeTracker", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
-    prepareModule("de.jpx3.intave.module.tracker.block.BlockUpdateTracker", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
-    prepareModule("de.jpx3.intave.module.tracker.player.EffectTracker", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
-    prepareModule("de.jpx3.intave.module.tracker.entity.EntityTracker", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
-    prepareModule("de.jpx3.intave.module.tracker.player.InventoryTracker", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
+    prepareModule("de.jpx3.intave.module.tracker.player.AbilityTracker", defaultBoot);
+    prepareModule("de.jpx3.intave.module.tracker.player.AttributeTracker", defaultBoot);
+    prepareModule("de.jpx3.intave.module.tracker.block.BlockUpdateTracker", defaultBoot);
+    prepareModule("de.jpx3.intave.module.tracker.player.ConnectionTracker", defaultBoot);
+    prepareModule("de.jpx3.intave.module.tracker.player.EffectTracker", defaultBoot);
+    prepareModule("de.jpx3.intave.module.tracker.entity.EntityTracker", defaultBoot);
+    prepareModule("de.jpx3.intave.module.tracker.player.InventoryTracker", defaultBoot);
+    prepareModule("de.jpx3.intave.module.tracker.entity.LazyEntityCollisionService", defaultBoot);
+    prepareModule("de.jpx3.intave.module.tracker.entity.EntityCollisionDisabler", defaultBoot);
+
+    // mitigate
+    prepareModule("de.jpx3.intave.module.mitigate.CombatMitigator", defaultBoot);
+    prepareModule("de.jpx3.intave.module.mitigate.MovementEmulator", lateBoot);
+    prepareModule("de.jpx3.intave.module.mitigate.ReconDelayLimiter", lateBoot);
 
     // dispatch
-    prepareModule("de.jpx3.intave.module.dispatch.AttackDispatcher", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_10).build());
-    prepareModule("de.jpx3.intave.module.dispatch.MovementDispatcher", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_10).build());
+    prepareModule("de.jpx3.intave.module.dispatch.AttackDispatcher", lateBoot);
+    prepareModule("de.jpx3.intave.module.dispatch.MovementDispatcher", lateBoot);
 
     // misc
-    prepareModule("de.jpx3.intave.module.warning.ClientWarningModule", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
-    prepareModule("de.jpx3.intave.module.patcher.PacketResynchronizer", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
+    prepareModule("de.jpx3.intave.module.warning.ClientWarningModule", defaultBoot);
+    prepareModule("de.jpx3.intave.module.event.CustomEvents", defaultBoot);
+    prepareModule("de.jpx3.intave.module.patcher.PacketResynchronizer", defaultBoot);
+    prepareModule("de.jpx3.intave.module.violation.ViolationProcessor", defaultBoot);
+    prepareModule("de.jpx3.intave.module.filter.Filters", defaultBoot);
+    prepareModule("de.jpx3.intave.module.player.UserLifetimeService", defaultBoot);
+    prepareModule("de.jpx3.intave.module.player.MiscBukkitEvents", defaultBoot);
+
 //    prepareModule("de.jpx3.intave.module.patch.TimeoutHalter", ModuleSettings.builder().requireProtocolLib().bootAt(BootSegment.STAGE_7).build());
   }
 

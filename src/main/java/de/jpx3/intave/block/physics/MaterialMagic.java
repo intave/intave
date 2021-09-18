@@ -1,7 +1,7 @@
 package de.jpx3.intave.block.physics;
 
 import de.jpx3.intave.annotate.refactoring.IdoNotBelongHere;
-import de.jpx3.intave.block.access.BlockTypeAccess;
+import de.jpx3.intave.block.type.BlockTypeAccess;
 import org.bukkit.Material;
 
 @IdoNotBelongHere

@@ -1,7 +1,7 @@
 package de.jpx3.intave.world.raytrace;
 
-import de.jpx3.intave.block.access.BlockVariantRegister;
 import de.jpx3.intave.block.state.BlockStateAccess;
+import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.clazz.rewrite.PatchyAutoTranslation;
 import de.jpx3.intave.clazz.rewrite.PatchyTranslateParameters;
 import de.jpx3.intave.shade.BoundingBox;
@@ -141,7 +141,7 @@ public final class v14Raytracer implements Raytracer {
       return null;
     }
     org.bukkit.Material type = blockStateAccess.resolveType(var1.getX() >> 4, var1.getZ() >> 4, var1.getX(), var1.getY(), var1.getZ());
-    int variantIndex = blockStateAccess.resolveVariant(var1.getX() >> 4, var1.getZ() >> 4, var1.getX(), var1.getY(), var1.getZ());
+    int variantIndex = blockStateAccess.resolveVariantIndex(var1.getX() >> 4, var1.getZ() >> 4, var1.getX(), var1.getY(), var1.getZ());
     IBlockData blockVariant = (IBlockData) BlockVariantRegister.rawBlockDataOf(type, variantIndex);
     Vec3D var4 = var0x.b();
     Vec3D var5 = var0x.a();

@@ -13,12 +13,12 @@ import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.violation.Violation;
+import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ViolationMetadata;
-import de.jpx3.intave.violation.Violation;
-import de.jpx3.intave.violation.ViolationContext;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -120,12 +120,12 @@ public final class Timer extends MetaCheck<Timer.TimerData> {
       Violation violation = Violation.builderFor(Timer.class).forPlayer(player)
         .withMessage("moved too frequently").withDetails(balanceAsString + " ticks ahead").withVL(0.5)
         .build();
-      ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
+      ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
       if (violationContext.shouldCounterThreat()) {
         MovementMetadata movementData = user.meta().movement();
         movementData.invalidMovement = true;
         Vector setback = new Vector(movementData.physicsMotionX, movementData.physicsMotionY, movementData.physicsMotionZ);
-        plugin.eventService().emulationEngine().emulationSetBack(player, setback, 12, false);
+        Modules.mitigate().movement().emulationSetBack(player, setback, 12, false);
       }
       timerData.lastTimerFlag = System.currentTimeMillis();
       timerData.timerBalance -= highToleranceMode || timerData.timerBalance > overflowLimit ? 2.5 : 0.5;
@@ -189,7 +189,7 @@ public final class Timer extends MetaCheck<Timer.TimerData> {
 //    if (timerData.flagTick) {
 //      ComplexColliderSimulationResult result = this.simulationProcessor.simulateMovementWithoutKeyPress(user);
 //      Vector bukkitVector = result.context().toBukkitVector();
-//      plugin.eventService().emulationEngine().emulationSetBack(player, bukkitVector, 6, false);
+//      Modules.mitigate().movementEmulator().emulationSetBack(player, bukkitVector, 6, false);
 //      movementData.invalidMovement = true;
 //    }
 //  }

@@ -49,5 +49,5 @@ public interface BlockStateLookup {
    * @param posZ the blocks z coordinate
    * @return the blocks variant index
    */
-  int resolveVariant(int chunkX, int chunkZ, int posX, int posY, int posZ);
+  int resolveVariantIndex(int chunkX, int chunkZ, int posX, int posY, int posZ);
 }

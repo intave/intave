@@ -22,7 +22,7 @@ public final class EmptyBlockStateAccess implements BlockStateAccess {
   }
 
   @Override
-  public int resolveVariant(int chunkX, int chunkZ, int posX, int posY, int posZ) {
+  public int resolveVariantIndex(int chunkX, int chunkZ, int posX, int posY, int posZ) {
     return 0;
   }
 

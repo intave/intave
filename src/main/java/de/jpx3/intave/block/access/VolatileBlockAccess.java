@@ -1,6 +1,8 @@
 package de.jpx3.intave.block.access;
 
 import de.jpx3.intave.annotate.Relocate;
+import de.jpx3.intave.block.variant.BlockVariant;
+import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.shade.BlockPosition;
 import de.jpx3.intave.user.User;
@@ -59,19 +61,33 @@ public final class VolatileBlockAccess implements BukkitEventSubscriber {
     return Material.AIR;
   }
 
-  public static int variantAccess(User user, World blockAccess, int blockX, int blockY, int blockZ) {
+  public static BlockVariant variantAccess(User user, Location location) {
+    return variantAccess(user, location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
+  }
+
+  public static BlockVariant variantAccess(User user, World blockAccess, int blockX, int blockY, int blockZ) {
+    Material type = typeAccess(user, blockAccess, blockX, blockY, blockZ);
+    int variantIndex = variantIndexAccess(user, blockAccess, blockX, blockY, blockZ);
+    return BlockVariantRegister.variantOf(type, variantIndex);
+  }
+
+  public static int variantIndexAccess(User user, Location location) {
+    return variantIndexAccess(user, location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
+  }
+
+  public static int variantIndexAccess(User user, World blockAccess, int blockX, int blockY, int blockZ) {
     if (isInLoadedChunk(blockAccess, blockX, blockZ) || Bukkit.isPrimaryThread()) {
-      return user.blockShapeAccess().resolveVariant(blockX >> 4, blockZ >> 4, blockX, blockY, blockZ);
+      return user.blockShapeAccess().resolveVariantIndex(blockX >> 4, blockZ >> 4, blockX, blockY, blockZ);
     }
     return 0;
   }
 
-  public static int variantAccess(User user, World blockAccess, double x, double y, double z) {
+  public static int variantIndexAccess(User user, World blockAccess, double x, double y, double z) {
     int blockX = floor(x);
     int blockY = floor(y);
     int blockZ = floor(z);
     if (isInLoadedChunk(blockAccess, blockX, blockZ) || Bukkit.isPrimaryThread()) {
-      return user.blockShapeAccess().resolveVariant(blockX >> 4, blockZ >> 4, blockX, blockY, blockZ);
+      return user.blockShapeAccess().resolveVariantIndex(blockX >> 4, blockZ >> 4, blockX, blockY, blockZ);
     }
     return 0;
   }

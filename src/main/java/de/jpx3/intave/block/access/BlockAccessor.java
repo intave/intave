@@ -15,7 +15,7 @@ import org.bukkit.inventory.ItemStack;
 public interface BlockAccessor {
   Material typeOf(Block block);
 
-  int variantOf(Block block);
+  int variantIndexOf(Block block);
 
   Object nativeVariantOf(Block block);
 

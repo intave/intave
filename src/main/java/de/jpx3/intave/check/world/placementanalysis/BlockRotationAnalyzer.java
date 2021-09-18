@@ -14,8 +14,10 @@ import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.MathHelper;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.packet.reader.BlockInteractionReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.shade.EnumDirection;
@@ -23,7 +25,6 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import de.jpx3.intave.violation.Violation;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -100,7 +101,7 @@ public final class BlockRotationAnalyzer extends MetaCheckPart<PlacementAnalysis
         Violation violation = Violation.builderFor(PlacementAnalysis.class)
           .forPlayer(player).withMessage(COMMON_FLAG_MESSAGE).withDetails(details)
           .withDefaultThreshold().withVL(0).build();
-        plugin.violationProcessor().processViolation(violation);
+        Modules.violationProcessor().processViolation(violation);
       }
 //      event.setCancelled(true);
 //      Synchronizer.synchronizeDelayed(() -> refreshBlocksAround(player, blockPosition.toLocation(player.getWorld())), 20);

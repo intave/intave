@@ -2,9 +2,9 @@ package de.jpx3.intave.user.meta;
 
 import com.google.common.collect.Lists;
 import de.jpx3.intave.annotate.Relocate;
+import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
+import de.jpx3.intave.module.mitigate.HurtimeModifier;
 import de.jpx3.intave.player.dmc.DamageController;
-import de.jpx3.intave.violation.mitigate.AttackNerfStrategy;
-import de.jpx3.intave.violation.mitigate.HurtimeModifier;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;

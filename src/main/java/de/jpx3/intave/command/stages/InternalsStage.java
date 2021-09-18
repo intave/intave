@@ -10,6 +10,7 @@ import de.jpx3.intave.command.Forward;
 import de.jpx3.intave.command.SubCommand;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.executor.TaskTracker;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -46,7 +47,7 @@ public final class InternalsStage extends CommandStage {
   )
   public void internalCommand(CommandSender commandSender, String[] message) {
     String fullMessage = Arrays.stream(message).map(s -> s + " ").collect(Collectors.joining()).trim();
-    plugin.violationProcessor().broadcastNotify(fullMessage);
+    Modules.violationProcessor().broadcastNotify(fullMessage);
   }
 
   @SubCommand(

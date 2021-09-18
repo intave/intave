@@ -8,7 +8,6 @@ import de.jpx3.intave.block.physics.BlockProperties;
 import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.shade.BoundingBox;
-import de.jpx3.intave.shade.WrappedMathHelper;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.EffectMetadata;
@@ -24,6 +23,8 @@ import org.bukkit.material.Attachable;
 import org.bukkit.material.Directional;
 import org.bukkit.material.MaterialData;
 import org.bukkit.material.Openable;
+
+import static de.jpx3.intave.shade.WrappedMathHelper.floor;
 
 public final class MovementHelper {
   @Deprecated
@@ -47,9 +48,9 @@ public final class MovementHelper {
     if (movementData.lastOnGround) {
       Location location = new Location(
         world,
-        WrappedMathHelper.floor(positionX),
-        WrappedMathHelper.floor(positionY - movementData.frictionPosSubtraction()),
-        WrappedMathHelper.floor(positionZ)
+        floor(positionX),
+        floor(positionY - movementData.frictionPosSubtraction()),
+        floor(positionZ)
       );
       float slipperiness = currentSlipperiness(user, location);
       float var4 = movementData.frictionMultiplier() / (slipperiness * slipperiness * slipperiness);
@@ -86,12 +87,12 @@ public final class MovementHelper {
   @Deprecated
   @IdoNotBelongHere
   public static boolean isAnyLiquid(World world, User user, BoundingBox boundingBox) {
-    int minX = WrappedMathHelper.floor(boundingBox.minX);
-    int minY = WrappedMathHelper.floor(boundingBox.minY);
-    int minZ = WrappedMathHelper.floor(boundingBox.minZ);
-    int maxX = WrappedMathHelper.floor(boundingBox.maxX);
-    int maxY = WrappedMathHelper.floor(boundingBox.maxY);
-    int maxZ = WrappedMathHelper.floor(boundingBox.maxZ);
+    int minX = floor(boundingBox.minX);
+    int minY = floor(boundingBox.minY);
+    int minZ = floor(boundingBox.minZ);
+    int maxX = floor(boundingBox.maxX);
+    int maxY = floor(boundingBox.maxY);
+    int maxZ = floor(boundingBox.maxZ);
     for (int x = minX; x <= maxX; ++x) {
       for (int y = minY; y <= maxY; ++y) {
         for (int z = minZ; z <= maxZ; ++z) {
@@ -108,12 +109,12 @@ public final class MovementHelper {
   @Deprecated
   @IdoNotBelongHere
   public static boolean isAllLiquid(User user, World world, BoundingBox boundingBox) {
-    int minX = WrappedMathHelper.floor(boundingBox.minX);
-    int minY = WrappedMathHelper.floor(boundingBox.minY);
-    int minZ = WrappedMathHelper.floor(boundingBox.minZ);
-    int maxX = WrappedMathHelper.floor(boundingBox.maxX);
-    int maxY = WrappedMathHelper.floor(boundingBox.maxY);
-    int maxZ = WrappedMathHelper.floor(boundingBox.maxZ);
+    int minX = floor(boundingBox.minX);
+    int minY = floor(boundingBox.minY);
+    int minZ = floor(boundingBox.minZ);
+    int maxX = floor(boundingBox.maxX);
+    int maxY = floor(boundingBox.maxY);
+    int maxZ = floor(boundingBox.maxZ);
     for (int x = minX; x <= maxX; ++x) {
       for (int y = minY; y <= maxY; ++y) {
         for (int z = minZ; z <= maxZ; ++z) {
@@ -130,12 +131,12 @@ public final class MovementHelper {
   @Deprecated
   @IdoNotBelongHere
   public static boolean isLavaInBB(User user, World world, BoundingBox boundingBox) {
-    int minX = WrappedMathHelper.floor(boundingBox.minX);
-    int minY = WrappedMathHelper.floor(boundingBox.minY);
-    int minZ = WrappedMathHelper.floor(boundingBox.minZ);
-    int maxX = WrappedMathHelper.floor(boundingBox.maxX + 1.0D);
-    int maxY = WrappedMathHelper.floor(boundingBox.maxY + 1.0D);
-    int maxZ = WrappedMathHelper.floor(boundingBox.maxZ + 1.0D);
+    int minX = floor(boundingBox.minX);
+    int minY = floor(boundingBox.minY);
+    int minZ = floor(boundingBox.minZ);
+    int maxX = floor(boundingBox.maxX + 1.0D);
+    int maxY = floor(boundingBox.maxY + 1.0D);
+    int maxZ = floor(boundingBox.maxZ + 1.0D);
     for (int x = minX; x < maxX; ++x) {
       for (int y = minY; y < maxY; ++y) {
         for (int z = minZ; z < maxZ; ++z) {
@@ -155,15 +156,15 @@ public final class MovementHelper {
     ProtocolMetadata clientData = user.meta().protocol();
     Block block = VolatileBlockAccess.unsafe__BlockAccess(
       player.getWorld(),
-      WrappedMathHelper.floor(positionX),
-      WrappedMathHelper.floor(positionY),
-      WrappedMathHelper.floor(positionZ)
+      floor(positionX),
+      floor(positionY),
+      floor(positionZ)
     );
     Material type = VolatileBlockAccess.typeAccess(
       user, player.getWorld(),
-      WrappedMathHelper.floor(positionX),
-      WrappedMathHelper.floor(positionY),
-      WrappedMathHelper.floor(positionZ)
+      floor(positionX),
+      floor(positionY),
+      floor(positionZ)
     );
     if (clientData.combatUpdate() && ItemProperties.isTrapdoor(type) && canGoThroughTrapDoorOnLadder(user, block)) {
       return true;

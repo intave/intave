@@ -32,7 +32,6 @@ public final class FeedbackReceiver extends Module {
   private final static long CHECK_TIMEOUT_KICK = TIMEOUT_KICK / 4;
 
   public FeedbackReceiver(IntavePlugin plugin) {
-    //    plugin.packetSubscriptionLinker().linkSubscriptionsIn(this);
     int taskId = plugin.getServer().getScheduler()
       .scheduleAsyncRepeatingTask(plugin, this::checkTransactionTimeout, CHECK_TIMEOUT_KICK, CHECK_TIMEOUT_KICK);
     TaskTracker.begun(taskId);

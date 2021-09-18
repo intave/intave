@@ -6,7 +6,6 @@ import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntaveLogger;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Module;
@@ -32,12 +31,6 @@ public final class FeedbackSender extends Module {
   private final static long OPTIONAL_SENT_LIMIT = 100;
 
   private final ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
-//  private final FeedbackReceiver responseListener;
-
-  public FeedbackSender(IntavePlugin plugin) {
-//    plugin.packetSubscriptionLinker().linkSubscriptionsIn(this);
-//    responseListener = new FeedbackReceiver(plugin);
-  }
 
   public <T> void doubleSynchronize(
     Player player, PacketEvent event, T target,
@@ -246,8 +239,7 @@ public final class FeedbackSender extends Module {
     return user.meta().connection().transactionShortKeyMap().size();
   }
 
-  public User userOf(Player player) {
+  private User userOf(Player player) {
     return UserRepository.userOf(player);
   }
-
 }

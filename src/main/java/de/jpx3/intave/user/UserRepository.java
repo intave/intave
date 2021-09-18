@@ -3,7 +3,7 @@ package de.jpx3.intave.user;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.cleanup.ShutdownTasks;
 import de.jpx3.intave.diagnostic.MemoryWatchdog;
-import de.jpx3.intave.violation.mitigate.HurtimeModifier;
+import de.jpx3.intave.module.mitigate.HurtimeModifier;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class UserRepository {
   private final static Map<UUID, User> repository = MemoryWatchdog.watch("users", new ConcurrentHashMap<>());
-  private final static User fallbackUser = UserFactory.newFallback();
+  private final static User fallbackUser = UserFactory.createFallback();
   private static boolean closed;
 
   // used to load the class on startup
@@ -22,7 +22,7 @@ public final class UserRepository {
   }
 
   public static void registerUser(Player player) {
-    repository.put(player.getUniqueId(), UserFactory.newFor(player));
+    repository.put(player.getUniqueId(), UserFactory.createUserFor(player));
     if (IntaveControl.RESET_HURT_TIME_ON_JOIN) {
       HurtimeModifier.setNoDamageTicksOf(player, 20);
     }

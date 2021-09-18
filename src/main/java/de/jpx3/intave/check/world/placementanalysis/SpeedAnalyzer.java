@@ -7,14 +7,15 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.cleanup.GarbageCollector;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.violation.Violation;
+import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.EffectMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import de.jpx3.intave.violation.Violation;
-import de.jpx3.intave.violation.ViolationContext;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -106,7 +107,7 @@ public final class SpeedAnalyzer extends MetaCheckPart<PlacementAnalysis, SpeedA
             .withDetails(((int) average) + "ms/block, limit at " + ((int) minAverage) + "ms/block")
             .withDefaultThreshold().withVL(average > 400 ? 3 : average < 300 ? 5 : 4).build();
 
-          ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
+          ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
           if (violationContext.violationLevelAfter() > 20) {
             //dmc1
             parentCheck().applyPlacementAnalysisDamageCancel(user, "1");

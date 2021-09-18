@@ -15,16 +15,17 @@ import de.jpx3.intave.diagnostic.LatencyStudy;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.tracker.entity.WrappedEntity;
+import de.jpx3.intave.module.violation.Violation;
+import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.shade.NativeVector;
 import de.jpx3.intave.user.MessageChannelSubscriptions;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
-import de.jpx3.intave.violation.Violation;
-import de.jpx3.intave.violation.ViolationContext;
-import de.jpx3.intave.violation.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.world.raytrace.Raytracing;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -37,8 +38,8 @@ import java.util.Locale;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.tracker.entity.EntityTracker.entityByIdentifier;
+import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DONT_PROCESS_VIOSTAT;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_9;
-import static de.jpx3.intave.violation.Violation.ViolationFlags.DONT_PROCESS_VIOSTAT;
 
 public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytraceMeta> {
   private final IntavePlugin plugin;
@@ -126,7 +127,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     }
 
     // make player trustfactor dependent
-    int maximumPendingFeedbackPackets = trustFactorSetting("pending-allowance", player);
+    int maximumPendingFeedbackPackets = trustFactorSetting("pending-allowance", player) + (int) MathHelper.minmax(0, LatencyStudy.cachedAverage(), 20);
 
     List<Attack> remainingAttacks = attackRaytraceMeta.pendingAttacks;
     for (Attack remainingAttack : remainingAttacks) {
@@ -230,7 +231,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 
   private boolean invalidReachStanding(User user, WrappedEntity entity) {
     Player player = user.player();
-    int maximumPendingFeedbackPackets = trustFactorSetting("pending-allowance", player);
+    int maximumPendingFeedbackPackets = trustFactorSetting("pending-allowance", player) + (int) MathHelper.minmax(0, LatencyStudy.cachedAverage(), 20);
     long pendingFeedbackPackets = entity.pendingFeedbackPackets();
     boolean entityHasNotTimedOut = pendingFeedbackPackets < maximumPendingFeedbackPackets;
     if (!entityHasNotTimedOut && entity.clientSynchronized) {
@@ -247,7 +248,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     double blockReachDistance = Raytracing.reachDistance(player);
     float rotationYaw = movementData.rotationYaw % 360;
 
-    int maximumPendingFeedbackPackets = trustFactorSetting("pending-allowance", player);
+    int maximumPendingFeedbackPackets = trustFactorSetting("pending-allowance", player) + (int) MathHelper.minmax(0, LatencyStudy.cachedAverage(), 20);
     long pendingFeedbackPackets = entity.pendingFeedbackPackets();
     boolean entityHasNotTimedOut = pendingFeedbackPackets < maximumPendingFeedbackPackets;
 
@@ -358,7 +359,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       .forPlayer(player).withMessage(message).withDetails(details)
       .withCustomThreshold(thresholdKey).withVL(vl)
       .build();
-    ViolationContext violationContext = plugin.violationProcessor().processViolation(violation);
+    ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
     if (violationContext.violationLevelAfter() > 50) {
       //dmc3
       user.applyAttackNerfer(AttackNerfStrategy.DMG_MEDIUM, "3");
@@ -435,7 +436,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         .withCustomThreshold(thresholdKey).withVL(0)
         .appendFlags(DONT_PROCESS_VIOSTAT)
         .build();
-      plugin.violationProcessor().processViolation(violation);
+      Modules.violationProcessor().processViolation(violation);
       return true;
     }
     hitboxDecrementer.decrement(user, VL_DECREMENT_PER_ATTACK);
@@ -461,7 +462,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     double lastPositionY = movementData.lastPositionY;
     double lastPositionZ = movementData.lastPositionZ;
     double blockReachDistance = Raytracing.reachDistance(meta);
-    int maximumPendingFeedbackPackets = trustFactorSetting("pending-allowance", player);
+    int maximumPendingFeedbackPackets = trustFactorSetting("pending-allowance", player) + (int) MathHelper.minmax(0, LatencyStudy.cachedAverage(), 20);
     double minReach = 10;
     WrappedEntity clonedEntity = entity.temporaryCopy();
     boolean livingEntity = entity.typeData.isLivingEntity();

@@ -21,7 +21,7 @@ public final class v8BlockAccessor implements BlockAccessor {
   }
 
   @Override
-  public int variantOf(Block block) {
+  public int variantIndexOf(Block block) {
     return block.getData();
   }
 

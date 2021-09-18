@@ -34,7 +34,7 @@ public final class SimulationEvaluator {
     double receivedMotionZ = movementData.motionZ();
     double differenceY = Math.abs(receivedMotionY - predictedY);
     boolean accountedSkippedMovement = movementData.recentlyEncounteredFlyingPacket(2);
-    double legitimateDeviation = accountedSkippedMovement ? 1e-2 : 1e-5;
+    double legitimateDeviation = accountedSkippedMovement ? 0.01 : 0.00001;
     // MotionY calculations with sin/cos (FastMath affected)
     boolean fastMathAffected = pose == Pose.SWIMMING || pose == Pose.FALL_FLYING;
     if (fastMathAffected) {
@@ -56,13 +56,13 @@ public final class SimulationEvaluator {
     }
 
     //TODO: Bad fix
-    if (clientData.applyModernCollider() && Math.abs(differenceY - 0.2) < 1e-5 && movementData.lastOnGround && !movementData.onGround) {
+    if (clientData.applyModernCollider() && Math.abs(differenceY - 0.2) < 0.00001 && movementData.lastOnGround && !movementData.onGround) {
       if (Collision.present(player, movementData.boundingBox().expand(movementData.motionX(), 0.201, movementData.motionZ()))) {
         differenceY = 0;
       }
     }
 
-    if (movementData.recentlyEncounteredFlyingPacket(3) && differenceY > 1e-3) {
+    if (movementData.recentlyEncounteredFlyingPacket(3) && differenceY > 0.001) {
       boolean inLiquid = movementData.pastWaterMovement <= 10 || movementData.inLava();
       int allowedPackets = Hypot.fast(movementData.motionX(), movementData.motionZ()) < 0.03 ? 3 : 1;
       if (inLiquid || movementData.physicsPacketRelinkFlyVL++ <= allowedPackets) {
@@ -95,7 +95,7 @@ public final class SimulationEvaluator {
       && movementData.pastExternalVelocity != 0;
 
     if (movementData.inWeb) {
-      legitimateDeviation = criticalWeb ? 1e-6 : 0.13;
+      legitimateDeviation = criticalWeb ? 0.000001 : 0.13;
     }
 
     if (movementData.pastInWeb < 10 && !movementData.inWeb && differenceY < 0.1) {
@@ -142,6 +142,8 @@ public final class SimulationEvaluator {
       } else {
         multiplier *= 0.25;
       }
+    } else if (movementData.pastElytraFlying < 4 && movementData.physicsJumped && movementData.motionY() < movementData.jumpMotion()) {
+      multiplier *= 0.3;
     }
 
     if (criticalWeb) {
@@ -288,6 +290,8 @@ public final class SimulationEvaluator {
       } else {
         abuseHorizontally *= 0.6;
       }
+    } else if (movementData.pastElytraFlying < 4) {
+      abuseHorizontally *= 0.3;
     }
 
     boolean movedTooQuicklyCheckable = distanceMoved > 0.3 || violationLevelData.physicsInvalidMovementsInRow >= 8;
