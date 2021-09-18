@@ -60,7 +60,7 @@ public final class v14BlockAccessor implements BlockAccessor {
     WorldServer worldServer = ((CraftWorld) block.getWorld()).getHandle();
     IBlockAccess blockAccess = worldServer.getChunkProvider().c(block.getX() >> 4, block.getZ() >> 4);
     if (blockAccess == null) {
-      return Blocks.AIR;
+      return Blocks.AIR.getBlockData();
     }
     return blockAccess.getType(positionOfBlock(block));
   }

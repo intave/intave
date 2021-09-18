@@ -54,6 +54,9 @@ public final class SimulationEvaluator {
     if (movementData.fireworkTolerant) {
       legitimateDeviation = Math.max(legitimateDeviation, 0.8);
     }
+    if (movementData.onFirework) {
+      legitimateDeviation = Math.max(legitimateDeviation, 0.4);
+    }
 
     //TODO: Bad fix
     if (clientData.applyModernCollider() && Math.abs(differenceY - 0.2) < 0.00001 && movementData.lastOnGround && !movementData.onGround) {
@@ -142,8 +145,8 @@ public final class SimulationEvaluator {
       } else {
         multiplier *= 0.25;
       }
-    } else if (movementData.pastElytraFlying < 4 && movementData.physicsJumped && movementData.motionY() < movementData.jumpMotion()) {
-      multiplier *= 0.3;
+    } else if (movementData.pastElytraFlying < 4 && movementData.motionY() < movementData.jumpMotion()) {
+      multiplier *=  movementData.physicsJumped ? 0.3 : 0.6;
     }
 
     if (criticalWeb) {
@@ -222,6 +225,9 @@ public final class SimulationEvaluator {
     // Firework
     if (movementData.fireworkTolerant) {
       legitimateDeviation = Math.max(legitimateDeviation, 0.8);
+    }
+    if (movementData.onFirework) {
+      legitimateDeviation = Math.max(legitimateDeviation, 0.4);
     }
 
     // Flying packet

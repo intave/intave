@@ -23,9 +23,10 @@ public final class WrappedEntityFirework extends WrappedEntity {
   public void entityPlayerMoveUpdate() {
     MovementMetadata movementData = this.attachedUser.meta().movement();
     if (movementData.pose() == Pose.FALL_FLYING) {
-      if (this.ticksAlive <= 1) {
+      if (this.ticksAlive <= 2) {
         movementData.fireworkTolerant = true;
       }
+      movementData.onFirework = true;
       applyElytraBoost();
     }
   }

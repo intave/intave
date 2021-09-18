@@ -58,6 +58,7 @@ public final class MovementMetadata {
   // Use #pose for checking a player's pose
   public boolean elytraFlying;
   public boolean fireworkTolerant;
+  public boolean onFirework;
 
   public boolean onGround, lastOnGround, step;
   public boolean collidedHorizontally, collidedVertically;
