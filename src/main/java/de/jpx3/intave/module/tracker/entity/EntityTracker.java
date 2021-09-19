@@ -447,9 +447,9 @@ public final class EntityTracker extends Module {
     long serverPosZ;
 
     if (NEW_POSITION_PROCESSING_1_9) {
-      serverPosX = ClientMathHelper.getPositionLong(location.getX());
-      serverPosY = ClientMathHelper.getPositionLong(location.getY());
-      serverPosZ = ClientMathHelper.getPositionLong(location.getZ());
+      serverPosX = ClientMathHelper.positionLong(location.getX());
+      serverPosY = ClientMathHelper.positionLong(location.getY());
+      serverPosZ = ClientMathHelper.positionLong(location.getZ());
     } else {
       serverPosX = ClientMathHelper.floor(location.getX() * 32d);
       serverPosY = ClientMathHelper.floor(location.getY() * 32d);
@@ -527,9 +527,9 @@ public final class EntityTracker extends Module {
     ConnectionMetadata synchronizeData = user.meta().connection();
 //    Map<Integer, WrappedEntity> entities = synchronizeData.entities();
     WrappedEntity entity = createEntityOf(user, entityId, entityTypeData, player);
-    entity.serverPosX = ClientMathHelper.getPositionLong(posX);
-    entity.serverPosY = ClientMathHelper.getPositionLong(posY);
-    entity.serverPosZ = ClientMathHelper.getPositionLong(posZ);
+    entity.serverPosX = ClientMathHelper.positionLong(posX);
+    entity.serverPosY = ClientMathHelper.positionLong(posY);
+    entity.serverPosZ = ClientMathHelper.positionLong(posZ);
     entity.setPositionAndRotationSpawnMob(posX, posY, posZ, posY);
 //    entities.put(entityId, entity);
     synchronizeData.enterEntity(entity);

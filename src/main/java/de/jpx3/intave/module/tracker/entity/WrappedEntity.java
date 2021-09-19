@@ -163,9 +163,9 @@ public class WrappedEntity {
       newPosX = packet.getDoubles().read(0);
       newPosY = packet.getDoubles().read(1);
       newPosZ = packet.getDoubles().read(2);
-      serverPosX = ClientMathHelper.getPositionLong(newPosX);
-      serverPosY = ClientMathHelper.getPositionLong(newPosY);
-      serverPosZ = ClientMathHelper.getPositionLong(newPosZ);
+      serverPosX = ClientMathHelper.positionLong(newPosX);
+      serverPosY = ClientMathHelper.positionLong(newPosY);
+      serverPosZ = ClientMathHelper.positionLong(newPosZ);
     } else {
       serverPosX = packet.getIntegers().read(1);
       serverPosY = packet.getIntegers().read(2);

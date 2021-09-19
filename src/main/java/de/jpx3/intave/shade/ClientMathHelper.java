@@ -403,8 +403,8 @@ public final class ClientMathHelper {
     return j << 16 | k << 8 | l;
   }
 
-  public static long getPositionLong(double value) {
-    return WrappedMathHelper.floor_double_long(value * 4096.0D);
+  public static long positionLong(double value) {
+    return floor_double_long(value * 4096.0D);
   }
 
   /**
