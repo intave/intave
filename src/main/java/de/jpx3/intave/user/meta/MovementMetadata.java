@@ -7,7 +7,6 @@ import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.annotate.Relocate;
-import de.jpx3.intave.annotate.refactoring.IdoNotBelongHere;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.fluid.Fluid;
@@ -229,7 +228,6 @@ public final class MovementMetadata {
   }
 
   @DispatchTarget
-  @IdoNotBelongHere
   public void updateMovement(
     PacketContainer packet,
     boolean hasMovement, boolean hasRotation
@@ -294,7 +292,6 @@ public final class MovementMetadata {
     return new Vector(f3 * f4, -f5, (double) (f2 * f4));
   }
 
-  @IdoNotBelongHere
   private void updateElytra() {
     if (elytraFlying && !this.onGround && !this.inWater && !Effects.isPotionLevitationActive(player)) {
       elytraFlying = hasElytraEquipped();
@@ -309,7 +306,6 @@ public final class MovementMetadata {
     return plate != null && plate.getType() == Material.ELYTRA;
   }
 
-  @IdoNotBelongHere
   private void updateEntityMovement() {
     ConnectionMetadata connectionMetadata = user.meta().connection();
     for (WrappedEntity value : connectionMetadata.entities()) {
@@ -321,7 +317,6 @@ public final class MovementMetadata {
 //    }
   }
 
-  @IdoNotBelongHere
   public void updateEyesInWater() {
     double yPos = positionY + eyeHeight() - (double) 0.11111f;
     this.eyesInWater = interactingFluid != null && interactingFluid.isIn(FluidTag.WATER);
@@ -340,7 +335,6 @@ public final class MovementMetadata {
     return this.eyesInWater;
   }
 
-  @IdoNotBelongHere
   public void updatePose() {
     boolean modernPose = user.meta().protocol().protocolVersion() >= VER_1_14;
     Pose pose;
@@ -435,13 +429,11 @@ public final class MovementMetadata {
     return actualSneaking;
   }
 
-  @IdoNotBelongHere
   public void setPose(Pose pose) {
     this.pose = pose;
     updatePose();
   }
 
-  @IdoNotBelongHere
   private void updateSize() {
     width = pose.width(user);
     height = pose.height(user);
@@ -453,12 +445,10 @@ public final class MovementMetadata {
     return Collision.nonePresent(user.player(), pose.boundingBoxOf(user).shrink(0.0000001));
   }
 
-  @IdoNotBelongHere
   private float jumpUpwardsMotion() {
     return hasJumpFactor ? 0.42f * jumpFactor() : 0.42f;
   }
 
-  @IdoNotBelongHere
   private float jumpFactor() {
     World world = player.getWorld();
     float f = jumpFactorOf(VolatileBlockAccess.typeAccess(user, world, positionX, positionY, positionZ));
@@ -466,17 +456,14 @@ public final class MovementMetadata {
     return (double) f == 1.0D ? f1 : f;
   }
 
-  @IdoNotBelongHere
   private float jumpFactorOf(Material material) {
     return BlockProperties.ofType(material).jumpFactor();
   }
 
-  @IdoNotBelongHere
   public boolean collidedWithBoat() {
     return nearestBoatLocation != null && distanceToVerifiedLocation(nearestBoatLocation) < 2;
   }
 
-  @IdoNotBelongHere
   public double distanceToVerifiedLocation(Location location) {
     double xDiff = Math.abs(verifiedPositionX - location.getX());
     double yDiff = Math.abs(verifiedPositionY - location.getY());
@@ -499,12 +486,10 @@ public final class MovementMetadata {
   }
 
   @DispatchTarget
-  @IdoNotBelongHere
   public void applyGroundInformationToPacket(PacketContainer packet) {
     packet.getBooleans().write(0, onGround);
   }
 
-  @IdoNotBelongHere
   private void updateMovementMetaData() {
     MetadataBundle meta = user.meta();
     AbilityMetadata abilityData = meta.abilities();
@@ -553,7 +538,6 @@ public final class MovementMetadata {
     }
   }
 
-  @IdoNotBelongHere
   public boolean inLava() {
     ProtocolMetadata clientData = user.meta().protocol();
     if (clientData.waterUpdate()) {
@@ -590,7 +574,6 @@ public final class MovementMetadata {
     return lastVelocity != null && lastVelocity.clone().setY(0).length() > 0.2;
   }
 
-  @IdoNotBelongHere
   public double baseMoveSpeed() {
     EffectMetadata potionData = user.meta().potions();
     int speedAmplifier = potionData.potionEffectSpeedAmplifier();
@@ -604,7 +587,6 @@ public final class MovementMetadata {
     return baseSpeed;
   }
 
-  @IdoNotBelongHere
   public void sprintReset() {
     InventoryMetadata inventoryData = user.meta().inventory();
     // really required

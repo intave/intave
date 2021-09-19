@@ -158,9 +158,11 @@ public final class ClientMathHelper {
 
   public static double average(long[] values) {
     long i = 0L;
+
     for (long j : values) {
       i += j;
     }
+
     return (double) i / (double) values.length;
   }
 
@@ -402,7 +404,7 @@ public final class ClientMathHelper {
   }
 
   public static long getPositionLong(double value) {
-    return ClientMathHelper.floor_double_long(value * 4096.0D);
+    return WrappedMathHelper.floor_double_long(value * 4096.0D);
   }
 
   /**
