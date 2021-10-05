@@ -25,27 +25,23 @@ public interface BlockStateLookup {
    * @param posZ the blocks z coordinate
    * @return the blocks bounding boxes
    */
-  @NotNull BlockShape resolveShape(int posX, int posY, int posZ);
+  @NotNull BlockShape shapeAt(int posX, int posY, int posZ);
 
   /**
    * Resolve-if-not-cached and retrieve the type of the specified block.
-   * @param chunkX the chunk x coordinate
-   * @param chunkZ the chunk z coordinate
    * @param posX the blocks x coordinate
    * @param posY the blocks y coordinate
    * @param posZ the blocks z coordinate
    * @return the blocks type
    */
-  @NotNull Material resolveType(int chunkX, int chunkZ, int posX, int posY, int posZ);
+  @NotNull Material typeAt(int posX, int posY, int posZ);
 
   /**
    * Resolve-if-not-cached and retrieve the variant index of the specified block.
-   * @param chunkX the chunk x coordinate
-   * @param chunkZ the chunk z coordinate
    * @param posX the blocks x coordinate
    * @param posY the blocks y coordinate
    * @param posZ the blocks z coordinate
    * @return the blocks variant index
    */
-  int resolveVariantIndex(int chunkX, int chunkZ, int posX, int posY, int posZ);
+  int variantIndexAt(int posX, int posY, int posZ);
 }

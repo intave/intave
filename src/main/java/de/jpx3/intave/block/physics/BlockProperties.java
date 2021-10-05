@@ -11,22 +11,22 @@ public final class BlockProperties {
   private final static Map<Material, Property> registry = new HashMap<>();
 
   public static void setup() {
-    Property.of(Material.ICE).slipperiness(0.98f).build().exists(BlockProperties::append);
-    Property.of(Material.SLIME_BLOCK).slipperiness(0.8f).build().exists(BlockProperties::append);
-    Property.of(Material.PACKED_ICE).slipperiness(0.98f).build().exists(BlockProperties::append);
-    Property.of("FROSTED_ICE").slipperiness(0.98F).build().exists(BlockProperties::append);
-    Property.of("BLUE_ICE").slipperiness(0.989F).build().exists(BlockProperties::append);
-    Property.of(Material.LADDER).climbable().build().exists(BlockProperties::append);
-    Property.of(Material.VINE).climbable().build().exists(BlockProperties::append);
-    Property.of("SCAFFOLDING").climbable().build().exists(BlockProperties::append);
-    Property.of("WEEPING_VINES").climbable().build().exists(BlockProperties::append);
-    Property.of("WEEPING_VINES_PLANT").climbable().build().exists(BlockProperties::append);
-    Property.of("TWISTING_VINES").climbable().build().exists(BlockProperties::append);
-    Property.of("TWISTING_VINES_PLANT").climbable().build().exists(BlockProperties::append);
-    Property.of("CAVE_VINES_PLANT").climbable().build().exists(BlockProperties::append);
-    Property.of(Material.SOUL_SAND).speedFactor(0.4f).soulSpeedAffected().build().exists(BlockProperties::append);
-    Property.of("SOUL_SOIL").soulSpeedAffected().build().exists(BlockProperties::append);
-    Property.of("HONEY_BLOCK").jumpFactor(0.5f).speedFactor(0.4f).build().exists(BlockProperties::append);
+    Property.of(Material.ICE).slipperiness(0.98f).build().saveIfPresent();
+    Property.of(Material.SLIME_BLOCK).slipperiness(0.8f).build().saveIfPresent();
+    Property.of(Material.PACKED_ICE).slipperiness(0.98f).build().saveIfPresent();
+    Property.of("FROSTED_ICE").slipperiness(0.98F).build().saveIfPresent();
+    Property.of("BLUE_ICE").slipperiness(0.989F).build().saveIfPresent();
+    Property.of(Material.LADDER).climbable().build().saveIfPresent();
+    Property.of(Material.VINE).climbable().build().saveIfPresent();
+    Property.of("SCAFFOLDING").climbable().build().saveIfPresent();
+    Property.of("WEEPING_VINES").climbable().build().saveIfPresent();
+    Property.of("WEEPING_VINES_PLANT").climbable().build().saveIfPresent();
+    Property.of("TWISTING_VINES").climbable().build().saveIfPresent();
+    Property.of("TWISTING_VINES_PLANT").climbable().build().saveIfPresent();
+    Property.of("CAVE_VINES_PLANT").climbable().build().saveIfPresent();
+    Property.of(Material.SOUL_SAND).speedFactor(0.4f).soulSpeedAffected().build().saveIfPresent();
+    Property.of("SOUL_SOIL").soulSpeedAffected().build().saveIfPresent();
+    Property.of("HONEY_BLOCK").jumpFactor(0.5f).speedFactor(0.4f).build().saveIfPresent();
   }
 
   private static void append(Property property, Material material) {
@@ -61,7 +61,11 @@ public final class BlockProperties {
       this.soulSpeedAffected = soulSpeedAffected;
     }
 
-    public void exists(BiConsumer<Property, Material> consumer) {
+    public void saveIfPresent() {
+      ifPresent(BlockProperties::append);
+    }
+
+    public void ifPresent(BiConsumer<Property, Material> consumer) {
       if (this.material != null) {
         consumer.accept(this, this.material);
       }

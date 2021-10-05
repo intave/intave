@@ -23,7 +23,7 @@ public final class v12FluidResolver extends FluidEngine {
   @Override
   protected Fluid fluidAt(User user, int x, int y, int z) {
     Player player = user.player();
-    Block block = VolatileBlockAccess.serverBlockAccess(user.player().getWorld(), x, y, z);
+    Block block = VolatileBlockAccess.blockAccess(user.player().getWorld(), x, y, z);
     if (block.getY() < 0) {
       return Fluid.empty();
     }
@@ -65,7 +65,7 @@ public final class v12FluidResolver extends FluidEngine {
     for (int x = minX; x < maxX; ++x) {
       for (int y = minY; y < maxY; ++y) {
         for (int z = minZ; z < maxZ; ++z) {
-          Block block = VolatileBlockAccess.serverBlockAccess(world, x, y, z);
+          Block block = VolatileBlockAccess.blockAccess(world, x, y, z);
           Material clientSideBlock = VolatileBlockAccess.typeAccess(user, world, x, y, z);
           boolean waterServerSide = MaterialMagic.isWater(BlockTypeAccess.typeAccess(block, player));
           boolean waterClientSide = MaterialMagic.isWater(clientSideBlock);

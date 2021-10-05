@@ -12,30 +12,30 @@ import java.util.Map;
 
 public final class EmptyBlockStateAccess implements BlockStateAccess {
   @Override
-  public @NotNull BlockShape resolveShape(int posX, int posY, int posZ) {
+  public @NotNull BlockShape shapeAt(int posX, int posY, int posZ) {
     return BlockShapes.emptyShape();
   }
 
   @Override
-  public @NotNull Material resolveType(int chunkX, int chunkZ, int posX, int posY, int posZ) {
+  public @NotNull Material typeAt(int posX, int posY, int posZ) {
     return Material.AIR;
   }
 
   @Override
-  public int resolveVariantIndex(int chunkX, int chunkZ, int posX, int posY, int posZ) {
+  public int variantIndexAt(int posX, int posY, int posZ) {
     return 0;
   }
 
   @Override
-  public void identityInvalidate() {
+  public void invalidateAll() {
   }
 
   @Override
-  public void invalidate() {
+  public void invalidateCache() {
   }
 
   @Override
-  public void invalidate0(int posX, int posY, int posZ) {
+  public void invalidateCacheAt0(int posX, int posY, int posZ) {
   }
 
   @Override

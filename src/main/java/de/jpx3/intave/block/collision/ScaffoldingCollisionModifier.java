@@ -33,7 +33,7 @@ public final class ScaffoldingCollisionModifier extends CollisionModifier {
   }
 
   private boolean bottomProperty(User user, World world, int posX, int posY, int posZ) {
-    Block block = VolatileBlockAccess.serverBlockAccess(world, posX, posY, posZ);
+    Block block = VolatileBlockAccess.blockAccess(world, posX, posY, posZ);
     if (block.getY() < 0) {
       return false;
     }

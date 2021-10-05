@@ -3,6 +3,7 @@ package de.jpx3.intave.check.movement.physics;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
+import de.jpx3.intave.shade.BoundingBox;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -35,14 +36,19 @@ public final class SimulationEvaluator {
     double differenceY = Math.abs(receivedMotionY - predictedY);
     boolean accountedSkippedMovement = movementData.recentlyEncounteredFlyingPacket(2);
     double legitimateDeviation = accountedSkippedMovement ? 0.01 : 0.00001;
+
+    if (pose.height(user) < 1 && receivedMotionY <= 0 && accountedSkippedMovement) {
+      legitimateDeviation = 0.1;
+    }
+
     // MotionY calculations with sin/cos (FastMath affected)
     boolean fastMathAffected = pose == Pose.SWIMMING || pose == Pose.FALL_FLYING;
     if (fastMathAffected) {
-      legitimateDeviation = 0.001;
+      legitimateDeviation = Math.max(legitimateDeviation, 0.001);
     }
 
     if ((movementData.pastPushedByWaterFlow < 10 || movementData.inLava()) && distanceMoved < 0.2) {
-      legitimateDeviation = 0.02;
+      legitimateDeviation = Math.max(legitimateDeviation, 0.02);
     }
 
     // Riptide
@@ -58,9 +64,12 @@ public final class SimulationEvaluator {
       legitimateDeviation = Math.max(legitimateDeviation, 0.4);
     }
 
-    //TODO: Bad fix
-    if (clientData.applyModernCollider() && Math.abs(differenceY - 0.2) < 0.00001 && movementData.lastOnGround && !movementData.onGround) {
-      if (Collision.present(player, movementData.boundingBox().expand(movementData.motionX(), 0.201, movementData.motionZ()))) {
+    // doesn't quite work
+    if (clientData.applyModernCollider()) {
+      double crouchingHeightGap = 1 - user.sizeOf(Pose.CROUCHING).height() % 1;
+      double standingHeightGap = 1 - user.sizeOf(Pose.STANDING).height() % 1;
+      boolean collisionProbable = Math.abs(receivedMotionY - crouchingHeightGap) < 0.01 || Math.abs(receivedMotionY - standingHeightGap) < 0.01;
+      if (collisionProbable && Collision.present(player, BoundingBox.fromPosition(user, movementData.positionX, movementData.positionY, movementData.positionZ).expand(movementData.motionX(), receivedMotionY + 0.1, movementData.motionZ()))) {
         differenceY = 0;
       }
     }
@@ -146,7 +155,7 @@ public final class SimulationEvaluator {
         multiplier *= 0.25;
       }
     } else if (movementData.pastElytraFlying < 4 && movementData.motionY() < movementData.jumpMotion()) {
-      multiplier *=  movementData.physicsJumped ? 0.3 : 0.6;
+      multiplier *= movementData.physicsJumped || System.currentTimeMillis() - movementData.lastJump < 1000 ? 0.1 : 0.3;
     }
 
     if (criticalWeb) {
@@ -205,7 +214,7 @@ public final class SimulationEvaluator {
       if (distance > 0.0007) {
         boolean collides = Collision.nearSolidBlock(player.getWorld(), movementData.boundingBox().growHorizontally(0.001));
         if (collides) {
-          legitimateDeviation = distanceMoved < 0.04 ? 0.04 : 0.001;
+          legitimateDeviation = distanceMoved < 0.04 ? 0.04 : 0.002;
         }
       }
     }
@@ -224,10 +233,11 @@ public final class SimulationEvaluator {
 
     // Firework
     if (movementData.fireworkTolerant) {
-      legitimateDeviation = Math.max(legitimateDeviation, 0.8);
+      // srsly who cares
+      legitimateDeviation = Math.max(legitimateDeviation, 3);
     }
     if (movementData.onFirework) {
-      legitimateDeviation = Math.max(legitimateDeviation, 0.4);
+      legitimateDeviation = Math.max(legitimateDeviation, 1);
     }
 
     // Flying packet
@@ -297,7 +307,7 @@ public final class SimulationEvaluator {
         abuseHorizontally *= 0.6;
       }
     } else if (movementData.pastElytraFlying < 4) {
-      abuseHorizontally *= 0.3;
+      abuseHorizontally *= 0.1;
     }
 
     boolean movedTooQuicklyCheckable = distanceMoved > 0.3 || violationLevelData.physicsInvalidMovementsInRow >= 8;

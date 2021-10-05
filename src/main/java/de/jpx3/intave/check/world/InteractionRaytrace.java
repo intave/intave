@@ -346,7 +346,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     Player player = interaction.player();
     User user = userOf(player);
     ResponseType response = interaction.type().response();
-    BlockStateAccess blockStateAccess = user.blockStateAccess();
+    BlockStateAccess blockStateAccess = user.blockStates();
     if (enforceCancel) {
       response = ResponseType.CANCEL;
     }
@@ -423,8 +423,8 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     Player player = interaction.player();
     User user = userOf(player);
     InteractionType type = interaction.type();
-    Block targetLocationBlock = VolatileBlockAccess.serverBlockAccess(targetLocation);
-    Block raycastLocationBlock = VolatileBlockAccess.serverBlockAccess(raycastLocation);
+    Block targetLocationBlock = VolatileBlockAccess.blockAccess(targetLocation);
+    Block raycastLocationBlock = VolatileBlockAccess.blockAccess(raycastLocation);
     Material raycastLocationBlockType = BlockTypeAccess.typeAccess(raycastLocationBlock);
     Material targetLocationBlockType = BlockTypeAccess.typeAccess(targetLocationBlock);
     if (targetLocationBlockType == Material.AIR || raycastLocationBlockType == Material.AIR) {
@@ -564,7 +564,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     if (!VolatileBlockAccess.isInLoadedChunk(location.getWorld(), location.getBlockX(), location.getBlockZ())) {
       return;
     }
-    Block block = VolatileBlockAccess.serverBlockAccess(location);
+    Block block = VolatileBlockAccess.blockAccess(location);
     Object handle = BlockVariantAccess.nativeVariantAccess(block);
     WrappedBlockData blockData = WrappedBlockData.fromHandle(handle);
     com.comphenix.protocol.wrappers.BlockPosition position = new com.comphenix.protocol.wrappers.BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());

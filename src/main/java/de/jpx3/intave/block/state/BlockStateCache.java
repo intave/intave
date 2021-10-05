@@ -13,12 +13,12 @@ public interface BlockStateCache extends BlockStateLookup {
   /**
    * Invalidate all caches
    */
-  void identityInvalidate();
+  void invalidateAll();
 
   /**
    * Invalidate resolver caches
    */
-  void invalidate();
+  void invalidateCache();
 
   /**
    * Invalidate all blocks next to a specified position
@@ -26,14 +26,14 @@ public interface BlockStateCache extends BlockStateLookup {
    * @param posY the y coordinate of the selected block
    * @param posZ the z coordinate of the selected block
    */
-  default void invalidate(int posX, int posY, int posZ) {
-    invalidate0(posX + 1, posY, posZ);
-    invalidate0(posX - 1, posY, posZ);
-    invalidate0(posX, posY, posZ + 1);
-    invalidate0(posX, posY, posZ - 1);
-    invalidate0(posX, posY + 1, posZ);
-    invalidate0(posX, posY - 1, posZ);
-    invalidate0(posX, posY, posZ);
+  default void invalidateCacheAt(int posX, int posY, int posZ) {
+    invalidateCacheAt0(posX + 1, posY, posZ);
+    invalidateCacheAt0(posX - 1, posY, posZ);
+    invalidateCacheAt0(posX, posY, posZ + 1);
+    invalidateCacheAt0(posX, posY, posZ - 1);
+    invalidateCacheAt0(posX, posY + 1, posZ);
+    invalidateCacheAt0(posX, posY - 1, posZ);
+    invalidateCacheAt0(posX, posY, posZ);
   }
 
   /**
@@ -42,5 +42,5 @@ public interface BlockStateCache extends BlockStateLookup {
    * @param posY the y coordinate of the selected block
    * @param posZ the z coordinate of the selected block
    */
-  void invalidate0(int posX, int posY, int posZ);
+  void invalidateCacheAt0(int posX, int posY, int posZ);
 }

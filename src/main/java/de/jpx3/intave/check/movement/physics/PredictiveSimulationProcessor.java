@@ -14,7 +14,7 @@ import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 
 @Relocate
-public final class PredictionSimulationProcessor implements SimulationProcessor {
+public final class PredictiveSimulationProcessor implements SimulationProcessor {
 
   /*
   * this class is rather messy
@@ -22,7 +22,7 @@ public final class PredictionSimulationProcessor implements SimulationProcessor 
   * */
   private final boolean itemUsageReset;
 
-  public PredictionSimulationProcessor(boolean itemUsageReset) {
+  public PredictiveSimulationProcessor(boolean itemUsageReset) {
     this.itemUsageReset = itemUsageReset;
   }
 
@@ -304,8 +304,9 @@ public final class PredictionSimulationProcessor implements SimulationProcessor 
     return simulationResult;
   }
 
-  private final static boolean[] OPTIMISTIC_BOOLEAN_ORDER = new boolean[]{true, false};
-  private final static boolean[] PESSIMISTIC_BOOLEAN_ORDER = new boolean[]{false, true};
+  private final static boolean[] ALWAYS = new boolean[]{true};
+  private final static boolean[] OPTIMISTIC = new boolean[]{true, false};
+  private final static boolean[] PESSIMISTIC = new boolean[]{false, true};
   private final static boolean[] NEVER = new boolean[]{false};
 
   private final static int[][] KEYS_USAGE_ORDERED = {{1, 0}, {0, 0}, {1, -1}, {1, 1}, {0, -1}, {0, 1}, {-1, -1}, {-1, 0}, {-1, 1}};
@@ -328,19 +329,19 @@ public final class PredictionSimulationProcessor implements SimulationProcessor 
     double nearestKeyDistance = Double.MAX_VALUE;
 
     SIMULATION:
-    for (boolean sprinting : movementData.sprintingAllowed() || movementData.hasSprintSpeed ? /* surprisingly pessimistic */ PESSIMISTIC_BOOLEAN_ORDER : NEVER) {
+    for (boolean sprinting : movementData.sprintingAllowed() || movementData.hasSprintSpeed ? /* surprisingly pessimistic */ PESSIMISTIC : NEVER) {
       movementData.refreshFriction(sprinting);
-      for (boolean useItemState : inventoryData.handActive() ? OPTIMISTIC_BOOLEAN_ORDER : PESSIMISTIC_BOOLEAN_ORDER) {
+      for (boolean useItemState : inventoryData.handActive() ? OPTIMISTIC : PESSIMISTIC) {
         if (skipUseItem && useItemState) {
           continue;
         }
         IterativeStudy.USE_ITEM_ITERATOR.run();
-        for (boolean attackReduce : PESSIMISTIC_BOOLEAN_ORDER) {
+        for (boolean attackReduce : PESSIMISTIC) {
           if (attackReduce && (movementData.pastPlayerAttackPhysics >= 1 || AttackDispatcher.REDUCING_DISABLED)) {
             continue;
           }
           IterativeStudy.ATTACK_REDUCE_ITERATOR.run();
-          for (boolean jumped : estimatedJump ? OPTIMISTIC_BOOLEAN_ORDER : PESSIMISTIC_BOOLEAN_ORDER) {
+          for (boolean jumped : estimatedJump ? OPTIMISTIC : PESSIMISTIC) {
             // Jumps are only allowed on the ground :(
             if (jumped && !lastOnGround && !inLava && !inWater) {
               continue;

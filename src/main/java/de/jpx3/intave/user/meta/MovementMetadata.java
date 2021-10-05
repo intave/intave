@@ -46,7 +46,7 @@ import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_14;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_15;
 
 @Relocate
-public final class MovementMetadata {
+public final class MovementMetadata implements SimulationEnvironment {
   private final Player player;
   private final User user;
   private volatile WeakReference<Object> nmsWorld;
@@ -88,7 +88,7 @@ public final class MovementMetadata {
   private Material blockOnPosition = Material.AIR;
 
   // Timestamps
-  public long lastSneakingTimestamps, lastJumpTimestamps;
+  public long lastSneakingTimestamps, lastJump;
 
   private volatile BoundingBox boundingBox = BoundingBox.fromBounds(0, 0, 0, 0, 0, 0);
   private boolean boundingBoxSetup = false;
@@ -558,6 +558,21 @@ public final class MovementMetadata {
     }
   }
 
+  @Override
+  public boolean inWeb() {
+    return inWeb;
+  }
+
+  @Override
+  public boolean onGround() {
+    return onGround;
+  }
+
+  @Override
+  public boolean lastOnGround() {
+    return lastOnGround;
+  }
+
   public boolean recentlyEncounteredFlyingPacket(int ticks) {
     ProtocolMetadata clientData = user.meta().protocol();
     if (clientData.flyingPacketStream()) {
@@ -688,6 +703,22 @@ public final class MovementMetadata {
     return jumpMotion;
   }
 
+  @Override
+  public double gravity() {
+    return gravity;
+  }
+
+  @Override
+  public boolean isSneaking() {
+    return sneaking;
+  }
+
+  @Override
+  public boolean inWater() {
+    return inWater;
+  }
+
+  @Deprecated
   public float aiMoveSpeed() {
     return aiMoveSpeed;
   }
@@ -727,6 +758,51 @@ public final class MovementMetadata {
     return pose;
   }
 
+  @Override
+  public double positionX() {
+    return positionX;
+  }
+
+  @Override
+  public double positionY() {
+    return positionY;
+  }
+
+  @Override
+  public double positionZ() {
+    return positionZ;
+  }
+
+  @Override
+  public double verifiedPositionX() {
+    return verifiedPositionX;
+  }
+
+  @Override
+  public double verifiedPositionY() {
+    return verifiedPositionY;
+  }
+
+  @Override
+  public double verifiedPositionZ() {
+    return verifiedPositionZ;
+  }
+
+  @Override
+  public double lastPositionX() {
+    return lastPositionX;
+  }
+
+  @Override
+  public double lastPositionY() {
+    return lastPositionY;
+  }
+
+  @Override
+  public double lastPositionZ() {
+    return lastPositionZ;
+  }
+
   public boolean sprintingAllowed() {
     return sprintingAllowed;
   }
@@ -745,6 +821,11 @@ public final class MovementMetadata {
 
   public float yawCosine() {
     return yawCosine;
+  }
+
+  @Override
+  public Vector lookVector() {
+    return lookVector;
   }
 
   public double frictionPosSubtraction() {

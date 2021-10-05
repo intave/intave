@@ -11,7 +11,6 @@ import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import de.jpx3.intave.packet.PacketSender;
 import org.bukkit.entity.Player;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 

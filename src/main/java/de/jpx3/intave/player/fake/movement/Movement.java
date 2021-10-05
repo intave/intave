@@ -2,7 +2,6 @@ package de.jpx3.intave.player.fake.movement;
 
 import de.jpx3.intave.block.access.BlockVariantAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
-import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.shape.ShapeResolver;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.block.type.BlockTypeAccess;
@@ -143,7 +142,7 @@ public abstract class Movement extends HeadRotationMovement {
           for (int x = xstart; x < xend; ++x) {
             for (int z = zstart; z < zend; ++z) {
               for (int y = ystart; y < maxY; ++y) {
-                Block block = VolatileBlockAccess.serverBlockAccess(world, x, y, z);
+                Block block = VolatileBlockAccess.blockAccess(world, x, y, z);
                 Material type = BlockTypeAccess.typeAccess(block);
                 int variant = BlockVariantAccess.variantAccess(block);
                 List<BoundingBox> resolve = boundingBoxResolver.resolve(world, null, type, variant, x, y, z).boundingBoxes();

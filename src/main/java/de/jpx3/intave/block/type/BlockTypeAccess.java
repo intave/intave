@@ -74,7 +74,7 @@ public final class BlockTypeAccess {
    */
   @Deprecated
   public static Material typeAccess(Block block, Player player) {
-    return translate(UserRepository.userOf(player), typeAccess(block));
+    return player == null ? typeAccess(block) : translate(UserRepository.userOf(player), typeAccess(block));
   }
 
   public static boolean hasTranslation(User user, Material origin) {

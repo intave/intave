@@ -1,6 +1,7 @@
 package de.jpx3.intave.check.movement.physics;
 
 import de.jpx3.intave.annotate.refactoring.IdoNotBelongHere;
+import de.jpx3.intave.annotate.refactoring.WhyMustIExist;
 import de.jpx3.intave.block.access.BlockWrapper;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
@@ -26,6 +27,8 @@ import org.bukkit.material.Openable;
 
 import static de.jpx3.intave.shade.ClientMathHelper.floor;
 
+@Deprecated
+@WhyMustIExist
 public final class MovementHelper {
   @Deprecated
   @IdoNotBelongHere
@@ -154,7 +157,7 @@ public final class MovementHelper {
   public static boolean isOnLadder(User user, double positionX, double positionY, double positionZ) {
     Player player = user.player();
     ProtocolMetadata clientData = user.meta().protocol();
-    Block block = VolatileBlockAccess.serverBlockAccess(
+    Block block = VolatileBlockAccess.blockAccess(
       player.getWorld(),
       floor(positionX),
       floor(positionY),
@@ -178,14 +181,14 @@ public final class MovementHelper {
     block = BlockWrapper.emit(user, block);
     Location location = block.getLocation();
     BlockState blockState = block.getState(); // unbelievable heavy
-    MaterialData trapDoorData = blockState.getData();
+    MaterialData trapDoorData = blockState.getData(); // corrupted
     if (trapDoorData instanceof Openable && (((Openable) trapDoorData).isOpen())) {
       Attachable directional = (Attachable) blockState.getData();
       Location downLocation = location.clone().add(0, -1, 0);
       if (!(trapDoorData instanceof Directional)) {
         return false;
       }
-      Block downBlock = VolatileBlockAccess.serverBlockAccess(downLocation);
+      Block downBlock = VolatileBlockAccess.blockAccess(downLocation);
       MaterialData downBlockData = downBlock.getState().getData();
       if (!(downBlockData instanceof Directional)) {
         return false;

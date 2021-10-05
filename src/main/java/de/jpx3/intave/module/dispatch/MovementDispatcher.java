@@ -42,9 +42,10 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.player.*;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.InvocationTargetException;
@@ -129,7 +130,7 @@ public final class MovementDispatcher extends Module {
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
     movementData.updateWorld();
-    user.blockStateAccess().identityInvalidate();
+    user.blockStates().invalidateAll();
     user.refreshSprintState();
   }
 
@@ -189,7 +190,7 @@ public final class MovementDispatcher extends Module {
         movement.physicsMotionX = 0;
         movement.physicsMotionY = 0;
         movement.physicsMotionZ = 0;
-        user.blockStateAccess().identityInvalidate();
+        user.blockStates().invalidateAll();
         user.meta().potions().clearPotionEffects();
       });
   }
@@ -486,7 +487,7 @@ public final class MovementDispatcher extends Module {
       movementData.pastInventoryOpen++;
     }
     if (movementData.physicsJumped) {
-      movementData.lastJumpTimestamps = System.currentTimeMillis();
+      movementData.lastJump = System.currentTimeMillis();
     }
     inventoryData.pastHotBarSlotChange++;
     inventoryData.pastItemUsageTransition++;

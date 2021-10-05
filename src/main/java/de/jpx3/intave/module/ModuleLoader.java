@@ -69,7 +69,7 @@ public final class ModuleLoader {
 
   public Collection<Module> loadRequests(BootSegment bootSegment) {
     return classPick(segment -> readyToLoad(bootSegment, segment))
-      .stream().map(this::instanceOf).map(o -> (Module) o)
+      .stream().map(this::instanceOf).map(o -> /* module cast */(Module) o)
       .peek(this::initiate).collect(Collectors.toList());
   }
 

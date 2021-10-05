@@ -129,7 +129,7 @@ public final class BlockRotationAnalyzer extends MetaCheckPart<PlacementAnalysis
     if (!VolatileBlockAccess.isInLoadedChunk(location.getWorld(), location.getBlockX(), location.getBlockZ())) {
       return;
     }
-    Block block = VolatileBlockAccess.serverBlockAccess(location);
+    Block block = VolatileBlockAccess.blockAccess(location);
     Object handle = BlockVariantAccess.nativeVariantAccess(block);
     WrappedBlockData blockData = WrappedBlockData.fromHandle(handle);
     com.comphenix.protocol.wrappers.BlockPosition position = new com.comphenix.protocol.wrappers.BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());

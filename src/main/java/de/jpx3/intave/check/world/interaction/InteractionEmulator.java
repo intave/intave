@@ -45,8 +45,8 @@ public final class InteractionEmulator implements EventProcessor {
   public void onPre(BlockPlaceEvent place) {
     if (place.getClass().equals(BlockPlaceEvent.class)) {
       Block block = place.getBlock();
-      BlockStateAccess blockStateAccess = userOf(place.getPlayer()).blockStateAccess();
-      blockStateAccess.invalidate(block.getX(), block.getY(), block.getZ());
+      BlockStateAccess blockStateAccess = userOf(place.getPlayer()).blockStates();
+      blockStateAccess.invalidateCacheAt(block.getX(), block.getY(), block.getZ());
       blockStateAccess.invalidateOverride(block.getX(), block.getY(), block.getZ());
     }
   }
@@ -55,8 +55,8 @@ public final class InteractionEmulator implements EventProcessor {
   public void on(PlayerBucketFillEvent fill) {
     Player player = fill.getPlayer();
     Block block = fill.getBlockClicked().getRelative(fill.getBlockFace());
-    BlockStateAccess blockStateAccess = userOf(player).blockStateAccess();
-    blockStateAccess.invalidate(block.getX(), block.getY(), block.getZ());
+    BlockStateAccess blockStateAccess = userOf(player).blockStates();
+    blockStateAccess.invalidateCacheAt(block.getX(), block.getY(), block.getZ());
     blockStateAccess.invalidateOverride(block.getX(), block.getY(), block.getZ());
   }
 
@@ -64,8 +64,8 @@ public final class InteractionEmulator implements EventProcessor {
   public void on(PlayerBucketEmptyEvent empty) {
     Player player = empty.getPlayer();
     Block block = empty.getBlockClicked().getRelative(empty.getBlockFace());
-    BlockStateAccess blockStateAccess = userOf(player).blockStateAccess();
-    blockStateAccess.invalidate(block.getX(), block.getY(), block.getZ());
+    BlockStateAccess blockStateAccess = userOf(player).blockStates();
+    blockStateAccess.invalidateCacheAt(block.getX(), block.getY(), block.getZ());
     blockStateAccess.invalidateOverride(block.getX(), block.getY(), block.getZ());
   }
 
@@ -73,8 +73,8 @@ public final class InteractionEmulator implements EventProcessor {
   public void onPre(BlockBreakEvent breeak) {
     if (breeak.getClass().equals(BlockBreakEvent.class)) {
       Block block = breeak.getBlock();
-      BlockStateAccess blockStateAccess = userOf(breeak.getPlayer()).blockStateAccess();
-      blockStateAccess.invalidate(block.getX(), block.getY(), block.getZ());
+      BlockStateAccess blockStateAccess = userOf(breeak.getPlayer()).blockStates();
+      blockStateAccess.invalidateCacheAt(block.getX(), block.getY(), block.getZ());
       blockStateAccess.invalidateOverride(block.getX(), block.getY(), block.getZ());
     }
   }
@@ -100,14 +100,14 @@ public final class InteractionEmulator implements EventProcessor {
     BlockPosition blockPosition = interaction.targetBlock();
     Location blockBreakLocation = blockPosition.toLocation(world);
     boolean access = WorldPermission.blockBreakPermission(
-      player, VolatileBlockAccess.serverBlockAccess(blockBreakLocation)
+      player, VolatileBlockAccess.blockAccess(blockBreakLocation)
     );
     if (access) {
       int blockX = blockBreakLocation.getBlockX();
       int blockY = blockBreakLocation.getBlockY();
       int blockZ = blockBreakLocation.getBlockZ();
       // add to future bounding boxes
-      BlockStateAccess blockStateAccess = userOf(player).blockStateAccess();
+      BlockStateAccess blockStateAccess = userOf(player).blockStates();
       blockStateAccess.override(world, blockX, blockY, blockZ, Material.AIR, (byte) 0);
     }
     return access ? EmulationResult.SUCCEEDED : EmulationResult.FAILED;
@@ -141,7 +141,7 @@ public final class InteractionEmulator implements EventProcessor {
       variant
     );
     if (access) {
-      BlockStateAccess blockStateAccess = userOf(player).blockStateAccess();
+      BlockStateAccess blockStateAccess = userOf(player).blockStates();
       blockStateAccess.override(world, blockX, blockY, blockZ, replacementType, variant);
       // enforce block reset later
       Synchronizer.packetSynchronize(() -> {
@@ -156,7 +156,7 @@ public final class InteractionEmulator implements EventProcessor {
   private EmulationResult emulateInteraction(Player player, Interaction interaction) {
     World world = interaction.world();
     Location clickedBlockLocation = interaction.targetBlock().toLocation(world);
-    Block clickedBlock = VolatileBlockAccess.serverBlockAccess(clickedBlockLocation);
+    Block clickedBlock = VolatileBlockAccess.blockAccess(clickedBlockLocation);
     Material itemTypeInHand = interaction.itemTypeInHand();
     Location placementLocation = clickedBlockLocation.clone().add(Direction.getFront(interaction.targetDirection()).getDirectionVec().convertToBukkitVec());
     emulateInteractWithHandItem(player, clickedBlock, placementLocation, itemTypeInHand);
@@ -170,7 +170,7 @@ public final class InteractionEmulator implements EventProcessor {
     Location placementLocation,
     Material itemTypeInHand
   ) {
-    BlockStateAccess blockStateAccess = userOf(player).blockStateAccess();
+    BlockStateAccess blockStateAccess = userOf(player).blockStates();
     World world = player.getWorld();
     switch (itemTypeInHand) {
       case BUCKET: {
@@ -197,7 +197,7 @@ public final class InteractionEmulator implements EventProcessor {
 
   private void emulatePhysicalInteract(Player player, Block block) {
     World world = player.getWorld();
-    BlockStateAccess blockStateAccess = userOf(player).blockStateAccess();
+    BlockStateAccess blockStateAccess = userOf(player).blockStates();
     Material clickedType = BlockTypeAccess.typeAccess(block, player);
     switch (clickedType) {
       case ACACIA_DOOR:

@@ -37,11 +37,10 @@ public final class BoatSimulator extends BaseSimulator {
     movement.boatGlide = getBoatGlide(user);
     updateMotion(user, motion);
     controlBoat(user, motion);
-
     ComplexColliderSimulationResult collision = Collider.simulateComplexCollision(
       user, motion, movement.inWeb, movement.verifiedPositionX, movement.verifiedPositionY, movement.verifiedPositionZ
     );
-    return Simulation.of(user, /*temporary*/MovementConfiguration.select((int)keyForward,(int) keyStrafe, attackReduce, sprinting, jumped, handActive), collision);
+    return Simulation.of(user, /*temporary solution */MovementConfiguration.select((int)keyForward,(int) keyStrafe, attackReduce, sprinting, jumped, handActive), collision);
   }
 
   private Status getBoatStatus(User user) {

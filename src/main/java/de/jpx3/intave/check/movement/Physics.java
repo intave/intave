@@ -66,7 +66,7 @@ public final class Physics extends Check {
     this.decrementer = new CheckViolationLevelDecrementer(this, VL_DECREMENT_PER_VALID_MOVE * 20);
     this.highToleranceMode = configuration().settings().boolBy("high-tolerance", false);
     this.resetItemUsage = configuration().settings().boolBy("reset-item-usage", true);
-    this.simulationProcessor = new PredictionSimulationProcessor(resetItemUsage);
+    this.simulationProcessor = new PredictiveSimulationProcessor(resetItemUsage);
     this.simulationEvaluator = new SimulationEvaluator();
     setDefaultMitigationStrategy(MitigationStrategy.CAREFUL);
     this.fallDamageApplier = new FallDamageApplier();
@@ -259,9 +259,10 @@ public final class Physics extends Check {
     boolean spectator = player.getGameMode() == GameMode.SPECTATOR;
 
     MovementMetadata movementData = meta.movement();
+    ProtocolMetadata protocolMetadata = meta.protocol();
     ViolationMetadata violationLevelData = meta.violationLevel();
     AbilityMetadata abilityData = meta.abilities();
-    BlockStateAccess blockStateAccess = user.blockStateAccess();
+    BlockStateAccess blockStateAccess = user.blockStates();
 
     ComplexColliderSimulationResult expectedMovement = simulation.collider();
     Motion context = expectedMovement.motion();
@@ -367,7 +368,7 @@ public final class Physics extends Check {
         double blockPositionX = (boundingBox.minX + boundingBox.maxX) / 2.0;
         double blockPositionY = (boundingBox.minY + boundingBox.maxY) / 2.0;
         double blockPositionZ = (boundingBox.minZ + boundingBox.maxZ) / 2.0;
-        Block block = VolatileBlockAccess.serverBlockAccess(player.getWorld(), blockPositionX, blockPositionY, blockPositionZ);
+        Block block = VolatileBlockAccess.blockAccess(player.getWorld(), blockPositionX, blockPositionY, blockPositionZ);
         boolean currentlyInOverride = blockStateAccess.currentlyInOverride(ClientMathHelper.floor(blockPositionX), ClientMathHelper.floor(blockPositionY), ClientMathHelper.floor(blockPositionZ));
         boolean altered = BlockTypeAccess.hasTranslation(user, BlockTypeAccess.typeAccess(block));
 
@@ -383,15 +384,12 @@ public final class Physics extends Check {
         String message = "moved into " + colliderName.trim();
         boolean multipleBoxes = intersectionBoundingBoxesCurrent.size() > 1;
         String details = (multipleBoxes ? intersectionBoundingBoxesCurrent.size() : "one") + " box" + (multipleBoxes ? "es" : "");
-
         if (!IntaveControl.IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT) {
-          blockStateAccess.identityInvalidate();
+          blockStateAccess.invalidateAll();
         }
-
         Violation violation = Violation.builderFor(Physics.class)
           .forPlayer(player).withMessage(message).withDetails(details).withVL(0).build();
         Modules.violationProcessor().processViolation(violation);
-
         Vector emulationMotion = new Vector(predictedX, predictedY, predictedZ);
         Modules.mitigate().movement().emulationSetBack(player, emulationMotion, 2, true);
       } else {
@@ -400,7 +398,6 @@ public final class Physics extends Check {
           movementData.currentlyInBlock = true;
           movementData.phaseIntersectingBoundingBoxes = ImmutableList.copyOf(intersectionBoundingBoxesCurrent);
         }
-
         // Prevents players from walking in other blocks
         boolean startBoundingBoxInList = false;
         for (BoundingBox intersectingBoundingBox : movementData.phaseIntersectingBoundingBoxes) {
@@ -410,18 +407,16 @@ public final class Physics extends Check {
             break;
           }
         }
-
         if (!startBoundingBoxInList) {
           movementData.invalidMovement = true;
           if (!IntaveControl.IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT) {
-            blockStateAccess.identityInvalidate();
+            blockStateAccess.invalidateAll();
           }
-
           BoundingBox boundingBox = intersectionBoundingBoxesCurrent.get(0);
           double blockPositionX = (boundingBox.minX + boundingBox.maxX) / 2.0;
           double blockPositionY = (boundingBox.minY + boundingBox.maxY) / 2.0;
           double blockPositionZ = (boundingBox.minZ + boundingBox.maxZ) / 2.0;
-          Block block = VolatileBlockAccess.serverBlockAccess(player.getWorld(), blockPositionX, blockPositionY, blockPositionZ);
+          Block block = VolatileBlockAccess.blockAccess(player.getWorld(), blockPositionX, blockPositionY, blockPositionZ);
 
           String message = "moved into " + shortenTypeName(BlockTypeAccess.typeAccess(block, player)) + " block whilst moving in another block";
           boolean multipleBoxes = intersectionBoundingBoxesCurrent.size() > 1;
@@ -454,13 +449,15 @@ public final class Physics extends Check {
         || movementData.pastElytraFlying < 20;
       if (uncommonArea) {
         violationLevelIncrease /= 2;
+      } else if (protocolMetadata.waterUpdate()) {
+        violationLevelIncrease /= 2;
       }
       violationLevelIncrease = Math.min(200.0, violationLevelIncrease);
       violationLevelIncrease = Math.max(1, violationLevelIncrease);
       violationLevelData.physicsVL = MathHelper.minmax(0, violationLevelData.physicsVL + violationLevelIncrease, 200);
       violationLevelData.physicsInvalidMovementsInRow++;
       if (!IntaveControl.IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT) {
-        blockStateAccess.identityInvalidate();
+        blockStateAccess.invalidateAll();
       }
       // resend attributes
       statisticApply(user, CheckStatistics::increaseFails);

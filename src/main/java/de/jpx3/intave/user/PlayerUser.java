@@ -84,7 +84,7 @@ final class PlayerUser implements User {
     this.playerConnection = new WeakReference<>(ReflectiveHandleAccess.playerConnectionOf(player));
     this.metadata = new MetadataBundle(player, this);
     this.permissionCache = new ExpiringPermissionCache(16, TimeUnit.SECONDS);
-    this.blockStateAccess = MultiChunkKeyBlockStateAccess.withDefaultResolverOf(player());
+    this.blockStateAccess = MultiChunkKeyBlockStateAccess.forPlayer(player());
     this.complexColliderProcessor = Collider.suitableComplexColliderProcessorFor(this);
     this.simpleColliderProcessor = Collider.suitableSimpleColliderProcessorFor(this);
     Synchronizer.synchronize(this::setDefaultMessagingChannel);
@@ -237,7 +237,7 @@ final class PlayerUser implements User {
   }
 
   @Override
-  public BlockStateAccess blockStateAccess() {
+  public BlockStateAccess blockStates() {
     return blockStateAccess;
   }
 
@@ -342,7 +342,7 @@ final class PlayerUser implements User {
   @Override
   public void clearTypeTranslations() {
     typeTranslations.clear();
-    blockStateAccess.identityInvalidate();
+    blockStateAccess.invalidateAll();
   }
 
   @Override

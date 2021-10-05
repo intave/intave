@@ -40,7 +40,7 @@ public final class Collision {
     World world = player.getWorld();
     MovementMetadata movementData = user.meta().movement();
     ShapeCombiner shapeCombiner = ShapeCombiner.create();
-    BlockStateAccess stateAccess = user.blockStateAccess();
+    BlockStateAccess stateAccess = user.blockStates();
     boolean outsideBorderLast = movementData.outsideBorder;
     boolean outsideBorderCurrent = playerOutsideBorder(user);
     if (outsideBorderLast && outsideBorderCurrent) {
@@ -51,8 +51,8 @@ public final class Collision {
     for (int x = minX; x <= maxX; ++x) {
       for (int z = minZ; z <= maxZ; ++z) {
         for (int y = ystart; y <= maxY; ++y) {
-          BlockShape resolve = stateAccess.resolveShape(x, y, z);
-          Material material = stateAccess.resolveType(x >> 4, z >> 4, x, y, z);
+          BlockShape resolve = stateAccess.shapeAt(x, y, z);
+          Material material = stateAccess.typeAt(x, y, z);
           if (CollisionModifiers.isModified(material)) {
             // this should not happen too often
             resolve = BlockShapes.shapeOf(CollisionModifiers.modified(material, user, playerBoundingBox, x, y, z, resolve.boundingBoxes()));
@@ -87,7 +87,7 @@ public final class Collision {
     int ystart = Math.max(minY - 1, 0);
     User user = UserRepository.userOf(player);
     World world = player.getWorld();
-    BlockStateAccess blockStateAccess = user.blockStateAccess();
+    BlockStateAccess blockStates = user.blockStates();
     MovementMetadata movementData = user.meta().movement();
     boolean outsideBorderLast = movementData.outsideBorder;
     boolean outsideBorderCurrent = playerOutsideBorder(user);
@@ -99,8 +99,8 @@ public final class Collision {
     for (int x = minX; x <= maxX; ++x) {
       for (int z = minZ; z <= maxZ; ++z) {
         for (int y = ystart; y <= maxY; ++y) {
-          BlockShape shape = blockStateAccess.resolveShape(x, y, z);
-          Material material = blockStateAccess.resolveType(x >> 4, z >> 4, x, y, z);
+          BlockShape shape = blockStates.shapeAt(x, y, z);
+          Material material = blockStates.typeAt(x, y, z);
           if (CollisionModifiers.isModified(material)) {
             shape = BlockShapes.shapeOf(CollisionModifiers.modified(material, user, playerBox, x, y, z, shape.boundingBoxes()));
           }
@@ -145,7 +145,7 @@ public final class Collision {
     } else if (!outsideBorderLast && !outsideBorderCurrent) {
       movementData.outsideBorder = true;
     }
-    BlockStateAccess stateAccess = user.blockStateAccess();
+    BlockStateAccess stateAccess = user.blockStates();
     World world = player.getWorld();
     // this looks 1000x slower than it actually is
     for (int chunkx = minX >> 4; chunkx <= maxX - 1 >> 4; ++chunkx) {
@@ -160,8 +160,8 @@ public final class Collision {
           for (int x = xstart; x < xend; ++x) {
             for (int z = zstart; z < zend; ++z) {
               for (int y = ystart; y < maxY; ++y) {
-                List<BoundingBox> resolve = stateAccess.resolveShape(x, y, z).boundingBoxes();
-                Material material = stateAccess.resolveType(chunkx, chunkz, x, y, z);
+                List<BoundingBox> resolve = stateAccess.shapeAt(x, y, z).boundingBoxes();
+                Material material = stateAccess.typeAt(x, y, z);
                 if (CollisionModifiers.isModified(material)) {
                   resolve = CollisionModifiers.modified(material, user, playerBoundingBox, x, y, z, resolve);
                 }
@@ -254,7 +254,7 @@ public final class Collision {
     for (int x = minX; x <= maxX; x++) {
       for (int y = minY; y <= maxY; y++) {
         for (int z = minZ; z <= maxZ; z++) {
-          Block block = VolatileBlockAccess.serverBlockAccess(world, x, y, z);
+          Block block = VolatileBlockAccess.blockAccess(world, x, y, z);
           Material type = BlockTypeAccess.typeAccess(block);
           if (!MaterialMagic.isLiquid(type) && BlockTypeAccess.typeAccess(block) != Material.AIR) {
             return true;
@@ -287,7 +287,7 @@ public final class Collision {
     for (int x = minX; x <= maxX; x++) {
       for (int y = minY; y <= maxY; y++) {
         for (int z = minZ; z <= maxZ; z++) {
-          Block block = VolatileBlockAccess.serverBlockAccess(world, x, y, z);
+          Block block = VolatileBlockAccess.blockAccess(world, x, y, z);
           if (blockTypeApplier.apply(BlockTypeAccess.typeAccess(block))) {
             return true;
           }

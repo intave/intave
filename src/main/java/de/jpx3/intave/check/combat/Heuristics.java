@@ -73,9 +73,6 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
       appendCheckPart(new RotationStandardDeviationHeuristic(this));
       appendCheckPart(new RotationSnapHeuristic(this));
       appendCheckPart(new LongTermClickAccuracyHeuristic(this));
-    }
-
-    if (IntaveControl.GOMME_MODE || IntaveControl.DISABLE_LICENSE_CHECK) {
       appendCheckPart(new SameRotationHeuristic(this));
       appendCheckPart(new AttackRequiredHeuristic(this));
     }
@@ -183,7 +180,7 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
       }
     }
 
-    if (overallConfidence.level() >= Confidence.LIKELY.level()) {
+    if (overallConfidence.level() >= Confidence.VERY_LIKELY.level()) {
       Anomaly.Type type = findDominantType(anomalies);
       String identifier;
       if (IntaveControl.DEBUG_HEURISTICS) {
@@ -207,12 +204,12 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
     switch (confidence) {
       case CERTAIN:
         return "certain (!!)";
+      case ALMOST_CERTAIN:
+        return "almost certain (!)";
       case VERY_LIKELY:
-        return "very likely (!)";
+        return "very likely (?!)";
       case LIKELY:
-        return "likely (?!)";
-      case PROBABLE:
-        return "probable (?)";
+        return "likely (?)";
       case MAYBE:
         return "maybe (??)";
       default:
@@ -285,13 +282,13 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
     boolean triedEmulationLight = lastMiningStrategy == MiningStrategy.EMULATION_LIGHT;
     switch (overallConfidence) {
       case MAYBE:
-      case VERY_LIKELY:
+      case ALMOST_CERTAIN:
         strategy = MiningStrategy.EMULATION_LIGHT;
         break;
       case PROBABLE:
         strategy = random() && !triedEmulationLight ? MiningStrategy.EMULATION_LIGHT : MiningStrategy.EMULATION_MODERATE;
         break;
-      case LIKELY:
+      case VERY_LIKELY:
         strategy = random() && !triedEmulationLight ? MiningStrategy.EMULATION_LIGHT : MiningStrategy.EMULATION_HEAVY;
         break;
     }

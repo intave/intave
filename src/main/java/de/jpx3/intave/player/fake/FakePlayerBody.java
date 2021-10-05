@@ -292,7 +292,7 @@ public abstract class FakePlayerBody extends FakePlayerIdentity {
   }
 
   private String walkingSoundAt(Location location) {
-    Block block = VolatileBlockAccess.serverBlockAccess(location.clone().add(0.0, -1.0, 0.0));
+    Block block = VolatileBlockAccess.blockAccess(location.clone().add(0.0, -1.0, 0.0));
     switch (BlockTypeAccess.typeAccess(block)) {
       case GRASS: {
         return "step.grass";

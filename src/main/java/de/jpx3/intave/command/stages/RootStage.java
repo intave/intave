@@ -304,7 +304,7 @@ public final class RootStage extends CommandStage {
   @Native
   public void outputReplacements(User user) {
     Player player = user.player();
-    BlockStateAccess bba = user.blockStateAccess();
+    BlockStateAccess bba = user.blockStates();
     player.sendMessage(ChatColor.RED + "You have " + bba.locatedReplacements().size() + "/" + bba.indexedReplacements().size() + " replacements");
   }
 
@@ -410,7 +410,7 @@ public final class RootStage extends CommandStage {
   public void invisibleBlock(User user) {
     Player player = user.player();
     Location location = player.getLocation();
-    user.blockStateAccess().override(player.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), Material.OBSIDIAN, 0);
+    user.blockStates().override(player.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), Material.OBSIDIAN, 0);
     player.sendMessage(ChatColor.GREEN + "Block summoned");
   }
 

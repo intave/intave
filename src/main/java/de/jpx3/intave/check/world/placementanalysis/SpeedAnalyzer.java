@@ -94,7 +94,7 @@ public final class SpeedAnalyzer extends MetaCheckPart<PlacementAnalysis, SpeedA
 
         boolean noHardFault = System.currentTimeMillis() - meta.lastHardFaultClick > 8000;
         boolean noSneaking = System.currentTimeMillis() - movementData.lastSneakingTimestamps > 8000;
-        boolean recentJump = System.currentTimeMillis() - movementData.lastJumpTimestamps < 750;
+        boolean recentJump = System.currentTimeMillis() - movementData.lastJump < 750;
         double minAverage = (inOneLine ? ((recentJump ? 450 : noHardFault ? (noSneaking ? 500 : 300) : (noSneaking ? 350 : 200))) : 150);
 
         int speedAmplifier = potionData.potionEffectSpeedAmplifier();
