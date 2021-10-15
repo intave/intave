@@ -61,9 +61,7 @@ public final class BlockRotationAnalyzer extends MetaCheckPart<PlacementAnalysis
     AbilityMetadata abilities = user.meta().abilities();
 
     BlockRotationMeta meta = metaOf(user);
-
     BlockInteractionReader reader = PacketReaders.readerOf(packet);
-    ;
     com.comphenix.protocol.wrappers.BlockPosition blockPosition = reader.blockPosition();
 
     if (blockPosition == null || event.isCancelled() || movement.hasRidingEntity()) {
@@ -101,7 +99,7 @@ public final class BlockRotationAnalyzer extends MetaCheckPart<PlacementAnalysis
         String details = "pitch of " + ((int) movement.rotationPitch) + " placing blocks in " + MathHelper.formatDouble(average, 2) + " ms/block";
         Violation violation = Violation.builderFor(PlacementAnalysis.class)
           .forPlayer(player).withMessage(COMMON_FLAG_MESSAGE).withDetails(details)
-          .withDefaultThreshold().withVL(0).build();
+          .withDefaultThreshold().withVL(4).build();
         Modules.violationProcessor().processViolation(violation);
       }
 //      event.setCancelled(true);

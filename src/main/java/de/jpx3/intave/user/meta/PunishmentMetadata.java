@@ -87,15 +87,15 @@ public final class PunishmentMetadata {
         if (lastValidAttack < delay) {
           event.setCancelled(true);
         } else {
-          int random = ThreadLocalRandom.current().nextInt(-5, 10);
+          int random = ThreadLocalRandom.current().nextInt(-10, 10);
           if (random < 0) {
             delay = 550;
           } else if (random < 5) {
             delay = 600;
-          } else if (random < 8) {
+          }/* else if (random < 8) {
             delay = 650;
-          } else {
-            delay = 700;
+          }*/ else {
+            delay = 650;
           }
           lastTimeValidHurttimeAttack.put(entityId, System.currentTimeMillis());
         }

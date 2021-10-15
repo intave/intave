@@ -12,7 +12,7 @@ import java.util.Map;
  * The {@link BlockStateLookup} is eligible to delete overrides after 5 seconds after their initialization.
  *
  * @see BlockStateLookup
- * @see BlockStateCache
+ * @see BlockStateCaching
  * @see BlockStateAccess
  */
 

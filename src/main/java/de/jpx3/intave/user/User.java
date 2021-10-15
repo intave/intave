@@ -4,7 +4,7 @@ import de.jpx3.intave.access.UnsupportedFallbackOperationException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.access.player.trust.TrustFactorResolver;
 import de.jpx3.intave.block.state.BlockStateAccess;
-import de.jpx3.intave.block.state.BlockStateCache;
+import de.jpx3.intave.block.state.BlockStateCaching;
 import de.jpx3.intave.block.state.BlockStateLookup;
 import de.jpx3.intave.block.state.BlockStateOverrides;
 import de.jpx3.intave.check.MetaCheck;
@@ -162,7 +162,7 @@ public interface User {
    * Retrieve the player's block state cache
    * @return the player's block state cache
    * @see BlockStateLookup
-   * @see BlockStateCache
+   * @see BlockStateCaching
    * @see BlockStateOverrides
    */
   BlockStateAccess blockStates();

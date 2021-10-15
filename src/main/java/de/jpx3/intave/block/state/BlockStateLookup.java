@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * A BlockShapeAccess serves as an auto-resolving cache for block types, block bounding boxes and block variants.
  *
  * @see User
- * @see BlockStateCache
+ * @see BlockStateCaching
  * @see BlockStateOverrides
  * @see BlockStateAccess
  * @see MultiChunkKeyBlockStateAccess

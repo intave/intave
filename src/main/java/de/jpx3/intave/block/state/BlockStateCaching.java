@@ -1,7 +1,7 @@
 package de.jpx3.intave.block.state;
 
 /**
- * The {@link BlockStateCache} extends the functionality of the
+ * The {@link BlockStateCaching} extends the functionality of the
  * {@link BlockStateLookup} by adding methods related to cache invalidation.
  *
  * @see BlockStateLookup
@@ -9,7 +9,7 @@ package de.jpx3.intave.block.state;
  * @see BlockStateAccess
  */
 
-public interface BlockStateCache extends BlockStateLookup {
+public interface BlockStateCaching {
   /**
    * Invalidate all caches
    */
