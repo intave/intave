@@ -528,7 +528,7 @@ public final class MovementEmulator extends Module {
     if (i == 5) {
       vector.setZ(f);
     }
-    if (isOpenBlockSpace(player, blockPosition.up())) {
+    if (isOpenBlockSpace(player, blockPosition.up()) && isOpenBlockSpace(player, blockPosition.up().up())) {
       vector.setY(f);
     }
     return vector;
