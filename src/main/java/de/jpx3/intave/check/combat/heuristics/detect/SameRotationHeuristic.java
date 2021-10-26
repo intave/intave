@@ -139,19 +139,17 @@ public final class SameRotationHeuristic extends MetaCheckPart<Heuristics, SameR
 
   private void checkSameRotationPitch(SameRotationHeuristicMeta meta, Player player) {
     // Guckt ob die rotation die ein Spieler hat schon mal zuvor gesendet wurde wärend der Spieler sich schnell gedreht hat
-    boolean containedPitch = meta.pitchRotations.contains(meta.lastTick.pitch);
+//    boolean containedPitch = meta.pitchRotations.contains(meta.lastTick.pitch);
 
-    if(Math.abs(meta.lastTick.pitchMotion) > 35 && Math.abs(meta.lastTick.pitchMotion) < 38) {
-      // This is a fix for the Labymod bug where the rotation Pitch gets send to the server when selecting the Emote with the "x" key ingame
-      return;
-    }
+    //INFO: This check got disabled because of flaggs caused by labymod
+    // the flaggs from labymod are caused by choosing an emote from the X key and then moving the mouse up, if the mouse is still and the x key gets released its causing a flag.
 
-    if (containedPitch && Math.abs(meta.lastTick.pitch) != 90) {
-      meta.violationLevel += transformViolation(60);
-      String description = "same rotation (Pitch:" + meta.lastTick.pitch + ", PitchMotion:" + MathHelper.formatDouble(meta.lastTick.pitchMotion, 2) + ")";
-      Anomaly anomaly = anomalyOf("181", description, meta);
-      parentCheck().saveAnomaly(player, anomaly);
-    }
+//    if (containedPitch && Math.abs(meta.lastTick.pitch) != 90) {
+//      meta.violationLevel += transformViolation(60);
+//      String description = "same rotation (Pitch:" + meta.lastTick.pitch + ", PitchMotion:" + MathHelper.formatDouble(meta.lastTick.pitchMotion, 2) + ")";
+//      Anomaly anomaly = anomalyOf("181", description, meta);
+//      parentCheck().saveAnomaly(player, anomaly);
+//    }
   }
 
   private void checkExactRotationMotionYaw(SameRotationHeuristicMeta meta, Player player) {

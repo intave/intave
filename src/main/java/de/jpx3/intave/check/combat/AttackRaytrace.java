@@ -379,7 +379,11 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     int vl = 0;
     switch (attackRaytraceResult) {
       case MISS: {
-        vl = 4;
+        if (!entity.typeData.isLivingEntity()) {
+          vl = 0;
+        } else {
+          vl = 4;
+        }
         break;
       }
       case REACH: {
@@ -416,7 +420,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     if (minReach > blockReachDistance) {
       String entityName = attackedEntity.entityName();
       String targetDescriptor = resolveArticle(entityName) + " " + entityName.toLowerCase();
-      String thresholdKey = "";
+      String thresholdKey;
       String message, details;
       if (minReach == 10) {
         message = "attacked " + targetDescriptor + " out of sight";
