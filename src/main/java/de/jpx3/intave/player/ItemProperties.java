@@ -17,6 +17,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -33,6 +34,7 @@ public final class ItemProperties {
   private static final Set<Material> materialPotionItems = Sets.newHashSet();
   private static final Set<Material> foodLevelConstraintFoodItems = Sets.newHashSet();
   private static final Set<Material> nonFoodLevelConstraintFoodItems = Sets.newHashSet();
+  private static final Set<Material> arrowItems = Sets.newHashSet();
 
   public static void setup() {
     try {
@@ -40,6 +42,7 @@ public final class ItemProperties {
       loadDefaultUseItems(serverVersion);
       loadPotions();
       loadFoodItems();
+      loadArrows();
     } catch (Exception e) {
       throw new IllegalStateException(e);
     }
@@ -55,16 +58,18 @@ public final class ItemProperties {
       "mushroom_soup", "raw_fish", "cooked_fish", "raw_chicken",
       "carrot_item", "potato_item", "rabbit_stew"
     );
-
     List<String> nonFoodLevelConstraintFoodItemNames =
       Lists.newArrayList("golden_apple", "enchanted_golden_apple");
-
     materialListConvert(foodLevelConstraintFoodItemNames, foodLevelConstraintFoodItems);
     materialListConvert(nonFoodLevelConstraintFoodItemNames, nonFoodLevelConstraintFoodItems);
   }
 
   private static void materialListConvert(List<String> input, Set<Material> output) {
     input.stream().map(ItemProperties::materialByName).forEach(output::add);
+  }
+
+  private static void loadArrows() {
+    arrowItems.addAll(materialsMatching("ARROW"));
   }
 
   private static void loadDefaultUseItems(MinecraftVersion serverVersion) {
@@ -93,7 +98,7 @@ public final class ItemProperties {
     }
 
     // Bow check
-    if (type == Material.BOW && !inventoryContains(player, Material.ARROW)) {
+    if (type == Material.BOW && !inventoryContains(player, arrowItems)) {
       return false;
     }
 
@@ -157,6 +162,16 @@ public final class ItemProperties {
     return Arrays.stream(Material.values())
       .filter(materiall -> materiall.name().equalsIgnoreCase(name))
       .findFirst().orElse(null);
+  }
+
+  private static boolean inventoryContains(Player player, Collection<Material> items) {
+    PlayerInventory inventory = player.getInventory();
+    for (ItemStack content : inventory.getContents()) {
+      if (content != null && items.contains(content.getType())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static boolean inventoryContains(Player player, Material item) {

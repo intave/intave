@@ -8,7 +8,12 @@ public final class MovementConfiguration {
   private final int forward, strafe;
   private final boolean attackReduce, sprinting, jumped, handActive;
 
-  private MovementConfiguration(int index, int forward, int strafe, boolean attackReduce, boolean sprinting, boolean jumped, boolean handActive) {
+  private MovementConfiguration(
+    int index,
+    int forward, int strafe,
+    boolean attackReduce, boolean sprinting,
+    boolean jumped, boolean handActive
+  ) {
     this.index = index;
     this.forward = forward;
     this.strafe = strafe;

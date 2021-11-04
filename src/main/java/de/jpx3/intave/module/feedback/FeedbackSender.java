@@ -174,15 +174,16 @@ public final class FeedbackSender extends Module {
   ) {
     User user = UserRepository.userOf(player);
     ConnectionMetadata synchronizeData = user.meta().connection();
-    short transactionKey = findAvailableTransactionIdFor(player);
-    if (transactionKey >= TRANSACTION_MAX_CODE) {
-      synchronizeData.transactionCounter = TRANSACTION_MIN_CODE;
-    }
-    long transactionNumCounter = synchronizeData.transactionNumCounter++;
     if (obj == null) {
       //noinspection unchecked
       obj = (T) FALLBACK_OBJECT;
     }
+    if (synchronizeData.transactionShortKeyMap().size() > 5000) {
+      callback.success(player, obj);
+      return null;
+    }
+    short transactionKey = findAvailableTransactionIdFor(player);
+    long transactionNumCounter = synchronizeData.transactionNumCounter++;
     FeedbackRequest<T> feedbackEntry = new FeedbackRequest<>(callback, tracker, obj, transactionKey, transactionNumCounter);
     synchronizeData.transactionShortKeyMap().put(transactionKey, feedbackEntry);
     synchronizeData.transactionGlobalKeyMap().put(transactionNumCounter, feedbackEntry);
@@ -194,8 +195,13 @@ public final class FeedbackSender extends Module {
     User user = UserRepository.userOf(player);
     ConnectionMetadata synchronizeData = user.meta().connection();
     Map<Short, FeedbackRequest<?>> transactionFeedBackMap = synchronizeData.transactionShortKeyMap();
-    short counter = USE_PING_PONG_PACKETS ? 13 : TRANSACTION_MIN_CODE;
-    while (transactionFeedBackMap.containsKey(counter))
+    int attempts = 1000;
+    short counter = (short) (USE_PING_PONG_PACKETS ? 13 : TRANSACTION_MIN_CODE);
+    int pending = transactionFeedBackMap.size();
+    if (pending > 500) {
+      counter += pending;
+    }
+    while (transactionFeedBackMap.containsKey(counter) && attempts-- > 0)
       counter++;
     return counter;
   }
@@ -212,6 +218,9 @@ public final class FeedbackSender extends Module {
   }
 
   private void performRequest(Player receiver, FeedbackRequest<?> request) {
+    if (request == null) {
+      return;
+    }
     short id = request.key();
     PacketContainer packet;
     if (USE_PING_PONG_PACKETS) {
