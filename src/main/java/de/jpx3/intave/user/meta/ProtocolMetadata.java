@@ -22,6 +22,9 @@ public final class ProtocolMetadata {
   public static int VER_1_9 = 107; // 1.9
   public static int VERSION_DETAILS = 97; // secret integer for security - DO NOT MODIFY
   public static int VER_1_8 = 47; // 1.8
+
+  public static int VER_INVALID = 1000;
+
   private String versionString;
   private String clientBrand = "Unknown";
   private int protocolVersion;
@@ -37,9 +40,19 @@ public final class ProtocolMetadata {
     this.protocolVersion = player == null ? -1 : ViaVersionAdapter.protocolVersionOf(player);
     this.versionString = versionAsString();
     this.refreshes++;
+
+    if (protocolVersion == -1 || protocolVersion == 0) {
+      protocolVersion = VER_INVALID;
+    }
   }
 
   private String versionAsString() {
+    // ViaVersion's special cases
+    if (protocolVersion == -1)
+      return "Unresolved";
+    if (protocolVersion == 0)
+      return "Unknown";
+
     if (protocolVersion < 0)
       return "1.0";
     if (protocolVersion <= 47)
