@@ -111,7 +111,7 @@ public final class ClientMathHelper {
    * third parameters.
    */
   public static int clamp_int(int num, int min, int max) {
-    return num < min ? min : (num > max ? max : num);
+    return num < min ? min : (Math.min(num, max));
   }
 
   /**
@@ -119,11 +119,11 @@ public final class ClientMathHelper {
    * third parameters
    */
   public static float clamp_float(float num, float min, float max) {
-    return num < min ? min : (num > max ? max : num);
+    return num < min ? min : (Math.min(num, max));
   }
 
   public static double clamp_double(double num, double min, double max) {
-    return num < min ? min : (num > max ? max : num);
+    return num < min ? min : (Math.min(num, max));
   }
 
   public static double denormalizeClamp(double p_151238_0_, double p_151238_2_, double p_151238_4_) {
@@ -158,11 +158,9 @@ public final class ClientMathHelper {
 
   public static double average(long[] values) {
     long i = 0L;
-
     for (long j : values) {
       i += j;
     }
-
     return (double) i / (double) values.length;
   }
 

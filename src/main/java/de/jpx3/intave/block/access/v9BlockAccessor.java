@@ -9,7 +9,6 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_9_R2.CraftWorld;
 import org.bukkit.craftbukkit.v1_9_R2.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_9_R2.util.CraftMagicNumbers;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -28,7 +27,9 @@ public final class v9BlockAccessor implements BlockAccessor {
   @Override
   @PatchyAutoTranslation
   public Object nativeVariantOf(Block block) {
-    return CraftMagicNumbers.getBlock(block).getBlockData();
+    Material type = block.getType();
+    byte variant = block.getData();
+    return net.minecraft.server.v1_9_R2.Block.getByCombinedId(type.getId() | (variant & 0xF) << 12);
   }
 
   @Override

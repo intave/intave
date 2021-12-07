@@ -141,10 +141,10 @@ final class PatchyTranslator {
         }
         if (original.type == InstructionTargetType.METHOD) {
           String newName = Locate.patchyMethodCovert(original.owner, name, translate(original.desc));
-          if (name.equals("getBlock")) {
-            Thread.dumpStack();
-            System.out.println(name + " -> " + newName);
-          }
+//          if (name.equals("getBlock")) {
+//            Thread.dumpStack();
+//            System.out.println(name + " -> " + newName);
+//          }
 //          System.out.println(original.owner + name + original.desc + " -> " + original.owner + newName + original.desc);
           name = newName;
         }

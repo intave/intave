@@ -57,6 +57,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.*;
+import static de.jpx3.intave.check.world.interaction.InteractionEmulator.EmulationResult.FAILED;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
 public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.InteractionMeta> {
@@ -318,7 +319,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     if (!raytraceFailed) {
       decrementer.decrement(user, 0.25);
       InteractionEmulator.EmulationResult emulationResult = interactionEmulator.emulate(interaction);
-      boolean emulationFailed = emulationResult == InteractionEmulator.EmulationResult.FAILED;
+      boolean emulationFailed = emulationResult == FAILED;
       flag = emulationFailed;
       flagEnforce = emulationFailed;
     } else {
