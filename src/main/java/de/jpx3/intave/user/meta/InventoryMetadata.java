@@ -137,7 +137,6 @@ public final class InventoryMetadata {
   }
 
   public void setHandActive(boolean handActive) {
-    player.sendMessage("handActive:" + handActive);
     this.handActive = handActive;
   }
 

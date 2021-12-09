@@ -60,8 +60,8 @@ public abstract class IntegerMatcher {
     AND((bool0, bool1) -> bool0 && bool1, "&&"),
     OR((bool0, bool1) -> bool0 || bool1, "||");
 
-    BinaryOperator<Boolean> function;
-    String output;
+    final BinaryOperator<Boolean> function;
+    final String output;
 
     MergeOperation(BinaryOperator<Boolean> function, String output) {
       this.function = function;

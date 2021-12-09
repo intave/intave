@@ -48,12 +48,12 @@ public final class ConnectionTracker extends Module {
             break;
           }
         }
-        if (containsIntave) {
+//        if (containsIntave) {
           System.out.println("Thread:" + thread.getName());
           Exception exception = new Exception();
           exception.setStackTrace(stackTraceElements);
           exception.printStackTrace();
-        }
+//        }
       }
     });
   }
