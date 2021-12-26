@@ -1,3 +1,8 @@
+#
+# Intave Locate Mappings
+# Copyright Intave 2021 - all rights reserved
+#
+
 AxisAlignedBB -> {
   [17-18] -> "net/minecraft/world/phys/AxisAlignedBB"
   fields {
@@ -14,6 +19,22 @@ AxisAlignedBB -> {
 
 Block -> {
   [17-18] -> "net/minecraft/world/level/block/Block"
+  methods {
+    18 -> {
+      "getItem()RItem;" -> "k()RItem;"
+      "getStates()RBlockStateList;" -> "m()RBlockStateList;"
+      "getDamage(RIBlockData;REntityHuman;RIBlockAccess;RBlockPosition;)F" -> "a(RIBlockData;REntityHuman;RIBlockAccess;RBlockPosition;)F"
+    }
+  }
+}
+
+BlockBase -> {
+  [17-18] -> "net/minecraft/world/level/block/state/BlockBase"
+  methods {
+    18 -> {
+      "getCollisionShape(RIBlockAccess;RBlockPosition;)RVoxelShape;" -> "k(RIBlockAccess;RBlockPosition;)RVoxelShape;"
+    }
+  }
 }
 
 BlockStateInteger -> {
@@ -30,6 +51,13 @@ BlockStateList -> {
 
 BlockPosition -> {
   [17-18] -> "net/minecraft/core/BlockPosition"
+  methods {
+    18 -> {
+      "getX()I" -> "u()I"
+      "getY()I" -> "v()I"
+      "getZ()I" -> "w()I"
+    }
+  }
 }
 
 BlockPosition$MutableBlockPosition -> {
@@ -46,6 +74,12 @@ ChunkProviderServer -> {
 
 DataWatcher -> {
   [17-18] -> "net/minecraft/network/syncher/DataWatcher"
+  methods {
+    18 -> {
+      "set(RDataWatcherObject;Ljava/lang/Object;)V" -> "b(RDataWatcherObject;Ljava/lang/Object;)V"
+      "get(RDataWatcherObject;)Ljava/lang/Object;" -> "a(RDataWatcherObject;)Ljava/lang/Object;"
+    }
+  }
 }
 
 DataWatcherObject -> {
@@ -59,10 +93,22 @@ DamageSource -> {
 Entity -> {
   [17-18] -> "net/minecraft/world/entity/Entity"
   fields {
-    [17-18] -> {
+    17 -> {
       "yaw" -> "ay"
       "pitch" -> "az"
       "onGround" -> "z"
+    }
+    18 -> {
+      "yaw" -> "aA"
+      "pitch" -> "aB"
+      "onGround" -> "z"
+    }
+  }
+  methods {
+    18 -> {
+      "getWidth()F" -> "cT()F"
+      "getHeight()F" -> "cU()F"
+      "getDataWatcher()RDataWatcher;" -> "ai()RDataWatcher;"
     }
   }
 }
@@ -93,8 +139,11 @@ EntitySize -> {
 EntityLiving -> {
   [17-18] -> "net/minecraft/world/entity/EntityLiving"
   fields {
-    [17-18] -> {
+    17 -> {
       "maxNoDamageTicks" -> "aU"
+    }
+    18 -> {
+      "maxNoDamageTicks" -> "aV"
     }
   }
 }
@@ -107,6 +156,11 @@ EntityPlayer -> {
       "inventory" -> "co"
     }
   }
+  methods {
+    18 -> {
+      "getInventory()RPlayerInventory;" -> "fq()RPlayerInventory;"
+    }
+  }
 }
 
 EnumMainHand -> {
@@ -115,6 +169,12 @@ EnumMainHand -> {
 
 Fluid -> {
   [17-18] -> "net/minecraft/world/level/material/Fluid"
+  methods {
+    18 -> {
+      "isSource()Z" -> "b()Z"
+      "isEmpty()Z" -> "c()Z"
+    }
+  }
 }
 
 GeneratorAccess -> {
@@ -123,6 +183,13 @@ GeneratorAccess -> {
 
 IBlockAccess -> {
   [17-18] -> "net/minecraft/world/level/IBlockAccess"
+  methods {
+    18 -> {
+      "getType(RBlockPosition;)RIBlockData;" -> "a_(RBlockPosition;)RIBlockData;"
+      "getFluid(RBlockPosition;)RFluid;" -> "b_(RBlockPosition;)RFluid;"
+      "rayTrace(RRayTrace;)RMovingObjectPositionBlock;" -> "a(RRayTrace;)RMovingObjectPositionBlock;"
+    }
+  }
 }
 
 IBlockData -> {
@@ -130,16 +197,32 @@ IBlockData -> {
   methods {
     18 -> {
       "getBlock()RBlock;" -> "b()RBlock;"
+      "getMaterial()RMaterial;" -> "c()RMaterial;"
+      "getCollisionShape(RIBlockAccess;RBlockPosition;)RVoxelShape;" -> "k(RIBlockAccess;RBlockPosition;)RVoxelShape;"
+      "getStateMap()Lcom/google/common/collect/ImmutableMap;" -> "t()Lcom/google/common/collect/ImmutableMap;"
+      "get(RIBlockState;)Ljava/lang/Comparable;" -> "c(RIBlockState;)Ljava/lang/Comparable;"
     }
   }
 }
 
 IBlockState -> {
   [17-18] -> "net/minecraft/world/level/block/state/properties/IBlockState"
+  methods {
+    18 -> {
+      "getType()Ljava/lang/Class;" -> "g()Ljava/lang/Class;"
+      "getName()Ljava/lang/String;" -> "f()Ljava/lang/String;"
+      "getValues()Ljava/util/Collection;" -> "a()Ljava/util/Collection;"
+    }
+  }
 }
 
 BlockStateInteger -> {
   [17-18] -> "net/minecraft/world/level/block/state/properties/BlockStateInteger"
+  methods {
+    18 -> {
+      "getValues()Ljava/util/Collection;" -> "a()Ljava/util/Collection;"
+    }
+  }
 }
 
 BlockStateBoolean -> {
@@ -179,12 +262,26 @@ Item -> {
   [17-18] -> "net/minecraft/world/item/Item"
 }
 
+ItemStack -> {
+  [17-18] -> "net/minecraft/world/item/ItemStack"
+  methods {
+    18 -> {
+      "getItem()RItem;" -> "c()RItem;"
+    }
+  }
+}
+
 IWorldReader -> {
   [17-18] -> "net/minecraft/world/level/IWorldReader"
 }
 
 Material -> {
   [17-18] -> "net/minecraft/world/level/material/Material"
+  methods {
+    18 -> {
+      "isReplaceable()Z" -> "e()Z"
+    }
+  }
 }
 
 MinecraftServer -> {
@@ -198,6 +295,15 @@ MovingObjectPosition -> {
       "pos" -> "a"
     }
   }
+  methods {
+    18 -> {
+      "getType()RMovingObjectPosition$EnumMovingObjectType;" -> "c()RMovingObjectPosition$EnumMovingObjectType;"
+    }
+  }
+}
+
+MovingObjectPosition$EnumMovingObjectType -> {
+  [17-18] -> "net/minecraft/world/phys/MovingObjectPosition$EnumMovingObjectType"
 }
 
 MovingObjectPositionEntity -> {
@@ -248,6 +354,15 @@ PacketPlayOutGameStateChange$a -> {
 
 PlayerConnection -> {
   [17-18] -> "net/minecraft/server/network/PlayerConnection"
+}
+
+PlayerInventory -> {
+  [17-18] -> "net/minecraft/world/entity/player/PlayerInventory"
+  methods {
+    18 -> {
+      "getItem(I)RItemStack;" -> "b(I)RItemStack;"
+    }
+  }
 }
 
 RayTrace -> {
@@ -331,6 +446,11 @@ Vec3D -> {
 
 VoxelShape -> {
   [17-18] -> "net/minecraft/world/phys/shapes/VoxelShape"
+  methods {
+    18 -> {
+      "toList()Ljava/util/List;" -> "d()Ljava/util/List;"
+    }
+  }
 }
 
 VoxelShapes -> {
@@ -339,8 +459,19 @@ VoxelShapes -> {
 
 World -> {
   [17-18] -> "net/minecraft/world/level/World"
+  methods {
+    18 -> {
+      "getChunkProvider()RIChunkProvider;" -> "L()RIChunkProvider;"
+    }
+  }
 }
 
 WorldServer -> {
   [17-18] -> "net/minecraft/server/level/WorldServer"
+  methods {
+    18 -> {
+      "getChunkProvider()RChunkProviderServer;" -> "k()RChunkProviderServer;"
+      "rayTrace(RRayTrace;)RMovingObjectPositionBlock;" -> "a(RRayTrace;)RMovingObjectPositionBlock;"
+    }
+  }
 }

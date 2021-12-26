@@ -1,7 +1,6 @@
 #
-# Intave Type-To-Type mappings to support block type replacements for legacy players when running ViaBackwards or ViaRewind
-# You may not use and not distribute this file without proper permission
-# WARNING: YOU MAY NOT MODIFY THIS FILE
+# Intave Backward Block Mappings
+# Copyright Intave 2021 - all rights reserved
 #
 
 from 1.9 down to 1.8 interpret

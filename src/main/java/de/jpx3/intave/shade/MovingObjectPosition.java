@@ -9,6 +9,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Entity;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 public class MovingObjectPosition {
   private final static boolean NEW_RESOLVER = MinecraftVersions.VER1_14_0.atOrAbove();
@@ -80,10 +81,13 @@ public class MovingObjectPosition {
 
   private static MovingObjectPosition modernResolve(Object movingObjectPosition) {
     try {
-      Class<?> movingObjectPositionBase = Lookup.serverClass("MovingObjectPosition");
+//      Class<?> movingObjectPositionBase = Lookup.serverClass("MovingObjectPosition");
       Class<?> movingObjectPositionEntity = Lookup.serverClass("MovingObjectPositionEntity");
       Class<?> movingObjectPositionBlock = Lookup.serverClass("MovingObjectPositionBlock");
-      String typeName = (String) Enum.class.getMethod("name").invoke(movingObjectPositionBase.getMethod("getType").invoke(movingObjectPosition));
+
+      Class<?> movingObjectPositionType = Lookup.serverClass("MovingObjectPosition$EnumMovingObjectType");
+      Method typeResolveMethod = Lookup.serverMethod("MovingObjectPosition", "getType", movingObjectPositionType);
+      String typeName = (String) Enum.class.getMethod("name").invoke(typeResolveMethod.invoke(movingObjectPosition));
       MovingObjectType movingObjectType = MovingObjectType.valueOf(typeName);
       if (movingObjectType == MovingObjectType.ENTITY) {
         Field field = movingObjectPositionEntity.getDeclaredField("entity");

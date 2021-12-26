@@ -13,7 +13,9 @@ public class IntegerSetting extends NamedSetting<Integer> {
 
   public IntegerSetting(String name, int min, int max) {
     super(name, Integer.TYPE);
-    this.values = ImmutableSet.copyOf(IntStream.rangeClosed(min, max).boxed().collect(Collectors.toSet()));
+    this.values = ImmutableSet.copyOf(
+      IntStream.rangeClosed(min, max).boxed().collect(Collectors.toSet())
+    );
   }
 
   @Override

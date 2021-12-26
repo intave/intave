@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class Locate {
   private final static Locations CLASS_AND_FIELD_LOCATIONS =
     LocateFileCompiler.create().fromResourceInJar("/mappings/locate").reduced();
-  private final static ClassLocations classLocation = CLASS_AND_FIELD_LOCATIONS.classLocations();
+  private final static ClassLocations classLocations = CLASS_AND_FIELD_LOCATIONS.classLocations();
   private final static FieldLocations fieldLocations = CLASS_AND_FIELD_LOCATIONS.fieldLocations();
   private final static MethodLocations methodLocations = CLASS_AND_FIELD_LOCATIONS.methodLocations();
   private final static Map<String, ClassLocation> classLocationCache = new ConcurrentHashMap<>();
@@ -53,7 +53,7 @@ public final class Locate {
   }
 
   private static ClassLocation classLocationLookupByKey(String key) {
-    return classLocation
+    return classLocations
       .filterByKey(key)
       .findAnyOrDefault(() -> ClassLocation.defaultFor(key));
   }
@@ -63,6 +63,10 @@ public final class Locate {
     String outputName;
     if (classInput.startsWith("net.minecraft.server.v")) {
       outputName = methodNameByKey(classInput.split("\\.")[4], methodName + methodDescription);
+    } else if(classInput.startsWith("net.minecraft")) {
+      String[] packages = classInput.split("\\.");
+      String classKey = packages[packages.length - 1];
+      outputName = methodNameByKey(classKey, methodName + methodDescription);
     } else {
       outputName = methodName;
     }

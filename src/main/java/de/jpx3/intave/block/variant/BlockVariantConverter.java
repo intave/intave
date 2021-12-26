@@ -9,7 +9,6 @@ import org.bukkit.Material;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public final class BlockVariantConverter {
   static {
@@ -18,13 +17,10 @@ public final class BlockVariantConverter {
     PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, className);
   }
 
-  public static Map<Integer, BlockVariant> translate(Material type, Map<Integer, Object> natives) {
-    return natives.entrySet().stream().collect(
-      Collectors.toMap(
-        Map.Entry::getKey,
-        entry -> translate(type, entry.getValue()),
-        (a, b) -> b)
-    );
+  public static Map<Integer, BlockVariant> translate(Material type, Map<Integer, Object> indexToNative) {
+    Map<Integer, BlockVariant> indexToVariant = new HashMap<>();
+    indexToNative.forEach((key, nativeVariant) -> indexToVariant.put(key, translate(type, nativeVariant)));
+    return indexToVariant;
   }
 
   public final static BlockVariant EMPTY = new EmptyBlockVariant();
@@ -62,11 +58,7 @@ public final class BlockVariantConverter {
       }
       Map<Setting<?>, Comparable<?>> configuration = new HashMap<>();
       for (net.minecraft.server.v1_16_R1.IBlockState<?> state : states) {
-        Setting<?> setting = settingCache.get(state);
-        if (setting == null) {
-          setting = modernConvertSetting(state);
-          settingCache.put(state, setting);
-        }
+        Setting<?> setting = settingCache.computeIfAbsent(state, Bridge::modernConvertSetting);
         configuration.put(setting, convertEnumToIndexIfPresent(data.get(state)));
       }
       return configuration;
@@ -79,9 +71,8 @@ public final class BlockVariantConverter {
       if (state instanceof net.minecraft.server.v1_16_R1.BlockStateInteger) {
         net.minecraft.server.v1_16_R1.BlockStateInteger blockStateInteger = (net.minecraft.server.v1_16_R1.BlockStateInteger) state;
         Collection<Integer> values = blockStateInteger.getValues();
-        Integer min = values.stream().min(Integer::compare).orElse(0);
-        Integer max = values.stream().max(Integer::compare).orElse(0);
-        return new IntegerSetting(name, min, max);
+        IntSummaryStatistics statistics = values.stream().mapToInt(value -> value).summaryStatistics();
+        return new IntegerSetting(name, statistics.getMin(), statistics.getMax());
       } else if (state instanceof net.minecraft.server.v1_16_R1.BlockStateBoolean) {
         return new BooleanSetting(name);
       } else if (state instanceof net.minecraft.server.v1_16_R1.BlockStateEnum) {
@@ -99,11 +90,7 @@ public final class BlockVariantConverter {
       }
       Map<Setting<?>, Comparable<?>> configuration = new HashMap<>();
       for (IBlockState<?> state : states) {
-        Setting<?> setting = settingCache.get(state);
-        if (setting == null) {
-          setting = aquaticConvertSetting(state);
-          settingCache.put(state, setting);
-        }
+        Setting<?> setting = settingCache.computeIfAbsent(state, Bridge::aquaticConvertSetting);
         configuration.put(setting, convertEnumToIndexIfPresent(data.get(state)));
       }
       return configuration;
@@ -116,9 +103,8 @@ public final class BlockVariantConverter {
       if (state instanceof BlockStateInteger) {
         BlockStateInteger blockStateInteger = (BlockStateInteger) state;
         Collection<Integer> values = blockStateInteger.getValues();
-        Integer min = values.stream().min(Integer::compare).orElse(0);
-        Integer max = values.stream().max(Integer::compare).orElse(0);
-        return new IntegerSetting(name, min, max);
+        IntSummaryStatistics statistics = values.stream().mapToInt(value -> value).summaryStatistics();
+        return new IntegerSetting(name, statistics.getMin(), statistics.getMax());
       } else if (state instanceof BlockStateBoolean) {
         return new BooleanSetting(name);
       } else if (state instanceof BlockStateEnum) {
@@ -136,11 +122,7 @@ public final class BlockVariantConverter {
       }
       Map<Setting<?>, Comparable<?>> configuration = new HashMap<>();
       for (net.minecraft.server.v1_13_R2.IBlockState<?> state : states) {
-        Setting<?> setting = settingCache.get(state);
-        if (setting == null) {
-          setting = legacyConvertSetting(state);
-          settingCache.put(state, setting);
-        }
+        Setting<?> setting = settingCache.computeIfAbsent(state, Bridge::legacyConvertSetting);
         configuration.put(setting, convertEnumToIndexIfPresent(data.get(state)));
       }
       return configuration;
@@ -153,9 +135,8 @@ public final class BlockVariantConverter {
       if (state instanceof BlockStateInteger) {
         BlockStateInteger blockStateInteger = (BlockStateInteger) state;
         Collection<Integer> values = blockStateInteger.getValues();
-        Integer min = values.stream().min(Integer::compare).orElse(0);
-        Integer max = values.stream().max(Integer::compare).orElse(0);
-        return new IntegerSetting(name, min, max);
+        IntSummaryStatistics statistics = values.stream().mapToInt(value -> value).summaryStatistics();
+        return new IntegerSetting(name, statistics.getMin(), statistics.getMax());
       } else if (state instanceof BlockStateBoolean) {
         return new BooleanSetting(name);
       } else if (state instanceof BlockStateEnum) {

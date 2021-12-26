@@ -20,7 +20,7 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.feedback.FeedbackSender;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
-import de.jpx3.intave.module.mitigate.HurtimeModifier;
+import de.jpx3.intave.module.mitigate.HurttimeModifier;
 import de.jpx3.intave.module.violation.placeholder.PlayerContext;
 import de.jpx3.intave.module.violation.placeholder.UserContext;
 import de.jpx3.intave.packet.PacketSender;
@@ -392,7 +392,7 @@ final class PlayerUser implements User {
     if (fakePlayer != null) {
       fakePlayer.remove();
     }
-    HurtimeModifier.removeNoDamageTickChangeOf(this);
+    HurttimeModifier.removeNoDamageTickChangeOf(this);
     for (MessageChannel value : MessageChannel.values()) {
       MessageChannelSubscriptions.setChannelActivation(player(), value, false);
     }

@@ -40,7 +40,7 @@ public final class MethodLocation extends Location {
   }
 
   public String translatedKey() {
-    return targetMethodName() + targetMethodSignature();
+    return methodName(key()) + methodSignature(key());
   }
 
   private Method compile() {
@@ -49,7 +49,7 @@ public final class MethodLocation extends Location {
     String fromSig = methodSignature(from);
     String toSig = methodSignature(to);
     if (!fromSig.equals(toSig)) {
-      throw new IllegalStateException("Signatures must (still) match: " + fromSig + " != " + toSig);
+      throw new IllegalStateException("Signatures must ( still :( ) match: " + fromSig + " != " + toSig);
     }
     Class<?> ownerClass = Lookup.serverClass(classKey());
     Type[] argumentTypes = Type.getArgumentTypes(toSig);
@@ -75,19 +75,21 @@ public final class MethodLocation extends Location {
     return input.substring(0, input.indexOf("("));
   }
 
-  private final static Pattern REPLACE_REGEX = Pattern.compile("^R([a-z]|[A-Z])+;$");
+  private final static Pattern REPLACE_REGEX = Pattern.compile("R([a-z]|[A-Z]|[0-9]|\\$)+;");
 
   private String methodSignature(String input) {
     String signature = input.substring(input.indexOf("("));
     Matcher matcher = REPLACE_REGEX.matcher(signature);
-    while (matcher.find()) {
+    int lastEnd = 0;
+    while (matcher.find(lastEnd)) {
       int start = matcher.start();
       int end = matcher.end();
-      String expr = signature.substring(start + 1, end);
+      String expr = signature.substring(start + 1, end - 1);
       Class<?> serverClass = Lookup.serverClass(expr);
       String formattedServerClass = "L" + serverClass.getName().replace(".", "/") + ";";
-//      System.out.println("Found Regex Match " + matcher.group() + " in " + input + ", replacing with " + formattedServerClass);
-      signature = signature.substring(0, start) + formattedServerClass + signature.substring(end + 1);
+      signature = signature.substring(0, start) + formattedServerClass + signature.substring(end);
+      lastEnd = start + formattedServerClass.length();
+      matcher = REPLACE_REGEX.matcher(signature);
     }
     return signature;
   }
@@ -98,9 +100,8 @@ public final class MethodLocation extends Location {
 
   @Override
   public String toString() {
-    return "MethodLocation{"+classKey+"/"+key()+" -> "+target+" @"+versionMatcher()+"}";
+    return "MethodLocation{"+classKey+"."+key()+"/"+translatedKey()+" -> "+target+" @"+versionMatcher()+"}";
   }
-
 
   public static MethodLocation defaultFor(String classKey, String initialSignature) {
     return new MethodLocation(classKey, initialSignature, IntegerMatcher.between(8, 17), initialSignature);

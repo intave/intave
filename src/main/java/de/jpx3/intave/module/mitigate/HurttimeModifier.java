@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 
 import java.lang.reflect.Field;
 
-public final class HurtimeModifier {
+public final class HurttimeModifier {
   private static boolean hitDelayLinkageError = false;
 
   public static void applyHurtTimeChangeTo(Player player, int durationTicks, int additionalHurtTime) {

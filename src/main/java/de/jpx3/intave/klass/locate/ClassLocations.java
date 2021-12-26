@@ -1,15 +1,19 @@
 package de.jpx3.intave.klass.locate;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.Iterator;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public final class ClassLocations {
+public final class ClassLocations implements Iterable<ClassLocation> {
   private final Iterable<ClassLocation> classLocations;
 
   public ClassLocations(Iterable<ClassLocation> classLocations) {
@@ -41,7 +45,7 @@ public final class ClassLocations {
     return findAny().orElseGet(supplier);
   }
 
-  private Stream<ClassLocation> stream() {
+  public Stream<ClassLocation> stream() {
     return StreamSupport.stream(this.classLocations.spliterator(), false);
   }
 
@@ -49,5 +53,21 @@ public final class ClassLocations {
     return new ClassLocations(
       stream().filter(predicate).collect(Collectors.toList())
     );
+  }
+
+  @NotNull
+  @Override
+  public Iterator<ClassLocation> iterator() {
+    return classLocations.iterator();
+  }
+
+  @Override
+  public void forEach(Consumer<? super ClassLocation> action) {
+    classLocations.forEach(action);
+  }
+
+  @Override
+  public Spliterator<ClassLocation> spliterator() {
+    return classLocations.spliterator();
   }
 }

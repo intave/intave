@@ -3,7 +3,7 @@ package de.jpx3.intave.user.meta;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
-import de.jpx3.intave.module.mitigate.HurtimeModifier;
+import de.jpx3.intave.module.mitigate.HurttimeModifier;
 import de.jpx3.intave.player.dmc.DamageModify;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -69,14 +69,14 @@ public final class PunishmentMetadata {
       new AttackNerfer(AttackNerfStrategy.HT_MEDIUM, DAMAGE_CANCEL_MEDIUM_DURATION, event -> {
         // Perform hurt-time change
         int ticks = -ThreadLocalRandom.current().nextInt(4, 7);
-        HurtimeModifier.applyHurtTimeChangeTo(player, (int) (DAMAGE_CANCEL_MEDIUM_DURATION / 50), ticks);
+        HurttimeModifier.applyHurtTimeChangeTo(player, (int) (DAMAGE_CANCEL_MEDIUM_DURATION / 50), ticks);
         // Perform hurt-time change on entity
         performEntityHurtTimeChange(event.getEntity());
       }),
       new AttackNerfer(AttackNerfStrategy.HT_LIGHT, DAMAGE_CANCEL_LIGHT_DURATION, event -> {
         // Perform hurt-time change
         int ticks = -ThreadLocalRandom.current().nextInt(3, 4);
-        HurtimeModifier.applyHurtTimeChangeTo(player, (int) (DAMAGE_CANCEL_LIGHT_DURATION / 50), ticks);
+        HurttimeModifier.applyHurtTimeChangeTo(player, (int) (DAMAGE_CANCEL_LIGHT_DURATION / 50), ticks);
       }),
       new AttackNerfer(AttackNerfStrategy.BLOCKING, BLOCKING_DAMAGE_CANCEL_DURATION, event -> {
         DamageModify.withNewDamageApplier(event, BLOCKING, current -> -0d);
@@ -112,7 +112,7 @@ public final class PunishmentMetadata {
     }
     Player player = (Player) entity;
     int increase = 2;
-    HurtimeModifier.applyHurtTimeChangeTo(player, (int) (ENTITY_HURT_TIME_CHANGE_DURATION / 50), increase);
+    HurttimeModifier.applyHurtTimeChangeTo(player, (int) (ENTITY_HURT_TIME_CHANGE_DURATION / 50), increase);
   }
 
   public List<AttackNerfer> availableAttackNerfer() {

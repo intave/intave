@@ -2,13 +2,41 @@ package de.jpx3.intave.klass;
 
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.klass.locate.Locate;
+import de.jpx3.intave.lib.asm.Type;
 import org.bukkit.Bukkit;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Arrays;
 
 public final class Lookup {
   private final static String VERSION = Bukkit.getServer().getClass().getPackage().getName().substring(23);
   private final static String CRAFT_BUKKIT_PREFIX = "org.bukkit.craftbukkit." + VERSION;
+
+  public static Method serverMethod(String classKey, String name, Class<?> returnType) {
+    return serverMethod(classKey, name, new Class[0], returnType);
+  }
+
+  public static Method serverMethod(String classKey, String name, Class<?>[] arguments) {
+    return serverMethod(classKey, name, arguments, Void.TYPE);
+  }
+
+  public static Method serverMethod(String classKey, String name, Class<?>[] arguments, Class<?> returnType) {
+    Type[] argumentTypes = Arrays.stream(arguments).map(Type::getType).toArray(Type[]::new);
+    return serverMethod(classKey, name + Type.getMethodDescriptor(Type.getType(returnType), argumentTypes));
+  }
+
+  public static Method serverMethod(String classKey, String name, Type[] arguments) {
+    return serverMethod(classKey, name + Type.getMethodDescriptor(Type.VOID_TYPE, arguments));
+  }
+
+  public static Method serverMethod(String classKey, String name, Type[] arguments, Type returnType) {
+    return serverMethod(classKey, name + Type.getMethodDescriptor(returnType, arguments));
+  }
+
+  public static Method serverMethod(String classKey, String methodKey) {
+    return Locate.methodByKey(classKey, methodKey);
+  }
 
   public static Field serverField(String serverClassName, String fieldName) {
     return Locate.fieldByKey(serverClassName, fieldName);

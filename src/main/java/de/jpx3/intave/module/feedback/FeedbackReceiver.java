@@ -83,7 +83,7 @@ public final class FeedbackReceiver extends Module {
       TRANSACTION, PONG
     }
   )
-  public void onPacketReceiving(PacketEvent event) {
+  public void receiveAcknowledgementPacket(PacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     if (user == null) {

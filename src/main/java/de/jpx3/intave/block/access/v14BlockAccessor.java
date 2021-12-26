@@ -17,6 +17,8 @@ import org.bukkit.craftbukkit.v1_14_R1.util.CraftMagicNumbers;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.Objects;
+
 @PatchyAutoTranslation
 public final class v14BlockAccessor implements BlockAccessor {
   private final static boolean INVENTORY_VIA_GETTER = MinecraftVersions.VER1_17_0.atOrAbove();
@@ -93,16 +95,16 @@ public final class v14BlockAccessor implements BlockAccessor {
       return false;
     }
     User user = UserRepository.userOf(player);
-    int heldItemType = user.meta().inventory().handSlot();
+    int heldSlot = user.meta().inventory().handSlot();
     net.minecraft.server.v1_14_R1.BlockPosition blockPosition = positionOfNative(nativeBlockPosition);
     IBlockData blockData = blockAccess.getType(blockPosition);
     Object heldItem;
     if (INVENTORY_VIA_GETTER) {
-      heldItem = ((org.bukkit.craftbukkit.v1_17_R1.entity.CraftPlayer) player).getHandle().getInventory().getItem(heldItemType).getItem();
+      heldItem = ((org.bukkit.craftbukkit.v1_17_R1.entity.CraftPlayer) player).getHandle().getInventory().getItem(heldSlot).getItem();
     } else {
-      heldItem = ((CraftPlayer) player).getHandle().inventory.getItem(heldItemType).getItem();
+      heldItem = ((CraftPlayer) player).getHandle().inventory.getItem(heldSlot).getItem();
     }
-    return blockData.getMaterial().isReplaceable() && blockData.getBlock().getItem().getItem() == heldItem;
+    return blockData.getMaterial().isReplaceable() && Objects.equals(blockData.getBlock().getItem(), heldItem);
   }
 
   @PatchyAutoTranslation

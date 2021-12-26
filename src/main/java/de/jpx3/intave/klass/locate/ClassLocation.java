@@ -36,6 +36,13 @@ public final class ClassLocation extends Location {
     return location.replace("{version}", Lookup.version());
   }
 
+  @Override
+  public String toString() {
+    return "ClassLocation{" +
+      key() + " -> " + compiledLocation() +
+      '}';
+  }
+
   public static ClassLocation defaultFor(String name) {
     return new ClassLocation(name, IntegerMatcher.between(8, 16), "net.minecraft.server.{version}." + name);
   }

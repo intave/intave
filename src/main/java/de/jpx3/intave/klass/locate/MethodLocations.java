@@ -1,16 +1,20 @@
 package de.jpx3.intave.klass.locate;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public final class MethodLocations {
+public final class MethodLocations implements Iterable<MethodLocation> {
   private final Iterable<MethodLocation> methodLocations;
 
   public MethodLocations(Iterable<MethodLocation> methodLocations) {
@@ -58,5 +62,21 @@ public final class MethodLocations {
 
   public static MethodLocations empty() {
     return new MethodLocations(Collections.emptyList());
+  }
+
+  @Override
+  public void forEach(Consumer<? super MethodLocation> action) {
+    methodLocations.forEach(action);
+  }
+
+  @Override
+  public Spliterator<MethodLocation> spliterator() {
+    return methodLocations.spliterator();
+  }
+
+  @NotNull
+  @Override
+  public Iterator<MethodLocation> iterator() {
+    return methodLocations.iterator();
   }
 }

@@ -3,7 +3,7 @@ package de.jpx3.intave.user;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.cleanup.ShutdownTasks;
 import de.jpx3.intave.diagnostic.MemoryWatchdog;
-import de.jpx3.intave.module.mitigate.HurtimeModifier;
+import de.jpx3.intave.module.mitigate.HurttimeModifier;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -24,7 +24,7 @@ public final class UserRepository {
   public static void registerUser(Player player) {
     repository.put(player.getUniqueId(), UserFactory.createUserFor(player));
     if (IntaveControl.RESET_HURT_TIME_ON_JOIN) {
-      HurtimeModifier.setNoDamageTicksOf(player, 20);
+      HurttimeModifier.setNoDamageTicksOf(player, 20);
     }
   }
 

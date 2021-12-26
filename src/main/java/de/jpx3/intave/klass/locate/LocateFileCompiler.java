@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 public final class LocateFileCompiler implements CompilerStreamFunctionProvider<Locations> {
   public Locations apply(List<String> lines) {
     lines.removeIf(String::isEmpty);
+    lines.removeIf(s -> s.startsWith("#"));
     lines.removeIf(string -> string.trim().isEmpty());
     List<ClassLocation> classLocations = new ArrayList<>();
     List<FieldLocation> fieldLocations = new ArrayList<>();
@@ -25,12 +26,18 @@ public final class LocateFileCompiler implements CompilerStreamFunctionProvider<
         List<String> methodLines = new ArrayList<>();
         boolean fieldScope = false, methodScope = false;
         while (!(line = lines.get(++i)).equals("}")) {
-          if (line.contains("methods {")) {
+          if (line.startsWith("  methods {")) {
+            if (fieldScope) {
+              throw new IllegalStateException("Method scope entrance whilst field scope still active");
+            }
             methodScope = true;
-            fieldScope = false;
-          } else if (line.contains("fields {")) {
+          } else if (line.startsWith("  fields {")) {
+            if (fieldScope) {
+              throw new IllegalStateException("Field scope entrance whilst method scope still active");
+            }
             fieldScope = true;
-            methodScope = false;
+          } else if (line.startsWith("  }")) {
+            fieldScope = methodScope = false;
           } else if (fieldScope) {
             fieldLines.add(line.trim());
           } else if (methodScope) {
@@ -57,11 +64,20 @@ public final class LocateFileCompiler implements CompilerStreamFunctionProvider<
     if (affectedLines.isEmpty()) {
       return Collections.emptyList();
     }
-    String firstLine = affectedLines.get(0);
-    String matcherInput = firstLine.split("->")[0].trim();
-    IntegerMatcher matcher = matcherOf(matcherInput);
-
-    return methodInnerCompile(className, matcher, affectedLines.subList(1, affectedLines.size()));
+    affectedLines = new ArrayList<>(affectedLines);
+    List<MethodLocation> result = new ArrayList<>();
+    while (!affectedLines.isEmpty()) {
+      String firstLine = affectedLines.remove(0);
+      String matcherInput = firstLine.split("->")[0].trim();
+      int exit = affectedLines.indexOf("}");
+      if (exit < 0) {
+        throw new IllegalStateException("End block expected in " + className + " of " + affectedLines);
+      }
+      List<String> linesThisSelector = affectedLines.subList(0, exit + 1);
+      result.addAll(methodInnerCompile(className, matcherOf(matcherInput), linesThisSelector));
+      affectedLines.removeAll(linesThisSelector);
+    }
+    return result;
   }
 
   private List<MethodLocation> methodInnerCompile(String className, IntegerMatcher matcher, List<String> affectedLines) {
@@ -82,10 +98,20 @@ public final class LocateFileCompiler implements CompilerStreamFunctionProvider<
     if (affectedLines.isEmpty()) {
       return Collections.emptyList();
     }
-    String firstLine = affectedLines.get(0);
-    String matcherInput = firstLine.split("->")[0].trim();
-    IntegerMatcher matcher = matcherOf(matcherInput);
-    return fieldInnerCompile(className, matcher, affectedLines.subList(1, affectedLines.size()));
+    affectedLines = new ArrayList<>(affectedLines);
+    List<FieldLocation> result = new ArrayList<>();
+    while (!affectedLines.isEmpty()) {
+      String firstLine = affectedLines.remove(0);
+      String matcherInput = firstLine.split("->")[0].trim();
+      int exit = affectedLines.indexOf("}");
+      if (exit < 0) {
+        throw new IllegalStateException("End block expected in " + className + " of " + affectedLines);
+      }
+      List<String> linesThisSelector = affectedLines.subList(0, exit + 1);
+      result.addAll(fieldInnerCompile(className, matcherOf(matcherInput), linesThisSelector));
+      affectedLines.removeAll(linesThisSelector);
+    }
+    return result;
   }
 
   private List<FieldLocation> fieldInnerCompile(String className, IntegerMatcher matcher, List<String> affectedLines) {
