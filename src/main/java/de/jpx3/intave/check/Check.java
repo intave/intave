@@ -102,6 +102,12 @@ import java.util.function.Consumer;
     checkParts.add(checkPart);
   }
 
+  protected void appendCheckParts(CheckPart<?>... checkParts) {
+    for (CheckPart<?> checkPart : checkParts) {
+      appendCheckPart(checkPart);
+    }
+  }
+
   /**
    * Retrieves a {@link TrustFactor} setting for a given key using the trustfactor of the given {@link Player}.
    * @param key the trustfactor setting key

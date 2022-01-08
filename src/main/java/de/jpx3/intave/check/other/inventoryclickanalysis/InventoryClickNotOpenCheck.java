@@ -48,6 +48,11 @@ public final class InventoryClickNotOpenCheck extends CheckPart<InventoryClickAn
     boolean isNativeInventoryClick = container == 0;
     boolean forceInventoryOnClickOpen = user.meta().inventory().forceInventoryOnClickOpen;
 
+    // Do not remove! @Richy
+    if (!forceInventoryOnClickOpen) {
+      return;
+    }
+
     if (!inventory.inventoryOpen()) {
       if (user.meta().protocol().supportsInventoryAchievementPacket()) {
         Violation violation = Violation.builderFor(InventoryClickAnalysis.class)
@@ -58,7 +63,7 @@ public final class InventoryClickNotOpenCheck extends CheckPart<InventoryClickAn
         Modules.violationProcessor().processViolation(violation);
         Synchronizer.synchronize(player::updateInventory);
         event.setCancelled(true);
-      } else if (forceInventoryOnClickOpen && isNativeInventoryClick) {
+      } else if (isNativeInventoryClick) {
         user.meta().inventory().updateInventoryOpenState(true);
       }
     }

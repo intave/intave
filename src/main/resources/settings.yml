@@ -94,6 +94,8 @@ check:
 
     invokant: false
 
+    check_sent_slot_twice_vl: 100
+
     thresholds:
       50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is sending invalid packets"
       100:
@@ -139,10 +141,6 @@ check:
         - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking too quickly"
         - "intave internals collectivekick {player} &cYou have been kicked, as an account with your ip address was removed from the game"
         - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat"
-
-  abilityspeedlimiter:
-
-    # pure emptiness
 
 blacklist:
 
