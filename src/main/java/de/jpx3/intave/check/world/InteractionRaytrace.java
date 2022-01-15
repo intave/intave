@@ -105,16 +105,27 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       }
       Material clickedType = VolatileBlockAccess.typeAccess(user, blockPosition.toLocation(player.getWorld()));
       boolean clickableInteraction = BlockInteractionAccess.isClickable(clickedType);
-      Material heldItemType = user.meta().inventory().heldItemType();
-      boolean interactionIsPlacement = heldItemType != Material.AIR && heldItemType.isBlock() && !clickableInteraction && !abilityMetadata.inGameMode(GameMode.ADVENTURE);
+      ItemStack heldItem = user.meta().inventory().heldItem();
 
       EnumWrappers.Hand handSlot = packet.getHands().readSafely(0);
       handSlot = handSlot == null ? EnumWrappers.Hand.MAIN_HAND : handSlot;
 
+      Material heldItemType = heldItem == null ? Material.AIR : heldItem.getType();
+      Material offHandItemType = user.meta().inventory().offhandItemType();
+      Material interactedBlockType = handSlot == EnumWrappers.Hand.MAIN_HAND ? heldItemType : offHandItemType;
+      if (interactedBlockType == null) {
+        interactedBlockType = Material.AIR;
+      }
+
+      boolean interactionIsPlacement = interactedBlockType != Material.AIR
+        && interactedBlockType.isBlock()
+        && !clickableInteraction
+        && !abilityMetadata.inGameMode(GameMode.ADVENTURE);
+
       Interaction interaction = new Interaction(
         packet.deepClone(), player.getWorld(), player, blockPosition, enumDirection,
         interactionIsPlacement ? InteractionType.PLACE : InteractionType.INTERACT,
-        heldItemType, handSlot, null
+        interactedBlockType, handSlot, null
       );
 
       boolean mustPostValidate = interactionMeta.remainingBlockStart > 0;

@@ -1,6 +1,7 @@
 package de.jpx3.intave.user.meta;
 
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.annotate.refactoring.IdoNotBelongHere;
 import de.jpx3.intave.player.Enchantments;
@@ -46,15 +47,23 @@ public final class InventoryMetadata {
     return handActive;
   }
 
+  @Nullable
   public ItemStack heldItem() {
     return player == null ? null : player.getInventory().getItem(handSlot);//heldItem;
   }
 
+  @Nullable
   public ItemStack offhandItem() {
     if (!MinecraftVersions.VER1_9_0.atOrAbove()) {
       return null;
     }
     return player == null ? null : player.getInventory().getItemInOffHand();
+  }
+
+  @Nullable
+  public Material offhandItemType() {
+    ItemStack item = offhandItem();
+    return item == null ? null : item.getType();
   }
 
   public int handSlot() {
