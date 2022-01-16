@@ -153,7 +153,7 @@ public final class SimulationEvaluator {
       multiplier = 5000;
     } else if (abuseVertically > 0.009 && !allowDeviation) {
       abuseVertically = Math.max(abuseVertically, 0.1);
-      multiplier = 200;
+      multiplier = 500;
     } else {
       multiplier = 100;
     }
@@ -183,6 +183,8 @@ public final class SimulationEvaluator {
         abuseVertically = 0;
       }
     }
+
+    player.sendMessage("deviation:" + legitimateDeviation + " " + abuseVertically + " " + multiplier);
 
     return abuseVertically * multiplier;
   }
