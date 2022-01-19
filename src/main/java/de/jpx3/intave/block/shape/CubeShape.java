@@ -83,4 +83,13 @@ public final class CubeShape extends MemoryTraced implements BlockShape {
       boundingBox.maxY > min(Y_AXIS) && boundingBox.minY < max(Y_AXIS) &&
       boundingBox.maxZ > min(Z_AXIS) && boundingBox.minZ < max(Z_AXIS);
   }
+
+  @Override
+  public String toString() {
+    return "CubeShape{" +
+      "x=" + x +
+      ", y=" + y +
+      ", z=" + z +
+      '}';
+  }
 }

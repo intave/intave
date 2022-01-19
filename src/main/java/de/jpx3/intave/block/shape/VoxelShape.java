@@ -153,4 +153,20 @@ public final class VoxelShape implements BlockShape {
   public boolean isEmpty() {
     return this.storage.isEmpty();
   }
+
+  @Override
+  public String toString() {
+    return "VoxelShape{" +
+      "storage=" + storage +
+      ", sizeX=" + sizeX +
+      ", sizeY=" + sizeY +
+      ", sizeZ=" + sizeZ +
+      ", startX=" + startX +
+      ", startY=" + startY +
+      ", startZ=" + startZ +
+      ", endX=" + endX +
+      ", endY=" + endY +
+      ", endZ=" + endZ +
+      '}';
+  }
 }

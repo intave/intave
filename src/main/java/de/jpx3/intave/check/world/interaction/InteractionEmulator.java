@@ -29,6 +29,8 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 
+import static de.jpx3.intave.IntaveControl.DUMP_BLOCK_HITBOX_ON_RIGHT_CLICK;
+
 public final class InteractionEmulator implements EventProcessor {
   private final IntavePlugin plugin;
 
@@ -230,6 +232,11 @@ public final class InteractionEmulator implements EventProcessor {
     World world = player.getWorld();
     BlockStateAccess blockStateAccess = userOf(player).blockStates();
     Material clickedType = BlockTypeAccess.typeAccess(block, player);
+
+    if (DUMP_BLOCK_HITBOX_ON_RIGHT_CLICK) {
+      player.sendMessage(String.valueOf(blockStateAccess.shapeAt(block.getX(), block.getY(), block.getZ())));
+    }
+
     switch (clickedType) {
       case ACACIA_DOOR:
       case DARK_OAK_DOOR:

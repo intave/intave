@@ -67,4 +67,12 @@ public final class MergeBlockShape implements BlockShape {
   public boolean intersectsWith(BoundingBox boundingBox) {
     return shapeA.intersectsWith(boundingBox) || shapeB.intersectsWith(boundingBox);
   }
+
+  @Override
+  public String toString() {
+    return "MergedShape{" +
+      "shapeA=" + shapeA +
+      ", shapeB=" + shapeB +
+      '}';
+  }
 }

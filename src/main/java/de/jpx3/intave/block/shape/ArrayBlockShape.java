@@ -5,6 +5,7 @@ import de.jpx3.intave.shade.BoundingBox;
 import de.jpx3.intave.shade.Direction;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -96,5 +97,12 @@ public final class ArrayBlockShape extends MemoryTraced implements BlockShape {
       }
     }
     return false;
+  }
+
+  @Override
+  public String toString() {
+    return "ArrayBlockShape{" +
+      "contents=" + Arrays.toString(contents) +
+      '}';
   }
 }

@@ -413,7 +413,7 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
 
   // box
   public String toString() {
-    return "box[" + this.minX + ", " + this.minY + ", " + this.minZ + " -> " + this.maxX + ", " + this.maxY + ", " + this.maxZ + "]";
+    return "Box{" + this.minX + ", " + this.minY + ", " + this.minZ + " -> " + this.maxX + ", " + this.maxY + ", " + this.maxZ + "}";
   }
 
   // position
@@ -497,15 +497,15 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
     double x1, double y1, double z1,
     double x2, double y2, double z2
   ) {
-    double d0 = Math.min(x1, x2);
-    double d1 = Math.min(y1, y2);
-    double d2 = Math.min(z1, z2);
-    double d3 = Math.max(x1, x2);
-    double d4 = Math.max(y1, y2);
-    double d5 = Math.max(z1, z2);
+    double fromX = Math.min(x1, x2);
+    double fromY = Math.min(y1, y2);
+    double fromZ = Math.min(z1, z2);
+    double toX = Math.max(x1, x2);
+    double toY = Math.max(y1, y2);
+    double toZ = Math.max(z1, z2);
     return new BoundingBox(
-      d0 / 16D, d1 / 16D, d2 / 16D,
-      d3 / 16D, d4 / 16D, d5 / 16D
+      fromX / 16D, fromY / 16D, fromZ / 16D,
+      toX / 16D, toY / 16D, toZ / 16D
     );
   }
 

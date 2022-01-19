@@ -19,6 +19,8 @@ public final class IntaveControl {
   public final static boolean NETTY_DUMP_ON_TIMEOUT = true;
   public final static boolean FILL_UFOE_STACKTRACE = false;
   public final static boolean USE_TIMINGS = true;
+  public final static boolean DUMP_BLOCK_HITBOX_ON_RIGHT_CLICK = false;
+  public final static boolean SETBACK_WITH_PRESSED_KEYS = false;
 
   public final static boolean USE_EXTERNAL_CONFIGURATION_FILE = true;
   public final static boolean GOMME_MODE = false;

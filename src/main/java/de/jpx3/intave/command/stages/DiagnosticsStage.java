@@ -166,7 +166,6 @@ public final class DiagnosticsStage extends CommandStage {
     try {
       FileOutputStream stream = new FileOutputStream(threadDumpFile);
       PrintStream printStream = new PrintStream(stream);
-//      printStream.println("============= <Intave Thread Dump Header> =============");
       printStream.println("Static environment");
       printStream.println(" Time: " + LocalDateTime.now().format(MESSAGE_DATE_FORMATTER));
       printStream.println(" Intave: " + IntavePlugin.version());
@@ -181,7 +180,6 @@ public final class DiagnosticsStage extends CommandStage {
       printStream.println("Players");
       printStream.println(" Thread dump creator: " + sender.getName());
       printStream.println(" Players online: " + Bukkit.getOnlinePlayers().size() + "/" + Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList()));
-//      printStream.println("============= </Intave Thread Dump Header> =============");
       printStream.println(" ");
       Thread.getAllStackTraces().forEach((thread, stackTraceElements) -> {
         String threadName = thread.getName();

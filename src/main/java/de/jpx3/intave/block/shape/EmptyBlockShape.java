@@ -46,4 +46,9 @@ final class EmptyBlockShape implements BlockShape {
   public boolean intersectsWith(BoundingBox boundingBox) {
     return false;
   }
+
+  @Override
+  public String toString() {
+    return "EmptyBlockShape{}";
+  }
 }

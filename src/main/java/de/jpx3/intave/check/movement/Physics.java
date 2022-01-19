@@ -342,7 +342,12 @@ public final class Physics extends Check {
     }
     if (distance > 1e-3) {
       movementData.suspiciousMovement = true;
-      Simulation otherSimulation = simulationProcessor.simulateWithoutKeyPress(user, selectSimulator(user));
+      Simulation otherSimulation;
+      if (IntaveControl.SETBACK_WITH_PRESSED_KEYS) {
+        otherSimulation = simulationProcessor.simulateWithKeyPress(user, selectSimulator(user), movementData.keyForward, movementData.keyStrafe, false);
+      } else {
+        otherSimulation = simulationProcessor.simulateWithoutKeyPress(user, selectSimulator(user));
+      }
       Motion setbackMotion = otherSimulation.motion();
       predictedX = setbackMotion.motionX;
       predictedY = setbackMotion.motionY;
@@ -426,8 +431,10 @@ public final class Physics extends Check {
       violationLevelIncrease = Math.max(1, violationLevelIncrease);
       violationLevelData.physicsVL = MathHelper.minmax(0, violationLevelData.physicsVL + violationLevelIncrease, 200);
       violationLevelData.physicsInvalidMovementsInRow++;
-      if (!IntaveControl.IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT) {
-        blockStateAccess.invalidateAll();
+      if (violationLevelData.physicsVL > 20) {
+        if (!IntaveControl.IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT) {
+          blockStateAccess.invalidateAll();
+        }
       }
       // resend attributes
       statisticApply(user, CheckStatistics::increaseFails);
