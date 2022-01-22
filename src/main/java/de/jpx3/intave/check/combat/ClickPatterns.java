@@ -19,7 +19,7 @@ public final class ClickPatterns extends Check {
 
   public void makeDetection(Player player, String details, double vl) {
     Violation violation = Violation.builderFor(ClickPatterns.class)
-      .forPlayer(player).withMessage("clicks suspiciously deviant").withDetails(details)
+      .forPlayer(player).withMessage("clicks suspiciously").withDetails(details)
       .withVL(vl).withDefaultThreshold().build();
     Modules.violationProcessor().processViolation(violation);
   }

@@ -9,9 +9,6 @@ public final class LowDeviationClickPattern extends MetaCheckPart<ClickPatterns,
     super(parentCheck, LowDeviationMeta.class);
   }
 
-
-
-
   public static class LowDeviationMeta extends CheckCustomMetadata {
     
   }
