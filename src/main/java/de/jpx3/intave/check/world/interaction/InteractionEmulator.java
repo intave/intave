@@ -29,6 +29,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
+import org.bukkit.util.NumberConversions;
 
 import static de.jpx3.intave.IntaveControl.DUMP_BLOCK_HITBOX_ON_RIGHT_CLICK;
 
@@ -118,6 +119,11 @@ public final class InteractionEmulator implements EventProcessor {
       // add to future bounding boxes
       BlockStateAccess blockStateAccess = userOf(player).blockStates();
 
+      Location verifiedLocation = user.meta().movement().verifiedLocation();
+      if (distance(verifiedLocation, blockPosition) < 2 && blockPosition.getY() < verifiedLocation.getBlockY()) {
+        user.meta().movement().pastNearbyCollisionInaccuracy = 0;
+      }
+
       Material material = blockStateAccess.typeAt(blockX, blockY, blockZ);
       if (material == BlockTypeAccess.WEB) {
         boolean playerInsideWeb = Collision.playerInImaginaryBlock(
@@ -128,8 +134,17 @@ public final class InteractionEmulator implements EventProcessor {
         }
       }
       blockStateAccess.override(world, blockX, blockY, blockZ, Material.AIR, 0);
+      blockStateAccess.invalidateCacheAt(blockX, blockY, blockZ);
     }
     return access ? EmulationResult.SUCCEEDED : EmulationResult.FAILED;
+  }
+
+  private static double distance(Location playerLocation, BlockPosition blockPosition) {
+    return Math.sqrt(
+      NumberConversions.square(playerLocation.getBlockX() - blockPosition.getX()) +
+        NumberConversions.square(playerLocation.getBlockY() - blockPosition.getY()) +
+        NumberConversions.square(playerLocation.getBlockZ() - blockPosition.getZ())
+    );
   }
 
   private EmulationResult emulatePlacement(Player player, Interaction interaction) {
@@ -172,11 +187,12 @@ public final class InteractionEmulator implements EventProcessor {
         }
       }
       user.meta().movement().pastBlockPlacement = 0;
-      BlockStateAccess blockStateAccess = user.blockStates();
-      blockStateAccess.override(world, blockX, blockY, blockZ, replacementType, variant);
+      BlockStateAccess blockStates = user.blockStates();
+      blockStates.override(world, blockX, blockY, blockZ, replacementType, variant);
+      blockStates.invalidateCacheAt(blockX, blockY, blockZ);
       // enforce block reset later
       Synchronizer.synchronize(() -> {
-        Synchronizer.synchronize(() -> blockStateAccess.invalidateOverride(blockX, blockY, blockZ));
+        Synchronizer.synchronize(() -> blockStates.invalidateOverride(blockX, blockY, blockZ));
       });
     } else {
       return EmulationResult.FAILED;

@@ -7,6 +7,7 @@ import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.annotate.HighOrderService;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.check.combat.AttackRaytrace;
+import de.jpx3.intave.check.combat.ClickPatterns;
 import de.jpx3.intave.check.combat.ClickSpeedLimiter;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.movement.Physics;
@@ -65,12 +66,13 @@ public final class CheckService {
     addCheck(InteractionRaytrace.class);
     addCheck(Heuristics.class);
     addCheck(AttackRaytrace.class);
+    addCheck(ClickPatterns.class);
+    addCheck(ClickSpeedLimiter.class);
     addCheck(Timer.class);
     addCheck(BreakSpeedLimiter.class);
     addCheck(ProtocolScanner.class);
     addCheck(PlacementAnalysis.class);
     addCheck(InventoryClickAnalysis.class);
-    addCheck(ClickSpeedLimiter.class);
 
     bakeQuickAccess();
     checkLinker.linkBukkitEventSubscriptions(checks);

@@ -87,11 +87,12 @@ check:
 
     enabled: true
 
-    50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is clicking with suspicious deviancy (auto-clicker)"
-    100:
-      - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for clicking with suspicious deviancy (auto-clicker)"
-      - "intave internals collectivekick {player} &cYou have been kicked, as an account with your ip address was removed from the game"
-      - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat"
+    thresholds:
+      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is clicking statistically anomalous (auto-clicker)"
+      100:
+        - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for clicking statistically anomalous (auto-clicker)"
+        - "intave internals collectivekick {player} &cYou have been kicked, as an account with your ip address was removed from the game"
+        - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat"
 
   clickspeedlimiter:
 

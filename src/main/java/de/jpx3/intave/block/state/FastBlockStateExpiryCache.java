@@ -4,20 +4,27 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import de.jpx3.intave.shade.Position;
 import org.bukkit.Location;
+import org.bukkit.entity.Player;
 
 import java.util.Map;
 import java.util.Set;
 
 final class FastBlockStateExpiryCache {
-  private final Map<Location, BlockState> located = Maps.newConcurrentMap();
+  private final Map<Position, BlockState> located = Maps.newConcurrentMap();
   private final Map<Long, BlockState> indexed = Maps.newConcurrentMap();
-  private final Set<Location> locations = Sets.newConcurrentHashSet();
+  private final Set<Position> locations = Sets.newConcurrentHashSet();
+
+  private final Player player;
+
+  FastBlockStateExpiryCache(Player player) {
+    this.player = player;
+  }
 
   public BlockState byKey(long index) {
     return indexed.get(index);
   }
 
-  public void insert(Location position, BlockState blockState) {
+  public void insert(Position position, BlockState blockState) {
     located.put(position, blockState);
     locations.add(position);
     indexed.put(bigKey(position), blockState);
@@ -32,9 +39,10 @@ final class FastBlockStateExpiryCache {
   }
 
   public void internalRefresh() {
-    for (Location location : locations) {
+    for (Position location : locations) {
       BlockState blockState = located.get(location);
       if (blockState == null || blockState.expired()) {
+//        player.sendMessage("Refreshed " + location + " " + (blockState == null ? "null" : blockState.age()));
         locations.remove(location);
         located.remove(location);
         indexed.remove(bigKey(location));
@@ -43,9 +51,9 @@ final class FastBlockStateExpiryCache {
   }
 
   public void chunkReset(int chunkXMinPos, int chunkXMaxPos, int chunkZMinPos, int chunkZMaxPos) {
-    for (Location location : located.keySet()) {
-      if (location.getX() >= chunkXMinPos && location.getX() < chunkXMaxPos &&
-        location.getZ() >= chunkZMinPos && location.getZ() < chunkZMaxPos) {
+    for (Position location : located.keySet()) {
+      if (location.xCoordinate() >= chunkXMinPos && location.xCoordinate() < chunkXMaxPos &&
+        location.zCoordinate() >= chunkZMinPos && location.zCoordinate() < chunkZMaxPos) {
         long key = bigKey(location);
         located.remove(location);
         locations.remove(location);
@@ -60,7 +68,7 @@ final class FastBlockStateExpiryCache {
     locations.clear();
   }
 
-  public Map<Location, BlockState> located() {
+  public Map<Position, BlockState> located() {
     return located;
   }
 
@@ -68,7 +76,7 @@ final class FastBlockStateExpiryCache {
     return indexed;
   }
 
-  public Set<Location> locations() {
+  public Set<Position> locations() {
     return locations;
   }
 

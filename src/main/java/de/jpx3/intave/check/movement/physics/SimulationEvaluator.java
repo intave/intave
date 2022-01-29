@@ -250,7 +250,7 @@ public final class SimulationEvaluator {
     // Flying packet
     if (movementData.recentlyEncounteredFlyingPacket(2)) {
       if (movementData.onGround) {
-        boolean lessThanExpected = distanceMoved <= predictedDistanceMoved;
+        boolean lessThanExpected = distanceMoved <= predictedDistanceMoved + 0.02;
         legitimateDeviation = Math.max(legitimateDeviation, lessThanExpected ? 0.115 : 0.005);
       } else {
         legitimateDeviation = Math.max(legitimateDeviation, 0.05);

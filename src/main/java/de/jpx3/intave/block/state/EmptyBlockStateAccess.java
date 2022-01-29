@@ -2,7 +2,7 @@ package de.jpx3.intave.block.state;
 
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
-import org.bukkit.Location;
+import de.jpx3.intave.shade.Position;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
@@ -61,7 +61,7 @@ public final class EmptyBlockStateAccess implements BlockStateAccess {
   }
 
   @Override
-  public Map<Location, BlockState> locatedReplacements() {
+  public Map<Position, BlockState> locatedReplacements() {
     return Collections.emptyMap();
   }
 

@@ -10,6 +10,7 @@ import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.variant.BlockVariantAccess;
 import de.jpx3.intave.diagnostic.ShapeAccessFlowStudy;
 import de.jpx3.intave.math.Hypot;
+import de.jpx3.intave.shade.Position;
 import de.jpx3.intave.world.WorldHeight;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -26,7 +27,7 @@ public final class MultiChunkKeyBlockStateAccess implements BlockStateAccess {
   private final Player player;
   private final ShapeResolverPipeline shapeResolver;
   private final Map<Long, BlockState> blockCache = Maps.newConcurrentMap();
-  private final FastBlockStateExpiryCache replacementCache = new FastBlockStateExpiryCache();
+  private final FastBlockStateExpiryCache replacementCache;
   private int originChunkX, originChunkZ;
   private int chunkX, chunkZ;
 
@@ -35,6 +36,7 @@ public final class MultiChunkKeyBlockStateAccess implements BlockStateAccess {
   ) {
     this.player = player;
     this.shapeResolver = resolver;
+    this.replacementCache = new FastBlockStateExpiryCache(player);
   }
 
   @Override
@@ -161,6 +163,7 @@ public final class MultiChunkKeyBlockStateAccess implements BlockStateAccess {
   public void invalidateAll() {
     invalidateCache();
     replacementCache.clear();
+//    player.sendMessage(ChatColor.GOLD + "invalidateAll()");
   }
 
   @Override
@@ -171,11 +174,16 @@ public final class MultiChunkKeyBlockStateAccess implements BlockStateAccess {
   @Override
   public void invalidateCacheAt0(int posX, int posY, int posZ) {
     blockCache.remove(bigKey(posX, posY, posZ));
+
+//    player.sendMessage(ChatColor.GOLD + "invalidateCacheAt0("+posX+", "+posY+", "+posZ+")");
   }
 
   @Override
   public void override(World world, int posX, int posY, int posZ, Material type, int variant) {
-    invalidateOverride(posX, posY, posZ);
+//    invalidateOverride(posX, posY, posZ);
+    long key = bigKey(posX, posY, posZ);
+    replacementCache.remove(key);
+
     BlockState blockState;
     if (type == Material.AIR) {
       blockState = BlockState.empty();
@@ -183,8 +191,9 @@ public final class MultiChunkKeyBlockStateAccess implements BlockStateAccess {
       BlockShape shape = shapeResolver.resolve(world, player, type, variant, posX, posY, posZ);
       blockState = new BlockState(shape, type, variant);
     }
-    Location position = new Location(null, posX, posY, posZ);
+    Position position = new Position(posX, posY, posZ);
     replacementCache.insert(position, blockState);
+//    player.sendMessage(ChatColor.GOLD + "override("+posX+", "+posY+", "+posZ+", "+type+")");
   }
 
   @Override
@@ -208,15 +217,21 @@ public final class MultiChunkKeyBlockStateAccess implements BlockStateAccess {
   public void invalidateOverride(int posX, int posY, int posZ) {
     long key = bigKey(posX, posY, posZ);
     replacementCache.remove(key);
+//    player.sendMessage(ChatColor.GOLD + "invalidateOverride("+posX+", "+posY+", "+posZ+")");
   }
 
+  private long lastPurge = System.currentTimeMillis();
+
   public void purgeOverrides() {
-    replacementCache.internalRefresh();
+    if (System.currentTimeMillis() - lastPurge > 500) {
+      lastPurge = System.currentTimeMillis();
+      replacementCache.internalRefresh();
+    }
   }
 
   @Override
   @Deprecated
-  public Map<Location, BlockState> locatedReplacements() {
+  public Map<Position, BlockState> locatedReplacements() {
     return replacementCache.located();
   }
 

@@ -49,6 +49,31 @@ public final class Position implements Serializable {
     return (float) Math.sqrt(d0 * d0 + d1 * d1 + d2 * d2);
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    Position position = (Position) o;
+
+    if (Double.compare(position.xCoordinate, xCoordinate) != 0) return false;
+    if (Double.compare(position.yCoordinate, yCoordinate) != 0) return false;
+    return Double.compare(position.zCoordinate, zCoordinate) == 0;
+  }
+
+  @Override
+  public int hashCode() {
+    int result;
+    long temp;
+    temp = Double.doubleToLongBits(xCoordinate);
+    result = (int) (temp ^ (temp >>> 32));
+    temp = Double.doubleToLongBits(yCoordinate);
+    result = 31 * result + (int) (temp ^ (temp >>> 32));
+    temp = Double.doubleToLongBits(zCoordinate);
+    result = 31 * result + (int) (temp ^ (temp >>> 32));
+    return result;
+  }
+
   public Position with(Motion motion) {
     return new Position(xCoordinate + motion.motionX, yCoordinate + motion.motionY, zCoordinate + motion.motionZ);
   }

@@ -1,5 +1,6 @@
 package de.jpx3.intave.block.state;
 
+import de.jpx3.intave.shade.Position;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -48,7 +49,7 @@ public interface BlockStateOverrides extends BlockStateLookup {
    * The {@link Location} is the of the block
    * @return the located replacements
    */
-  Map<Location, BlockState> locatedReplacements();
+  Map<Position, BlockState> locatedReplacements();
 
   /**
    * Retrieve all overrides/replacements as a {@link Long} key to {@link BlockState} {@link Map}.

@@ -35,19 +35,10 @@ import de.jpx3.intave.packet.reader.BlockInteractionReader;
 import de.jpx3.intave.packet.reader.EntityReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.player.ItemProperties;
-import de.jpx3.intave.shade.BlockPosition;
-import de.jpx3.intave.shade.BoundingBox;
-import de.jpx3.intave.shade.ClientMathHelper;
-import de.jpx3.intave.shade.Direction;
-import de.jpx3.intave.shade.MovingObjectPosition;
-import de.jpx3.intave.shade.NativeVector;
+import de.jpx3.intave.shade.*;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
-import de.jpx3.intave.user.meta.AbilityMetadata;
-import de.jpx3.intave.user.meta.CheckCustomMetadata;
-import de.jpx3.intave.user.meta.InventoryMetadata;
-import de.jpx3.intave.user.meta.MovementMetadata;
-import de.jpx3.intave.user.meta.ProtocolMetadata;
+import de.jpx3.intave.user.meta.*;
 import de.jpx3.intave.world.raytrace.Raytracing;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -149,12 +140,18 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
   public void receiveBreak(PacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
-    AbilityMetadata abilityData = user.meta().abilities();
-    InventoryMetadata inventoryData = user.meta().inventory();
+
+    InteractionMeta interactionMeta = metaOf(user);
+    MetadataBundle meta = user.meta();
+    AttackMetadata attack = meta.attack();
+    AbilityMetadata abilityData = meta.abilities();
+    InventoryMetadata inventoryData = meta.inventory();
+
     PacketContainer packet = event.getPacket();
     com.comphenix.protocol.wrappers.BlockPosition blockPosition = packet.getBlockPositionModifier().readSafely(0);
 
     if (blockPosition == null || event.isCancelled()) {
+      interactionMeta.isBreakingBlock = attack.inBreakProcess = false;
       return;
     }
 
@@ -165,7 +162,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     }
 
     EnumWrappers.PlayerDigType playerDigType = packet.getPlayerDigTypes().readSafely(0);
-    float blockDamage = BlockInteractionAccess.blockDamage(player, user.meta().inventory().heldItem(), blockPosition);
+    float blockDamage = BlockInteractionAccess.blockDamage(player, inventoryData.heldItem(), blockPosition);
     boolean instantBreak = blockDamage >= 1.0f || abilityData.inGameMode(AbilityTracker.GameMode.CREATIVE);
     boolean breakBlock = instantBreak || playerDigType == STOP_DESTROY_BLOCK;
 
@@ -176,11 +173,10 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       return;
     }
 
-    InteractionMeta interactionMeta = metaOf(user);
     Interaction interaction = new Interaction(
       packet.deepClone(), player.getWorld(), player, blockPosition, enumDirection,
       breakBlock ? InteractionType.BREAK : InteractionType.INTERACT,
-      user.meta().inventory().heldItemType(), EnumWrappers.Hand.MAIN_HAND, playerDigType
+      inventoryData.heldItemType(), EnumWrappers.Hand.MAIN_HAND, playerDigType
     );
 
     boolean mustPostValidate = interactionMeta.remainingBlockStart > 0;
@@ -195,9 +191,9 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     }
 
     if (breakBlock || playerDigType == ABORT_DESTROY_BLOCK) {
-      interactionMeta.isBreakingBlock = false;
+      interactionMeta.isBreakingBlock = attack.inBreakProcess= false;
     } else if (playerDigType == START_DESTROY_BLOCK) {
-      interactionMeta.isBreakingBlock = true;
+      interactionMeta.isBreakingBlock = attack.inBreakProcess = true;
     }
   }
 

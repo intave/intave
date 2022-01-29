@@ -63,7 +63,11 @@ public final class BlockState extends MemoryTraced {
    * @return whether the state is expired
    */
   public boolean expired() {
-    return !IntaveControl.IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT && System.currentTimeMillis() - creation > 10000;
+    return !IntaveControl.IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT && age() > 10000;
+  }
+
+  public long age() {
+    return System.currentTimeMillis() - creation;
   }
 
   @Override

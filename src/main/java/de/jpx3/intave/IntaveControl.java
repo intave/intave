@@ -22,6 +22,8 @@ public final class IntaveControl {
   public final static boolean DUMP_BLOCK_HITBOX_ON_RIGHT_CLICK = false;
   public final static boolean SETBACK_WITH_PRESSED_KEYS = false;
 
+  public final static boolean CLICKPATTERNS_OUTPUT = false;
+
   public final static boolean USE_EXTERNAL_CONFIGURATION_FILE = true;
   public final static boolean GOMME_MODE = false;
   public final static boolean DISABLE_LICENSE_CHECK = true;
