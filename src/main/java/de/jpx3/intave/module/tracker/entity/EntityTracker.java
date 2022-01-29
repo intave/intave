@@ -754,14 +754,23 @@ public final class EntityTracker extends Module {
         requiredIndex = 6;
       }
       if (index == requiredIndex) {
-        Object rawValue = watchableObject.getRawValue();
-        if (rawValue instanceof OptionalInt) {
-          rawValue = ((OptionalInt) rawValue).orElse(0);
-        }
-        return ((Number) rawValue).floatValue();
+        return readHealthFromWatchableObject(watchableObject);
       }
     }
     return null;
+  }
+
+  private Float readHealthFromWatchableObject(WrappedWatchableObject watchableObject) {
+    Object rawValue = watchableObject.getRawValue();
+    if (rawValue instanceof OptionalInt) {
+      OptionalInt optionalInt = (OptionalInt) rawValue;
+      if (!optionalInt.isPresent()) {
+        return null;
+      }
+
+      rawValue = optionalInt.getAsInt();
+    }
+    return ((Number) rawValue).floatValue();
   }
 
   private void updateHealthState(EntityShade entity, float health) {
