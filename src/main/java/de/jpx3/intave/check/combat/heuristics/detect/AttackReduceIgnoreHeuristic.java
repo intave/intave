@@ -59,7 +59,9 @@ public final class AttackReduceIgnoreHeuristic extends MetaCheckPart<Heuristics,
 
     ItemStack itemStack = inventoryData.heldItem();
     boolean knockbackEnchantment = itemStack != null && itemStack.containsEnchantment(Enchantment.KNOCKBACK);
-    if (knockbackEnchantment || abilities.inGameModeIncludePending(AbilityTracker.GameMode.SPECTATOR)) {
+    boolean flying = abilities.probablyFlying() || abilities.allowFlying();
+
+    if (knockbackEnchantment || flying || abilities.inGameModeIncludePending(AbilityTracker.GameMode.SPECTATOR)) {
       return;
     }
 
