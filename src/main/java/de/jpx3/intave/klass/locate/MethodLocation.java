@@ -104,6 +104,6 @@ public final class MethodLocation extends Location {
   }
 
   public static MethodLocation defaultFor(String classKey, String initialSignature) {
-    return new MethodLocation(classKey, initialSignature, IntegerMatcher.between(8, 17), initialSignature);
+    return new MethodLocation(classKey, initialSignature, IntegerMatcher.between(80, 170), initialSignature);
   }
 }

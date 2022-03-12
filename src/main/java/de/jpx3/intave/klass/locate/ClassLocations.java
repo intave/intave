@@ -30,7 +30,8 @@ public final class ClassLocations implements Iterable<ClassLocation> {
   }
 
   private int currentMinecraftVersion() {
-    return MinecraftVersion.getCurrentVersion().getMinor();
+    MinecraftVersion version = MinecraftVersion.getCurrentVersion();
+    return version.getMinor() * 10 + version.getBuild();
   }
 
   public Optional<ClassLocation> findAny() {

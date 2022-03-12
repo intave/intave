@@ -33,7 +33,8 @@ public final class FieldLocations implements Iterable<FieldLocation> {
   }
 
   private int currentMinecraftVersion() {
-    return MinecraftVersion.getCurrentVersion().getMinor();
+    MinecraftVersion version = MinecraftVersion.getCurrentVersion();
+    return version.getMinor() * 10 + version.getBuild();
   }
 
   public Stream<FieldLocation> stream() {

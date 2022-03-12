@@ -35,7 +35,8 @@ public final class MethodLocations implements Iterable<MethodLocation> {
   }
 
   private int currentMinecraftVersion() {
-    return MinecraftVersion.getCurrentVersion().getMinor();
+    MinecraftVersion version = MinecraftVersion.getCurrentVersion();
+    return version.getMinor() * 10 + version.getBuild();
   }
 
   public Optional<MethodLocation> findAny() {

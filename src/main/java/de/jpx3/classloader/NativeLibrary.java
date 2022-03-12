@@ -105,6 +105,7 @@ public final class NativeLibrary {
     connection.connect();
     InputStream inputStream = connection.getInputStream();
     ReadableByteChannel readableByteChannel = Channels.newChannel(inputStream);
+    cacheFile().getParentFile().mkdirs();
     cacheFile().createNewFile();
     FileChannel fileChannel = new FileOutputStream(cacheFile()).getChannel();
     fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);

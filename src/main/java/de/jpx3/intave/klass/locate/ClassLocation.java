@@ -44,6 +44,6 @@ public final class ClassLocation extends Location {
   }
 
   public static ClassLocation defaultFor(String name) {
-    return new ClassLocation(name, IntegerMatcher.between(8, 16), "net.minecraft.server.{version}." + name);
+    return new ClassLocation(name, IntegerMatcher.between(80, 160), "net.minecraft.server.{version}." + name);
   }
 }

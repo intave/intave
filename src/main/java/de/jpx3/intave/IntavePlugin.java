@@ -63,6 +63,7 @@ import de.jpx3.intave.version.IntaveVersion;
 import de.jpx3.intave.version.IntaveVersionList;
 import de.jpx3.intave.version.JavaVersion;
 import de.jpx3.intave.world.border.WorldBorders;
+import de.jpx3.intave.world.chunk.ChunkProviderServerAccess;
 import de.jpx3.intave.world.permission.WorldPermission;
 import de.jpx3.intave.world.raytrace.Raytracing;
 import org.bukkit.Bukkit;
@@ -163,6 +164,7 @@ public final class IntavePlugin extends JavaPlugin {
     try {
       // We need to put this here before setting up the Synchronizer
       componentLoader = new ComponentLoader(this);
+      componentLoader.prepareComponents();
       componentLoader.loadComponents();
 
       ProtocolLibraryAdapter.checkIfOutdated();
@@ -182,6 +184,7 @@ public final class IntavePlugin extends JavaPlugin {
       ContextSecrets.setup();
       ReflectiveAccess.setup();
       EntityTypeDataAccessor.setup();
+      ChunkProviderServerAccess.setup();
 
       trustFactorService = new TrustFactorService(this);
 
