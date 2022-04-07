@@ -288,9 +288,11 @@ public final class MovementDispatcher extends Module {
       }
     }
 
-    // garbage fix
+    // garbage fix for sending POSITION_LOOK packets on newer client versions when rightclicking
     if (
-      clientData.cavesAndCliffsUpdate() && !movementData.awaitTeleport && !movementData.awaitOutgoingTeleport
+      clientData.cavesAndCliffsUpdate() && !movementData.awaitTeleport
+        && !movementData.awaitOutgoingTeleport
+        && packet.getType() == PacketType.Play.Client.POSITION_LOOK
     ) {
       StructureModifier<Double> modifier = packet.getDoubles();
       double positionX = modifier.read(0);

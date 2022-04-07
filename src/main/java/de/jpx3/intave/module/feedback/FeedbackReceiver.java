@@ -208,8 +208,7 @@ public final class FeedbackReceiver extends Module {
       ENTITY_VELOCITY,
       ENTITY_SOUND,
       ENTITY_EFFECT,
-      REMOVE_ENTITY_EFFECT,
-      CHAT
+      REMOVE_ENTITY_EFFECT
     }
   )
   public void enqueueOutgoingPackets(PacketEvent event) {
@@ -229,12 +228,8 @@ public final class FeedbackReceiver extends Module {
 
     long positionTimeoutTolerance = user.meta().protocol().flyingPacketStream() ? 0 : 1000;
     boolean riding = user.meta().movement().isInVehicle();
-    boolean positionTimeout = !riding && System.currentTimeMillis() - user.meta().connection().lastMovementPacket() > connection.transactionPingAverage() + 300 + positionTimeoutTolerance;
-
-    boolean deletePacket = packetType == PacketType.Play.Server.REL_ENTITY_MOVE ||
-      packetType == PacketType.Play.Server.REL_ENTITY_MOVE_LOOK ||
-      packetType == PacketType.Play.Server.ENTITY_LOOK ||
-      packetType == PacketType.Play.Server.ENTITY_MOVE_LOOK;
+    boolean positionTimeout = !riding
+      && System.currentTimeMillis() - user.meta().connection().lastMovementPacket() > connection.transactionPingAverage() + 300 + positionTimeoutTolerance;
 
     boolean idAddressed =
       packetType == PacketType.Play.Server.ENTITY_STATUS ||
@@ -249,12 +244,9 @@ public final class FeedbackReceiver extends Module {
       }
     }
 
-    boolean reachedQueueLimit = enqueuedPackets.size() > 2000;
-    if ((transactionTimeout || positionTimeout) && !reachedQueueLimit) {
-      if (!deletePacket) {
-        enqueuedPackets.offerLast(packetContainer.getHandle());
-        user.meta().connection().lastEnqueue = System.currentTimeMillis();
-      }
+    if (transactionTimeout || positionTimeout) {
+      enqueuedPackets.offerLast(packetContainer.getHandle());
+      user.meta().connection().lastEnqueue = System.currentTimeMillis();
       event.setCancelled(true);
     } else if (!enqueuedPackets.isEmpty()) {
       if (enqueuedPackets.size() > 100) {
@@ -264,9 +256,7 @@ public final class FeedbackReceiver extends Module {
           if (packet == null) break;
           sendPacket(player, packet);
         }
-        if (!deletePacket) {
-          enqueuedPackets.offerLast(packetContainer.getHandle());
-        }
+        enqueuedPackets.offerLast(packetContainer.getHandle());
       } else {
         // send all packets in the queue by poll
         while (!enqueuedPackets.isEmpty()) {
