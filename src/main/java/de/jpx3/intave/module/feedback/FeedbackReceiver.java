@@ -216,6 +216,9 @@ public final class FeedbackReceiver extends Module {
     }
   )
   public void enqueueOutgoingPackets(PacketEvent event) {
+    if (!IntaveControl.GOMME_MODE) {
+      return;
+    }
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     ConnectionMetadata connection = user.meta().connection();

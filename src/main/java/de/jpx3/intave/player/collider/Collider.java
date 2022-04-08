@@ -1,6 +1,9 @@
 package de.jpx3.intave.player.collider;
 
-import de.jpx3.intave.player.collider.complex.*;
+import de.jpx3.intave.player.collider.complex.ColliderProcessor;
+import de.jpx3.intave.player.collider.complex.ColliderSimulationResult;
+import de.jpx3.intave.player.collider.complex.v14ColliderProcessor;
+import de.jpx3.intave.player.collider.complex.v8ColliderProcessor;
 import de.jpx3.intave.player.collider.simple.SimpleColliderProcessor;
 import de.jpx3.intave.player.collider.simple.SimpleColliderSimulationResult;
 import de.jpx3.intave.player.collider.simple.UniversalSimpleColliderProcessor;
@@ -24,7 +27,7 @@ public final class Collider {
   }
 
   static {
-    v7ComplexColliderProcessor = new v7ColliderProcessor();
+    v7ComplexColliderProcessor = new v8ColliderProcessor();//new v7ColliderProcessor();
     v8ComplexColliderProsessor = new v8ColliderProcessor();
     v14ComplexColliderProcessor = new v14ColliderProcessor();
     universalSimpleColliderProcessor = new UniversalSimpleColliderProcessor();

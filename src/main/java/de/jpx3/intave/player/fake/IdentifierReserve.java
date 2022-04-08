@@ -1,6 +1,5 @@
 package de.jpx3.intave.player.fake;
 
-import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.Lookup;
@@ -18,25 +17,8 @@ import java.util.stream.IntStream;
  * So we reserve us a bunch of ids so we can use them later
  */
 public final class IdentifierReserve {
-  private final static Field ENTITY_COUNT_FIELD;
+  private final static Field ENTITY_COUNT_FIELD = Lookup.serverField("Entity", "entityCount");
   private final static int REQUIRED_ID_POOL_SIZE = 25;
-
-  static {
-    try {
-      String fieldName = MinecraftVersions.VER1_17_0.atOrAbove() ? "b" : "entityCount";
-      Field entityCountField = Lookup.serverClass("Entity").getDeclaredField(fieldName);
-      ENTITY_COUNT_FIELD = ensureAccessibility(entityCountField);
-    } catch (NoSuchFieldException e) {
-      throw new IntaveInternalException(e);
-    }
-  }
-
-  private static Field ensureAccessibility(Field field) {
-    if (!field.isAccessible()) {
-      field.setAccessible(true);
-    }
-    return field;
-  }
 
   private final static Queue<Integer> availableIds = new ConcurrentLinkedDeque<>();
 

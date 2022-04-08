@@ -25,9 +25,7 @@ public final class BlockVariantRegister {
   private final static Map<Material, Map<Integer, BlockVariant>> blockVariants = new EnumMap<>(Material.class);
 
   static {
-    if (AVOID_LEGACY_IDS) {
-      PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), "de.jpx3.intave.block.variant.BlockVariantRegister$Indexer");
-    }
+    PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), "de.jpx3.intave.block.variant.BlockVariantRegister$Indexer");
   }
 
   public static void indexIfAvailable() {
