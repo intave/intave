@@ -14,7 +14,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class NeuralNetwork implements Serializable {
   public int trainedCounter = 0;
-  public double localLearningRate = -1;
+  public double localLearningRate = 0.03;
   public List<ActivationFunction> activationFunctions = new CopyOnWriteArrayList<>();
   public Matrix[] biases;
   public Matrix[] weights;
