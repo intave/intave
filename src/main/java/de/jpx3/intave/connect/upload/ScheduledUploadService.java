@@ -12,8 +12,8 @@ import org.apache.commons.io.output.CountingOutputStream;
 import org.bukkit.Bukkit;
 
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
+import javax.crypto.CipherInputStream;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -21,11 +21,9 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.security.KeyFactory;
-import java.security.PublicKey;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
-import java.util.zip.GZIPOutputStream;
+import java.util.zip.DeflaterInputStream;
+import java.util.zip.DeflaterOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -58,9 +56,9 @@ public final class ScheduledUploadService {
   }
 
   @Native
-  public void scheduledUpload(String name, InputStream data) throws IOException {
-    // encrypt data with public key
-    if (storageSize + data.available() > STORAGE_BYTE_LIMIT) {
+  public void scheduledUpload(String name, InputStream inputStream) throws IOException {
+    // encrypt inputStream with public key
+    if (storageSize + inputStream.available() > STORAGE_BYTE_LIMIT) {
       if (!temporaryFolderPresent()) {
         newTemporaryFolder();
       }
@@ -73,17 +71,17 @@ public final class ScheduledUploadService {
         }
       });
       storage.clear();
-      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-      byte[] copy = new byte[2048];
-      int read;
-      while ((read = data.read(copy)) != -1) {
-        buffer.write(copy, 0, read);
+      inputStream = compressAndEncrypt(inputStream);
+      OutputStream outputStream = copyToSessionChannel(name);
+      // copy inputStream to outputStream
+      try (OutputStream output = new BufferedOutputStream(outputStream)) {
+        byte[] buffer = new byte[2048];
+        int read;
+        while ((read = inputStream.read(buffer)) != -1) {
+          output.write(buffer, 0, read);
+        }
       }
-      byte[] array = compressAndEncrypt(buffer.toByteArray());
-      if (array == null) {
-        return;
-      }
-      copyToSession(name, array);
+      inputStream.close();
       storageSize = 0;
       return;
     }
@@ -91,7 +89,7 @@ public final class ScheduledUploadService {
       ByteArrayOutputStream buffer = new ByteArrayOutputStream();
       byte[] copy = new byte[2048];
       int read;
-      while ((read = data.read(copy)) != -1) {
+      while ((read = inputStream.read(copy)) != -1) {
         buffer.write(copy, 0, read);
       }
       byte[] array = compressAndEncrypt(buffer.toByteArray());
@@ -105,54 +103,40 @@ public final class ScheduledUploadService {
     }
   }
 
-  private byte[] compressAndEncrypt(byte[] data) {
-    try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
-      try (GZIPOutputStream gzip = new GZIPOutputStream(buffer)) {
-        gzip.write(data);
-      }
-      data = buffer.toByteArray();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+  private InputStream compressAndEncrypt(InputStream data) {
     try {
-      KeyFactory rsaKeyFactory = KeyFactory.getInstance("RSA");
-      PublicKey publicKey = rsaKeyFactory.generatePublic(new X509EncodedKeySpec(publicKey(new byte[4096])));
-      Cipher cipher = Cipher.getInstance("RSA");
-      cipher.init(Cipher.PUBLIC_KEY, publicKey);
-      KeyGenerator aesKeyGenerator = KeyGenerator.getInstance("AES");
-      aesKeyGenerator.init(128);
-      SecretKey aesKey = aesKeyGenerator.generateKey();
-      Cipher encryptCipher = Cipher.getInstance("AES/GCM/NoPadding");
-      encryptCipher.init(Cipher.ENCRYPT_MODE, aesKey);
-      byte[] encryptedData = encryptCipher.doFinal(data);
-      byte[] encryptedAesKey = cipher.doFinal(aesKey.getEncoded());
-      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-      buffer.write(encryptedData);
-      buffer.write(encryptedAesKey);
-      return buffer.toByteArray();
+      data = new DeflaterInputStream(data);
+      String password = "Iloovestatistics";
+      // encrypt data with AES key
+      SecretKeySpec key = new SecretKeySpec(password.getBytes(StandardCharsets.UTF_8), "AES");
+      Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+      cipher.init(Cipher.ENCRYPT_MODE, key);
+      return new CipherInputStream(data, cipher);
     } catch (Exception exception) {
       exception.printStackTrace();
     }
     return null;
   }
 
-  private byte[] publicKey(byte[] garbage) {
-    String fileName = "/id_rsa.pub";
-    try(InputStream resourceAsStream = getClass().getResourceAsStream(fileName)) {
-      if (resourceAsStream == null) {
-        throw new RuntimeException("Failed to load public key: " + fileName);
-      } else {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        byte[] copy = new byte[2048];
-        int read;
-        while ((read = resourceAsStream.read(copy)) != -1) {
-          buffer.write(copy, 0, read);
-        }
-        return buffer.toByteArray();
+  private byte[] compressAndEncrypt(byte[] data) {
+    try {
+      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+      try (DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(buffer)) {
+        deflaterOutputStream.write(data, 0, data.length);
+        deflaterOutputStream.flush();
       }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+      data = buffer.toByteArray();
+
+      String password = "Iloovestatistics";
+      // encrypt data with AES key
+      SecretKeySpec key = new SecretKeySpec(password.getBytes(StandardCharsets.UTF_8), "AES");
+      Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+      cipher.init(Cipher.ENCRYPT_MODE, key);
+      return cipher.doFinal(data);
+    } catch (Exception exception) {
+      exception.printStackTrace();
     }
+    return null;
   }
 
   public void disable() {
@@ -360,6 +344,15 @@ public final class ScheduledUploadService {
     try (java.io.FileOutputStream out = new FileOutputStream(file)) {
       out.write(data);
     }
+  }
+
+  private OutputStream copyToSessionChannel(String name) throws IOException {
+    File file = new File(tempDirectory(), name);
+    file.createNewFile();
+    file.setWritable(true);
+    file.setReadable(true);
+    // push input stream to file output stream
+    return new FileOutputStream(file);
   }
 
   private File tempDirectory() {
