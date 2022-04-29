@@ -61,6 +61,9 @@ public final class FeedbackSender extends Module {
     int options
   ) {
     tracedDoubleSynchronize(player, event.getPacket(), target, firstCallback, secondCallback, firstTracker, secondTracker, options);
+    if (event.isReadOnly()) {
+      event.setReadOnly(false);
+    }
     event.setCancelled(true);
   }
 
@@ -90,6 +93,7 @@ public final class FeedbackSender extends Module {
     tracedSingleSynchronize(player, target, firstCallback, firstTracker, options);
     user.ignoreNextOutboundPacket();
     sendPacket(player, encapsulate);
+    user.receiveNextOutboundPacketAgain();
     tracedSingleSynchronize(player, target, secondCallback, secondTracker, options);
   }
 

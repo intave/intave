@@ -21,6 +21,10 @@ public final class Motion {
     this.motionZ = motionZ;
   }
 
+  public static Motion fromVector(Vector velocity) {
+    return new Motion(velocity.getX(), velocity.getY(), velocity.getZ());
+  }
+
   public void reset(double x, double y, double z) {
     this.motionX = x;
     this.motionY = y;

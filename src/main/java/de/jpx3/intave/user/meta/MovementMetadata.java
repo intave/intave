@@ -4,6 +4,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.WrappedAttribute;
 import com.comphenix.protocol.wrappers.WrappedAttributeModifier;
+import com.google.common.collect.ImmutableList;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.annotate.DispatchTarget;
@@ -18,6 +19,8 @@ import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.check.movement.physics.*;
 import de.jpx3.intave.entity.datawatcher.DataWatcherAccess;
 import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.module.dispatch.MovementDispatcher;
+import de.jpx3.intave.module.feedback.Superposition;
 import de.jpx3.intave.module.tracker.entity.EntityShade;
 import de.jpx3.intave.player.Effects;
 import de.jpx3.intave.shade.BoundingBox;
@@ -88,6 +91,10 @@ public final class MovementMetadata implements SimulationEnvironment {
   private Simulator simulator = Simulators.PLAYER;
   private Material blockOnPosition = Material.AIR;
 
+  // superposition
+  private final Superposition<Motion> velocitySuperposition;
+  private final List<Superposition<?>> superpositions;
+
   // Timestamps
   public long lastSneakingTimestamps, lastJump, lastMovement;
 
@@ -114,7 +121,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public boolean checkWebStateAgainNextTick = false;
   private boolean eyesInWater;
   public int pastPushedByWaterFlow = 100;
-  public int pastElytraFlying = 100, pastVelocity = 100, pastExternalVelocity = 100, pastInWeb = 100, pastWaterMovement = 100;
+  public int pastElytraFlying = 100, pastVelocity = 100, pastExternalVelocity = 100, pastExternalVelocityResetCache, pastInWeb = 100, pastWaterMovement = 100;
   public int pastLongTeleport = 100;
   public int pastInventoryOpen = 100;
   public int pastBlockPlacement = 100;
@@ -127,6 +134,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   public boolean invalidMovement, suspiciousMovement;
   public double physicsMotionX, physicsMotionY, physicsMotionZ;
   public double physicsMotionXBeforeVelocity, physicsMotionYBeforeVelocity, physicsMotionZBeforeVelocity;
+  public double physicsMotionXResetCache, physicsMotionYResetCache, physicsMotionZResetCache;
+  public double physicsMotionXBeforeVelocityResetCache, physicsMotionYBeforeVelocityResetCache, physicsMotionZBeforeVelocityResetCache;
   public int pastRiptideSpin = 100;
   public int pastPlayerAttackPhysics = 100;
   public boolean physicsResetMotionX, physicsResetMotionZ;
@@ -163,6 +172,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public boolean isTeleportConfirmationPacket;
   public boolean dropPostTickMotionProcessing;
   public boolean willReceiveSetbackVelocity;
+  public boolean willReceiveSetbackVelocityResetCache;
   public int lastTeleport;
   public int teleportId;
   public volatile boolean awaitTeleport = false, expectTeleport = false, awaitOutgoingTeleport = false;
@@ -184,6 +194,16 @@ public final class MovementMetadata implements SimulationEnvironment {
   public MovementMetadata(Player player, User user) {
     this.player = player;
     this.user = user;
+    this.velocitySuperposition = Superposition
+      .builderFor(Motion.class)
+      .apply(MovementDispatcher::applyVelocitySuperposition)
+      .collapse(MovementDispatcher::collapseVelocitySuperposition)
+      .reset(MovementDispatcher::resetVelocitySuperposition)
+      .mergeSelectOverride()
+      .user(user)
+      .timeout(2)
+      .build();
+    superpositions = ImmutableList.of(/*velocitySuperposition*/);
   }
 
   public void setup() {
@@ -679,6 +699,14 @@ public final class MovementMetadata implements SimulationEnvironment {
 //      player.sendMessage(ChatColor.RED + "Removed Sprinting Modifier");
       movementSpeedModifiers.remove(SPRINTING_MODIFIER);
     }
+  }
+
+  public Superposition<Motion> velocitySuperposition() {
+    return velocitySuperposition;
+  }
+
+  public List<Superposition<?>> superpositions() {
+    return superpositions;
   }
 
   public void dismountRidingEntity() {

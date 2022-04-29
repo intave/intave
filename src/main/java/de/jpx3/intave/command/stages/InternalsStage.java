@@ -11,6 +11,7 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.executor.TaskTracker;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.world.WorldHeight;
 import org.bukkit.Bukkit;
@@ -101,8 +102,10 @@ public final class InternalsStage extends CommandStage {
     newPacket.getDataWatcherModifier().
       write(0, fallbackDatawatcher);
 
-    UserRepository.userOf(player).ignoreNextOutboundPacket();
+    User user = UserRepository.userOf(player);
+    user.ignoreNextOutboundPacket();
     PacketSender.sendServerPacket(player, newPacket);
+    user.receiveNextOutboundPacketAgain();
   }
 
   private WrappedDataWatcher defaultWatcherOf(World world, EntityType type) {

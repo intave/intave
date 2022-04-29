@@ -7,6 +7,7 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.UnsupportedFallbackOperationException;
 import de.jpx3.intave.diagnostic.timings.Timing;
 import de.jpx3.intave.diagnostic.timings.Timings;
+import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 
 import java.util.Arrays;
@@ -51,6 +52,10 @@ public final class FilteringPacketAdapter extends WeakReferencePacketAdapter imp
     try {
       Timings.EXE_NETTY.start();
       timing.start();
+      User user = UserRepository.userOf(event.getPlayer());
+      if (user.shouldIgnoreNextInboundPacket()) {
+        return;
+      }
       executor.invoke(subscriber, event);
     } catch (UnsupportedFallbackOperationException ignored) {
       // ignored
@@ -70,6 +75,10 @@ public final class FilteringPacketAdapter extends WeakReferencePacketAdapter imp
       return;
     }
     try {
+      User user = UserRepository.userOf(event.getPlayer());
+      if (user.shouldIgnoreNextOutboundPacket()) {
+        return;
+      }
       executor.invoke(subscriber, event);
     } catch (UnsupportedFallbackOperationException ignored) {
       // ignored

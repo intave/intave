@@ -8,6 +8,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -53,16 +54,24 @@ public final class WebResource implements Resource {
         byte[] buff = new byte[4096];
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         int i;
-        while((i = inputStream.read(buff)) != -1) {
+        while ((i = inputStream.read(buff)) != -1) {
           output.write(buff, 0, i);
         }
         byte[] data = output.toByteArray();
         if (IntaveControl.DISABLE_LICENSE_CHECK) {
-          System.out.println("[debug] Manually read " + data.length + " bytes from " + url);
+          System.out.println("[debug] Read " + data.length + " bytes from " + url + " manually");
         }
         return new ByteArrayInputStream(data);
       }
+      if (IntaveControl.DISABLE_LICENSE_CHECK) {
+        System.out.println("[debug] Read " + inputStream.available() + " bytes from " + url);
+      }
       return inputStream;
+    } catch (SocketTimeoutException timeout) {
+      if (IntaveControl.DISABLE_LICENSE_CHECK) {
+        System.out.println("[debug] Timeout reading " + url);
+      }
+      return new ByteArrayInputStream(new byte[0]);
     } catch (Exception exception) {
       exception.printStackTrace();
       return new ByteArrayInputStream(new byte[0]);

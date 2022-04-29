@@ -32,6 +32,9 @@ public interface Resource extends LegacyResource {
   default <C, R> R collectLines(Collector<? super String, C, R> collector) {
     C container = collector.supplier().get();
     try (InputStream inputStream = read()) {
+      if (inputStream == null) {
+        return collector.finisher().apply(container);
+      }
       Scanner scanner = new Scanner(inputStream, "UTF-8");
       while (scanner.hasNextLine()) {
         collector.accumulator().accept(container, scanner.nextLine());

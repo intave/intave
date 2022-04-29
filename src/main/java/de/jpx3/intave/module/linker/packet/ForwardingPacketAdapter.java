@@ -47,7 +47,7 @@ public final class ForwardingPacketAdapter extends WeakReferencePacketAdapter {
       return;
     }
     if (user.shouldIgnoreNextOutboundPacket()) {
-      user.receiveNextOutboundPacketAgain();
+//      user.receiveNextOutboundPacketAgain();
       return;
     }
     for (PacketAdapter filteringPacketAdapter : targetList) {

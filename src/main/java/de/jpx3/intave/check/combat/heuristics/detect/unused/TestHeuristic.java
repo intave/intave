@@ -53,6 +53,7 @@ public final class TestHeuristic extends MetaCheckPart<Heuristics, TestHeuristic
     try {
       userOf(player).ignoreNextOutboundPacket();
       protocol.sendServerPacket(player, packet);
+      userOf(player).receiveNextOutboundPacketAgain();
     } catch (InvocationTargetException exception) {
       exception.printStackTrace();
     }

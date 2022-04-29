@@ -32,6 +32,7 @@ public final class ModuleLoader {
     // feedback
     prepareModule("de.jpx3.intave.module.feedback.FeedbackSender", defaultBoot);
     prepareModule("de.jpx3.intave.module.feedback.FeedbackReceiver", defaultBoot);
+    prepareModule("de.jpx3.intave.module.feedback.PacketDelayer", defaultBoot);
 
     // tracker
     prepareModule("de.jpx3.intave.module.tracker.player.AbilityTracker", defaultBoot);

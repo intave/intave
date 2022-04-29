@@ -22,6 +22,7 @@ import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.feedback.FeedbackCallback;
+import de.jpx3.intave.module.feedback.Superposition;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
@@ -35,6 +36,7 @@ import de.jpx3.intave.packet.converter.PlayerActionResolver;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.shade.BoundingBox;
+import de.jpx3.intave.shade.Motion;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.*;
@@ -50,6 +52,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -307,6 +310,10 @@ public final class MovementDispatcher extends Module {
       }
     }
 
+    for (Superposition<?> superposition : movementData.superpositions()) {
+      superposition.computeVariations();
+    }
+
     connectionData.receiveMovement();
     movementData.updateMovement(packet, hasMovement, hasRotation);
     teleportApplyEnforcer.receiveMovement(event);
@@ -481,6 +488,11 @@ public final class MovementDispatcher extends Module {
     boolean vehicleMove = packetType == PacketType.Play.Client.VEHICLE_MOVE;
     boolean hasMovement = vehicleMove || packet.getBooleans().read(1);
     boolean hasRotation = vehicleMove || packet.getBooleans().read(2);
+
+//    movementData.velocitySuperposition().completeTick();
+    for (Superposition<?> superposition : movementData.superpositions()) {
+      superposition.completeTick();
+    }
 
     if (movementData.awaitTeleport) {
       return;
@@ -703,11 +715,9 @@ public final class MovementDispatcher extends Module {
         integers.readSafely(2) / 8000d,
         integers.readSafely(3) / 8000d
       );
-
       User user = UserRepository.userOf(player);
       MetadataBundle meta = user.meta();
       MovementMetadata movementData = meta.movement();
-
       if (movementData.willReceiveSetbackVelocity && velocity.length() < 0.001) {
         movementData.willReceiveSetbackVelocity = false;
         velocity = movementData.setbackOverrideVelocity;
@@ -716,13 +726,12 @@ public final class MovementDispatcher extends Module {
         integers.writeSafely(3, (int) (velocity.getZ() * 8000d));
         return;
       }
-
       /*
         Some players abuse "velocity buffering", giving them the ability to jump up to 40 - 50 blocks (provided they have external help).
         This fix is an attempt to decrease this bugs effectiveness, neither perfect nor sustainable, but somewhat working
        */
       int pendingVelocityPackets = movementData.pendingVelocityPackets.get();
-      if(pendingVelocityPackets > 1 && user.meta().attack().wasRecentlyAttackedByEntity()) {
+      if (pendingVelocityPackets > 1 && user.meta().attack().wasRecentlyAttackedByEntity()) {
         if (pendingVelocityPackets < 6) {
           velocity.setX(velocity.getX() / pendingVelocityPackets);
           velocity.setY(Math.min(0, velocity.getY()));
@@ -730,19 +739,21 @@ public final class MovementDispatcher extends Module {
           integers.writeSafely(1, (int) (velocity.getX() * 8000d));
           integers.writeSafely(2, (int) (velocity.getY() * 8000d));
           integers.writeSafely(3, (int) (velocity.getZ() * 8000d));
-        } else {
-          if (!event.isReadOnly()) {
-            event.setCancelled(true);
-            return;
+        }/* else {
+          if (event.isReadOnly()) {
+            event.setReadOnly(false);
           }
-        }
+          event.setCancelled(true);
+          return;
+        }*/
       }
-
       movementData.pendingVelocityPackets.incrementAndGet();
       movementData.emulationVelocity = velocity.clone();
       if (movementData.sneaking) {
         movementData.sneakPatchVelocity = velocity.clone();
       }
+      Motion motion = Motion.fromVector(velocity);
+//      movementData.velocitySuperposition().stateSynchronize(event, motion);
       Modules.feedback().synchronize(player, velocity, this::receiveVelocity);
     }
   }
@@ -768,6 +779,63 @@ public final class MovementDispatcher extends Module {
     Synchronizer.synchronize(() -> movementData.emulationVelocity = null);
     movementData.pastVelocity = 0;
     movementData.pendingVelocityPackets.decrementAndGet();
+  }
+
+  public static void applyVelocitySuperposition(User user, Motion velocity) {
+    MetadataBundle meta = user.meta();
+    MovementMetadata movementData = meta.movement();
+    ViolationMetadata violationLevelData = meta.violationLevel();
+
+    movementData.pastExternalVelocityResetCache = movementData.pastExternalVelocity;
+    movementData.physicsMotionXBeforeVelocityResetCache = movementData.physicsMotionXBeforeVelocity;
+    movementData.physicsMotionYBeforeVelocityResetCache = movementData.physicsMotionYBeforeVelocity;
+    movementData.physicsMotionZBeforeVelocityResetCache = movementData.physicsMotionZBeforeVelocity;
+    movementData.physicsMotionXResetCache = movementData.physicsMotionX;
+    movementData.physicsMotionYResetCache = movementData.physicsMotionY;
+    movementData.physicsMotionZResetCache = movementData.physicsMotionZ;
+    movementData.willReceiveSetbackVelocityResetCache = movementData.willReceiveSetbackVelocity;
+
+    if (!violationLevelData.isInActiveTeleportBundle) {
+      movementData.physicsMotionXBeforeVelocity = movementData.physicsMotionX;
+      movementData.physicsMotionYBeforeVelocity = movementData.physicsMotionY;
+      movementData.physicsMotionZBeforeVelocity = movementData.physicsMotionZ;
+      movementData.physicsMotionX = velocity.motionX();
+      movementData.physicsMotionY = velocity.motionY();
+      movementData.physicsMotionZ = velocity.motionZ();
+      movementData.lastVelocity = new Vector(velocity.motionX(), velocity.motionY(), velocity.motionZ());
+    }
+  }
+
+  public static void collapseVelocitySuperposition(User user, @Nullable Motion velocity) {
+    if (velocity != null) {
+      MetadataBundle meta = user.meta();
+      MovementMetadata movementData = meta.movement();
+      Synchronizer.synchronize(() -> movementData.emulationVelocity = null);
+      movementData.pastVelocity = 0;
+      movementData.pendingVelocityPackets.decrementAndGet();
+      if (!movementData.willReceiveSetbackVelocity) {
+        movementData.pastExternalVelocity = 0;
+      }
+      movementData.willReceiveSetbackVelocity = false;
+//      if (!movementData.willReceiveSetbackVelocity) {
+//        movementData.pastExternalVelocity = 0;
+//      }
+//      movementData.willReceiveSetbackVelocity = false;
+    }
+  }
+
+  public static void resetVelocitySuperposition(User user) {
+    MetadataBundle meta = user.meta();
+    MovementMetadata movementData = meta.movement();
+
+    movementData.pastExternalVelocity = movementData.pastExternalVelocityResetCache;
+    movementData.physicsMotionXBeforeVelocity = movementData.physicsMotionXBeforeVelocityResetCache;
+    movementData.physicsMotionYBeforeVelocity = movementData.physicsMotionYBeforeVelocityResetCache;
+    movementData.physicsMotionZBeforeVelocity = movementData.physicsMotionZBeforeVelocityResetCache;
+    movementData.physicsMotionX = movementData.physicsMotionXResetCache;
+    movementData.physicsMotionY = movementData.physicsMotionYResetCache;
+    movementData.physicsMotionZ = movementData.physicsMotionZResetCache;
+    movementData.willReceiveSetbackVelocity = movementData.willReceiveSetbackVelocityResetCache;
   }
 
   @PacketSubscription(

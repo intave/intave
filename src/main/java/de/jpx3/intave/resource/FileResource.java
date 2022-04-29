@@ -4,6 +4,7 @@ import java.io.*;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
 
 public final class FileResource implements Resource {
   private final File file;
@@ -51,7 +52,7 @@ public final class FileResource implements Resource {
       if (!available()) {
         return new ByteArrayInputStream(new byte[0]);
       }
-      InputStream inputStream = new FileInputStream(file);
+      InputStream inputStream = Files.newInputStream(file.toPath());
       ByteArrayOutputStream inputBytes = new ByteArrayOutputStream();
       byte[] buf = new byte[4096];
       int i;
@@ -61,7 +62,8 @@ public final class FileResource implements Resource {
       inputStream.close();
       return new ByteArrayInputStream(inputBytes.toByteArray());
     } catch (IOException exception) {
-      throw new IllegalStateException(exception);
+//      throw new IllegalStateException(exception);
+      return new ByteArrayInputStream(new byte[0]);
     }
   }
 

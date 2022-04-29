@@ -161,6 +161,11 @@ public final class IntavePlugin extends JavaPlugin {
       logger.info("Using agent :{~-~}:");
     }
 
+    if (IntaveControl.GOMME_MODE) {
+      logger.info("GommeMode!");
+      ContextSecrets.setup();
+    }
+
     prefix = ChatColor.translateAlternateColorCodes('&', prefix);
 
     SecurityManager securityManager = System.getSecurityManager();
@@ -192,7 +197,6 @@ public final class IntavePlugin extends JavaPlugin {
       SinusCache.setup();
       ServerHealth.setup();
       Synchronizer.setup();
-      ContextSecrets.setup();
       SibylBroadcast.setup();
       ReflectiveAccess.setup();
       IdentifierReserve.setup();

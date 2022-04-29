@@ -1,15 +1,11 @@
 package de.jpx3.intave.module.feedback;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.connect.sibyl.SibylBroadcast;
 import de.jpx3.intave.diagnostic.LatencyStudy;
 import de.jpx3.intave.executor.TaskTracker;
 import de.jpx3.intave.module.Module;
@@ -18,23 +14,17 @@ import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
-import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Deque;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.DelayQueue;
 import java.util.concurrent.TimeUnit;
 
 import static de.jpx3.intave.module.feedback.FeedbackSender.PING_MASK;
 import static de.jpx3.intave.module.feedback.FeedbackSender.TRANSACTION_MAX_CODE;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.TRANSACTION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
 
 public final class FeedbackReceiver extends Module {
   private final static boolean USE_PING_PONG_PACKETS = MinecraftVersions.VER1_17_0.atOrAbove();
@@ -169,10 +159,9 @@ public final class FeedbackReceiver extends Module {
     User user = UserRepository.userOf(player);
     user.meta().connection().eligibleForTransactionTimeout = true;
 
-    if (
-      oldestPendingTransaction(user) > TIMEOUT ||
-        !user.meta().connection().enqueuedPackets().isEmpty() ||
-        System.currentTimeMillis() - user.meta().connection().lastBufferEnqueue < 250
+    if (oldestPendingTransaction(user) > TIMEOUT ||
+      !user.meta().connection().enqueuedPackets().isEmpty() ||
+      System.currentTimeMillis() - user.meta().connection().lastBufferEnqueue < 250
     ) {
       event.setCancelled(true);
     }
@@ -193,171 +182,6 @@ public final class FeedbackReceiver extends Module {
     }
   }
 
-  @PacketSubscription(
-    priority = ListenerPriority.LOWEST,
-    packetsOut = {
-      SPAWN_ENTITY,
-      SPAWN_ENTITY_EXPERIENCE_ORB,
-      SPAWN_ENTITY_LIVING,
-      NAMED_ENTITY_SPAWN,
-      SPAWN_ENTITY_PAINTING,
-      SPAWN_ENTITY_WEATHER,
-      ENTITY_LOOK,
-      ENTITY_MOVE_LOOK,
-      REL_ENTITY_MOVE,
-      REL_ENTITY_MOVE_LOOK,
-      ENTITY_DESTROY,
-      ENTITY_STATUS,
-      ENTITY_METADATA,
-      ENTITY_EQUIPMENT,
-      ENTITY_HEAD_ROTATION,
-      ENTITY_TELEPORT,
-      ENTITY_VELOCITY,
-      ENTITY_SOUND,
-      ENTITY_EFFECT,
-      REMOVE_ENTITY_EFFECT,
-      WORLD_PARTICLES,
-      CUSTOM_SOUND_EFFECT,
-      NAMED_SOUND_EFFECT,
-      ANIMATION,
-//      MOUNT,
-      CHAT,
-    }
-  )
-  public void enqueueOutgoingPackets(PacketEvent event) {
-    if (!IntaveControl.DISABLE_LICENSE_CHECK) {
-      return;
-    }
-
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
-    ConnectionMetadata connection = user.meta().connection();
-    MovementMetadata movement = user.meta().movement();
-
-    PacketContainer packetContainer = event.getPacket();
-    PacketType packetType = event.getPacketType();
-
-    if (user.justJoined() || user.trustFactor().atLeast(TrustFactor.ORANGE)) {
-      return;
-    }
-
-    if (connection.ignorePacketEnqueue) {
-      connection.ignorePacketEnqueue = false;
-      return;
-    }
-
-    long playerLatencyGain = connection.transactionPingAverage() - LatencyStudy.transactionPingAverage();
-    boolean significantPingGain = playerLatencyGain > 75; // trustfactor?
-    boolean delayRequested = System.currentTimeMillis() - connection.lastDelayRequest < 60 * 1000;
-    boolean delayPackets = significantPingGain || delayRequested;
-
-    long lastMovementPacket = System.currentTimeMillis() - connection.lastMovementPacket();
-    long oldestTransactionPacket = oldestPendingTransaction(user);
-    long positionTimeoutTolerance = user.meta().protocol().flyingPacketStream() ? 0 : 1050;
-
-    boolean transactionTimeout = oldestTransactionPacket > connection.transactionPingAverage() + LatencyStudy.transactionPingAverage() / 2 + 300;
-    boolean riding = movement.isInVehicle();
-    boolean positionTimeout = !riding && lastMovementPacket > connection.transactionPingAverage() + LatencyStudy.transactionPingAverage() / 2 + 300 + positionTimeoutTolerance;
-
-    boolean idAddressed =
-//      packetType == PacketType.Play.Server.ATTACH_ENTITY ||
-      packetType == PacketType.Play.Server.ANIMATION ||
-      packetType == PacketType.Play.Server.ENTITY_STATUS ||
-      packetType == PacketType.Play.Server.ENTITY_METADATA ||
-      packetType == PacketType.Play.Server.ENTITY_VELOCITY
-      ;
-
-    if (idAddressed) {
-      Integer entityId = packetContainer.getIntegers().read(0);
-      if (entityId != null && entityId == player.getEntityId()) {
-        return;
-      }
-    }
-
-    Deque<Object> enqueuedPackets = connection.enqueuedPackets();
-    DelayQueue<DelayedPacket> delayedPackets = connection.delayedPackets();
-
-    boolean tooManyPackets = enqueuedPackets.size() > 8000;
-    boolean buffer = !tooManyPackets && !player.isDead() && (transactionTimeout || positionTimeout);
-//    boolean enqueueLater = significantPingGain
-
-    if (buffer) {
-      // put all delayed packets into the enqueuedPacket queue
-      if (!delayedPackets.isEmpty()) {
-        DelayedPacket[] delayedObjectsArray = delayedPackets.toArray(new DelayedPacket[0]);
-        delayedPackets.clear();
-        for (DelayedPacket delayedPacket : delayedObjectsArray) {
-          enqueuedPackets.offerLast(delayedPacket.packet());
-        }
-      }
-      enqueuedPackets.offerLast(packetContainer.getHandle());
-      connection.lastBufferEnqueue = System.currentTimeMillis();
-      event.setCancelled(true);
-    } else if (!enqueuedPackets.isEmpty()) {
-      int enqueuedPacketAmount = enqueuedPackets.size();
-      if (enqueuedPacketAmount > 100) {
-        // send up to 10 packets in the queue by poll
-        for (int i = 0; i < 10; i++) {
-          Object packet = enqueuedPackets.pollFirst();
-          if (packet == null) break;
-          connection.ignorePacketEnqueue = true;
-          sendPacket(player, packet);
-        }
-        enqueuedPackets.offerLast(packetContainer.getHandle());
-        event.setCancelled(true);
-      } else {
-        // send all packets in the queue by poll
-        while (!enqueuedPackets.isEmpty()) {
-          Object packet = enqueuedPackets.pollFirst();
-          connection.ignorePacketEnqueue = true;
-          sendPacket(player, packet);
-        }
-      }
-      if (connection.lastBufferNotification + 30000 < System.currentTimeMillis()) {
-        connection.lastBufferNotification = System.currentTimeMillis();
-        SibylBroadcast.broadcast("[AYCN] " + player.getName() + " had himself " + enqueuedPacketAmount + " packets buffered.");
-        if (IntaveControl.GOMME_MODE) {
-          System.out.println("[AYCN] " + player.getName() + " got " + enqueuedPacketAmount + " packets buffered.");
-        }
-//        player.sendMessage(ChatColor.RED + "You have " + enqueuedPacketAmount + " packets buffered.");
-      }
-      connection.lastBufferEnqueue = System.currentTimeMillis();
-    } else if (!delayedPackets.isEmpty()) {
-      DelayedPacket obj;
-      while ((obj = delayedPackets.poll()) != null) {
-        Object packet = obj.packet();
-        connection.ignorePacketEnqueue = true;
-        sendPacket(player, packet);
-      }
-    }
-    if (delayPackets) {
-      long requestedDelay = Math.max(delayRequested ? 100 : 0, (long) (Math.max(playerLatencyGain, 100) / 2d));
-      long delay = Math.min(connection.delayedPackets++ / 2 , requestedDelay);
-      long scheduledTime = System.nanoTime() + delay * 1_000_000;
-      scheduledTime = Math.max(connection.lastDelaySlot + 1, scheduledTime);
-      connection.lastDelaySlot = scheduledTime;
-      delayedPackets.add(new DelayedPacket(packetContainer.getHandle(), scheduledTime));
-      event.setCancelled(true);
-      if (connection.lastDelayNotification + 30000 < System.currentTimeMillis()) {
-        connection.lastDelayNotification = System.currentTimeMillis();
-        SibylBroadcast.broadcast("[AYCN] " + player.getName() + " is being delayed by " + requestedDelay + "ms.");
-        if (IntaveControl.GOMME_MODE) {
-          System.out.println("[AYCN] " + player.getName() + " is being delayed by " + requestedDelay + "ms.");
-        }
-//        player.sendMessage(ChatColor.RED + "You are being delayed by " + requestedDelay + "ms.");
-      }
-    } else {
-      connection.delayedPackets = 0;
-    }
-  }
-
-  private void sendPacket(Player player, Object packet) {
-    try {
-      ProtocolLibrary.getProtocolManager().sendServerPacket(player, PacketContainer.fromPacket(packet), true);
-    } catch (InvocationTargetException exception) {
-      exception.printStackTrace();
-    }
-  }
 
   public long oldestPendingTransaction(User user) {
     ConnectionMetadata synchronizeData = user.meta().connection();

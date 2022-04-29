@@ -10,6 +10,7 @@ import de.jpx3.intave.access.check.UnknownCheckException;
 import de.jpx3.intave.access.player.UnknownPlayerException;
 import de.jpx3.intave.check.Check;
 import de.jpx3.intave.cleanup.ReferenceMap;
+import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.Player;
 
@@ -76,7 +77,7 @@ public final class CheckAccessor {
           throw new UnknownPlayerException("Player " + player.getName() + " couldn't be found");
         }
         Map<String, Map<String, Double>> violationLevel = UserRepository.userOf(player).meta().violationLevel().violationLevel;
-        violationLevel.getOrDefault(check.name().toLowerCase(), DEFAULT_RETURN).put(threshold, violationLevelOf(player, threshold) + amount);
+        violationLevel.getOrDefault(check.name().toLowerCase(), DEFAULT_RETURN).put(threshold, MathHelper.minmax(0, violationLevelOf(player, threshold) + amount, 1000));
       }
 
       @Override

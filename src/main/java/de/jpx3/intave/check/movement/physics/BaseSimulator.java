@@ -631,8 +631,9 @@ class BaseSimulator extends Simulator {
     MovementMetadata movement = user.meta().movement();
     ViolationMetadata violationMetadata = user.meta().violationLevel();
 
+    System.out.println("Past external velocity: " + movement.pastExternalVelocity);
     Vector emulationMotion = new Vector(predictedX, predictedY, predictedZ);
-    int setbackTicks = (movement.pastExternalVelocity <= 8) ? 8 : ((violationMetadata.physicsVL > 50) ? 3 : 2);
-    Modules.mitigate().movement().emulationSetBack(user.player(), emulationMotion, setbackTicks, true);
+    int setbackTicks = (movement.pastExternalVelocity <= 16) ? 10 : ((violationMetadata.physicsVL > 50) ? 3 : 2);
+    Modules.mitigate().movement().emulationSetBack(user.player(), emulationMotion, setbackTicks, (movement.pastExternalVelocity > 16));
   }
 }

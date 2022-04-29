@@ -24,6 +24,16 @@ public final class PacketSender {
     }
   }
 
+  public static void sendServerPacketWithoutEvent(Player receiver, PacketContainer packet) {
+    if (!protocolManager.isClosed()) {
+      try {
+        protocolManager.sendServerPacket(receiver, packet, false);
+      } catch (InvocationTargetException exception) {
+        exception.printStackTrace();
+      }
+    }
+  }
+
   private final static boolean PROTOCOL_LIB_CORRECTED_THEIR_TYPO = Arrays.stream(ProtocolManager.class.getDeclaredMethods()).anyMatch(method -> method.getName().equalsIgnoreCase("receiveClientPacket"));
   private final static Method RECEIVE_PACKET_METHOD;
 

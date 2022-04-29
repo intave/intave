@@ -52,7 +52,6 @@ public final class EncryptionLayer implements Resource {
       SecureRandom secureRandom = new SecureRandom();
       byte[] iv = new byte[12];
       secureRandom.nextBytes(iv);
-
       long quarterYearsSinceEpoch = ByteVector.startTime / (1000L * 60 * 60 * 24 * 365 / 4);
       String asString = String.valueOf(quarterYearsSinceEpoch);
       Random random = new Random(quarterYearsSinceEpoch);
@@ -60,8 +59,8 @@ public final class EncryptionLayer implements Resource {
       MessageDigest messageDigest;
       try {
         messageDigest = MessageDigest.getInstance("SHA-256");
-      } catch (NoSuchAlgorithmException e) {
-        throw new IllegalStateException(e);
+      } catch (NoSuchAlgorithmException exception) {
+        throw new IllegalStateException(exception);
       }
       // shuffle the string using the random
       byte[] bytes = asString.getBytes(UTF_8);
@@ -121,7 +120,11 @@ public final class EncryptionLayer implements Resource {
         byteArrayOutputStream.write(buf, 0, i);
       }
       inputStream.close();
-      ByteBuffer byteBuffer = ByteBuffer.wrap(byteArrayOutputStream.toByteArray());
+      byte[] byteArray = byteArrayOutputStream.toByteArray();
+      if (byteArray.length == 0) {
+        return new ByteArrayInputStream(new byte[0]);
+      }
+      ByteBuffer byteBuffer = ByteBuffer.wrap(byteArray);
       byte[] iv = new byte[byteBuffer.getInt()];
       byteBuffer.get(iv);
 
@@ -132,8 +135,8 @@ public final class EncryptionLayer implements Resource {
       MessageDigest messageDigest;
       try {
         messageDigest = MessageDigest.getInstance("SHA-256");
-      } catch (NoSuchAlgorithmException e) {
-        throw new IllegalStateException(e);
+      } catch (NoSuchAlgorithmException exception) {
+        throw new IllegalStateException(exception);
       }
       // shuffle the string using the random
       byte[] bytes = asString.getBytes(UTF_8);
@@ -176,7 +179,7 @@ public final class EncryptionLayer implements Resource {
     } catch (Exception exception) {
       exception.printStackTrace();
     }
-    return null;
+    return new ByteArrayInputStream(new byte[0]);
   }
 
   @Override
