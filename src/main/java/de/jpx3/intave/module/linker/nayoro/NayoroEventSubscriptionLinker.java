@@ -8,8 +8,8 @@ import de.jpx3.intave.klass.create.IRXClassFactory;
 import de.jpx3.intave.lib.asm.Type;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
-import de.jpx3.intave.module.nayoro.NayoroEvent;
-import de.jpx3.intave.module.nayoro.NayoroPlayer;
+import de.jpx3.intave.module.nayoro.Event;
+import de.jpx3.intave.module.nayoro.PlayerContainer;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -21,7 +21,7 @@ public final class NayoroEventSubscriptionLinker extends Module {
   private final IntavePlugin plugin;
   private int totalLoaded = 0;
   private long totalLoad = 0;
-  private final Map<Class<? extends NayoroEvent>, List<NayoroRegisteredListener>> eventListeners = Maps.newHashMap();
+  private final Map<Class<? extends Event>, List<NayoroRegisteredListener>> eventListeners = Maps.newHashMap();
 
   public NayoroEventSubscriptionLinker(IntavePlugin plugin) {
     this.plugin = plugin;
@@ -41,14 +41,25 @@ public final class NayoroEventSubscriptionLinker extends Module {
     totalLoad += System.nanoTime() - start;
   }
 
-  public void fireEvent(NayoroPlayer player, NayoroEvent event) {
-    eventListeners.get(event.getClass()).forEach(executor -> executor.execute(player, event));
+  public void unregisterEventsIn(NayoroEventSubscriber eventProcessor) {
+    for (Map.Entry<Class<? extends Event>, List<NayoroRegisteredListener>> classListEntry : eventListeners.entrySet()) {
+      List<NayoroRegisteredListener> value = classListEntry.getValue();
+      value.removeIf(nayoroRegisteredListener -> nayoroRegisteredListener.subscriber() == eventProcessor);
+    }
   }
 
-  private Map<Class<? extends NayoroEvent>, List<NayoroRegisteredListener>> processLinking(NayoroEventSubscriber listener) {
+  public void fireEvent(PlayerContainer player, Event event) {
+    List<NayoroRegisteredListener> listeners = eventListeners.get(event.getClass());
+    if (listeners == null || listeners.isEmpty()) {
+      return;
+    }
+    listeners.forEach(executor -> executor.execute(player, event));
+  }
+
+  private Map<Class<? extends Event>, List<NayoroRegisteredListener>> processLinking(NayoroEventSubscriber listener) {
     Class<? extends NayoroEventSubscriber> listenerClass = listener.getClass();
     List<Method> methods = ImmutableList.copyOf(listenerClass.getDeclaredMethods());
-    Map<Class<? extends NayoroEvent>, List<NayoroRegisteredListener>> ret = Maps.newConcurrentMap();
+    Map<Class<? extends Event>, List<NayoroRegisteredListener>> ret = Maps.newConcurrentMap();
 
     int found = 0;
     for (Method method : methods) {
@@ -59,27 +70,28 @@ public final class NayoroEventSubscriptionLinker extends Module {
       Class<?> checkClass;
       if (
         method.getParameterTypes().length == 2 &&
-        method.getParameterTypes()[0].equals(NayoroPlayer.class) &&
-          NayoroEvent.class.isAssignableFrom(checkClass = method.getParameterTypes()[1])
+        method.getParameterTypes()[0].equals(PlayerContainer.class) &&
+          Event.class.isAssignableFrom(checkClass = method.getParameterTypes()[1])
       ) {
         if (Modifier.isPrivate(method.getModifiers()) || Modifier.isStatic(method.getModifiers())) {
           throw new IntaveInternalException("Invalid linking for method " + method);
         }
-        Class<? extends NayoroEvent> eventClass = checkClass.asSubclass(NayoroEvent.class);
+        Class<? extends Event> eventClass = checkClass.asSubclass(Event.class);
         List<NayoroRegisteredListener> registeredListeners = ret.computeIfAbsent(eventClass, k -> new ArrayList<>());
-        String playerClassPath = canonicalRepresentation(className(NayoroPlayer.class));
-        String concreteListenerClassPath = canonicalRepresentation(className(listenerClass));
-        String concreteEventClassPath = canonicalRepresentation(className(eventClass));
         String eventListenerClassPath = canonicalRepresentation(className(NayoroEventSubscriber.class));
-        String eventClassPath = canonicalRepresentation(className(NayoroEvent.class));
+        String playerClassPath = canonicalRepresentation(className(PlayerContainer.class));
+        String eventClassPath = canonicalRepresentation(className(Event.class));
+        String specifiedListenerClassPath = canonicalRepresentation(className(listenerClass));
+        String specifiedPlayerClassPath = canonicalRepresentation(className(method.getParameterTypes()[0]));
+        String specifiedEventClassPath = canonicalRepresentation(className(eventClass));
         Class<NayoroEventExecutor> executorClass = IRXClassFactory.assembleCallerClass(
           BukkitEventSubscriptionLinker.class.getClassLoader(),
           NayoroEventExecutor.class,
           "<generated>",
           "execute",
           "(L"+eventListenerClassPath+";L"+playerClassPath+";L"+eventClassPath+";)V",
-          "(L"+concreteListenerClassPath+";L"+ concreteEventClassPath +";)V",
-          concreteListenerClassPath,
+          "(L"+specifiedListenerClassPath+";L"+specifiedPlayerClassPath+";L"+ specifiedEventClassPath +";)V",
+          specifiedListenerClassPath,
           method.getName(),
           Type.getMethodDescriptor(method),
           false,

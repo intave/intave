@@ -122,13 +122,14 @@ final class PlayerUser implements User {
     this.colliderProcessor = Collider.suitableComplexColliderProcessorFor(this);
     this.simpleColliderProcessor = Collider.suitableSimpleColliderProcessorFor(this);
     this.poseSizes = Pose.poseSizesByVersion(metadata.protocol().protocolVersion());
+    meta().movement().setupDefaults();
   }
 
   private void outputVersionJoinInfo() {
     Player player = player();
     ProtocolMetadata clientData = meta().protocol();
     String string = player.getName() + " joined with version " + clientData.versionString() + "/" + clientData.protocolVersion();
-    if (clientData.clientVersionOlderThanServerVersion()) {
+    if (clientData.outdatedClient()) {
       string += " (behind)";
     }
     IntaveLogger.logger().printLine(string);

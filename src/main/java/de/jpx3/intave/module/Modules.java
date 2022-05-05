@@ -6,10 +6,12 @@ import de.jpx3.intave.module.event.CustomEvents;
 import de.jpx3.intave.module.feedback.FeedbackReceiver;
 import de.jpx3.intave.module.feedback.FeedbackSender;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
+import de.jpx3.intave.module.linker.nayoro.NayoroEventSubscriptionLinker;
 import de.jpx3.intave.module.linker.packet.PacketSubscriptionLinker;
 import de.jpx3.intave.module.mitigate.CombatMitigator;
 import de.jpx3.intave.module.mitigate.MovementEmulator;
 import de.jpx3.intave.module.mitigate.ReconDelayLimiter;
+import de.jpx3.intave.module.nayoro.Nayoro;
 import de.jpx3.intave.module.player.StorageLoader;
 import de.jpx3.intave.module.violation.ViolationProcessor;
 
@@ -44,6 +46,9 @@ public final class Modules {
 
   // quick accessors
 
+  public static Nayoro nayoro() {
+    return find(Nayoro.class);
+  }
   public static StorageLoader storage() {
     return find(StorageLoader.class);
   }
@@ -96,6 +101,10 @@ public final class Modules {
 
     public PacketSubscriptionLinker packetEvents() {
       return find(PacketSubscriptionLinker.class);
+    }
+
+    public NayoroEventSubscriptionLinker nayoroEvents() {
+      return find(NayoroEventSubscriptionLinker.class);
     }
   }
 

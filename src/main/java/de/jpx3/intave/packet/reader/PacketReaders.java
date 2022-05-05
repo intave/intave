@@ -40,6 +40,7 @@ public final class PacketReaders {
     setup(CUSTOM_PAYLOAD_IN, PayloadInReader::new);
     setup(BLOCK_PLACE, BlockInteractionReader::new);
     setup(USE_ITEM, BlockInteractionReader::new);
+    setup(USE_ENTITY, EntityUseReader::new);
     setup(BLOCK_DIG, BlockPositionReader::new);
   }
 

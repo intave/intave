@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.linker.nayoro;
 
-import de.jpx3.intave.module.nayoro.NayoroEvent;
-import de.jpx3.intave.module.nayoro.NayoroPlayer;
+import de.jpx3.intave.module.nayoro.Event;
+import de.jpx3.intave.module.nayoro.PlayerContainer;
 
 public final class NayoroRegisteredListener {
   private final NayoroEventSubscriber subscriber;
@@ -12,11 +12,15 @@ public final class NayoroRegisteredListener {
     this.eventExecutor = eventExecutor;
   }
 
-  public void execute(NayoroPlayer player, NayoroEvent event) {
+  public void execute(PlayerContainer player, Event event) {
     eventExecutor.execute(subscriber, player, event);
   }
 
   public void initialize() {
 
+  }
+
+  public NayoroEventSubscriber subscriber() {
+    return subscriber;
   }
 }

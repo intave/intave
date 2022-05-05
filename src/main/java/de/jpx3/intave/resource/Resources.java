@@ -144,7 +144,6 @@ public final class Resources {
       stringBuilder.append(String.format("%02x", b));
     }
     String quarterHash = stringBuilder.toString();
-
     return (((long) (fileHashCode & 0xffff) | (quarterHash.hashCode() & 0xffff0000)) << Integer.SIZE);
   }
 

@@ -28,7 +28,6 @@ public final class LongTermClickAccuracyHeuristic extends MetaCheckPart<Heuristi
     this.plugin = IntavePlugin.singletonInstance();
   }
 
-
   @PacketSubscription(
     packetsIn = {
       USE_ENTITY, ARM_ANIMATION

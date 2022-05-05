@@ -7,9 +7,16 @@ import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 
 public class EntityReader extends AbstractPacketReader {
-  public @Nullable Entity readEntity(PacketEvent event) {
-    World world = event.getPlayer().getWorld();
-    int identifier = event.getPacket().getIntegers().read(0);
+  public int entityId() {
+    return packet.getIntegers().read(0);
+  }
+
+  public @Nullable Entity entityBy(PacketEvent event) {
+    return entityBy(event.getPlayer().getWorld());
+  }
+
+  public @Nullable Entity entityBy(World world) {
+    int identifier = packet.getIntegers().read(0);
     return EntityLookup.findEntity(world, identifier);
   }
 }

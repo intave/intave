@@ -296,18 +296,16 @@ public class Matrix implements Serializable {
   
   @Override
   public String toString() {
-    String output = "matrix(";
-    
+    StringBuilder output = new StringBuilder("matrix(");
     for (int rowIndex = 0; rowIndex < rows(); rowIndex++) {
-      output += "[";
+      output.append("[");
       for (int colIndex = 0; colIndex < data[rowIndex].length; colIndex++) {
-        output += data[rowIndex][colIndex] + ", ";
+        output.append(data[rowIndex][colIndex]).append(", ");
       }
-      output = output.substring(0, output.length() - 2);
-      output += "], ";
+      output = new StringBuilder(output.substring(0, output.length() - 2));
+      output.append("], ");
     }
-    output = output.substring(0, output.length() - 2);
-    
+    output = new StringBuilder(output.substring(0, output.length() - 2));
     return output + ")";
   }
 }

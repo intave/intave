@@ -28,6 +28,7 @@ public final class ModuleLoader {
     // linker
     prepareModule("de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker", eventBoot);
     prepareModule("de.jpx3.intave.module.linker.packet.PacketSubscriptionLinker", packetBoot);
+    prepareModule("de.jpx3.intave.module.linker.nayoro.NayoroEventSubscriptionLinker", packetBoot);
 
     // feedback
     prepareModule("de.jpx3.intave.module.feedback.FeedbackSender", defaultBoot);
@@ -55,6 +56,7 @@ public final class ModuleLoader {
     prepareModule("de.jpx3.intave.module.dispatch.MovementDispatcher", lateBoot);
 
     // misc
+    prepareModule("de.jpx3.intave.module.nayoro.Nayoro", lateBoot);
     prepareModule("de.jpx3.intave.module.warning.ClientWarningModule", defaultBoot);
     prepareModule("de.jpx3.intave.module.event.CustomEvents", defaultBoot);
     prepareModule("de.jpx3.intave.module.patcher.PacketResynchronizer", defaultBoot);

@@ -97,7 +97,7 @@ public final class PreAttackHeuristic extends MetaCheckPart<Heuristics, PreAttac
     if (entity == null || !entity.clientSynchronized || movementData.lastTeleport < 5) {
       return;
     }
-    if (clientData.clientVersionOlderThanServerVersion()) {
+    if (clientData.outdatedClient()) {
       return;
     }
     boolean dead = entity.fakeDead || entity.dead;

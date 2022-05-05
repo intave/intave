@@ -99,11 +99,11 @@ public final class ProtocolMetadata {
   }
 
   public boolean flyingPacketStream() {
-    return protocolVersion <= VER_1_8 && !clientVersionOlderThanServerVersion();
+    return protocolVersion <= VER_1_8 && !outdatedClient();
   }
 
   public boolean supportsInventoryAchievementPacket() {
-    return protocolVersion <= VER_1_11_1 && !clientVersionOlderThanServerVersion();
+    return protocolVersion <= VER_1_11_1 && !outdatedClient();
   }
 
   public boolean applyModernCollider() {
@@ -168,7 +168,7 @@ public final class ProtocolMetadata {
 
   private Boolean behind;
 
-  public boolean clientVersionOlderThanServerVersion() {
+  public boolean outdatedClient() {
     if (behind == null || refreshes < 2) {
       MinecraftVersion server = MinecraftVersion.getCurrentVersion();
       MinecraftVersion client = new MinecraftVersion(versionAsString(protocolVersion));

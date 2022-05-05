@@ -75,6 +75,7 @@ public final class CheckService {
     bakeQuickAccess();
     checkLinker.linkBukkitEventSubscriptions(checks);
     checkLinker.linkPacketEventSubscriptions(checks);
+    checkLinker.linkNayoroEventSubscriptions(checks);
 
     ShutdownTasks.addBeforeAll(this::reset);
   }
@@ -85,6 +86,7 @@ public final class CheckService {
   public void reset() {
     checkLinker.removeBukkitEventSubscriptions(checks);
     checkLinker.removePacketEventSubscriptions(checks);
+    checkLinker.removeNayoroEventSubscriptions(checks);
     resetQuickAccess();
     checks = new CopyOnWriteArrayList<>();
     classRequestCache = new HashMap<>();

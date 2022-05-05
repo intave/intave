@@ -6,14 +6,8 @@ import java.util.Collections;
 import java.util.List;
 
 public final class Sample implements Environment {
-
-  private void run(NayoroEvent event) {
-
-
-  }
-
   @Override
-  public NayoroPlayer mainPlayer() {
+  public PlayerContainer mainPlayer() {
     return null;
   }
 
@@ -25,6 +19,11 @@ public final class Sample implements Environment {
   @Override
   public Position positionOf(int entity) {
     return null;
+  }
+
+  @Override
+  public boolean property(String name) {
+    return false;
   }
 
   @Override

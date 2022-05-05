@@ -28,7 +28,7 @@ public final class BlockVariantRegister {
     PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), "de.jpx3.intave.block.variant.BlockVariantRegister$Indexer");
   }
 
-  public static void indexIfAvailable() {
+  public static void index() {
     for (Material type : Material.values()) {
       if (type.isBlock()) {
         Indexer.index(type, blockDataIndex::put, blockDataRegister::put);

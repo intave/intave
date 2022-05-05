@@ -36,7 +36,7 @@ public final class HealthFilter extends Filter {
       }
       PacketContainer packet = event.getPacket();
       EntityReader entityReader = PacketReaders.readerOf(packet);
-      Entity entity = entityReader.readEntity(event);
+      Entity entity = entityReader.entityBy(event);
       entityReader.close();
       if (entity == null) {
         return;

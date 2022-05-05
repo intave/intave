@@ -80,7 +80,7 @@ public final class NoSwingHeuristic extends MetaCheckPart<Heuristics, NoSwingHeu
     }
 
     // fix?
-    if (user.meta().protocol().clientVersionOlderThanServerVersion()) {
+    if (user.meta().protocol().outdatedClient()) {
       return;
     }
 

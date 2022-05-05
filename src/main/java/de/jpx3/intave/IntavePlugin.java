@@ -549,7 +549,7 @@ public final class IntavePlugin extends JavaPlugin {
         }
       }
 
-      BlockVariantRegister.indexIfAvailable();
+      BlockVariantRegister.index();
 
       PacketReaders.setup();
       BlockWrapper.setup();

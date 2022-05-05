@@ -78,7 +78,7 @@ public final class EntityTypeResolver {
     int entityId = packet.getIntegers().read(0);
 
     EntityReader entityReader = PacketReaders.readerOf(packet);
-    Entity entity = entityReader.readEntity(event);
+    Entity entity = entityReader.entityBy(event);
     entityReader.close();
 
     if (entity != null) {
@@ -371,7 +371,7 @@ public final class EntityTypeResolver {
         return HitboxSize.of(0.5F, 1.975F);
     }
     if (IntaveControl.DISABLE_LICENSE_CHECK) {
-      IntaveLogger.logger().info("Zero BoundingBox 1");
+      IntaveLogger.logger().info("Failed to map bounding box of dead entity " + deadEntityType + "/" + nameByDeadEntityType(deadEntityType));
     }
     return HitboxSize.zero();
   }

@@ -19,7 +19,6 @@ public final class v14ShapeDrill extends AbstractShapeDrill {
   public BlockShape resolve(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
     net.minecraft.server.v1_14_R1.World handle = ((CraftWorld) world).getHandle();
     BlockPosition blockPosition = new BlockPosition(posX, posY, posZ);
-    // do not attempt to merge this class with v13BoundingBoxDrill
     IBlockData blockData = (IBlockData) BlockVariantRegister.rawVariantOf(type, blockState);
     if (blockData == null) {
       return BlockShapes.emptyShape();
@@ -37,6 +36,7 @@ public final class v14ShapeDrill extends AbstractShapeDrill {
     if (VoxelShapes.b() == collisionShape) {
       return BlockShapes.cubicShapeAt(posX, posY, posZ);
     }
+    // convert complex blocks to native BBs
     List<AxisAlignedBB> nativeBoxes = collisionShape.d();
     return translateWithOffset(nativeBoxes, posX, posY, posZ);
   }

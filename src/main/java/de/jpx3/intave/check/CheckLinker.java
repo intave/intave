@@ -2,6 +2,7 @@ package de.jpx3.intave.check;
 
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
+import de.jpx3.intave.module.linker.nayoro.NayoroEventSubscriptionLinker;
 import de.jpx3.intave.module.linker.packet.PacketSubscriptionLinker;
 
 import java.util.Collection;
@@ -27,6 +28,16 @@ import java.util.function.Consumer;
  * @see BukkitEventSubscriptionLinker
  */
 public final class CheckLinker {
+  public void linkNayoroEventSubscriptions(Collection<Check> checks) {
+    NayoroEventSubscriptionLinker nayoro = Modules.linker().nayoroEvents();
+    iterativeApply(checks, nayoro::registerEventsIn);
+  }
+
+  public void removeNayoroEventSubscriptions(Collection<Check> checks) {
+    NayoroEventSubscriptionLinker packetSubscriptionLinker = Modules.linker().nayoroEvents();
+    iterativeApply(checks, packetSubscriptionLinker::unregisterEventsIn);
+  }
+
   /**
    * Iterate through the {@link Collection} of {@link Check}s -
    * constraint by {@link Check#performLinkage()} - and their check parts - constraint by {@link CheckPart#enabled()}

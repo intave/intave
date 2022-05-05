@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.linker.nayoro;
 
-import de.jpx3.intave.module.nayoro.NayoroEvent;
-import de.jpx3.intave.module.nayoro.NayoroPlayer;
+import de.jpx3.intave.module.nayoro.Event;
+import de.jpx3.intave.module.nayoro.PlayerContainer;
 
 /**
  * Class generated using IntelliJ IDEA
@@ -9,5 +9,5 @@ import de.jpx3.intave.module.nayoro.NayoroPlayer;
  */
 
 public interface NayoroEventExecutor {
-  void execute(NayoroEventSubscriber subscriber, NayoroPlayer player, NayoroEvent event);
+  void execute(NayoroEventSubscriber subscriber, PlayerContainer player, Event event);
 }

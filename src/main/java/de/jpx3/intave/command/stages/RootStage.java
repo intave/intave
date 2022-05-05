@@ -20,6 +20,8 @@ import de.jpx3.intave.command.SubCommand;
 import de.jpx3.intave.diagnostic.*;
 import de.jpx3.intave.diagnostic.timings.Timing;
 import de.jpx3.intave.diagnostic.timings.Timings;
+import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.nayoro.Nayoro;
 import de.jpx3.intave.shade.BoundingBox;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -131,6 +133,25 @@ public final class RootStage extends CommandStage {
         }
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
       });
+    }
+  }
+
+  @SubCommand(
+    selectors = "record",
+    usage = "",
+    description = "Record timings",
+    permission = "sibyl"
+  )
+  @Native
+  public void recordCommand(User user, @Optional Player target) {
+    User targetUser = target != null ? UserRepository.userOf(target) : user;
+    Nayoro nayoro = Modules.nayoro();
+    if (!nayoro.recordingActiveFor(targetUser)) {
+      nayoro.enableRecordingFor(targetUser);
+      user.player().sendMessage(ChatColor.GREEN + "Recording enabled for " + ChatColor.RED + targetUser.player().getName());
+    } else {
+      nayoro.disableRecordingFor(targetUser);
+      user.player().sendMessage(ChatColor.GREEN + "Recording disabled for " + ChatColor.RED + targetUser.player().getName());
     }
   }
 

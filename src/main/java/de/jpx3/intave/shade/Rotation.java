@@ -14,12 +14,12 @@ public final class Rotation implements Serializable {
     return yaw;
   }
 
-  public void setYaw(float yaw) {
-    this.yaw = yaw;
-  }
-
   public float pitch() {
     return pitch;
+  }
+
+  public void setYaw(float yaw) {
+    this.yaw = yaw;
   }
 
   public void setPitch(float pitch) {

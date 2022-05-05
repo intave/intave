@@ -217,16 +217,18 @@ public final class MovementMetadata implements SimulationEnvironment {
     applyPlayerLocation();
   }
 
-  private void setupDefaults() {
+  public void setupDefaults() {
     ProtocolMetadata clientData = user.meta().protocol();
     int version = clientData.protocolVersion();
     this.resetMotion = version <= 47 ? 0.005 : 0.003;
     this.frictionMultiplier = version <= VER_1_15 ? 0.16277136f : 0.16277137F;
     this.frictionPosSubtraction = version <= VER_1_15 ? 1.0 : 0.5000001;
     this.hasJumpFactor = version >= VER_1_15;
-    Location location = player.getLocation();
-    boundingBox = BoundingBox.fromPosition(user, location.getX(), location.getY(), location.getZ());
-    boundingBoxSetup = true;
+    if (!boundingBoxSetup) {
+      Location location = player.getLocation();
+      boundingBox = BoundingBox.fromPosition(user, location.getX(), location.getY(), location.getZ());
+      boundingBoxSetup = true;
+    }
   }
 
   private void applyPlayerLocation() {

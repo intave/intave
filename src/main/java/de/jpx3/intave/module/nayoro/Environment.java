@@ -10,9 +10,11 @@ import java.util.List;
  */
 
 public interface Environment {
-  NayoroPlayer mainPlayer();
+  PlayerContainer mainPlayer();
   List<Integer> entities();
   Position positionOf(int entity);
+
+  boolean property(String name);
 
   long duration();
   long time();

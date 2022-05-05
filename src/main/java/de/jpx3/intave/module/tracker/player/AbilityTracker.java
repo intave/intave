@@ -182,6 +182,21 @@ public final class AbilityTracker extends Module {
       this.id = id;
     }
 
+    public static GameMode fromBukkit(org.bukkit.GameMode gameMode) {
+      switch (gameMode) {
+        case SURVIVAL:
+          return SURVIVAL;
+        case CREATIVE:
+          return CREATIVE;
+        case ADVENTURE:
+          return ADVENTURE;
+        case SPECTATOR:
+          return SPECTATOR;
+        default:
+          throw new IllegalArgumentException("Unable to resolve game mode " + gameMode);
+      }
+    }
+
     public int id() {
       return id;
     }

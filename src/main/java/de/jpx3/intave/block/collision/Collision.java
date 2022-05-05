@@ -4,7 +4,10 @@ import de.jpx3.intave.annotate.DoNotFlowObfuscate;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.physics.MaterialMagic;
-import de.jpx3.intave.block.shape.*;
+import de.jpx3.intave.block.shape.BlockShape;
+import de.jpx3.intave.block.shape.ShapeCombiner;
+import de.jpx3.intave.block.shape.ShapeResolver;
+import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.block.state.BlockStateAccess;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.variant.BlockVariantAccess;
@@ -213,10 +216,11 @@ public final class Collision {
                 if (blockRemaining-- <= 0) {
                   break exit;
                 }
-                List<BoundingBox> resolve = stateAccess.shapeAt(x, y, z).boundingBoxes();
+                BlockShape blockShape = stateAccess.shapeAt(x, y, z);
+//                List<BoundingBox> resolve = blockShape.boundingBoxes();
                 Material material = stateAccess.typeAt(x, y, z);
                 if (CollisionModifiers.isModified(material)) {
-                  resolve = CollisionModifiers.modified(material, user, playerBoundingBox, x, y, z, BlockShapes.shapeOf(resolve)).boundingBoxes();
+                  blockShape = CollisionModifiers.modified(material, user, playerBoundingBox, x, y, z, blockShape);
                 }
                 boolean blockOutsideBorder = !blockInsideBorder(world, x, z);
                 if (blockOutsideBorder && !movementData.outsideBorder) {
@@ -225,11 +229,13 @@ public final class Collision {
                   }
                   resolvedBoundingBoxes.add(new BoundingBox(x, y, z, x + 1, y, z + 1));
                 }
-                if (resolve != null && !resolve.isEmpty()) {
-                  if (resolvedBoundingBoxes == null) {
-                    resolvedBoundingBoxes = new ArrayList<>(resolve);
-                  } else {
-                    resolvedBoundingBoxes.addAll(resolve);
+                if (blockShape != null && !blockShape.isEmpty()) {
+                  if (blockShape.intersectsWith(playerBoundingBox)) {
+                    if (resolvedBoundingBoxes == null) {
+                      resolvedBoundingBoxes = new ArrayList<>(blockShape.boundingBoxes());
+                    } else {
+                      resolvedBoundingBoxes.addAll(blockShape.boundingBoxes());
+                    }
                   }
                 }
               }

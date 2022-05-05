@@ -41,6 +41,7 @@ public final class FileResource implements Resource {
       FileChannel fileChannel = new FileOutputStream(file).getChannel();
       ReadableByteChannel byteChannel = Channels.newChannel(new ByteArrayInputStream(inputBytes.toByteArray()));
       fileChannel.transferFrom(byteChannel, 0, Long.MAX_VALUE);
+      fileChannel.close();
     } catch (IOException exception) {
       exception.printStackTrace();
     }

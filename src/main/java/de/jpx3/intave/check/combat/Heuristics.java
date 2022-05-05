@@ -23,6 +23,7 @@ import de.jpx3.intave.check.combat.heuristics.detect.experimental.RotationPrevis
 import de.jpx3.intave.check.combat.heuristics.detect.inventory.PacketInventoryHeuristic;
 import de.jpx3.intave.check.combat.heuristics.detect.mods.LabyModsHeuristic;
 import de.jpx3.intave.check.combat.heuristics.detect.other.*;
+import de.jpx3.intave.check.combat.heuristics.detect.testing.TestingHeuristic;
 import de.jpx3.intave.check.combat.heuristics.mine.MiningStrategyContainer;
 import de.jpx3.intave.check.combat.heuristics.mine.MiningStrategyExecutor;
 import de.jpx3.intave.diagnostic.natives.NativeCheck;
@@ -83,6 +84,7 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
     boolean enterprise = (ProtocolMetadata.VERSION_DETAILS & 0x200) != 0;
     boolean partner = (ProtocolMetadata.VERSION_DETAILS & 0x100) != 0;
 
+    // For enterprise users
     if (enterprise) {
       appendCheckPart(new OldAirClickLimitHeuristic(this));
       appendCheckPart(new AttackReduceIgnoreHeuristic(this));
@@ -91,18 +93,22 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
       appendCheckPart(new LongTermClickAccuracyHeuristic(this));
     }
 
+    // for Gomme
     if (IntaveControl.GOMME_MODE || IntaveControl.DISABLE_LICENSE_CHECK) {
       appendCheckPart(new SameRotationHeuristic(this));
       appendCheckPart(new AttackRequiredHeuristic(this));
       appendCheckPart(new LabyModsHeuristic(this));
     }
 
+    // for testing
+    if (!IntaveControl.GOMME_MODE && IntaveControl.DISABLE_LICENSE_CHECK) {
+      appendCheckPart(new RotationPrevisionDetermination(this));
+      appendCheckPart(new TestingHeuristic(this));
+    }
+
     // Lucky experimental heuristics
     appendCheckPart(new SwingLimitHeuristics(this));
     appendCheckPart(new SwingDeviationHeuristics(this));
-
-    appendCheckPart(new RotationPrevisionDetermination(this));
-
 
     appendCheckPart(new PreAttackHeuristic(this));
 //    appendCheckPart(new RotationAngleHeuristic(this));

@@ -536,7 +536,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
 //    User user = userOf(player);
     PacketContainer packet = event.getPacket();
     EntityReader entityReader = PacketReaders.readerOf(packet);
-    Entity entity = entityReader.readEntity(event);
+    Entity entity = entityReader.entityBy(event);
     entityReader.close();
 
     if (entity instanceof Player && UserRepository.hasUser((Player) entity)) {

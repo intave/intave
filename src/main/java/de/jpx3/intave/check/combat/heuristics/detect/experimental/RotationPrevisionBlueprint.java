@@ -76,7 +76,7 @@ public abstract class RotationPrevisionBlueprint<M extends RotationPrevisionBlue
 
     boolean moving = Hypot.fast(movementData.motionX(), movementData.motionZ()) + Math.abs(movementData.motionY()) >= 0.025;
     boolean combatRequirements = moving
-      && meta.lastAttack <= 1
+//      && meta.lastAttack <= 1
       && target.moving(0.025)
       && target.ticksAlive > 25
       && attackData.lastReach() > 1.0;

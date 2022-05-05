@@ -18,12 +18,6 @@ public final class EnderPortalFramePatch extends BoundingBoxPatch {
   private final BoundingBox eye8 = BoundingBox.originFromX16(5, 13, 5, 11, 16, 11);
   private final BoundingBox eye13 = BoundingBox.originFromX16(4, 13, 4, 12, 16, 12);
 
-  {
-    baseShape.makeOriginBox();
-    eye8.makeOriginBox();
-    eye13.makeOriginBox();
-  }
-
   @Override
   protected List<BoundingBox> patch(World world, Player player, Block block, List<BoundingBox> bbs) {
     return patch(world, player, block.getX(), block.getY(), block.getZ(), BlockTypeAccess.typeAccess(block, player), BlockVariantAccess.variantAccess(block), bbs);

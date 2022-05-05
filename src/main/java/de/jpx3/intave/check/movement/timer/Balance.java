@@ -21,6 +21,8 @@ import de.jpx3.intave.user.meta.ViolationMetadata;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
@@ -154,7 +156,25 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
     }
   }
 
+  @BukkitEventSubscription
+  public void receiveAttackUpdate(EntityDamageByEntityEvent event) {
+    Entity entity = event.getEntity();
+    if (entity instanceof Player && event.getCause() == EntityDamageEvent.DamageCause.ENTITY_ATTACK) {
+      Player player = (Player) entity;
+      int attackCancelThreshold = trustFactorSetting("act", player);
+      int attackCancelLength = trustFactorSetting("acl", player);
+      cancelOnPacketOverflow(player, event, attackCancelThreshold, attackCancelLength);
+    }
+  }
+
+  private final static long DEFAULT_DELAY = 5;
+  private final static long DEFAULT_THRESHOLD = 2000;
+
   private void cancelOnPacketOverflow(Player player, Cancellable cancellable) {
+    cancelOnPacketOverflow(player, cancellable, DEFAULT_THRESHOLD, DEFAULT_DELAY);
+  }
+
+  private void cancelOnPacketOverflow(Player player, Cancellable cancellable, long threshold, long delay) {
     User user = userOf(player);
     BalanceMeta timerData = metaOf(user);
     long lastTimerFlag = timerData.lastTimerFlag;
@@ -166,7 +186,7 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
       return;
     }
     Map<String, Double> stringDoubleMap = violationLevel.get(name);
-    if (stringDoubleMap.get("thresholds") > 5 && msSinceFlag < 2000) {
+    if (stringDoubleMap.get("thresholds") > threshold && msSinceFlag < delay) {
       cancellable.setCancelled(true);
       player.updateInventory();
     }

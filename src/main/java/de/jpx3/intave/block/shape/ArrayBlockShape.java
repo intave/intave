@@ -5,6 +5,8 @@ import de.jpx3.intave.shade.BoundingBox;
 import de.jpx3.intave.shade.Direction;
 import de.jpx3.intave.shade.Position;
 
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -81,23 +83,30 @@ public final class ArrayBlockShape extends MemoryTraced implements BlockShape {
     return raytrace;
   }
 
+  private final static Reference<List<BoundingBox>> EMPTY_REFERENCE = new WeakReference<>(null);
+  private Reference<List<BoundingBox>> boundingBoxCache = EMPTY_REFERENCE;
+
   @Override
   public List<BoundingBox> boundingBoxes() {
-    List<BoundingBox> boundingBoxes = null;
-    for (BlockShape content : contents) {
-      List<BoundingBox> added = content.boundingBoxes();
-      if (!added.isEmpty()) {
-        if (boundingBoxes == null) {
-          boundingBoxes = new ArrayList<>(contents.length);
-        }
-        if (added.size() == 1) {
-          boundingBoxes.add(added.get(0));
-        } else {
-          boundingBoxes.addAll(added);
+    if (boundingBoxCache.get() == null) {
+      List<BoundingBox> boundingBoxes = null;
+      for (BlockShape content : contents) {
+        List<BoundingBox> added = content.boundingBoxes();
+        if (!added.isEmpty()) {
+          if (boundingBoxes == null) {
+            boundingBoxes = new ArrayList<>(contents.length);
+          }
+          if (added.size() == 1) {
+            boundingBoxes.add(added.get(0));
+          } else {
+            boundingBoxes.addAll(added);
+          }
         }
       }
+      List<BoundingBox> boundingBoxList = boundingBoxes == null ? Collections.emptyList() : boundingBoxes;
+      boundingBoxCache = new WeakReference<>(boundingBoxList);
     }
-    return boundingBoxes == null ? Collections.emptyList() : boundingBoxes;
+    return boundingBoxCache.get();
   }
 
   @Override

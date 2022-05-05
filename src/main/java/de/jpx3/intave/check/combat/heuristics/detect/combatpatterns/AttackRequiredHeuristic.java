@@ -96,7 +96,7 @@ public final class AttackRequiredHeuristic extends MetaCheckPart<Heuristics, Att
     if (entity == null || !entity.clientSynchronized || movementData.lastTeleport < 5) {
       return;
     }
-    if (clientData.protocolVersion() != VER_1_8 || clientData.clientVersionOlderThanServerVersion()) {
+    if (clientData.protocolVersion() != VER_1_8 || clientData.outdatedClient()) {
       return;
     }
 
@@ -111,7 +111,7 @@ public final class AttackRequiredHeuristic extends MetaCheckPart<Heuristics, Att
 
     if (!recentlyUsedRot && meta.didSwing && !meta.didAttack) {
       // Raytrace if cursor is upon entity
-      boolean cursorUponEntity = cursorUponEntity(player, user, entity);
+      boolean cursorUponEntity = cursorUponEntity(user, entity);
       if (cursorUponEntity) {
         long timeToLastFlag = System.currentTimeMillis() - meta.lastFlag;
         if (timeToLastFlag < 20_000 && timeToLastFlag > 1500) {
@@ -141,10 +141,10 @@ public final class AttackRequiredHeuristic extends MetaCheckPart<Heuristics, Att
   }
 
   private boolean cursorUponEntity(
-    Player player,
     User user,
     EntityShade entity
   ) {
+    Player player = user.player();
     MetadataBundle meta = user.meta();
     MovementMetadata movementData = meta.movement();
     ProtocolMetadata clientData = meta.protocol();
