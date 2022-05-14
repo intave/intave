@@ -34,6 +34,6 @@ public final class SlotSwitchEvent extends Event {
 
   @Override
   public void accept(EventSink sink) {
-    sink.on(this);
+    sink.visit(this);
   }
 }

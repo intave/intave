@@ -156,6 +156,19 @@ public final class RootStage extends CommandStage {
   }
 
   @SubCommand(
+    selectors = "playback",
+    usage = "",
+    description = "Playback recorded timings",
+    permission = "sibyl"
+  )
+  @Native
+  public void playbackCommand(User user, @Optional Player target) {
+    User targetUser = target != null ? UserRepository.userOf(target) : user;
+    Nayoro nayoro = Modules.nayoro();
+    nayoro.instantPlayback(targetUser);
+  }
+
+  @SubCommand(
     selectors = "packettimings",
     usage = "",
     description = "Output timing data",

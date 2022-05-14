@@ -10,7 +10,7 @@ public final class ForwardEventSink extends EventSink {
   }
 
   @Override
-  public void onAny(Event event) {
+  public void visitAny(Event event) {
     Modules.linker().nayoroEvents().fireEvent(player, event);
   }
 }

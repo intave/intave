@@ -182,10 +182,10 @@ public final class FeedbackSender extends Module {
       //noinspection unchecked
       obj = (T) FALLBACK_OBJECT;
     }
-    if (synchronizeData.transactionShortKeyMap().size() > 5000) {
-      callback.success(player, obj);
-      return null;
-    }
+//    if (synchronizeData.transactionShortKeyMap().size() > 15000) {
+//      callback.success(player, obj);
+//      return null;
+//    }
     short transactionKey = findAvailableTransactionIdFor(player);
     long transactionNumCounter = synchronizeData.transactionNumCounter++;
     FeedbackRequest<T> feedbackEntry = new FeedbackRequest<>(callback, tracker, obj, transactionKey, transactionNumCounter);

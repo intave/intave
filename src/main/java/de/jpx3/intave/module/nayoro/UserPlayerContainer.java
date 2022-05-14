@@ -19,6 +19,7 @@ import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_8;
 
 public final class UserPlayerContainer implements PlayerContainer {
   private final User user;
+  private Environment environment;
 
   public UserPlayerContainer(User user) {
     this.user = user;
@@ -29,6 +30,16 @@ public final class UserPlayerContainer implements PlayerContainer {
     if (IntaveControl.DISABLE_LICENSE_CHECK) {
       user.player().sendMessage("[debug] " + message);
     }
+  }
+
+  @Override
+  public Environment environment() {
+    return environment;
+  }
+
+  @Override
+  public void setEnvironment(Environment environment) {
+    this.environment = environment;
   }
 
   @Override

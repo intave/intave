@@ -19,7 +19,7 @@ public final class ClickEvent extends Event {
 
   @Override
   public void accept(EventSink sink) {
-    sink.on(this);
+    sink.visit(this);
   }
 
   public static ClickEvent create() {

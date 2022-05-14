@@ -2,7 +2,8 @@ package de.jpx3.intave.module.nayoro;
 
 import de.jpx3.intave.shade.Position;
 
-import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Class generated using IntelliJ IDEA
@@ -11,11 +12,13 @@ import java.util.List;
 
 public interface Environment {
   PlayerContainer mainPlayer();
-  List<Integer> entities();
+  Set<Integer> entities();
   Position positionOf(int entity);
 
-  boolean property(String name);
+  boolean inSight(int entity);
 
-  long duration();
-  long time();
+  boolean property(String name);
+  boolean hasPassed(long time);
+
+  Map<String, Boolean> properties();
 }

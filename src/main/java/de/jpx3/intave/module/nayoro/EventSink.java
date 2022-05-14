@@ -1,27 +1,55 @@
 package de.jpx3.intave.module.nayoro;
 
 public abstract class EventSink {
-  public void on(AttackEvent event) {
-    onAny(event);
+  public void visitSelect(Event event) {
+    if (event instanceof AttackEvent) {
+      visit((AttackEvent) event);
+    } else if (event instanceof ClickEvent) {
+      visit((ClickEvent) event);
+    } else if (event instanceof EntityMoveEvent) {
+      visit((EntityMoveEvent) event);
+    } else if (event instanceof PlayerInitEvent) {
+      visit((PlayerInitEvent) event);
+    } else if (event instanceof PlayerMoveEvent) {
+      visit((PlayerMoveEvent) event);
+    } else if (event instanceof SlotSwitchEvent) {
+      visit((SlotSwitchEvent) event);
+    } else if (event instanceof PropertiesEvent) {
+      visit((PropertiesEvent) event);
+    }
   }
 
-  public void on(ClickEvent event) {
-    onAny(event);
+  public void visit(PropertiesEvent event) {
+    visitAny(event);
   }
 
-  public void on(EntityMoveEvent event) {
-    onAny(event);
+  public void visit(AttackEvent event) {
+    visitAny(event);
   }
 
-  public void on(MoveEvent event) {
-    onAny(event);
+  public void visit(ClickEvent event) {
+    visitAny(event);
   }
 
-  public void on(SlotSwitchEvent event) {
-    onAny(event);
+  public void visit(EntityMoveEvent event) {
+    visitAny(event);
   }
 
-  public abstract void onAny(Event event);
+  public void visit(PlayerInitEvent event) {
+    visitAny(event);
+  }
+
+  public void visit(PlayerMoveEvent event) {
+    visitAny(event);
+  }
+
+  public void visit(SlotSwitchEvent event) {
+    visitAny(event);
+  }
+
+  public void visitAny(Event event) {
+
+  }
 
   public void close() {
 

@@ -8,6 +8,7 @@ import de.jpx3.intave.user.UserLocal;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -15,10 +16,12 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterInputStream;
 
 public final class Nayoro extends Module {
   private final UserLocal<Set<EventSink>> eventSinks = UserLocal.withInitial(this::defaultSinksFor);
   private final PacketEventDispatch packetEventDispatch = new PacketEventDispatch(sinkCallback());
+  private final List<Playback> playbacks = new ArrayList<>();
 
   @Override
   public void enable() {
@@ -34,7 +37,8 @@ public final class Nayoro extends Module {
       OutputStream outputStream = Files.newOutputStream(sampleFile.toPath());
       outputStream = new DeflaterOutputStream(outputStream);
       outputStream = new BufferedOutputStream(outputStream, 1024 * 1024);
-      RecordEventSink recordEventSink = new RecordEventSink(new LiveEnvironment(user), new DataOutputStream(outputStream));
+      DataOutputStream dataOutput = new DataOutputStream(outputStream);
+      RecordEventSink recordEventSink = new RecordEventSink(new LiveEnvironment(user), dataOutput);
       eventSinks.get(user).add(recordEventSink);
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -51,6 +55,26 @@ public final class Nayoro extends Module {
         .peek(EventSink::close)
         .collect(Collectors.toList());
     remove.forEach(eventSinks.get(user)::remove);
+  }
+
+  public void instantPlayback(User user) {
+    File samplesFolder = new File(plugin.dataFolder(), "samples");
+    samplesFolder.mkdirs();
+    File sampleFile = new File(samplesFolder, user.player().getUniqueId() + ".sample");
+    try {
+      if (!sampleFile.exists()) {
+        return;
+      }
+      InputStream inputStream = Files.newInputStream(sampleFile.toPath());
+      inputStream = new InflaterInputStream(inputStream);
+      inputStream = new BufferedInputStream(inputStream, 1024 * 1024);
+      DataInputStream dataInput = new DataInputStream(inputStream);
+      Playback playback = new InstantPlayback(dataInput, Runnable::run, playbacks::remove);
+      playbacks.add(playback);
+      playback.start();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public BiConsumer<User, Consumer<EventSink>> sinkCallback() {

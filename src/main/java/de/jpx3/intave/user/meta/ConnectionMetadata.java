@@ -19,7 +19,7 @@ public final class ConnectionMetadata {
   private final Map<Long, FeedbackRequest<?>> transactionGlobalKeyMap = Maps.newConcurrentMap();
   private final Map<Long, Queue<FeedbackRequest<?>>> transactionOptionalAppendixMap = Maps.newConcurrentMap();
   private final Map<Integer, EntityShade> entitiesById = Maps.newConcurrentMap();
-  private final List<Integer> entityIds = Lists.newArrayList();
+  private final Set<Integer> entityIds = new HashSet<>();
   private final List<EntityShade> entities = Lists.newCopyOnWriteArrayList();
   private final List<EntityShade> synchronizedEntities = Lists.newCopyOnWriteArrayList();
   private final Map<Long, Long> remainingPingPacketTimestamps = Maps.newConcurrentMap();
@@ -197,7 +197,7 @@ public final class ConnectionMetadata {
     return bufferEnqueue;
   }
 
-  public List<Integer> entityIds() {
+  public Set<Integer> entityIds() {
     return entityIds;
   }
 }

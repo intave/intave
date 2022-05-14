@@ -30,7 +30,7 @@ public final class AttackEvent extends Event {
 
   @Override
   public void accept(EventSink sink) {
-    sink.on(this);
+    sink.visit(this);
   }
 
   public static AttackEvent create(int source, int target) {

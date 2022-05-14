@@ -69,9 +69,25 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
     double x = movement.positionX;
     double y = movement.positionY;
     double z = movement.positionZ;
-    double yaw = movement.rotationYaw;
-    double pitch = movement.rotationPitch;
-    MoveEvent movementEvent = MoveEvent.create(x, y, z, yaw, pitch);
+    double lastX = movement.lastPositionX;
+    double lastY = movement.lastPositionY;
+    double lastZ = movement.lastPositionZ;
+    float yaw = movement.rotationYaw;
+    float pitch = movement.rotationPitch;
+    float lastYaw = movement.lastRotationYaw;
+    float lastPitch = movement.lastRotationPitch;
+    PlayerMoveEvent movementEvent;
+    if (movement.recordedMoves++ % 200 == 0) {
+      movementEvent = PlayerMoveEvent.create(
+        x, y, z,
+        yaw, pitch
+      );
+    } else {
+      movementEvent = PlayerMoveEvent.create(
+        x, y, z, lastX, lastY, lastZ,
+        yaw, pitch, lastYaw, lastPitch
+      );
+    }
     reverseSink.accept(user, movementEvent::accept);
   }
 }

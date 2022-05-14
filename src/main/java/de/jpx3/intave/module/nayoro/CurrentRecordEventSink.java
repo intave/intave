@@ -35,7 +35,7 @@ public final class CurrentRecordEventSink extends EventSink {
   }
 
   @Override
-  public synchronized void onAny(Event event) {
+  public synchronized void visitAny(Event event) {
     try {
       dataOutput.writeLong(System.currentTimeMillis() - start);
       dataOutput.writeInt(EventRegistry.idOf(event));

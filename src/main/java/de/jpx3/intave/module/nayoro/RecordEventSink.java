@@ -8,14 +8,24 @@ public class RecordEventSink extends EventSink {
   private final long start = System.currentTimeMillis();
   private final Environment environment;
   private final DataOutput dataOutput;
+  private boolean setup = false;
 
   public RecordEventSink(Environment environment, DataOutput dataOutput) {
     this.environment = environment;
     this.dataOutput = dataOutput;
   }
 
+  public synchronized void setupIfNeeded() {
+    if (!setup) {
+      setup = true;
+      visit(new PlayerInitEvent(environment.mainPlayer()));
+      visit(new PropertiesEvent(environment.properties()));
+    }
+  }
+
   @Override
-  public void onAny(Event event) {
+  public void visitAny(Event event) {
+    setupIfNeeded();
     try {
       dataOutput.writeLong(System.currentTimeMillis() - start);
       dataOutput.writeByte(EventRegistry.idOf(event));

@@ -6,8 +6,8 @@ import de.jpx3.intave.shade.Position;
 import de.jpx3.intave.user.User;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 
 public final class LiveEnvironment implements Environment {
@@ -18,6 +18,7 @@ public final class LiveEnvironment implements Environment {
   public LiveEnvironment(User user) {
     this.user = user;
     this.player = new UserPlayerContainer(user);
+    this.player.setEnvironment(this);
     setupProperties();
   }
 
@@ -41,7 +42,7 @@ public final class LiveEnvironment implements Environment {
   }
 
   @Override
-  public List<Integer> entities() {
+  public Set<Integer> entities() {
     return user.meta().connection().entityIds();
   }
 
@@ -51,18 +52,19 @@ public final class LiveEnvironment implements Environment {
     return new Position(position.posX, position.posY, position.posZ);
   }
 
+  // not used
+  @Override
+  public boolean inSight(int entity) {
+    throw new UnsupportedOperationException("InSight not supported in live environment");
+  }
+
   @Override
   public boolean property(String name) {
     return propertySupplier.getOrDefault(name, () -> false).getAsBoolean();
   }
 
   @Override
-  public long duration() {
-    return -1;
-  }
-
-  @Override
-  public long time() {
-    return -1;
+  public boolean hasPassed(long time) {
+    return System.currentTimeMillis() > time;
   }
 }

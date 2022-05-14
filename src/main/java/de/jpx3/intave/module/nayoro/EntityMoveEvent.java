@@ -46,8 +46,36 @@ public final class EntityMoveEvent extends Event {
     inSight = in.readBoolean();
   }
 
+  public int entityId() {
+    return entityId;
+  }
+
+  public double x() {
+    return x;
+  }
+
+  public double y() {
+    return y;
+  }
+
+  public double z() {
+    return z;
+  }
+
+  public float yaw() {
+    return yaw;
+  }
+
+  public float pitch() {
+    return pitch;
+  }
+
+  public boolean inSight() {
+    return inSight;
+  }
+
   @Override
   public void accept(EventSink sink) {
-    sink.on(this);
+    sink.visit(this);
   }
 }

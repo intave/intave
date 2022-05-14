@@ -10,9 +10,11 @@ public final class EventRegistry {
   static {
     register(AttackEvent.class, 0);
     register(ClickEvent.class, 1);
-    register(MoveEvent.class, 2);
+    register(PlayerMoveEvent.class, 2);
     register(EntityMoveEvent.class, 3);
     register(SlotSwitchEvent.class, 4);
+    register(PropertiesEvent.class, 5);
+    register(PlayerInitEvent.class, 6);
   }
 
   private static void register(Class<? extends Event> eventClass, int id) {
@@ -30,8 +32,14 @@ public final class EventRegistry {
 
   public static <T extends Event> T eventOf(int id) {
     try {
+      Class<? extends Event> eventClass = idsToEvents.get(id);
+      if (eventClass == null) {
+        throw new IllegalArgumentException("Unknown event id: " + id);
+      }
       //noinspection unchecked
-      return (T) idsToEvents.get(id).newInstance();
+      return (T) eventClass.newInstance();
+    } catch (RuntimeException exception) {
+      throw exception;
     } catch (Exception exception) {
       throw new RuntimeException(exception);
     }

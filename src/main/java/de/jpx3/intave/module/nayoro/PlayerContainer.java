@@ -11,6 +11,8 @@ import org.bukkit.GameMode;
  */
 
 public interface PlayerContainer {
+  Environment environment();
+  void setEnvironment(Environment environment);
   int id();
   int version();
   boolean outdatedClient();

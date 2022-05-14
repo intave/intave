@@ -88,6 +88,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   private float yawSine, yawCosine, friction;
   public float rotationYaw, rotationPitch;
   public float lastRotationYaw, lastRotationPitch;
+  public long recordedMoves;
   private Pose pose = Pose.STANDING;
   private Simulator simulator = Simulators.PLAYER;
   private Material blockOnPosition = Material.AIR;
