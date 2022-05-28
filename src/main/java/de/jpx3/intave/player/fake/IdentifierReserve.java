@@ -1,6 +1,5 @@
 package de.jpx3.intave.player.fake;
 
-import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.Lookup;
 import org.bukkit.Bukkit;
@@ -53,7 +52,7 @@ public final class IdentifierReserve {
     return IntStream.range(0, amount).map(i -> reserveEntityId()).toArray();
   }
 
-  private static final boolean ATOMIC_INTEGER_FIELD = MinecraftVersions.VER1_14_0.atOrAbove();
+  private static final boolean ATOMIC_INTEGER_FIELD = ENTITY_COUNT_FIELD.getType() == AtomicInteger.class;
 
   private static int reserveEntityId() {
     int newId = 0;

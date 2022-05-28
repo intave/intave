@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.List;
 
 final class EmptyBlockShape implements BlockShape {
+  EmptyBlockShape() {}
+
   @Override
   public BlockShape contextualized(int posX, int posY, int posZ) {
     return this;

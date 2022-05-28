@@ -310,6 +310,14 @@ public final class MovementMetadata implements SimulationEnvironment {
       updateMovementMetaData();
     } else {
       pastClientFlyingPacket = 0;
+      if (hasRotation) {
+        motionX = positionX - verifiedPositionX;
+        motionY = positionY - verifiedPositionY;
+        motionZ = positionZ - verifiedPositionZ;
+        blockOnPosition = VolatileBlockAccess.typeAccess(user, player.getWorld(), positionX, positionY - frictionPosSubtraction, positionZ);
+        updateEntityActionStates();
+        updateMovementMetaData();
+      }
     }
     lastRotationYaw = rotationYaw;
     lastRotationPitch = rotationPitch;

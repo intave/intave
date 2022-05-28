@@ -28,12 +28,12 @@ import java.util.function.Consumer;
  * @see BukkitEventSubscriptionLinker
  */
 public final class CheckLinker {
-  public void linkNayoroEventSubscriptions(Collection<Check> checks) {
+  public void linkNayoroEventSubscriptions(Collection<? extends Check> checks) {
     NayoroEventSubscriptionLinker nayoro = Modules.linker().nayoroEvents();
     iterativeApply(checks, nayoro::registerEventsIn);
   }
 
-  public void removeNayoroEventSubscriptions(Collection<Check> checks) {
+  public void removeNayoroEventSubscriptions(Collection<? extends Check> checks) {
     NayoroEventSubscriptionLinker packetSubscriptionLinker = Modules.linker().nayoroEvents();
     iterativeApply(checks, packetSubscriptionLinker::unregisterEventsIn);
   }
@@ -45,7 +45,7 @@ public final class CheckLinker {
    *
    * @param checks the collection of checks to perform linkage on
    */
-  public void linkPacketEventSubscriptions(Collection<Check> checks) {
+  public void linkPacketEventSubscriptions(Collection<? extends Check> checks) {
     PacketSubscriptionLinker packetSubscriptionLinker = Modules.linker().packetEvents();
     iterativeApply(checks, packetSubscriptionLinker::linkSubscriptionsIn);
   }
@@ -57,7 +57,7 @@ public final class CheckLinker {
    *
    * @param checks the collection of checks to remove linkage
    */
-  public void removePacketEventSubscriptions(Collection<Check> checks) {
+  public void removePacketEventSubscriptions(Collection<? extends Check> checks) {
     PacketSubscriptionLinker packetSubscriptionLinker = Modules.linker().packetEvents();
     iterativeApply(checks, packetSubscriptionLinker::removeSubscriptionsOf);
   }
@@ -69,7 +69,7 @@ public final class CheckLinker {
    *
    * @param checks the collection of checks to perform linkage on
    */
-  public void linkBukkitEventSubscriptions(Collection<Check> checks) {
+  public void linkBukkitEventSubscriptions(Collection<? extends Check> checks) {
     BukkitEventSubscriptionLinker bukkitEventLinker = Modules.linker().bukkitEvents();
     iterativeApply(checks, bukkitEventLinker::registerEventsIn);
   }
@@ -81,14 +81,14 @@ public final class CheckLinker {
    *
    * @param checks the collection of checks to remove linkage
    */
-  public void removeBukkitEventSubscriptions(Collection<Check> checks) {
+  public void removeBukkitEventSubscriptions(Collection<? extends Check> checks) {
     BukkitEventSubscriptionLinker bukkitEventLinker = Modules.linker().bukkitEvents();
     iterativeApply(checks, bukkitEventLinker::unregisterEventsIn);
   }
 
   private void iterativeApply(
-    Collection<Check> checks,
-    Consumer<EventProcessor> applier
+    Collection<? extends Check> checks,
+    Consumer<? super EventProcessor> applier
   ) {
     for (Check check : checks) {
       if (check.performLinkage()) {

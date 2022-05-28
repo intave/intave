@@ -18,11 +18,11 @@ final class VoxelShape implements BlockShape {
   private final int startX, startY, startZ;
   private final int endX, endY, endZ;
 
-  public VoxelShape(int xSizeIn, int ySizeIn, int zSizeIn) {
+  VoxelShape(int xSizeIn, int ySizeIn, int zSizeIn) {
     this(xSizeIn, ySizeIn, zSizeIn, xSizeIn, ySizeIn, zSizeIn, 0, 0, 0);
   }
 
-  public VoxelShape(int xSizeIn, int ySizeIn, int zSizeIn, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+  VoxelShape(int xSizeIn, int ySizeIn, int zSizeIn, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
     this.storage = new BitSet(xSizeIn * ySizeIn * zSizeIn);
     this.sizeX = xSizeIn;
     this.sizeY = ySizeIn;

@@ -63,7 +63,6 @@ public final class PacketDelayer extends Module {
       CUSTOM_SOUND_EFFECT,
       NAMED_SOUND_EFFECT,
       ANIMATION,
-//      MOUNT,
       CHAT,
     }
   )
@@ -81,7 +80,6 @@ public final class PacketDelayer extends Module {
     }
 
     if (connection.ignorePacketEnqueue) {
-      connection.ignorePacketEnqueue = false;
       return;
     }
 
@@ -137,6 +135,7 @@ public final class PacketDelayer extends Module {
           if (packet == null) break;
           connection.ignorePacketEnqueue = true;
           sendPacket(player, packet);
+          connection.ignorePacketEnqueue = false;
         }
         enqueuedPackets.offerLast(packetContainer.getHandle());
         event.setCancelled(true);
@@ -146,6 +145,7 @@ public final class PacketDelayer extends Module {
           Object packet = enqueuedPackets.pollFirst();
           connection.ignorePacketEnqueue = true;
           sendPacket(player, packet);
+          connection.ignorePacketEnqueue = false;
         }
       }
       if (connection.lastBufferNotification + 30000 < System.currentTimeMillis()) {
@@ -163,6 +163,7 @@ public final class PacketDelayer extends Module {
         Object packet = obj.packet();
         connection.ignorePacketEnqueue = true;
         sendPacket(player, packet);
+        connection.ignorePacketEnqueue = false;
       }
     }
     if (delayPackets && reverseLag) {

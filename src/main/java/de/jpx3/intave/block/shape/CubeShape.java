@@ -16,7 +16,7 @@ import static de.jpx3.intave.shade.Direction.Axis.*;
 final class CubeShape extends MemoryTraced implements BlockShape {
   private final int x, y, z;
 
-  public CubeShape(int x, int y, int z) {
+  CubeShape(int x, int y, int z) {
     this.x = x;
     this.y = y;
     this.z = z;
@@ -44,10 +44,12 @@ final class CubeShape extends MemoryTraced implements BlockShape {
     return offset;
   }
 
+  @Override
   public double min(Direction.Axis axis) {
     return axis.select(x, y, z);
   }
 
+  @Override
   public double max(Direction.Axis axis) {
     return axis.select(x, y, z) + 1;
   }
@@ -117,7 +119,7 @@ final class CubeShape extends MemoryTraced implements BlockShape {
     double targetMain, double targetUp, double targetRight
   ) {
     double normalizedStepMain = (minMain - targetMain) / differenceMain;
-    if (0.0 < normalizedStepMain && normalizedStepMain < distanceStorage[0]) {
+    if (normalizedStepMain > 0.0 && normalizedStepMain < distanceStorage[0]) {
       double normalizedStepUp = targetUp + normalizedStepMain * differenceUp;
       double normalizedStepRight = targetRight + normalizedStepMain * differenceRight;
       if (

@@ -10,7 +10,7 @@ import java.util.List;
 final class MergeBlockShape implements BlockShape {
   private final BlockShape shapeA, shapeB;
 
-  public MergeBlockShape(BlockShape shapeA, BlockShape shapeB) {
+  MergeBlockShape(BlockShape shapeA, BlockShape shapeB) {
     this.shapeA = shapeA;
     this.shapeB = shapeB;
   }

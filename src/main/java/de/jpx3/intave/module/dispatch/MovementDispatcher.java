@@ -395,7 +395,7 @@ public final class MovementDispatcher extends Module {
     if (!movementData.isTeleportConfirmationPacket) {
       interactionRaytraceCheck.receiveMovement(event);
 
-      if (hasMovement) {
+      if (hasMovement || hasRotation) {
         physicsCheck.receiveMovement(user);
       } else {
         physicsCheck.updateOnGroundIfFlying(user);
