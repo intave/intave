@@ -41,13 +41,13 @@ public class Timings {
   public static final Timing EXE_NETTY = Timing.of("Exe/Netty");
 
   public static final Map<String, ChatColor> COLOR_CODE_NAMESPACE = new HashMap<String, ChatColor>() {
-    /*<init>*/ {
-      put("Check", ChatColor.RED);
-      put("Service", ChatColor.YELLOW);
-      put("Exe", ChatColor.GRAY);
-      put("Event", ChatColor.GOLD);
-      put("Packet", ChatColor.DARK_PURPLE);
-    }
+      /*<init>*/ {
+          put("Check", ChatColor.RED);
+          put("Service", ChatColor.YELLOW);
+          put("Exe", ChatColor.GRAY);
+          put("Event", ChatColor.GOLD);
+          put("Packet", ChatColor.DARK_PURPLE);
+      }
   };
 
   public static void addTiming(Timing timing) {
