@@ -39,6 +39,8 @@ import static de.jpx3.intave.user.UserRepository.userOf;
 public final class MovementEmulation extends Module {
   private boolean enabled;
   private int activationThreshold;
+  private int repeatedActivationThreshold;
+  private int repeatsRequired;
   private int ticks;
   private int ticksForHardSync;
 
@@ -52,6 +54,8 @@ public final class MovementEmulation extends Module {
     if (configuration.has("speculative-forward-emulation")) {
       enabled = configuration.boolBy("speculative-forward-emulation.enabled", false);
       activationThreshold = configuration.intBy("speculative-forward-emulation.activation-threshold", 0);
+      repeatedActivationThreshold = configuration.intBy("speculative-forward-emulation.repeated-activation-threshold", 0);
+      repeatsRequired = configuration.intBy("speculative-forward-emulation.repeats-required", 0);
       ticks = configuration.intBy("speculative-forward-emulation.ticks", 0);
       ticksForHardSync = configuration.intBy("speculative-forward-emulation.ticks-for-hard-sync", 0);
     } else {
@@ -83,7 +87,12 @@ public final class MovementEmulation extends Module {
     MovementMetadata movement = user.meta().movement();
     ConnectionMetadata connection = user.meta().connection();
     long lastMovementPacket = connection.lastMovementPacket();
-    boolean timeout = System.currentTimeMillis() - lastMovementPacket >= activationThreshold * 50L;
+    boolean baseTimeout = System.currentTimeMillis() - lastMovementPacket >= activationThreshold * 50L;
+    boolean lowTimeout = System.currentTimeMillis() - lastMovementPacket >= repeatedActivationThreshold * 50L;
+    if (lowTimeout && movement.speculativeTicks == 0) {
+      lowTimeout = ++movement.speculativeLowThresholdOverflows >= repeatsRequired;
+    }
+    boolean timeout = baseTimeout || lowTimeout;
     boolean hadMovement = Math.abs(movement.physicsMotionX) > 0.1 || Math.abs(movement.physicsMotionZ) > 0.1 || Math.abs(movement.physicsMotionY) > 0.1;
 
     if (timeout && hadMovement && !movement.speculationEnded) {

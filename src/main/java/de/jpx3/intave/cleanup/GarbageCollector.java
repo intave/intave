@@ -6,11 +6,13 @@ import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public final class GarbageCollector {
   private static final List<Reference<Map<?, ?>>> boundMaps = Lists.newCopyOnWriteArrayList();
   private static final List<Reference<List<?>>> boundLists = Lists.newCopyOnWriteArrayList();
+  private static final List<Reference<Set<?>>> boundSets = Lists.newCopyOnWriteArrayList();
 
   private GarbageCollector() {
     throw new UnsupportedOperationException();
@@ -31,6 +33,11 @@ public final class GarbageCollector {
     return initialList;
   }
 
+  public static <T> Set<T> watch(Set<T> initialSet) {
+    boundSets.add(new WeakReference<>(initialSet));
+    return initialSet;
+  }
+
   public static <K> void clear(K key) {
     boundMaps.forEach(reference -> {
       Map<?, ?> map;
@@ -42,6 +49,12 @@ public final class GarbageCollector {
       List<?> list;
       if ((list = reference.get()) != null) {
         list.remove(key);
+      }
+    });
+    boundSets.forEach(reference -> {
+      Set<?> set;
+      if ((set = reference.get()) != null) {
+        set.remove(key);
       }
     });
   }
@@ -59,10 +72,17 @@ public final class GarbageCollector {
         list.removeIf(check);
       }
     });
+    boundSets.forEach(reference -> {
+      Set<?> set = reference.get();
+      if (set != null) {
+        set.removeIf(check);
+      }
+    });
   }
 
   public static void die() {
     boundMaps.clear();
     boundLists.clear();
+    boundSets.clear();
   }
 }

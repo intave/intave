@@ -282,11 +282,12 @@ final class PlayerUser implements User {
 
   @Override
   public boolean receives(MessageChannel channel) {
-    if (!BukkitPermissionCheck.permissionCheck(player(), channel.permission())) {
-      receivingUserChannels.remove(channel);
+    boolean receives = receivingUserChannels.contains(channel);
+    if (receives && !BukkitPermissionCheck.permissionCheck(player(), channel.permission())) {
+      toggleReceive(channel);
       return false;
     }
-    return receivingUserChannels.contains(channel);
+    return receives;
   }
 
   @Override

@@ -162,6 +162,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public double speculativeMotionX, speculativeMotionY, speculativeMotionZ;
   public double speculativePositionX, speculativePositionY, speculativePositionZ;
   public boolean speculationEnded = false;
+  public int speculativeLowThresholdOverflows;
   public boolean inSpeculation = false;
   // States if an external entity push onto the player is estimated
   public boolean pushedByEntity;
