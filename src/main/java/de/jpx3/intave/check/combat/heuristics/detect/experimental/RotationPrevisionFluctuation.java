@@ -41,8 +41,8 @@ public final class RotationPrevisionFluctuation extends RotationPrevisionBluepri
     // Currently, not accurate enough
     if (yawAverage >= 1.5 && Math.abs(fluctuationAverage) <= 0.5 && fluctuationDeviation >= 2) {
       String description = String.format("suspicious aiming fluctuation %.2f %.2f", fluctuationAverage, yawAverage);
-      Anomaly anomaly = Anomaly.anomalyOf("410", Confidence.NONE, Anomaly.Type.KILLAURA, description);
-      parentCheck().saveAnomaly(user.player(), anomaly);
+      //Anomaly anomaly = Anomaly.anomalyOf("410", Confidence.NONE, Anomaly.Type.KILLAURA, description);
+      //parentCheck().saveAnomaly(user.player(), anomaly);
     }
   }
 
