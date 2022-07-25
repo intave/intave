@@ -25,7 +25,7 @@ public final class IntaveControl {
   public static final boolean CLICKPATTERNS_OUTPUT = false;
   public static final boolean DEBUG_LOCATE_RESOURCE = false;
 
-  public static final boolean USE_EXTERNAL_CONFIGURATION_FILE = false;
+  public static final boolean USE_EXTERNAL_CONFIGURATION_FILE = true;
   public static final boolean GOMME_MODE = false;
-  public static final boolean DISABLE_LICENSE_CHECK = false;
+  public static final boolean DISABLE_LICENSE_CHECK = true;
 }
