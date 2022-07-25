@@ -1,10 +1,12 @@
 package de.jpx3.intave.check.combat.heuristics.detect.clickpatterns;
 
+import de.jpx3.intave.annotate.Reserved;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Reserved
 public abstract class SwingBlueprintMeta extends CheckCustomMetadata {
   protected final List<ClickData> pendingClicks = new ArrayList<>();
   protected final List<Integer> delays = new ArrayList<>();

@@ -3,7 +3,7 @@ package de.jpx3.intave.check.combat.heuristics.detect.combatpatterns;
 import com.comphenix.protocol.events.PacketEvent;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.annotate.PartnerOnly;
+import de.jpx3.intave.annotate.Reserved;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
@@ -27,7 +27,7 @@ import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.SUGGE
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.LOOK;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION_LOOK;
 
-@PartnerOnly
+@Reserved
 public final class RotationStandardDeviationHeuristic extends MetaCheckPart<Heuristics, RotationStandardDeviationHeuristic.RotationStandardDeviationMeta> {
   private final IntavePlugin plugin;
 

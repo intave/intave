@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.combat.heuristics.detect.testing;
 
 import com.comphenix.protocol.events.PacketEvent;
-import de.jpx3.intave.annotate.PartnerOnly;
+import de.jpx3.intave.annotate.Reserved;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.module.linker.nayoro.NayoroRelay;
@@ -17,7 +17,7 @@ import java.util.UUID;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.BLOCK_DIG;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.BLOCK_PLACE;
 
-@PartnerOnly
+@Reserved
 public final class TestingHeuristic extends MetaCheckPart<Heuristics, TestingHeuristic.ExampleMeta> {
   public TestingHeuristic(Heuristics parent) {
     super(parent, ExampleMeta.class);

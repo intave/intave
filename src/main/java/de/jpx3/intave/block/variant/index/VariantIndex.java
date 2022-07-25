@@ -42,8 +42,8 @@ public class VariantIndex {
 
   public static void indexApplyWithReverse(
     Material material,
-    BiConsumer<Material, ? super Map<Object, Integer>> indexApply,
-    BiConsumer<Material, ? super Map<Integer, Object>> registerApply
+    BiConsumer<? super Material, ? super Map<Object, Integer>> indexApply,
+    BiConsumer<? super Material, ? super Map<Integer, Object>> registerApply
   ) {
     Map<Object, Integer> index = index(material);
     // reverse map

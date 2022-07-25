@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.combat.heuristics.detect.experimental;
 
-import de.jpx3.intave.annotate.PartnerOnly;
+import de.jpx3.intave.annotate.Reserved;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
 import de.jpx3.intave.check.combat.heuristics.Confidence;
@@ -13,7 +13,7 @@ import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.DELAY
 import static de.jpx3.intave.check.combat.heuristics.detect.experimental.RotationPrevisionBlueprintMeta.RotationData;
 import static de.jpx3.intave.check.combat.heuristics.detect.experimental.RotationPrevisionDetermination.RotationPrevisionDeterminationMeta;
 
-@PartnerOnly
+@Reserved
 public final class RotationPrevisionDetermination extends RotationPrevisionBlueprint<RotationPrevisionDeterminationMeta> {
   public RotationPrevisionDetermination(Heuristics parentCheck) {
     super(parentCheck, RotationPrevisionDeterminationMeta.class, 100, true);

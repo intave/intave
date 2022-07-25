@@ -19,10 +19,12 @@ public final class BlockVariantRegister {
       }
     }
     int count = 0;
+    int blockCount = 0;
     for (Map<Object, Integer> index : blockDataIndex.values()) {
       count += index.size();
+      blockCount++;
     }
-    IntaveLogger.logger().info("Indexed " + count + " block variations.");
+    IntaveLogger.logger().info("Indexed " + count + " variations of " + blockCount + " blocks");
   }
 
   public static BlockVariant variantOf(Material type, int variantIndex) {

@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.combat.heuristics.detect.experimental;
 
-import de.jpx3.intave.annotate.PartnerOnly;
+import de.jpx3.intave.annotate.Reserved;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.user.User;
@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import static de.jpx3.intave.check.combat.heuristics.detect.experimental.RotationPrevisionBlueprintMeta.RotationData;
 import static de.jpx3.intave.check.combat.heuristics.detect.experimental.RotationPrevisionFluctuation.RotationPrevisionFluctuationMeta;
 
-@PartnerOnly
+@Reserved
 public final class RotationPrevisionFluctuation extends RotationPrevisionBlueprint<RotationPrevisionFluctuationMeta> {
   public RotationPrevisionFluctuation(Heuristics parentCheck) {
     super(parentCheck, RotationPrevisionFluctuationMeta.class, 250, true);

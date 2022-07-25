@@ -8,7 +8,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import de.jpx3.intave.IntaveControl;
-import de.jpx3.intave.annotate.PartnerOnly;
+import de.jpx3.intave.annotate.Reserved;
 import de.jpx3.intave.check.CheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
@@ -34,7 +34,7 @@ import static de.jpx3.intave.check.combat.heuristics.Confidence.MAYBE;
 import static de.jpx3.intave.module.linker.packet.ListenerPriority.LOWEST;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.CUSTOM_PAYLOAD_IN;
 
-@PartnerOnly
+@Reserved
 public final class LabyModsHeuristic extends CheckPart<Heuristics> {
   private final Resource hashResource = Resources.cacheResourceChain("https://service.intave.de/hashes", "hashes", TimeUnit.DAYS.toMillis(7));
   private final Map<String, String> invalidModsByHash = new HashMap<>();

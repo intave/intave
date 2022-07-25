@@ -47,7 +47,6 @@ final class EmptyPrefetchPipe implements ShapeResolverPipeline {
       case LEVER:
         return true;
     }
-
     return false;
   }
 }

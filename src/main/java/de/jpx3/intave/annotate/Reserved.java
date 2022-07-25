@@ -13,5 +13,5 @@ import java.lang.annotation.Target;
 @NameIntrinsicallyImportant
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.CLASS)
-public @interface PartnerOnly {
+public @interface Reserved {
 }

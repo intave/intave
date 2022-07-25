@@ -4,7 +4,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.annotate.PartnerOnly;
+import de.jpx3.intave.annotate.Reserved;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
@@ -25,7 +25,7 @@ import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.DMG_MEDIUM;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_8;
 
-@PartnerOnly
+@Reserved
 public final class PreAttackHeuristic extends MetaCheckPart<Heuristics, PreAttackHeuristic.PreAttackMeta> {
   private final IntavePlugin plugin;
 
