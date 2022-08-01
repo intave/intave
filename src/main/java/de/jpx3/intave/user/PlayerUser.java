@@ -359,6 +359,11 @@ final class PlayerUser implements User {
   }
 
   @Override
+  public int protocolVersion() {
+    return meta().protocol().protocolVersion();
+  }
+
+  @Override
   public UserContext userContext() {
     return playerPlaceholderContext;
   }

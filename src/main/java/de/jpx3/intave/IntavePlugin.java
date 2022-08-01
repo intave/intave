@@ -60,6 +60,7 @@ import de.jpx3.intave.security.*;
 import de.jpx3.intave.security.blacklist.BlacklistService;
 import de.jpx3.intave.security.letis.Letis;
 import de.jpx3.intave.share.link.WrapperConverter;
+import de.jpx3.intave.test.TestService;
 import de.jpx3.intave.trustfactor.TrustFactorService;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.version.DurationTranslator;
@@ -122,6 +123,7 @@ public final class IntavePlugin extends JavaPlugin {
   private Letis letis;
   private Analytics analytics;
   private Metrics metrics;
+  private TestService testService;
 
   public IntavePlugin() {
     // stage 2
@@ -232,7 +234,8 @@ public final class IntavePlugin extends JavaPlugin {
 
       // ja das muss so krebsig hier hin
       if (IntaveControl.DISABLE_LICENSE_CHECK) {
-        logger().info(ChatColor.DARK_RED + "This self-signed version bypasses certification requirements");
+        logger().warn("This version has no license check, deal with caution.");
+        logger().warn("Do not distribute or keep any copies of this file on your local computer.");
 //        System.setProperty("java.net.serviceprovider.key", "~bypass");
         LICENSE_NAME = "~bypass";
         VERSION_DETAILS |= 0x100;
@@ -566,7 +569,7 @@ public final class IntavePlugin extends JavaPlugin {
       PacketReaders.setup();
       BlockWrapper.setup();
       WorldBorders.setup();
-      ShapeResolver.setup();
+//      ShapeResolver.setup();
 
       // stage 7
       Modules.proceedBoot(BootSegment.STAGE_7);
@@ -618,6 +621,8 @@ public final class IntavePlugin extends JavaPlugin {
       proxyMessenger = new ProxyMessenger(this);
       sibylIntegrationService = new SibylIntegrationService(this);
       blackListService = new BlacklistService(this);
+      testService = new TestService();
+      testService.scheduleTestsForFirstTick();
       uploadService = new ScheduledUploadService();
       uploadService.enable();
       letis = new Letis(this);
@@ -657,11 +662,11 @@ public final class IntavePlugin extends JavaPlugin {
     BackgroundExecutor.execute(this::clearSaveFolderGarbage);
     logger.performCompression();
 
-    if (JavaVersion.current() < 17) {
-      String noticePrefix = ChatColor.DARK_RED + "Notice" + ChatColor.DARK_GRAY + ": ";
-      logger.info(noticePrefix + ChatColor.RED + "Upgrading Java has incredible performance benefits");
-      logger.info(noticePrefix + ChatColor.RED + "We strongly recommend updating Java now");
-      logger.info(noticePrefix + ChatColor.RED + "Support for older versions of Java might eventually be dropped");
+    if (JavaVersion.current() < 12) {
+//      logger.warn(ChatColor.RED + "Upgrading Java has incredible performance benefits");
+//      logger.warn(ChatColor.RED + "We strongly recommend updating Java now");
+//      logger.warn(ChatColor.RED + "Support for older versions of Java might eventually be dropped");
+      logger.warn(ChatColor.RED + "Your version of Java is outdated, consider updating");
     }
 
     if (IntaveControl.NETTY_DUMP_ON_TIMEOUT) {

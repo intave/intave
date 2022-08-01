@@ -28,7 +28,10 @@ public final class v8ShapeDrill extends AbstractShapeDrill {
     }
     List<AxisAlignedBB> bbs = new ArrayList<>();
     WorldServer worldServer = ((CraftWorld) world).getHandle();
-    blockData.getBlock().a(worldServer, new BlockPosition(posX, posY, posZ), blockData, ALWAYS_COLLIDING_BOX, bbs, null);
+    Block block = blockData.getBlock();
+    BlockPosition blockposition = new BlockPosition(posX, posY, posZ);
+    block.updateShape(worldServer, blockposition);
+    block.a(worldServer, blockposition, blockData, ALWAYS_COLLIDING_BOX, bbs, null);
     return translate(bbs);
   }
 
@@ -42,6 +45,9 @@ public final class v8ShapeDrill extends AbstractShapeDrill {
     }
     WorldServer worldServer = ((CraftWorld) world).getHandle();
     Block block = blockData.getBlock();
+    if (!block.a(blockData, false)) {
+      return BlockShapes.emptyShape();
+    }
     block.updateShape(worldServer, blockposition);
     return BoundingBox.originFrom(
       block.B(), block.D(), block.F(),

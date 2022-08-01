@@ -49,7 +49,7 @@ public final class PlayerAccessor {
     return new PlayerAccess() {
       @Override
       public int protocolVersion() {
-        return user.meta().protocol().protocolVersion();
+        return user.protocolVersion();
       }
 
       @Override

@@ -6,7 +6,7 @@ import org.bukkit.entity.Player;
 
 public final class BlockStateCaches {
   public static ExtendedBlockStateCache forPlayer(Player player) {
-    return forPlayerWithResolver(player, ShapeResolver.pipelineHead());
+    return forPlayerWithResolver(player, ShapeResolver.globalPipeline());
   }
 
   public static ExtendedBlockStateCache forPlayerWithResolver(Player player, ShapeResolverPipeline resolver) {

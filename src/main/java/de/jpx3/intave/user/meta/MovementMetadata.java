@@ -446,7 +446,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   public void updatePose() {
-    boolean modernPose = user.meta().protocol().protocolVersion() >= VER_1_14;
+    boolean modernPose = user.protocolVersion() >= VER_1_14;
     Pose pose;
     if (modernPose) {
       if (this.isPoseClear(Pose.SWIMMING)) {

@@ -7,7 +7,7 @@ import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
-public final class PowderSnowCollisionModifier extends CollisionModifier {
+final class PowderSnowCollisionModifier extends CollisionModifier {
   private static final BlockShape POWDER_SNOW_FROM_ABOVE = BlockShapes.originCube();
 
   @Override

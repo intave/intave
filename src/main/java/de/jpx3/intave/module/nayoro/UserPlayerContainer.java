@@ -68,7 +68,7 @@ public final class UserPlayerContainer implements PlayerContainer {
 
   @Override
   public int version() {
-    return user.meta().protocol().protocolVersion();
+    return user.protocolVersion();
   }
 
   @Override

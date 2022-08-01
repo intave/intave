@@ -4,6 +4,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.google.common.util.concurrent.AtomicDouble;
+import de.jpx3.intave.annotate.Reserved;
 import de.jpx3.intave.check.Blueprint;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.math.Hypot;
@@ -21,6 +22,7 @@ import java.util.List;
 import static de.jpx3.intave.check.combat.heuristics.detect.experimental.RotationPrevisionBlueprintMeta.RotationData;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
+@Reserved
 public abstract class RotationPrevisionBlueprint<M extends RotationPrevisionBlueprintMeta>
   extends Blueprint<Heuristics, RotationPrevisionBlueprintMeta, M> {
   private final int sampleSize;

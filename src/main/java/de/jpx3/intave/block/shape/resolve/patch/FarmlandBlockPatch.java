@@ -13,7 +13,7 @@ final class FarmlandBlockPatch extends BoundingBoxPatch {
   @Override
   protected BlockShape collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
     User user = UserRepository.userOf(player);
-    if (user.meta().protocol().protocolVersion() > 210 /* 1.10.1*/) {
+    if (user.protocolVersion() > 210 /* 1.10.1*/) {
       return BoundingBox.originFrom(0, 0, 0, 1, 0.9375f, 1);
     } else {
       return BlockShapes.originCube();

@@ -539,7 +539,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 
     // when standing still
     if (movementData.recentlyEncounteredFlyingPacket(1)
-      && user.meta().protocol().protocolVersion() >= VER_1_9) {
+      && user.protocolVersion() >= VER_1_9) {
       List<EntityShade.EntityPositionContext> history = entity.positionHistory;
       from = history.size() - 1;
       for (int i = from; i >= 0; i--) {

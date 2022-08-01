@@ -129,7 +129,7 @@ public abstract class Movement extends HeadRotationMovement {
     return new SimpleColliderResult(motionX, motionY, motionZ, onGround, startMotionY != motionY);
   }
 
-  private static final ShapeResolverPipeline boundingBoxResolver = ShapeResolver.pipelineHead();
+  private static final ShapeResolverPipeline boundingBoxResolver = ShapeResolver.globalPipeline();
 
   private List<BoundingBox> resolveCollisions(World world, BoundingBox boundingBox) {
     int minX = floor(boundingBox.minX);

@@ -10,7 +10,7 @@ final class CarpetPatch extends BoundingBoxPatch {
   protected BlockShape collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
 //    System.out.println("CarpetPatch.patch at " + posX + " " + posY + " " + posZ + " with state " + blockState);
 //    User user = UserRepository.userOf(player);
-    return /*user.meta().protocol().protocolVersion() <= 5 ?
+    return /*user.protocolVersion() <= 5 ?
       Collections.emptyList() : */shape;
   }
 

@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.List;
 import java.util.Scanner;
 import java.util.function.BiConsumer;
@@ -23,6 +24,14 @@ public interface Resource extends LegacyResource {
 
   default void write(byte[] bytes) {
     write(new ByteArrayInputStream(bytes));
+  }
+
+  default void write(String string) {
+    write(string.getBytes());
+  }
+
+  default void write(Collection<String> lines) {
+    write(String.join(System.lineSeparator(), lines));
   }
 
   InputStream read();

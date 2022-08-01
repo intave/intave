@@ -16,7 +16,7 @@ final class CarpetCollisionModifier extends CollisionModifier {
 
   @Override
   public BlockShape modify(User user, BoundingBox userBox, int posX, int posY, int posZ, BlockShape shape) {
-    if (user.meta().protocol().protocolVersion() <= 5) {
+    if (user.protocolVersion() <= 5) {
       Material material = VolatileBlockAccess.typeAccess(user, posX, posY - 1, posZ);
       boolean isCarpetBelow = CARPETS.contains(material);
 

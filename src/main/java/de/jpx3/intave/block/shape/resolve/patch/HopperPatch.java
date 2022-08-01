@@ -38,7 +38,7 @@ final class HopperPatch extends BoundingBoxPatch {
   @Override
   protected BlockShape collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape originalShape) {
     User user = UserRepository.userOf(player);
-    if (user.meta().protocol().protocolVersion() >= VER_1_13) {
+    if (user.protocolVersion() >= VER_1_13) {
       if (MinecraftVersion.AQUATIC_UPDATE.atOrAbove()) {
         return originalShape;
       } else {

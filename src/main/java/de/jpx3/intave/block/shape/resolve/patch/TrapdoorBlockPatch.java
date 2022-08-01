@@ -57,18 +57,18 @@ final class TrapdoorBlockPatch extends BoundingBoxPatch {
     TOP("top"),
     BOTTOM("bottom");
 
-    private final String c;
+    private final String name;
 
     EnumTrapdoorHalf(String s) {
-      this.c = s;
+      this.name = s;
     }
 
     public String toString() {
-      return this.c;
+      return this.name;
     }
 
     public String getName() {
-      return this.c;
+      return this.name;
     }
   }
 }

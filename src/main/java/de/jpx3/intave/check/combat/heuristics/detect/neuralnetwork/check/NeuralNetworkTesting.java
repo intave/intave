@@ -22,7 +22,7 @@ import java.util.concurrent.Executors;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
 public class NeuralNetworkTesting extends MetaCheckPart<Heuristics, NeuralNetworkTesting.NeuralNetworkTestingMeta> {
-  // for testing without needing to run intave on a server
+  // for selftests without needing to run intave on a server
 
   private final String testUsername = "DarkAndBlue";
 

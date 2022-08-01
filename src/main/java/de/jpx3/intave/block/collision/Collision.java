@@ -205,7 +205,7 @@ public final class Collision {
     return boundingBox.maxX > minX && boundingBox.minX < maxX && (boundingBox.maxY > minY && boundingBox.minY < maxY && boundingBox.maxZ > minZ && boundingBox.minZ < maxZ);
   }
 
-  private static final ShapeResolverPipeline SHAPE_RESOLVER = ShapeResolver.pipelineHead();
+  private static final ShapeResolverPipeline SHAPE_RESOLVER = ShapeResolver.globalPipeline();
 
   @Deprecated
   // I suck, please remove

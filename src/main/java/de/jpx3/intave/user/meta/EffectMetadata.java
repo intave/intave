@@ -25,7 +25,7 @@ public final class EffectMetadata {
     }
   }
 
-  private void loadPotionEffectsFrom(Collection<PotionEffect> potionEffects) {
+  private void loadPotionEffectsFrom(Collection<? extends PotionEffect> potionEffects) {
     for (PotionEffect potionEffect : potionEffects) {
       inspectEffect(potionEffect);
     }

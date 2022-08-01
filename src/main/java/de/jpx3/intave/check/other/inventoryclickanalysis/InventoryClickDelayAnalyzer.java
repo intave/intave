@@ -59,7 +59,7 @@ public final class InventoryClickDelayAnalyzer extends MetaCheckPart<InventoryCl
     User user = userOf(player);
     ClickDelayMeta meta = metaOf(user);
 
-    if (user.meta().protocol().protocolVersion() >= ProtocolMetadata.VER_1_12) {
+    if (user.protocolVersion() >= ProtocolMetadata.VER_1_12) {
       // TODO: when a player shifts an item in 1.12+ he sends a "null" as itemStack which makes the check imcompatible
       return;
     }

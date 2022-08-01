@@ -11,7 +11,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static de.jpx3.intave.check.combat.heuristics.detect.neuralnetwork.activationfunctions.ActivationFunction.sigmoid;
 
 public class Window extends JFrame {
-  // for testing without building the whole projekt
+  // for selftests without building the whole projekt
   public static void main(String[] args) {
     CopyOnWriteArrayList<Point> redPoints = new CopyOnWriteArrayList<>();
     CopyOnWriteArrayList<Point> greenPoints = new CopyOnWriteArrayList<>();

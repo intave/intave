@@ -96,7 +96,7 @@ public final class AbilityMetadata {
     return attributeValue(key, x -> true);
   }
 
-  public double attributeValue(String key, Predicate<WrappedAttributeModifier> filter) {
+  public double attributeValue(String key, Predicate<? super WrappedAttributeModifier> filter) {
     key = keyTranslation(key);
     for (Map.Entry<String, List<WrappedAttributeModifier>> wrappedAttributeListEntry : attributeModifiers.entrySet()) {
       WrappedAttribute attribute = attributes.get(wrappedAttributeListEntry.getKey());

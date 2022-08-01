@@ -84,7 +84,7 @@ public final class IntaveLogger extends PluginLogger {
   }
 
   public void error(String errorMessage) {
-    String message = IntavePlugin.prefix() + ChatColor.RED + "ERROR" + IntavePlugin.defaultColor() + ": " + errorMessage;
+    String message = IntavePlugin.prefix() + ChatColor.DARK_RED + ChatColor.BOLD + "ERROR" + IntavePlugin.defaultColor() + ": " + ChatColor.RED + errorMessage;
     for (PrintStream outputStream : outputStreams) {
       outputStream.print(ChatColor.stripColor(message));
     }
@@ -97,7 +97,7 @@ public final class IntaveLogger extends PluginLogger {
   }
 
   public void warn(String errorMessage) {
-    String message = IntavePlugin.prefix() + ChatColor.RED + "WARN" + IntavePlugin.defaultColor() + ": " + errorMessage;
+    String message = IntavePlugin.prefix() + ChatColor.YELLOW + ChatColor.BOLD + "WARNING" + IntavePlugin.defaultColor() + ": " + ChatColor.RED + errorMessage;
     for (PrintStream outputStream : outputStreams) {
       outputStream.print(ChatColor.stripColor(message));
     }

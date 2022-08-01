@@ -42,7 +42,7 @@ public final class CivbreakHeuristic extends MetaCheckPart<Heuristics, CivbreakH
       meta.isMining = true;
     }
     if (playerDigType == EnumWrappers.PlayerDigType.STOP_DESTROY_BLOCK) {
-      if (user.meta().protocol().protocolVersion() < ProtocolMetadata.VER_1_14) {
+      if (user.protocolVersion() < ProtocolMetadata.VER_1_14) {
         if (!meta.isMining) {
 //          player.sendMessage("cancel");
           event.setCancelled(true);

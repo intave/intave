@@ -30,6 +30,10 @@ public final class UserRepository {
     }
   }
 
+  public static void manuallyRegisterUser(Player player, User user) {
+    repository.put(player.getUniqueId(), user);
+  }
+
   public static boolean hasUser(Player player) {
     return repository.containsKey(player.getUniqueId());
   }

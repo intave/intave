@@ -82,6 +82,18 @@ public final class Resources {
 //    return refreshFileAccessDateOnRead(file, resourceFromFile(file).encrypted());
 //  }
 
+  @Native
+  public static Resource fileCache(
+    String identifier
+  ) {
+    try {
+      String name = nameFrom(new URL("https://google.com"), identifier, Long.MAX_VALUE);
+      return fileSpread(fileLocationOf(name), Resources::resourceFromFileWithLock, 8).encrypted();
+    } catch (MalformedURLException exception) {
+      throw new IllegalStateException(exception);
+    }
+  }
+
   public static Resource cacheResourceChain(
     String url,
     String identifier,

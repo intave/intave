@@ -122,9 +122,8 @@ final class CubeShape extends MemoryTraced implements BlockShape {
     if (normalizedStepMain > 0.0 && normalizedStepMain < distanceStorage[0]) {
       double normalizedStepUp = targetUp + normalizedStepMain * differenceUp;
       double normalizedStepRight = targetRight + normalizedStepMain * differenceRight;
-      if (
-        minUp - TOLERANCE < normalizedStepUp && normalizedStepUp < maxUp + TOLERANCE &&
-          minRight - TOLERANCE < normalizedStepRight && normalizedStepRight < maxRight + TOLERANCE
+      if (minUp - TOLERANCE < normalizedStepUp && normalizedStepUp < maxUp + TOLERANCE &&
+        minRight - TOLERANCE < normalizedStepRight && normalizedStepRight < maxRight + TOLERANCE
       ) {
         distanceStorage[0] = normalizedStepMain;
         return selectedDirection;

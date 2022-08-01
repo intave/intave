@@ -1,9 +1,7 @@
 package de.jpx3.intave.user;
 
-import de.jpx3.intave.access.UnsupportedFallbackOperationException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.annotate.Relocate;
-import de.jpx3.intave.block.state.BlockStateCaches;
 import de.jpx3.intave.block.state.ExtendedBlockStateCache;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.connect.customclient.CustomClientSupportConfig;
@@ -11,82 +9,64 @@ import de.jpx3.intave.entity.size.HitboxSize;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.violation.placeholder.PlayerContext;
 import de.jpx3.intave.module.violation.placeholder.UserContext;
-import de.jpx3.intave.player.collider.Colliders;
 import de.jpx3.intave.player.collider.complex.Collider;
 import de.jpx3.intave.player.collider.simple.SimpleCollider;
-import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
-import de.jpx3.intave.user.permission.ExpiringPermissionCache;
 import de.jpx3.intave.user.permission.PermissionCache;
-import de.jpx3.intave.user.storage.PlayerStorage;
 import de.jpx3.intave.user.storage.Storage;
-import de.jpx3.intave.user.storage.Storages;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 @Relocate
-public final class FallbackUser implements User {
-  private final MetadataBundle metadata;
-  private final PermissionCache permissionCache;
-  private final Collider collider;
-  private final SimpleCollider simpleCollider;
-  private final Map<Pose, HitboxSize> poseSizes;
-  private final ExtendedBlockStateCache blockStateAccess;
-  private final CustomClientSupportConfig customClientSupportConfig = CustomClientSupportConfig.createDefault();
+final class TestUser implements User {
+  private final Map<Class<? extends CheckCustomMetadata>, CheckCustomMetadata> metadataPool = new ConcurrentHashMap<>();
+  private final Player player;
+  private final int protocolVersion;
 
-  private final UserContext userContext = new UserContext(this);
-  private final PlayerContext playerContext = PlayerContext.empty();
+  TestUser(Player player, int protocolVersion) {
+    this.player = player;
+    this.protocolVersion = protocolVersion;
+  }
 
-  private final PlayerStorage storage = Storages.emptyPlayerStorageFor(UUID.randomUUID());
+  @Override
+  public UUID id() {
+    return player.getUniqueId();
+  }
 
-  FallbackUser() {
-    this.metadata = new MetadataBundle(null, this);
-    this.permissionCache = new ExpiringPermissionCache(16, TimeUnit.SECONDS);
-    this.blockStateAccess = BlockStateCaches.empty();
-    this.collider = Colliders.suitableComplexColliderProcessorFor(this);
-    this.simpleCollider = Colliders.suitableSimpleColliderProcessorFor(this);
-    this.poseSizes = Pose.AT_LEAST_1_8_POSE;
-    this.metadata.setup();
+  @Override
+  public Object playerHandle() {
+    return null;
+  }
+
+  @Override
+  public Object playerConnection() {
+    return null;
+  }
+
+  @Override
+  public Player player() {
+    return player;
+  }
+
+  @Override
+  public MetadataBundle meta() {
+    return null;
   }
 
   @Override
   public void delayedSetup() {
+
   }
 
   @Override
   public void applyNewProtocolVersion() {
 
-  }
-
-  @Override
-  public MetadataBundle meta() {
-    return this.metadata;
-  }
-
-  @Override
-  public UUID id() {
-    return UUID.randomUUID();
-  }
-
-  @Override
-  public Object playerHandle() {
-    throw UnsupportedFallbackOperationException.INSTANCE;//new UnsupportedFallbackOperationException("Can't locate a player here");
-  }
-
-  @Override
-  public Object playerConnection() {
-    throw UnsupportedFallbackOperationException.INSTANCE;//new UnsupportedFallbackOperationException("Can't locate a player here");
-  }
-
-  @Override
-  public Player player() {
-    throw UnsupportedFallbackOperationException.INSTANCE;//new UnsupportedFallbackOperationException("Can't locate a player here");
   }
 
   @Override
@@ -96,35 +76,40 @@ public final class FallbackUser implements User {
 
   @Override
   public long joined() {
-    return System.currentTimeMillis();
+    return 0;
   }
 
   @Override
   public boolean hasPlayer() {
-    return false;
+    return true;
   }
 
   @Override
-  public CheckCustomMetadata checkMetadata(Class<? extends CheckCustomMetadata> classTarget) {
-    try {
-      return classTarget.newInstance();
-    } catch (InstantiationException | IllegalAccessException exception) {
-      throw new IllegalStateException(exception);
-    }
-  }
-
-  @Override
-  public PermissionCache permissionCache() {
-    return permissionCache;
+  public CheckCustomMetadata checkMetadata(Class<? extends CheckCustomMetadata> metaClass) {
+    return metadataPool.computeIfAbsent(metaClass, initializeMe -> {
+      try {
+        return initializeMe.newInstance();
+      } catch (RuntimeException exception) {
+        throw exception;
+      } catch (Exception exception) {
+        throw new IllegalStateException(exception);
+      }
+    });
   }
 
   @Override
   public CustomClientSupportConfig customClientSupport() {
-    return CustomClientSupportConfig.createDefault();
+    return null;
   }
 
   @Override
   public void setCustomClientSupport(CustomClientSupportConfig customClientSupportConfig) {
+
+  }
+
+  @Override
+  public PermissionCache permissionCache() {
+    return null;
   }
 
   @Override
@@ -139,62 +124,67 @@ public final class FallbackUser implements User {
 
   @Override
   public void ignoreNextInboundPacket() {
+
   }
 
   @Override
   public void ignoreNextOutboundPacket() {
+
   }
 
   @Override
   public void receiveNextInboundPacketAgain() {
+
   }
 
   @Override
   public void receiveNextOutboundPacketAgain() {
+
   }
 
   @Override
   public Storage mainStorage() {
-    return storage;
+    return null;
   }
 
   @Override
   public <T extends Storage> T storageOf(Class<T> storageClass) {
-    return storage.storageOf(storageClass);
+    return null;
   }
 
   @Override
   public ExtendedBlockStateCache blockStates() {
-    return blockStateAccess;
+    return null;
   }
 
   @Override
   public Collider collider() {
-    return collider;
+    return null;
   }
 
   @Override
   public SimpleCollider simplifiedCollider() {
-    return simpleCollider;
+    return null;
   }
 
   @Override
   public PlayerContext playerContext() {
-    return playerContext;
+    return null;
   }
 
   @Override
   public UserContext userContext() {
-    return userContext;
+    return null;
   }
 
   @Override
   public TrustFactor trustFactor() {
-    return TrustFactor.DARK_RED;
+    return null;
   }
 
   @Override
   public void setTrustFactor(TrustFactor trustFactor) {
+
   }
 
   @Override
@@ -209,10 +199,12 @@ public final class FallbackUser implements User {
 
   @Override
   public void toggleReceive(MessageChannel channel) {
+
   }
 
   @Override
   public void setChannelConstraint(MessageChannel channel, Predicate<Player> constraint) {
+
   }
 
   @Override
@@ -222,20 +214,22 @@ public final class FallbackUser implements User {
 
   @Override
   public Predicate<Player> channelPlayerConstraint(MessageChannel channel) {
-    return player -> false;
+    return null;
+  }
+
+  @Override
+  public void removeChannelConstraint(MessageChannel channel) {
+
   }
 
   @Override
   public void applyAttackNerfer(AttackNerfStrategy strategy, String checkId) {
+
   }
 
   @Override
   public void applyShortAttackStimulus(AttackNerfStrategy strategy, String checkId) {
 
-  }
-
-  @Override
-  public void removeChannelConstraint(MessageChannel channel) {
   }
 
   @Override
@@ -250,20 +244,22 @@ public final class FallbackUser implements User {
 
   @Override
   public int protocolVersion() {
-    return meta().protocol().protocolVersion();
+    return protocolVersion;
   }
 
   @Override
   public HitboxSize sizeOf(Pose pose) {
-    return poseSizes.get(pose);
+    return null;
   }
 
   @Override
   public void clearTypeTranslations() {
+
   }
 
   @Override
   public void applyTypeTranslation(Material from, Material to) {
+
   }
 
   @Override
@@ -273,10 +269,12 @@ public final class FallbackUser implements User {
 
   @Override
   public void noteHardTransactionResponse() {
+
   }
 
   @Override
   public void kick(String reason) {
+
   }
 
   @Override
@@ -286,18 +284,11 @@ public final class FallbackUser implements User {
 
   @Override
   public void unregister() {
-    FakePlayer fakePlayer = meta().attack().fakePlayer();
-    if (fakePlayer != null) {
-      fakePlayer.remove();
-    }
+
   }
 
   @Override
   public void refreshSprintState() {
-  }
 
-  @Override
-  public String toString() {
-    return "FallbackUser{}";
   }
 }

@@ -49,7 +49,7 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
     }
 
     if (action == EnumWrappers.EntityUseAction.ATTACK) {
-      if (user.meta().protocol().protocolVersion() <= ProtocolMetadata.VER_1_8) {
+      if (user.protocolVersion() <= ProtocolMetadata.VER_1_8) {
         meta.attackCountArray[meta.attackArrayIndex]++;
       } else {
         meta.attacksDuringFlyingPackets.add(System.currentTimeMillis());
@@ -76,7 +76,7 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
     ClickSpeedLimiterMeta meta = metaOf(user);
     PacketType pt = event.getPacketType();
 
-    if (user.meta().protocol().protocolVersion() <= ProtocolMetadata.VER_1_8) {
+    if (user.protocolVersion() <= ProtocolMetadata.VER_1_8) {
       // 1.8
       meta.countAccuratePositionPackets = 20;
     } else {

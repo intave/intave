@@ -1,10 +1,18 @@
 package de.jpx3.intave.user;
 
+import de.jpx3.intave.user.storage.Storage;
 import org.bukkit.entity.Player;
 
 public final class UserFactory {
   public static User createFallback() {
     return new FallbackUser();
+  }
+
+  public static User createTestUserFor(
+    Player player,
+    int protocolVersion
+  ) {
+    return new TestUser(player, protocolVersion);
   }
 
   public static User createUserFor(Player player) {

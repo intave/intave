@@ -201,7 +201,7 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
 //      player.sendMessage("cps: " + sum);
     }
 
-    if (sum > 13 && user.meta().protocol().protocolVersion() <= ProtocolMetadata.VER_1_8) {
+    if (sum > 13 && user.protocolVersion() <= ProtocolMetadata.VER_1_8) {
       meta.flaggCounter++;
       double timeDiffrenceInSeconds = (System.currentTimeMillis() - meta.lastFlagTimeStamp) / 1000d;
 

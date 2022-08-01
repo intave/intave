@@ -26,7 +26,7 @@ final class LocateFileCompiler implements CompilerStreamFunctionProvider<Locatio
         List<String> fieldLines = new ArrayList<>();
         List<String> methodLines = new ArrayList<>();
         boolean fieldScope = false, methodScope = false;
-        while (!(line = lines.get(++i)).equals("}")) {
+        while (!"}".equals(line = lines.get(++i))) {
           if (line.startsWith("  methods {")) {
             if (fieldScope) {
               throw new IllegalStateException("Method scope entrance whilst field scope still active");

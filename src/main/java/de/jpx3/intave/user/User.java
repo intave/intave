@@ -326,6 +326,13 @@ public interface User {
   int latencyJitter();
 
   /**
+   * Retrieve a player's protocol version.
+   * See <a href="https://wiki.vg/Protocol_version_numbers">protocol versions</a> for more information.
+   * @return a player's protocol version
+   */
+  int protocolVersion();
+
+  /**
    * Retrieve the {@link HitboxSize} of a {@link Pose}.
    * This is {@link User}-dependant due to changes of boundaries between Minecraft versions.
    *

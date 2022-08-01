@@ -290,8 +290,8 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
 
     if (confidence.level() >= 30) {
       meta.internalViolation -= confidence.level();
-      if (user.meta().protocol().protocolVersion() > 47) {
-        description += " " + user.meta().protocol().protocolVersion();
+      if (user.protocolVersion() > 47) {
+        description += " " + user.protocolVersion();
       }
 
       description += " conf:" + confidence.level() + "/" + meta.internalViolation;

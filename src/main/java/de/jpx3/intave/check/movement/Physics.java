@@ -505,7 +505,7 @@ public final class Physics extends Check {
       String received = formatPosition(receivedMotionX, receivedMotionY, receivedMotionZ);
       String expected = formatPosition(predictedX, predictedY, predictedZ);
       String message = "moved incorrectly";
-      String details = received + " est: " + expected;
+      String details = received + " actual: " + expected;
 
       if (velocityDetected) {
         details += ", strict";

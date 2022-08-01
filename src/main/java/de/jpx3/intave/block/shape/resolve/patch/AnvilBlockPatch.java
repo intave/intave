@@ -19,7 +19,7 @@ final class AnvilBlockPatch extends BoundingBoxPatch {
   @Override
   public BlockShape collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
     User user = UserRepository.userOf(player);
-    boolean legacy = user.meta().protocol().protocolVersion() < ProtocolMetadata.VER_1_13;
+    boolean legacy = user.protocolVersion() < ProtocolMetadata.VER_1_13;
     Direction.Axis axis = axisOf(blockState);
     return legacy ? legacyPatch(axis) : modernPatch(axis);
   }

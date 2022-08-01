@@ -8,13 +8,14 @@ import java.util.function.Function;
 
 public final class BlockShapes {
   private static final BlockShape EMPTY = new EmptyBlockShape();
+  private static final BlockShape CUBE = new CubeShape(0,0,0);
 
   public static BlockShape emptyShape() {
     return EMPTY;
   }
 
   public static BlockShape originCube() {
-    return new CubeShape(0, 0, 0);
+    return CUBE;
   }
 
   public static BlockShape cubeAt(int posX, int posY, int posZ) {
