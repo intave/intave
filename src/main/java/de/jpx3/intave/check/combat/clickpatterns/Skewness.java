@@ -82,23 +82,21 @@ public final class Skewness extends MetaCheckPart<ClickPatterns, Skewness.Skewne
   }
 
   private double skewnessOf(Collection<? extends Number> sd) {
-    double total = 0;
-    int amount = 0;
-    List<Double> asDoubles = new ArrayList<>();
-    for (Number number : sd) {
-      double numberAsDouble = number.doubleValue();
-      total += numberAsDouble;
-      amount++;
-      asDoubles.add(numberAsDouble);
-    }
+    int amount = sd.size();
     if (amount == 0) {
       return 0;
     }
-    asDoubles.sort(Double::compareTo);
+    double total = 0;
+    List<Double> numbersAsDoubles = new ArrayList<>();
+    for (Number number : sd) {
+      double numberAsDouble = number.doubleValue();
+      total += numberAsDouble;
+      numbersAsDoubles.add(numberAsDouble);
+    }
+    numbersAsDoubles.sort(Double::compareTo);
     double mean = total / amount;
-    double median = asDoubles.get((amount % 2 != 0 ? amount : amount - 1) / 2);
-    double standardDeviation = standardDeviationOf(asDoubles);
-    return 3 * (mean - median) / standardDeviation;
+    double median = numbersAsDoubles.get((amount % 2 != 0 ? amount : amount - 1) / 2);
+    return 3 * (mean - median) / standardDeviationOf(numbersAsDoubles);
   }
 
   private double standardDeviationOf(Collection<? extends Number> sd) {

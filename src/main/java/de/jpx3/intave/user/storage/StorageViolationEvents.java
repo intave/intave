@@ -58,19 +58,19 @@ public class StorageViolationEvents implements Storage, Iterable<StorageViolatio
   }
 
   public double matchFactor(
-    Predicate<StorageViolationEvent> predicate
+    Predicate<? super StorageViolationEvent> predicate
   ) {
     return (double) numMatching(predicate) / size();
   }
 
   public long numMatching(
-    Predicate<StorageViolationEvent> predicate
+    Predicate<? super StorageViolationEvent> predicate
   ) {
     return stream().filter(predicate).count();
   }
 
   public StorageViolationEvents filter(
-    Predicate<StorageViolationEvent> predicate
+    Predicate<? super StorageViolationEvent> predicate
   ) {
     List<StorageViolationEvent> filtered = stream()
       .filter(predicate)

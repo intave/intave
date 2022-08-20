@@ -30,6 +30,7 @@ public final class ProtocolMetadata {
   private MinecraftVersion minecraftVersion;
   private String versionString;
   private String clientBrand = "Unknown";
+  private String locale = "en_US";
   private int protocolVersion;
   private final User user;
   private int refreshes;
@@ -56,7 +57,7 @@ public final class ProtocolMetadata {
     String versionString = versionAsString(protocolVersion);
     if (protocolVersion <= 0) {
       protocolVersion = VER_INVALID;
-      minecraftVersion = MinecraftVersions.VER1_18_2;
+      minecraftVersion = MinecraftVersions.VER1_19_1;
     } else {
       minecraftVersion = new MinecraftVersion(versionString);
       MinecraftVersion server = MinecraftVersion.getCurrentVersion();
@@ -180,6 +181,14 @@ public final class ProtocolMetadata {
 
   public boolean oppositeBlockVectorBehavior() {
     return protocolVersion >= VER_1_14;
+  }
+
+  public void setLocale(String locale) {
+    this.locale = locale;
+  }
+
+  public String locale() {
+    return locale;
   }
 
   private Boolean behind;

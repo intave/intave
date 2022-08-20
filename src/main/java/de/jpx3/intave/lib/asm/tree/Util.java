@@ -28,6 +28,7 @@
 package de.jpx3.intave.lib.asm.tree;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -155,9 +156,7 @@ final class Util {
 
   static <T> List<T> asArrayList(int length, T[] array) {
     List<T> list = new ArrayList<>(length);
-    for (int i = 0; i < length; ++i) {
-      list.add(array[i]); // NOPMD(UseArraysAsList): we convert a part of the array.
-    }
+    list.addAll(Arrays.asList(array).subList(0, length));
     return list;
   }
 }

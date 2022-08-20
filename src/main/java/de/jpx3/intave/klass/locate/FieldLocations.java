@@ -41,7 +41,7 @@ final class FieldLocations implements Iterable<FieldLocation> {
     return StreamSupport.stream(this.fieldLocations.spliterator(), false);
   }
 
-  public FieldLocations filter(Predicate<FieldLocation> predicate) {
+  public FieldLocations filter(Predicate<? super FieldLocation> predicate) {
     Iterable<FieldLocation> classLocations = stream().filter(predicate).collect(Collectors.toList());
     return new FieldLocations(classLocations);
   }

@@ -8,10 +8,12 @@ import de.jpx3.intave.block.shape.BlockShapeTests;
 import de.jpx3.intave.block.shape.resolve.BlockShapeDrillTests;
 import de.jpx3.intave.block.shape.resolve.BlockShapePipelineTests;
 import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.klass.locate.ReferenceExistenceTests;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginDescriptionFile;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -28,15 +30,25 @@ public final class TestService {
 
   @Native
   public void performTests() {
-    IntaveLogger.logger().info("Running self-tests..");
+    IntaveLogger.logger().info("Intave will take a few seconds to self-test,");
+    IntaveLogger.logger().info("since it is yet unfamiliar with your environment.");
     try {
       // we can assume all classes loaded
+
+      // parts
       performTest(BlockShapeTests.class);
       performTest(BlockShapeDrillTests.class);
       performTest(BlockShapePipelineTests.class);
 
+
+      // checks
+//      performTest(SimulatorBasicTests.class);
+
+      // locate
+      performTest(ReferenceExistenceTests.class);
+
     } catch (Exception exception) {
-      if (IntaveControl.TEST_VERBOSE) {
+      if (IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
         exception.printStackTrace();
       }
       IntaveLogger.logger().error("Failure reported from a CAT1 self-test, aborting with ERROR notice.");
@@ -60,7 +72,7 @@ public final class TestService {
   private static final String environmentHash = environmentHash();
 
   public boolean environmentKnown() {
-    return false;
+    return true;
 //    String environmentHash = environmentHash();
 //    return supportedEnvironments.contains(environmentHash);
   }
@@ -70,12 +82,21 @@ public final class TestService {
     environmentHashResource.write(supportedEnvironments);
   }
 
+
   private static String environmentHash() {
     StringBuilder bigString = new StringBuilder(Bukkit.getServer().getName());
     for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
       bigString.append(plugin.getName());
-      bigString.append(plugin.getDescription().getVersion());
+      PluginDescriptionFile description = plugin.getDescription();
+      bigString.append(description.getMain());
+      bigString.append(description.getVersion());
+      bigString.append(plugin.getConfig().saveToString());
     }
+    bigString.append(System.getProperty("java.version"));
+    bigString.append(System.getProperty("java.vendor"));
+    bigString.append(System.getProperty("java.home"));
+    bigString.append(System.getProperty("os.name"));
+    bigString.append(System.getProperty("os.version"));
     bigString.append(Bukkit.getVersion());
     bigString.append(Bukkit.getBukkitVersion());
     // hash with SHA-256
@@ -87,8 +108,8 @@ public final class TestService {
     }
     byte[] hash = digest.digest(bigString.toString().getBytes());
     StringBuilder hashString = new StringBuilder();
-    for (byte b : hash) {
-      hashString.append(String.format("%02x", b));
+    for (byte bite : hash) {
+      hashString.append(String.format("%02x", bite));
     }
     return hashString.toString();
   }

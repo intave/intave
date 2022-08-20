@@ -1,6 +1,5 @@
 package de.jpx3.intave.user;
 
-import de.jpx3.intave.user.storage.Storage;
 import org.bukkit.entity.Player;
 
 public final class UserFactory {

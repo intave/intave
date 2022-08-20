@@ -8,10 +8,10 @@ import java.util.function.Consumer;
 
 public final class InstantPlayback extends Playback implements Runnable {
   private final Executor executor;
-  private final Consumer<Playback> onComplete;
+  private final Consumer<? super Playback> onComplete;
   private boolean interrupted = false;
 
-  public InstantPlayback(DataInputStream stream, Executor executor, Consumer<Playback> onComplete) {
+  public InstantPlayback(DataInputStream stream, Executor executor, Consumer<? super Playback> onComplete) {
     super(stream, null);
     this.executor = executor;
     this.onComplete = onComplete;

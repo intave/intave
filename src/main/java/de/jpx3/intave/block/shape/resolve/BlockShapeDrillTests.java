@@ -21,6 +21,10 @@ public final class BlockShapeDrillTests extends Tests {
   private MaterialData priorMaterial;
   private ShapeResolverPipeline drill;
 
+  public BlockShapeDrillTests() {
+    super("BSDT");
+  }
+
   @Before
   public void setup() {
     World world = Bukkit.getWorlds().get(0);
@@ -33,7 +37,7 @@ public final class BlockShapeDrillTests extends Tests {
   }
 
   @Test(
-    testCode = "BSDT_A",
+    testCode = "A",
     severity = Severity.ERROR
   )
   public void testSolidCollision() {
@@ -43,7 +47,7 @@ public final class BlockShapeDrillTests extends Tests {
   }
 
   @Test(
-    testCode = "BSDT_B",
+    testCode = "B",
     severity = Severity.ERROR
   )
   public void testSolidOutline() {
@@ -53,7 +57,7 @@ public final class BlockShapeDrillTests extends Tests {
   }
 
   @Test(
-    testCode = "BSDT_C",
+    testCode = "C",
     severity = Severity.ERROR
   )
   public void testTransparentCollision() {
@@ -63,14 +67,14 @@ public final class BlockShapeDrillTests extends Tests {
   }
 
   @Test(
-    testCode = "BSDT_D",
+    testCode = "D",
     severity = Severity.WARNING
   )
   public void testTransparentOutline() {
     block.setType(Material.AIR, false);
     Material type = block.getType();
     BlockShape blockShape = drill.outlineShapeOf(block.getWorld(), player, type, 0, 0, 0, 0);
-    if (!blockShape.isEmpty() && IntaveControl.TEST_VERBOSE) {
+    if (!blockShape.isEmpty() && IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
       System.out.println(type);
       System.out.println(blockShape);
     }
@@ -78,7 +82,7 @@ public final class BlockShapeDrillTests extends Tests {
   }
 
   @Test(
-    testCode = "BSDT_E",
+    testCode = "E",
     severity = Severity.ERROR
   )
   public void testDeviationFromActualCollision() {
@@ -88,7 +92,7 @@ public final class BlockShapeDrillTests extends Tests {
   }
 
   @Test(
-    testCode = "BSDT_F",
+    testCode = "F",
     severity = Severity.WARNING
   )
   public void testDeviationFromActualOutline() {
@@ -98,7 +102,7 @@ public final class BlockShapeDrillTests extends Tests {
   }
 
   @Test(
-    testCode = "BSDT_G",
+    testCode = "G",
     severity = Severity.ERROR
   )
   public void testComplexCollisionShape() {

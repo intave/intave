@@ -26,6 +26,10 @@ public final class BlockShapePipelineTests extends Tests {
   private Block block;
   private MaterialData previousMaterialData;
 
+  public BlockShapePipelineTests() {
+    super("BSPT");
+  }
+
   @Before
   public void before() {
     world = Bukkit.getWorlds().get(0);
@@ -35,7 +39,7 @@ public final class BlockShapePipelineTests extends Tests {
   }
 
   @Test(
-    testCode = "BSPT_A",
+    testCode = "A",
     severity = Severity.WARNING
   )
   public void testPipelineSequence() {

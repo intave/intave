@@ -400,7 +400,7 @@ public abstract class Printer {
     PrintWriter output,
     PrintWriter logger)
     throws IOException {
-    if (args.length < 1 || args.length > 2 || (args[0].equals("-debug") && args.length != 2)) {
+    if (args.length < 1 || args.length > 2 || ("-debug".equals(args[0]) && args.length != 2)) {
       logger.println(usage);
       return;
     }
@@ -409,7 +409,7 @@ public abstract class Printer {
 
     String className;
     int parsingOptions;
-    if (args[0].equals("-debug")) {
+    if ("-debug".equals(args[0])) {
       className = args[1];
       parsingOptions = ClassReader.SKIP_DEBUG;
     } else {

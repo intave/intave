@@ -11,6 +11,8 @@ import org.bukkit.Bukkit;
 import java.util.Arrays;
 
 public final class ProtocolLibraryAdapter {
+  private final static String PROTOCOLLIB_OUTDATED = "Your version of ProtocolLib is outdated";
+
   @Deprecated
   public static MinecraftVersion serverVersion() {
     return MinecraftVersion.getCurrentVersion();
@@ -25,31 +27,31 @@ public final class ProtocolLibraryAdapter {
     boolean specifiedEnumModifier = Arrays.stream(EnumWrappers.class.getMethods()).anyMatch(method -> method.getName().equalsIgnoreCase("getGenericConverter") && method.getParameterCount() == 2);
 
     if (!specifiedEnumModifier) {
-      throw new InvalidDependencyException("Your version of ProtocolLib is outdated (missing generic enum conversion)");
+      throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + " (missing generic enum conversion)");
     }
 
     if (!methodExists(MinecraftVersion.class.getName(), "atOrAbove")) {
-      throw new InvalidDependencyException("Your version of ProtocolLib is outdated (atOrAbove check missing)");
+      throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + " (atOrAbove check missing)");
     }
 
     if (!methodExistsInClassHierarchy(PacketContainer.class.getName(), "getMinecraftKeys")) {
-      throw new InvalidDependencyException("Your version of ProtocolLib is outdated (missing minecraft key access)");
+      throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + " (missing minecraft key access)");
     }
 
     if (MinecraftVersions.VER1_14_0.atOrAbove()) {
       if (!methodExistsInClassHierarchy("com.comphenix.protocol.events.PacketContainer", "getMovingBlockPositions")) {
-        throw new InvalidDependencyException("Your version of ProtocolLib is outdated (missing moving-object-position packet access)");
+        throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + " (missing moving-object-position packet access)");
       }
     }
 
     if (MinecraftVersions.VER1_17_0.atOrAbove()) {
       if (!methodExistsInClassHierarchy(PacketContainer.class.getName(), "getEnumEntityUseActions")) {
-        throw new InvalidDependencyException("Your version of ProtocolLib is outdated (missing enum entity use action access)");
+        throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + " (missing enum entity use action access)");
       }
 
       if (MinecraftVersions.VER1_17_1.atOrAbove()) {
         if (!methodExistsInClassHierarchy(PacketContainer.class.getName(), "getIntLists")) {
-          throw new InvalidDependencyException("Your version of ProtocolLib is outdated (missing int list access)");
+          throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + " (missing int list access)");
         }
       }
     }

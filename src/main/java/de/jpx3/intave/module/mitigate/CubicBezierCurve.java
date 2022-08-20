@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-public final class CubicBezierCurve {
+final class CubicBezierCurve {
   private final Point2d bezA, bezB;
   private final Point2d start, end;
 

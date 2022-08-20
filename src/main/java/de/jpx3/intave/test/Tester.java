@@ -54,31 +54,37 @@ public final class Tester implements Runnable {
   }
 
   private void runTest(Method testMethod) {
+    Test annotation = testMethod.getAnnotation(Test.class);
+    String testCode = annotation.testCode();
+
     Tests test;
     try {
       test = (Tests) testClass.newInstance();
+    } catch (Exception exception) {
+      throw new RuntimeException("Failed to instantiate test", exception);
+    }
+    String fullTestName = test.testCode() + "/" + testCode;
+    try {
       if (beforeMethod != null) {
         beforeMethod.invoke(test);
       }
-    } catch (Exception exception) {
-      throw new RuntimeException("Failed to setup selftest", exception);
+    } catch (Throwable t) {
+      throw new RuntimeException("Failed to run @Before method for "+ fullTestName, t);
     }
     try {
-      if (IntaveControl.TEST_VERBOSE) {
+      if (IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
         IntaveLogger.logger().info("Running test: " + testMethod.getName());
       }
       testMethod.invoke(test);
     } catch (Throwable throwable) {
-      Test annotation = testMethod.getAnnotation(Test.class);
-      String testCode = annotation.testCode();
       Severity severity = annotation.severity();
-      String message = "Test " + testCode.replace("_", "/") + " failed";
-      if (IntaveControl.TEST_VERBOSE) {
+      String message = "Test " + fullTestName + " failed";
+      if (IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
         throwable.printStackTrace();
-        if (throwable.getCause() != null) {
+        while (throwable.getCause() != null) {
           throwable = throwable.getCause();
         }
-        message += " from a " + throwable.getClass().getName() + ": " + throwable.getMessage();
+        message += " from a " + throwable.getClass().getSimpleName() + ": " + throwable.getMessage();
       } else {
         message += "";
       }
@@ -91,7 +97,7 @@ public final class Tester implements Runnable {
         try {
           afterMethod.invoke(test);
         } catch (Exception exception) {
-          throw new RuntimeException(exception);
+          exception.printStackTrace();
         }
       }
     }

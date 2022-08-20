@@ -673,6 +673,10 @@ public final class IntavePlugin extends JavaPlugin {
       logger.info(ChatColor.YELLOW + "This version will dump netty threads when a player times out");
     }
 
+    if (IntaveControl.USE_DEBUG_LOCATE_RESOURCE) {
+      logger.info(ChatColor.YELLOW + "This version will use the Intave/locate file for class mappings");
+    }
+
     registerNativeCheck();
 
     Modules.linker().packetEvents().refreshLinkages();

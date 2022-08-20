@@ -38,7 +38,7 @@ final class ClassLocation extends Location {
 
   @Override
   public String toString() {
-    return "ClassLocation{" +
+    return "{" +
       key() + " -> " + compiledLocation() +
       '}';
   }

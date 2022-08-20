@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'de.jpx3'
-version = '14.4.5'
+version = '14.4.6'
 description = 'Intave is an event- & packetbased, hyper-threaded & polyheuristic cheat detection software, providing fair play'
 
 def fileName = "Intave"
@@ -20,8 +20,8 @@ repositories {
 
 dependencies {
   implementation 'org.jetbrains:annotations:23.0.0'
-  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
-  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
   compileOnly 'org.spigotmc:spigot-api:1.12.2-R0.1-SNAPSHOT' // The Spigot API with no shadowing. Requires the OSS repo.
   compileOnly 'it.unimi.dsi:fastutil:8.5.8'
   compileOnly fileTree(dir: 'libs/', include: ['*.jar'])

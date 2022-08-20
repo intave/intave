@@ -1,6 +1,5 @@
 package de.jpx3.intave.block.state;
 
-import com.google.common.collect.Maps;
 import de.jpx3.intave.annotate.DoNotFlowObfuscate;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.shape.BlockShape;
@@ -12,13 +11,12 @@ import de.jpx3.intave.diagnostic.ShapeAccessFlowStudy;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.world.WorldHeight;
+import io.netty.util.collection.LongObjectHashMap;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Map;
 
 import static de.jpx3.intave.IntaveControl.DISABLE_BLOCK_CACHING_ENTIRELY;
 
@@ -26,7 +24,7 @@ import static de.jpx3.intave.IntaveControl.DISABLE_BLOCK_CACHING_ENTIRELY;
 final class MultiChunkKeyExtendedBlockStateCache implements ExtendedBlockStateCache {
   private final Player player;
   private final ShapeResolverPipeline shapeResolver;
-  private final Map<Long, BlockState> blockCache = Maps.newConcurrentMap();
+  private final LongObjectHashMap<BlockState> blockCache = new LongObjectHashMap<>(1024);
   private final BlockStateReplacementCache<Long> replacementCache;
   private int originChunkX, originChunkZ;
   private int chunkX, chunkZ;
@@ -36,7 +34,7 @@ final class MultiChunkKeyExtendedBlockStateCache implements ExtendedBlockStateCa
   ) {
     this.player = player;
     this.shapeResolver = resolver;
-    this.replacementCache = new BlockStateReplacementCache<>(player, this::bigKey);
+    this.replacementCache = new BlockStateReplacementCache<>(player, MultiChunkKeyExtendedBlockStateCache::bigKey);
   }
 
   @Override
@@ -210,7 +208,6 @@ final class MultiChunkKeyExtendedBlockStateCache implements ExtendedBlockStateCa
   @Override
   public void invalidateCacheAt0(int posX, int posY, int posZ) {
     blockCache.remove(bigKey(posX, posY, posZ));
-
 //    player.sendMessage(ChatColor.GOLD + "invalidateCacheAt0("+posX+", "+posY+", "+posZ+")");
   }
 
@@ -219,7 +216,6 @@ final class MultiChunkKeyExtendedBlockStateCache implements ExtendedBlockStateCa
 //    invalidateOverride(posX, posY, posZ);
     long key = bigKey(posX, posY, posZ);
     replacementCache.remove(key);
-
     BlockState blockState;
     if (type == Material.AIR) {
       blockState = BlockState.empty();
@@ -275,19 +271,19 @@ final class MultiChunkKeyExtendedBlockStateCache implements ExtendedBlockStateCa
     return replacementCache.located().size();
   }
 
-  private long bigKey(Position location) {
+  private static long bigKey(Position location) {
     return bigKey(location.getBlockX(), location.getBlockY(), location.getBlockZ());
   }
 
-  private long bigKey(int posX, int posY, int posZ) {
+  private static long bigKey(int posX, int posY, int posZ) {
     return (posX & 0x3fffffL) << 42 | (posY & 0xfffffL) | (posZ & 0x3fffffL) << 20;
   }
 
-  private int smallKey(Position position) {
+  private static int smallKey(Position position) {
     return smallKey(position.getBlockX(), position.getBlockY(), position.getBlockZ());
   }
 
-  private int smallKey(int posX, int posY, int posZ) {
+  private static int smallKey(int posX, int posY, int posZ) {
     return (posX & 0x3fff) << 20 | (posY & 0x3ff) << 8 | (posZ & 0x3fff);
   }
 }

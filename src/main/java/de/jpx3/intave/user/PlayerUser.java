@@ -8,6 +8,7 @@ import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
+import de.jpx3.intave.adapter.ViaVersionAdapter;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.block.state.BlockStateCaches;
 import de.jpx3.intave.block.state.ExtendedBlockStateCache;
@@ -127,7 +128,7 @@ final class PlayerUser implements User {
   private void outputVersionJoinInfo() {
     Player player = player();
     ProtocolMetadata clientData = meta().protocol();
-    String string = player.getName() + " joined with version " + clientData.versionString() + "/" + clientData.protocolVersion();
+    String string = player.getName() + " joined with version " + clientData.versionString() + "/" + clientData.protocolVersion() + " and locale " + clientData.locale();
     if (clientData.outdatedClient()) {
       string += " (behind)";
     }

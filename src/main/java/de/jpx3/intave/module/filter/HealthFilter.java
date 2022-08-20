@@ -57,8 +57,20 @@ public final class HealthFilter extends Filter {
 
   private void stripHealthFromDataWatcher(WrappedDataWatcher watcher) {
     if (watcher != null && watcher.getObject(6) != null && watcher.getFloat(6) != 0.0F) {
-      watcher.setObject(6, Float.NaN);
+      float fakeHealth;
+      if (chanceOf(0.05f)) {
+        fakeHealth = Float.POSITIVE_INFINITY;
+      } else if (chanceOf(0.05f)) {
+        fakeHealth = Math.max(1, (float) (Math.random() * 20.0F));
+      } else {
+        fakeHealth = Float.NaN;
+      }
+      watcher.setObject(6, fakeHealth);
     }
+  }
+
+  private boolean chanceOf(float chance) {
+    return Math.random() < chance;
   }
 
   @Override

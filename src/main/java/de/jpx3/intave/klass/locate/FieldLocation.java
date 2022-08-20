@@ -49,7 +49,7 @@ final class FieldLocation extends Location {
 
   @Override
   public String toString() {
-    return "FieldLocation{" + classKey + "/" + key() + " -> " + target + " @" + versionMatcher() + "}";
+    return "{" + classKey + "/" + key() + " -> " + target + " @" + versionMatcher() + "}";
   }
 
   public static FieldLocation defaultFor(String classKey, String fieldKey) {

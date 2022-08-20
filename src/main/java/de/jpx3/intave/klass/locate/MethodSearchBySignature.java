@@ -45,7 +45,7 @@ public final class MethodSearchBySignature {
       Optional.empty();
   }
 
-  public MethodSearchBySignature peek(Consumer<MethodHandle> applier) {
+  public MethodSearchBySignature peek(Consumer<? super MethodHandle> applier) {
     for (MethodHandle method : methodsMatching) {
       applier.accept(method);
     }
@@ -73,7 +73,7 @@ public final class MethodSearchBySignature {
     private final Class<?> targetClass;
     private Type[] parameters;
     private Type returnType;
-    private Predicate<Method> filter = method -> true;
+    private Predicate<? super Method> filter = method -> true;
     private boolean mustHaveResult;
     private boolean publicLookup;
 
@@ -107,7 +107,7 @@ public final class MethodSearchBySignature {
       return this;
     }
 
-    public Builder withFilter(Predicate<Method> filter) {
+    public Builder withFilter(Predicate<? super Method> filter) {
       this.filter = filter;
       return this;
     }

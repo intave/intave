@@ -10,10 +10,10 @@ public class StorageViolationEvent implements Storage {
   private int violationLevel;
   private long timestamp;
 
-  public StorageViolationEvent() {
+  StorageViolationEvent() {
   }
 
-  public StorageViolationEvent(
+  StorageViolationEvent(
     String checkName,
     String details,
     String intaveVersion,

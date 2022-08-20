@@ -6,8 +6,12 @@ import de.jpx3.intave.test.Test;
 import de.jpx3.intave.test.Tests;
 
 public final class BlockShapeTests extends Tests {
+  public BlockShapeTests() {
+    super("BST");
+  }
+
   @Test(
-    testCode = "BST_A",
+    testCode = "A",
     severity = Severity.ERROR
   )
   public void emptyMustBeEmpty() {
@@ -17,7 +21,7 @@ public final class BlockShapeTests extends Tests {
   }
 
   @Test(
-    testCode = "BST_B",
+    testCode = "B",
     severity = Severity.ERROR
   )
   public void testArrayMustBeEmpty() {
@@ -27,7 +31,7 @@ public final class BlockShapeTests extends Tests {
   }
 
   @Test(
-    testCode = "BST_C",
+    testCode = "C",
     severity = Severity.ERROR
   )
   public void arrayMustNotBeEmptyIfContainsNonEmpty() {
@@ -38,27 +42,29 @@ public final class BlockShapeTests extends Tests {
   }
 
   @Test(
-    testCode = "BST_D",
+    testCode = "D",
     severity = Severity.ERROR
   )
   public void testCubicBoundingBoxMustBeCubic() {
     BlockShape blockShape = BoundingBox.originFrom(0, 0, 0, 1, 1, 1);
-    blockShape.contextualized(1, 1, 1);
+    assertTrue(blockShape.isCubic());
+    blockShape = blockShape.contextualized(1, 1, 1);
     assertTrue(blockShape.isCubic());
   }
 
   @Test(
-    testCode = "BST_E",
+    testCode = "E",
     severity = Severity.ERROR
   )
   public void testCubeShapeMustBeCubic() {
     BlockShape blockShape = BlockShapes.originCube();
-    blockShape.contextualized(1, 1, 1);
+    assertTrue(blockShape.isCubic());
+    blockShape = blockShape.contextualized(1, 1, 1);
     assertTrue(blockShape.isCubic());
   }
 
   @Test(
-    testCode = "BST_F",
+    testCode = "F",
     severity = Severity.ERROR
   )
   public void testArrayShapeMustBeCubic() {
@@ -71,7 +77,7 @@ public final class BlockShapeTests extends Tests {
   }
 
   @Test(
-    testCode = "BST_G",
+    testCode = "G",
     severity = Severity.ERROR
   )
   public void testMergeShapeMustBeCubic() {
@@ -84,7 +90,7 @@ public final class BlockShapeTests extends Tests {
   }
 
   @Test(
-    testCode = "BST_H",
+    testCode = "H",
     severity = Severity.ERROR
   )
   public void testMergeShapeMustBeEmpty() {
@@ -105,7 +111,7 @@ public final class BlockShapeTests extends Tests {
   }
 
   @Test(
-    testCode = "BST_I",
+    testCode = "I",
     severity = Severity.ERROR
   )
   public void testMerge() {

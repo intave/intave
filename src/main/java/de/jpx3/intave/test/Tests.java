@@ -1,6 +1,16 @@
 package de.jpx3.intave.test;
 
 public abstract class Tests {
+  private final String testCode;
+
+  public Tests(String testCode) {
+    this.testCode = testCode;
+  }
+
+  public String testCode() {
+    return testCode;
+  }
+
   protected void assertEquals(Object expected, Object actual) {
     if (!expected.equals(actual)) {
       throw new AssertionError("Expected: " + expected + ", actual: " + actual);
@@ -47,5 +57,13 @@ public abstract class Tests {
     if (expected.equals(actual)) {
       throw new AssertionError("Expected: " + expected + ", actual: " + actual);
     }
+  }
+
+  protected void fail() {
+    throw new AssertionError("Expected failure");
+  }
+
+  protected void fail(String message) {
+    throw new AssertionError(message);
   }
 }

@@ -42,6 +42,7 @@ public final class FakePlayerFactory {
   public static Player createPlayer(BiFunction<String, Object[], Object> methodReturn) {
     List<BiFunction<String, Object[], Object>> methods = new ArrayList<>();
     methods.add(FakePlayerFactory::identity);
+    methods.add(methodReturn);
     try {
       return (Player) playerConstructorForMethods(methods).newInstance(Bukkit.getServer());
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
@@ -69,7 +70,7 @@ public final class FakePlayerFactory {
     try {
       return ByteBuddyFactory.getInstance()
         .createSubclass(FakePlayer.class, ConstructorStrategy.Default.NO_CONSTRUCTORS)
-        .name(FakePlayerFactory.class.getPackage().getName() + ".Generator" + COUNTER++)
+        .name(FakePlayerFactory.class.getPackage().getName() + ".Generator" + UUID.randomUUID().toString().substring(0,8) + COUNTER++)
         .implement(new Type[]{Player.class})
         .defineField("server", Server.class, new ModifierContributor.ForField[]{Visibility.PRIVATE})
         .defineConstructor(new ModifierContributor.ForMethod[]{Visibility.PUBLIC})

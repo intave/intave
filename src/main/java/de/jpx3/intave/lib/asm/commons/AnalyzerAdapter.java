@@ -305,7 +305,7 @@ public class AnalyzerAdapter extends MethodVisitor {
     pop(descriptor);
     if (opcode != Opcodes.INVOKESTATIC) {
       Object value = pop();
-      if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>")) {
+      if (opcode == Opcodes.INVOKESPECIAL && "<init>".equals(name)) {
         Object initializedValue;
         if (value == Opcodes.UNINITIALIZED_THIS) {
           initializedValue = this.owner;

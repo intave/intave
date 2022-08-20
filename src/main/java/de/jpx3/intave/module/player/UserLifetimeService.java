@@ -3,7 +3,6 @@ package de.jpx3.intave.module.player;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
-import de.jpx3.intave.user.FallbackUser;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Bukkit;
@@ -15,7 +14,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 public final class UserLifetimeService extends Module {
   public void enable() {
     for (Player player : Bukkit.getOnlinePlayers()) {
-      if (UserRepository.userOf(player) instanceof FallbackUser) {
+      if (!UserRepository.userOf(player).hasPlayer()) {
         UserRepository.registerUser(player);
       }
       User user = UserRepository.userOf(player);

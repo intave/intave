@@ -7,6 +7,8 @@ import org.bukkit.Material;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -41,6 +43,14 @@ final class TypeTranslations {
 
   public Map<Material, Material> asTypeMap() {
     return collect(MAP_COLLECTOR);
+  }
+
+  public void forEach(Consumer<? super TypeTranslation> action) {
+    translations.forEach(action);
+  }
+
+  public void forEachType(BiConsumer<? super Material, ? super Material> action) {
+    translations.forEach(typeTranslation -> action.accept(typeTranslation.typeFrom(), typeTranslation.typeTo()));
   }
 
   public <R> R collect(Collector<? super TypeTranslation, ?, R> collector) {

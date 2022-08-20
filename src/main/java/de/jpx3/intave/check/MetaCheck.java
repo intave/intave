@@ -34,8 +34,7 @@ import org.bukkit.entity.Player;
  * }</pre>
  * The meta class must be declared as type parameter M,
  * its {@code class} must be passed in the {@link MetaCheck#MetaCheck(String, String, Class)} constructor,
- * and it must be a subclass of {@link CheckCustomMetadata}. Make sure it either has no constructor (best) or a public,
- * empty constructor.
+ * and it must be a subclass of {@link CheckCustomMetadata}. Make sure it has a public, empty constructor - explicitly or implicitly.
  * <br>
  * <br>
  * The {@link MetaCheck#metaOf(User)} or the {@link MetaCheck#metaOf(Player)} method are used to access the metadata holder.

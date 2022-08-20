@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 @Relocate
-public final class FallbackUser implements User {
+final class FallbackUser implements User {
   private final MetadataBundle metadata;
   private final PermissionCache permissionCache;
   private final Collider collider;

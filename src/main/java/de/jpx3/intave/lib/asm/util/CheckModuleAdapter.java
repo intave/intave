@@ -135,7 +135,7 @@ public class CheckModuleAdapter extends ModuleVisitor {
         | Opcodes.ACC_SYNTHETIC
         | Opcodes.ACC_MANDATED);
     if (classVersion >= Opcodes.V10
-      && module.equals("java.base")
+      && "java.base".equals(module)
       && (access & (Opcodes.ACC_STATIC_PHASE | Opcodes.ACC_TRANSITIVE)) != 0) {
       throw new IllegalArgumentException(
         "Invalid access flags: "

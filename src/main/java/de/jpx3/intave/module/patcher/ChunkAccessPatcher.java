@@ -84,7 +84,7 @@ public final class ChunkAccessPatcher extends Module {
         iterator.forEachRemaining(newQueue::add);
       }
     } catch (Exception | Error exception) {
-      IntaveLogger.logger().info("Failed to patch chunk unload queue of \"" + world.getName() + " with \"" + patchName + "\": " + exception.getMessage());
+      IntaveLogger.logger().info(String.format("Failed to patch chunk unload queue of \"%s\" with \"%s\": %s", world.getName(), patchName, exception.getMessage()));
       exception.printStackTrace();
     }
   }

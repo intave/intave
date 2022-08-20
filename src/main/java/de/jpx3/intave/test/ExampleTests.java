@@ -10,6 +10,10 @@ public final class ExampleTests extends Tests {
   private Block targetBlock;
   private Material priorMaterial;
 
+  public ExampleTests() {
+    super("EXMPL");
+  }
+
   @Before
   public void setup() {
     World world = Bukkit.getWorlds().get(0);
@@ -18,7 +22,7 @@ public final class ExampleTests extends Tests {
   }
 
   @Test(
-    testCode = "EXMPL_MAT_CMP",
+    testCode = "MAT_CMP",
     severity = Severity.ERROR
   )
   public void test() {
@@ -28,7 +32,7 @@ public final class ExampleTests extends Tests {
   }
 
   @Test(
-    testCode = "EXMPL_MAT2_CMP",
+    testCode = "MAT2_CMP",
     severity = Severity.ERROR
   )
   public void test2() {

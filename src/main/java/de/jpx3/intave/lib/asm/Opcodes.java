@@ -47,6 +47,18 @@ public interface Opcodes {
   int ASM5 = 5 << 16 | 0 << 8;
   int ASM6 = 6 << 16 | 0 << 8;
   int ASM7 = 7 << 16 | 0 << 8;
+  int ASM8 = 8 << 16 | 0 << 8;
+  int ASM9 = 9 << 16 | 0 << 8;
+  int ASM10 = 10 << 16 | 0 << 8;
+  int ASM11 = 11 << 16 | 0 << 8;
+  int ASM12 = 12 << 16 | 0 << 8;
+  int ASM13 = 13 << 16 | 0 << 8;
+  int ASM14 = 14 << 16 | 0 << 8;
+  int ASM15 = 15 << 16 | 0 << 8;
+  int ASM16 = 16 << 16 | 0 << 8;
+  int ASM17 = 17 << 16 | 0 << 8;
+  int ASM18 = 18 << 16 | 0 << 8;
+  int ASM19 = 19 << 16 | 0 << 8;
 
   /**
    * <i>Experimental, use at your own risk. This field will be renamed when it becomes stable, this
@@ -279,6 +291,11 @@ public interface Opcodes {
   int V12 = 0 << 16 | 56;
   int V13 = 0 << 16 | 57;
   int V14 = 0 << 16 | 58;
+  int V15 = 0 << 16 | 59;
+  int V16 = 0 << 16 | 60;
+  int V17 = 0 << 16 | 61;
+  int V18 = 0 << 16 | 62;
+  int V19 = 0 << 16 | 63;
 
   /**
    * Version flag indicating that the class is using 'preview' features.

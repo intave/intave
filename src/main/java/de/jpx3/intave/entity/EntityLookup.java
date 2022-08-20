@@ -18,15 +18,13 @@ public final class EntityLookup {
   private static final MethodHandle entityByIdAccessor = MethodSearchBySignature
     .search(Lookup.serverClass("World"), new Class[]{Integer.TYPE}, Lookup.serverClass("Entity"))
     .findAnyOrThrow();
-
   private static final MethodHandle bukkitEntityFromEntityAccessor = MethodSearchBySignature
     .search(Lookup.serverClass("Entity"), new Class[0], Lookup.craftBukkitClass("entity.CraftEntity"))
     .findAnyOrThrow();
-
   private static final Cache<Integer, Entity> entityAccessCache =
     CacheBuilder.newBuilder()
       .expireAfterAccess(16, TimeUnit.SECONDS).weakValues()
-      .concurrencyLevel(16).build();
+      .concurrencyLevel(8).build();
 
   public static @Nullable Entity findEntity(World world, int identifier) {
     Entity entity = entityAccessCache.getIfPresent(identifier);

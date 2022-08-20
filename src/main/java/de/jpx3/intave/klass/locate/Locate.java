@@ -15,8 +15,8 @@ import java.util.concurrent.TimeUnit;
 
 public final class Locate {
   private static final Resource LOCATE_RESOURCE =
-    IntaveControl.DEBUG_LOCATE_RESOURCE ?
-      Resources.resourceFromFile(new File(IntavePlugin.singletonInstance().dataFolder(), "locate.yml")) :
+    IntaveControl.USE_DEBUG_LOCATE_RESOURCE ?
+      Resources.resourceFromFile(new File(IntavePlugin.singletonInstance().dataFolder(), "locate")) :
       Resources.cacheResourceChain("https://service.intave.de/locate/" + IntavePlugin.version(), "locate", TimeUnit.DAYS.toMillis(14));
   private static final Locations CLASS_AND_FIELD_LOCATIONS = LocateFileCompiler.create().fromResource(LOCATE_RESOURCE).reduced();
   private static final ClassLocations classLocations = CLASS_AND_FIELD_LOCATIONS.classLocations();
@@ -146,5 +146,19 @@ public final class Locate {
     classLocationCache.clear();
     methodLocationCache.clear();
     fieldLocationCache.clear();
+  }
+
+  // for tests:
+
+  static ClassLocations classLocations() {
+    return classLocations;
+  }
+
+  static Map<String, MethodLocation> methodLocationCache() {
+    return methodLocationCache;
+  }
+
+  static FieldLocations fieldLocations() {
+    return fieldLocations;
   }
 }
