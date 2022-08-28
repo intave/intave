@@ -1,5 +1,13 @@
-# Project exclude paths
-/.gradle/
-build.gradle
-build/
-/.idea/
+/*
+
+# Whitelist source
+/gradle/
+/libs/
+/src/
+/.gitignore
+/build.gradle.kts
+/gradle.properties
+/gradlew
+/gradlew.bat
+/README.md
+/settings.gradle.kts
