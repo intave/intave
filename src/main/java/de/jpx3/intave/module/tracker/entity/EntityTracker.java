@@ -719,7 +719,7 @@ public final class EntityTracker extends Module {
       }
       int entityId = optionalId.getAsInt();
       MovementMetadata movement = user.meta().movement();
-      if (movement.pose() == Pose.FALL_FLYING && entityId == player.getEntityId()) {
+      if ((movement.pose() == Pose.FALL_FLYING || movement.elytraFlying) && entityId == player.getEntityId()) {
         movement.fireworkRocketsTicks = 0;
       }
       return true;
