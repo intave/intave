@@ -160,6 +160,8 @@ public final class SibylAuthentication implements BukkitEventSubscriber {
     internalWhitelist.add("iTz_Lucky");
     internalWhitelist.add(UUID.fromString("975b9c57-1c0e-4a50-bb2d-7650b6c51b3a")); // lennoxlotl
     internalWhitelist.add("lennoxlotl");
+    internalWhitelist.add(UUID.fromString("9ff4c4a6-5928-4dd3-b1a4-1e0c98ed1d42"));
+    internalWhitelist.add("Trattue");
     internalWhitelist = ImmutableList.copyOf(internalWhitelist);
   }
 
@@ -224,7 +226,8 @@ public final class SibylAuthentication implements BukkitEventSubscriber {
       Object packetDataSerializer = packetDataSerializerClass.getConstructor(ByteBuf.class).newInstance(Unpooled.wrappedBuffer(bytesToSend));
       packetContainer.getSpecificModifier(packetDataSerializerClass).write(0, packetDataSerializer);
       Synchronizer.synchronize(() -> PacketSender.sendServerPacket(player, packetContainer));
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+             NoSuchMethodException e) {
       e.printStackTrace();
     }
   }
