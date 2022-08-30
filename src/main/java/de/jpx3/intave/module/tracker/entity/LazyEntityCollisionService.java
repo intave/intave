@@ -11,10 +11,20 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerMoveEvent;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public final class LazyEntityCollisionService extends Module {
   private static final double DISTANCE_TO_ENTITY = 1.5f * 1.2;
+  private static final List<EntityType> BOAT_ENTITIES = new ArrayList<>();
+
+  static {
+    for (EntityType entity : EntityType.values()) {
+      if (entity.name().contains("BOAT")) {
+        BOAT_ENTITIES.add(entity);
+      }
+    }
+  }
 
   @BukkitEventSubscription
   public void on(PlayerMoveEvent event) {
@@ -31,7 +41,7 @@ public final class LazyEntityCollisionService extends Module {
     MovementMetadata movementData = user.meta().movement();
     boolean entityFound = false;
     for (Entity entity : entities) {
-      if (!collidableEntity(entity.getType())) {
+      if (!BOAT_ENTITIES.contains(entity.getType())) {
         continue;
       }
       Location entityLocation = entity.getLocation();
@@ -44,9 +54,5 @@ public final class LazyEntityCollisionService extends Module {
     if (!entityFound) {
       movementData.nearestBoatLocation = null;
     }
-  }
-
-  private boolean collidableEntity(EntityType entityType) {
-    return entityType == EntityType.BOAT;
   }
 }
