@@ -98,6 +98,7 @@ public final class InventoryMetadata {
     if (heldItem != null && Enchantments.tridentRiptideEnchanted(heldItem)
         || offhandItem != null && Enchantments.tridentRiptideEnchanted(offhandItem)) {
       movementData.pastRiptideSpin = 0;
+      movementData.onGroundWithRiptide = movementData.onGround;
     }
     this.handActive = false;
     this.pastItemUsageTransition = 0;

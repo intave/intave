@@ -64,7 +64,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public double widthRounded, heightRounded;
   public boolean elytraFlying;
   public int fireworkRocketsTicks = 100;
-  public boolean onGround, lastOnGround, step;
+  public boolean onGround, lastOnGround, step, onGroundWithRiptide;
   public boolean collidedHorizontally, collidedVertically;
   public float artificialFallDistance;
   public boolean allowFallDamage;

@@ -66,7 +66,7 @@ public final class SimulationEvaluator {
     }
 
     // Riptide
-    if (movement.pastRiptideSpin < 2) {
+    if (movement.pastRiptideSpin < 4) {
       vecticalLegitimateDeviation = resolveRiptideDeviation(movement);
     }
 
@@ -301,7 +301,7 @@ public final class SimulationEvaluator {
     }
 
     // Riptide
-    if (movement.pastRiptideSpin < 2) {
+    if (movement.pastRiptideSpin < 4) {
       horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, resolveRiptideDeviation(movement));
     }
 
@@ -382,8 +382,8 @@ public final class SimulationEvaluator {
 
   private double resolveRiptideDeviation(MovementMetadata movementData) {
     double riptideTolerance;
-    if (movementData.onGround) {
-      riptideTolerance = movementData.pastRiptideSpin == 0 ? RIPTIDE_TOLERANCE : RIPTIDE_GROUND_TOLERANCE_2;
+    if (movementData.onGroundWithRiptide) {
+      riptideTolerance = movementData.pastRiptideSpin == 0 ? RIPTIDE_TOLERANCE * 2 : RIPTIDE_GROUND_TOLERANCE_2;
     } else {
       riptideTolerance = movementData.pastRiptideSpin == 0 ? RIPTIDE_TOLERANCE : RIPTIDE_TOLERANCE_2;
     }
