@@ -7,7 +7,7 @@ import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.resolve.patch.cobblewall.WallConnectResolver;
 import de.jpx3.intave.block.type.BlockTypeAccess;
-import de.jpx3.intave.klass.rewrite.*;
+import de.jpx3.intave.klass.rewrite.PatchyLoadingInjector;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Direction;
@@ -28,26 +28,26 @@ public class CobbleStoneWallPatch extends BoundingBoxPatch {
   private static final boolean COMBAT_UPDATE = MinecraftVersions.VER1_9_0.atOrAbove();
   private static final WallConnectResolver connectResolver;
   private static final BoundingBox[] BOUNDING_BOXES =
-      new BoundingBox[] {
-        BoundingBox.fromBounds(0.25D, 0.0D, 0.25D, 0.75D, 1.0D, 0.75D),
-        BoundingBox.fromBounds(0.25D, 0.0D, 0.25D, 0.75D, 1.0D, 1.0D),
-        BoundingBox.fromBounds(0.0D, 0.0D, 0.25D, 0.75D, 1.0D, 0.75D),
-        BoundingBox.fromBounds(0.0D, 0.0D, 0.25D, 0.75D, 1.0D, 1.0D),
-        BoundingBox.fromBounds(0.25D, 0.0D, 0.0D, 0.75D, 1.0D, 0.75D),
-        BoundingBox.fromBounds(0.3125D, 0.0D, 0.0D, 0.6875D, 0.875D, 1.0D),
-        BoundingBox.fromBounds(0.0D, 0.0D, 0.0D, 0.75D, 1.0D, 0.75D),
-        BoundingBox.fromBounds(0.0D, 0.0D, 0.0D, 0.75D, 1.0D, 1.0D),
-        BoundingBox.fromBounds(0.25D, 0.0D, 0.25D, 1.0D, 1.0D, 0.75D),
-        BoundingBox.fromBounds(0.25D, 0.0D, 0.25D, 1.0D, 1.0D, 1.0D),
-        BoundingBox.fromBounds(0.0D, 0.0D, 0.3125D, 1.0D, 0.875D, 0.6875D),
-        BoundingBox.fromBounds(0.0D, 0.0D, 0.25D, 1.0D, 1.0D, 1.0D),
-        BoundingBox.fromBounds(0.25D, 0.0D, 0.0D, 1.0D, 1.0D, 0.75D),
-        BoundingBox.fromBounds(0.25D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D),
-        BoundingBox.fromBounds(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 0.75D),
-        BoundingBox.fromBounds(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D)
-      };
+    new BoundingBox[]{
+      BoundingBox.fromBounds(0.25D, 0.0D, 0.25D, 0.75D, 1.0D, 0.75D),
+      BoundingBox.fromBounds(0.25D, 0.0D, 0.25D, 0.75D, 1.0D, 1.0D),
+      BoundingBox.fromBounds(0.0D, 0.0D, 0.25D, 0.75D, 1.0D, 0.75D),
+      BoundingBox.fromBounds(0.0D, 0.0D, 0.25D, 0.75D, 1.0D, 1.0D),
+      BoundingBox.fromBounds(0.25D, 0.0D, 0.0D, 0.75D, 1.0D, 0.75D),
+      BoundingBox.fromBounds(0.3125D, 0.0D, 0.0D, 0.6875D, 0.875D, 1.0D),
+      BoundingBox.fromBounds(0.0D, 0.0D, 0.0D, 0.75D, 1.0D, 0.75D),
+      BoundingBox.fromBounds(0.0D, 0.0D, 0.0D, 0.75D, 1.0D, 1.0D),
+      BoundingBox.fromBounds(0.25D, 0.0D, 0.25D, 1.0D, 1.0D, 0.75D),
+      BoundingBox.fromBounds(0.25D, 0.0D, 0.25D, 1.0D, 1.0D, 1.0D),
+      BoundingBox.fromBounds(0.0D, 0.0D, 0.3125D, 1.0D, 0.875D, 0.6875D),
+      BoundingBox.fromBounds(0.0D, 0.0D, 0.25D, 1.0D, 1.0D, 1.0D),
+      BoundingBox.fromBounds(0.25D, 0.0D, 0.0D, 1.0D, 1.0D, 0.75D),
+      BoundingBox.fromBounds(0.25D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D),
+      BoundingBox.fromBounds(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 0.75D),
+      BoundingBox.fromBounds(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D)
+    };
 
-  private static final Direction[] SIDE_DIRECTIONS = new Direction[] {SOUTH, WEST, NORTH, EAST};
+  private static final Direction[] SIDE_DIRECTIONS = new Direction[]{SOUTH, WEST, NORTH, EAST};
 
   static {
     // Only apply on 1.9.0-1.13.2
@@ -55,6 +55,7 @@ public class CobbleStoneWallPatch extends BoundingBoxPatch {
       connectResolver = null;
     } else {
       ClassLoader classLoader = IntavePlugin.class.getClassLoader();
+      // ! Only full class paths (without concatenations) are supported, CHANGE THIS
       String packageName = "de.jpx3.intave.block.shape.resolve.patch.cobblewall.";
       String className = "";
       if (AQUATIC_UPDATE) {
@@ -76,14 +77,14 @@ public class CobbleStoneWallPatch extends BoundingBoxPatch {
 
   @Override
   protected BlockShape collisionPatch(
-      World world,
-      Player player,
-      int posX,
-      int posY,
-      int posZ,
-      Material type,
-      int blockState,
-      BlockShape shape) {
+    World world,
+    Player player,
+    int posX,
+    int posY,
+    int posZ,
+    Material type,
+    int blockState,
+    BlockShape shape) {
     // Only apply on 1.9.0-1.13.2
     if (connectResolver == null) {
       return shape;
@@ -112,9 +113,9 @@ public class CobbleStoneWallPatch extends BoundingBoxPatch {
     }
     for (Direction sideDirection : SIDE_DIRECTIONS) {
       if (connectResolver.canConnectTo(
-          world,
-          new BlockPosition(posX, posY, posZ).add(sideDirection.getDirectionVec()),
-          sideDirection)) {
+        world,
+        new BlockPosition(posX, posY, posZ).add(sideDirection.getDirectionVec()),
+        sideDirection)) {
         connected.add(sideDirection);
       }
     }

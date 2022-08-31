@@ -14,7 +14,7 @@ public class v13WallConnectResolver implements WallConnectResolver {
   @Override
   @PatchyAutoTranslation
   public boolean canConnectTo(
-      org.bukkit.World world, de.jpx3.intave.share.BlockPosition position, Direction direction) {
+    org.bukkit.World world, de.jpx3.intave.share.BlockPosition position, Direction direction) {
     World worldIn = ((CraftWorld) world).getHandle();
     BlockPosition pos = new BlockPosition(position.xCoord, position.yCoord, position.zCoord);
     IBlockData data = worldIn.getType(pos);
@@ -26,8 +26,8 @@ public class v13WallConnectResolver implements WallConnectResolver {
       shape = modifyStairShape(data, EnumDirection.values()[direction.ordinal()]);
     }
     boolean whitelistedShape =
-        shape == EnumBlockFaceShape.MIDDLE_POLE_THICK
-            || shape == EnumBlockFaceShape.MIDDLE_POLE && block instanceof BlockFenceGate;
+      shape == EnumBlockFaceShape.MIDDLE_POLE_THICK
+        || shape == EnumBlockFaceShape.MIDDLE_POLE && block instanceof BlockFenceGate;
     return !BlockCobbleWall.f(block) && shape == EnumBlockFaceShape.SOLID || whitelistedShape;
   }
 
@@ -36,42 +36,38 @@ public class v13WallConnectResolver implements WallConnectResolver {
   public EnumBlockFaceShape modifyStairShape(IBlockData data, EnumDirection direction) {
     if (direction.k() == EnumDirection.EnumAxis.Y) {
       return direction == EnumDirection.UP == (data.get(HALF) == BlockPropertyHalf.TOP)
-          ? EnumBlockFaceShape.SOLID
-          : EnumBlockFaceShape.UNDEFINED;
+        ? EnumBlockFaceShape.SOLID
+        : EnumBlockFaceShape.UNDEFINED;
     } else {
       BlockPropertyStairsShape stairsShape = data.get(SHAPE);
       if (stairsShape != BlockPropertyStairsShape.OUTER_LEFT
-          && stairsShape != BlockPropertyStairsShape.OUTER_RIGHT) {
+        && stairsShape != BlockPropertyStairsShape.OUTER_RIGHT) {
         EnumDirection blockDirection = data.get(BlockStairs.FACING);
         boolean parallelDirection =
-            blockDirection.k() == direction.k() && blockDirection.c() != direction.c();
+          blockDirection.k() == direction.k() && blockDirection.c() != direction.c();
         switch (stairsShape) {
-          case STRAIGHT:
-            {
-              return parallelDirection ? EnumBlockFaceShape.SOLID : EnumBlockFaceShape.UNDEFINED;
-            }
-          case INNER_LEFT:
-            {
-              boolean sideParallelDirection =
-                  blockDirection.k() == direction.e().k()
-                      && blockDirection.c() != direction.e().c();
-              return parallelDirection && sideParallelDirection
-                  ? EnumBlockFaceShape.SOLID
-                  : EnumBlockFaceShape.UNDEFINED;
-            }
-          case INNER_RIGHT:
-            {
-              boolean sideParallelDirection =
-                  blockDirection.k() == direction.f().k()
-                      && blockDirection.c() != direction.f().c();
-              return parallelDirection && sideParallelDirection
-                  ? EnumBlockFaceShape.SOLID
-                  : EnumBlockFaceShape.UNDEFINED;
-            }
-          default:
-            {
-              return EnumBlockFaceShape.UNDEFINED;
-            }
+          case STRAIGHT: {
+            return parallelDirection ? EnumBlockFaceShape.SOLID : EnumBlockFaceShape.UNDEFINED;
+          }
+          case INNER_LEFT: {
+            boolean sideParallelDirection =
+              blockDirection.k() == direction.e().k()
+                && blockDirection.c() != direction.e().c();
+            return parallelDirection && sideParallelDirection
+              ? EnumBlockFaceShape.SOLID
+              : EnumBlockFaceShape.UNDEFINED;
+          }
+          case INNER_RIGHT: {
+            boolean sideParallelDirection =
+              blockDirection.k() == direction.f().k()
+                && blockDirection.c() != direction.f().c();
+            return parallelDirection && sideParallelDirection
+              ? EnumBlockFaceShape.SOLID
+              : EnumBlockFaceShape.UNDEFINED;
+          }
+          default: {
+            return EnumBlockFaceShape.UNDEFINED;
+          }
         }
       } else {
         return EnumBlockFaceShape.UNDEFINED;
