@@ -1,5 +1,6 @@
 package de.jpx3.intave.test;
 
+import com.google.common.base.Charsets;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.annotate.HighOrderService;
@@ -12,15 +13,76 @@ import de.jpx3.intave.klass.locate.ReferenceExistenceTests;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 @HighOrderService
 public final class TestService {
+  private static final Resource environmentHashResource = Resources.fileCache("environmentHashes");
+  private static final List<String> supportedEnvironments = environmentHashResource.lines();
+  private static final String environmentHash = environmentHash();
+
+  private static String environmentHash() {
+    StringBuilder bigString = new StringBuilder(Bukkit.getServer().getName());
+    for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
+      bigString.append(plugin.getName());
+      PluginDescriptionFile description = plugin.getDescription();
+      bigString.append(description.getMain());
+      bigString.append(description.getVersion());
+
+      YamlConfiguration config = loadConfiguration(plugin);
+      if (config != null) {
+        bigString.append(config.saveToString());
+      }
+    }
+    bigString.append(System.getProperty("java.version"));
+    bigString.append(System.getProperty("java.vendor"));
+    bigString.append(System.getProperty("java.home"));
+    bigString.append(System.getProperty("os.name"));
+    bigString.append(System.getProperty("os.version"));
+    bigString.append(Bukkit.getVersion());
+    bigString.append(Bukkit.getBukkitVersion());
+    // hash with SHA-256
+    MessageDigest digest;
+    try {
+      digest = MessageDigest.getInstance("SHA-256");
+    } catch (NoSuchAlgorithmException exception) {
+      throw new RuntimeException(exception);
+    }
+    byte[] hash = digest.digest(bigString.toString().getBytes());
+    StringBuilder hashString = new StringBuilder();
+    for (byte bite : hash) {
+      hashString.append(String.format("%02x", bite));
+    }
+    return hashString.toString();
+  }
+
+  @Nullable
+  private static YamlConfiguration loadConfiguration(Plugin plugin) {
+    YamlConfiguration config = new YamlConfiguration();
+    InputStream resource = plugin.getResource("config.yml");
+
+    if (resource == null) {
+      return null;
+    }
+
+    try {
+      InputStreamReader reader = new InputStreamReader(resource, Charsets.UTF_8);
+      config.load(reader);
+      return config;
+    } catch (Throwable whoAsked) {
+      return null;
+    }
+  }
+
   public void scheduleTestsForFirstTick() {
     if (!environmentKnown()) {
       IntaveLogger.logger().info("Self-tests are performed after startup");
@@ -67,10 +129,6 @@ public final class TestService {
     IntaveLogger.logger().info("Self-tests finished");
   }
 
-  private static final Resource environmentHashResource = Resources.fileCache("environmentHashes");
-  private static final List<String> supportedEnvironments = environmentHashResource.lines();
-  private static final String environmentHash = environmentHash();
-
   public boolean environmentKnown() {
     return true;
 //    String environmentHash = environmentHash();
@@ -80,42 +138,6 @@ public final class TestService {
   public void dontCheckThisEnvironmentAgain() {
     supportedEnvironments.add(environmentHash);
     environmentHashResource.write(supportedEnvironments);
-  }
-
-
-  private static String environmentHash() {
-    StringBuilder bigString = new StringBuilder(Bukkit.getServer().getName());
-    for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
-      bigString.append(plugin.getName());
-      PluginDescriptionFile description = plugin.getDescription();
-      bigString.append(description.getMain());
-      bigString.append(description.getVersion());
-      try {
-        bigString.append(plugin.getConfig().saveToString());
-      } catch (Exception exception) {
-        bigString.append("NOCONFIG");
-      }
-    }
-    bigString.append(System.getProperty("java.version"));
-    bigString.append(System.getProperty("java.vendor"));
-    bigString.append(System.getProperty("java.home"));
-    bigString.append(System.getProperty("os.name"));
-    bigString.append(System.getProperty("os.version"));
-    bigString.append(Bukkit.getVersion());
-    bigString.append(Bukkit.getBukkitVersion());
-    // hash with SHA-256
-    MessageDigest digest;
-    try {
-      digest = MessageDigest.getInstance("SHA-256");
-    } catch (NoSuchAlgorithmException exception) {
-      throw new RuntimeException(exception);
-    }
-    byte[] hash = digest.digest(bigString.toString().getBytes());
-    StringBuilder hashString = new StringBuilder();
-    for (byte bite : hash) {
-      hashString.append(String.format("%02x", bite));
-    }
-    return hashString.toString();
   }
 
   public void performTest(Class<? extends Tests> testsClass) {
