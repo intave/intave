@@ -135,7 +135,15 @@ public class PlayerHandTracker extends Module {
       return;
     }
 
-    boolean useItem = ItemProperties.canItemBeUsed(player, heldItem) || ItemProperties.canItemBeUsed(player, offhandItem);
+    boolean offHandUsable = ItemProperties.canItemBeUsed(player, offhandItem);
+    boolean mainHandUsable = ItemProperties.canItemBeUsed(player, heldItem);
+    boolean useItem = mainHandUsable || offHandUsable;
+
+    // For some reason Minecraft sends BlockPlace packets on 1.9+ with diamond swords
+    boolean usingSword = mainHandUsable && sword;
+    if (usingSword && !offHandUsable && user.protocolVersion() > 47) {
+      return;
+    }
 
     if (requestedItemUse && useItem) {
       inventoryData.activateHand();
