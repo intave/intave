@@ -14,8 +14,9 @@ final class HardcodeConfigurationResolver implements ConfigurationResolver {
     switch (owner.toString()) {
       case "5ee6db6d-6751-4081-9cbf-28eb0f6cc055":
         return richysConfiguration();
+      case "4669e155-946a-4aeb-a15b-aeb1123509c8":
       case "975b9c57-1c0e-4a50-bb2d-7650b6c51b3a":
-        return lennoxConfiguration();
+        return lennoxConfiguration(owner);
 
       default:
         return defaultConfiguration();
@@ -59,8 +60,7 @@ final class HardcodeConfigurationResolver implements ConfigurationResolver {
       .build();
   }
 
-  private OutputConfiguration lennoxConfiguration() {
-    UUID owner = UUID.fromString("975b9c57-1c0e-4a50-bb2d-7650b6c51b3a");
+  private OutputConfiguration lennoxConfiguration(UUID owner) {
     EnumSet<MessageCategory> categories = EnumSet.allOf(MessageCategory.class);
     categories.remove(MessageCategory.SIMFUL);
 

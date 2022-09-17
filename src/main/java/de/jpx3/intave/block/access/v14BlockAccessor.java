@@ -105,7 +105,8 @@ public final class v14BlockAccessor implements BlockAccessor {
     } else {
       heldItem = ((CraftPlayer) player).getHandle().inventory.getItem(heldSlot).getItem();
     }
-    return blockData.getMaterial().isReplaceable() && !Objects.equals(blockData.getBlock().getItem(), heldItem);
+    Item targetItem = blockData.getBlock().getItem();
+    return blockData.getMaterial().isReplaceable() && !Objects.equals(targetItem, heldItem);
   }
 
   @PatchyAutoTranslation

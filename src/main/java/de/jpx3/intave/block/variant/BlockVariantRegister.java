@@ -1,6 +1,5 @@
 package de.jpx3.intave.block.variant;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.block.variant.index.VariantIndex;
 import org.bukkit.Material;
