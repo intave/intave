@@ -21,7 +21,7 @@ import org.bukkit.inventory.ItemStack;
 import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION_LOOK;
-import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_17;
+import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_9;
 
 @Reserved
 public final class AttackReduceIgnoreHeuristic extends MetaCheckPart<Heuristics, AttackReduceIgnoreHeuristic.AttackReduceMeta> {
@@ -47,7 +47,7 @@ public final class AttackReduceIgnoreHeuristic extends MetaCheckPart<Heuristics,
     AbilityMetadata abilities = user.meta().abilities();
     ProtocolMetadata clientData = user.meta().protocol();
 
-    if (clientData.protocolVersion() >= VER_1_17 || AttackDispatcher.REDUCING_DISABLED) {
+    if (clientData.protocolVersion() >= VER_1_9 || AttackDispatcher.REDUCING_DISABLED) {
       return;
     }
 
