@@ -9,7 +9,6 @@ import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.block.access.BlockInteractionAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
-import de.jpx3.intave.block.collision.CollisionModifiers;
 import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.block.state.ExtendedBlockStateCache;
 import de.jpx3.intave.block.type.BlockTypeAccess;
@@ -95,6 +94,7 @@ public final class InteractionEmulator implements EventProcessor {
       case PLACE:
         emulationResult = emulatePlacement(player, interaction);
         break;
+      case START_BREAK:
       case INTERACT:
         emulationResult = emulateInteraction(player, interaction);
         break;

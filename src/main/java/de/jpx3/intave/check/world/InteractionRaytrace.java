@@ -208,7 +208,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
 
     Interaction interaction = new Interaction(
       packet.deepClone(), player.getWorld(), player, blockPosition, enumDirection,
-      breakBlock ? InteractionType.BREAK : InteractionType.INTERACT,
+      breakBlock ? InteractionType.BREAK : InteractionType.START_BREAK,
       inventoryData.heldItemType(), heldItemStack, EnumWrappers.Hand.MAIN_HAND, playerDigType
     );
 

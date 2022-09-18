@@ -4,6 +4,7 @@ import de.jpx3.intave.check.world.InteractionRaytrace;
 
 public enum InteractionType {
   BREAK(InteractionRaytrace.ResponseType.CANCEL, false),
+  START_BREAK(InteractionRaytrace.ResponseType.RAYTRACE_CAST, false),
   INTERACT(InteractionRaytrace.ResponseType.RAYTRACE_CAST, false),
   PLACE(InteractionRaytrace.ResponseType.RAYTRACE_CAST, false);
 
