@@ -34,7 +34,7 @@ public final class ShapeResolver {
     if (!VER1_13_0.atOrAbove()) {
       resolver = new DrillRescuePipe(resolver);
     }
-    if (VER1_9_0.atOrAbove()) {
+    if (VER1_13_0.atOrAbove()) {
       // cache
       resolver = new VariantCachePipe(resolver);
     }
