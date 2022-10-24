@@ -142,7 +142,7 @@ final class BlockVariantConverter {
 
     @PatchyAutoTranslation
     private static Setting<?> aquaticConvertSetting(Object blockState) {
-      net.minecraft.server.v1_8_R3.IBlockState<?> state = (net.minecraft.server.v1_8_R3.IBlockState<?>) blockState;
+      net.minecraft.server.v1_13_R2.IBlockState<?> state = (net.minecraft.server.v1_13_R2.IBlockState<?>) blockState;
       String name = state.a();
       if (state instanceof BlockStateInteger) {
         BlockStateInteger blockStateInteger = (BlockStateInteger) state;
@@ -152,7 +152,7 @@ final class BlockVariantConverter {
       } else if (state instanceof BlockStateBoolean) {
         return new BooleanSetting(name);
       } else if (state instanceof BlockStateEnum) {
-        return new EnumSetting(name, state.b(), state.c());
+        return new EnumSetting(name, state.b(), state.d());
       }
       throw new IllegalStateException("Unknown block state " + state + " (" + name + ")");
     }
