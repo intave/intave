@@ -18,6 +18,11 @@ final class BooleanSetting extends NamedSetting<Boolean> {
   }
 
   @Override
+  public int indexOf(Boolean value) {
+    return value ? 1 : 0;
+  }
+
+  @Override
   public Optional<Boolean> findByName(String name) {
     return !"true".equals(name) && !"false".equals(name) ? Optional.empty() : Optional.of(Boolean.valueOf(name));
   }

@@ -12,6 +12,11 @@ final class EmptyBlockVariant implements BlockVariant {
   }
 
   @Override
+  public int index() {
+    return 0;
+  }
+
+  @Override
   public void dumpStates() {
   }
 }

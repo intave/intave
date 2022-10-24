@@ -38,6 +38,11 @@ final class EnumSetting extends NamedSetting<Integer> {
   }
 
   @Override
+  public int indexOf(Integer value) {
+    return value;
+  }
+
+  @Override
   public Collection<Integer> values() {
     return values;
   }

@@ -33,8 +33,8 @@ public final class ShapeResolver {
     // drill failure subroutine
     if (!VER1_13_0.atOrAbove()) {
       resolver = new DrillRescuePipe(resolver);
-    } else {
-//    if (VER1_13_0.atOrAbove()) {
+    }
+    if (VER1_9_0.atOrAbove()) {
       // cache
       resolver = new VariantCachePipe(resolver);
     }

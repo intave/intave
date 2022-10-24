@@ -28,7 +28,7 @@ public final class v13BlockAccessor implements BlockAccessor {
   @Override
   public int variantIndexOf(Block block) {
     Material type = typeOf(block);
-    net.minecraft.server.v1_13_R2.IBlockData blockData = (net.minecraft.server.v1_13_R2.IBlockData) nativeVariantOf(block);
+    IBlockData blockData = (IBlockData) nativeVariantOf(block);
     int variantIndex = BlockVariantRegister.variantIndexOf(type, blockData);
     return Math.max(variantIndex, 0);
   }

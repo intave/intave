@@ -25,23 +25,20 @@ final class BlockVariantConverter {
       return Collections.emptyMap();
     }
     Map<Integer, BlockVariant> indexToVariant = new HashMap<>();
-    indexToNative.forEach(
-      (key, nativeVariant) ->
-        indexToVariant.put(key,
-          translate(type, nativeVariant)
-        )
+    indexToNative.forEach((key, nativeVariant) ->
+      indexToVariant.put(key, translate(type, nativeVariant, key))
     );
     return indexToVariant;
   }
 
   static final BlockVariant EMPTY = new EmptyBlockVariant();
 
-  private static BlockVariant translate(Material type, Object blockData) {
+  private static BlockVariant translate(Material type, Object blockData, int variantIndex) {
     Map<Setting<?>, Comparable<?>> settings = Bridge.settingsOf(blockData);
     if (settings.isEmpty()) {
       return EMPTY;
     }
-    return new IndexedBlockVariant(type, settings);
+    return new IndexedBlockVariant(type, settings, variantIndex);
   }
 
   @PatchyAutoTranslation

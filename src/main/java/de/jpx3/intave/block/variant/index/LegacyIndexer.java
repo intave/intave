@@ -26,8 +26,7 @@ class LegacyIndexer implements Indexer {
       }
       BlockStateList blockStateList = (BlockStateList) getStateListMethod.invoke(block);
       for (net.minecraft.server.v1_8_R3.IBlockData blockData : blockStateList.a()) {
-        int legacyData = block.toLegacyData(blockData);
-        index.put(blockData, legacyData);
+        index.put(blockData, block.toLegacyData(blockData));
       }
     } catch (Exception exception) {
       exception.printStackTrace();

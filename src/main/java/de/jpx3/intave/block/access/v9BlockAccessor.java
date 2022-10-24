@@ -21,6 +21,7 @@ public final class v9BlockAccessor implements BlockAccessor {
 
   @Override
   public int variantIndexOf(Block block) {
+    // up to 1.12.2 this is correct
     return block.getData();
   }
 

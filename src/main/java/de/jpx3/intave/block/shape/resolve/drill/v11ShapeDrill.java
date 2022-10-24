@@ -21,9 +21,9 @@ public final class v11ShapeDrill extends AbstractShapeDrill {
 
   @Override
   @PatchyAutoTranslation
-  public BlockShape collisionShapeOf(World world, Player player, org.bukkit.Material type, int blockState, int posX, int posY, int posZ) {
+  public BlockShape collisionShapeOf(World world, Player player, org.bukkit.Material type, int variant, int posX, int posY, int posZ) {
     BlockPosition blockposition = new BlockPosition(posX, posY, posZ);
-    IBlockData blockData = Block.getByCombinedId(type.getId() | (blockState & 0xf) << 12);
+    IBlockData blockData = (IBlockData) BlockVariantRegister.rawVariantOf(type, variant);
     if (blockData == null) {
       return BlockShapes.emptyShape();
     }
@@ -35,9 +35,9 @@ public final class v11ShapeDrill extends AbstractShapeDrill {
 
   @Override
   @PatchyAutoTranslation
-  public BlockShape outlineShapeOf(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
+  public BlockShape outlineShapeOf(World world, Player player, Material type, int variant, int posX, int posY, int posZ) {
     BlockPosition blockposition = new BlockPosition(posX, posY, posZ);
-    IBlockData blockData = (IBlockData) BlockVariantRegister.rawVariantOf(type, blockState);
+    IBlockData blockData = (IBlockData) BlockVariantRegister.rawVariantOf(type, variant);
     if (blockData == null) {
       return BlockShapes.emptyShape();
     }

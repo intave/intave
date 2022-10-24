@@ -22,7 +22,7 @@ public final class IntaveControl {
   public static final boolean NETTY_DUMP_ON_TIMEOUT = true;
   public static final boolean FILL_UFOE_STACKTRACE = false;
   public static final boolean USE_TIMINGS = true;
-  public static final boolean DUMP_BLOCK_HITBOX_ON_RIGHT_CLICK = false;
+  public static final boolean DUMP_BLOCK_HITBOX_ON_RIGHT_CLICK = true;
   public static final boolean SETBACK_WITH_PRESSED_KEYS = false;
   public static final boolean USE_SUPERPOSITIONS = false;
   public static final boolean CLICKPATTERNS_OUTPUT = false;

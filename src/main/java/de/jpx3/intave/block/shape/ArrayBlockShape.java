@@ -144,6 +144,6 @@ final class ArrayBlockShape extends MemoryTraced implements BlockShape {
 
   @Override
   public String toString() {
-    return "(" + Arrays.stream(contents).map(Object::toString).collect(Collectors.joining(", ")) + ")";
+    return "[" + Arrays.stream(contents).map(Object::toString).collect(Collectors.joining("; ")) + "]";
   }
 }
