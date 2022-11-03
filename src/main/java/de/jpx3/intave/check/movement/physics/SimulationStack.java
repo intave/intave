@@ -10,6 +10,8 @@ final class SimulationStack {
   private Simulation simulation;
   private double smallestDistance;
 
+  private int trials;
+
   SimulationStack() {
     this.smallestDistance = DEFAULT_DISTANCE;
   }
@@ -70,6 +72,14 @@ final class SimulationStack {
 
   double smallestDistance() {
     return smallestDistance;
+  }
+
+  public int trials() {
+    return trials;
+  }
+
+  public void setTrials(int trials) {
+    this.trials = trials;
   }
 
   MovementConfiguration configuration() {

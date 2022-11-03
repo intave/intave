@@ -24,7 +24,7 @@ public final class BlockShapePipelineTests extends Tests {
   private ShapeResolverPipeline head;
   private World world;
   private Block block;
-  private MaterialData previousMaterialData;
+  private BlockStorage previousMaterialData;
 
   public BlockShapePipelineTests() {
     super("BSPT");
@@ -34,7 +34,7 @@ public final class BlockShapePipelineTests extends Tests {
   public void before() {
     world = Bukkit.getWorlds().get(0);
     block = world.getBlockAt(0, 0, 0);
-    previousMaterialData = block.getState().getData();
+    previousMaterialData = BlockStorage.store(block);
     player = FakePlayerFactory.createPlayer();
   }
 
@@ -55,8 +55,7 @@ public final class BlockShapePipelineTests extends Tests {
 
   @After
   public void after() {
-    block.setType(previousMaterialData.getItemType());
-    block.getState().setData(previousMaterialData);
+    previousMaterialData.restore();
   }
 
   private static final class SimpleDrill implements ShapeResolverPipeline {

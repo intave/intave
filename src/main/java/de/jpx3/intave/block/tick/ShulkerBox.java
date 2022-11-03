@@ -39,8 +39,7 @@ public final class ShulkerBox {
     if (opening) {
       ticks++;
     } else {
-      // double regressive ticks
-      ticks -= 2;
+      ticks--;
     }
   }
 

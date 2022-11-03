@@ -663,6 +663,10 @@ public final class MovementDispatcher extends Module {
     }
     if (movement.shulkerYToleranceRemaining > 0) {
       movement.shulkerYToleranceRemaining--;
+      if (movement.shulkerYToleranceRemaining == 0) {
+        movement.highestShulkerY = Integer.MIN_VALUE;
+        movement.lowestShulkerY = Integer.MAX_VALUE;
+      }
     }
     if (movement.shulkerZToleranceRemaining > 0) {
       movement.shulkerZToleranceRemaining--;
@@ -969,16 +973,24 @@ public final class MovementDispatcher extends Module {
           movement.shulkers.add(blockPosition);
           movement.shulkerDataHashCodeAccess.putIfAbsent(positionHash, box);
         }
-        switch (facing.axis()) {
-          case X_AXIS:
-            movement.shulkerXToleranceRemaining = 20;
-            break;
-          case Y_AXIS:
-            movement.shulkerYToleranceRemaining = 20;
-            break;
-          case Z_AXIS:
-            movement.shulkerZToleranceRemaining = 20;
-            break;
+        double distanceToShulker = MathHelper.distanceOf(
+          movement.positionX, movement.positionY, movement.positionZ,
+          blockPosition.getX() + 0.5, blockPosition.getY() + 0.5, blockPosition.getZ() + 0.5
+        );
+        if (distanceToShulker <= 4) {
+          movement.lowestShulkerY = Math.min(movement.lowestShulkerY, blockPosition.getY());
+          movement.highestShulkerY = Math.max(movement.highestShulkerY, blockPosition.getY() + 1);
+          switch (facing.axis()) {
+            case X_AXIS:
+              movement.shulkerXToleranceRemaining = 20;
+              break;
+            case Y_AXIS:
+              movement.shulkerYToleranceRemaining = 20;
+              break;
+            case Z_AXIS:
+              movement.shulkerZToleranceRemaining = 20;
+              break;
+          }
         }
       });
     }

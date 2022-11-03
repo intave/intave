@@ -122,6 +122,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public int shulkerXToleranceRemaining;
   public int shulkerYToleranceRemaining;
   public int shulkerZToleranceRemaining;
+  public int lowestShulkerY = Integer.MAX_VALUE, highestShulkerY = Integer.MIN_VALUE;
   public List<BlockPosition> shulkers = new ArrayList<>();
   public Map<BlockPosition, ShulkerBox> shulkerData = new HashMap<>();
   public Map<Integer, ShulkerBox> shulkerDataHashCodeAccess = new HashMap<>();

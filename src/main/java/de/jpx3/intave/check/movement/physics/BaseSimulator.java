@@ -361,7 +361,8 @@ class BaseSimulator extends Simulator {
     double positionZ,
     double motionX,
     double motionY,
-    double motionZ) {
+    double motionZ
+  ) {
     Player player = user.player();
     World world = player.getWorld();
     MetadataBundle meta = user.meta();

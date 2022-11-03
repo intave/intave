@@ -27,6 +27,7 @@ final class BlockState extends MemoryTraced {
   private final Material type;
   private final int variantIndex;
   private final long creation = System.currentTimeMillis();
+  private int hashCode = 0;
 
   BlockState(BlockShape outlineShape, BlockShape collisionShape, Material type, int variantIndex) {
     this.outlineShape = outlineShape;
@@ -96,11 +97,14 @@ final class BlockState extends MemoryTraced {
 
   @Override
   public int hashCode() {
-    int result = collisionShape != null ? collisionShape.hashCode() : 0;
-    result = 31 * result + (type != null ? type.hashCode() : 0);
-    result = 31 * result + variantIndex;
-    result = 31 * result + (int) (creation ^ (creation >>> 32));
-    return result;
+    if (hashCode == 0) {
+      int result = collisionShape != null ? collisionShape.hashCode() : 0;
+      result = 31 * result + (type != null ? type.hashCode() : 0);
+      result = 31 * result + variantIndex;
+      result = 31 * result + (int) (creation ^ (creation >>> 32));
+      hashCode = result;
+    }
+    return hashCode;
   }
 
   public static BlockState empty() {

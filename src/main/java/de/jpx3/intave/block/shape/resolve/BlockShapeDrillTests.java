@@ -18,7 +18,7 @@ public final class BlockShapeDrillTests extends Tests {
   private Block block;
   private Player player;
   private User user;
-  private MaterialData priorMaterial;
+  private BlockStorage priorMaterial;
   private ShapeResolverPipeline drill;
 
   public BlockShapeDrillTests() {
@@ -29,7 +29,7 @@ public final class BlockShapeDrillTests extends Tests {
   public void setup() {
     World world = Bukkit.getWorlds().get(0);
     block = world.getBlockAt(0, 0, 0);
-    priorMaterial = block.getState().getData();
+    priorMaterial = BlockStorage.store(block);
     player = FakePlayerFactory.createPlayer();
     user = UserFactory.createTestUserFor(player, 47);
     UserRepository.manuallyRegisterUser(player, user);
@@ -114,7 +114,6 @@ public final class BlockShapeDrillTests extends Tests {
 
   @After
   public void teardown() {
-    block.setType(priorMaterial.getItemType());
-    block.getState().setData(priorMaterial);
+    priorMaterial.restore();
   }
 }

@@ -30,6 +30,11 @@ public final class MathHelper {
     return new BigDecimal(value).setScale(digits, RoundingMode.HALF_UP).toPlainString();
   }
 
+  public static String decimalPlacesOf(double value, int digits) {
+    value %= 1;
+    return formatDouble(value, digits).substring(1);
+  }
+
   public static double map(double currentValue, double min, double max, double min2, double max2) {
     return (currentValue - min) / (max - min) * (max2 - min2) + min2;
   }

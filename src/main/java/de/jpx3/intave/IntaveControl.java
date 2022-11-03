@@ -3,7 +3,7 @@ package de.jpx3.intave;
 public final class IntaveControl {
   public static final boolean APPLY_GLOBAL_LOW_TRUSTFACTOR = false;
   public static final boolean USE_DEBUG_RESOURCES = false;
-  public static final boolean DEBUG_MOVEMENT = false;
+  public static final boolean DEBUG_MOVEMENT = true;
   public static final boolean DEBUG_EMULATION = false;
   public static final boolean DEBUG_HEURISTICS = false;
   public static final boolean LATENCY_PING_AS_XP_LEVEL = false;

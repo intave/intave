@@ -124,6 +124,9 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
       SimulationStack simulationStack = simulateMovementIterative(user, simulator);
       simulation = simulationStack.bestSimulation();
       enterIterativeSimulationStack(user, simulationStack);
+      if (simulationStack.trials() >= 8) {
+        simulation.append("t" + simulationStack.trials());
+      }
     } else {
       for (Superposition<?> superposition : superpositions) {
         superposition.collapseVariation(0);
@@ -360,8 +363,12 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
     int nearestForwardKey = -2, nearestStrafeKey = -2;
     double nearestKeyDistance = Double.MAX_VALUE;
 
-    List<Superposition<?>> superpositions = movementData.superpositions();
-    int[] correctSuperpositions = new int[superpositions.size()];
+    List<Superposition<?>> superpositions;
+    int[] correctSuperpositions;
+    if (IntaveControl.USE_SUPERPOSITIONS) {
+      superpositions = movementData.superpositions();
+      correctSuperpositions = new int[superpositions.size()];
+    }
 
     SIMULATION:
     for (int j = 0; j < (IntaveControl.USE_SUPERPOSITIONS ? superpositions.size() : 1); j++) {
@@ -460,6 +467,7 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
     IterativeStudy.ATTACK_REDUCE_ITERATOR.pass();
     IterativeStudy.JUMP_ITERATOR.pass();
     IterativeStudy.enterTrials(iterativeRuns);
+    simulationStack.setTrials(iterativeRuns);
     Timings.CHECK_PHYSICS_PROC_ITR.stop();
     return simulationStack;
   }

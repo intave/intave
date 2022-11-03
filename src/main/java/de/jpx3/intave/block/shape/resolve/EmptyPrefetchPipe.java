@@ -27,6 +27,10 @@ final class EmptyPrefetchPipe implements ShapeResolverPipeline {
 
   @Override
   public BlockShape outlineShapeOf(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
+    if (isEmpty(type)) {
+      ShapeAccessFlowStudy.incremDynamic();
+      return BlockShapes.emptyShape();
+    }
     return forward.outlineShapeOf(world, player, type, blockState, posX, posY, posZ);
   }
 
@@ -41,10 +45,6 @@ final class EmptyPrefetchPipe implements ShapeResolverPipeline {
     }
     switch (type) {
       case AIR:
-      case SIGN:
-      case SIGN_POST:
-      case WALL_SIGN:
-      case LEVER:
         return true;
     }
     return false;

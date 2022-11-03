@@ -258,10 +258,10 @@ public final class FeedbackSender extends Module {
 
   private /* synchronized (is already always sync) */ short findAvailableTransactionIdFor(Player player) {
     User user = UserRepository.userOf(player);
-    ConnectionMetadata synchronizeData = user.meta().connection();
-    Map<Short, FeedbackRequest<?>> transactionFeedBackMap = synchronizeData.transactionShortKeyMap();
+    ConnectionMetadata connection = user.meta().connection();
+    Map<Short, FeedbackRequest<?>> transactionFeedBackMap = connection.transactionShortKeyMap();
     int attempts = 1000;
-    short counter = (short) (USE_PING_PONG_PACKETS ? 13 : TRANSACTION_MIN_CODE);
+    short counter = (short) (USE_PING_PONG_PACKETS ? 13 : TRANSACTION_MIN_CODE + connection.randomTransactionIdShift);
     int pending = transactionFeedBackMap.size();
     if (pending > 500) {
       counter += pending;

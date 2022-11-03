@@ -73,7 +73,7 @@ public final class Tester implements Runnable {
     }
     try {
       if (IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
-        IntaveLogger.logger().info("Running test: " + testMethod.getName());
+//        IntaveLogger.logger().info("Running test: " + testMethod.getName());
       }
       testMethod.invoke(test);
     } catch (Throwable throwable) {

@@ -77,8 +77,12 @@ public final class SimulationEvaluator {
       vecticalLegitimateDeviation = Math.max(vecticalLegitimateDeviation, 0.5);
     }
 
-    if (movement.shulkerYToleranceRemaining > 0 && Math.abs(receivedMotionY) <= 0.15) {
-      vecticalLegitimateDeviation = Math.max(vecticalLegitimateDeviation, 0.2);
+    if (movement.shulkerYToleranceRemaining > 0 && // tick restriction
+      (movement.positionY >= movement.lowestShulkerY - 1 && movement.positionY <= movement.highestShulkerY + 1) && // height restriction
+      receivedMotionY - movement.jumpMotion() < 0.2 && // motion restriction
+      (Math.abs(receivedMotionY) <= 0.5 || ((movement.positionY % 0.05) < 0.0001 && (Math.abs(receivedMotionY - movement.jumpMotion()) < 0.01 || (receivedMotionY <= 0 && receivedMotionY > -.8)))) // various other restrictions
+    ) {
+      vecticalLegitimateDeviation = Math.max(vecticalLegitimateDeviation, 1);
     }
 
     // spamming sneak under blocks
@@ -266,7 +270,7 @@ public final class SimulationEvaluator {
     }
 
     if (movement.shulkerYToleranceRemaining > 0) {
-      horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, 0.1);
+      horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, Math.abs(movement.motionY()) < .3 ? .3 : .1);
     }
 
     if (movement.collidedHorizontally && movement.pastVelocity < 20) {

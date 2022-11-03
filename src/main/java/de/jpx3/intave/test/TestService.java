@@ -3,29 +3,42 @@ package de.jpx3.intave.test;
 import com.google.common.base.Charsets;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
+import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.annotate.HighOrderService;
 import de.jpx3.intave.annotate.Native;
+import de.jpx3.intave.block.access.BlockAccessTests;
 import de.jpx3.intave.block.shape.BlockShapeTests;
 import de.jpx3.intave.block.shape.resolve.BlockShapeDrillTests;
 import de.jpx3.intave.block.shape.resolve.BlockShapePipelineTests;
+import de.jpx3.intave.check.EventProcessor;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.locate.ReferenceExistenceTests;
+import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriber;
+import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
+import de.jpx3.intave.security.HashAccess;
+import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @HighOrderService
-public final class TestService {
+public final class TestService implements EventProcessor {
   private static final Resource environmentHashResource = Resources.fileCache("environmentHashes");
   private static final List<String> supportedEnvironments = environmentHashResource.lines();
   private static final String environmentHash = environmentHash();
@@ -43,6 +56,14 @@ public final class TestService {
         bigString.append(config.saveToString());
       }
     }
+    String jarHash;
+    try {
+      File currentJavaJarFile = new File(IntavePlugin.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+      jarHash = HashAccess.hashOf(currentJavaJarFile);
+    } catch (URISyntaxException e) {
+      jarHash = "unable-to-hash";
+    }
+    bigString.append(jarHash);
     bigString.append(System.getProperty("java.version"));
     bigString.append(System.getProperty("java.vendor"));
     bigString.append(System.getProperty("java.home"));
@@ -85,15 +106,34 @@ public final class TestService {
 
   public void scheduleTestsForFirstTick() {
     if (!environmentKnown()) {
+      Modules.linker().bukkitEvents().registerEventsIn(this);
       IntaveLogger.logger().info("Self-tests are performed after startup");
       Synchronizer.synchronize(this::performTests);
     }
   }
 
+  private final Queue<Runnable> loadQueue = new ConcurrentLinkedQueue<>();
+
+  @BukkitEventSubscription
+  // on world load event
+  public void on(WorldLoadEvent event) {
+    Runnable runnable;
+    while ((runnable = loadQueue.poll()) != null) {
+      Synchronizer.synchronize(runnable);
+    }
+  }
+
   @Native
   public void performTests() {
-    IntaveLogger.logger().info("Intave will take a few seconds to self-test,");
-    IntaveLogger.logger().info("since it is yet unfamiliar with your environment.");
+    if (Bukkit.getWorlds().isEmpty()) {
+      IntaveLogger.logger().info("No worlds loaded, delaying self-tests");
+      loadQueue.add(this::performTests);
+      return;
+    }
+
+    IntaveLogger.logger().info("Intave will take a few seconds to self-test");
+    IntaveLogger.logger().info("Ignore any error warnings from bukkit or other plugins during this time");
+    long start = System.currentTimeMillis();
     try {
       // we can assume all classes loaded
 
@@ -102,12 +142,13 @@ public final class TestService {
       performTest(BlockShapeDrillTests.class);
       performTest(BlockShapePipelineTests.class);
 
+      performTest(BlockAccessTests.class);
 
       // checks
 //      performTest(SimulatorBasicTests.class);
 
       // locate
-      performTest(ReferenceExistenceTests.class);
+//      performTest(ReferenceExistenceTests.class);
 
     } catch (Exception exception) {
       if (IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
@@ -126,13 +167,13 @@ public final class TestService {
       return;
     }
     dontCheckThisEnvironmentAgain();
-    IntaveLogger.logger().info("Self-tests finished");
+    IntaveLogger.logger().info("Testing completed after " + (System.currentTimeMillis() - start) + "ms");
   }
 
   public boolean environmentKnown() {
-    return true;
-//    String environmentHash = environmentHash();
-//    return supportedEnvironments.contains(environmentHash);
+//    return true;
+    String environmentHash = environmentHash();
+    return supportedEnvironments.contains(environmentHash);
   }
 
   public void dontCheckThisEnvironmentAgain() {

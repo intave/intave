@@ -16,6 +16,7 @@ import org.bukkit.entity.Player;
 
 import java.util.*;
 import java.util.concurrent.DelayQueue;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Relocate
 public final class ConnectionMetadata {
@@ -33,6 +34,7 @@ public final class ConnectionMetadata {
   public boolean sendAsyncMessage = false;
   public boolean eligibleForTransactionTimeout = false;
   public int speculativeMovementTicks = 0;
+  public int randomTransactionIdShift = ThreadLocalRandom.current().nextInt(1, 2000);
 
   private final Deque<Object> bufferEnqueue = new ArrayDeque<>(8500);
   private final DelayQueue<DelayedPacket> delayQueue = new DelayQueue<>();

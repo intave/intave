@@ -60,8 +60,7 @@ import java.util.stream.Collectors;
 
 import static de.jpx3.intave.diagnostic.message.MessageCategory.SIMFLT;
 import static de.jpx3.intave.diagnostic.message.MessageCategory.SIMFUL;
-import static de.jpx3.intave.math.MathHelper.formatDouble;
-import static de.jpx3.intave.math.MathHelper.formatPosition;
+import static de.jpx3.intave.math.MathHelper.*;
 import static de.jpx3.intave.share.ClientMathHelper.floor;
 
 @Relocate
@@ -497,6 +496,8 @@ public final class Physics extends Check {
       statisticApply(user, CheckStatistics::increasePasses);
     }
 
+    boolean setback = false;
+
     if (!spectator && violationLevelData.physicsVL > 50 && violationLevelIncrease > 0) {
       String received = formatPosition(receivedMotionX, receivedMotionY, receivedMotionZ);
       String expected = formatPosition(predictedX, predictedY, predictedZ);
@@ -531,7 +532,6 @@ public final class Physics extends Check {
 
       MitigationStrategy mitigationStrategy = mitigationStrategy();
 
-      boolean setback = false;
       double manualOverrideDistance = 0;
       switch (mitigationStrategy) {
         case AGGRESSIVE:
@@ -599,63 +599,126 @@ public final class Physics extends Check {
     boolean anyDebugRequested = !IntaveControl.DEBUG_MOVEMENT && (faultDebugRequested || fullDebugRequested);
 
     if (IntaveControl.DEBUG_MOVEMENT || anyDebugRequested) {
-      ChatColor chatColor = violationLevelIncrease == 0 ? ChatColor.GRAY : ChatColor.YELLOW;
-//      String poseName = movementData.pose().name();
-      String displayPhysicsVL = formatDouble(violationLevelData.physicsVL, 4);
-      String displayHorizontalVL = formatDouble(horizontalViolationIncrease, 3);
-      String displayVerticalVL = formatDouble(verticalViolationIncrease, 3);
-      String displayViolationIncrease = formatDouble(violationLevelIncrease, 3);
+      ChatColor chatColor = ChatColor.GRAY;
+      String symbol = "";
 
-      String violationLevelInfo;
-      if (violationLevelIncrease > 0) {
-        violationLevelInfo = "g:" + displayPhysicsVL + ",c:" + displayViolationIncrease + "(" + displayHorizontalVL + "," + displayVerticalVL + ")";
-      } else {
-        violationLevelInfo = "g:" + displayPhysicsVL;
+      if (setback) {
+        chatColor = ChatColor.DARK_RED;
+        symbol = "!! ";
+      } else if (violationLevelIncrease > 0) {
+        chatColor = ChatColor.RED;
+        symbol = "! ";
+      } /*else if (violationLevelData.physicsVL > 10) {
+        chatColor = ChatColor.YELLOW;
+        symbol = "? ";
+      }*/
+
+      String debug = chatColor + symbol;
+
+      boolean fly = movementData.recentlyEncounteredFlyingPacket(0);
+      while (key.length() < 2) {
+        key += " ";
       }
-      String debug = String.valueOf(chatColor);
-//      debug += "motion x: " + predictedX + ", y: " + predictedY + ", z: " + predictedZ;
-      debug += movementData.simulator().debugName();
-      debug += " ";
-      if (movementData.recentlyEncounteredFlyingPacket(0)) {
-        debug += "f";
+      if (fly) {
+        debug += ChatColor.STRIKETHROUGH;
       }
-      debug += "(" + key + ")";
-      debug += " " + violationLevelInfo;
-      debug += " " + pose.name();
-//      debug += " frt" + movementData.fireworkRocketsTicks;
+      debug += /*"(" +*/ key /*+ ")"*/;
+      if (fly) {
+        debug += chatColor;
+      }
+      if (pose != Pose.STANDING || movementData.sprinting) {
+        String poseName = "";
+        switch (pose) {
+          case SLEEPING:
+            poseName = "L";
+            break;
+          case FALL_FLYING:
+            poseName = "E";
+            break;
+          case SWIMMING:
+            poseName = "U";
+            break;
+          case CROUCHING:
+            poseName = "C";
+            break;
+          case STANDING:
+            poseName = "R";
+            break;
+        }
+        debug += ChatColor.BOLD + poseName + chatColor;
+      }
+
+      debug += " y:" + formatDouble(movementData.motionY(), 4) + "@" + decimalPlacesOf(movementData.positionY(), 4);
+
+      if (!simulation.details().isEmpty()) {
+        debug += ChatColor.ITALIC + " " + simulation.details() + chatColor;
+      }
+      if (movementData.fireworkRocketsTicks < 100) {
+        debug += ChatColor.ITALIC + " frt:" + movementData.fireworkRocketsTicks + chatColor;
+      }
+      if (movementData.shulkerXToleranceRemaining + movementData.shulkerYToleranceRemaining + movementData.shulkerZToleranceRemaining > 0) {
+        debug += ChatColor.ITALIC + " slk:" + movementData.shulkerXToleranceRemaining + "," + movementData.shulkerYToleranceRemaining + "," + movementData.shulkerZToleranceRemaining + chatColor;
+      }
 //      debug += " web (a: " + shortenBoolean(movementData.inWeb) + ", r: " + shortenBoolean(collidesWeb(user, currentBoundingBox)) + ")";
 //      debug += "cia " + movementData.pastNearbyCollisionInaccuracy;
 //      debug += " ai ?" + movementData.aiMoveSpeed();
 //      debug += " sprint " + shortenBoolean(movementData.sprinting) + "/" + shortenBoolean(movementData.hasSprintSpeed);
 //      debug += " (sneak " + movementData.sneaking + "/"+movementData.actualSneaking()+")";
-      debug += " (size:" + movementData.width + "," + movementData.height + ")";
+//      debug += " (size:" + movementData.width + "," + movementData.height + ")";
 //      debug += " hand=" + shortenBoolean(meta.inventory().handActive());
 //      debug += inventoryData.heldItem().getType().name();
 //      debug += " flying:" + movementData.pastFlyingPacketAccurate;
 //      debug += " gliding:" + shortenBoolean(movementData.elytraFlying);
-      debug += " y:" + formatDouble(movementData.motionY(), 4);
 
-      List<String> tags = new ArrayList<>();
-
-      tags.add("dist=" + (movementData.recentlyEncounteredFlyingPacket(1) ? "~" + formatDouble(distance, 8) : formatDouble(distance, 8)));
-      if (collidedWithBoat) {
-        tags.add("boat");
-      }
-      if (violationLevelData.isInActiveTeleportBundle) {
-        tags.add("atb");
-      }
-      if (movedIntoBlock) {
-        tags.add("bb-intersection");
-      }
-      if (movementData.physicsJumped) {
-        tags.add("jump");
-      }
-      if (velocityDetected) {
-        tags.add("velocity?");
-      }
+//      List<String> tags = new ArrayList<>();
+//      tags.add("d:" + (movementData.recentlyEncounteredFlyingPacket(1) ? "~" + formatDouble(distance, 6) : formatDouble(distance, 6)));
+//      if (collidedWithBoat) {
+//        tags.add("boat");
+//      }
+//      if (violationLevelData.isInActiveTeleportBundle) {
+//        tags.add("atb");
+//      }
+//      if (movedIntoBlock) {
+//        tags.add("bb-intersection");
+//      }
+//      if (movementData.physicsJumped) {
+//        tags.add("jump");
+//      }
+//      if (velocityDetected) {
+//        tags.add("velocity?");
+//      }
 //      tags.add("riding:" + movementData.hasRidingEntity());
+//      debug += " " + String.join(" ", tags);
 
-      debug += " " + String.join(" ", tags);
+      String displayPhysicsVL = formatDouble(violationLevelData.physicsVL, 1);
+      String displayHorizontalVL = formatDouble(horizontalViolationIncrease, 1);
+      String displayVerticalVL = formatDouble(verticalViolationIncrease, 1);
+      String displayViolationIncrease = formatDouble(violationLevelIncrease, 1);
+
+      if (violationLevelIncrease > 0) {
+        double hvRatio = horizontalViolationIncrease / violationLevelIncrease;
+        String extraSymbols = "";
+        if (hvRatio > 0.8) {
+          extraSymbols = "H" + displayHorizontalVL;
+        } else if (hvRatio < 0.2) {
+          extraSymbols = "V" + displayVerticalVL;
+        }
+        extraSymbols += "B" + displayViolationIncrease;
+        debug += " g:" + displayPhysicsVL + "+" + extraSymbols;
+      } else if (violationLevelData.physicsVL > 25) {
+        debug += " g:" + ChatColor.YELLOW + displayPhysicsVL + chatColor;
+      } else if (violationLevelData.physicsVL > 5) {
+        debug += " g:" + displayPhysicsVL;
+      }
+
+      String distanceOutput = formatDouble(distance, distance < 0.1 && violationLevelIncrease > 0 ? 9 : 3);
+      if (movementData.recentlyEncounteredFlyingPacket(1)) {
+        distanceOutput = "~" + distanceOutput;
+      } else if (distance >= 0.01 && violationLevelIncrease == 0) {
+        distanceOutput = ChatColor.STRIKETHROUGH + distanceOutput + chatColor;
+      }
+      debug += " d:" + distanceOutput;
+
       if (debug.startsWith(" ")) {
         debug = debug.substring(1);
       }
@@ -708,11 +771,15 @@ public final class Physics extends Check {
       key += "W";
     } else if (forward == -1) {
       key += "S";
+    } else {
+      key += " ";
     }
     if (strafe == 1) {
       key += "A";
     } else if (strafe == -1) {
       key += "D";
+    } else {
+      key += " ";
     }
     return key;
   }

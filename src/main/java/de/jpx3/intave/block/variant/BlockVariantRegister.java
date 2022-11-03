@@ -33,6 +33,10 @@ public final class BlockVariantRegister {
     ).get(variantIndex);
   }
 
+  static void clearVariantCompilationCache() {
+    blockVariants.clear();
+  }
+
   public static int variantIndexOf(Material type, Object rawBlockData) {
     Map<Object, Integer> indexMap = blockDataIndex.get(type);
     Integer integer = indexMap.get(rawBlockData);
