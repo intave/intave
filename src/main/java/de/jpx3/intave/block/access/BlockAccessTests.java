@@ -39,6 +39,21 @@ public final class BlockAccessTests extends Tests {
     }
   }
 
+  @Test(
+    testCode = "B",
+    severity = Severity.ERROR
+  )
+  public void testBlockData() {
+    for (Material value : Material.values()) {
+      if (value.isBlock() && !value.name().contains("REDSTONE")) {
+        block.setType(value, false);
+
+        assertEquals(value, block.getType());
+        assertEquals(value, BlockAccess.global().typeOf(block));
+      }
+    }
+  }
+
   @After
   public void tearDown() {
     priorMaterial.restore();

@@ -8,6 +8,10 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.version.ProtocolVersionConverter;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 @Relocate
 public final class ProtocolMetadata {
   // final has been removed to disguise modified integer VERSION_DETAILS
@@ -34,6 +38,8 @@ public final class ProtocolMetadata {
   private int protocolVersion;
   private final User user;
   private int refreshes;
+
+  public List<UUID> shownPlayers = new ArrayList<>();
 
   public ProtocolMetadata(Player player, User user) {
     this.user = user;
