@@ -20,7 +20,7 @@ import de.jpx3.intave.block.physics.BlockPhysics;
 import de.jpx3.intave.block.physics.BlockProperties;
 import de.jpx3.intave.block.shape.resolve.patch.BoundingBoxPatcher;
 import de.jpx3.intave.block.type.BlockTypeAccess;
-import de.jpx3.intave.block.variant.BlockVariantAccess;
+import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.check.CheckService;
 import de.jpx3.intave.cleanup.GarbageCollector;
@@ -593,7 +593,7 @@ public final class IntavePlugin extends JavaPlugin {
       VolatileBlockAccess.setup();
       BlockAccess.setup();
       BlockInteractionAccess.setup();
-      BlockVariantAccess.setup();
+      BlockVariantNativeAccess.setup();
       BlockTypeAccess.setup();
       CollisionModifiers.setup();
       ViaVersionAdapter.setup();

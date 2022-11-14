@@ -51,19 +51,59 @@ final class MethodLocation extends Location {
     if (!fromSig.equals(toSig)) {
       throw new IllegalStateException("Signatures differ: " + fromSig + " != " + toSig);
     }
-    Class<?> ownerClass = Lookup.serverClass(classKey());
+    Class<?> owningClass = Lookup.serverClass(classKey()), orignalOwningClass = owningClass;
     Type[] argumentTypes = Type.getArgumentTypes(toSig);
+    String name = methodName(to);
     Class<?>[] parameterTypes = Arrays.stream(argumentTypes)
       .map(type -> classOf(type.getCanonicalClassName()))
       .toArray(Class[]::new);
-    try {
-      return ownerClass.getMethod(methodName(to), parameterTypes);
-    } catch (NoSuchMethodException exception) {
-      throw new IllegalStateException(exception);
-    }
+    do {
+      try {
+        Method declaredMethod = owningClass.getMethod(name, parameterTypes);
+        if (!declaredMethod.isAccessible()) {
+          declaredMethod.setAccessible(true);
+        }
+        return declaredMethod;
+      } catch (NoSuchMethodException ignored) {}
+    } while ((owningClass = owningClass.getSuperclass()) != Object.class);
+//    do {
+//      System.out.println("Dumping methods of " + orignalOwningClass);
+//      for (Method declaredMethod : orignalOwningClass.getDeclaredMethods()) {
+//        System.out.println("  " + declaredMethod);
+//      }
+//    } while ((orignalOwningClass = orignalOwningClass.getSuperclass()) != Object.class);
+    throw new IllegalStateException("Unable to find method " + to + " in " + classKey());
   }
 
   private Class<?> classOf(String name) {
+    name = name.replace('/', '.');
+    if (name.equals("int")) {
+      return int.class;
+    }
+    if (name.equals("boolean")) {
+      return boolean.class;
+    }
+    if (name.equals("byte")) {
+      return byte.class;
+    }
+    if (name.equals("char")) {
+      return char.class;
+    }
+    if (name.equals("double")) {
+      return double.class;
+    }
+    if (name.equals("float")) {
+      return float.class;
+    }
+    if (name.equals("long")) {
+      return long.class;
+    }
+    if (name.equals("short")) {
+      return short.class;
+    }
+    if (name.equals("void")) {
+      return void.class;
+    }
     try {
       return Class.forName(name);
     } catch (ClassNotFoundException exception) {
@@ -92,6 +132,10 @@ final class MethodLocation extends Location {
       matcher = REPLACE_REGEX.matcher(signature);
     }
     return signature;
+  }
+
+  public String methodNameOfKey() {
+    return methodName(key());
   }
 
   public String classKey() {

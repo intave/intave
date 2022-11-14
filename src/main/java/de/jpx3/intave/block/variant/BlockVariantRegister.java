@@ -33,10 +33,6 @@ public final class BlockVariantRegister {
     ).get(variantIndex);
   }
 
-  static void clearVariantCompilationCache() {
-    blockVariants.clear();
-  }
-
   public static int variantIndexOf(Material type, Object rawBlockData) {
     Map<Object, Integer> indexMap = blockDataIndex.get(type);
     Integer integer = indexMap.get(rawBlockData);
@@ -51,5 +47,13 @@ public final class BlockVariantRegister {
       exception.printStackTrace();
       return blockDataRegister.get(type).get(0);
     }
+  }
+
+  public static int variantCountOf(Material type) {
+    return blockDataRegister.get(type).size();
+  }
+
+  static void invalidateShadowedVariantCache() {
+    blockVariants.clear();
   }
 }

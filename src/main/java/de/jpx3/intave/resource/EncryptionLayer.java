@@ -90,6 +90,13 @@ final class EncryptionLayer implements Resource {
       for (int j = 0; j < passwordBytes.length; j++) {
         passwordBytes[j] ^= quarterHashBytes[j % quarterHash.length()];
       }
+      // shuffle the password bytes using the random
+      for (int j = 0; j < passwordBytes.length; j++) {
+        int index = random.nextInt(passwordBytes.length);
+        byte temp = passwordBytes[j];
+        passwordBytes[j] = passwordBytes[index];
+        passwordBytes[index] = temp;
+      }
       KeySpec spec = new PBEKeySpec(new String(passwordBytes, UTF_8).toCharArray(), iv, 65536, 128); // AES-128
       SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
       byte[] key = secretKeyFactory.generateSecret(spec).getEncoded();
@@ -170,6 +177,13 @@ final class EncryptionLayer implements Resource {
       byte[] quarterHashBytes = quarterHash.getBytes(UTF_8);
       for (int j = 0; j < passwordBytes.length; j++) {
         passwordBytes[j] ^= quarterHashBytes[j % quarterHash.length()];
+      }
+      // shuffle the password bytes using the random
+      for (int j = 0; j < passwordBytes.length; j++) {
+        int index = random.nextInt(passwordBytes.length);
+        byte temp = passwordBytes[j];
+        passwordBytes[j] = passwordBytes[index];
+        passwordBytes[index] = temp;
       }
       KeySpec spec = new PBEKeySpec(new String(passwordBytes, UTF_8).toCharArray(), iv, 65536, 128); // AES-128
       SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");

@@ -2,10 +2,7 @@ package de.jpx3.intave.block.variant;
 
 import org.bukkit.Material;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 final class IndexedBlockVariant implements BlockVariant {
   private final Material type;
@@ -25,6 +22,11 @@ final class IndexedBlockVariant implements BlockVariant {
     this.nativeConfig = nativeConfig;
     nativeConfig.keySet().forEach(setting -> namedSettings.put(setting.name().toLowerCase(Locale.ROOT), setting));
     nativeConfig.forEach((setting, comparable) -> namedConfig.put(setting.name().toLowerCase(Locale.ROOT), comparable));
+  }
+
+  @Override
+  public Set<String> propertyNames() {
+    return namedConfig.keySet();
   }
 
   public <T> T propertyOf(String name) {
@@ -53,6 +55,6 @@ final class IndexedBlockVariant implements BlockVariant {
 
   @Override
   public void dumpStates() {
-    nativeConfig.forEach((setting, comparable) -> System.out.println(setting.name() + ": " + comparable));
+    nativeConfig.forEach((setting, comparable) -> System.out.println("  " + setting.name() + ": " + comparable));
   }
 }

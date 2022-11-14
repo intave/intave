@@ -28,15 +28,18 @@ final class FieldLocation extends Location {
   }
 
   private Field compile() {
-    try {
-      Field declaredField = Lookup.serverClass(classKey).getDeclaredField(target);
-      if (!declaredField.isAccessible()) {
-        declaredField.setAccessible(true);
-      }
-      return declaredField;
-    } catch (Exception exception) {
-      throw new IllegalStateException(exception);
-    }
+    Class<?> owningClass = Lookup.serverClass(classKey);
+    do {
+      try {
+        Field declaredField = owningClass.getDeclaredField(target);
+        if (!declaredField.isAccessible()) {
+          declaredField.setAccessible(true);
+        }
+        return declaredField;
+      } catch (NoSuchFieldException ignored) {}
+    } while ((owningClass = owningClass.getSuperclass()) != Object.class);
+
+    throw new IllegalStateException("Could not find field " + target + " in " + owningClass);
   }
 
   public String targetName() {

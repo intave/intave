@@ -13,7 +13,7 @@ public final class SimulatorBasicTests extends Tests {
   private TestWorld testWorld;
 
   public SimulatorBasicTests() {
-    super("PHYBA");
+    super("SB");
   }
 
   @Before

@@ -142,14 +142,4 @@ public final class FilteringPacketAdapter extends WeakReferencePacketAdapter imp
     }
     return isVocal ? "An" : "A";
   }
-
-  @Override
-  public String toString() {
-    return "FilteringPacketAdapter{" +
-      "methodName='" + methodName + '\'' +
-      ", subscriber=" + subscriber +
-      ", receivingWhitelist=" + receivingWhitelist +
-      ", sendingWhitelist=" + sendingWhitelist +
-      '}';
-  }
 }

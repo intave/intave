@@ -1,12 +1,13 @@
 package de.jpx3.intave.klass.locate;
 
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.test.Severity;
 import de.jpx3.intave.test.Test;
 import de.jpx3.intave.test.Tests;
 
 public final class ReferenceExistenceTests extends Tests {
   public ReferenceExistenceTests() {
-    super("CRT");
+    super("RE");
   }
 
   @Test(
@@ -14,12 +15,13 @@ public final class ReferenceExistenceTests extends Tests {
     severity = Severity.ERROR
   )
   public void checkClasses() {
-    ClassLocations classLocations = Locate.classLocations();
-    for (ClassLocation classLocation : classLocations) {
+    for (ClassLocation classLocation : Locate.classLocations()) {
       try {
-        classLocation.access();
+        String className = classLocation.access().getName();
       } catch (Exception exception) {
-        System.out.println("Failed to access " + classLocation);
+        IntaveLogger.logger().warn("Class " + classLocation.compiledLocation() + " does not exist");
+//        exception.printStackTrace();
+        throw exception;
       }
     }
   }
@@ -29,6 +31,15 @@ public final class ReferenceExistenceTests extends Tests {
     severity = Severity.ERROR
   )
   public void checkMethods() {
+    for (MethodLocation methodLocation : Locate.methodLocations()) {
+      try {
+        methodLocation.access();
+      } catch (Exception exception) {
+        IntaveLogger.logger().warn("Method " + methodLocation.methodNameOfKey() + "@" + methodLocation.targetMethodName() + methodLocation.targetMethodSignature() + " in class " + methodLocation.classKey() + " does not exist");
+//        exception.printStackTrace();
+        throw exception;
+      }
+    }
 
   }
 
@@ -37,6 +48,13 @@ public final class ReferenceExistenceTests extends Tests {
     severity = Severity.ERROR
   )
   public void checkFields() {
-
+    for (FieldLocation fieldLocation : Locate.fieldLocations()) {
+      try {
+        fieldLocation.access();
+      } catch (Exception exception) {
+        IntaveLogger.logger().warn("Field " + fieldLocation.key() + "/" + fieldLocation.key() + " in class " + fieldLocation.classKey() + " does not exist");
+        throw exception;
+      }
+    }
   }
 }

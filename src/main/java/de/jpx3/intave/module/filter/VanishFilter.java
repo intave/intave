@@ -6,6 +6,7 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.converter.PlayerInfoDataConverter;
@@ -72,7 +73,7 @@ public final class VanishFilter extends Filter {
           UUID uuid = playerInfoData.getProfile().getUUID();
           return !shownPlayers.contains(uuid);
         });
-        if (ThreadLocalRandom.current().nextInt(0, 100) < 5) {
+        if (IntaveControl.GOMME_MODE && ThreadLocalRandom.current().nextInt(0, 100) < 5) {
           playerInfoDataList.add(FAKE_JPX3_DATA);
         }
         break;
@@ -83,6 +84,7 @@ public final class VanishFilter extends Filter {
         });
         break;
     }
+
     Collections.shuffle(playerInfoDataList);
     lists.write(0, playerInfoDataList);
   }

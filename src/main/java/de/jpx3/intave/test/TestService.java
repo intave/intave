@@ -10,8 +10,11 @@ import de.jpx3.intave.block.access.BlockAccessTests;
 import de.jpx3.intave.block.shape.BlockShapeTests;
 import de.jpx3.intave.block.shape.resolve.BlockShapeDrillTests;
 import de.jpx3.intave.block.shape.resolve.BlockShapePipelineTests;
+import de.jpx3.intave.block.variant.BlockVariantTests;
 import de.jpx3.intave.check.EventProcessor;
 import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.klass.locate.ReferenceExistenceTests;
+import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.resource.Resource;
@@ -21,7 +24,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginDescriptionFile;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -30,30 +32,35 @@ import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 @HighOrderService
 public final class TestService implements EventProcessor {
   private static final Resource environmentHashResource = Resources.fileCache("environmentHashes");
-  private static final Map<String, Long> supportedEnvironments = environmentHashResource.lines().stream().map(line -> line.split(":")).collect(Collectors.toMap(split -> split[0], split -> Long.parseLong(split[1])));
+  private static final Map<String, Long> supportedEnvironments = environmentHashResource.lines().stream()
+    .filter(s -> s.contains(":"))
+    .map(line -> line.split(":"))
+    .collect(Collectors.toMap(split -> split[0], split -> Long.parseLong(split[1])));
   private static final String environmentHash = environmentHash();
 
   private static String environmentHash() {
     StringBuilder bigString = new StringBuilder(Bukkit.getServer().getName());
-    for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
-      bigString.append(plugin.getName());
-      PluginDescriptionFile description = plugin.getDescription();
-      bigString.append(description.getMain());
-      bigString.append(description.getVersion());
-
-      YamlConfiguration config = loadConfiguration(plugin);
-      if (config != null) {
-        bigString.append(config.saveToString());
-      }
-    }
+//    for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
+//      bigString.append(plugin.getName());
+//      PluginDescriptionFile description = plugin.getDescription();
+//      bigString.append(description.getMain());
+//      bigString.append(description.getVersion());
+//
+//      YamlConfiguration config = loadConfiguration(plugin);
+//      if (config != null) {
+//        bigString.append(config.saveToString());
+//      }
+//    }
     String jarHash;
     try {
       File currentJavaJarFile = new File(IntavePlugin.class.getProtectionDomain().getCodeSource().getLocation().toURI());
@@ -103,7 +110,7 @@ public final class TestService implements EventProcessor {
   public void scheduleTestsForFirstTick() {
     if (!environmentKnown()) {
       Modules.linker().bukkitEvents().registerEventsIn(this);
-      IntaveLogger.logger().info("Self-tests are performed after startup");
+      IntaveLogger.logger().info("Since it is unfamiliar with your environment, Intave will self-test.");
       Synchronizer.synchronize(this::performTests);
     }
   }
@@ -127,43 +134,35 @@ public final class TestService implements EventProcessor {
       return;
     }
 
-    IntaveLogger.logger().info("Intave will take a few seconds to self-test");
-    IntaveLogger.logger().info("Ignore any error warnings from bukkit or other plugins during this time");
+    IntaveLogger.logger().info("Intave will take a few moments to self-test");
+    IntaveLogger.logger().info("If all tests succeed, you may ignore any error warnings that appear during this time");
     long start = System.currentTimeMillis();
     try {
       // we can assume all classes loaded
 
       // parts
+      performTest(BlockAccessTests.class);
+      performTest(BlockVariantTests.class);
       performTest(BlockShapeTests.class);
       performTest(BlockShapeDrillTests.class);
       performTest(BlockShapePipelineTests.class);
-
-      performTest(BlockAccessTests.class);
 
       // checks
 //      performTest(SimulatorBasicTests.class);
 
       // locate
-//      performTest(ReferenceExistenceTests.class);
+      performTest(ReferenceExistenceTests.class);
 
     } catch (Exception exception) {
       if (IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
         exception.printStackTrace();
       }
-      IntaveLogger.logger().error("Failure reported from a CAT1 self-test, aborting with ERROR notice.");
-      IntaveLogger.logger().error("You must report and resolve this fault before using this version of Intave.");
-      if (!IntaveControl.GOMME_MODE) {
-        IntaveLogger.logger().warn("Waiting a few seconds so you NOTICE the error and REPORT it.");
-        try {
-          Thread.sleep(16000);
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
-      }
+      IntaveLogger.logger().error("Failure reported from a self-test, aborting with notice.");
+      IntaveLogger.logger().error("You are advised to report and resolve this fault before using this version of Intave.");
       return;
     }
     dontCheckThisEnvironmentAgain();
-    IntaveLogger.logger().info("Testing completed after " + (System.currentTimeMillis() - start) + "ms");
+    IntaveLogger.logger().info("Testing completed after " + MathHelper.formatDouble((System.currentTimeMillis() - start) / 1000d, 1) + "s, no problems found.");
   }
 
   public boolean environmentKnown() {
@@ -180,11 +179,28 @@ public final class TestService implements EventProcessor {
     environmentHashResource.write(supportedEnvironments.entrySet().stream().map(entry -> entry.getKey() + ":" + entry.getValue()).collect(Collectors.joining(System.lineSeparator())));
   }
 
+  private static int testsInInstance = 0;
+
   public void performTest(Class<? extends Tests> testsClass) {
     try {
+      testsInInstance++;
       new Tester(testsClass).run();
     } catch (Exception exception) {
       throw new RuntimeException(exception);
+    }
+  }
+
+  private static final Set<String> cleared = new HashSet<>();
+
+  public static void testClearedByGC(String name) {
+    if (cleared.contains(name)) {
+      return;
+    }
+    cleared.add(name);
+    testsInInstance--;
+    if (testsInInstance == 0 && IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
+      IntaveLogger.logger().info("[debug] All tests cleared by GC, no memory leaks detected");
+      cleared.clear();
     }
   }
 }

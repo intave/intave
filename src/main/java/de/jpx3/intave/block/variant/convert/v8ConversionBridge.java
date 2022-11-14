@@ -3,10 +3,12 @@ package de.jpx3.intave.block.variant.convert;
 import de.jpx3.intave.block.variant.*;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.klass.rewrite.PatchyAutoTranslation;
-import net.minecraft.server.v1_14_R1.BlockStateBoolean;
-import net.minecraft.server.v1_14_R1.BlockStateEnum;
-import net.minecraft.server.v1_14_R1.BlockStateInteger;
+import net.minecraft.server.v1_8_R3.Block;
+import net.minecraft.server.v1_8_R3.BlockStateBoolean;
+import net.minecraft.server.v1_8_R3.BlockStateEnum;
+import net.minecraft.server.v1_8_R3.BlockStateInteger;
 import net.minecraft.server.v1_8_R3.BlockStateList;
+import net.minecraft.server.v1_8_R3.IBlockData;
 import net.minecraft.server.v1_8_R3.IBlockState;
 
 import java.lang.reflect.Method;
@@ -18,8 +20,8 @@ public final class v8ConversionBridge implements ConversionBridge {
 
   @PatchyAutoTranslation
   public Map<Setting<?>, Comparable<?>> settingsOf(Object blockData) {
-    net.minecraft.server.v1_8_R3.IBlockData data = (net.minecraft.server.v1_8_R3.IBlockData) blockData;
-    net.minecraft.server.v1_8_R3.Block block = data.getBlock();
+    IBlockData data = (IBlockData) blockData;
+    Block block = data.getBlock();
     Map<Setting<?>, Comparable<?>> configuration = new HashMap<>();
     try {
       if (getStateListMethod == null) {
@@ -31,7 +33,7 @@ public final class v8ConversionBridge implements ConversionBridge {
       if (states.isEmpty()) {
         return Collections.emptyMap();
       }
-      for (net.minecraft.server.v1_8_R3.IBlockState<?> state : states) {
+      for (IBlockState<?> state : states) {
         Setting<?> setting = SettingCache.computeSettingIfAbsent(state, this::convertSetting);
         configuration.put(setting, convertEnumToIndexIfPresent(data.get(state)));
       }
@@ -43,11 +45,11 @@ public final class v8ConversionBridge implements ConversionBridge {
 
   @PatchyAutoTranslation
   public Setting<?> convertSetting(Object blockState) {
-    net.minecraft.server.v1_8_R3.IBlockState<?> state = (net.minecraft.server.v1_8_R3.IBlockState<?>) blockState;
+    IBlockState<?> state = (IBlockState<?>) blockState;
     String name = state.a();
     if (state instanceof BlockStateInteger) {
       BlockStateInteger blockStateInteger = (BlockStateInteger) state;
-      Collection<Integer> values = blockStateInteger.getValues();
+      Collection<Integer> values = blockStateInteger.c();
       IntSummaryStatistics statistics = values.stream().mapToInt(value -> value).summaryStatistics();
       return Settings.integerSetting(name, statistics.getMin(), statistics.getMax());
     } else if (state instanceof BlockStateBoolean) {

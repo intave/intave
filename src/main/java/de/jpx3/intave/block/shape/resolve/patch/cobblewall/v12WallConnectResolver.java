@@ -1,8 +1,7 @@
 package de.jpx3.intave.block.shape.resolve.patch.cobblewall;
 
 import de.jpx3.intave.block.access.VolatileBlockAccess;
-import de.jpx3.intave.block.variant.BlockVariantAccess;
-import de.jpx3.intave.block.variant.BlockVariantRegister;
+import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.klass.rewrite.PatchyAutoTranslation;
 import de.jpx3.intave.klass.rewrite.PatchyTranslateParameters;
 import de.jpx3.intave.share.Direction;
@@ -18,7 +17,7 @@ public class v12WallConnectResolver implements WallConnectResolver {
     World worldIn = ((org.bukkit.craftbukkit.v1_12_R1.CraftWorld) world).getHandle();
     BlockPosition pos = new BlockPosition(position.xCoord, position.yCoord, position.zCoord);
     org.bukkit.block.Block bukkitBlock = VolatileBlockAccess.blockAccess(world, position);
-    IBlockData data = (IBlockData) BlockVariantAccess.nativeVariantAccess(bukkitBlock);
+    IBlockData data = (IBlockData) BlockVariantNativeAccess.nativeVariantAccess(bukkitBlock);
     Block block = data.getBlock();
     EnumBlockFaceShape shape = data.d(worldIn, pos, EnumDirection.values()[direction.ordinal()]);
     // Stairs are wrongly given back by the server, don't ask me why, prob. some error which was

@@ -66,7 +66,13 @@ public final class Tester implements Runnable {
     String fullTestName = test.testCode() + "/" + testCode;
     try {
       if (beforeMethod != null) {
+        long start = System.currentTimeMillis();
         beforeMethod.invoke(test);
+        long end = System.currentTimeMillis();
+        long duration = end - start;
+        if (duration > 100 && IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
+          IntaveLogger.logger().warn("[debug] Before method of test " + fullTestName + " took " + duration + "ms!");
+        }
       }
     } catch (Throwable t) {
       throw new RuntimeException("Failed to run @Before method for "+ fullTestName, t);
@@ -75,7 +81,14 @@ public final class Tester implements Runnable {
       if (IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
 //        IntaveLogger.logger().info("Running test: " + testMethod.getName());
       }
+
+      long start = System.currentTimeMillis();
       testMethod.invoke(test);
+      long end = System.currentTimeMillis();
+      long duration = end - start;
+      if (duration > 250 && IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
+        IntaveLogger.logger().warn("[debug] Test " + fullTestName + " took " + duration + "ms!");
+      }
     } catch (Throwable throwable) {
       Severity severity = annotation.severity();
       String message = "Test " + fullTestName + " failed";
@@ -95,7 +108,13 @@ public final class Tester implements Runnable {
     } finally {
       if (afterMethod != null) {
         try {
+          long start = System.currentTimeMillis();
           afterMethod.invoke(test);
+          long end = System.currentTimeMillis();
+          long duration = end - start;
+          if (duration > 100 && IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
+            IntaveLogger.logger().warn("[debug] After method of test " + fullTestName + " took " + duration + "ms!");
+          }
         } catch (Exception exception) {
           exception.printStackTrace();
         }

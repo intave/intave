@@ -8,7 +8,6 @@ import de.jpx3.intave.klass.Lookup;
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitScheduler;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Queue;
 import java.util.concurrent.Executor;
 
@@ -23,25 +22,24 @@ public final class Synchronizer {
       //noinspection unchecked
       Queue<Runnable> cachedProcessQueue = (Queue<Runnable>) minecraftServerClass.getField("processQueue").get(minecraftServer);
       synchronizationExecutor = cachedProcessQueue::add;
-    } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException exception) {
-      throw new IllegalStateException(exception);
     } catch (NoSuchFieldException exception) {
       IntavePlugin.singletonInstance().logger().error("Your version of spigot has removed support for task-queueing. We will switch to bukkit's scheduling service");
       synchronizationExecutor = command -> scheduler.runTask(IntavePlugin.singletonInstance(), command);
+    } catch (Exception exception) {
+      throw new IllegalStateException(exception);
     }
   }
 
   public static void synchronize(Runnable runnable) {
-    runnable = wrapTask(runnable);
-    synchronizationExecutor.execute(runnable);
+    synchronizationExecutor.execute(wrapped(runnable));
   }
 
   public static void synchronizeDelayed(Runnable runnable, int ticks) {
-    runnable = wrapTask(runnable);
+    runnable = wrapped(runnable);
     scheduler.runTaskLater(IntavePlugin.singletonInstance(), runnable, ticks);
   }
 
-  private static Runnable wrapTask(Runnable runnable) {
+  private static Runnable wrapped(Runnable runnable) {
     return () -> {
       try {
         Timings.EXE_SERVER.start();

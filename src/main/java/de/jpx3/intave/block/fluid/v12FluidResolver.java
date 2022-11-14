@@ -3,7 +3,7 @@ package de.jpx3.intave.block.fluid;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.block.type.BlockTypeAccess;
-import de.jpx3.intave.block.variant.BlockVariantAccess;
+import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.ClientMathHelper;
@@ -24,7 +24,7 @@ final class v12FluidResolver extends FluidResolver {
     if (block.getY() < WorldHeight.LOWER_WORLD_LIMIT) {
       return Fluid.empty();
     }
-    float height = LegacyWaterflow.resolveLiquidHeightPercentage(BlockVariantAccess.variantAccess(block));
+    float height = LegacyWaterflow.resolveLiquidHeightPercentage(BlockVariantNativeAccess.variantAccess(block));
     Material type = BlockTypeAccess.typeAccess(block, player);
     FluidTag fluidTag = FluidTag.EMPTY;
     if (MaterialMagic.isWater(type)) {
@@ -67,7 +67,7 @@ final class v12FluidResolver extends FluidResolver {
           boolean waterServerSide = MaterialMagic.isWater(BlockTypeAccess.typeAccess(block, player));
           boolean waterClientSide = MaterialMagic.isWater(clientSideBlock);
           if (waterServerSide) {
-            double height = 1 - LegacyWaterflow.resolveLiquidHeightPercentage(BlockVariantAccess.variantAccess(block));
+            double height = 1 - LegacyWaterflow.resolveLiquidHeightPercentage(BlockVariantNativeAccess.variantAccess(block));
             double d1 = (float) y + height;
             if (d1 >= entityBoundingBox.minY) {
               inWater = true;

@@ -10,7 +10,7 @@ import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.block.shape.resolve.ShapeResolver;
 import de.jpx3.intave.block.state.ExtendedBlockStateCache;
 import de.jpx3.intave.block.type.BlockTypeAccess;
-import de.jpx3.intave.block.variant.BlockVariantAccess;
+import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
@@ -209,7 +209,7 @@ public final class Collision {
           }
           Block block = VolatileBlockAccess.blockAccess(world, x, y, z);
           Material type = BlockTypeAccess.typeAccess(block, player);
-          int variant = BlockVariantAccess.variantAccess(block);
+          int variant = BlockVariantNativeAccess.variantAccess(block);
           BlockShape shape = SHAPE_RESOLVER.collisionShapeOf(world, player, type, variant, x, y, z);
           if (shape.intersectsWith(playerBox)) {
             return false;

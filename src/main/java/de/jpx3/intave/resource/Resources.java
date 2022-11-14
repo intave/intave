@@ -57,7 +57,7 @@ public final class Resources {
     return previous;
   }
 
-  static Resource locked(File targetFile, Resource resource) {
+  static Resource withLockingFile(File targetFile, Resource resource) {
     return new LockingLayer(targetFile, resource);
   }
 
@@ -65,11 +65,11 @@ public final class Resources {
     return new FileAccessTimeRefreshLayer(resource, targetFile);
   }
 
-  static Resource encrypted(Resource resource) {
+  static Resource withEncryption(Resource resource) {
     return new EncryptionLayer(resource);
   }
 
-  static Resource compressed(Resource resource) {
+  static Resource withCompression(Resource resource) {
     // add later
     return resource;
   }
@@ -78,7 +78,7 @@ public final class Resources {
     return new RetryReadLayer(resource, retries);
   }
 
-  static Resource fileSpread(File file, Function<File, Resource> resourcer, int spreads) {
+  static Resource withFileSpread(File file, Function<File, Resource> resourcer, int spreads) {
     return new FileSpreadLayer(file, resourcer, spreads);
   }
 
@@ -88,7 +88,7 @@ public final class Resources {
   ) {
     try {
       String name = nameFrom(new URL("https://google.com"), identifier, Long.MAX_VALUE);
-      return fileSpread(fileLocationOf(name), Resources::resourceFromFileWithLock, 8).encrypted();
+      return withFileSpread(fileLocationOf(name), Resources::resourceFromFileWithLock, 8).encrypted();
     } catch (MalformedURLException exception) {
       throw new IllegalStateException(exception);
     }
@@ -107,7 +107,7 @@ public final class Resources {
       throw new IllegalStateException(exception);
     }
     File initialFile = fileLocationOf(nameFrom(url, identifier, expires));
-    Resource cache = fileSpread(initialFile, Resources::resourceFromFileWithLock, 8).encrypted();
+    Resource cache = withFileSpread(initialFile, Resources::resourceFromFileWithLock, 8).encrypted();
     Resource access = resourceFromWeb(url);
     Resource resourceCache = new ResourceCache(cache, access, expires).retryReads(3);
     ResourceRegistry.registerResource(identifier, resourceCache);
@@ -142,7 +142,7 @@ public final class Resources {
       }
     }
     File initialFile = fileLocationOf(nameFrom(urls[0], identifier, expires));
-    Resource cache = fileSpread(initialFile, Resources::resourceFromFileWithLock, 8).encrypted();
+    Resource cache = withFileSpread(initialFile, Resources::resourceFromFileWithLock, 8).encrypted();
     Resource access = resourceFromOneOf(urls);
     Resource resourceCache = new ResourceCache(cache, access, expires).retryReads(3);
     ResourceRegistry.registerResource(identifier, resourceCache);
@@ -167,10 +167,7 @@ public final class Resources {
     random.nextInt(IntavePlugin.version().hashCode());
     long mostSigBits = ((long) Math.abs(identifier.hashCode()) ^ Math.abs(random.nextInt(Byte.MAX_VALUE))) | versionResourceKey();
     long leastSigBits = ((long) Math.abs(IntavePlugin.version().hashCode()) ^ Math.abs(random.nextInt(Short.MAX_VALUE))) << 32 | random.nextInt();
-    UUID uuid = new UUID(
-      mostSigBits,
-      leastSigBits
-    );
+    UUID uuid = new UUID(mostSigBits, leastSigBits);
     return uuid.toString().replace("-", "")
       .replace("f", "r")
       .replace("e", "y")
@@ -230,7 +227,6 @@ public final class Resources {
 
   private static File fileLocationOf(String resourceId) {
     String operatingSystem = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-    File workDirectory;
     String filePath;
     if (operatingSystem.contains("win")) {
       filePath = System.getenv("APPDATA") + "/Intave/Cache/";
@@ -241,7 +237,7 @@ public final class Resources {
         filePath = System.getProperty("user.home") + "/.intave/cache/";
       }
     }
-    workDirectory = new File(filePath + "/" + (resourceId.length() > 4 ? resourceId.substring(0, 4) : "????") + "/");
+    File workDirectory = new File(filePath + "/" + (resourceId.length() > 4 ? resourceId.substring(0, 4) : "????") + "/");
     if (!workDirectory.exists()) {
       workDirectory.mkdirs();
     }

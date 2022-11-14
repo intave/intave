@@ -7,7 +7,7 @@ import de.jpx3.intave.test.Tests;
 
 public final class BlockShapeTests extends Tests {
   public BlockShapeTests() {
-    super("BST");
+    super("BS");
   }
 
   @Test(

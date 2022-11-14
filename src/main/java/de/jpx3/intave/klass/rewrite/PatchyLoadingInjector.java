@@ -1,5 +1,6 @@
 package de.jpx3.intave.klass.rewrite;
 
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.annotate.Native;
 
@@ -25,10 +26,9 @@ public final class PatchyLoadingInjector {
       }
       return classByName(className);
     } catch (Error | Exception exception) {
-      if (classBytes.length > 0) {
-        File dumpFile;
+      if (classBytes.length > 0 && IntaveControl.DISABLE_LICENSE_CHECK) {
         try {
-          dumpFile = File.createTempFile("intave-patchy-" + className, ".class");
+          File dumpFile = File.createTempFile("intave-patchy-" + className, ".class");
           FileOutputStream fileOutputStream = new FileOutputStream(dumpFile);
           fileOutputStream.write(classBytes);
           fileOutputStream.close();

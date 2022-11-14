@@ -22,7 +22,7 @@ public final class BlockShapeDrillTests extends Tests {
   private ShapeResolverPipeline drill;
 
   public BlockShapeDrillTests() {
-    super("BSDT");
+    super("BSD");
   }
 
   @Before
@@ -34,6 +34,7 @@ public final class BlockShapeDrillTests extends Tests {
     user = UserFactory.createTestUserFor(player, 47);
     UserRepository.manuallyRegisterUser(player, user);
     drill = DrillResolver.selectedDrill();
+    block.setType(Material.AIR);
   }
 
   @Test(

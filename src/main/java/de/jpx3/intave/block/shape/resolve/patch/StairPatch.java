@@ -5,7 +5,7 @@ import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
-import de.jpx3.intave.block.variant.BlockVariantAccess;
+import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.share.BoundingBox;
 import net.minecraft.server.v1_12_R1.*;
 import org.bukkit.Material;
@@ -68,7 +68,7 @@ public class StairPatch extends BoundingBoxPatch {
       return shape;
     }
     org.bukkit.block.Block bukkitBlock = VolatileBlockAccess.blockAccess(world, posX, posY, posZ);
-    IBlockData data = (IBlockData) BlockVariantAccess.nativeVariantAccess(bukkitBlock);
+    IBlockData data = (IBlockData) BlockVariantNativeAccess.nativeVariantAccess(bukkitBlock);
     Block block = data.getBlock();
     // Only apply if stairs are really at this position
     if (block instanceof BlockStairs) {

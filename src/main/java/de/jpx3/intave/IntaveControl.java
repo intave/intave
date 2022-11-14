@@ -3,7 +3,7 @@ package de.jpx3.intave;
 public final class IntaveControl {
   public static final boolean APPLY_GLOBAL_LOW_TRUSTFACTOR = false;
   public static final boolean USE_DEBUG_RESOURCES = false;
-  public static final boolean DEBUG_MOVEMENT = true;
+  public static final boolean DEBUG_MOVEMENT = false;
   public static final boolean DEBUG_EMULATION = false;
   public static final boolean DEBUG_HEURISTICS = false;
   public static final boolean LATENCY_PING_AS_XP_LEVEL = false;
@@ -27,7 +27,7 @@ public final class IntaveControl {
   public static final boolean USE_SUPERPOSITIONS = false;
   public static final boolean CLICKPATTERNS_OUTPUT = false;
   public static final boolean USE_DEBUG_LOCATE_RESOURCE = false;
-  public static final boolean DEBUG_OUTPUT_FOR_TESTS = true;
+  public static final boolean DEBUG_OUTPUT_FOR_TESTS = false;
 
   public static final boolean USE_EXTERNAL_CONFIGURATION_FILE = true;
   public static final boolean GOMME_MODE = false;

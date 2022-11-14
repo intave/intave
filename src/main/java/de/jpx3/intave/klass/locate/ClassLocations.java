@@ -6,9 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Spliterator;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,12 +33,19 @@ final class ClassLocations implements Iterable<ClassLocation> {
     return version.getMinor() * 10 + version.getBuild();
   }
 
-  public <C, R> R collect(Collector<ClassLocation, C, R> collector) {
-    return stream().collect(collector);
+  public <C, R> R collect(Collector<? super ClassLocation, C, R> collector) {
+    C container = collector.supplier().get();
+    BiConsumer<C, ? super ClassLocation> accumulator = collector.accumulator();
+    Function<C, R> finisher = collector.finisher();
+    for (ClassLocation classLocation : this) {
+      accumulator.accept(container, classLocation);
+    }
+    return finisher.apply(container);
   }
 
   public Optional<ClassLocation> findAny() {
-    return stream().findAny();
+    Iterator<ClassLocation> iterator = iterator();
+    return iterator.hasNext() ? Optional.of(iterator.next()) : Optional.empty();
   }
 
   public ClassLocation findAnyOrNull() {
@@ -55,7 +60,7 @@ final class ClassLocations implements Iterable<ClassLocation> {
     return StreamSupport.stream(this.classLocations.spliterator(), false);
   }
 
-  public ClassLocations filter(Predicate<ClassLocation> predicate) {
+  public ClassLocations filter(Predicate<? super ClassLocation> predicate) {
     return new ClassLocations(
       stream().filter(predicate).collect(Collectors.toList())
     );

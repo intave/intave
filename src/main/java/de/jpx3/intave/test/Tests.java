@@ -1,5 +1,7 @@
 package de.jpx3.intave.test;
 
+import java.util.Set;
+
 public abstract class Tests {
   private final String testCode;
 
@@ -59,11 +61,28 @@ public abstract class Tests {
     }
   }
 
+  protected <E> void assertContains(Set<E> set, E element) {
+    if (!set.contains(element)) {
+      throw new AssertionError("Expected " + set + " to contain " + element);
+    }
+  }
+
+  protected <E> void assertDoesNotContain(Set<E> set, E element) {
+    if (set.contains(element)) {
+      throw new AssertionError("Expected " + set + " to not contain " + element);
+    }
+  }
+
   protected void fail() {
     throw new AssertionError("Expected failure");
   }
 
   protected void fail(String message) {
     throw new AssertionError(message);
+  }
+
+  @Override
+  protected final void finalize() {
+    TestService.testClearedByGC(testCode);
   }
 }

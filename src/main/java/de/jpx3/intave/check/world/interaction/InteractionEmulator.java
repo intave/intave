@@ -12,7 +12,7 @@ import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.block.state.ExtendedBlockStateCache;
 import de.jpx3.intave.block.type.BlockTypeAccess;
-import de.jpx3.intave.block.variant.BlockVariantAccess;
+import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.check.EventProcessor;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
@@ -312,15 +312,15 @@ public final class InteractionEmulator implements EventProcessor {
       case JUNGLE_DOOR:
       case WOOD_DOOR:
       case WOODEN_DOOR: {
-        int upperData = BlockVariantAccess.variantAccess(block);
+        int upperData = BlockVariantNativeAccess.variantAccess(block);
         int lowerData;
 
         boolean isUpper = (upperData & 8) != 0;
         if (isUpper) {
-          lowerData = BlockVariantAccess.variantAccess(block = block.getRelative(BlockFace.DOWN));
+          lowerData = BlockVariantNativeAccess.variantAccess(block = block.getRelative(BlockFace.DOWN));
         } else {
           lowerData = upperData;
-          upperData = BlockVariantAccess.variantAccess(block.getRelative(BlockFace.UP));
+          upperData = BlockVariantNativeAccess.variantAccess(block.getRelative(BlockFace.UP));
         }
 
         // toggle close
@@ -348,7 +348,7 @@ public final class InteractionEmulator implements EventProcessor {
       }
       case TRAP_DOOR: {
         // flawed
-        int data = BlockVariantAccess.variantAccess(block);
+        int data = BlockVariantNativeAccess.variantAccess(block);
         boolean newOpen = (data & 4) != 0;
         int bitMask = 4;
         byte newData = (byte) (!newOpen ? (data | bitMask) : (data & ~bitMask));

@@ -2,6 +2,7 @@ package de.jpx3.intave.block.type;
 
 import org.bukkit.Material;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -20,8 +21,8 @@ public final class MaterialSearch {
     return null;
   }
 
-  public static Set<Material> materialsThatContain(String search) {
-    return filterBy(material -> material.name().toLowerCase().contains(search.toLowerCase()));
+  public static Set<Material> materialsThatContain(String... searches) {
+    return filterBy(material -> Arrays.stream(searches).anyMatch(search -> material.name().toLowerCase().contains(search.toLowerCase())));
   }
 
   public static Set<Material> filterBy(Predicate<? super Material> predicate) {

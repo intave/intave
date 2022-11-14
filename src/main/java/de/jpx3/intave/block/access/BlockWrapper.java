@@ -1,7 +1,7 @@
 package de.jpx3.intave.block.access;
 
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.block.variant.BlockVariantAccess;
+import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.klass.rewrite.PatchyAutoTranslation;
 import de.jpx3.intave.klass.rewrite.PatchyLoadingInjector;
 import de.jpx3.intave.klass.rewrite.PatchyTranslateParameters;
@@ -129,7 +129,7 @@ public final class BlockWrapper {
     @PatchyAutoTranslation
     @PatchyTranslateParameters
     public net.minecraft.server.v1_13_R2.IBlockData getNMS() {
-      return (net.minecraft.server.v1_13_R2.IBlockData) BlockVariantAccess.nativeVariantAccess(this);
+      return (net.minecraft.server.v1_13_R2.IBlockData) BlockVariantNativeAccess.nativeVariantAccess(this);
     }
   }
 }

@@ -133,9 +133,7 @@ public final class Locate {
       .filterByClassKey(classKey)
       .filterByFieldKey(fieldKey)
       .stream().findAny()
-      .orElseGet(
-        () -> FieldLocation.defaultFor(classKey, fieldKey)
-      );
+      .orElseGet(() -> FieldLocation.defaultFor(classKey, fieldKey));
   }
 
   public static void setup() {
@@ -154,8 +152,8 @@ public final class Locate {
     return classLocations;
   }
 
-  static Map<String, MethodLocation> methodLocationCache() {
-    return methodLocationCache;
+  static MethodLocations methodLocations() {
+    return methodLocations;
   }
 
   static FieldLocations fieldLocations() {

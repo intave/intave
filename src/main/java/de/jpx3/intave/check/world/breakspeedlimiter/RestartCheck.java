@@ -8,7 +8,7 @@ import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
-import de.jpx3.intave.block.variant.BlockVariantAccess;
+import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.BreakSpeedLimiter;
 import de.jpx3.intave.executor.Synchronizer;
@@ -137,7 +137,7 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
       return;
     }
     Block block = VolatileBlockAccess.blockAccess(location);
-    Object handle = BlockVariantAccess.nativeVariantAccess(block);
+    Object handle = BlockVariantNativeAccess.nativeVariantAccess(block);
     WrappedBlockData blockData = WrappedBlockData.fromHandle(handle);
     packet.getBlockData().write(0, blockData);
 

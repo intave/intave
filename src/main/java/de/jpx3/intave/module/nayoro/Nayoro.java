@@ -44,10 +44,9 @@ public final class Nayoro extends Module {
       outputStream = new DeflaterOutputStream(outputStream, new Deflater(Deflater.BEST_COMPRESSION));
       outputStream = new BufferedOutputStream(outputStream, 1024 * 1024);
 
-      OutputStream outputStream2 = Files.newOutputStream(Paths.get(sampleFile.getAbsolutePath() + ".uncompressed"));
-      outputStream2 = new BufferedOutputStream(outputStream2, 1024 * 1024);
-
-      outputStream = new MultiplexOutputStream(outputStream, outputStream2);
+//      OutputStream outputStream2 = Files.newOutputStream(Paths.get(sampleFile.getAbsolutePath() + ".uncompressed"));
+//      outputStream2 = new BufferedOutputStream(outputStream2, 1024 * 1024);
+//      outputStream = new MultiplexOutputStream(outputStream, outputStream2);
 
       DataOutputStream dataOutput = new DataOutputStream(outputStream);
       RecordEventSink recordEventSink = new RecordEventSink(new LiveEnvironment(user), dataOutput);

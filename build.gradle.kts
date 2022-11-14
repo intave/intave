@@ -13,7 +13,7 @@ plugins {
 
 val simpleName = "Intave"
 group = "de.jpx3"
-version = "14.5.3"
+version = "14.5.4"
 description = "Cheat detection software, providing fair play"
 
 /*
@@ -138,13 +138,14 @@ run {
   registerServerTask("1.15.2", 8)
   registerServerTask("1.16.5", 8)
   registerServerTask("1.17.1", 16)
+  registerServerTask("1.18", 17)
   registerServerTask("1.18.2", 17)
   registerServerTask("1.19", 17)
   registerServerTask("1.19.2", 17)
 }
 
 fun registerServerTask(serverVersion: String, javaVersion: Int) {
-  tasks.register<RunServerTask>("iacServer_${serverVersion}-j$javaVersion") {
+  tasks.register<RunServerTask>("paper_${serverVersion}") {
     group = simpleName
     dependsOn("iacBuild")
     pluginJars.from("build/libs/$simpleName.jar")

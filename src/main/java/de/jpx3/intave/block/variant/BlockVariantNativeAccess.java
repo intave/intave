@@ -9,7 +9,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 
-public final class BlockVariantAccess {
+public final class BlockVariantNativeAccess {
   private static final boolean MODERN_MATERIAL_PROCESSING = MinecraftVersions.VER1_13_0.atOrAbove();
 
   public static void setup() {

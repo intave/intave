@@ -11,7 +11,7 @@ public final class ExampleTests extends Tests {
   private Material priorMaterial;
 
   public ExampleTests() {
-    super("EXMPL");
+    super("EX");
   }
 
   @Before

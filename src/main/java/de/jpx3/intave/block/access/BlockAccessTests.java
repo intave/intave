@@ -1,17 +1,22 @@
 package de.jpx3.intave.block.access;
 
+import de.jpx3.intave.block.type.MaterialSearch;
 import de.jpx3.intave.test.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 
+import java.util.Set;
+
 public final class BlockAccessTests extends Tests {
   private Block block, blockBelow;
   private BlockStorage priorMaterial, priorMaterialBelow;
 
+  private final Set<Material> blacklistedMaterials = MaterialSearch.materialsThatContain("REDSTONE", "BED");
+
   public BlockAccessTests() {
-    super("BAT");
+    super("BA");
   }
 
   @Before
@@ -31,23 +36,8 @@ public final class BlockAccessTests extends Tests {
   )
   public void testBlockTypes() {
     for (Material value : Material.values()) {
-      if (value.isBlock() && !value.name().contains("REDSTONE")) {
+      if (value.isBlock() && !blacklistedMaterials.contains(value)) {
         block.setType(value, false);
-        assertEquals(value, block.getType());
-        assertEquals(value, BlockAccess.global().typeOf(block));
-      }
-    }
-  }
-
-  @Test(
-    testCode = "B",
-    severity = Severity.ERROR
-  )
-  public void testBlockData() {
-    for (Material value : Material.values()) {
-      if (value.isBlock() && !value.name().contains("REDSTONE")) {
-        block.setType(value, false);
-
         assertEquals(value, block.getType());
         assertEquals(value, BlockAccess.global().typeOf(block));
       }

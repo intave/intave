@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -47,10 +46,9 @@ public interface Resource extends LegacyResource {
   }
 
   default <C, R> R collectLines(Collector<? super String, C, R> collector) {
-    Supplier<C> supplier = collector.supplier();
+    C container = collector.supplier().get();
     BiConsumer<C, ? super String> accumulator = collector.accumulator();
     Function<C, R> finisher = collector.finisher();
-    C container = supplier.get();
     try (InputStream inputStream = read()) {
       if (inputStream == null) {
         return finisher.apply(container);
@@ -66,15 +64,15 @@ public interface Resource extends LegacyResource {
   }
 
   default Resource compressed() {
-    return Resources.compressed(this);
+    return Resources.withCompression(this);
   }
 
   default Resource encrypted() {
-    return Resources.encrypted(this);
+    return Resources.withEncryption(this);
   }
 
   default Resource locked(File lockTarget) {
-    return Resources.locked(lockTarget, this);
+    return Resources.withLockingFile(lockTarget, this);
   }
 
   default Resource retryReads(int retries) {

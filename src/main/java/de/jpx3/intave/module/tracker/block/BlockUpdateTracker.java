@@ -7,7 +7,7 @@ import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.block.state.ExtendedBlockStateCache;
-import de.jpx3.intave.block.variant.BlockVariantAccess;
+import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.feedback.FeedbackCallback;
@@ -142,7 +142,7 @@ public final class BlockUpdateTracker extends Module {
           user.meta().movement().pastNearbyCollisionInaccuracy = 0;
         }
         Material material = blockData.getType();
-        int variant = BlockVariantAccess.variantAccess(blockData);
+        int variant = BlockVariantNativeAccess.variantAccess(blockData);
         blockStateAccess.override(world, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ(), material, variant);
         blockStateAccess.invalidateCacheAt(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
       }

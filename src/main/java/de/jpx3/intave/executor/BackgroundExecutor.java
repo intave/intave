@@ -10,37 +10,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public final class BackgroundExecutor {
-  private static ExecutorService executorService;
+  private static ExecutorService executor;
 
   public static void start() {
-    executorService = Executors.newSingleThreadExecutor(IntaveThreadFactory.ofLowestPriority());
-  }
-
-  public static void stopBlocking() {
-    if (executorService == null) {
-      return;
-    }
-    List<Runnable> tasks = executorService.shutdownNow();
-    if (!tasks.isEmpty()) {
-      IntavePlugin.singletonInstance().logger().info("Waiting for background tasks to complete");
-    }
-    for (Runnable runnable : tasks) {
-      runnable.run();
-    }
-    try {
-      if (!executorService.awaitTermination(16, TimeUnit.SECONDS)) {
-        IntavePlugin.singletonInstance().logger().info("Unable to complete background tasks after 16s");
-      }
-    } catch (InterruptedException exception) {
-      exception.printStackTrace();
-    }
+    executor = Executors.newSingleThreadExecutor(IntaveThreadFactory.ofLowestPriority());
   }
 
   public static void execute(Runnable runnable) {
-    if (executorService == null || executorService.isShutdown() || executorService.isTerminated()) {
+    if (executor == null || executor.isShutdown() || executor.isTerminated()) {
       return;
     }
-    executorService.execute(wrapTask(runnable));
+    executor.execute(wrapTask(runnable));
   }
 
   private static Runnable wrapTask(Runnable runnable) {
@@ -49,7 +29,7 @@ public final class BackgroundExecutor {
         Timings.EXE_BACKGROUND.start();
         runnable.run();
       } catch (Exception | Error throwable) {
-        if (executorService.isShutdown() || executorService.isTerminated()) {
+        if (executor.isShutdown() || executor.isTerminated()) {
           return;
         }
         IntaveLogger.logger().error("Failed to execute background task " + runnable);
@@ -58,5 +38,25 @@ public final class BackgroundExecutor {
         Timings.EXE_BACKGROUND.stop();
       }
     };
+  }
+
+  public static void stopBlocking() {
+    if (executor == null) {
+      return;
+    }
+    List<Runnable> tasks = executor.shutdownNow();
+    if (!tasks.isEmpty()) {
+      IntavePlugin.singletonInstance().logger().info("Waiting for background tasks to complete");
+    }
+    for (Runnable runnable : tasks) {
+      runnable.run();
+    }
+    try {
+      if (!executor.awaitTermination(16, TimeUnit.SECONDS)) {
+        IntavePlugin.singletonInstance().logger().info("Unable to complete background tasks after 16s");
+      }
+    } catch (InterruptedException exception) {
+      exception.printStackTrace();
+    }
   }
 }

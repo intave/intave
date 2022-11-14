@@ -6,7 +6,7 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.block.type.BlockTypeAccess;
-import de.jpx3.intave.block.variant.BlockVariantAccess;
+import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.diagnostic.ShapeAccessFlowStudy;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.share.Position;
@@ -188,7 +188,7 @@ final class MultiChunkKeyExtendedBlockStateCache implements ExtendedBlockStateCa
       return BlockState.empty();
     } else {
       ShapeAccessFlowStudy.incremLookups();
-      int variant = BlockVariantAccess.variantAccess(block);
+      int variant = BlockVariantNativeAccess.variantAccess(block);
       BlockShape outlineShape = shapeResolver.outlineShapeOf(world, player, type, variant, posX, posY, posZ);
       BlockShape collisionShape = shapeResolver.collisionShapeOf(world, player, type, variant, posX, posY, posZ);
       return new BlockState(outlineShape, collisionShape, type, variant);

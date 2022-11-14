@@ -27,7 +27,7 @@ public final class BlockShapePipelineTests extends Tests {
   private BlockStorage previousMaterialData;
 
   public BlockShapePipelineTests() {
-    super("BSPT");
+    super("BSP");
   }
 
   @Before
