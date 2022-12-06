@@ -36,6 +36,7 @@ public final class ConnectionMetadata {
   public int speculativeMovementTicks = 0;
   public int randomTransactionIdShift = ThreadLocalRandom.current().nextInt(1, 2000);
   public int attacksQueued;
+  public long lastAttackQueueRequest;
 
   private final Deque<Object> bufferEnqueue = new ArrayDeque<>(8500);
   private final DelayQueue<DelayedPacket> delayQueue = new DelayQueue<>();

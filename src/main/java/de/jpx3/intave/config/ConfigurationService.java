@@ -10,6 +10,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Files;
 
 @HighOrderService
 public final class ConfigurationService {
@@ -28,9 +29,18 @@ public final class ConfigurationService {
     if (!dataFolder.exists()) {
       dataFolder.mkdirs();
     }
-    File configFile = new File(dataFolder, "config.yml");
-    if (!configFile.exists()) {
-      saveResource("config.yml", false);
+    File configFile;
+    File oldConfigFile = new File(dataFolder, "config.yml");
+    File newConfigFile = new File(dataFolder, "sources.yml");
+    if (oldConfigFile.exists() && !newConfigFile.exists()) {
+      configFile = oldConfigFile;
+    } else if (!oldConfigFile.exists() && newConfigFile.exists()) {
+      configFile = newConfigFile;
+    } else if (!oldConfigFile.exists() && !newConfigFile.exists()) {
+      saveResource("sources.yml", false);
+      configFile = newConfigFile;
+    } else {
+      throw new IntaveBootFailureException("Both config.yml and sources.yml exist. Please delete one of them.");
     }
     try {
       FileInputStream fileInputStream = new FileInputStream(configFile);
@@ -67,7 +77,7 @@ public final class ConfigurationService {
         }
         try {
           if (!outFile.exists() || replace) {
-            OutputStream out = new FileOutputStream(outFile);
+            OutputStream out = Files.newOutputStream(outFile.toPath());
             byte[] buf = new byte[1024];
             int len;
             while ((len = in.read(buf)) != -1) {

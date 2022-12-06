@@ -231,6 +231,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 //          }
 //        });
       }
+//      System.out.println("cancelHit: " + cancelHit);
       if (cancelHit == null || !cancelHit || user.trustFactor().atLeast(TrustFactor.BYPASS)) {
         if (!violationLevelData.isInActiveTeleportBundle && remainingAttack.shouldResend) {
           receiveExcludedPacket(player, remainingAttack.packet);
@@ -263,7 +264,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     }
     double minReach = findLowestPossibleReachIterative(user, entity, false, true);
     double blockReachDistance = Raytracing.reachDistance(player);
-    return minReach > blockReachDistance;
+    return minReach > blockReachDistance || reachLimit(user, blockReachDistance);
   }
 
   private boolean invalidReachWalking(User user, EntityShade entity) {
@@ -291,7 +292,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       false
     );
 
-    return distanceOfResult.reach() > blockReachDistance;
+    return distanceOfResult.reach() > blockReachDistance || reachLimit(user, distanceOfResult.reach());
   }
 
   /**
@@ -304,6 +305,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     AttackMetadata attackData = meta.attack();
     MovementMetadata movementData = meta.movement();
     ProtocolMetadata clientData = meta.protocol();
+    ConnectionMetadata connection = meta.connection();
     PunishmentMetadata punishmentData = meta.punishment();
 
     double blockReachDistance = Raytracing.reachDistance(meta);
@@ -352,11 +354,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       default: {
         hitboxDecrementer.decrement(user, VL_DECREMENT_PER_ATTACK);
         reachDecrementer.decrement(user, VL_DECREMENT_PER_ATTACK);
-        if (punishmentData.nerferOfType(AttackNerfStrategy.CANCEL_FIRST_HIT).active()) {
-          double moved = Hypot.fast(movementData.motionX(), movementData.motionZ());
-          return moved > 0.1 && raytrace.reach() > 2.8;
-        }
-        return false;
+        return reachLimit(user, raytrace.reach());
       }
     }
 
@@ -392,6 +390,27 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       user.applyAttackNerfer(AttackNerfStrategy.DMG_MEDIUM, "3");
     }
     return true;
+  }
+
+  private boolean reachLimit(User user, double reach) {
+    Player player = user.player();
+    MetadataBundle meta = user.meta();
+    MovementMetadata movementData = meta.movement();
+    PunishmentMetadata punishment = meta.punishment();
+    ConnectionMetadata connection = meta.connection();
+
+    if (punishment.nerferOfType(AttackNerfStrategy.CANCEL_FIRST_HIT).active()) {
+      double moved = Hypot.fast(movementData.motionX(), movementData.motionZ());
+      return moved > 0.1 && reach > 2.8;
+    }
+//    player.sendMessage("reach: " + reach);
+    if (System.currentTimeMillis() - connection.lastAttackQueueRequest < 300) {
+      String message = "ML " + MathHelper.formatDouble(reach, 2);
+      DebugBroadcast.broadcast(player, MessageCategory.PKBF, MessageSeverity.HIGH, message, message);
+      return reach > 2.4;
+    }
+    return false;
+//    return true;
   }
 
   private int applicableViolationPoints(
@@ -471,7 +490,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     }
     hitboxDecrementer.decrement(user, VL_DECREMENT_PER_ATTACK);
     reachDecrementer.decrement(user, VL_DECREMENT_PER_ATTACK);
-    return false;
+    return reachLimit(user, minReach);
   }
 
   private double findLowestPossibleReachIterative(

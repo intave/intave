@@ -24,10 +24,13 @@ public final class Timer extends Check {
     highToleranceMode = settings.boolBy("high-tolerance", false);
     reverseBlink = settings.boolBy("reverse-blink", false) || IntaveControl.GOMME_MODE;
     reverseLag = settings.boolBy("reverse-lag", false) || IntaveControl.GOMME_MODE;
-    combatMicroLag = settings.boolBy("anti-micro-lag", false);
+    combatMicroLag = settings.boolBy("anti-micro-lag", IntaveControl.GOMME_MODE);
 //    if (highToleranceMode) {
 //      IntaveLogger.logger().info("Enabled high ping tolerance");
 //    }
+    if (combatMicroLag) {
+      IntaveLogger.logger().info("Enabled combat micro lag detection");
+    }
     this.balance = new Balance(this);
     appendCheckPart(balance);
     //  appendCheckPart(new MovementFrequency(this));

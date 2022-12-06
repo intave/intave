@@ -14,10 +14,7 @@ import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.meta.CheckCustomMetadata;
-import de.jpx3.intave.user.meta.MetadataBundle;
-import de.jpx3.intave.user.meta.MovementMetadata;
-import de.jpx3.intave.user.meta.ViolationMetadata;
+import de.jpx3.intave.user.meta.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -28,8 +25,11 @@ import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.util.Vector;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
+import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.POSITION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.RESPAWN;
 
@@ -75,6 +75,7 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
     }
     User user = userOf(player);
     MetadataBundle meta = user.meta();
+    ConnectionMetadata connection = meta.connection();
     BalanceMeta timerData = metaOf(user);
     long time = System.currentTimeMillis();
     long delta = time - timerData.lastFlyingPacket;
@@ -101,9 +102,27 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
     statisticApply(user, CheckStatistics::increaseTotal);
     boolean suspicious = /*violationLevelOf(user) > 10 && */!user.trustFactor().atLeast(TrustFactor.ORANGE) /*&& System.currentTimeMillis() - timerData.lastTimerFlag < 2000*/;
     int overflowLimit = highToleranceMode ? 750 : (suspicious ? 100 : 250);
+    List<Double> timerBalanceHistory = timerData.timerBalanceHistory;
+
+    timerBalanceHistory.add(timerData.timerBalance);
+    if (timerBalanceHistory.size() > 40) {
+      timerBalanceHistory.remove(0);
+    }
+
+    int mean = mean(timerBalanceHistory);
+    double vl = timerData.timerBalance - mean < -8 ? timerData.timerBalance - mean < -10 ? timerData.timerBalance - mean < -50 ? 8 : 3 : 1 : -0.5;
+    boolean combatMicroLag = parentCheck().combatMicroLag();
+    timerData.balanceUnderflowVL += vl;
+    timerData.balanceUnderflowVL = MathHelper.minmax(0, timerData.balanceUnderflowVL, 30);
+
+    if (timerData.balanceUnderflowVL > 15 && combatMicroLag && !user.trustFactor().atLeast(TrustFactor.ORANGE)) {
+      connection.lastAttackQueueRequest = System.currentTimeMillis();
+    }
+
+//    player.sendMessage("§c" + timerData.timerBalance + "§7 ~§c" + mean + "§7 -> §c" + formatDouble(timerData.balanceUnderflowVL, 2));
 
     if (timerData.timerBalance > overflowLimit && !user.meta().movement().isInVehicle()) {
-      String balanceAsString = MathHelper.formatDouble(timerData.timerBalance / 50, 2);
+      String balanceAsString = formatDouble(timerData.timerBalance / 50, 2);
       statisticApply(user, CheckStatistics::increaseFails);
       Violation violation = Violation.builderFor(Timer.class).forPlayer(player)
         .withMessage("moved too frequently").withDetails(balanceAsString + " ticks ahead")
@@ -127,6 +146,14 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
         decrementer.decrement(user, 0.01);
       }
     }
+  }
+
+  private int mean(List<Double> list) {
+    int sum = 0;
+    for (double d : list) {
+      sum += d;
+    }
+    return sum / list.size();
   }
 
   @BukkitEventSubscription
@@ -159,6 +186,12 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
       int attackCancelThreshold = trustFactorSetting("act", player);
       int attackCancelLength = trustFactorSetting("acl", player);
       cancelOnPacketOverflow(player, event, attackCancelThreshold, attackCancelLength);
+
+//      User user = userOf(player);
+//      ConnectionMetadata connection = user.meta().connection();
+//      if (System.currentTimeMillis() - connection.lastAttackQueueRequest < 250) {
+//        event.setCancelled(true);
+//      }
     }
   }
 
@@ -207,13 +240,14 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
 
   public static class BalanceMeta extends CheckCustomMetadata {
     public double timerBalance;
+    public List<Double> timerBalanceHistory = new LinkedList<>();
     public long lastFlyingPacket;
     public long lastTimerFlag;
     public long lastLagSpike;
     public long lastRespawn;
     public long nextConfirmedBalance;
     public long confirmedBalance;
-    public int balanceUnderflowVL;
+    public double balanceUnderflowVL;
     public boolean currentUnderflow;
   }
 }

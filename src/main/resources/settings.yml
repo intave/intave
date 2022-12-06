@@ -159,9 +159,10 @@ command:
   hide: true
 
 rejoin:
+  # Don't forget to reset this value when you deactivate it
   delay: 3600
   refresh: true
-  message: "&cYou were recently removed, please wait before connecting again"
+  message: "&cYou were removed recently, wait before connecting again"
 
 # You should disable any of these options **ONLY**
 # when experiencing serious problems and **ONLY** after reporting the issue to us.

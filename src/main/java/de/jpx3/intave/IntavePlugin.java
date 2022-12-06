@@ -970,8 +970,7 @@ public final class IntavePlugin extends JavaPlugin {
       // mark caches as deletable
       Class<?> relocator = Class.forName("de.jpx3.relocator.Relocator");
       relocator.getMethod("i").invoke(null);
-    } catch (Exception ignored) {
-    }
+    } catch (Exception ignored) {}
   }
 
   public IntaveAccess access() {

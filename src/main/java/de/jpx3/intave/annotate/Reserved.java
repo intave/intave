@@ -6,10 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Class generated using IntelliJ IDEA
- * Created by Richard Strunk 2022
+ * Reserved classes are only present for partner servers
  */
-
 @NameIntrinsicallyImportant
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.CLASS)
