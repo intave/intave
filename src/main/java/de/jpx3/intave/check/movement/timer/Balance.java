@@ -137,7 +137,6 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
     if (timerData.balanceUnderflowVL > 15 && combatMicroLag && !user.trustFactor().atLeast(TrustFactor.ORANGE)) {
       connection.lastAttackQueueRequest = System.currentTimeMillis();
     }
-    player.sendMessage(timerData.balanceUnderflowVL + "");
 
 //    player.sendMessage("§c" + timerData.timerBalance + "§7 ~§c" + mean + "§7 -> §c" + formatDouble(timerData.balanceUnderflowVL, 2));
 
