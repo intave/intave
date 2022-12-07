@@ -1,5 +1,6 @@
 package de.jpx3.intave.block.variant.index;
 
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.klass.rewrite.PatchyLoadingInjector;
@@ -41,14 +42,21 @@ public class VariantIndex {
   }
 
   public static void indexApplyWithReverse(
-    Material material,
+    Material type,
     BiConsumer<? super Material, ? super Map<Object, Integer>> indexApply,
     BiConsumer<? super Material, ? super Map<Integer, Object>> registerApply
   ) {
-    Map<Object, Integer> index = index(material);
+    Map<Object, Integer> index = index(type);
     // reverse map
-    indexApply.accept(material, index);
-    registerApply.accept(material, reversed(index));
+    indexApply.accept(type, index);
+    Map<Integer, Object> reversed = reversed(index);
+    if (!reversed.containsKey(0)) {
+      if (IntaveControl.DEBUG_VARIANT_COMPILATION) {
+        System.out.println("[variant/debug] Block " + type + " has no zero state, using first state");
+      }
+      reversed.put(0, index.keySet().iterator().next());
+    }
+    registerApply.accept(type, reversed);
   }
 
   private static Map<Object, Integer> index(Material type) {

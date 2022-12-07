@@ -101,7 +101,7 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
       timerData.timerBalance += timerData.timerBalance < -400 ? 45 : 15;
     }
     statisticApply(user, CheckStatistics::increaseTotal);
-    boolean suspicious = /*violationLevelOf(user) > 10 && */!user.trustFactor().atLeast(TrustFactor.ORANGE) /*&& System.currentTimeMillis() - timerData.lastTimerFlag < 2000*/;
+    boolean suspicious = parentCheck().combatMicroLag() &&/*violationLevelOf(user) > 10 && */!user.trustFactor().atLeast(TrustFactor.ORANGE) /*&& System.currentTimeMillis() - timerData.lastTimerFlag < 2000*/;
     int overflowLimit = highToleranceMode ? 750 : (suspicious ? 25 : 250);
     List<Double> safeTimerBalanceHistory = timerData.safeTimerBalanceHistory;
     List<Double> timerBalanceHistory = timerData.timerBalanceHistory;

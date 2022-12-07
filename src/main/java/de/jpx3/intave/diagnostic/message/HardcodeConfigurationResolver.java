@@ -41,7 +41,7 @@ final class HardcodeConfigurationResolver implements ConfigurationResolver {
     colors.put(MessageCategory.SIMFLT, ChatColor.DARK_GRAY);
     colors.put(MessageCategory.SIMFUL, ChatColor.GRAY);
     colors.put(MessageCategory.PKBF, ChatColor.GRAY);
-    colors.put(MessageCategory.MKLG, ChatColor.GRAY);
+    colors.put(MessageCategory.MKLG, ChatColor.DARK_PURPLE);
     colors.put(MessageCategory.PKDL, ChatColor.GRAY);
     colors.put(MessageCategory.TRUSTSET, ChatColor.GRAY);
 

@@ -32,19 +32,19 @@ class LegacyIndexer implements Indexer {
       for (IBlockData blockData : blockStateList.a()) {
         int value = block.toLegacyData(blockData);
         index.put(blockData, value);
-        if (firstState == null) {
-          firstState = blockData;
-        }
-        if (value == 0) {
-          hasZeroState = true;
-        }
+//        if (firstState == null) {
+//          firstState = blockData;
+//        }
+//        if (value == 0) {
+//          hasZeroState = true;
+//        }
       }
-      if (!hasZeroState) {
-        if (IntaveControl.DEBUG_VARIANT_COMPILATION) {
-          System.out.println("[variant/debug] Block " + type + " has no zero state, using first state");
-        }
-        index.put(firstState, 0);
-      }
+//      if (!hasZeroState) {
+//        if (IntaveControl.DEBUG_VARIANT_COMPILATION) {
+//          System.out.println("[variant/debug] Block " + type + " has no zero state, using first state");
+//        }
+//        index.put(firstState, 0);
+//      }
     } catch (Exception exception) {
       exception.printStackTrace();
     }
