@@ -10,6 +10,9 @@ check:
     # Trustfactor mappings and high-tolerance modes are supported throughout all of them
     mitigation: CAREFUL
 
+    # Experimental feature, reduces feedback-related false positives
+    use-superpositions: false
+
     speculative-forward-emulation:
       enabled: false
       activation-threshold: 0

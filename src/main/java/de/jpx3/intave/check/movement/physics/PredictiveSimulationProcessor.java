@@ -26,9 +26,11 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
    * please refactor
    * */
   private final boolean itemUsageReset;
+  private final boolean useSuperpositions;
 
-  public PredictiveSimulationProcessor(boolean itemUsageReset) {
+  public PredictiveSimulationProcessor(boolean itemUsageReset, boolean useSuperpositions) {
     this.itemUsageReset = itemUsageReset;
+    this.useSuperpositions = useSuperpositions;
   }
 
   @Override
@@ -363,19 +365,19 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
     int nearestForwardKey = -2, nearestStrafeKey = -2;
     double nearestKeyDistance = Double.MAX_VALUE;
 
-    List<Superposition<?>> superpositions;
-    int[] correctSuperpositions;
-    if (IntaveControl.USE_SUPERPOSITIONS) {
+    List<Superposition<?>> superpositions = null;
+    int[] correctSuperpositions = null;
+    if (useSuperpositions) {
       superpositions = movementData.superpositions();
       correctSuperpositions = new int[superpositions.size()];
     }
 
     SIMULATION:
-    for (int j = 0; j < (IntaveControl.USE_SUPERPOSITIONS ? superpositions.size() : 1); j++) {
-      Superposition<?> superposition = IntaveControl.USE_SUPERPOSITIONS ? superpositions.get(j) : null;
-      int variations = IntaveControl.USE_SUPERPOSITIONS ? superposition.variationsCount() : 1;
+    for (int j = 0; j < (useSuperpositions ? superpositions.size() : 1); j++) {
+      Superposition<?> superposition = useSuperpositions ? superpositions.get(j) : null;
+      int variations = useSuperpositions ? superposition.variationsCount() : 1;
       for (int variationIndex = 0; variationIndex < Math.max(variations, 1); variationIndex++) {
-        if (IntaveControl.USE_SUPERPOSITIONS) {
+        if (useSuperpositions) {
           superposition.applyVariation(variationIndex);
         }
         for (boolean sprinting : movementData.sprintingAllowed() || movementData.hasSprintSpeed ? /* surprisingly pessimistic */ PESSIMISTIC : NEVER) {
@@ -434,7 +436,7 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
                     nearestStrafeKey = keyStrafe;
                   }
                   if (simulationStack.smallestDistance() <= (movementData.recentlyEncounteredFlyingPacket(2) ? REQUIRED_ACCURACY_FOR_FLYING_PROC_EXIT : REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT)) {
-                    if (IntaveControl.USE_SUPERPOSITIONS) {
+                    if (useSuperpositions) {
                       correctSuperpositions[j] = variationIndex;
                     }
                     break SIMULATION;
@@ -444,12 +446,12 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
             }
           }
         }
-        if (IntaveControl.USE_SUPERPOSITIONS) {
+        if (useSuperpositions) {
           superposition.resetVariation(variationIndex);
         }
       }
     }
-    if (IntaveControl.USE_SUPERPOSITIONS) {
+    if (useSuperpositions) {
       for (int i = 0; i < superpositions.size(); i++) {
         Superposition<?> superposition = superpositions.get(i);
         superposition.collapseVariation(correctSuperpositions[i]);

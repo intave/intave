@@ -66,12 +66,14 @@ import static de.jpx3.intave.share.ClientMathHelper.floor;
 public final class Physics extends Check {
   private static final double VL_DECREMENT_PER_VALID_MOVE = 0.05;
   private static final double VELOCITY_VL_THRESHOLD = 6;
+  public static boolean USE_SUPERPOSITIONS = false;
 
   private final IntavePlugin plugin;
   private final CheckViolationLevelDecrementer decrementer;
   private final SimulationProcessor simulationProcessor;
   private final SimulationEvaluator simulationEvaluator;
   private final FallDamageApplier fallDamageApplier;
+  private final boolean useSuperpositions;
   private final boolean highToleranceMode;
   private final boolean resetItemUsage;
   private final boolean closeInventory;
@@ -94,7 +96,10 @@ public final class Physics extends Check {
       this.refreshNearbyBlocks = settings.boolBy("refresh-nearby-blocks-on-detection", true);
     }
 
-    this.simulationProcessor = new PredictiveSimulationProcessor(resetItemUsage);
+    this.useSuperpositions = settings.boolBy("use-superpositions", false);
+    Physics.USE_SUPERPOSITIONS = useSuperpositions;
+
+    this.simulationProcessor = new PredictiveSimulationProcessor(resetItemUsage, useSuperpositions);
     this.simulationEvaluator = new SimulationEvaluator();
     setDefaultMitigationStrategy(MitigationStrategy.CAREFUL);
     this.fallDamageApplier = new FallDamageApplier();

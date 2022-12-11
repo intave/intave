@@ -18,6 +18,7 @@ import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.physics.BlockProperties;
 import de.jpx3.intave.block.tick.ShulkerBox;
 import de.jpx3.intave.block.type.BlockTypeAccess;
+import de.jpx3.intave.check.movement.Physics;
 import de.jpx3.intave.check.movement.physics.*;
 import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.entity.datawatcher.DataWatcherAccess;
@@ -209,9 +210,9 @@ public final class MovementMetadata implements SimulationEnvironment {
       .reset(MovementDispatcher::resetVelocitySuperposition)
       .overrideMerge()
       .user(user)
-      .timeout(1)
+      .timeout(2)
       .build();
-    if (IntaveControl.USE_SUPERPOSITIONS) {
+    if (Physics.USE_SUPERPOSITIONS) {
       superpositions = ImmutableList.of(velocitySuperposition);
     } else {
       superpositions = ImmutableList.of();
@@ -220,8 +221,7 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   public void setup() {
     if (player != null) {
-      Synchronizer.synchronize(() ->
-        this.elytraFlying = flyingWithElytra(player));
+      Synchronizer.synchronize(() -> this.elytraFlying = flyingWithElytra(player));
     }
     applyPlayerStats();
     updateWorld();

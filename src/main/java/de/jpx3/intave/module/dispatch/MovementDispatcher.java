@@ -918,7 +918,7 @@ public final class MovementDispatcher extends Module {
         movementData.sneakPatchVelocity = velocity.clone();
       }
       Motion motion = Motion.fromVector(velocity);
-      if (USE_SUPERPOSITIONS) {
+      if (Physics.USE_SUPERPOSITIONS) {
         movementData.velocitySuperposition().stateSynchronize(event, motion);
       } else {
         Modules.feedback().synchronize(player, velocity, this::receiveVelocity);
