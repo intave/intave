@@ -15,7 +15,9 @@ import de.jpx3.intave.player.collider.simple.SimpleCollider;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.permission.PermissionCache;
+import de.jpx3.intave.user.storage.PlayerStorage;
 import de.jpx3.intave.user.storage.Storage;
+import de.jpx3.intave.user.storage.Storages;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
@@ -29,10 +31,15 @@ final class TestUser implements User {
   private final Map<Class<? extends CheckCustomMetadata>, CheckCustomMetadata> metadataPool = new ConcurrentHashMap<>();
   private final Player player;
   private final int protocolVersion;
+  private PlayerStorage storage;
 
   TestUser(Player player, int protocolVersion) {
     this.player = player;
     this.protocolVersion = protocolVersion;
+    UUID id = player.getUniqueId();
+    if (id != null) {
+      this.storage = Storages.emptyPlayerStorageFor(id);
+    }
   }
 
   @Override
@@ -145,12 +152,12 @@ final class TestUser implements User {
 
   @Override
   public Storage mainStorage() {
-    return null;
+    return storage;
   }
 
   @Override
   public <T extends Storage> T storageOf(Class<T> storageClass) {
-    return null;
+    return storage.storageOf(storageClass);
   }
 
   @Override

@@ -63,7 +63,7 @@ public final class Tester implements Runnable {
     } catch (Exception exception) {
       throw new RuntimeException("Failed to instantiate test", exception);
     }
-    String fullTestName = test.testCode() + "/" + testCode;
+    String fullTestName = test.testCode() + "::" + testCode;
     try {
       if (beforeMethod != null) {
         long start = System.currentTimeMillis();
@@ -91,19 +91,21 @@ public final class Tester implements Runnable {
       }
     } catch (Throwable throwable) {
       Severity severity = annotation.severity();
-      String message = "Test " + fullTestName + " failed";
-      if (IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
-        throwable.printStackTrace();
-        while (throwable.getCause() != null) {
-          throwable = throwable.getCause();
-        }
-        message += " from a " + throwable.getClass().getSimpleName() + ": " + throwable.getMessage();
-      } else {
-        message += "";
-      }
-      IntaveLogger.logger().info(message);
+      String message = "Self-test " + fullTestName + " failed";
+//      if (IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
+//        throwable.printStackTrace();
+//        while (throwable.getCause() != null) {
+//          throwable = throwable.getCause();
+//        }
+//        message += " from a " + throwable.getClass().getSimpleName() + ": " + throwable.getMessage();
+//      } else {
+//        message += "";
+//      }
       if (severity.mustInterrupt()) {
+        IntaveLogger.logger().error(message);
         throw new RuntimeException(message, throwable);
+      } else {
+        IntaveLogger.logger().info(message);
       }
     } finally {
       if (afterMethod != null) {

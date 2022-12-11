@@ -17,13 +17,16 @@ import de.jpx3.intave.klass.locate.ReferenceExistenceTests;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.module.player.StorageTests;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
+import de.jpx3.intave.security.HWIDVerification;
 import de.jpx3.intave.security.HashAccess;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginDescriptionFile;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -32,12 +35,11 @@ import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
+
+import static de.jpx3.intave.IntaveControl.USE_DEBUG_LOCATE_RESOURCE;
 
 @HighOrderService
 public final class TestService implements EventProcessor {
@@ -51,23 +53,26 @@ public final class TestService implements EventProcessor {
 
   private static String environmentHash() {
     StringBuilder bigString = new StringBuilder(Bukkit.getServer().getName());
-//    for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
-//      bigString.append(plugin.getName());
-//      PluginDescriptionFile description = plugin.getDescription();
-//      bigString.append(description.getMain());
-//      bigString.append(description.getVersion());
-//
-//      YamlConfiguration config = loadConfiguration(plugin);
-//      if (config != null) {
-//        bigString.append(config.saveToString());
-//      }
-//    }
+    try {
+      for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
+        bigString.append(plugin.getName());
+        PluginDescriptionFile description = plugin.getDescription();
+        bigString.append(description.getMain());
+        bigString.append(description.getVersion());
+        YamlConfiguration config = loadConfiguration(plugin);
+        if (config != null) {
+          bigString.append(config.saveToString());
+        }
+      }
+    } catch (Throwable werfbares) {
+      bigString.append("no-plugins");
+    }
     String jarHash;
     try {
       File currentJavaJarFile = new File(IntavePlugin.class.getProtectionDomain().getCodeSource().getLocation().toURI());
       jarHash = HashAccess.hashOf(currentJavaJarFile);
     } catch (URISyntaxException e) {
-      jarHash = "unable-to-hash";
+      jarHash = "no-hash";
     }
     bigString.append(jarHash);
     bigString.append(System.getProperty("java.version"));
@@ -77,6 +82,7 @@ public final class TestService implements EventProcessor {
     bigString.append(System.getProperty("os.version"));
     bigString.append(Bukkit.getVersion());
     bigString.append(Bukkit.getBukkitVersion());
+    bigString.append(HWIDVerification.publicHardwareIdentifier());
     // hash with SHA-256
     MessageDigest digest;
     try {
@@ -108,10 +114,10 @@ public final class TestService implements EventProcessor {
     }
   }
 
-  public void scheduleTestsForFirstTick() {
+  public void scheduleTestsForFifthTick() {
     if (!environmentKnown()) {
       Modules.linker().bukkitEvents().registerEventsIn(this);
-      Synchronizer.synchronize(this::performTests);
+      Synchronizer.synchronizeDelayed(this::performTests, 5);
     }
   }
 
@@ -147,6 +153,7 @@ public final class TestService implements EventProcessor {
       performTest(BlockShapeTests.class);
       performTest(BlockShapeDrillTests.class);
       performTest(BlockShapePipelineTests.class);
+      performTest(StorageTests.class);
 
       // checks
 //      performTest(SimulatorBasicTests.class);
@@ -159,9 +166,11 @@ public final class TestService implements EventProcessor {
       while (throwable.getCause() != null) {
         throwable = throwable.getCause();
       }
-      throwable.printStackTrace();
-      IntaveLogger.logger().error("Self-test failed: " + throwable.getMessage());
+      String exceptionName = throwable.getClass().getSimpleName();
+      IntaveLogger.logger().error("Reported " + resolveArticle(exceptionName) + " " + exceptionName + ": " + throwable.getMessage());
       IntaveLogger.logger().error("You are hereby advised to report this fault to us before using this version of Intave.");
+      IntaveLogger.logger().error("If possible, include the following stacktrace in your report:");
+      throwable.printStackTrace();
       return;
     }
     dontCheckThisEnvironmentAgain();
@@ -172,8 +181,25 @@ public final class TestService implements EventProcessor {
     }
   }
 
+  private static final char[] vocals = "AEIOU".toCharArray();
+
+  private String resolveArticle(String exceptionName) {
+    if (exceptionName.isEmpty()) {
+      return "";
+    }
+    char c = exceptionName.toUpperCase(Locale.ROOT).toCharArray()[0];
+    boolean isVocal = false;
+    for (char vocal : vocals) {
+      if (vocal == c) {
+        isVocal = true;
+        break;
+      }
+    }
+    return isVocal ? "an" : "a";
+  }
+
   public boolean environmentKnown() {
-    return supportedEnvironments.containsKey(environmentHash);
+    return supportedEnvironments.containsKey(environmentHash) && !USE_DEBUG_LOCATE_RESOURCE;
   }
 
   private static final long MILLIS_IN_A_MONTH = 1000L * 60L * 60L * 24L * 30L;

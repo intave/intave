@@ -1,7 +1,5 @@
 package de.jpx3.intave.module.player;
 
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.storage.EmptyStorageGateway;
 import de.jpx3.intave.access.player.storage.StorageGateway;
@@ -20,17 +18,11 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.Inflater;
-import java.util.zip.InflaterOutputStream;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.zip.Deflater.BEST_COMPRESSION;
 
 public final class StorageLoader extends Module {
   private StorageGateway storageGateway = new EmptyStorageGateway();
@@ -74,73 +66,26 @@ public final class StorageLoader extends Module {
             return;
           }
           PlayerStorage playerStorage = Storages.emptyPlayerStorageFor(id);
-          inputTo(playerStorage, byteBuffer);
+          StorageIOProcessor.inputTo(playerStorage, byteBuffer);
           storage.accept(playerStorage);
         })
       )
     );
   }
 
-  private void requestStorageFor(Player player) {
+  public void requestStorageFor(Player player) {
     Storage storage = UserRepository.userOf(player).mainStorage();
     UUID id = player.getUniqueId();
     BackgroundExecutor.execute(() ->
-      storageGateway.requestStorage(id, buffer -> inputTo(storage, buffer)/*storage::read*/));
+      storageGateway.requestStorage(id, buffer -> StorageIOProcessor.inputTo(storage, buffer)/*storage::read*/));
   }
 
-  private void saveStorageFor(Player player) {
+  public void saveStorageFor(Player player) {
     Storage storage = UserRepository.userOf(player).mainStorage();
     UUID id = player.getUniqueId();
-    ByteBuffer buffer = outputFrom(storage);
+    ByteBuffer buffer = StorageIOProcessor.outputFrom(storage);
     BackgroundExecutor.execute(() ->
       storageGateway.saveStorage(id, buffer));
-  }
-
-  private void inputTo(Storage storage, ByteBuffer buffer) {
-    if (buffer == null) {
-      return;
-    }
-    byte[] array = buffer.array();
-    if (array.length == 0) {
-      return;
-    }
-    byte[] bytes = decompress(array);
-    storage.readFrom(ByteStreams.newDataInput(bytes));
-  }
-
-  private ByteBuffer outputFrom(Storage storage) {
-    ByteArrayDataOutput output = ByteStreams.newDataOutput();
-    storage.writeTo(output);
-    byte[] bytes = output.toByteArray();
-    return ByteBuffer.wrap(compress(bytes));
-  }
-
-  private static byte[] compress(byte[] in) {
-    try {
-      ByteArrayOutputStream out = new ByteArrayOutputStream();
-      DeflaterOutputStream deflater = new DeflaterOutputStream(out, new Deflater(BEST_COMPRESSION));
-      deflater.write(in);
-      deflater.flush();
-      deflater.close();
-      return out.toByteArray();
-    } catch (Exception exception) {
-      exception.printStackTrace();
-      return new byte[0];
-    }
-  }
-
-  private static byte[] decompress(byte[] in) {
-    try {
-      ByteArrayOutputStream out = new ByteArrayOutputStream();
-      InflaterOutputStream inflater = new InflaterOutputStream(out, new Inflater());
-      inflater.write(in);
-      inflater.flush();
-      inflater.close();
-      return out.toByteArray();
-    } catch (Exception exception) {
-      exception.printStackTrace();
-      return new byte[0];
-    }
   }
 
   public StorageGateway storageGateway() {
