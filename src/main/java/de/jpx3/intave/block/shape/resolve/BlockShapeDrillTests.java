@@ -116,5 +116,6 @@ public final class BlockShapeDrillTests extends Tests {
   @After
   public void teardown() {
     priorMaterial.restore();
+    UserRepository.unregisterUser(player);
   }
 }

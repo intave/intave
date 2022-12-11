@@ -29,7 +29,7 @@ import java.util.function.Consumer;
 import static de.jpx3.intave.module.feedback.FeedbackOptions.SELF_SYNCHRONIZATION;
 import static de.jpx3.intave.player.fake.FakePlayerAttribute.*;
 import static de.jpx3.intave.player.fake.MetadataAccess.updateHealthFor;
-import static de.jpx3.intave.player.fake.ProfileLookup.acquireGameProfile;
+import static de.jpx3.intave.player.fake.ProfileGenerator.acquireGameProfile;
 
 public final class FakePlayer extends FakePlayerBody {
   public static final float SPAWN_HEALTH_STATE = 20.0f;

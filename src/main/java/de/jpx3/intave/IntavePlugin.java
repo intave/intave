@@ -240,7 +240,7 @@ public final class IntavePlugin extends JavaPlugin {
       // ja das muss so krebsig hier hin
       if (IntaveControl.DISABLE_LICENSE_CHECK) {
         logger().warn("This version has no license check, deal with caution.");
-        logger().warn("Do not distribute or keep any copies of this file on your local computer.");
+        logger().warn("Do not distribute this file and keep any copies of this file on your local computer.");
 //        System.setProperty("java.net.serviceprovider.key", "~bypass");
         LICENSE_NAME = "~bypass";
         VERSION_DETAILS |= 0x100;
@@ -351,21 +351,17 @@ public final class IntavePlugin extends JavaPlugin {
         String message = "";
         boolean bad = false;
         boolean clearReloCache = false;
-        // VMProtect doesn't like switches :(
+        // VMProtect doesn't like JNICs switch-equivalent :(
         //noinspection IfCanBeSwitch
         if ("banned".equals(response) || "invalid".equals(response) || "error".equals(response)) {
-          message = "Unable to boot: Something went wrong verifying integrity";
+          message = "Unable to boot: Authentication failed";
           bad = true;
           clearReloCache = true;
-        } else if ("hwid".equals(response)) {
-          message = "Unable to boot: Hardware identification failed (see website)";
-          bad = true;
-//          clearReloCache = true;
-        } else if ("hwidr".equals(response)) {
-          message = "Unable to boot: Hardware identification required (see website)";
+        } else if ("hwid".equals(response) || "hwidr".equals(response)) {
+          message = "Unable to boot: Hardware identification failed - verify this machine on your dashboard";
           bad = true;
         } else if ("rate".equals(response)) {
-          message = "Unable to boot: Too many pending requests, please contact support";
+          message = "Unable to boot: Too many pending hardware requests, please contact support";
           bad = true;
         } else if ("expired".equals(response)) {
           message = "Unable to boot: Buy Intave for continued use";
@@ -463,28 +459,35 @@ public final class IntavePlugin extends JavaPlugin {
           }
           String keyResponse = properties.get("exchange-key");
           // verify the server integrity
-          boolean validResponse = false;
+          boolean validInputConfirmation = false;
           if (keyResponse != null) {
             byte[] responseBytes = new byte[keyResponse.length() / 2];
             for (int i = 0; i < responseBytes.length; i++) {
               responseBytes[i] = (byte) Integer.parseInt(keyResponse.substring(i * 2, i * 2 + 2), 16);
             }
             if (responseBytes == digest) {
-              validResponse = true;
+              validInputConfirmation = true;
             } else {
               int length = responseBytes.length;
               if (digest.length == length) {
-                validResponse = length > 1;
+                validInputConfirmation = length > 1;
                 for (int i = 0; i < length; i++) {
                   if (responseBytes[i] != digest[i]) {
-                    validResponse = false;
+                    validInputConfirmation = false;
                     break;
                   }
                 }
               }
             }
           }
-          if (!validResponse) {
+
+          boolean validOutputConfirmation = false;
+          String macResponse = properties.get("mac");
+          if (macResponse != null) {}
+          // believe
+          validOutputConfirmation = true;
+
+          if (!validInputConfirmation || !validOutputConfirmation) {
             logger.error("Unable to boot: Authentication response not trustworthy");
             contextStatusResource.write(new ByteArrayInputStream(("failure-" + response).getBytes(UTF_8)));
             bootFailure("Internal failure");
@@ -539,7 +542,7 @@ public final class IntavePlugin extends JavaPlugin {
                   } catch (Exception ignored) {
                   }
                 } else {
-                  // perform github check
+                  // perform GitHub check
                   Scanner scanner2 = new Scanner(connection.getInputStream(), "UTF-8");
                   Map<String, String> availabilities = new HashMap<>();
                   while (scanner2.hasNextLine()) {
@@ -655,7 +658,7 @@ public final class IntavePlugin extends JavaPlugin {
       sibylIntegrationService = new SibylIntegrationService(this);
       blackListService = new BlacklistService(this);
       testService = new TestService();
-      testService.scheduleTestsForFirstTick();
+      testService.scheduleTestsForFifthTick();
       uploadService = new ScheduledUploadService();
       uploadService.enable();
       letis = new Letis(this);
@@ -721,7 +724,7 @@ public final class IntavePlugin extends JavaPlugin {
     }
 
     if (IntaveControl.APPLY_GLOBAL_LOW_TRUSTFACTOR) {
-      logger.info(ChatColor.YELLOW + "This version assigns only the red trustfactor for debugging purposes");
+      logger.info(ChatColor.YELLOW + "This version assigns only the red trustfactor for debugging");
     }
 
     registerNativeCheck();

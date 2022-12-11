@@ -12,7 +12,6 @@ import de.jpx3.intave.diagnostic.message.MessageCategory;
 import de.jpx3.intave.diagnostic.message.MessageSeverity;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -37,7 +36,7 @@ public final class PacketDelayer extends Module {
     Timer timerCheck = plugin.checks().searchCheck(Timer.class);
     this.reverseBlink = timerCheck.reverseBlink();
     this.reverseLag = timerCheck.reverseLag();
-    this.microLag = timerCheck.combatMicroLag();
+    this.microLag = timerCheck.lowToleranceMode();
   }
 
   @PacketSubscription(

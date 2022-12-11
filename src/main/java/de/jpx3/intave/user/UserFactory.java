@@ -7,14 +7,11 @@ public final class UserFactory {
     return new FallbackUser();
   }
 
-  public static User createTestUserFor(
-    Player player,
-    int protocolVersion
-  ) {
-    return new TestUser(player, protocolVersion);
-  }
-
   public static User createUserFor(Player player) {
     return new PlayerUser(player);
+  }
+
+  public static User createTestUserFor(Player player, int protocolVersion) {
+    return new TestUser(player, protocolVersion);
   }
 }

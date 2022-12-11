@@ -36,7 +36,7 @@ class ModernIndexer implements Indexer {
       takenIds.add(id);
       do {
         id = ThreadLocalRandom.current().nextInt(1, MAX_VALUE);
-      } while (takenIds.contains(id) || id == -1);
+      } while (takenIds.contains(id));
     }
     return index;
   }

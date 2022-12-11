@@ -18,7 +18,7 @@ import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
-public final class ProfileLookup {
+public final class ProfileGenerator {
   public static WrappedGameProfile acquireGameProfile() {
     UUID uuid;
     boolean noConnection = false;

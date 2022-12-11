@@ -40,8 +40,7 @@ public final class UserRepository {
 
   public static void unregisterUser(Player player) {
     if (hasUser(player)) {
-      User user = userOf(player);
-      user.unregister();
+      userOf(player).unregister();
     }
     repository.remove(player.getUniqueId());
   }

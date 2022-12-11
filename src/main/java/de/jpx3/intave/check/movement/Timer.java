@@ -14,7 +14,7 @@ public final class Timer extends Check {
   private final boolean highToleranceMode;
   private final boolean reverseBlink;
   private final boolean reverseLag;
-  private final boolean combatMicroLag;
+  private final boolean noTolerance;
   private final Balance balance;
 
   public Timer() {
@@ -22,15 +22,18 @@ public final class Timer extends Check {
     this.decrementer = new CheckViolationLevelDecrementer(this, 0.2);
     CheckSettings settings = configuration().settings();
     highToleranceMode = settings.boolBy("high-tolerance", false);
-    reverseBlink = settings.boolBy("reverse-blink", false) || IntaveControl.GOMME_MODE;
-    reverseLag = settings.boolBy("reverse-lag", false) || IntaveControl.GOMME_MODE;
-    combatMicroLag = settings.boolBy("anti-micro-lag", IntaveControl.GOMME_MODE);
-//    if (highToleranceMode) {
-//      IntaveLogger.logger().info("Enabled high ping tolerance");
-//    }
-    if (combatMicroLag) {
-      IntaveLogger.logger().info("Enabled combat micro lag detection");
+    noTolerance = settings.boolBy("low-tolerance", IntaveControl.GOMME_MODE);
+    reverseBlink = settings.boolBy("reverse-blink", IntaveControl.GOMME_MODE);
+    reverseLag = settings.boolBy("reverse-lag", IntaveControl.GOMME_MODE);
+
+    if (highToleranceMode && noTolerance) {
+      IntaveLogger.logger().info("Conflicting tolerance settings: must either be high or low.");
+    } else if (highToleranceMode) {
+      IntaveLogger.logger().info("Enabled high ping tolerance");
+    } else if (noTolerance) {
+      IntaveLogger.logger().info("Enabled low network tolerance mode");
     }
+
     this.balance = new Balance(this);
     appendCheckPart(balance);
     //  appendCheckPart(new MovementFrequency(this));
@@ -54,16 +57,16 @@ public final class Timer extends Check {
     return highToleranceMode;
   }
 
+  public boolean lowToleranceMode() {
+    return noTolerance;
+  }
+
   public boolean reverseBlink() {
     return reverseBlink;
   }
 
   public boolean reverseLag() {
     return reverseLag;
-  }
-
-  public boolean combatMicroLag() {
-    return combatMicroLag;
   }
 
   public CheckViolationLevelDecrementer decrementer() {

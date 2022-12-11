@@ -64,7 +64,7 @@ public final class FileArchiver {
       out.putNextEntry(new ZipEntry(file.getName()));
       out.setLevel(Deflater.BEST_COMPRESSION);
       int count;
-      byte[] buffer = new byte[1024];
+      byte[] buffer = new byte[8192];
       while ((count = in.read(buffer)) != -1) {
         out.write(buffer, 0, count);
       }

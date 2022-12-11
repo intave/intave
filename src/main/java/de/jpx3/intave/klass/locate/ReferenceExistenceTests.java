@@ -52,7 +52,7 @@ public final class ReferenceExistenceTests extends Tests {
       try {
         fieldLocation.access();
       } catch (Exception exception) {
-        IntaveLogger.logger().warn("Field " + fieldLocation.key() + "/" + fieldLocation.key() + " in class " + fieldLocation.classKey() + " does not exist");
+        IntaveLogger.logger().warn("Field " + fieldLocation.key() + "/" + fieldLocation.targetName() + " in class " + fieldLocation.classKey() + " does not exist");
         throw exception;
       }
     }

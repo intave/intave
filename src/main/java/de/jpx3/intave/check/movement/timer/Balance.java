@@ -7,7 +7,6 @@ import de.jpx3.intave.check.CheckStatistics;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.movement.Timer;
-import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
@@ -101,7 +100,7 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
       timerData.timerBalance += timerData.timerBalance < -400 ? 45 : 15;
     }
     statisticApply(user, CheckStatistics::increaseTotal);
-    boolean suspicious = parentCheck().combatMicroLag() &&/*violationLevelOf(user) > 10 && */!user.trustFactor().atLeast(TrustFactor.ORANGE) /*&& System.currentTimeMillis() - timerData.lastTimerFlag < 2000*/;
+    boolean suspicious = parentCheck().lowToleranceMode() &&/*violationLevelOf(user) > 10 && */!user.trustFactor().atLeast(TrustFactor.ORANGE) /*&& System.currentTimeMillis() - timerData.lastTimerFlag < 2000*/;
     int overflowLimit = highToleranceMode ? 750 : (suspicious ? 25 : 250);
     List<Double> safeTimerBalanceHistory = timerData.safeTimerBalanceHistory;
     List<Double> timerBalanceHistory = timerData.timerBalanceHistory;

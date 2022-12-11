@@ -36,7 +36,7 @@ check:
     high-tolerance: true
     reverse-blink: true
     reverse-lag: false
-    anti-micro-lag: false
+    low-tolerance: false
     thresholds:
       50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is moving too frequently / is lagging"
       100: "intave internals sendnotify &c{player}&7/{trust-color}&7 is moving too frequently / is lagging for a long period"

@@ -53,7 +53,7 @@ public final class RotationUnlikelyAccuracyHeuristic extends MetaCheckPart<Heuri
       double yawAverage = averageOf(heuristicMeta.yawSpeeds);
       double maxDistanceToPerfectYaw = heuristicMeta.distancesToPerfectYaw
         .stream()
-        .mapToDouble(i -> i)
+        .mapToDouble(Double::doubleValue)
         .max()
         .orElse(0);
       List<Double> angleData = heuristicMeta.distancesToPerfectYaw;

@@ -66,12 +66,6 @@ final class MethodLocation extends Location {
         return declaredMethod;
       } catch (NoSuchMethodException ignored) {}
     } while ((owningClass = owningClass.getSuperclass()) != Object.class);
-//    do {
-//      System.out.println("Dumping methods of " + orignalOwningClass);
-//      for (Method declaredMethod : orignalOwningClass.getDeclaredMethods()) {
-//        System.out.println("  " + declaredMethod);
-//      }
-//    } while ((orignalOwningClass = orignalOwningClass.getSuperclass()) != Object.class);
     throw new IllegalStateException("Unable to find method " + to + " in " + classKey());
   }
 
