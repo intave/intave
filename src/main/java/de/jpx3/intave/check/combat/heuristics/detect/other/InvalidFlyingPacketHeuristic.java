@@ -22,10 +22,10 @@ public class InvalidFlyingPacketHeuristic extends MetaCheckPart<Heuristics, Inva
   }
 
   @PacketSubscription(
-      priority = ListenerPriority.HIGH,
-      packetsIn = {
-          POSITION, LOOK, POSITION_LOOK, FLYING
-      }
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      POSITION, LOOK, POSITION_LOOK, FLYING
+    }
   )
   public void receiveFlyingPacket(PacketEvent event) {
     Player player = event.getPlayer();
