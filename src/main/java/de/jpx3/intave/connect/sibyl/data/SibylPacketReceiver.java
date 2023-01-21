@@ -47,12 +47,6 @@ public final class SibylPacketReceiver {
       JsonObject packetData = element.getAsJsonObject();
       String packetName = packetData.get("name").getAsString();
       JsonElement packetContent = packetData.get("content");
-      if (!packetName.startsWith("in")) {
-        if (IntaveControl.SIBYL_DEBUG) {
-          System.out.println("Received packet with invalid name: " + packetName);
-        }
-        return;
-      }
 
       if (service.encryptionActiveFor(player)) {
         String base64encryptedText = packetContent.getAsString();

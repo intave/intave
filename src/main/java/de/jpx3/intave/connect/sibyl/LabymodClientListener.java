@@ -58,9 +58,6 @@ public final class LabymodClientListener implements PacketEventSubscriber {
     ByteBuf bytes = (ByteBuf) packet.getSpecificModifier(Lookup.serverClass("PacketDataSerializer")).getValues().get(0);
     try {
       bytes.markReaderIndex();
-
-
-
       String messageKey = LabyModChannelHelper.readString(bytes, Short.MAX_VALUE);
       if (messageKey.equalsIgnoreCase(channel)) {
         String messageContent = LabyModChannelHelper.readString(bytes, Short.MAX_VALUE);

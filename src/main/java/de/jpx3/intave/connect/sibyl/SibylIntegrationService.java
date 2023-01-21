@@ -6,6 +6,7 @@ import de.jpx3.intave.annotate.HighOrderService;
 import de.jpx3.intave.annotate.Native;
 import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.connect.sibyl.auth.SibylAuthentication;
+import de.jpx3.intave.connect.sibyl.data.SibylPacketReceiver;
 import de.jpx3.intave.connect.sibyl.data.SibylPacketTransmitter;
 import de.jpx3.intave.connect.sibyl.data.packet.*;
 import de.jpx3.intave.executor.Synchronizer;
@@ -31,6 +32,7 @@ public final class SibylIntegrationService implements BukkitEventSubscriber {
   private final IntavePlugin plugin;
   private final SibylAuthentication authentication;
   private final SibylPacketTransmitter packetTransmitter;
+  private final SibylPacketReceiver packetReceiver;
 
   private static final KeyPair globalKeyPair;
   private static final byte[] verifyToken;
@@ -56,6 +58,7 @@ public final class SibylIntegrationService implements BukkitEventSubscriber {
     subscribers.add(this::afterAuthentication);
     this.authentication = new SibylAuthentication(plugin, subscribers);
     this.packetTransmitter = new SibylPacketTransmitter(authentication, this);
+    this.packetReceiver = new SibylPacketReceiver(plugin, this);
     this.plugin.eventLinker().registerEventsIn(this);
     broadcastRestart();
   }
@@ -141,10 +144,12 @@ public final class SibylIntegrationService implements BukkitEventSubscriber {
     broadcastTrustedPacket(packet);
   }
 
-  public void publishTest(Player player, int id) {
-    SibylPacketOutMessage packet = new SibylPacketOutMessage();
+  public void publishDebug(Player player, int id, String fullMessage, String shortMessage) {
+    SibylPacketOutDebug packet = new SibylPacketOutDebug();
     packet.setDebugId(id);
-    broadcastTrustedPacket(packet);
+    packet.setFullMessage(fullMessage);
+    packet.setShortMessage(shortMessage);
+    sendTrustedPacket(player, packet);
   }
 
   @Native
@@ -153,6 +158,13 @@ public final class SibylIntegrationService implements BukkitEventSubscriber {
       if (authentication.isAuthenticated(player)) {
         packetTransmitter.transmitPacket(player, packet);
       }
+    }
+  }
+
+  @Native
+  public void sendTrustedPacket(Player player, SibylPacket packet) {
+    if (authentication.isAuthenticated(player)) {
+      packetTransmitter.transmitPacket(player, packet);
     }
   }
 

@@ -44,13 +44,18 @@ public final class DebugBroadcast {
     }
     for (Player receiver : receivers) {
       if (IntavePlugin.singletonInstance().sibyl().isAuthenticated(receiver)) {
-        OutputConfiguration configuration = configurationOf(receiver.getUniqueId());
-        if (configuration.canOutput(category, target) && !severity.isLowerThan(configuration.minimumSeverity())) {
-          String color = configuration.colorOf(category).toString();
-          String prefix = configuration.prefixSelector().formatPrefix(severity, category.name());
-          String theMessage = configuration.detailOf(category).select(fullMessage, shortMessage);
-          String completeMessage = color + prefix + " " + theMessage;
-          receiver.sendMessage(completeMessage);
+        // Use new sibyl if encryption available otherwise use fallback method
+        if (IntavePlugin.singletonInstance().sibyl().encryptionActiveFor(receiver)) {
+          IntavePlugin.singletonInstance().sibyl().publishDebug(receiver, category.ordinal(), fullMessage, shortMessage);
+        } else {
+          OutputConfiguration configuration = configurationOf(receiver.getUniqueId());
+          if (configuration.canOutput(category, target) && !severity.isLowerThan(configuration.minimumSeverity())) {
+            String color = configuration.colorOf(category).toString();
+            String prefix = configuration.prefixSelector().formatPrefix(severity, category.name());
+            String theMessage = configuration.detailOf(category).select(fullMessage, shortMessage);
+            String completeMessage = color + prefix + " " + theMessage;
+            receiver.sendMessage(completeMessage);
+          }
         }
       }
     }

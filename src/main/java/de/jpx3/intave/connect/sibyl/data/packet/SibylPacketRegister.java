@@ -10,8 +10,7 @@ public final class SibylPacketRegister {
   private static Map<String, Class<? extends SibylPacket>> availablePackets = new HashMap<>();
 
   static {
-    availablePackets.put("out-attack-cancel", SibylPacketOutAttackCancel.class);
-    availablePackets.put("out-message", SibylPacketOutMessage.class);
+    availablePackets.put("confirm-encryption", SibylPacketInConfirmEncryption.class);
 
     availablePackets = ImmutableMap.copyOf(availablePackets);
   }
