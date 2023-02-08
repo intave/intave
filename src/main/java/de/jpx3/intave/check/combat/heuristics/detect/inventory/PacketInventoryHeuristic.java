@@ -61,7 +61,7 @@ public final class PacketInventoryHeuristic extends MetaCheckPart<Heuristics, Pa
       return;
     }
 
-    if (clientData.flyingPacketStream() && meta.inventoryTicks == 0 && meta.performedInventoryOpenOperation) {
+    if (clientData.flyingPacketsAreSent() && meta.inventoryTicks == 0 && meta.performedInventoryOpenOperation) {
       int options = SUGGEST_MINING | DELAY_128s | LIMIT_2;
       String details = "closed inventory too quickly (" + meta.inventoryTicks + ")";
       Anomaly anomaly = Anomaly.anomalyOf("131", Confidence.NONE, Anomaly.Type.KILLAURA, details, options);
@@ -90,7 +90,7 @@ public final class PacketInventoryHeuristic extends MetaCheckPart<Heuristics, Pa
     MovementMetadata movementData = user.meta().movement();
     ProtocolMetadata clientData = user.meta().protocol();
 
-    if (!clientData.flyingPacketStream() || movementData.isInVehicle()) {
+    if (!clientData.flyingPacketsAreSent() || movementData.isInVehicle()) {
       return;
     }
 

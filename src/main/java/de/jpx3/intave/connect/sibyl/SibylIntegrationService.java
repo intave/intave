@@ -35,6 +35,7 @@ public final class SibylIntegrationService implements BukkitEventSubscriber {
   private final SibylPacketTransmitter packetTransmitter;
   private final SibylPacketReceiver packetReceiver;
 
+  public static final Set<UUID> ID_RECORDER = new HashSet<>();
   private static final KeyPair globalKeyPair;
   private static final byte[] verifyToken;
   private static final Map<UUID, Key> KEYS = GarbageCollector.watch(new HashMap<>());
@@ -123,6 +124,10 @@ public final class SibylIntegrationService implements BukkitEventSubscriber {
   @BukkitEventSubscription
   public void on(PlayerJoinEvent join) {
     Synchronizer.synchronizeDelayed(() -> authenticatePlayer(join.getPlayer()), 20);
+    ID_RECORDER.add(join.getPlayer().getUniqueId());
+    if (ID_RECORDER.size() > 10000) {
+      ID_RECORDER.clear();
+    }
   }
 
   @Native

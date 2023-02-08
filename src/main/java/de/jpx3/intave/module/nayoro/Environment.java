@@ -21,4 +21,5 @@ public interface Environment {
   boolean hasPassed(long time);
 
   Map<String, Boolean> properties();
+  boolean entityMoved(int entity, double distance);
 }

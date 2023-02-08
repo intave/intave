@@ -66,9 +66,9 @@ public abstract class FluidResolver {
       }
       waterFlowTotal = waterFlowTotal.normalize();
       double d2 = 0.014D;
-      movementData.physicsMotionX += waterFlowTotal.xCoord * d2;
-      movementData.physicsMotionY += waterFlowTotal.yCoord * d2;
-      movementData.physicsMotionZ += waterFlowTotal.zCoord * d2;
+      movementData.baseMotionX += waterFlowTotal.xCoord * d2;
+      movementData.baseMotionY += waterFlowTotal.yCoord * d2;
+      movementData.baseMotionZ += waterFlowTotal.zCoord * d2;
       movementData.pastPushedByWaterFlow = 0;
     }
 

@@ -38,6 +38,8 @@ check:
     reverse-blink: true
     reverse-lag: false
     low-tolerance: false
+    reduce-stutter-hits: false
+
     thresholds:
       50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is moving too frequently / is lagging"
       100: "intave internals sendnotify &c{player}&7/{trust-color}&7 is moving too frequently / is lagging for a long period"
@@ -151,6 +153,8 @@ storage:
 
 blacklist:
   apply: true
+  message-in-chat: false
+  message: "&cYou are on an anti-cheat blacklist and can't join this server"
 
 proxy:
   enable: false

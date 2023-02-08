@@ -38,14 +38,17 @@ public final class NayoroEventSubscriptionLinker extends Module {
 
   public void registerEventsIn(NayoroEventSubscriber listener) {
     long start = System.nanoTime();
-    eventListeners.putAll(processLinking(listener));
+    Map<Class<? extends Event>, List<NayoroRegisteredListener>> classListMap = processLinking(listener);
+    for (Map.Entry<Class<? extends Event>, List<NayoroRegisteredListener>> classListEntry : classListMap.entrySet()) {
+      eventListeners.computeIfAbsent(classListEntry.getKey(), k -> new ArrayList<>()).addAll(classListEntry.getValue());
+    }
     totalLoad += System.nanoTime() - start;
   }
 
   public void unregisterEventsIn(NayoroEventSubscriber eventProcessor) {
     for (Map.Entry<Class<? extends Event>, List<NayoroRegisteredListener>> classListEntry : eventListeners.entrySet()) {
       List<NayoroRegisteredListener> value = classListEntry.getValue();
-      value.removeIf(nayoroRegisteredListener -> nayoroRegisteredListener.subscriber() == eventProcessor);
+      value.removeIf(listener -> listener.subscriber() == eventProcessor);
     }
   }
 
@@ -54,7 +57,9 @@ public final class NayoroEventSubscriptionLinker extends Module {
     if (listeners == null || listeners.isEmpty()) {
       return;
     }
-    listeners.forEach(executor -> executor.execute(player, event));
+    for (NayoroRegisteredListener executor : listeners) {
+      executor.execute(player, event);
+    }
   }
 
   private Map<Class<? extends Event>, List<NayoroRegisteredListener>> processLinking(NayoroEventSubscriber listener) {
@@ -73,6 +78,7 @@ public final class NayoroEventSubscriptionLinker extends Module {
         method.getParameterTypes()[0].equals(PlayerContainer.class) &&
         Event.class.isAssignableFrom(checkClass = method.getParameterTypes()[1])
       ) {
+//        System.out.println("Found method " + method);
         if (Modifier.isPrivate(method.getModifiers()) || Modifier.isStatic(method.getModifiers())) {
           throw new IntaveInternalException("Invalid linking for method " + method);
         }

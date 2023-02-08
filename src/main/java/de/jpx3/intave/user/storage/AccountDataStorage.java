@@ -3,7 +3,7 @@ package de.jpx3.intave.user.storage;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 
-public final class AccountCheckStorage implements Storage {
+public final class AccountDataStorage implements Storage {
   private boolean blocked;
   private long blockedSince;
 

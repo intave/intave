@@ -71,7 +71,7 @@ public final class Motion {
   }
 
   public void resetTo(MovementMetadata data) {
-    reset(data.physicsMotionX, data.physicsMotionY, data.physicsMotionZ);
+    reset(data.baseMotionX, data.baseMotionY, data.baseMotionZ);
   }
 
   public double length() {

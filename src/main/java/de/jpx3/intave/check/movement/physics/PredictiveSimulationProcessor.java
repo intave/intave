@@ -141,7 +141,7 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
     MetadataBundle meta = user.meta();
     MovementMetadata movementData = meta.movement();
     InventoryMetadata inventoryData = meta.inventory();
-    if (movementData.pastPlayerAttackPhysics == 0 && movementData.sprinting && !simulationStack.reduced()) {
+    if (movementData.pastPlayerAttackPhysics == 0 && simulationStack.sprinted()/*movementData.sprinting*/ && !simulationStack.reduced()) {
       movementData.ignoredAttackReduce = true;
     }
     /* misplaced - please solve this otherwise */
@@ -157,6 +157,7 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
     movementData.keyForward = simulationStack.forward();
     movementData.keyStrafe = simulationStack.strafe();
     movementData.physicsJumped = simulationStack.jumped();
+//    movementData.sprintMove = simulationStack.sprinted();
   }
 
   private static final double REQUIRED_PREDICTION_ACCURACY_FOR_PRED_BIAS_PROCEED = 0.1;
@@ -167,8 +168,8 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
     MovementMetadata movementData = user.meta().movement();
     InventoryMetadata inventoryData = user.meta().inventory();
     Motion motionVector = movementData.motionProcessorContext;
-    double lastMotionX = movementData.physicsMotionX;
-    double lastMotionZ = movementData.physicsMotionZ;
+    double lastMotionX = movementData.baseMotionX;
+    double lastMotionZ = movementData.baseMotionZ;
     boolean jumped = false;
     boolean sprinting = movementData.sprintingAllowed() || movementData.hasSprintSpeed;
     if (movementData.lastOnGround && !movementData.denyJump()) {
@@ -187,7 +188,6 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
     float yaw = movementData.rotationYaw;
 
     boolean inventoryOpen = inventoryData.inventoryOpen();
-
     double directionPrediction = directionFrom(differenceX, differenceZ, yaw);
     int direction = (int) Math.round(directionPrediction);
 
@@ -231,6 +231,7 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
       configuration = configuration.withoutKeypress();
     }
     movementData.physicsJumped = jumped;
+//    movementData.sprintMove = sprinting;
     motionVector.resetTo(movementData);
     movementData.keyForward = configuration.forward();
     movementData.keyStrafe = configuration.strafe();
@@ -338,6 +339,7 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
       configuration = configuration.withoutKeypress();
     }
     movementData.physicsJumped = configuration.isJumping();
+//    movementData.sprintMove = configuration.isSprinting();
     motion.resetTo(movementData);
     movementData.keyForward = configuration.forward();
     movementData.keyStrafe = configuration.strafe();
@@ -402,7 +404,8 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
         if (useSuperpositions) {
           superposition.applyVariation(variationIndex);
         }
-        for (boolean sprinting : movementData.sprintingAllowed() || movementData.hasSprintSpeed ? /* surprisingly pessimistic */ PESSIMISTIC : NEVER) {
+        boolean sprinting = movementData.sprintingAllowed();
+//        for (boolean sprinting : movementData.sprintingAllowed() || movementData.hasSprintSpeed ? /* surprisingly pessimistic */ PESSIMISTIC : NEVER) {
           movementData.refreshFriction(sprinting);
           for (boolean useItemState : inventoryData.handActive() ? OPTIMISTIC : PESSIMISTIC) {
             if (skipUseItem && useItemState) {
@@ -473,7 +476,8 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
               }
             }
           }
-        }
+
+//        }
         if (useSuperpositions) {
           superposition.resetVariation(variationIndex);
         }

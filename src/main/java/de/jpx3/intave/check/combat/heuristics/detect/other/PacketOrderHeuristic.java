@@ -53,7 +53,7 @@ public final class PacketOrderHeuristic extends MetaCheckPart<Heuristics, Packet
       meta.movementSentThisTick = true;
       meta.betweenTransactionAndFlying.clear();
     } else if (isTransaction) {
-      if (meta.movementSentThisTick && !meta.betweenTransactionAndFlying.isEmpty() && protocol.flyingPacketStream()) {
+      if (meta.movementSentThisTick && !meta.betweenTransactionAndFlying.isEmpty() && protocol.flyingPacketsAreSent()) {
         int options = DELAY_128s | LIMIT_2;
         String description = "invalid packet order (" + meta.betweenTransactionAndFlying.stream().map(PacketType::name).map(s -> s.replace("_", " ")).collect(Collectors.joining(", ")) + ")";
         Anomaly anomaly = Anomaly.anomalyOf("14", Confidence.NONE, Anomaly.Type.KILLAURA, description, options);

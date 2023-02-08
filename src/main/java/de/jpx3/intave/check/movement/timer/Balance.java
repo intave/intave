@@ -1,19 +1,16 @@
 package de.jpx3.intave.check.movement.timer;
 
 import com.comphenix.protocol.events.PacketEvent;
-import de.jpx3.intave.IntaveControl;
-import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.check.CheckStatistics;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.movement.Timer;
-import de.jpx3.intave.executor.Synchronizer;
-import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.user.User;
@@ -32,6 +29,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static de.jpx3.intave.access.player.trust.TrustFactor.ORANGE;
+import static de.jpx3.intave.access.player.trust.TrustFactor.RED;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.POSITION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.RESPAWN;
@@ -39,11 +38,13 @@ import static de.jpx3.intave.module.linker.packet.PacketId.Server.RESPAWN;
 public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
   private final CheckViolationLevelDecrementer decrementer;
   private final boolean highToleranceMode;
+  private final boolean antiStutter;
 
   public Balance(Timer parentCheck) {
     super(parentCheck, BalanceMeta.class);
     this.decrementer = parentCheck.decrementer();
     this.highToleranceMode = parentCheck().highToleranceMode();
+    this.antiStutter = parentCheck().stutterPatch();
   }
 
   @PacketSubscription(
@@ -54,7 +55,7 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
   public void respawnTolerance(PacketEvent event) {
     Player player = event.getPlayer();
     metaOf(player).lastRespawn = System.currentTimeMillis();
-    metaOf(player).timerBalance -= 20.0;
+    metaOf(player).timerBalance -= 50.0;
   }
 
   @PacketSubscription(
@@ -64,9 +65,9 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
   )
   public void sentPosition(PacketEvent event) {
     User user = userOf(event.getPlayer());
-    double leniency = user.meta().violationLevel().isInActiveTeleportBundle ? 10 : 60;
+//    double leniency = user.meta().violationLevel().isInActiveTeleportBundle ? 10 : 60;
     BalanceMeta timerData = metaOf(user);
-    timerData.timerBalance -= leniency;
+    timerData.timerBalance -= 50;
     timerData.lastFlyingPacket = System.currentTimeMillis();
   }
 
@@ -78,7 +79,6 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
     }
     User user = userOf(player);
     MetadataBundle meta = user.meta();
-    ConnectionMetadata connection = meta.connection();
     BalanceMeta timerData = metaOf(user);
     long time = System.currentTimeMillis();
     long delta = time - timerData.lastFlyingPacket;
@@ -86,7 +86,8 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
     timerData.timerBalance += 50 - delta;
     int allowedLagInMilliseconds = trustFactorSetting("buffer-size", player);
     if (highToleranceMode || meta.abilities().probablyFlying()) {
-      allowedLagInMilliseconds *= 1.5;
+      // disable any limits for high tolerance mode and flying
+      allowedLagInMilliseconds = Integer.MAX_VALUE;
     }
     if (System.currentTimeMillis() - timerData.lastRespawn < 6000) {
       allowedLagInMilliseconds = Math.max(allowedLagInMilliseconds, 8000);
@@ -104,15 +105,8 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
 //      timerData.timerBalance += timerData.timerBalance < -400 ? 45 : 15;
 //    }
     statisticApply(user, CheckStatistics::increaseTotal);
-    boolean lowToleranceMode = parentCheck().lowToleranceMode() &&/*violationLevelOf(user) > 10 && */!user.trustFactor().atLeast(TrustFactor.YELLOW) /*&& System.currentTimeMillis() - timerData.lastTimerFlag < 2000*/;
-    int overflowLimit;
-    if (highToleranceMode) {
-      overflowLimit = 400;
-    } else if (lowToleranceMode) {
-      overflowLimit = 40;
-    } else {
-      overflowLimit = 200;
-    }
+    boolean lowToleranceMode = parentCheck().lowToleranceMode() &&/*violationLevelOf(user) > 10 && */user.trustFactor().atOrBelow(ORANGE) /*&& System.currentTimeMillis() - timerData.lastTimerFlag < 2000*/;
+    int overflowLimit = lowToleranceMode ? 40 : 120;
 
 //    List<Double> safeTimerBalanceHistory = timerData.safeTimerBalanceHistory;
 //    List<Double> timerBalanceHistory = timerData.timerBalanceHistory;
@@ -149,43 +143,40 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
 //    if (timerData.balanceUnderflowVL > 15 && combatMicroLag && IntaveControl.GOMME_MODE && hasRedTrustfactor) {
 //      connection.lastAttackQueueRequest = System.currentTimeMillis();
 //    }
+    boolean hasSuspiciousBalance = timerData.timerBalance < -150 && Math.abs(delta) > 100 && timerData.timerBalance + delta > -150;
+    if (antiStutter && user.latency() < 150 && hasSuspiciousBalance && !user.justJoined() && user.meta().protocol().flyingPacketsAreSent() && user.trustFactor().atOrBelow(RED)) {
+      user.nerfOnce(AttackNerfStrategy.DMG_HIGH, "76");
+//      user.player().sendMessage(ChatColor.RED + "Stutter detected");
+//      player.sendMessage(timerData.timerBalance + "/" + overflowLimit + " @" + user.latency() + "ms");
+    }
 
 //    player.sendMessage("vl: " + timerData.balanceUnderflowVL);
 //    player.sendMessage("§c" + timerData.timerBalance + "§7 ~§c" + mean + "§7 -> §c" + formatDouble(timerData.balanceUnderflowVL, 2));
-//    System.out.println(timerData.timerBalance + "/" + overflowLimit);
-
+//    player.setLevel((int) timerData.timerBalance);
     if (timerData.timerBalance > overflowLimit && !user.meta().movement().isInVehicle()) {
       String balanceAsString = formatDouble(timerData.timerBalance / 50, 2);
       statisticApply(user, CheckStatistics::increaseFails);
       Violation violation = Violation.builderFor(Timer.class).forPlayer(player)
         .withMessage("moved too frequently").withDetails(balanceAsString + " ticks ahead")
-        .withVL(System.currentTimeMillis() - timerData.lastTimerFlag < 1000 || violationLevelOf(user) > 16 ? 0.25 : 1)
+        .withVL(System.currentTimeMillis() - timerData.lastTimerFlag < 1000 || violationLevelOf(user) > 16 ? 0.5 : 1)
         .build();
       ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
       if (violationContext.shouldCounterThreat()) {
         movementData.invalidMovement = true;
-        Vector setback = new Vector(movementData.physicsMotionX, movementData.physicsMotionY, movementData.physicsMotionZ);
-        Modules.mitigate().movement().emulationSetBack(player, setback, 12, false);
+        Vector setback = new Vector(movementData.baseMotionX, movementData.baseMotionY, movementData.baseMotionZ);
+        Modules.mitigate().movement().emulationSetBack(player, setback, 3, 2, false);
       }
       timerData.lastTimerFlag = System.currentTimeMillis();
-      timerData.timerBalance -= highToleranceMode || timerData.timerBalance > overflowLimit ? 12.5 : 2.5;
+      timerData.timerBalance -= !violationContext.shouldCounterThreat() ? 25 : 10;
     } else {
       statisticApply(user, CheckStatistics::increasePasses);
       if (timerData.timerBalance > 0) {
-        timerData.timerBalance -= 0.375;
+        timerData.timerBalance -= 2;
       }
       if (System.currentTimeMillis() - timerData.lastTimerFlag > 10000) {
         decrementer.decrement(user, 0.01);
       }
     }
-  }
-
-  private int mean(List<Double> list) {
-    int sum = 0;
-    for (double d : list) {
-      sum += d;
-    }
-    return sum / Math.max(list.size(), 1);
   }
 
   @BukkitEventSubscription

@@ -14,7 +14,8 @@ public final class Timer extends Check {
   private final boolean highToleranceMode;
   private final boolean reverseBlink;
   private final boolean reverseLag;
-  private final boolean noTolerance;
+  private final boolean lowTolerance;
+  private final boolean stutterPatch;
   private final Balance balance;
 
   public Timer() {
@@ -22,16 +23,20 @@ public final class Timer extends Check {
     this.decrementer = new CheckViolationLevelDecrementer(this, 0.2);
     CheckSettings settings = configuration().settings();
     highToleranceMode = settings.boolBy("high-tolerance", false);
-    noTolerance = settings.boolBy("low-tolerance", IntaveControl.GOMME_MODE);
-    reverseBlink = settings.boolBy("reverse-blink", IntaveControl.GOMME_MODE);
+    lowTolerance = settings.boolBy("low-tolerance", IntaveControl.GOMME_MODE);
+    reverseBlink = settings.boolBy("reverse-blink", true);
     reverseLag = settings.boolBy("reverse-lag", IntaveControl.GOMME_MODE);
+    stutterPatch = settings.boolBy("block-stutter-hits", false);
 
-    if (highToleranceMode && noTolerance) {
+    if (highToleranceMode && lowTolerance) {
       IntaveLogger.logger().info("Conflicting tolerance settings: must either be high or low.");
     } else if (highToleranceMode) {
       IntaveLogger.logger().info("Enabled high ping tolerance");
-    } else if (noTolerance) {
+    } else if (lowTolerance) {
       IntaveLogger.logger().info("Enabled low network tolerance mode");
+    }
+    if (stutterPatch) {
+      IntaveLogger.logger().info("Enabled stutter hits prevention");
     }
 
     this.balance = new Balance(this);
@@ -58,7 +63,7 @@ public final class Timer extends Check {
   }
 
   public boolean lowToleranceMode() {
-    return noTolerance;
+    return lowTolerance;
   }
 
   public boolean reverseBlink() {
@@ -67,6 +72,14 @@ public final class Timer extends Check {
 
   public boolean reverseLag() {
     return reverseLag;
+  }
+
+  public boolean lowTolerance() {
+    return lowTolerance;
+  }
+
+  public boolean stutterPatch() {
+    return stutterPatch;
   }
 
   public CheckViolationLevelDecrementer decrementer() {

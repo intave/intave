@@ -24,6 +24,8 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.nayoro.Nayoro;
 import de.jpx3.intave.module.nayoro.event.EntityMoveEvent;
+import de.jpx3.intave.module.nayoro.event.EntityRemoveEvent;
+import de.jpx3.intave.module.nayoro.event.EntitySpawnEvent;
 import de.jpx3.intave.module.nayoro.event.sink.EventSink;
 import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.packet.reader.EntityDestroyReader;
@@ -115,6 +117,9 @@ public final class EntityTracker extends Module {
           firstSurvive = true;
         }
       }
+      if (entity.tracingEnabled() && !firstSurvive) {
+        nayoroEntityDespawn(user, entity);
+      }
       entity.setResponseTracingEnabled(firstSurvive);
     }
     validEntities.sort(Comparator.comparingDouble(entity -> entity.distanceToPlayerCache));
@@ -124,6 +129,11 @@ public final class EntityTracker extends Module {
       boolean trace = count < MAX_TRACED_ENTITIES;
       if (trace) {
         synchronizeData.tracedEntities().add(entity);
+      }
+      if (trace && !entity.wasTracedLastCycle()) {
+        nayoroEntitySpawn(user, entity);
+      } else if (!trace && entity.wasTracedLastCycle()) {
+        nayoroEntityDespawn(user, entity);
       }
       entity.setResponseTracingEnabled(trace);
       entity.doubleVerification = trace && count < MAX_DOUBLE_TRACED_ENTITIES;
@@ -586,6 +596,28 @@ public final class EntityTracker extends Module {
   }
 
   private final BiConsumer<User, Consumer<EventSink>> sinkCallback = Modules.nayoro().sinkCallback();
+
+  private void nayoroEntitySpawn(User user, Entity entity) {
+    Nayoro nayoro = Modules.nayoro();
+    if (!nayoro.recordingActiveFor(user)) {
+      return;
+    }
+    EntitySpawnEvent event = new EntitySpawnEvent(
+      entity.entityId(),
+      entity.typeData().size(),
+      entity.position.toPosition()
+    );
+    sinkCallback.accept(user, event::accept);
+  }
+
+  private void nayoroEntityDespawn(User user, Entity entity) {
+    Nayoro nayoro = Modules.nayoro();
+    if (!nayoro.recordingActiveFor(user)) {
+      return;
+    }
+    EntityRemoveEvent event = new EntityRemoveEvent(entity.entityId());
+    sinkCallback.accept(user, event::accept);
+  }
 
   private void nayoroEntityPositionUpdate(Player player, Entity entity) {
     Nayoro nayoro = Modules.nayoro();

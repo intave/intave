@@ -41,6 +41,10 @@ public enum TrustFactor implements Comparable<TrustFactor> {
     return factor() >= trustFactor.factor();
   }
 
+  public boolean atOrBelow(TrustFactor trustFactor) {
+    return factor() <= trustFactor.factor();
+  }
+
   public int factor() {
     return factor;
   }

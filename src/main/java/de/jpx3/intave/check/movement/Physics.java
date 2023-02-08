@@ -169,14 +169,14 @@ public final class Physics extends Check {
   private void simulateMotionClamp(User user) {
     MovementMetadata movementData = user.meta().movement();
     double resetMotion = movementData.resetMotion();
-    if (Math.abs(movementData.physicsMotionX) < resetMotion) {
-      movementData.physicsMotionX = 0.0;
+    if (Math.abs(movementData.baseMotionX) < resetMotion) {
+      movementData.baseMotionX = 0.0;
     }
-    if (Math.abs(movementData.physicsMotionY) < resetMotion) {
-      movementData.physicsMotionY = 0.0;
+    if (Math.abs(movementData.baseMotionY) < resetMotion) {
+      movementData.baseMotionY = 0.0;
     }
-    if (Math.abs(movementData.physicsMotionZ) < resetMotion) {
-      movementData.physicsMotionZ = 0.0;
+    if (Math.abs(movementData.baseMotionZ) < resetMotion) {
+      movementData.baseMotionZ = 0.0;
     }
   }
 
@@ -201,9 +201,9 @@ public final class Physics extends Check {
   @DispatchTarget
   public void endMovement(User user, boolean hasMovement) {
     MovementMetadata movementData = user.meta().movement();
-    double motionX = movementData.motionX();
-    double motionY = movementData.motionY();
-    double motionZ = movementData.motionZ();
+    double motionX = movementData.endMotionXOverride ? movementData.endMotionXOverrideValue : movementData.motionX();
+    double motionY = movementData.endMotionYOverride ? movementData.endMotionYOverrideValue : movementData.motionY();
+    double motionZ = movementData.endMotionZOverride ? movementData.endMotionZOverrideValue : movementData.motionZ();
     if (hasMovement) {
       Simulator simulator = movementData.simulator();
       if (movementData.pastVelocity == 0) {
@@ -213,16 +213,22 @@ public final class Physics extends Check {
           movementData.physicsJumpedOverrideVL--;
         }
       }
-      simulator.prepareNextTick(user, movementData.positionX, movementData.positionY, movementData.positionZ, motionX, motionY, motionZ);
+      simulator.prepareNextTick(user,
+        movementData.positionX, movementData.positionY, movementData.positionZ,
+        motionX, motionY, motionZ
+      );
     }
+    movementData.endMotionXOverride = false;
+    movementData.endMotionYOverride = false;
+    movementData.endMotionZOverride = false;
   }
 
   @DispatchTarget
   public void updateOnGroundIfFlying(User user) {
     MovementMetadata movementData = user.meta().movement();
-    double physicsMotionX = movementData.physicsMotionX;
-    double physicsMotionY = movementData.physicsMotionY;
-    double physicsMotionZ = movementData.physicsMotionZ;
+    double physicsMotionX = movementData.baseMotionX;
+    double physicsMotionY = movementData.baseMotionY;
+    double physicsMotionZ = movementData.baseMotionZ;
     if (Math.abs(physicsMotionX) < movementData.resetMotion()) {
       physicsMotionX = 0;
     }
@@ -248,9 +254,9 @@ public final class Physics extends Check {
     if (movementData.pastVelocity != 0) {
       return;
     }
-    double motionX = movementData.physicsMotionXBeforeVelocity * 0.91f;
-    double motionY = (movementData.physicsMotionYBeforeVelocity - 0.08) * 0.98f;
-    double motionZ = movementData.physicsMotionZBeforeVelocity * 0.91f;
+    double motionX = movementData.baseMotionXBeforeVelocity * 0.91f;
+    double motionY = (movementData.baseMotionYBeforeVelocity - 0.08) * 0.98f;
+    double motionZ = movementData.baseMotionZBeforeVelocity * 0.91f;
     if (motionX != 0 && motionY != 0 && motionZ != 0) {
       SimpleColliderResult colliderResult = Colliders.simplifiedCollision(
         user.player(),
@@ -279,7 +285,7 @@ public final class Physics extends Check {
 
   private void handleSneakInWater(User user) {
     MovementMetadata movementData = user.meta().movement();
-    movementData.physicsMotionY -= 0.04F;
+    movementData.baseMotionY -= 0.04F;
   }
 
   private void updateInWater(User user) {
@@ -363,16 +369,32 @@ public final class Physics extends Check {
       && !movementData.collidedWithBoat();
 
     if (checkVelocity && movementData.pastExternalVelocity < 10 && !movementData.recentlyEncounteredFlyingPacket(2)) {
+      boolean actuallyMoved = (Math.abs(predictedX) > 0.01 || Math.abs(predictedZ) > 0.01);
       if (distance > 0.005 && !onLadder) {
-        boolean aggressive = violationLevelData.physicsVelocityVL++ >= VELOCITY_VL_THRESHOLD || movementData.pastExternalVelocity == 0;
-        if (aggressive || distance > 0.01) {
-          if (aggressive) {
-            horizontalViolationIncrease = Math.max(2, horizontalViolationIncrease);
-            velocityDetected = true;
+        if (actuallyMoved) {
+          boolean aggressive = violationLevelData.physicsVelocityVL++ >= VELOCITY_VL_THRESHOLD || movementData.pastExternalVelocity == 0;
+          if (aggressive || distance > 0.01) {
+            if (aggressive) {
+              horizontalViolationIncrease = Math.max(2, horizontalViolationIncrease);
+              velocityDetected = true;
+            }
+            horizontalViolationIncrease *= 20.0;
           }
-          horizontalViolationIncrease *= 20.0;
+        } else {
+          if (Math.abs(differenceY) < 0.015 && movementData.pastExternalVelocity < 2) {
+            verticalViolationIncrease = 0;
+          }
         }
       }
+    }
+
+    boolean flyingJump = false;
+    if ((Math.abs(predictedX) < 0.04 && Math.abs(predictedZ) < 0.04) && Math.abs(predictedY - movementData.jumpMotion()) < 0.05 &&
+      differenceY > 0.01 && differenceY < 0.02 /* only allow positive differenceY */ && (movementData.lastOnGround() || movementData.onGround()) && movementData.recentlyEncounteredFlyingPacket(6)) {
+      flyingJump = true;
+      verticalViolationIncrease = 0;
+      movementData.endMotionYOverride = true;
+      movementData.endMotionYOverrideValue = predictedY;
     }
 
     if (movementData.elytraFlying) {
@@ -687,9 +709,9 @@ public final class Physics extends Check {
         debug += ChatColor.ITALIC + " slk:" + movementData.shulkerXToleranceRemaining + "," + movementData.shulkerYToleranceRemaining + "," + movementData.shulkerZToleranceRemaining + chatColor;
       }
 //      debug += " web (a: " + shortenBoolean(movementData.inWeb) + ", r: " + shortenBoolean(collidesWeb(user, currentBoundingBox)) + ")";
-      if (movementData.pastNearbyCollisionInaccuracy < 3) {
-        debug += ChatColor.ITALIC + " pci:" + movementData.pastNearbyCollisionInaccuracy + chatColor;
-      }
+//      if (movementData.pastNearbyCollisionInaccuracy < 3) {
+//        debug += ChatColor.ITALIC + " pci:" + movementData.pastNearbyCollisionInaccuracy + chatColor;
+//      }
       if (movementData.pastEdgeSneak < 4) {
         debug += ChatColor.ITALIC + " esk:" + movementData.pastEdgeSneak + chatColor;
       }
@@ -703,6 +725,20 @@ public final class Physics extends Check {
         // velocity low tolerance
         debug += ChatColor.ITALIC + " vlt:" + movementData.pastExternalVelocity + chatColor;
       }
+      if (flyingJump) {
+        debug += ChatColor.ITALIC + " fjp" + chatColor;
+      }
+      if (movementData.endMotionXOverride) {
+        debug += ChatColor.ITALIC + " emx:" + MathHelper.formatDouble(movementData.endMotionXOverrideValue, 4) + chatColor;
+      }
+      if (movementData.endMotionYOverride) {
+        debug += ChatColor.ITALIC + " emy:" + MathHelper.formatDouble(movementData.endMotionYOverrideValue, 4) + chatColor;
+      }
+      if (movementData.endMotionZOverride) {
+        debug += ChatColor.ITALIC + " emz:" + MathHelper.formatDouble(movementData.endMotionZOverrideValue, 4) + chatColor;
+      }
+
+//      debug += " spr:" + (simulation.wasSprinting() ? 1 : 0);
 
 //      debug += " ai ?" + movementData.aiMoveSpeed();
 //      debug += " sprint " + shortenBoolean(movementData.sprinting) + "/" + shortenBoolean(movementData.hasSprintSpeed);
@@ -767,7 +803,8 @@ public final class Physics extends Check {
       }
       String finalDebug = debug;
       if (!anyDebugRequested) {
-        player.sendMessage(finalDebug);
+        String finalFinalDebug = finalDebug;
+        Synchronizer.synchronize(() -> player.sendMessage(finalFinalDebug));
       } else {
         finalDebug = ChatColor.stripColor(finalDebug);
         if (faultDebugRequested && violationLevelIncrease > 0) {

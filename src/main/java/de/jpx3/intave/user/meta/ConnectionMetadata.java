@@ -145,7 +145,7 @@ public final class ConnectionMetadata {
   public void receivedTransactionAfter(long milliseconds) {
     transactionSum += Math.min(milliseconds, 1000);
     transactionNum++;
-    if (transactionNum > Short.MAX_VALUE / 2) {
+    if (transactionNum > Short.MAX_VALUE / 8) {
       transactionSum /= 2;
       transactionNum /= 2;
     }

@@ -143,7 +143,7 @@ public final class SimulationEvaluator {
           verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 10);
         }
         movement.enforceBoatStep = false;
-      } else if (movement.physicsMotionY < 0) {
+      } else if (movement.baseMotionY < 0) {
         verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 10);
         if (movement.motionY() > movement.jumpMotion()) {
           movement.enforceBoatStep = true;
@@ -390,7 +390,8 @@ public final class SimulationEvaluator {
         }
       } else {
         if (movement.pastEdgeSneak <= 3) {
-          boolean smallMovement = (Math.abs(movement.motionX()) < 0.08 && Math.abs(movement.motionZ()) < 0.2) || (Math.abs(movement.motionZ()) < 0.08 && Math.abs(movement.motionX()) < 0.2) && movement.onGround();
+          boolean smallMovement = (Math.abs(movement.motionX()) < 0.099 && Math.abs(movement.motionZ()) < 0.2) || (Math.abs(movement.motionZ()) < 0.099 && Math.abs(movement.motionX()) < 0.2) && movement.onGround();
+//          player.sendMessage(movement.motionX() + " " + movement.motionZ() + " " + smallMovement);
           limit = smallMovement ? 0.2 : 0.02;
         }
       }

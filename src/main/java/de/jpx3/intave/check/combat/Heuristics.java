@@ -97,6 +97,9 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
         appendCheckPart(new RotationStandardDeviationHeuristic(this));
         appendCheckPart(new RotationSnapHeuristic(this));
         appendCheckPart(new LongTermClickAccuracyHeuristic(this));
+        if (!IntaveControl.GOMME_MODE && IntaveControl.DISABLE_LICENSE_CHECK) {
+          appendCheckPart(new LongTermClickAccuracyRelayHeuristic(this));
+        }
         appendCheckPart(new ReshapedJumpHeuristic(this));
         appendCheckPart(new RotationAccuracyYawHeuristic(this));
         appendCheckPart(new RotationAccuracyPitchHeuristic(this));
@@ -179,7 +182,11 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
     String description = anomaly.description();
 
     String confidenceDetails = overallConfidence.output() + " (" + levelFrom(allConfidences.toArray(new Confidence[0])) + "+" + anomaly.confidence().level() + ")";
-    String message = ChatColor.RED + "[IH] " + player.getName() + " on p[" + pattern + "]" + confidenceDetails + " " + description;
+    String defaultPrefix = ChatColor.RED + "[IH] ";
+    if (IntavePlugin.singletonInstance().sibyl().encryptionActiveFor(player)) {
+      defaultPrefix = "";
+    }
+    String message = defaultPrefix + player.getName() + " on p[" + pattern + "]" + confidenceDetails + " " + description;
 
     if (IntaveControl.DEBUG_HEURISTICS && !plugin.sibyl().isAuthenticated(player)) {
       player.sendMessage(message);

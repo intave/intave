@@ -93,7 +93,7 @@ public final class MovementEmulation extends Module {
       lowTimeout = ++movement.speculativeLowThresholdOverflows >= repeatsRequired;
     }
     boolean timeout = baseTimeout || lowTimeout;
-    boolean hadMovement = Math.abs(movement.physicsMotionX) > 0.1 || Math.abs(movement.physicsMotionZ) > 0.1 || Math.abs(movement.physicsMotionY) > 0.1;
+    boolean hadMovement = Math.abs(movement.baseMotionX) > 0.1 || Math.abs(movement.baseMotionZ) > 0.1 || Math.abs(movement.baseMotionY) > 0.1;
 
     if (timeout && hadMovement && !movement.speculationEnded) {
       movement.inSpeculation = true;
@@ -108,7 +108,7 @@ public final class MovementEmulation extends Module {
         positionY = movement.speculativePositionY;
         positionZ = movement.speculativePositionZ;
       } else {
-        motion = new Vector(movement.physicsMotionX, movement.physicsMotionY, movement.physicsMotionZ);
+        motion = new Vector(movement.baseMotionX, movement.baseMotionY, movement.baseMotionZ);
         positionX = movement.positionX();
         positionY = movement.positionY();
         positionZ = movement.positionZ();

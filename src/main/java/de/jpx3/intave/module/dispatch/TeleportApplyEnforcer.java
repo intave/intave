@@ -347,9 +347,9 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
     movementData.verifiedPositionY = positionY;
     movementData.verifiedPositionZ = positionZ;
 
-    movementData.physicsMotionX = 0.0;
-    movementData.physicsMotionY = 0.0;
-    movementData.physicsMotionZ = 0.0;
+    movementData.baseMotionX = 0.0;
+    movementData.baseMotionY = 0.0;
+    movementData.baseMotionZ = 0.0;
 
     movementData.lastOnGround = false;
     movementData.setBoundingBox(BoundingBox.fromPosition(user, movementData.teleportLocation));

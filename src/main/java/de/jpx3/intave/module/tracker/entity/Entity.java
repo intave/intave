@@ -65,6 +65,7 @@ public class Entity {
   private Entity mountedOnEntity;
   private BoundingBox boundingBox;
   private boolean enabledResponseTracing;
+  private boolean wasTracedLastCycle;
 
   // experimental stuff
   public int duplicationId;
@@ -124,6 +125,10 @@ public class Entity {
     @Override
     public String toString() {
       return "[" + posX + "," + posY + "," + posZ + "]";
+    }
+
+    public Position toPosition() {
+      return new Position(posX, posY, posZ);
     }
   }
 
@@ -446,7 +451,12 @@ public class Entity {
     return enabledResponseTracing;
   }
 
+  public boolean wasTracedLastCycle() {
+    return wasTracedLastCycle;
+  }
+
   public void setResponseTracingEnabled(boolean enabledResponseTracing) {
+    this.wasTracedLastCycle = this.enabledResponseTracing;
     this.enabledResponseTracing = enabledResponseTracing;
   }
 

@@ -98,9 +98,9 @@ final class v12FluidResolver extends FluidResolver {
       }
       waterFlow = waterFlow.normalize();
       double d2 = 0.014D;
-      movementData.physicsMotionX += waterFlow.xCoord * d2;
-      movementData.physicsMotionY += waterFlow.yCoord * d2;
-      movementData.physicsMotionZ += waterFlow.zCoord * d2;
+      movementData.baseMotionX += waterFlow.xCoord * d2;
+      movementData.baseMotionY += waterFlow.yCoord * d2;
+      movementData.baseMotionZ += waterFlow.zCoord * d2;
       movementData.pastPushedByWaterFlow = 0;
     }
 

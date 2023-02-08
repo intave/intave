@@ -63,7 +63,7 @@ public final class PacketLoss extends MetaCheckPart<Timer, PacketLoss.PacketLoss
           if (violationContext.shouldCounterThreat()) {
             MovementMetadata movementData = user.meta().movement();
             movementData.invalidMovement = true;
-            Vector setback = new Vector(movementData.physicsMotionX, movementData.physicsMotionY, movementData.physicsMotionZ);
+            Vector setback = new Vector(movementData.baseMotionX, movementData.baseMotionY, movementData.baseMotionZ);
             Modules.mitigate().movement().emulationSetBack(player, setback, 12, false);
 
             balanceButActuallyGood.reset(user);

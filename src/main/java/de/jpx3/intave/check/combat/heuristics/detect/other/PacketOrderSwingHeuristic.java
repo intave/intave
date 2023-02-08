@@ -55,7 +55,7 @@ public final class PacketOrderSwingHeuristic extends MetaCheckPart<Heuristics, P
     if (user.meta().abilities().ignoringMovementPackets()) {
       return;
     }
-    if (clientData.flyingPacketStream() && action == EnumWrappers.EntityUseAction.ATTACK && !heuristicMeta.swingTick) {
+    if (clientData.flyingPacketsAreSent() && action == EnumWrappers.EntityUseAction.ATTACK && !heuristicMeta.swingTick) {
       String description = "swing not correlated with attack (" + user.meta().protocol().versionString() + ")";
       Anomaly anomaly = Anomaly.anomalyOf("31", Confidence.LIKELY, Anomaly.Type.KILLAURA, description);
       parentCheck().saveAnomaly(player, anomaly);

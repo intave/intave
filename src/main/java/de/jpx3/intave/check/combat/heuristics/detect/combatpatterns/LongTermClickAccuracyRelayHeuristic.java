@@ -1,28 +1,17 @@
 package de.jpx3.intave.check.combat.heuristics.detect.combatpatterns;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.annotate.Reserved;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
-import de.jpx3.intave.check.combat.heuristics.Anomaly;
 import de.jpx3.intave.check.combat.heuristics.Confidence;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.nayoro.NayoroRelay;
-import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.nayoro.Environment;
 import de.jpx3.intave.module.nayoro.PlayerContainer;
 import de.jpx3.intave.module.nayoro.event.AttackEvent;
 import de.jpx3.intave.module.nayoro.event.ClickEvent;
-import de.jpx3.intave.module.tracker.entity.Entity;
-import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.meta.AttackMetadata;
+import de.jpx3.intave.module.nayoro.event.PlayerMoveEvent;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
-import org.bukkit.entity.Player;
-
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.ARM_ANIMATION;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.USE_ENTITY;
 
 @Reserved
 public final class LongTermClickAccuracyRelayHeuristic extends MetaCheckPart<Heuristics, LongTermClickAccuracyRelayHeuristic.ClickAccuracyMeta> {
@@ -30,69 +19,53 @@ public final class LongTermClickAccuracyRelayHeuristic extends MetaCheckPart<Heu
     super(parentCheck, LongTermClickAccuracyRelayHeuristic.ClickAccuracyMeta.class);
   }
 
-  @PacketSubscription(
-    packetsIn = {
-      USE_ENTITY, ARM_ANIMATION
-    }
-  )
-  public void evaluateFightAccuracy(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
-    AttackMetadata attackData = user.meta().attack();
-    LongTermClickAccuracyRelayHeuristic.ClickAccuracyMeta heuristicMeta = metaOf(user);
-    PacketType packetType = event.getPacketType();
-    PacketContainer packet = event.getPacket();
-    Entity entity = attackData.lastAttackedEntity();
-    if (entity == null || !entity.moving(0.05) || entity.ticksAlive < 200) {
-      return;
-    }
-    if (!attackData.recentlyAttacked(500) || attackData.recentlySwitchedEntity(1000)) {
-      return;
-    }
-    if (packetType == PacketType.Play.Client.ARM_ANIMATION) {
-      heuristicMeta.swings++;
-    } else {
-      EnumWrappers.EntityUseAction action = packet.getEntityUseActions().readSafely(0);
-      if (action == null) {
-        action = packet.getEnumEntityUseActions().read(0).getAction();
-      }
-      if (action == EnumWrappers.EntityUseAction.ATTACK) {
-        heuristicMeta.attacks++;
-        heuristicMeta.swings--;
-        double failRate = (heuristicMeta.swings / heuristicMeta.attacks) * 100.0;
-//        Synchronizer.synchronize(() -> player.sendMessage(String.valueOf(failRate)));
-        if (heuristicMeta.attacks > 80) {
-          if (failRate >= 0 && failRate < 3) {
-            Anomaly anomaly = Anomaly.anomalyOf("210", Confidence.NONE, Anomaly.Type.KILLAURA, "player maintains high attack accuracy (failRate: " + MathHelper.formatDouble(failRate, 2) + "%)");
-            parentCheck().saveAnomaly(player, anomaly);
-          }
-          heuristicMeta.attacks = 0;
-          heuristicMeta.swings = 0;
-        }
-      }
-    }
+  @NayoroRelay
+  public void on(PlayerContainer player, ClickEvent click) {
+    ClickAccuracyMeta meta = player.meta(ClickAccuracyMeta.class);
+//    Environment environment = player.environment();
+//    if (meta.lastAttackedEntityId > 0 && !environment.entityMoved(meta.lastAttackedEntityId, 0.05)) {
+//      return;
+//    }
+//    if (System.currentTimeMillis() - meta.lastAttack > 500 || System.currentTimeMillis() - meta.lastSwitch < 1000) {
+//      return;
+//    }
+//    player.debug("click swing");
+    meta.swings++;
   }
 
   @NayoroRelay
   public void on(PlayerContainer player, AttackEvent attack) {
-
-  }
-
-  @NayoroRelay
-  public void on(PlayerContainer player, ClickEvent attack) {
-
-  }
-
-  private boolean entityRequirementMet(PlayerContainer player) {
-//    player.environment().hasPassed()
-    if (!player.recentlyAttacked(500) || !player.recentlySwitchedEntity(1000)) {
-      return false;
+    ClickAccuracyMeta meta = player.meta(ClickAccuracyMeta.class);
+    meta.lastAttack = System.currentTimeMillis();
+    if (meta.lastAttackedEntityId != attack.target()) {
+      meta.lastSwitch = System.currentTimeMillis();
+      meta.lastAttackedEntityId = attack.target();
     }
-    return true;
+//    Environment environment = player.environment();
+//    if (!environment.entityMoved(attack.target(), 0.05)) {
+//      return;
+//    }
+//    if (System.currentTimeMillis() - meta.lastAttack > 500 || System.currentTimeMillis() - meta.lastSwitch < 1000) {
+//      return;
+//    }
+    meta.attacks++;
+//    meta.swings--;
+    int fails = (int) (meta.swings - meta.attacks);
+    double failRate = (fails / meta.swings) * 100.0;
+    if (meta.attacks >= 100) {
+      if (failRate >= 0 && failRate < 3) {
+        player.noteAnomaly("210", Confidence.NONE, "player maintains high attack accuracy (failRate: " + MathHelper.formatDouble(failRate, 2) + "%)");
+      }
+      meta.attacks = 0;
+      meta.swings = 0;
+    }
   }
 
   public static class ClickAccuracyMeta extends CheckCustomMetadata {
     public double attacks;
     public double swings;
+    public long lastAttack;
+    public long lastSwitch;
+    public int lastAttackedEntityId;
   }
 }

@@ -33,6 +33,14 @@ public abstract class EventSink {
     visitAny(event);
   }
 
+  public void visit(EntitySpawnEvent event) {
+    visitAny(event);
+  }
+
+  public void visit(EntityRemoveEvent event) {
+    visitAny(event);
+  }
+
   public void visit(EntityMoveEvent event) {
     visitAny(event);
   }

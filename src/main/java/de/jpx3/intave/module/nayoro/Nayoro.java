@@ -99,6 +99,7 @@ public final class Nayoro extends Module {
       return Collections.emptySet();
     }
     PlayerContainer player = new UserPlayerContainer(user);
+    player.setEnvironment(new LiveEnvironment(user));
     return Sets.newHashSet(new ForwardEventSink(player));
   }
 

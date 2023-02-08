@@ -102,8 +102,7 @@ public final class SibylAuthentication implements BukkitEventSubscriber {
                   object.addProperty("action", "verify");
                   object.addProperty("state", success ? "success" : "rejected");
                   SibylAuthentication.this.sendMessageToClient(player, SibylAuthentication.this.messageChannelOf(player), "sibyl-auth", object);
-                  SibylAuthentication.this.setAuthState(player, success ? SibylAuthenticationState.ATH : SibylAuthenticationState.RGF
-                  );
+                  SibylAuthentication.this.setAuthState(player, success ? SibylAuthenticationState.ATH : SibylAuthenticationState.RGF);
                   if (success) {
                     onSuccessfulAuthentication(player);
                   }

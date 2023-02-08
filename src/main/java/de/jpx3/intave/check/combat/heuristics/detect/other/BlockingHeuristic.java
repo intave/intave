@@ -80,7 +80,7 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
     BlockingMeta meta = metaOf(user);
     PacketContainer packet = event.getPacket();
 
-    if (!user.meta().protocol().flyingPacketStream() || user.meta().abilities().ignoringMovementPackets()) {
+    if (!user.meta().protocol().flyingPacketsAreSent() || user.meta().abilities().ignoringMovementPackets()) {
       return;
     }
 

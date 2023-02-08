@@ -14,7 +14,7 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
-import de.jpx3.intave.user.storage.AccountCheckStorage;
+import de.jpx3.intave.user.storage.AccountDataStorage;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerJoinEvent;
 
@@ -32,14 +32,14 @@ public final class AccountCheck extends Module {
   private static final String PROFILE_REQUEST_SCHEMA = "https://laby.net/api/v2/user/%s/get-profile";
   private static final String MSA_REQUEST_SCHEMA = "https://laby.net/api/user/%s/account-type";
   private static final String GET_GAME_STATS_REQUEST_SCHEMA = "https://laby.net/api/user/%s/get-game-stats";
-  private static final int MINIMUM_AGE_IN_DAYS = 7;
+  private static final int MINIMUM_AGE_IN_DAYS = 14;
 
   @BukkitEventSubscription
   public void onJoin(PlayerJoinEvent join) {
     Player player = join.getPlayer();
     User user = UserRepository.userOf(player);
     user.onStorageReady(x -> {
-      AccountCheckStorage storage = user.storageOf(AccountCheckStorage.class);
+      AccountDataStorage storage = user.storageOf(AccountDataStorage.class);
       if (storage.isBlocked()) {
         punishNewAccount(player);
         return;
@@ -122,9 +122,10 @@ public final class AccountCheck extends Module {
     if (IntaveControl.GOMME_MODE) {
       SibylBroadcast.broadcast(player.getName() + "/" + player.getUniqueId() + " is a newly created account");
       User user = UserRepository.userOf(player);
-      user.nerfPermanently(AttackNerfStrategy.CRITICALS, "86");
       user.nerfPermanently(AttackNerfStrategy.BLOCKING, "86");
       user.nerfPermanently(AttackNerfStrategy.GARBAGE_HITS, "86");
+      user.nerfPermanently(AttackNerfStrategy.BURN_LONGER, "86");
+      user.setTrustFactor(TrustFactor.RED);
     }
   }
 

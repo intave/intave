@@ -12,6 +12,7 @@ import de.jpx3.intave.block.physics.BlockProperties;
 import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.block.type.MaterialSearch;
 import de.jpx3.intave.block.variant.BlockVariant;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.player.Effects;
@@ -28,6 +29,7 @@ import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.user.meta.ViolationMetadata;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -439,13 +441,12 @@ class BaseSimulator extends Simulator {
         violationLevelData.ignorePostTickMotionReset = false;
         //        player.sendMessage("Ignore physics motion reset " + motionVector);
       } else {
-        movementData.physicsMotionX = motionVector.motionX;
-        movementData.physicsMotionY = motionVector.motionY;
-        movementData.physicsMotionZ = motionVector.motionZ;
-        //        player.sendMessage(ChatColor.DARK_GRAY + "Reset physics motion to " +
-        // motionVector);
+        movementData.baseMotionX = motionVector.motionX;
+        movementData.baseMotionY = motionVector.motionY;
+        movementData.baseMotionZ = motionVector.motionZ;
       }
     }
+
     movementData.increaseFlyingPacket();
     movementData.pastEntityUse++;
     if (movementData.pastPlayerAttackPhysics < 100) {
@@ -519,7 +520,7 @@ class BaseSimulator extends Simulator {
     if (movementData.collidedVertically) {
       Motion collisionVector =
         BlockPhysics.blockLanded(
-          user, block, motion.motionX, movementData.physicsMotionY, motion.motionZ);
+          user, block, motion.motionX, movementData.baseMotionY, motion.motionZ);
       if (collisionVector != null) {
         motion.resetTo(collisionVector);
       } else {

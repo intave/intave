@@ -77,7 +77,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public double verifiedPositionX, verifiedPositionY, verifiedPositionZ;
   public double lastPositionX, lastPositionY, lastPositionZ;
   public double positionX, positionY, positionZ;
-  public boolean sprinting, lastSprinting, hasSprintSpeed, sneaking, lastSneaking;
+  public boolean sprinting, lastSprinting, /*sprintMove, lastSprintMove,*/ hasSprintSpeed, sneaking, lastSneaking;
   public int sprintSneakFaults;
   public boolean acceptSneakFaults = true;
   public int sneakingTicks;
@@ -114,10 +114,12 @@ public final class MovementMetadata implements SimulationEnvironment {
   public AtomicInteger pendingVelocityPackets = new AtomicInteger();
   public int physicsPacketRelinkFlyVL; // In Air
   public boolean invalidMovement, suspiciousMovement;
-  public double physicsMotionX, physicsMotionY, physicsMotionZ;
-  public double physicsMotionXBeforeVelocity, physicsMotionYBeforeVelocity, physicsMotionZBeforeVelocity;
-  public double physicsMotionXResetCache, physicsMotionYResetCache, physicsMotionZResetCache;
-  public double physicsMotionXBeforeVelocityResetCache, physicsMotionYBeforeVelocityResetCache, physicsMotionZBeforeVelocityResetCache;
+  public double baseMotionX, baseMotionY, baseMotionZ; // base or last motion, exclusively for the physics check
+  public double baseMotionXBeforeVelocity, baseMotionYBeforeVelocity, baseMotionZBeforeVelocity;
+  public double baseMotionXResetCache, baseMotionYResetCache, baseMotionZResetCache;
+  public double baseMotionXBeforeVelocityResetCache, baseMotionYBeforeVelocityResetCache, baseMotionZBeforeVelocityResetCache;
+  public boolean endMotionXOverride, endMotionYOverride, endMotionZOverride;
+  public double endMotionXOverrideValue, endMotionYOverrideValue, endMotionZOverrideValue;
   public int pastRiptideSpin = 100;
   public int highestLocalRiptideLevel = 0;
   public int pastPlayerAttackPhysics = 100;
@@ -200,7 +202,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   @Nullable
   private Vector motionMultiplier = null;
   private double jumpMotion;
-  private int pastClientFlyingPacket, pastFlyingPacketAccurate;
+  private int pastClientFlyingPacket;
+  public int pastFlyingPacketAccurate;
   private float aiMoveSpeed, jumpMovementFactor;
   private boolean eyesInWater;
   // Vehicle
@@ -605,10 +608,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   private void updateMovementMetaData() {
     MetadataBundle meta = user.meta();
     AbilityMetadata abilityData = meta.abilities();
-
     jumpMovementFactor = 0.02f;
     aiMoveSpeed = (float) abilityData.attributeValue("generic.movementSpeed", AbilityMetadata.EXCLUDE_SPRINT_MODIFIER);
-
     if (lastSprinting) {
       jumpMovementFactor = (float) ((double) jumpMovementFactor + (double) 0.02f * 0.3d);
     }
@@ -628,6 +629,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     ProtocolMetadata clientData = meta.protocol();
     InventoryMetadata inventoryData = meta.inventory();
     sprintingAllowed = sprinting;
+//    sprintingAllowed = true;
     if (sneaking && !clientData.sprintWhenSneaking()) {
       sprintingAllowed = false;
     }
@@ -638,6 +640,14 @@ public final class MovementMetadata implements SimulationEnvironment {
       sprintingAllowed = false;
     }
   }
+
+//  public boolean sprintingIsAllowed() {
+//    MetadataBundle meta = user.meta();
+//    AbilityMetadata abilities = meta.abilities();
+//    ProtocolMetadata clientData = meta.protocol();
+//    InventoryMetadata inventoryData = meta.inventory();
+//    return (!sneaking || clientData.sprintWhenSneaking()) && !inventoryData.inventoryOpen() && abilities.foodLevel > 6;
+//  }
 
   public boolean inLava() {
     ProtocolMetadata clientData = user.meta().protocol();
@@ -669,8 +679,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   public boolean recentlyEncounteredFlyingPacket(int ticks) {
-    ProtocolMetadata clientData = user.meta().protocol();
-    if (clientData.flyingPacketStream()) {
+    ProtocolMetadata protocol = user.meta().protocol();
+    if (protocol.flyingPacketsAreSent()) {
       return pastClientFlyingPacket <= ticks && pastFlyingPacketAccurate <= ticks;
     } else {
       return pastFlyingPacketAccurate <= ticks;
@@ -714,6 +724,7 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   public void setSprinting(boolean sprinting) {
     this.sprinting = sprinting;
+//    this.sprinting = false;
     AbilityMetadata abilities = user.meta().abilities();
     WrappedAttribute movementSpeed = abilities.findAttribute("generic.movementSpeed");
 
@@ -849,12 +860,12 @@ public final class MovementMetadata implements SimulationEnvironment {
     refreshFriction(sprinting);
   }
 
-  @Deprecated
-  public void setAiMoveSpeed(float aiMoveSpeed) {
-    this.aiMoveSpeed = aiMoveSpeed;
-//    friction = MovementHelper.resolveFriction(user, sprinting, verifiedPositionX, verifiedPositionY, verifiedPositionZ);
-    refreshFriction(sprinting);
-  }
+//  @Deprecated
+//  public void setAiMoveSpeed(float aiMoveSpeed) {
+//    this.aiMoveSpeed = aiMoveSpeed;
+////    friction = MovementHelper.resolveFriction(user, sprinting, verifiedPositionX, verifiedPositionY, verifiedPositionZ);
+//    refreshFriction(sprinting);
+//  }
 
   public int pastFlyingPacketAccurate() {
     return pastFlyingPacketAccurate;

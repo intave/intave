@@ -54,8 +54,8 @@ public final class ReshapedJumpHeuristic extends MetaCheckPart<Heuristics, Resha
       float yawSine = SinusCache.sin(rotationYaw * (float) Math.PI / 180.0F, false);
       float yawCosine = SinusCache.cos(rotationYaw * (float) Math.PI / 180.0F, false);
 
-      double physicsMotionX = movementData.physicsMotionX;
-      double physicsMotionZ = movementData.physicsMotionZ;
+      double physicsMotionX = movementData.baseMotionX;
+      double physicsMotionZ = movementData.baseMotionZ;
       ItemStack itemStack = inventoryData.heldItem();
       boolean knockbackEnchantment = itemStack != null && itemStack.containsEnchantment(Enchantment.KNOCKBACK);
 

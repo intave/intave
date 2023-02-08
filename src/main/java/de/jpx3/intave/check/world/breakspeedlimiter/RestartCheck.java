@@ -65,7 +65,7 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
 
     switch (digType) {
       case START_DESTROY_BLOCK: {
-        if (clientData.flyingPacketStream()) {
+        if (clientData.flyingPacketsAreSent()) {
           int ticksBetween = meta.ticks - meta.blockBreakTick;
           if (ticksBetween < 5) {
             String message = "started breaking too quickly";

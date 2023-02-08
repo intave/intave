@@ -85,7 +85,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       action = packet.getEnumEntityUseActions().read(0).getAction();
     }
     if (action == EnumWrappers.EntityUseAction.ATTACK) {
-      PacketContainer packetClone = packet.deepClone();
+      PacketContainer packetClone = packet.shallowClone();
       int entityId = packet.getIntegers().read(0);
       Entity entity = entityByIdentifier(user, entityId);
       boolean checkAgain;
@@ -196,7 +196,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
             && !abilityData.ignoringMovementPackets();
 
           if (checkActivated) {
-            if (!protocolMetadata.flyingPacketStream()) {
+            if (!protocolMetadata.flyingPacketsAreSent()) {
               // >= 1.9.x
               if (
                 entity.clientSynchronized

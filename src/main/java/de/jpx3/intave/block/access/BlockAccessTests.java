@@ -15,7 +15,7 @@ import java.util.Set;
 public final class BlockAccessTests extends Tests {
   private Block block, blockBelow;
   private BlockStorage priorMaterial, priorMaterialBelow;
-  private final Set<Material> blacklistedMaterials = MaterialSearch.materialsThatContain("REDSTONE", "BED", "SOIL", "GRASS_PATH");
+  private final Set<Material> blacklistedMaterials = MaterialSearch.materialsThatContain("REDSTONE", "BED", "SOIL", "GRASS_PATH", "EGG");
 
   public BlockAccessTests() {
     super("BA");

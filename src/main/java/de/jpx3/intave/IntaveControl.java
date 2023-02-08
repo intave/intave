@@ -32,6 +32,7 @@ public final class IntaveControl {
   public static final boolean SETBACK_WITH_PRESSED_KEYS = false;
   public static final boolean CLICKPATTERNS_OUTPUT = false;
   public static final boolean DEBUG_GRAYLIST = false;
+  public static final boolean DEBUG_BLUELIST = false;
   public static final boolean USE_DEBUG_LOCATE_RESOURCE = false;
   public static final boolean DEBUG_OUTPUT_FOR_TESTS = false;
   public static final boolean DEBUG_VARIANT_COMPILATION = false;

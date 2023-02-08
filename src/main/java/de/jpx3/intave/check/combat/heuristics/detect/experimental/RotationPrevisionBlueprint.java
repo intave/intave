@@ -71,7 +71,7 @@ public abstract class RotationPrevisionBlueprint<M extends RotationPrevisionBlue
   public void clientTickUpdate(PacketEvent event) {
     User user = userOf(event.getPlayer());
     RotationPrevisionBlueprintMeta meta = metaOf(user);
-    if (!user.meta().protocol().flyingPacketStream()) {
+    if (!user.meta().protocol().flyingPacketsAreSent()) {
       return;
     }
     meta.lastAttack++;

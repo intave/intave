@@ -31,8 +31,9 @@ public final class UserPlayerContainer implements PlayerContainer {
 
   @Override
   public void debug(String message) {
-    if (IntaveControl.DISABLE_LICENSE_CHECK) {
+    if (IntaveControl.DEBUG_HEURISTICS) {
       user.player().sendMessage("[debug] " + message);
+      System.out.println("[debug] " + message);
     }
   }
 
@@ -44,6 +45,9 @@ public final class UserPlayerContainer implements PlayerContainer {
   @Override
   public void noteAnomaly(String key, Confidence confidence, String description) {
     // ignore
+    if (IntaveControl.DEBUG_HEURISTICS) {
+      user.player().sendMessage("Nayoro Relay Anomaly: " + key + " (" + confidence + ") " + description);
+    }
   }
 
   @Override

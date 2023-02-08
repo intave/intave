@@ -56,7 +56,11 @@ public final class Simulation {
     return colliderResult;
   }
 
-  public MovementConfiguration configuration() {
+  public boolean wasSprinting() {
+    return configuration.isSprinting();
+  }
+
+  MovementConfiguration configuration() {
     return configuration;
   }
 

@@ -45,9 +45,9 @@ public final class LegacyWaterflow {
     if (inWater && flowVector != null && flowVector.lengthVector() > 0.0D) {
       flowVector = flowVector.normalize();
       double factor = 0.014D;
-      movementData.physicsMotionX += flowVector.xCoord * factor;
-      movementData.physicsMotionY += flowVector.yCoord * factor;
-      movementData.physicsMotionZ += flowVector.zCoord * factor;
+      movementData.baseMotionX += flowVector.xCoord * factor;
+      movementData.baseMotionY += flowVector.yCoord * factor;
+      movementData.baseMotionZ += flowVector.zCoord * factor;
       movementData.pastPushedByWaterFlow = 0;
     }
     return inWater;

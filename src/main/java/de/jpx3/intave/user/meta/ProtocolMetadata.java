@@ -27,6 +27,7 @@ public final class ProtocolMetadata {
   public static int VER_1_10 = 210;
   public static int VER_1_9 = 107; // 1.9
   public static int VERSION_DETAILS = 97; // secret integer for security - DO NOT MODIFY
+  public static int MARKED_FOR_PLAYER_REPORT = 78; // secret integer for security - DO NOT MODIFY
   public static int VER_1_8 = 47; // 1.8
 
   public static int VER_INVALID = 1000;
@@ -79,8 +80,8 @@ public final class ProtocolMetadata {
   }
 
   public float cameraSneakOffset() {
-    boolean override = user.customClientSupport().isLegacySneakHeight();
-    if (protocolVersion >= VER_1_13_2 && !override) {
+    boolean legacySneakHeight = user.customClientSupport().isLegacySneakHeight();
+    if (protocolVersion >= VER_1_13_2 && !legacySneakHeight) {
       return 0.35f;
     } else {
       return 0.08f;
@@ -107,7 +108,7 @@ public final class ProtocolMetadata {
 
   private static final boolean SERVER_DROPPED_FLYING_PACKETS = MinecraftVersions.VER1_9_0.atOrAbove();
 
-  public boolean flyingPacketStream() {
+  public boolean flyingPacketsAreSent() {
     // flying packets are guaranteed in 1.8 and below, removed in 1.9
     // but if the server is 1.9+, via version/backwards will drop them even for 1.8 clients
     return protocolVersion <= VER_1_8 && !SERVER_DROPPED_FLYING_PACKETS;

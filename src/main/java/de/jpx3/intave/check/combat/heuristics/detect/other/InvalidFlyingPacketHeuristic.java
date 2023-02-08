@@ -33,7 +33,7 @@ public class InvalidFlyingPacketHeuristic extends MetaCheckPart<Heuristics, Inva
     PacketContainer packet = event.getPacket();
     InvalidFlyingPacketHeuristicMeta meta = metaOf(user);
     // Only execute check on 1.9+
-    if (!user.meta().protocol().flyingPacketStream()) {
+    if (!user.meta().protocol().flyingPacketsAreSent()) {
       boolean groundState = packet.getBooleans().read(0);
       //noinspection deprecation
       if (event.getPacketType() == PacketType.Play.Client.FLYING) {

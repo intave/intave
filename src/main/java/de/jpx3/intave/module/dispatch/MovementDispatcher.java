@@ -96,21 +96,21 @@ public final class MovementDispatcher extends Module {
     ViolationMetadata violationLevelData = meta.violationLevel();
 
     movementData.pastExternalVelocityResetCache = movementData.pastExternalVelocity;
-    movementData.physicsMotionXBeforeVelocityResetCache = movementData.physicsMotionXBeforeVelocity;
-    movementData.physicsMotionYBeforeVelocityResetCache = movementData.physicsMotionYBeforeVelocity;
-    movementData.physicsMotionZBeforeVelocityResetCache = movementData.physicsMotionZBeforeVelocity;
-    movementData.physicsMotionXResetCache = movementData.physicsMotionX;
-    movementData.physicsMotionYResetCache = movementData.physicsMotionY;
-    movementData.physicsMotionZResetCache = movementData.physicsMotionZ;
+    movementData.baseMotionXBeforeVelocityResetCache = movementData.baseMotionXBeforeVelocity;
+    movementData.baseMotionYBeforeVelocityResetCache = movementData.baseMotionYBeforeVelocity;
+    movementData.baseMotionZBeforeVelocityResetCache = movementData.baseMotionZBeforeVelocity;
+    movementData.baseMotionXResetCache = movementData.baseMotionX;
+    movementData.baseMotionYResetCache = movementData.baseMotionY;
+    movementData.baseMotionZResetCache = movementData.baseMotionZ;
     movementData.willReceiveSetbackVelocityResetCache = movementData.willReceiveSetbackVelocity;
 
     if (!violationLevelData.isInActiveTeleportBundle) {
-      movementData.physicsMotionXBeforeVelocity = movementData.physicsMotionX;
-      movementData.physicsMotionYBeforeVelocity = movementData.physicsMotionY;
-      movementData.physicsMotionZBeforeVelocity = movementData.physicsMotionZ;
-      movementData.physicsMotionX = velocity.motionX();
-      movementData.physicsMotionY = velocity.motionY();
-      movementData.physicsMotionZ = velocity.motionZ();
+      movementData.baseMotionXBeforeVelocity = movementData.baseMotionX;
+      movementData.baseMotionYBeforeVelocity = movementData.baseMotionY;
+      movementData.baseMotionZBeforeVelocity = movementData.baseMotionZ;
+      movementData.baseMotionX = velocity.motionX();
+      movementData.baseMotionY = velocity.motionY();
+      movementData.baseMotionZ = velocity.motionZ();
 //      user.player().sendMessage("Applied velocity " + velocity);
       movementData.lastVelocity = new Vector(velocity.motionX(), velocity.motionY(), velocity.motionZ());
     }
@@ -140,12 +140,12 @@ public final class MovementDispatcher extends Module {
     MovementMetadata movementData = meta.movement();
 
     movementData.pastExternalVelocity = movementData.pastExternalVelocityResetCache;
-    movementData.physicsMotionXBeforeVelocity = movementData.physicsMotionXBeforeVelocityResetCache;
-    movementData.physicsMotionYBeforeVelocity = movementData.physicsMotionYBeforeVelocityResetCache;
-    movementData.physicsMotionZBeforeVelocity = movementData.physicsMotionZBeforeVelocityResetCache;
-    movementData.physicsMotionX = movementData.physicsMotionXResetCache;
-    movementData.physicsMotionY = movementData.physicsMotionYResetCache;
-    movementData.physicsMotionZ = movementData.physicsMotionZResetCache;
+    movementData.baseMotionXBeforeVelocity = movementData.baseMotionXBeforeVelocityResetCache;
+    movementData.baseMotionYBeforeVelocity = movementData.baseMotionYBeforeVelocityResetCache;
+    movementData.baseMotionZBeforeVelocity = movementData.baseMotionZBeforeVelocityResetCache;
+    movementData.baseMotionX = movementData.baseMotionXResetCache;
+    movementData.baseMotionY = movementData.baseMotionYResetCache;
+    movementData.baseMotionZ = movementData.baseMotionZResetCache;
     movementData.willReceiveSetbackVelocity = movementData.willReceiveSetbackVelocityResetCache;
   }
 
@@ -292,9 +292,9 @@ public final class MovementDispatcher extends Module {
           movement.sprintReset();
           user.refreshSprintState();
         }
-        movement.physicsMotionX = 0;
-        movement.physicsMotionY = 0;
-        movement.physicsMotionZ = 0;
+        movement.baseMotionX = 0;
+        movement.baseMotionY = 0;
+        movement.baseMotionZ = 0;
         user.blockStates().invalidateAll();
         user.meta().potions().clearPotionEffects();
       });
@@ -315,9 +315,9 @@ public final class MovementDispatcher extends Module {
       Float motionX = floats.read(1);
       Float motionY = floats.read(2);
       Float motionZ = floats.read(3);
-      movementData.physicsMotionX += motionX;
-      movementData.physicsMotionY += motionY;
-      movementData.physicsMotionZ += motionZ;
+      movementData.baseMotionX += motionX;
+      movementData.baseMotionY += motionY;
+      movementData.baseMotionZ += motionZ;
     });
   }
 
@@ -458,7 +458,7 @@ public final class MovementDispatcher extends Module {
         player.sendMessage("Distance movement ignore: " + distance);
       }
       event.setCancelled(true);
-      Vector vector = new Vector(movementData.physicsMotionX, movementData.physicsMotionY, movementData.physicsMotionZ);
+      Vector vector = new Vector(movementData.baseMotionX, movementData.baseMotionY, movementData.baseMotionZ);
       Modules.mitigate().movement().emulationSetBack(player, vector, 10, false);
       String message = "sent unsafe position";
       String details = "moved " + MathHelper.formatDouble(distance, 2) + " blocks";
@@ -494,9 +494,9 @@ public final class MovementDispatcher extends Module {
     if (
       !movementData.isTeleportConfirmationPacket &&
         movementData.canResetMotion &&
-        movementData.physicsMotionX == 0 &&
-        movementData.physicsMotionY == 0 &&
-        movementData.physicsMotionZ == 0 &&
+        movementData.baseMotionX == 0 &&
+        movementData.baseMotionY == 0 &&
+        movementData.baseMotionZ == 0 &&
         movementData.motionX() == 0 &&
         movementData.motionY() == 0 &&
         movementData.motionZ() == 0
@@ -682,6 +682,7 @@ public final class MovementDispatcher extends Module {
         }
       }
     }
+
     if (movement.shulkerXToleranceRemaining > 0) {
       movement.shulkerXToleranceRemaining--;
     }
@@ -979,12 +980,12 @@ public final class MovementDispatcher extends Module {
     ViolationMetadata violationLevelData = meta.violationLevel();
     MovementMetadata movementData = meta.movement();
     if (!violationLevelData.isInActiveTeleportBundle) {
-      movementData.physicsMotionXBeforeVelocity = movementData.physicsMotionX;
-      movementData.physicsMotionYBeforeVelocity = movementData.physicsMotionY;
-      movementData.physicsMotionZBeforeVelocity = movementData.physicsMotionZ;
-      movementData.physicsMotionX = velocity.getX();
-      movementData.physicsMotionY = velocity.getY();
-      movementData.physicsMotionZ = velocity.getZ();
+      movementData.baseMotionXBeforeVelocity = movementData.baseMotionX;
+      movementData.baseMotionYBeforeVelocity = movementData.baseMotionY;
+      movementData.baseMotionZBeforeVelocity = movementData.baseMotionZ;
+      movementData.baseMotionX = velocity.getX();
+      movementData.baseMotionY = velocity.getY();
+      movementData.baseMotionZ = velocity.getZ();
       movementData.lastVelocity = velocity.clone();
       if (!movementData.willReceiveSetbackVelocity) {
         movementData.pastExternalVelocity = 0;

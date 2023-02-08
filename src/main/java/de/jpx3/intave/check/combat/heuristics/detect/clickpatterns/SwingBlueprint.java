@@ -77,7 +77,7 @@ public abstract class SwingBlueprint<M extends SwingBlueprintMeta>
     User user = userOf(event.getPlayer());
     SwingBlueprintMeta meta = metaOf(user);
     // SwingBlueprint detections only work on 1.8- !
-    if (!user.meta().protocol().flyingPacketStream()) {
+    if (!user.meta().protocol().flyingPacketsAreSent()) {
       return;
     }
     // Completely ignore this swing, like it never existed!

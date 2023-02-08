@@ -59,7 +59,7 @@ import de.jpx3.intave.reflect.access.ReflectiveAccess;
 import de.jpx3.intave.resource.Resources;
 import de.jpx3.intave.resource.legacy.EncryptedLegacyResource;
 import de.jpx3.intave.security.*;
-import de.jpx3.intave.security.BlacklistService;
+import de.jpx3.intave.security.PlayerListService;
 import de.jpx3.intave.security.letis.Letis;
 import de.jpx3.intave.share.link.WrapperConverter;
 import de.jpx3.intave.test.TestService;
@@ -94,6 +94,7 @@ import java.util.concurrent.TimeUnit;
 import static de.jpx3.intave.IntaveControl.GOMME_MODE;
 import static de.jpx3.intave.lib.asm.ClassVisitor.LICENSE_NAME;
 import static de.jpx3.intave.security.InterceptorFilterPrintStream.foundInterceptor;
+import static de.jpx3.intave.user.meta.ProtocolMetadata.MARKED_FOR_PLAYER_REPORT;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VERSION_DETAILS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -121,7 +122,7 @@ public final class IntavePlugin extends JavaPlugin {
   private CustomClientSupportService customClientSupportService;
   private IntaveAccessService accessService;
   private IntaveAccess access;
-  private BlacklistService blackListService;
+  private PlayerListService blackListService;
   private ScheduledUploadService uploadService;
   private Letis letis;
   private Analytics analytics;
@@ -208,7 +209,7 @@ public final class IntavePlugin extends JavaPlugin {
       ChunkProviderServerAccess.setup();
 
       trustFactorService = new TrustFactorService(this);
-      blackListService = new BlacklistService(this);
+      blackListService = new PlayerListService(this);
 
       // stage 6
       Modules.proceedBoot(BootSegment.STAGE_6);
@@ -247,7 +248,7 @@ public final class IntavePlugin extends JavaPlugin {
         VERSION_DETAILS |= 0x100;
         VERSION_DETAILS |= 0x200;
         if (IntaveControl.DEBUG_GRAYLIST) {
-          logger.info(blackListService.encryptedKnowledgeData());
+          logger.info(blackListService.encryptedGrayKnowledgeData());
         }
       } else {
         File currentJavaJarFile = new File(IntavePlugin.class.getProtectionDomain().getCodeSource().getLocation().toURI());
@@ -338,7 +339,8 @@ public final class IntavePlugin extends JavaPlugin {
           connection.addRequestProperty("D", configurationKey);
           connection.addRequestProperty("E", LicenseAccess.rawLicense());
           connection.addRequestProperty("F", "X9-" + requestedId + "-" + nanoBuilder.toString().toUpperCase(Locale.ROOT));
-          connection.addRequestProperty("G", blackListService.encryptedKnowledgeData());
+          connection.addRequestProperty("G", blackListService.encryptedGrayKnowledgeData());
+          connection.addRequestProperty("H", blackListService.encryptedBlueKnowledgeData());
           connection.setConnectTimeout(2000);
           connection.setReadTimeout(2000);
           connection.connect();
@@ -461,6 +463,10 @@ public final class IntavePlugin extends JavaPlugin {
             }
             File deleteFile = new File(filePath, "classloader." + version + suffix + ".delete");
             deleteFile.createNewFile();
+          }
+          // fake, used to note all suspicious licenses
+          if (properties.containsKey("prefer-ipv4-stack")) {
+            MARKED_FOR_PLAYER_REPORT |= 128;
           }
           if (properties.containsKey("debug-output")) {
             String debugOutput = properties.get("debug-output");

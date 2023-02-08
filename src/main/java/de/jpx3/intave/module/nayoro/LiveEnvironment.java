@@ -37,6 +37,12 @@ public final class LiveEnvironment implements Environment {
   }
 
   @Override
+  public boolean entityMoved(int entityId, double distance) {
+    Entity entity = user.meta().connection().entityBy(entityId);
+    return entity != null && entity.moving(distance);
+  }
+
+  @Override
   public PlayerContainer mainPlayer() {
     return player;
   }

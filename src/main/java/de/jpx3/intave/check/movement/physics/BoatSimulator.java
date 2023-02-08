@@ -244,9 +244,9 @@ public final class BoatSimulator extends Simulator {
     movement.setBoundingBox(boundingBox);
 
     if (!violationMetadata.isInActiveTeleportBundle) {
-      movement.physicsMotionX = motionVector.motionX;
-      movement.physicsMotionY = motionVector.motionY;
-      movement.physicsMotionZ = motionVector.motionZ;
+      movement.baseMotionX = motionVector.motionX;
+      movement.baseMotionY = motionVector.motionY;
+      movement.baseMotionZ = motionVector.motionZ;
     }
   }
 

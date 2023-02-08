@@ -172,7 +172,7 @@ public final class DebugStage extends CommandStage {
     permission = "sibyl"
   )
   public void falseFlag(User user) {
-    user.meta().movement().physicsMotionY = 2;
+    user.meta().movement().baseMotionY = 2;
   }
 
   public static DebugStage singletonInstance() {

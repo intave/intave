@@ -15,6 +15,8 @@ public final class EventRegistry {
     register(SlotSwitchEvent.class, 4);
     register(PropertiesEvent.class, 5);
     register(PlayerInitEvent.class, 6);
+    register(EntitySpawnEvent.class, 7);
+    register(EntityRemoveEvent.class, 8);
   }
 
   private static void register(Class<? extends Event> eventClass, int id) {
