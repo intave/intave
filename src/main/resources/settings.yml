@@ -13,12 +13,8 @@ check:
     # Experimental feature, reduces feedback-related false positives
     use-superpositions: false
 
-    # Unused, will be removed in the future
-    speculative-forward-emulation:
-      enabled: false
-      activation-threshold: 0
-      ticks: 3
-      ticks-for-hard-sync: -1
+    # Experimental feature, detects NoSlowdown cheats
+    enforce-item-slowdown: true
 
     on-detection:
       reset-item-usage: true
@@ -162,7 +158,7 @@ proxy:
 clientwarning:
   enable: true
 
-# Only works when intave-storage is used
+# Does not work yet
 accountcheck:
   enable: true
 
@@ -171,7 +167,7 @@ accountcheck:
   action: KICK
 
   kick-message-in-chat: true
-  kick-message: "&cDue to high abuse, your account needs to be at least a month old to join this server."
+  kick-message: "&cYou can't join this server."
 
 filter:
   health: false

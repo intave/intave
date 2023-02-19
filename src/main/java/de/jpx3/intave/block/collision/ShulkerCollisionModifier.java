@@ -7,13 +7,13 @@ import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 
-import static de.jpx3.intave.block.collision.CollisionRequestType.INTERSECTION_CHECK;
+import static de.jpx3.intave.block.collision.CollisionOrigin.INTERSECTION_CHECK;
 
 final class ShulkerCollisionModifier extends CollisionModifier {
   @Override
   public BlockShape modify(
     User user, BoundingBox userBox, int posX, int posY, int posZ, BlockShape shape,
-    CollisionRequestType collisionType
+    CollisionOrigin collisionType
   ) {
     if (collisionType == INTERSECTION_CHECK) {
       return BlockShapes.emptyShape();

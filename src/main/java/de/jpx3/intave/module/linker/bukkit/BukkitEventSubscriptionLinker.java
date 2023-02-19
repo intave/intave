@@ -6,7 +6,7 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.klass.create.IRXClassFactory;
-import de.jpx3.intave.lib.asm.Type;
+import de.jpx3.intave.library.asm.Type;
 import de.jpx3.intave.module.Module;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventException;

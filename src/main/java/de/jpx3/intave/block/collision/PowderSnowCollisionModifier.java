@@ -15,7 +15,7 @@ public final class PowderSnowCollisionModifier extends CollisionModifier {
   private static final BlockShape POWDER_SNOW_FROM_ABOVE = BlockShapes.originCube();
 
   @Override
-  public BlockShape modify(User user, BoundingBox userBox, int posX, int posY, int posZ, BlockShape shape, CollisionRequestType type) {
+  public BlockShape modify(User user, BoundingBox userBox, int posX, int posY, int posZ, BlockShape shape, CollisionOrigin type) {
     MovementMetadata movement = user.meta().movement();
     if (movement.artificialFallDistance > 2.5) {
       return FALLING_SHAPE.contextualized(posX, posY, posZ);

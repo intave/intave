@@ -41,7 +41,8 @@ import de.jpx3.intave.executor.BackgroundExecutor;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.executor.TaskTracker;
 import de.jpx3.intave.klass.locate.Locate;
-import de.jpx3.intave.lib.asm.Frame;
+import de.jpx3.intave.library.Libraries;
+import de.jpx3.intave.library.asm.Frame;
 import de.jpx3.intave.math.SinusCache;
 import de.jpx3.intave.metric.Metrics;
 import de.jpx3.intave.metric.ServerHealth;
@@ -77,6 +78,7 @@ import de.jpx3.intave.world.raytrace.Raytracing;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
@@ -92,7 +94,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static de.jpx3.intave.IntaveControl.GOMME_MODE;
-import static de.jpx3.intave.lib.asm.ClassVisitor.LICENSE_NAME;
+import static de.jpx3.intave.library.asm.ClassVisitor.LICENSE_NAME;
 import static de.jpx3.intave.security.InterceptorFilterPrintStream.foundInterceptor;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.MARKED_FOR_PLAYER_REPORT;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VERSION_DETAILS;
@@ -145,6 +147,7 @@ public final class IntavePlugin extends JavaPlugin {
     Modules.proceedBoot(BootSegment.STAGE_2);
     redirectPluginLogger();
     checkClassLoaderAvailability();
+    Libraries.setupLibraries();
   }
 
   @Native
@@ -741,6 +744,14 @@ public final class IntavePlugin extends JavaPlugin {
 
     if (IntaveControl.APPLY_GLOBAL_LOW_TRUSTFACTOR) {
       logger.info(ChatColor.YELLOW + "This version assigns only the red trustfactor for debugging");
+    }
+
+    Plugin viaBackwards = Bukkit.getPluginManager().getPlugin("ViaBackwards");
+    if (viaBackwards != null) {
+      if (!viaBackwards.getConfig().getBoolean("handle-pings-as-inv-acknowledgements", false)) {
+        logger.warn("ViaBackwards is not configured to replace ping packets with inventory acknowledgement packets");
+        logger.warn("This will lead to incorrect, feedback-related termination of connections");
+      }
     }
 
     registerNativeCheck();

@@ -238,7 +238,7 @@ public final class PunishmentMetadata {
         return;
       }
 //      activated = System.currentTimeMillis();
-      activated = System.currentTimeMillis() + 2_500 - duration;
+      activated = System.currentTimeMillis() + 3_000 - duration;
       limit = 3;
       executed = 0;
     }

@@ -1,7 +1,7 @@
 package de.jpx3.intave.klass.locate;
 
 import de.jpx3.intave.klass.Lookup;
-import de.jpx3.intave.lib.asm.Type;
+import de.jpx3.intave.library.asm.Type;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -51,7 +51,7 @@ final class MethodLocation extends Location {
     if (!fromSig.equals(toSig)) {
       throw new IllegalStateException("Signatures differ: " + fromSig + " != " + toSig);
     }
-    Class<?> owningClass = Lookup.serverClass(classKey()), orignalOwningClass = owningClass;
+    Class<?> owningClass = Lookup.serverClass(classKey());
     Type[] argumentTypes = Type.getArgumentTypes(toSig);
     String name = methodName(to);
     Class<?>[] parameterTypes = Arrays.stream(argumentTypes)

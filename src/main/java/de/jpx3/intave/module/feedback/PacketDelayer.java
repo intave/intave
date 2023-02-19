@@ -127,6 +127,7 @@ public final class PacketDelayer extends Module {
     long positionTimeoutTolerance = user.meta().protocol().flyingPacketsAreSent() ? 0 : 1050;
 
     long lagTolerance = user.trustFactorSetting("timer.lt");
+
     boolean transactionTimeout = oldestTransactionPacket * (lowToleranceMode ? 1.25 : 1) > connection.transactionPingAverage() + LatencyStudy.transactionPingAverage() / 2 + lagTolerance;
     boolean riding = movement.isInVehicle();
     long positionBlockTolerance = connection.transactionPingAverage() + LatencyStudy.transactionPingAverage() / 2 + lagTolerance + positionTimeoutTolerance;

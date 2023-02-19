@@ -114,10 +114,7 @@ public final class PacketReaders {
       throw new IllegalStateException("No reader available for type " + type);
     }
     PacketReader interpreter = threadLocal.get();
-    interpreter.flush(container);
-    if (interpreter instanceof CompiledPacketReader) {
-      ((CompiledPacketReader) interpreter).compile();
-    }
+    interpreter.enter(container);
     //noinspection unchecked
     return (T) interpreter;
   }

@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 @MyNameIsTooAbstract
 final class CachedForwardingWorldBorderAccess implements WorldBorderAccess {
-  private static final long CACHE_EXPIRY = TimeUnit.MICROSECONDS.toMillis(200);
+  private static final long CACHE_EXPIRY = TimeUnit.MILLISECONDS.toMillis(50);
   private final WorldBorderAccess forward;
   private final Map<World, WorldBorderAccessCache<Double>> sizeCache = GarbageCollector.watch(new ConcurrentHashMap<>());
   private final Map<World, WorldBorderAccessCache<Location>> locationCache = GarbageCollector.watch(new ConcurrentHashMap<>());
@@ -27,9 +27,9 @@ final class CachedForwardingWorldBorderAccess implements WorldBorderAccess {
       sizeCache = new WorldBorderAccessCache<>(forward.sizeOf(world));
       this.sizeCache.put(world, sizeCache);
     } else if (sizeCache.expired()) {
-      sizeCache.flush(forward.sizeOf(world));
+      sizeCache.refresh(forward.sizeOf(world));
     }
-    return sizeCache.target();
+    return sizeCache.value();
   }
 
   @Override
@@ -39,31 +39,31 @@ final class CachedForwardingWorldBorderAccess implements WorldBorderAccess {
       locationCache = new WorldBorderAccessCache<>(forward.centerOf(world));
       this.locationCache.put(world, locationCache);
     } else if (locationCache.expired()) {
-      locationCache.flush(forward.centerOf(world));
+      locationCache.refresh(forward.centerOf(world));
     }
-    return locationCache.target();
+    return locationCache.value();
   }
 
   public static class WorldBorderAccessCache<T> {
-    private T target;
+    private T value;
     private long time;
 
-    public WorldBorderAccessCache(T target) {
-      this.target = target;
+    public WorldBorderAccessCache(T value) {
+      this.value = value;
       this.time = System.currentTimeMillis();
     }
 
-    public void flush(T newValue) {
-      target = newValue;
+    public void refresh(T newValue) {
+      value = newValue;
       time = System.currentTimeMillis();
+    }
+
+    public T value() {
+      return value;
     }
 
     public boolean expired() {
       return System.currentTimeMillis() - time > CACHE_EXPIRY;
-    }
-
-    public T target() {
-      return target;
     }
   }
 }

@@ -55,7 +55,7 @@ final class MethodLocations implements Iterable<MethodLocation> {
     return StreamSupport.stream(this.methodLocations.spliterator(), false);
   }
 
-  public MethodLocations filter(Predicate<MethodLocation> predicate) {
+  public MethodLocations filter(Predicate<? super MethodLocation> predicate) {
     return new MethodLocations(
       stream().filter(predicate).collect(Collectors.toList())
     );

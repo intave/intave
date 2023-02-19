@@ -26,10 +26,12 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
    * */
   private final boolean itemUsageReset;
   private final boolean useSuperpositions;
+  private final boolean detectNoSlowdown;
 
-  public PredictiveSimulationProcessor(boolean itemUsageReset, boolean useSuperpositions) {
+  public PredictiveSimulationProcessor(boolean itemUsageReset, boolean useSuperpositions, boolean detectNoSlowdown) {
     this.itemUsageReset = itemUsageReset;
     this.useSuperpositions = useSuperpositions;
+    this.detectNoSlowdown = detectNoSlowdown;
   }
 
   @Override
@@ -149,7 +151,7 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
     boolean packetsSuggestsHandIsActive = inventoryData.handActive();
     if (packetsSuggestsHandIsActive && !movementSuggestsHandIsActive) {
       boolean releaseHandConditions = Hypot.fast(movementData.motionX(), movementData.motionZ()) > 0.3 || movementData.lastTeleport >= 2;
-      boolean itemIsBow = ItemProperties.isBow(meta.inventory().activeItem());
+      boolean itemIsBow = ItemProperties.isBow(meta.inventory().activeItemType()) || ItemProperties.isBow(meta.inventory().offhandItemType());
       if (releaseHandConditions && !itemIsBow && itemUsageReset) {
         meta.inventory().releaseItemNextTick();
       }
@@ -385,6 +387,16 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
       skipUseItem = false;
     }
 
+    if ((requireUseItem || skipUseItem) && user.meta().inventory().couldChargeCrossbow()) {
+      requireUseItem = false;
+      skipUseItem = false;
+    }
+
+    if (!detectNoSlowdown) {
+      skipUseItem = false;
+      requireUseItem = false;
+    }
+
     int iterativeRuns = 0;
     int nearestForwardKey = -2, nearestStrafeKey = -2;
     double nearestKeyDistance = Double.MAX_VALUE;
@@ -404,8 +416,14 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
         if (useSuperpositions) {
           superposition.applyVariation(variationIndex);
         }
-        boolean sprinting = movementData.sprintingAllowed();
-//        for (boolean sprinting : movementData.sprintingAllowed() || movementData.hasSprintSpeed ? /* surprisingly pessimistic */ PESSIMISTIC : NEVER) {
+//        boolean sprinting = movementData.sprintingAllowed();
+        boolean[] sprintSelector;
+        if (protocol.combatUpdate()) {
+          sprintSelector = movementData.sprintingAllowed() || movementData.hasSprintSpeed ? /* surprisingly pessimistic */ PESSIMISTIC : NEVER;
+        } else {
+          sprintSelector = movementData.sprinting ? ALWAYS : NEVER;
+        }
+        for (boolean sprinting : sprintSelector) {
           movementData.refreshFriction(sprinting);
           for (boolean useItemState : inventoryData.handActive() ? OPTIMISTIC : PESSIMISTIC) {
             if (skipUseItem && useItemState) {
@@ -476,8 +494,7 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
               }
             }
           }
-
-//        }
+        }
         if (useSuperpositions) {
           superposition.resetVariation(variationIndex);
         }

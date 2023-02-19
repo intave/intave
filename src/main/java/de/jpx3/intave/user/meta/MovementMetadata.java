@@ -40,10 +40,12 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import java.lang.ref.WeakReference;
+import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.comphenix.protocol.wrappers.WrappedAttributeModifier.Operation.ADD_PERCENTAGE;
+import static de.jpx3.intave.IntaveControl.REPLACE_JOAP_SETBACK_WITH_CM;
 import static de.jpx3.intave.check.movement.physics.MovementCharacteristics.resolveFriction;
 import static de.jpx3.intave.reflect.access.ReflectiveHandleAccess.handleOf;
 import static de.jpx3.intave.share.ClientMathHelper.*;
@@ -173,6 +175,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public int teleportResendCountdown = 20;
   public int outgoingTeleportCountdown = 5;
   public long lastRescueAttempt;
+  public long lastSimulationSprintResetAttempt;
   public int speculativeTicks = 0;
   public Map<UUID, Integer> pendingSpeculativeMovementTicks = GarbageCollector.watch(new HashMap<>());
   public boolean inReceiveSpeculativePacketRoutine = false;
@@ -688,6 +691,18 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   public boolean denyJump() {
+    InventoryMetadata inventoryData = user.meta().inventory();
+    if (inventoryData.inventoryOpen()) {
+      return true;
+    }
+    int trustFactorSetting = user.trustFactorSetting("physics.joap-limit") + (REPLACE_JOAP_SETBACK_WITH_CM ? 1 : 0);
+    return pastVelocity == 0 && sprinting && lastVelocityApplicableForJumpDenial() && physicsJumpedOverrideVL >= trustFactorSetting;
+  }
+
+  public boolean applyJumpCM() {
+    if (!REPLACE_JOAP_SETBACK_WITH_CM) {
+      return false;
+    }
     InventoryMetadata inventoryData = user.meta().inventory();
     if (inventoryData.inventoryOpen()) {
       return true;

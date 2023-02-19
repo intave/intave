@@ -62,20 +62,16 @@ public final class StorageLoader extends Module {
   }
 
   public void nullableManualStorageRequest(UUID id, Consumer<? super PlayerStorage> storage) {
-    // because it is very likely that this id was already fetched by our background executor, we need to
-    // resynchronize this call to the main thread - no biggi, just default threading bullshit
-    Synchronizer.synchronize(() ->
-      BackgroundExecutor.execute(() ->
-        storageGateway.requestStorage(id, byteBuffer -> {
-          if (byteBuffer.array().length == 0) {
-            storage.accept(null);
-            return;
-          }
-          PlayerStorage playerStorage = Storages.emptyPlayerStorageFor(id);
-          StorageIOProcessor.inputTo(playerStorage, byteBuffer);
-          storage.accept(playerStorage);
-        })
-      )
+    BackgroundExecutor.execute(() ->
+      storageGateway.requestStorage(id, byteBuffer -> {
+        if (byteBuffer.array().length == 0) {
+          storage.accept(null);
+          return;
+        }
+        PlayerStorage playerStorage = Storages.emptyPlayerStorageFor(id);
+        StorageIOProcessor.inputTo(playerStorage, byteBuffer);
+        storage.accept(playerStorage);
+      })
     );
   }
 
@@ -98,7 +94,7 @@ public final class StorageLoader extends Module {
       PlaytimeStorage playtimeStorage = playerStorage.storageOf(PlaytimeStorage.class);
       if (playtimeStorage != null) {
         if (playtimeStorage.readTag() != 0) {
-          recurringLevelSet(player, 5, playtimeStorage.readTag());
+          recurringLevelSet(player, 20, playtimeStorage.readTag());
         }
       }
     }

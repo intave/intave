@@ -38,7 +38,6 @@ final class FieldLocation extends Location {
         return declaredField;
       } catch (NoSuchFieldException ignored) {}
     } while ((owningClass = owningClass.getSuperclass()) != Object.class);
-
     throw new IllegalStateException("Could not find field " + target + " in " + owningClass);
   }
 

@@ -28,6 +28,7 @@ import static de.jpx3.intave.player.Enchantments.tridentRiptideEnchanted;
 
 public final class ItemProperties {
   public static final Material ITEM_TRIDENT = materialByName("TRIDENT");
+  public static final Material CROSSBOW = materialByName("CROSSBOW");
   private static final Set<Material> materialUseItems = Sets.newHashSet();
   private static final Set<Material> materialSwordItems = Sets.newHashSet();
   private static final Set<Material> materialTrapdoorItems = Sets.newHashSet();
@@ -92,13 +93,17 @@ public final class ItemProperties {
 
   public static boolean canItemBeUsed(Player player, @Nullable ItemStack itemStack) {
     Material type = itemStack == null ? Material.AIR : itemStack.getType();
-    if (ITEM_TRIDENT != null && type == ITEM_TRIDENT) {
+    if (/*ITEM_TRIDENT != null && */type == ITEM_TRIDENT) {
       User user = UserRepository.userOf(player);
       return tridentUsable(user, itemStack);
     }
 
     // Bow check
-    if (type == Material.BOW && !inventoryContains(player, arrowItems)) {
+    boolean hasArrows = inventoryContains(player, arrowItems);
+    if (type == Material.BOW && !hasArrows) {
+      return false;
+    }
+    if (type == CROSSBOW && !hasArrows) {
       return false;
     }
 

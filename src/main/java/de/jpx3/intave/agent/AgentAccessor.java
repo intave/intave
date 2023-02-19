@@ -2,7 +2,7 @@ package de.jpx3.intave.agent;
 
 
 import de.jpx3.intave.access.IntaveInternalException;
-import de.jpx3.intave.lib.asm.*;
+import de.jpx3.intave.library.asm.*;
 
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.ClassFileTransformer;

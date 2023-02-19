@@ -26,6 +26,7 @@ import de.jpx3.intave.check.CheckConfiguration.CheckSettings;
 import de.jpx3.intave.check.CheckStatistics;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.movement.physics.*;
+import de.jpx3.intave.connect.sibyl.SibylBroadcast;
 import de.jpx3.intave.diagnostic.message.DebugBroadcast;
 import de.jpx3.intave.diagnostic.message.MessageSeverity;
 import de.jpx3.intave.diagnostic.timings.Timings;
@@ -34,6 +35,7 @@ import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.feedback.Superposition;
+import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
@@ -74,6 +76,7 @@ public final class Physics extends Check {
   private final SimulationEvaluator simulationEvaluator;
   private final FallDamageApplier fallDamageApplier;
   private final boolean useSuperpositions;
+  private final boolean detectNoSlowdown;
   private final boolean highToleranceMode;
   private final boolean resetItemUsage;
   private final boolean closeInventory;
@@ -97,9 +100,10 @@ public final class Physics extends Check {
     }
 
     this.useSuperpositions = settings.boolBy("use-superpositions", false);
+    this.detectNoSlowdown = settings.boolBy("enforce-item-slowdown", true);
     Physics.USE_SUPERPOSITIONS = useSuperpositions;
 
-    this.simulationProcessor = new PredictiveSimulationProcessor(resetItemUsage, useSuperpositions);
+    this.simulationProcessor = new PredictiveSimulationProcessor(resetItemUsage, useSuperpositions, detectNoSlowdown);
     this.simulationEvaluator = new SimulationEvaluator();
     setDefaultMitigationStrategy(MitigationStrategy.CAREFUL);
     this.fallDamageApplier = new FallDamageApplier();
@@ -209,8 +213,12 @@ public final class Physics extends Check {
       if (movementData.pastVelocity == 0) {
         if (movementData.physicsJumped && movementData.lastVelocityApplicableForJumpDenial()) {
           movementData.physicsJumpedOverrideVL++;
+          if (movementData.applyJumpCM()) {
+            SibylBroadcast.broadcast("[CM] " + user.player().getName() + " jumped with velocity");
+            user.nerfOnce(AttackNerfStrategy.DMG_HIGH, "92");
+          }
         } else if (movementData.physicsJumpedOverrideVL > 0) {
-          movementData.physicsJumpedOverrideVL--;
+          movementData.physicsJumpedOverrideVL = Math.max(0, movementData.physicsJumpedOverrideVL - 0.5);
         }
       }
       simulator.prepareNextTick(user,
@@ -317,7 +325,7 @@ public final class Physics extends Check {
 
     MovementMetadata movementData = meta.movement();
     InventoryMetadata inventory = meta.inventory();
-    ProtocolMetadata protocolMetadata = meta.protocol();
+    ProtocolMetadata protocol = meta.protocol();
     ViolationMetadata violationLevelData = meta.violationLevel();
     AbilityMetadata abilityData = meta.abilities();
     ExtendedBlockStateCache blockStateAccess = user.blockStates();
@@ -348,7 +356,7 @@ public final class Physics extends Check {
     double positionY = movementData.verifiedPositionY;
     double positionZ = movementData.verifiedPositionZ;
 
-    boolean onLadderCurrent = MovementCharacteristics.isOnLadder(user, positionX, positionY, positionZ);
+    boolean onLadderCurrent = MovementCharacteristics.onClimbable(user, positionX, positionY, positionZ);
     boolean onLadder = onLadderCurrent || movementData.onLadderLast;
     movementData.onLadderLast = onLadderCurrent;
 
@@ -522,7 +530,7 @@ public final class Physics extends Check {
         || movementData.pastElytraFlying < 20;
       if (uncommonArea) {
         violationLevelIncrease /= 2;
-      } else if (protocolMetadata.waterUpdate()) {
+      } else if (protocol.waterUpdate()) {
         violationLevelIncrease /= 2;
       }
       violationLevelIncrease = Math.min(200.0, violationLevelIncrease);
@@ -616,6 +624,14 @@ public final class Physics extends Check {
         refreshNearbyBlocks(user, positionX, positionY, positionZ);
         movementData.invalidMovement = true;
       }
+    }
+
+    if (
+      setback && !protocol.combatUpdate() && simulation.wasSprinting()
+      && System.currentTimeMillis() - movementData.lastSimulationSprintResetAttempt > 10_000
+    ) {
+      movementData.lastSimulationSprintResetAttempt = System.currentTimeMillis();
+      user.refreshSprintState();
     }
 
     statisticApply(user, CheckStatistics::increaseTotal);

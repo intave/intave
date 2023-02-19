@@ -1,7 +1,7 @@
 package de.jpx3.intave.resource;
 
 import de.jpx3.intave.annotate.Native;
-import de.jpx3.intave.lib.asm.ByteVector;
+import de.jpx3.intave.library.asm.ByteVector;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;

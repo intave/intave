@@ -5,7 +5,7 @@ import com.google.common.collect.Maps;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.klass.create.IRXClassFactory;
-import de.jpx3.intave.lib.asm.Type;
+import de.jpx3.intave.library.asm.Type;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
 import de.jpx3.intave.module.nayoro.PlayerContainer;

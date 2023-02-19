@@ -15,6 +15,7 @@ import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.storage.AccountDataStorage;
+import net.md_5.bungee.api.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerJoinEvent;
 
@@ -32,10 +33,14 @@ public final class AccountCheck extends Module {
   private static final String PROFILE_REQUEST_SCHEMA = "https://laby.net/api/v2/user/%s/get-profile";
   private static final String MSA_REQUEST_SCHEMA = "https://laby.net/api/user/%s/account-type";
   private static final String GET_GAME_STATS_REQUEST_SCHEMA = "https://laby.net/api/user/%s/get-game-stats";
-  private static final int MINIMUM_AGE_IN_DAYS = 14;
+  private static final int MINIMUM_AGE_IN_DAYS = 31;
+
 
   @BukkitEventSubscription
   public void onJoin(PlayerJoinEvent join) {
+    if (!IntaveControl.GOMME_MODE) {
+      return;
+    }
     Player player = join.getPlayer();
     User user = UserRepository.userOf(player);
     user.onStorageReady(x -> {
@@ -49,8 +54,14 @@ public final class AccountCheck extends Module {
       // wait for guaranteed trustfactor resolution
       // let's not wait for trustfactor resolver directly, that would be effort
       Synchronizer.synchronizeDelayed(() -> {
+        if (!IntaveControl.GOMME_MODE) {
+          return;
+        }
         TrustFactor factor = user.trustFactor();
-        if (!factor.atLeast(ORANGE)) {
+        if (factor.atOrBelow(ORANGE)) {
+          if (!IntaveControl.GOMME_MODE) {
+            return;
+          }
           expensiveCheckIfAccountIsNew(player.getUniqueId(), accountIsNew -> {
             if (accountIsNew) {
               storage.setBlocked();
@@ -73,17 +84,29 @@ public final class AccountCheck extends Module {
   }
 
   public void expensiveCheckIfAccountIsNew(UUID id, BooleanConsumer callback) {
+    if (!IntaveControl.GOMME_MODE) {
+      return;
+    }
     isMicrosoftAccount(id, isMicrosoftAccount -> {
+      if (!IntaveControl.GOMME_MODE) {
+        return;
+      }
       if (!isMicrosoftAccount) {
         callback.accept(false);
         return;
       }
       seenOnLabyMod(id, seenOnLabyMod -> {
+        if (!IntaveControl.GOMME_MODE) {
+          return;
+        }
         if (seenOnLabyMod) {
           callback.accept(false);
           return;
         }
         profileHasAnyOldReferences(id, profileHasAnyOldReferences -> {
+          if (!IntaveControl.GOMME_MODE) {
+            return;
+          }
           if (profileHasAnyOldReferences) {
             callback.accept(false);
             return;
@@ -113,14 +136,14 @@ public final class AccountCheck extends Module {
       The administration is very shy to implement verification, because of fears it could prevent normal players from participating in games.
       So, we have to find a solution by ourselves.
       The compromise is to reduce combat impact of new accounts, so that they can't do much too much damage.
-      Our assumption is that an account that is only a week old will not stand a change against normal players anyway.
+      Our assumption is that an account that is only a month old will not stand a change against normal players anyway.
       New accounts will likely not use blocking and will not notice garbage hits, so it might not be a big deal for them.
       The biggest nerf probably is the Criticals-block, since it is extremely hard for cheaters to detect, and it reduces damage by a lot.
       This mechanic *has to be removed* when Gomme implements a proper verification system, that actually works.
       In the unlikely event that this system gets leaked to the public, we will not deny its existence, take full blame and open a public discussion about it.
      */
     if (IntaveControl.GOMME_MODE) {
-      SibylBroadcast.broadcast(player.getName() + "/" + player.getUniqueId() + " is a newly created account");
+      SibylBroadcast.broadcast(ChatColor.RED + player.getName() + " is a newly created account");
       User user = UserRepository.userOf(player);
       user.nerfPermanently(AttackNerfStrategy.BLOCKING, "86");
       user.nerfPermanently(AttackNerfStrategy.GARBAGE_HITS, "86");
@@ -174,7 +197,7 @@ public final class AccountCheck extends Module {
       });
     } catch (Exception e) {
 //      throw new RuntimeException(e);
-      e.printStackTrace();
+//      e.printStackTrace();
     }
   }
 
@@ -219,7 +242,7 @@ public final class AccountCheck extends Module {
         InputStreamReader reader = new InputStreamReader(inputStream);
         callback.accept(new JsonParser().parse(reader));
       } catch (Exception exception) {
-        exception.printStackTrace();
+//        exception.printStackTrace();
       }
     });
   }

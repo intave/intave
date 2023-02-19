@@ -21,8 +21,7 @@ public class EntityReader extends AbstractPacketReader implements EntityIterable
   }
 
   public @Nullable Entity entityBy(World world) {
-    int identifier = packet().getIntegers().read(0);
-    return EntityLookup.findEntity(world, identifier);
+    return EntityLookup.findEntity(world, entityId());
   }
 
   private boolean pendingIdAccess = true;

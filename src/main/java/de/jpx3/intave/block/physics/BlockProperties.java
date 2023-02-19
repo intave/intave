@@ -17,7 +17,7 @@ public final class BlockProperties {
     Property.builderFor("BLUE_ICE").slipperiness(0.989f).buildAndSave();
     Property.builderFor(SLIME_BLOCK).slipperiness(0.8f).buildAndSave();
     Property.builderFor(LADDER, VINE).climbable().buildAndSave();
-    Property.builderFor("SCAFFOLDING").climbable().buildAndSave();
+    Property.builderFor("SCAFFOLDING").climbable().withoutClimbableSneakLimit().buildAndSave();
     Property.builderFor("WEEPING_VINES", "WEEPING_VINES_PLANT").climbable().buildAndSave();
     Property.builderFor("TWISTING_VINES", "TWISTING_VINES_PLANT").climbable().buildAndSave();
     Property.builderFor("CAVE_VINES_PLANT").climbable().buildAndSave();
@@ -40,6 +40,7 @@ public final class BlockProperties {
     private final float jumpFactor;
     private final float speedFactor;
     private final boolean climbable;
+    private final boolean climbableSneakLimit;
     private final boolean soulSpeedAffected;
 
     public Property(
@@ -48,13 +49,14 @@ public final class BlockProperties {
       float jumpFactor,
       float speedFactor,
       boolean climbable,
-      boolean soulSpeedAffected
+      boolean climbableSneakLimit, boolean soulSpeedAffected
     ) {
       this.materials = materials;
       this.slipperiness = slipperiness;
       this.jumpFactor = jumpFactor;
       this.speedFactor = speedFactor;
       this.climbable = climbable;
+      this.climbableSneakLimit = climbableSneakLimit;
       this.soulSpeedAffected = soulSpeedAffected;
     }
 
@@ -62,7 +64,7 @@ public final class BlockProperties {
       ifPresent(BlockProperties::append);
     }
 
-    public void ifPresent(BiConsumer<Material, Property> consumer) {
+    public void ifPresent(BiConsumer<? super Material, ? super Property> consumer) {
       for (Material material : materials) {
         if (material != null) {
           consumer.accept(material, this);
@@ -84,6 +86,10 @@ public final class BlockProperties {
 
     public boolean climbable() {
       return climbable;
+    }
+
+    public boolean climbableSneakLimit() {
+      return climbableSneakLimit;
     }
 
     public boolean soulSpeedAffected() {
@@ -111,6 +117,7 @@ public final class BlockProperties {
       private float jumpFactor = 1.0f;
       private float speedFactor = 1.0f;
       private boolean climbable = false;
+      private boolean climbableSneakLimit = true;
       private boolean soulSpeedAffected = false;
 
       public Builder(Material... materials) {
@@ -142,8 +149,13 @@ public final class BlockProperties {
         return this;
       }
 
+      public Builder withoutClimbableSneakLimit() {
+        this.climbableSneakLimit = false;
+        return this;
+      }
+
       public Property build() {
-        return new Property(materials, slipperiness, jumpFactor, speedFactor, climbable, soulSpeedAffected);
+        return new Property(materials, slipperiness, jumpFactor, speedFactor, climbable, climbableSneakLimit, soulSpeedAffected);
       }
 
       public void buildAndSave() {

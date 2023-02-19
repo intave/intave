@@ -1,6 +1,6 @@
 package de.jpx3.intave.klass.locate;
 
-import de.jpx3.intave.lib.asm.Type;
+import de.jpx3.intave.library.asm.Type;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public final class MethodSearchBySignature {
@@ -35,11 +36,15 @@ public final class MethodSearchBySignature {
     return methodsMatching;
   }
 
-  public MethodHandle findAnyOrThrow() {
-    return findAny().orElseThrow(() -> new IllegalStateException("No matching method found"));
+  public MethodHandle findFirstOrThrow() {
+    return findFirst().orElseThrow(() -> new IllegalStateException("No matching method found"));
   }
 
-  public Optional<MethodHandle> findAny() {
+  public MethodHandle findFirstOrThrow(Supplier<? extends RuntimeException> exceptionSupplier)  {
+    return findFirst().orElseThrow(exceptionSupplier);
+  }
+
+  public Optional<MethodHandle> findFirst() {
     return methodsMatching.length > 0 ?
       Optional.ofNullable(methodsMatching[0]) :
       Optional.empty();

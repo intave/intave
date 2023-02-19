@@ -17,10 +17,10 @@ import static de.jpx3.intave.reflect.access.ReflectiveHandleAccess.handleOf;
 public final class EntityLookup {
   private static final MethodHandle entityByIdAccessor = MethodSearchBySignature
     .search(Lookup.serverClass("World"), new Class[]{Integer.TYPE}, Lookup.serverClass("Entity"))
-    .findAnyOrThrow();
+    .findFirstOrThrow();
   private static final MethodHandle bukkitEntityFromEntityAccessor = MethodSearchBySignature
     .search(Lookup.serverClass("Entity"), new Class[0], Lookup.craftBukkitClass("entity.CraftEntity"))
-    .findAnyOrThrow();
+    .findFirstOrThrow();
   private static final Cache<Integer, Entity> entityAccessCache =
     CacheBuilder.newBuilder()
       .expireAfterAccess(16, TimeUnit.SECONDS).weakValues()
@@ -32,7 +32,9 @@ public final class EntityLookup {
 
   public static @Nullable Entity findEntity(World world, int identifier) {
     Entity entity = entityAccessCache.getIfPresent(identifier);
-    if (entity != null) return entity;
+    if (entity != null) {
+      return entity;
+    }
     entity = entityById(world, identifier);
     if (entity != null) {
       entityAccessCache.put(identifier, entity);

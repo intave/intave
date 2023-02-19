@@ -2,7 +2,6 @@ package de.jpx3.intave;
 
 public final class IntaveControl {
   public static final boolean APPLY_GLOBAL_LOW_TRUSTFACTOR = false;
-  public static final boolean USE_DEBUG_RESOURCES = false;
   public static final boolean DEBUG_MOVEMENT = false;
   public static final boolean DEBUG_EMULATION = false;
   public static final boolean DEBUG_HEURISTICS = false;
@@ -34,6 +33,7 @@ public final class IntaveControl {
   public static final boolean DEBUG_GRAYLIST = false;
   public static final boolean DEBUG_BLUELIST = false;
   public static final boolean USE_DEBUG_LOCATE_RESOURCE = false;
+  public static final boolean USE_DEBUG_TRUSTFACTOR_RESOURCE = false;
   public static final boolean DEBUG_OUTPUT_FOR_TESTS = false;
   public static final boolean DEBUG_VARIANT_COMPILATION = false;
   public static final boolean DEBUG_ENTITY_TRACKING = false;
@@ -42,6 +42,7 @@ public final class IntaveControl {
   public static final boolean DEBUG_FEEDBACK_PACKETS = false;
   public static final boolean DEBUG_ITEM_USAGE = false;
   public static final boolean DEBUG_VELOCITY_RECEIVE = false;
+  public static final boolean REPLACE_JOAP_SETBACK_WITH_CM = true;
 
   public static final boolean USE_EXTERNAL_CONFIGURATION_FILE = true;
   public static final boolean GOMME_MODE = false;

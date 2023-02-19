@@ -82,8 +82,6 @@ import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_9;
 
 @Relocate
 public final class MovementDispatcher extends Module {
-  private static final Set<Material> SHULKER_BOX_MATERIALS = MaterialSearch.materialsThatContain("SHULKER_BOX");
-  private static final Set<Material> PISTON_MATERIALS = MaterialSearch.materialsThatContain("PISTON");
   private static final boolean ELYTRA_SUPPORTED = MinecraftVersions.VER1_9_0.atOrAbove();
   private TeleportApplyEnforcer teleportApplyEnforcer;
   private Physics physicsCheck;
@@ -587,7 +585,7 @@ public final class MovementDispatcher extends Module {
     Player player = user.player();
     ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
     InventoryMetadata inventory = user.meta().inventory();
-    inventory.blockNextArrow = inventory.pastHotBarSlotChange < 4 && ItemProperties.isBow(inventory.releaseItemType) || ItemProperties.isBow(inventory.activeItem());
+    inventory.blockNextArrow = inventory.pastHotBarSlotChange < 4 && ItemProperties.isBow(inventory.releaseItemType) || ItemProperties.isBow(inventory.activeItemType());
     PacketContainer packet = protocolManager.createPacket(PacketType.Play.Client.BLOCK_DIG);
     packet.getBlockPositionModifier().write(0, new BlockPosition(0, 0, 0));
     packet.getDirections().write(0, EnumWrappers.Direction.DOWN);
@@ -997,6 +995,9 @@ public final class MovementDispatcher extends Module {
     movementData.pendingVelocityPackets.decrementAndGet();
   }
 
+  private static final Set<Material> SHULKER_BOX_MATERIALS = MaterialSearch.materialsThatContain("SHULKER_BOX");
+  private static final Set<Material> PISTON_MATERIALS = MaterialSearch.materialsThatContain("PISTON");
+
   @PacketSubscription(
     packetsOut = {
       BLOCK_ACTION
@@ -1068,7 +1069,6 @@ public final class MovementDispatcher extends Module {
     }
     reader.release();
   }
-
 
   @PacketSubscription(
     priority = ListenerPriority.HIGH,

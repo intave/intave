@@ -9,7 +9,7 @@ import com.comphenix.protocol.injector.packet.PacketRegistry;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.annotate.DoNotFlowObfuscate;
 import de.jpx3.intave.klass.create.IRXClassFactory;
-import de.jpx3.intave.lib.asm.Type;
+import de.jpx3.intave.library.asm.Type;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.tinyprotocol.InjectionService;
 import de.jpx3.intave.packet.reader.PacketReader;
@@ -176,7 +176,7 @@ public final class PacketSubscriptionLinker extends Module {
   }
 
   private PacketType[] serverTranslate(PacketId.Server[] serverPackets) {
-    if (serverPackets.length == 1 && serverPackets[0].lookupName().equals("*")) {
+    if (serverPackets.length == 1 && "*".equals(serverPackets[0].lookupName())) {
       return PacketRegistry.getClientPacketTypes().toArray(new PacketType[0]);
     }
     return Arrays.stream(serverPackets).map(this::translateServerPacketType).flatMap(Arrays::stream).toArray(PacketType[]::new);

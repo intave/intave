@@ -212,6 +212,9 @@ public final class PlayerListService implements BukkitEventSubscriber {
 //  private static final String KICK_MESSAGE = ChatColor.RED + "You are on an anti-cheat blacklist and can't join this server";
 
   private void disconnect(Player player) {
+    if (!enabled()) {
+      return;
+    }
     blocked.add(player.getAddress().getAddress());
     Synchronizer.synchronize(() -> {
       if (messageInChat) {

@@ -33,8 +33,8 @@ public final class v14ShapeDrill extends AbstractShapeDrill {
     if (blockData == null || blockAccess == null) {
       return BlockShapes.emptyShape();
     }
-    VoxelShape shape = blockData.getShape(blockAccess, blockPositionOf(posX, posY, posZ));
-    return shapeFromVoxel(shape, posX, posY, posZ);
+    VoxelShape voxel = blockData.getShape(blockAccess, blockPositionOf(posX, posY, posZ));
+    return shapeFromVoxel(voxel, posX, posY, posZ);
   }
 
   @PatchyAutoTranslation

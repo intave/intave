@@ -2,7 +2,7 @@ package de.jpx3.intave.klass;
 
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.klass.locate.Locate;
-import de.jpx3.intave.lib.asm.Type;
+import de.jpx3.intave.library.asm.Type;
 import org.bukkit.Bukkit;
 
 import java.lang.reflect.Field;

@@ -66,6 +66,13 @@ final class CubeShape extends MemoryTraced implements BlockShape {
   }
 
   @Override
+  public boolean intersectsWith(BoundingBox boundingBox) {
+    return boundingBox.maxX > min(X_AXIS) && boundingBox.minX < max(X_AXIS) &&
+      boundingBox.maxY > min(Y_AXIS) && boundingBox.minY < max(Y_AXIS) &&
+      boundingBox.maxZ > min(Z_AXIS) && boundingBox.minZ < max(Z_AXIS);
+  }
+
+  @Override
   public BlockRaytrace raytrace(Position origin, Position target) {
     double[] distanceStorage = {1.0};
     double differenceX = origin.getX() - target.getX();
@@ -154,12 +161,6 @@ final class CubeShape extends MemoryTraced implements BlockShape {
   @Override
   public boolean isCubic() {
     return true;
-  }
-
-  public boolean intersectsWith(BoundingBox boundingBox) {
-    return boundingBox.maxX > min(X_AXIS) && boundingBox.minX < max(X_AXIS) &&
-      boundingBox.maxY > min(Y_AXIS) && boundingBox.minY < max(Y_AXIS) &&
-      boundingBox.maxZ > min(Z_AXIS) && boundingBox.minZ < max(Z_AXIS);
   }
 
   @Override

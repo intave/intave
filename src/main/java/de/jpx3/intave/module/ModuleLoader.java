@@ -109,7 +109,7 @@ final class ModuleLoader {
         return (T) klass.getConstructor(IntavePlugin.class).newInstance(IntavePlugin.singletonInstance());
       } catch (InvocationTargetException internalException) {
         throw new IntaveInternalException(internalException);
-      } catch (Exception exception) {
+      } catch (Exception methodNotFound) {
         return (T) klass.newInstance();
       }
     } catch (InstantiationException | IllegalAccessException | ClassNotFoundException exception) {

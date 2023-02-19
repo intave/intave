@@ -37,7 +37,7 @@ public final class TrustFactorService implements BukkitEventSubscriber {
   }
 
   public void setup() {
-    TrustFactorLoader trustFactorLoader = IntaveControl.USE_DEBUG_RESOURCES ? new DebugYamlTrustFactorLoader() : new InternetYamlTrustFactorLoader();
+    TrustFactorLoader trustFactorLoader = IntaveControl.USE_DEBUG_TRUSTFACTOR_RESOURCE ? new DebugYamlTrustFactorLoader() : new InternetYamlTrustFactorLoader();
     trustFactorConfiguration = trustFactorLoader.fetch();
     trustFactorResolver = DEFAULT_RESOLVER;
 

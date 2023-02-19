@@ -4,7 +4,7 @@ import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.annotate.Relocate;
-import de.jpx3.intave.annotate.refactoring.IdoNotBelongHere;
+import de.jpx3.intave.block.type.MaterialSearch;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.player.Enchantments;
 import de.jpx3.intave.player.ItemProperties;
@@ -38,7 +38,7 @@ public final class InventoryMetadata {
   private int handSlot;
   private volatile boolean handActive;
   private final Lock handActiveLock = new ReentrantLock();
-  private Material activeItem;
+  private Material activeItemType;
   private boolean foodItem;
 
   public InventoryMetadata(Player player) {
@@ -46,7 +46,7 @@ public final class InventoryMetadata {
     if (player != null) {
       this.handSlot = player.getInventory().getHeldItemSlot();
     }
-    activeItem = Material.AIR;
+    activeItemType = Material.AIR;
   }
 
   public boolean handActive() {
@@ -109,14 +109,14 @@ public final class InventoryMetadata {
       this.foodItem = ItemProperties.foodConsumable(player, heldItemType());
       this.pastItemUsageTransition = 0;
       this.handActiveTicks = 0;
-      this.activeItem = heldItemType();
+      this.activeItemType = heldItemType();
       if (IntaveControl.DEBUG_ITEM_USAGE) {
-        Material activeItem = this.activeItem;
+        Material activeItem = this.activeItemType;
         Synchronizer.synchronize(() -> {
           player.sendMessage("Item usage started: " + activeItem);
         });
         Thread.dumpStack();
-        System.out.println("Item usage started: " + this.activeItem);
+        System.out.println("Item usage started: " + this.activeItemType);
       }
     } finally {
       handActiveLock.unlock();
@@ -136,28 +136,31 @@ public final class InventoryMetadata {
       if (heldItem != null && Enchantments.tridentRiptideEnchanted(heldItem)
         || offhandItem != null && Enchantments.tridentRiptideEnchanted(offhandItem)) {
         movementData.pastRiptideSpin = 0;
-        movementData.highestLocalRiptideLevel = Math.max(movementData.highestLocalRiptideLevel, Enchantments.resolveRiptideModifier(heldItem));
+        movementData.highestLocalRiptideLevel = Math.max(
+          movementData.highestLocalRiptideLevel,
+          Math.max(Enchantments.resolveRiptideModifier(heldItem), Enchantments.resolveRiptideModifier(offhandItem))
+        );
         movementData.onGroundWithRiptide = movementData.onGround;
       }
       this.handActive = false;
       this.pastItemUsageTransition = 0;
       this.handActiveTicks = 0;
       if (IntaveControl.DEBUG_ITEM_USAGE) {
-        Material activeItem = this.activeItem;
+        Material activeItem = this.activeItemType;
         Synchronizer.synchronize(() -> {
           player.sendMessage("Item usage ended: " + activeItem);
         });
 //        Thread.dumpStack();
         System.out.println("Item usage ended: " + activeItem);
       }
-      this.activeItem = Material.AIR;
+      this.activeItemType = Material.AIR;
     } finally {
       handActiveLock.unlock();
     }
   }
 
-  public Material activeItem() {
-    return activeItem;
+  public Material activeItemType() {
+    return activeItemType;
   }
 
   public void releaseItemNextTick() {
@@ -186,6 +189,28 @@ public final class InventoryMetadata {
 
   public boolean foodItem() {
     return foodItem;
+  }
+
+  private static final Material CROSSBOW = MaterialSearch.materialThatIsNamed("CROSSBOW");
+
+  public boolean couldChargeCrossbow() {
+//    User user = UserRepository.userOf(player);
+    if (CROSSBOW == null) {
+      return false;
+    }
+    return (heldItemType() == CROSSBOW || offhandItemType() == CROSSBOW) && hasArrowInInventory();
+  }
+
+  private boolean hasArrowInInventory() {
+    for (ItemStack item : player.getInventory().getContents()) {
+      if (item == null) {
+        continue;
+      }
+      if (item.getType() == Material.ARROW) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public static class SlotSwitchData {

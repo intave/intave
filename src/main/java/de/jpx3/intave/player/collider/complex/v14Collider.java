@@ -37,7 +37,7 @@ public final class v14Collider implements Collider {
     double startMotionY = motion.motionY();
     double startMotionZ = motion.motionZ();
     boolean step = false;
-    BlockShape collisionShape = Collision.collisionShape(
+    BlockShape collisionShape = Collision.shape(
       player, movement.boundingBox().expand(motion.motionX, motion.motionY, motion.motionZ)
     );
     BoundingBox startBoundingBox = movement.boundingBox();
@@ -75,7 +75,7 @@ public final class v14Collider implements Collider {
       BoundingBox boundingBox3 = shiftedBoundingBox;
       shiftedBoundingBox = startBoundingBox;
       motion.motionY = movement.stepHeight;
-      BlockShape stepCollisionShape = Collision.collisionShape(
+      BlockShape stepCollisionShape = Collision.shape(
         player, shiftedBoundingBox.expand(startMotionX, motion.motionY, startMotionZ)
       );
       BoundingBox boundingBox4 = shiftedBoundingBox;

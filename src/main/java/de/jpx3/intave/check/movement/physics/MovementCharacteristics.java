@@ -166,7 +166,7 @@ public final class MovementCharacteristics {
   @Deprecated
   @IdoNotBelongHere
   @WhyMustIExist
-  public static boolean isOnLadder(User user, double positionX, double positionY, double positionZ) {
+  public static boolean onClimbable(User user, double positionX, double positionY, double positionZ) {
     Player player = user.player();
     ProtocolMetadata clientData = user.meta().protocol();
     Material type = VolatileBlockAccess.typeAccess(

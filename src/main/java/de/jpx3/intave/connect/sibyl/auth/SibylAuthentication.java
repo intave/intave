@@ -71,7 +71,11 @@ public final class SibylAuthentication implements BukkitEventSubscriber {
     }
 
     JsonObject jsonObject = element.getAsJsonObject();
-    String action = jsonObject.get("action").getAsString();
+    JsonElement actionAsElement = jsonObject.get("action");
+    if (actionAsElement == null || actionAsElement.isJsonNull()) {
+      return;
+    }
+    String action = actionAsElement.getAsString();
 
     switch (action) {
       case "greet":
@@ -90,7 +94,11 @@ public final class SibylAuthentication implements BukkitEventSubscriber {
         try {
           if ((boolean) whitelisted(player)
             && authStateOf(player) == SibylAuthenticationState.AW_AK) {
-            String authkey = jsonObject.get("key").getAsString();
+            JsonElement keyElement = jsonObject.get("key");
+            if (keyElement == null || keyElement.isJsonNull()) {
+              return;
+            }
+            String authkey = keyElement.getAsString();
             setAuthState(player, SibylAuthenticationState.AW_AKV);
             verifyAuthKey(
               authkey,

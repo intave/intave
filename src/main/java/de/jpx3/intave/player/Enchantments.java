@@ -54,16 +54,16 @@ public final class Enchantments {
     if (stacks == null || stacks.length == 0) {
       return 0;
     }
-    int depthStriderLevel = 0;
+    int enchantmentLevel = 0;
     for (ItemStack itemstack : stacks) {
       if (itemstack == null) {
         continue;
       }
       int level = itemstack.getEnchantmentLevel(enchantment);
-      if (level > depthStriderLevel) {
-        depthStriderLevel = level;
+      if (level > enchantmentLevel) {
+        enchantmentLevel = level;
       }
     }
-    return depthStriderLevel;
+    return enchantmentLevel;
   }
 }

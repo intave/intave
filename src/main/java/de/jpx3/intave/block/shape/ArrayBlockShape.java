@@ -94,8 +94,8 @@ final class ArrayBlockShape extends MemoryTraced implements BlockShape {
 
   @Override
   public List<BoundingBox> boundingBoxes() {
-    if (boundingBoxCache.get() == null) {
-      List<BoundingBox> boundingBoxes = null;
+    List<BoundingBox> boundingBoxes;
+    if ((boundingBoxes = boundingBoxCache.get()) == null) {
       for (BlockShape content : contents) {
         List<BoundingBox> added = content.boundingBoxes();
         if (!added.isEmpty()) {
@@ -110,8 +110,9 @@ final class ArrayBlockShape extends MemoryTraced implements BlockShape {
         }
       }
       boundingBoxCache = boundingBoxes == null ? EMPTY_REFERENCE : new WeakReference<>(boundingBoxes);
+      boundingBoxes = boundingBoxes == null ? Collections.emptyList() : boundingBoxes;
     }
-    return boundingBoxCache.get();
+    return boundingBoxes;
   }
 
   @Override

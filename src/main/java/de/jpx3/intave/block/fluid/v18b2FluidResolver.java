@@ -31,10 +31,7 @@ final class v18b2FluidResolver extends FluidResolver {
     resolveTagKey = MethodSearchBySignature
       .ofClass(Lookup.serverClass("Fluid"))
       .withParameters(new Class[]{Lookup.serverClass("TagKey")})
-      .withReturnType(Boolean.TYPE)
-      .enforceResult()
-      .search().findAny()
-      .orElseThrow(() -> new IllegalStateException("Could not find tag method"));
+      .withReturnType(Boolean.TYPE).search().findFirstOrThrow();
   }
 
   @Override

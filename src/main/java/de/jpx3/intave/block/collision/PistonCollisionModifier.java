@@ -10,11 +10,11 @@ import org.bukkit.Material;
 
 import java.util.Set;
 
-import static de.jpx3.intave.block.collision.CollisionRequestType.INTERSECTION_CHECK;
+import static de.jpx3.intave.block.collision.CollisionOrigin.INTERSECTION_CHECK;
 
 final class PistonCollisionModifier extends CollisionModifier {
   @Override
-  public BlockShape modify(User user, BoundingBox userBox, int posX, int posY, int posZ, BlockShape shape, CollisionRequestType type) {
+  public BlockShape modify(User user, BoundingBox userBox, int posX, int posY, int posZ, BlockShape shape, CollisionOrigin type) {
     MovementMetadata movement = user.meta().movement();
     Set<Motion> toleratedPistonMotions = movement.toleratedPistonMotions;
     if (!toleratedPistonMotions.isEmpty() && type == INTERSECTION_CHECK) {

@@ -25,6 +25,9 @@ public final class BlockInteractionAccess {
   }
 
   public static float blockDamage(Player player, ItemStack itemInHand, BlockPosition blockPosition) {
+    if (player == null || itemInHand == null || blockPosition == null) {
+      return 0;
+    }
     return BlockAccess.global().blockDamage(player.getWorld(), player, itemInHand, blockPosition);
   }
 

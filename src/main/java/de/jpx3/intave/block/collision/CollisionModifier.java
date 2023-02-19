@@ -16,7 +16,7 @@ abstract class CollisionModifier {
     this.materials = materials;
   }
 
-  public abstract BlockShape modify(User user, BoundingBox userBox, int posX, int posY, int posZ, BlockShape shape, CollisionRequestType type);
+  public abstract BlockShape modify(User user, BoundingBox userBox, int posX, int posY, int posZ, BlockShape shape, CollisionOrigin type);
 
   public BlockShape imaginaryBlockShape(Material type, User user, int posX, int posY, int posZ, int data) {
     return null;

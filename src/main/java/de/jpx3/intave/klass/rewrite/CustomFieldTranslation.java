@@ -2,7 +2,7 @@ package de.jpx3.intave.klass.rewrite;
 
 import com.google.common.collect.ImmutableList;
 import de.jpx3.intave.annotate.Native;
-import de.jpx3.intave.lib.asm.tree.AnnotationNode;
+import de.jpx3.intave.library.asm.tree.AnnotationNode;
 
 import java.util.ArrayList;
 import java.util.List;

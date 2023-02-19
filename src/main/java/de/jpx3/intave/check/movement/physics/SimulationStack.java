@@ -83,7 +83,7 @@ final class SimulationStack {
   }
 
   MovementConfiguration configuration() {
-    return simulation.configuration();
+    return bestSimulation().configuration();
   }
 
   static SimulationStack of(User user) {

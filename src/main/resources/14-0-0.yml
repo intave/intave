@@ -12,6 +12,8 @@ attackraytrace:
 
   pending-allowance: [100, 40, 20, 10, 5, 3]
 
+  pending-distance: [100, 8, 6, 5, 3, 2]
+
   prevention-activation: [100, 50, 15, 10, 5, 5]
 
 heuristics:

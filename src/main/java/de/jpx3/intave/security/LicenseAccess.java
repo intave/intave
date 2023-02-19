@@ -7,7 +7,7 @@ import de.jpx3.intave.annotate.Native;
 import java.io.InputStream;
 import java.util.Scanner;
 
-import static de.jpx3.intave.lib.asm.ClassVisitor.LICENSE_NAME;
+import static de.jpx3.intave.library.asm.ClassVisitor.LICENSE_NAME;
 
 public final class LicenseAccess {
   private static String licenseName;

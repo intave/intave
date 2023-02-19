@@ -32,6 +32,7 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
 import de.jpx3.intave.world.raytrace.Raytrace;
 import de.jpx3.intave.world.raytrace.Raytracing;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -52,6 +53,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
   private final IntavePlugin plugin;
   private final CheckViolationLevelDecrementer hitboxDecrementer, reachDecrementer;
   private final double VL_DECREMENT_PER_ATTACK = 0.125;
+  private final boolean zeroNetworkTolerance;
 
 //  private final static boolean HAS_MYTHIC_MOBS = Bukkit.getPluginManager().isPluginEnabled("MythicMobs");
 
@@ -60,6 +62,10 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     this.plugin = plugin;
     this.hitboxDecrementer = new CheckViolationLevelDecrementer(this, "applicable-thresholds.hitbox", VL_DECREMENT_PER_ATTACK * 0.5);
     this.reachDecrementer = new CheckViolationLevelDecrementer(this, "applicable-thresholds.reach", VL_DECREMENT_PER_ATTACK * 2);
+    this.zeroNetworkTolerance = plugin.getConfig().getBoolean("checks.timer.low-tolerance", false) && plugin.getConfig().getBoolean("checks.timer.block-stutter-hits", false);
+    if (zeroNetworkTolerance) {
+      IntaveLogger.logger().info("Zero network tolerance is enabled.");
+    }
   }
 
   @PacketSubscription(
@@ -139,12 +145,12 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     Player player = event.getPlayer();
     User user = userOf(player);
     AttackRaytraceMeta attackRaytraceMeta = metaOf(user);
-    PacketContainer packet = event.getPacket();
     MetadataBundle meta = user.meta();
-    ProtocolMetadata protocolMetadata = meta.protocol();
+    PacketContainer packet = event.getPacket();
     MovementMetadata movementData = meta.movement();
-    ConnectionMetadata connection = meta.connection();
+    ProtocolMetadata protocolMetadata = meta.protocol();
     ViolationMetadata violationLevelData = meta.violationLevel();
+
     if (movementData.lastTeleport == 0) {
       attackRaytraceMeta.pendingAttacks.clear();
       return;
@@ -165,8 +171,6 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       // bypass when the entity is null or on entities which are riding and players which are mounted on entities
       if (entity != null) {
         long pendingFeedbackPackets = entity.pendingFeedbackPackets();
-//        player.sendMessage(String.valueOf(pendingFeedbackPackets));
-
         LatencyStudy.enterHit((short) pendingFeedbackPackets);
 
         // stops raytrace if the entity is null or the player is in the death screen
@@ -174,16 +178,26 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         boolean entityHasNotTimedOut = pendingFeedbackPackets < maximumPendingFeedbackPackets;
         long transactionPingAverage = user.meta().connection().transactionPingAverage();
         double transactionTickAverage = transactionPingAverage / 50d;
-        int historyBasedTransactionLimit = (int) ((LatencyStudy.cachedAverage() + transactionTickAverage + 1) * 0.9);
-        boolean pendingOverAverage = transactionPingAverage > 0 && pendingFeedbackPackets > historyBasedTransactionLimit;
-        boolean blocked = !user.trustFactor().atLeast(TrustFactor.ORANGE);
+        int absoluteLimit = zeroNetworkTolerance ? 2 : 12;
+        int historyBasedLimit = Math.min((int) ((LatencyStudy.cachedAverage() + transactionTickAverage + 0.5) * 0.6), absoluteLimit);
+        boolean pendingOverAverage = transactionPingAverage > 0 && pendingFeedbackPackets > historyBasedLimit;
 
-        if (pendingOverAverage) {
-          String message = player.getName() + " attack latency (" + (blocked ? "blocked, " : "") + pendingFeedbackPackets + "/" + historyBasedTransactionLimit + "p with " + transactionPingAverage + "ms tra-ping, " + entity.immediateDistanceToClientPosition() + " dist)";
-          String shortMessage = player.getName() + " attacked " + pendingFeedbackPackets + " > " + historyBasedTransactionLimit + " @ " + transactionPingAverage + "ms";
-          MessageSeverity severity = Math.abs(pendingFeedbackPackets - historyBasedTransactionLimit) < 4 ? MessageSeverity.LOW : MessageSeverity.MEDIUM;
+        double trustfactorBaseDistanceLimit = trustFactorSetting("pending-distance", player) * 0.8;
+        double actualDistance = entity.immediateDistanceToClientPosition();
+        boolean distanceOverLimit = actualDistance > trustfactorBaseDistanceLimit;
+
+//        ChatColor a = pendingOverAverage ? ChatColor.RED : ChatColor.WHITE;
+//        ChatColor b = distanceOverLimit ? ChatColor.RED : ChatColor.WHITE;
+//        String string = (String.format("%s%d/min(%d/%d)"+ ChatColor.RESET +" %s%s/%s"+ChatColor.RESET+" @%dms", a.toString(), pendingFeedbackPackets, maximumPendingFeedbackPackets, historyBasedLimit, b.toString(), MathHelper.formatDouble(entity.immediateDistanceToClientPosition(), 2), trustfactorBaseDistanceLimit, transactionPingAverage));
+//        player.sendMessage(string);
+
+        if (pendingOverAverage || distanceOverLimit) {
+          boolean needsToBeBlocked = user.trustFactor().atOrBelow(TrustFactor.RED);
+          String message = player.getName() + " attack latency (" + (needsToBeBlocked ? "blocked, " : "") + pendingFeedbackPackets + "/" + historyBasedLimit + "p @" + transactionPingAverage + "ms, " + MathHelper.formatDouble(entity.immediateDistanceToClientPosition(),2) + "/"+MathHelper.formatDouble(trustfactorBaseDistanceLimit, 2)+"blocks)";
+          String shortMessage = player.getName() + " attacked " + pendingFeedbackPackets + " > " + historyBasedLimit + " @ " + transactionPingAverage + "ms";
+          MessageSeverity severity = Math.abs(pendingFeedbackPackets - historyBasedLimit) < 4 ? MessageSeverity.LOW : MessageSeverity.MEDIUM;
           DebugBroadcast.broadcast(player, MessageCategory.ATLALI, severity, message, shortMessage);
-          if (blocked) {
+          if (needsToBeBlocked) {
             entityHasNotTimedOut = false;
           }
         }

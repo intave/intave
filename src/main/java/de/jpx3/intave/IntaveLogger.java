@@ -83,30 +83,30 @@ public final class IntaveLogger extends PluginLogger {
     logToFile("(INF) " + infoMessage);
   }
 
-  public void error(String errorMessage) {
-    String message = IntavePlugin.prefix() + ChatColor.DARK_RED + ChatColor.BOLD + "ERROR" + IntavePlugin.defaultColor() + ": " + ChatColor.RED + errorMessage;
+  public void error(String message) {
+    String fullMessage = IntavePlugin.prefix() + ChatColor.DARK_RED + ChatColor.BOLD + "ERROR" + IntavePlugin.defaultColor() + ": " + ChatColor.RED + message;
     for (PrintStream outputStream : outputStreams) {
-      outputStream.print(ChatColor.stripColor(message));
+      outputStream.print(ChatColor.stripColor(fullMessage));
     }
     if (DISABLE_COLOR_OUTPUT) {
-      Bukkit.getLogger().warning(ChatColor.stripColor(message));
+      Bukkit.getLogger().warning(ChatColor.stripColor(fullMessage));
     } else {
-      Bukkit.getConsoleSender().sendMessage(message);
+      Bukkit.getConsoleSender().sendMessage(fullMessage);
     }
-    logToFile("(ERR) " + errorMessage);
+    logToFile("(ERR) " + message);
   }
 
-  public void warn(String errorMessage) {
-    String message = IntavePlugin.prefix() + ChatColor.YELLOW + ChatColor.BOLD + "WARNING" + IntavePlugin.defaultColor() + ": " + ChatColor.RED + errorMessage;
+  public void warn(String message) {
+    String fullMessage = IntavePlugin.prefix() + ChatColor.YELLOW + ChatColor.BOLD + "WARNING" + IntavePlugin.defaultColor() + ": " + ChatColor.RED + message;
     for (PrintStream outputStream : outputStreams) {
-      outputStream.print(ChatColor.stripColor(message));
+      outputStream.print(ChatColor.stripColor(fullMessage));
     }
     if (DISABLE_COLOR_OUTPUT) {
-      Bukkit.getLogger().warning(ChatColor.stripColor(message));
+      Bukkit.getLogger().warning(ChatColor.stripColor(fullMessage));
     } else {
-      Bukkit.getConsoleSender().sendMessage(message);
+      Bukkit.getConsoleSender().sendMessage(fullMessage);
     }
-    logToFile("(WARN) " + errorMessage);
+    logToFile("(WARN) " + message);
   }
 
   public void violation(String violation) {

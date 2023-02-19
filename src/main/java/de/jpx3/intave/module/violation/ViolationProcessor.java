@@ -251,7 +251,7 @@ public final class ViolationProcessor extends Module {
     double afterVL = violationContext.violationLevelAfter();
     List<String> newCommands = new ArrayList<>();
     for (String command : violationContext.commands()) {
-      ViolationPlaceholderContext placeholderContext = violationContext.placeholder(DetailScope.FULL /* automaticallly striped when not enterprise */);
+      ViolationPlaceholderContext placeholderContext = violationContext.placeholder(DetailScope.FULL /* automatically striped when not enterprise */);
       String executedCommand = MessageFormatter.resolveCommandReplacements(player, command, placeholderContext);
       IntaveCommandExecutionEvent commandTriggerEvent = Modules.eventInvoker().invokeEvent(
         IntaveCommandExecutionEvent.class,

@@ -36,7 +36,7 @@ public final class BlockVariantRegister {
   static final BlockVariant EMPTY_ERROR = new EmptyBlockVariant();
 
   // Note: Caching all materials can become quite memory-intensive.
-  //       Only pass in materials that are actually used, always filter random materials
+  //       Only pass in materials that are actually used, always filter random materials!
   public static BlockVariant variantOf(Material type, int variantIndex) {
     Map<Integer, BlockVariant> variantMap = blockVariants.computeIfAbsent(type, BlockVariantRegister::translateFromServer);
     BlockVariant variant = variantMap.get(variantIndex);

@@ -479,7 +479,7 @@ public class TinyProtocol {
       new Class[0],
       LOGIN_PACKET_METHOD_RETURN_TYPE,
       method -> !"toString".equals(method.getName())
-    ).findAnyOrThrow();
+    ).findFirstOrThrow();
 
     private void handleLoginStart(Channel channel, Object packet) {
       if (PACKET_LOGIN_IN_START.isInstance(packet)) {

@@ -3,7 +3,7 @@ package de.jpx3.intave.resource;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.annotate.Native;
 import de.jpx3.intave.connect.IntaveDomains;
-import de.jpx3.intave.lib.asm.ByteVector;
+import de.jpx3.intave.library.asm.ByteVector;
 import de.jpx3.intave.security.ContextSecrets;
 import de.jpx3.intave.security.HashAccess;
 

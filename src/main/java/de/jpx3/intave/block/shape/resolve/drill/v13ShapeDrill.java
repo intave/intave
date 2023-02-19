@@ -38,7 +38,6 @@ public final class v13ShapeDrill extends AbstractShapeDrill {
       return BlockShapes.emptyShape();
     }
     VoxelShape shape = blockData.getShape(handle, blockPosition);
-    List<AxisAlignedBB> nativeBoxes = shape.d();
-    return translateWithOffset(nativeBoxes, posX, posY, posZ);
+    return translateWithOffset(shape.d(), posX, posY, posZ);
   }
 }

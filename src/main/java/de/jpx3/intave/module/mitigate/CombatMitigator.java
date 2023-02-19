@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static de.jpx3.intave.access.player.trust.TrustFactor.RED;
 import static de.jpx3.intave.access.player.trust.TrustFactor.YELLOW;
 
 public final class CombatMitigator extends Module {
@@ -79,13 +80,18 @@ public final class CombatMitigator extends Module {
   @BukkitEventSubscription(priority = EventPriority.LOWEST)
   public void receiveAttack(EntityDamageByEntityEvent event) {
     Entity attacker = event.getDamager();
+    Entity attacked = event.getEntity();
     if (!(attacker instanceof Player) || event.getCause() != EntityDamageEvent.DamageCause.ENTITY_ATTACK || !(event.getEntity() instanceof LivingEntity)) {
       return;
     }
     Player player = (Player) attacker;
     PunishmentMetadata punishmentData = UserRepository.userOf(player).meta().punishment();
+
+    boolean attackerHasRedTrust = UserRepository.userOf(player).trustFactor().atOrBelow(RED);
+    boolean attackedHasRedTrust = (attacked instanceof Player) && UserRepository.userOf((Player) attacked).trustFactor().atOrBelow(RED);
+
     for (AttackNerfer attackNerfer : punishmentData.allNerfers()) {
-      if (attackNerfer.active() && !attackNerfer.inverseEvent()) {
+      if (attackNerfer.active() && !attackedHasRedTrust && !attackNerfer.inverseEvent()) {
         attackNerfer.executor().accept(event);
       }
     }
@@ -100,15 +106,16 @@ public final class CombatMitigator extends Module {
       }
     }
 
-    Entity attacked = event.getEntity();
     if (!(attacked instanceof Player)) {
       return;
     }
 
     Player attackedPlayer = (Player) attacked;
-    punishmentData = UserRepository.userOf(attackedPlayer).meta().punishment();
+    User attackedUser = UserRepository.userOf(attackedPlayer);
+
+    punishmentData = attackedUser.meta().punishment();
     for (AttackNerfer attackNerfer : punishmentData.allNerfers()) {
-      if (attackNerfer.active() && attackNerfer.inverseEvent()) {
+      if (attackNerfer.active() && !attackerHasRedTrust && attackNerfer.inverseEvent()) {
         attackNerfer.executor().accept(event);
       }
     }
@@ -134,8 +141,12 @@ public final class CombatMitigator extends Module {
 
   @Deprecated
   public void mitigate(User user, AttackNerfStrategy type, String checkId) {
+    if (type == AttackNerfStrategy.BLOCKING && user.meta().protocol().combatUpdate()) {
+      type = AttackNerfStrategy.HT_LIGHT;
+    }
+    AttackNerfStrategy finalType = type;
     Synchronizer.synchronize(() -> {
-      AttackNerfer nerfer = user.meta().punishment().nerferOfType(type);
+      AttackNerfer nerfer = user.meta().punishment().nerferOfType(finalType);
       boolean wasActive = nerfer.active();
       nerfer.activate();
       if (!wasActive) {

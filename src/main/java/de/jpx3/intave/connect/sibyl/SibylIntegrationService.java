@@ -176,6 +176,10 @@ public final class SibylIntegrationService implements BukkitEventSubscriber {
 
   @Native
   public void sendTrustedPacket(Player player, SibylPacket packet) {
+    if (!Bukkit.isPrimaryThread()) {
+      Synchronizer.synchronize(() -> sendTrustedPacket(player, packet));
+      return;
+    }
     if (authentication.isAuthenticated(player)) {
       packetTransmitter.transmitPacket(player, packet);
     }

@@ -175,7 +175,7 @@ public final class ConfigurationLoader {
           }
         }
         inputStream = Files.newInputStream(settingFile.toPath());
-      } else if (IntaveControl.USE_DEBUG_RESOURCES) {
+      } else if (IntaveControl.USE_DEBUG_TRUSTFACTOR_RESOURCE) {
         inputStream = ConfigurationLoader.class.getResourceAsStream("/settings.yml");
         if (inputStream == null) {
           throw new IntaveBootFailureException("Debug resources not found");

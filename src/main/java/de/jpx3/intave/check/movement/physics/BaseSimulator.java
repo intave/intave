@@ -12,7 +12,6 @@ import de.jpx3.intave.block.physics.BlockProperties;
 import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.block.type.MaterialSearch;
 import de.jpx3.intave.block.variant.BlockVariant;
-import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.player.Effects;
@@ -29,7 +28,6 @@ import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.user.meta.ViolationMetadata;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -73,12 +71,13 @@ class BaseSimulator extends Simulator {
     boolean inLava = environment.inLava();
     boolean elytraFlying = pose == Pose.FALL_FLYING;
     boolean swimming = pose == Pose.SWIMMING;
+    boolean crouching = pose == Pose.CROUCHING;
     boolean waterUpdate = protocol.waterUpdate();
 
     forward = ((int) forward) * 0.98f;
     strafe = ((int) strafe) * 0.98f;
 
-    if ((pose == Pose.CROUCHING) || (!protocol.beeUpdate() && environment.isSneaking())) {
+    if (crouching || (!protocol.beeUpdate() && environment.isSneaking())) {
       double sneakingModifier = clamp_double(0.3 + Enchantments.resolveSwiftSpeedModifier(user.player()) * 0.15f, 0.0f, 1.0f);
       forward = (float) ((double) forward * sneakingModifier);
       strafe = (float) ((double) strafe * sneakingModifier);
@@ -191,18 +190,29 @@ class BaseSimulator extends Simulator {
     float yawSine,
     float yawCosine) {
     performRelativeMoveSimulationOfState(context, environment.friction(), yawSine, yawCosine, moveForward, moveStrafe);
-    if (MovementCharacteristics.isOnLadder(
+
+    boolean onLadder = MovementCharacteristics.onClimbable(
       user,
       environment.verifiedPositionX(),
       environment.verifiedPositionY(),
-      environment.verifiedPositionZ())) {
-      float f6 = 0.15F;
-      context.motionX = ClientMathHelper.clamp_double(context.motionX, -f6, f6);
-      context.motionZ = ClientMathHelper.clamp_double(context.motionZ, -f6, f6);
-      if (context.motionY < -0.15D) {
-        context.motionY = -0.15D;
-      }
-      if (environment.isSneaking() && context.motionY < 0.0D) {
+      environment.verifiedPositionZ()
+    );
+
+    if (onLadder) {
+      float axisLimit = 0.15F;
+      context.motionX = ClientMathHelper.clamp_double(context.motionX, -axisLimit, axisLimit);
+      context.motionY = ClientMathHelper.clamp_double(context.motionY, -axisLimit, Integer.MAX_VALUE); // no positive limit
+      context.motionZ = ClientMathHelper.clamp_double(context.motionZ, -axisLimit, axisLimit);
+//      if (context.motionY < -0.15D) {
+//        context.motionY = -0.15D;
+//      }
+      Material type = VolatileBlockAccess.typeAccess(
+        user, user.player().getWorld(),
+        floor(environment.verifiedPositionX()),
+        floor(environment.verifiedPositionY()),
+        floor(environment.verifiedPositionZ())
+      );
+      if (environment.isSneaking() && context.motionY < 0.0D && BlockProperties.of(type).climbableSneakLimit()) {
         context.motionY = 0.0D;
       }
     }

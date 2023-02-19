@@ -6,64 +6,63 @@ import org.bukkit.entity.Player;
 
 @Relocate
 public final class MetadataBundle {
-  private final ViolationMetadata violation;
-  private final MovementMetadata movement;
   private final AbilityMetadata ability;
-  private final EffectMetadata potion;
-  private final ProtocolMetadata protocol;
-  private final ConnectionMetadata connection;
-  private final InventoryMetadata inventory;
   private final AttackMetadata attack;
+  private final ConnectionMetadata connection;
+  private final EffectMetadata effect;
+  private final InventoryMetadata inventory;
+  private final MovementMetadata movement;
+  private final ProtocolMetadata protocol;
   private final PunishmentMetadata punishment;
+  private final ViolationMetadata violation;
 
   public MetadataBundle(Player player, User user) {
-    this.violation = new ViolationMetadata();
-    this.protocol = new ProtocolMetadata(player, user);
     this.ability = new AbilityMetadata(player);
-    this.potion = new EffectMetadata(player);
-    this.inventory = new InventoryMetadata(player);
-    this.connection = new ConnectionMetadata(player);
-    this.movement = new MovementMetadata(player, user);
     this.attack = new AttackMetadata(player);
+    this.connection = new ConnectionMetadata(player);
+    this.effect = new EffectMetadata(player);
+    this.inventory = new InventoryMetadata(player);
+    this.movement = new MovementMetadata(player, user);
+    this.protocol = new ProtocolMetadata(player, user);
     this.punishment = new PunishmentMetadata(player);
-  }
-
-  public ViolationMetadata violationLevel() {
-    return violation;
-  }
-
-  public MovementMetadata movement() {
-    return movement;
-  }
-
-  public InventoryMetadata inventory() {
-    return inventory;
+    this.violation = new ViolationMetadata();
   }
 
   public AbilityMetadata abilities() {
     return ability;
   }
 
-  public EffectMetadata potions() {
-    return potion;
+  public AttackMetadata attack() {
+    return attack;
   }
 
   public ConnectionMetadata connection() {
     return connection;
   }
 
-  public ProtocolMetadata protocol() {
-    return protocol;
+  public EffectMetadata potions() {
+    return effect;
   }
 
-  public AttackMetadata attack() {
-    return attack;
+  public InventoryMetadata inventory() {
+    return inventory;
+  }
+
+  public MovementMetadata movement() {
+    return movement;
+  }
+
+  public ProtocolMetadata protocol() {
+    return protocol;
   }
 
   public PunishmentMetadata punishment() {
     return punishment;
   }
 
+  public ViolationMetadata violationLevel() {
+    return violation;
+  }
 
   public void setup() {
     movement.setup();

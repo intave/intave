@@ -2,14 +2,14 @@ package de.jpx3.intave.klass.create;
 
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
-import de.jpx3.intave.lib.asm.ClassWriter;
-import de.jpx3.intave.lib.asm.Label;
-import de.jpx3.intave.lib.asm.MethodVisitor;
-import de.jpx3.intave.lib.asm.Type;
+import de.jpx3.intave.library.asm.ClassWriter;
+import de.jpx3.intave.library.asm.Label;
+import de.jpx3.intave.library.asm.MethodVisitor;
+import de.jpx3.intave.library.asm.Type;
 
 import java.util.function.IntUnaryOperator;
 
-import static de.jpx3.intave.lib.asm.Opcodes.*;
+import static de.jpx3.intave.library.asm.Opcodes.*;
 
 final class IRXClassAssembler {
   static Class<?> generateCallerClass(

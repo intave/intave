@@ -98,8 +98,8 @@ public final class Speed extends MetaCheckPart<PlacementAnalysis, Speed.Placemen
         boolean noHardFault = IntaveControl.GOMME_MODE && System.currentTimeMillis() - meta.lastHardFaultClick > 6000;
         boolean noSneaking = System.currentTimeMillis() - movementData.lastSneakingTimestamps > 8000;
         boolean recentJump = System.currentTimeMillis() - movementData.lastJump < 750;
-        float distToNextNinety = Math.abs(user.meta().movement().rotationYaw()) % 90;
-        boolean ninetyDegreeAngle = distToNextNinety < 10 || distToNextNinety > 80;
+        float yawToNextNinetyDeg = Math.abs(user.meta().movement().rotationYaw()) % 90;
+        boolean ninetyDegreeAngle = yawToNextNinetyDeg < 10 || yawToNextNinetyDeg > 80;
 
         double minAverage;
 

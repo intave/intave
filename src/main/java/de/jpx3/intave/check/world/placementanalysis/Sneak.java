@@ -60,7 +60,6 @@ public final class Sneak extends MetaCheckPart<PlacementAnalysis, Sneak.SneakMet
         double average = placementSpeedHistory.stream().mapToDouble(value -> value).average().orElse(500);
         boolean inOneLine = isOneLine(meta.placementHistory);
         boolean noSneaking = System.currentTimeMillis() - movementData.lastSneakingTimestamps > 6000;
-
         double limit = 500;
 
         int speedAmplifier = potionData.potionEffectSpeedAmplifier();
@@ -106,7 +105,7 @@ public final class Sneak extends MetaCheckPart<PlacementAnalysis, Sneak.SneakMet
     return collisions;
   }
 
-  private boolean isOneLine(List<Location> blocks) {
+  private boolean isOneLine(List<? extends Location> blocks) {
     int lastBlockX = 0, lastBlockY = 0, lastBlockZ = 0;
     boolean lockedOnX = false, lockedOnZ = false;
     boolean first = true;

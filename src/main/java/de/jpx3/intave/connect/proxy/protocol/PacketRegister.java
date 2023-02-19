@@ -24,15 +24,15 @@ public final class PacketRegister {
     packets = ImmutableMap.copyOf(packetMap);
   }
 
-  public static Map<Integer, Class<? extends IntavePacket>> getPackets() {
+  public static Map<Integer, Class<? extends IntavePacket>> idToPacketTypes() {
     return packets;
   }
 
-  public static Collection<Class<? extends IntavePacket>> getPacketTypes() {
+  public static Collection<Class<? extends IntavePacket>> packetTypes() {
     return Collections.unmodifiableCollection(packets.values());
   }
 
-  public static Optional<Class<? extends IntavePacket>> getClassOf(int packetId) {
+  public static Optional<Class<? extends IntavePacket>> typeOfId(int packetId) {
     return Optional.ofNullable(packets.get(packetId));
   }
 

@@ -18,7 +18,7 @@ public final class FaultKicks {
     FEEDBACK_FAULTS = loadFrom(section, "feedback-faults", "feedback faults");
     IGNORING_FEEDBACK = loadFrom(section, "ignoring-feedback", "ignoring feedback packets");
     IGNORING_KEEP_ALIVE = loadFrom(section, "ignoring-keep-alive", "ignoring keep alive packets");
-    INVALID_KEY_INPUT = loadFrom(section, "invalid-key-input", "invalid key input");
+    INVALID_KEY_INPUT = loadFrom(section, "invalid-key-input", "invalid key inputs");
     INVALID_PLAYER_ACTION = loadFrom(section, "invalid-player-action", "invalid player actions");
   }
 

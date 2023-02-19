@@ -1,6 +1,6 @@
 package de.jpx3.intave.klass.rewrite;
 
-import de.jpx3.intave.lib.asm.tree.AnnotationNode;
+import de.jpx3.intave.library.asm.tree.AnnotationNode;
 
 import java.util.List;
 import java.util.Map;

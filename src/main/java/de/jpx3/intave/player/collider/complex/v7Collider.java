@@ -34,7 +34,7 @@ public final class v7Collider implements Collider {
       context.motionZ *= 0.25D;
     }
 
-    BlockShape var37 = Collision.collisionShape(user.player(), entityBoundingBox.expand(startMotionX, startMotionY, startMotionZ));
+    BlockShape var37 = Collision.shape(user.player(), entityBoundingBox.expand(startMotionX, startMotionY, startMotionZ));
     startMotionY = var37.allowedOffset(Direction.Axis.Y_AXIS, entityBoundingBox, startMotionY);
     entityBoundingBox = entityBoundingBox.offset(0, startMotionY, 0);
 
@@ -61,7 +61,7 @@ public final class v7Collider implements Collider {
       BoundingBox var29 = entityBoundingBox.copy();
       entityBoundingBox = var19;
 
-      var37 = Collision.collisionShape(user.player(), entityBoundingBox.expand(var13, startMotionY, var17));
+      var37 = Collision.shape(user.player(), entityBoundingBox.expand(var13, startMotionY, var17));
       startMotionY = var37.allowedOffset(Direction.Axis.Y_AXIS, entityBoundingBox, startMotionY);
       entityBoundingBox.offset(0, startMotionY, 0);
 

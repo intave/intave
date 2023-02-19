@@ -511,7 +511,7 @@ public final class SetbackSimulator extends Module {
     motionY = minmax(-4, motionY, 4);
     motionZ = minmax(-4, motionZ, 4);
 
-    BlockShape collisionBox = Collision.collisionShape(player, entityBoundingBox.expand(motionX, motionY, motionZ));
+    BlockShape collisionBox = Collision.shape(player, entityBoundingBox.expand(motionX, motionY, motionZ));
 
     // motion y
     motionY = collisionBox.allowedOffset(Y_AXIS, entityBoundingBox, motionY);

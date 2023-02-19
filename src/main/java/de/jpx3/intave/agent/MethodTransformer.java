@@ -1,6 +1,6 @@
 package de.jpx3.intave.agent;
 
-import de.jpx3.intave.lib.asm.MethodVisitor;
+import de.jpx3.intave.library.asm.MethodVisitor;
 
 public interface MethodTransformer {
   MethodVisitor replace(

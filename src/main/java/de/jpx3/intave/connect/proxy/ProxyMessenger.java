@@ -74,7 +74,7 @@ public final class ProxyMessenger {
 
   private void openChannel() {
     packetListeners = Maps.newHashMap();
-    PacketRegister.getPackets()
+    PacketRegister.idToPacketTypes()
       .entrySet()
       .stream()
       .filter(integerClassEntry -> integerClassEntry.getKey() >= 100)

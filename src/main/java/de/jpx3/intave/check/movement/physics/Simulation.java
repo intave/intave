@@ -36,6 +36,10 @@ public final class Simulation {
     this.debugInformation = 0;
   }
 
+  public boolean wasSprinting() {
+    return configuration.isSprinting();
+  }
+
   public double accuracy(Motion motionVector) {
     return distanceOf(motion(), motionVector);
   }
@@ -54,10 +58,6 @@ public final class Simulation {
 
   public ColliderResult collider() {
     return colliderResult;
-  }
-
-  public boolean wasSprinting() {
-    return configuration.isSprinting();
   }
 
   MovementConfiguration configuration() {

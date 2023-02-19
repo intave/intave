@@ -36,7 +36,7 @@ public final class CollisionModifiers {
     }
   }
 
-  public static BlockShape modified(User user, BoundingBox boundingBox, Material type, int posX, int posY, int posZ, BlockShape shape, CollisionRequestType requestType) {
+  public static BlockShape modified(User user, BoundingBox boundingBox, Material type, int posX, int posY, int posZ, BlockShape shape, CollisionOrigin requestType) {
     return repository.get(type).modify(user, boundingBox, posX, posY, posZ, shape, requestType);
   }
 

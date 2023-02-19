@@ -51,6 +51,7 @@ public final class Effects {
   }
 
   public static boolean isPotionActive(Player player, PotionEffectType type) {
+    // we should replace this with a more lag-proof method
     for (PotionEffect activePotionEffect : player.getActivePotionEffects()) {
       if (activePotionEffect.getType().equals(type)) {
         return true;

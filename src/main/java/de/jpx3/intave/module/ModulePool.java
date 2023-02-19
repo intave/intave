@@ -23,6 +23,8 @@ final class ModulePool {
   }
 
   public void enableModule(Module module) {
+    // first enable the module, then link subscriptions
+    module.enable();
     if (module.settings().shouldLinkSubscriptions()) {
       BukkitEventSubscriptionLinker bukkitEventLinker = lookup(BukkitEventSubscriptionLinker.class);
       if (bukkitEventLinker != null) {
@@ -33,7 +35,6 @@ final class ModulePool {
         packetSubscriptionLinker.linkSubscriptionsIn(module);
       }
     }
-    module.enable();
   }
 
   public void disableAll() {
