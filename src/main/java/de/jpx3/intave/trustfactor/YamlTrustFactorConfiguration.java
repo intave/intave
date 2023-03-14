@@ -2,7 +2,6 @@ package de.jpx3.intave.trustfactor;
 
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
-import de.jpx3.intave.annotate.Native;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.util.*;

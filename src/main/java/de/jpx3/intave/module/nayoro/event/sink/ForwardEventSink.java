@@ -3,7 +3,6 @@ package de.jpx3.intave.module.nayoro.event.sink;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.nayoro.PlayerContainer;
 import de.jpx3.intave.module.nayoro.event.Event;
-import de.jpx3.intave.module.nayoro.event.PlayerMoveEvent;
 
 public final class ForwardEventSink extends EventSink {
   private final PlayerContainer player;

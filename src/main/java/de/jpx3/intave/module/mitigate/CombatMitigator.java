@@ -2,7 +2,6 @@ package de.jpx3.intave.module.mitigate;
 
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
-import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.annotate.Native;
 import de.jpx3.intave.connect.sibyl.SibylMessageTransmitter;
 import de.jpx3.intave.executor.Synchronizer;

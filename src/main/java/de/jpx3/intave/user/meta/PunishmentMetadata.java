@@ -1,7 +1,6 @@
 package de.jpx3.intave.user.meta;
 
 import com.google.common.collect.Lists;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.annotate.Native;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;

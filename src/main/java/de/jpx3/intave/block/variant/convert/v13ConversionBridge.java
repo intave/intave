@@ -3,10 +3,10 @@ package de.jpx3.intave.block.variant.convert;
 import de.jpx3.intave.block.variant.Setting;
 import de.jpx3.intave.block.variant.Settings;
 import de.jpx3.intave.klass.rewrite.PatchyAutoTranslation;
-import net.minecraft.server.v1_13_R2.IBlockState;
 import net.minecraft.server.v1_13_R2.BlockStateBoolean;
 import net.minecraft.server.v1_13_R2.BlockStateEnum;
 import net.minecraft.server.v1_13_R2.BlockStateInteger;
+import net.minecraft.server.v1_13_R2.IBlockState;
 
 import java.util.*;
 

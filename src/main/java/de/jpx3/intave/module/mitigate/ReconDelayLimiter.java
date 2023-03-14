@@ -9,9 +9,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 
 import java.net.InetAddress;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 

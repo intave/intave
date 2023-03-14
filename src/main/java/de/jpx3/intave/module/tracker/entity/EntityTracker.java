@@ -28,7 +28,6 @@ import de.jpx3.intave.module.nayoro.event.EntityRemoveEvent;
 import de.jpx3.intave.module.nayoro.event.EntitySpawnEvent;
 import de.jpx3.intave.module.nayoro.event.sink.EventSink;
 import de.jpx3.intave.packet.PacketSender;
-import de.jpx3.intave.packet.reader.EntityDestroyReader;
 import de.jpx3.intave.packet.reader.EntityIterable;
 import de.jpx3.intave.packet.reader.EntityMetadataReader;
 import de.jpx3.intave.packet.reader.PacketReaders;

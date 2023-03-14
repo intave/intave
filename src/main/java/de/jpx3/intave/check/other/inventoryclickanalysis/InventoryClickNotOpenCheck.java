@@ -17,8 +17,6 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.InventoryMetadata;
 import org.bukkit.entity.Player;
 
-import java.util.Locale;
-
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.WINDOW_CLICK;
 
 public final class InventoryClickNotOpenCheck extends CheckPart<InventoryClickAnalysis> {

@@ -60,7 +60,6 @@ import de.jpx3.intave.reflect.access.ReflectiveAccess;
 import de.jpx3.intave.resource.Resources;
 import de.jpx3.intave.resource.legacy.EncryptedLegacyResource;
 import de.jpx3.intave.security.*;
-import de.jpx3.intave.security.PlayerListService;
 import de.jpx3.intave.security.letis.Letis;
 import de.jpx3.intave.share.link.WrapperConverter;
 import de.jpx3.intave.test.TestService;

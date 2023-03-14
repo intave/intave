@@ -9,15 +9,12 @@ import net.minecraft.core.BlockPosition;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.level.IBlockAccess;
 import net.minecraft.world.level.block.state.IBlockData;
-import net.minecraft.world.phys.AxisAlignedBB;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.VoxelShapes;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_17_R1.CraftWorld;
 import org.bukkit.entity.Player;
-
-import java.util.List;
 
 @PatchyAutoTranslation
 public final class v17b1ShapeDrill extends AbstractShapeDrill {

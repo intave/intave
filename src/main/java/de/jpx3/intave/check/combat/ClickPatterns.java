@@ -11,7 +11,6 @@ import de.jpx3.intave.check.combat.clickpatterns.Spikes;
 import de.jpx3.intave.check.combat.clickpatterns.Variance;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.user.User;
 import org.bukkit.entity.Player;

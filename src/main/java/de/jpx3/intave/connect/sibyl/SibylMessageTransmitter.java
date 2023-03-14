@@ -2,7 +2,6 @@ package de.jpx3.intave.connect.sibyl;
 
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.annotate.Native;
-import de.jpx3.intave.connect.sibyl.data.packet.SibylPacketOutMessage;
 import de.jpx3.intave.executor.Synchronizer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;

@@ -6,11 +6,9 @@ import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Confidence;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.nayoro.NayoroRelay;
-import de.jpx3.intave.module.nayoro.Environment;
 import de.jpx3.intave.module.nayoro.PlayerContainer;
 import de.jpx3.intave.module.nayoro.event.AttackEvent;
 import de.jpx3.intave.module.nayoro.event.ClickEvent;
-import de.jpx3.intave.module.nayoro.event.PlayerMoveEvent;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 
 @Reserved

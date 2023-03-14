@@ -24,8 +24,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.USE_ENTITY;
-import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.*;
-import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.CRITICALS;
+import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.BLOCKING;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_8;
 
 public final class AttackInInvalidStateHeuristic extends MetaCheckPart<Heuristics, AttackInInvalidStateHeuristic.AttackInInvalidStateMeta> {

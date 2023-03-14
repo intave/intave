@@ -3,7 +3,6 @@ package de.jpx3.intave.module.player;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import de.jpx3.intave.annotate.Native;
-import de.jpx3.intave.security.LicenseAccess;
 import de.jpx3.intave.user.storage.Storage;
 
 import javax.crypto.Cipher;

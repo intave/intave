@@ -20,7 +20,6 @@ import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.entity.Player;
 
 import java.util.Deque;
-import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.DelayQueue;
 
