@@ -148,7 +148,6 @@ public final class FeedbackReceiver extends Module {
           // This should never happen
           throw new IllegalStateException("Transaction key mismatch beta");
         }
-
         if (IntaveControl.DEBUG_FEEDBACK_PACKETS) {
           System.out.println("Emulating " + localRequest.userKey() + "/" +localRequest.num() + " for " + player.getName());
         }

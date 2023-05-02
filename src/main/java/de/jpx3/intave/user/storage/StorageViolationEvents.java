@@ -69,6 +69,10 @@ public class StorageViolationEvents implements Storage, Iterable<StorageViolatio
     return stream().filter(predicate).count();
   }
 
+  public StorageViolationEvents fromCheck(String check) {
+    return filter(event -> event.checkName().equalsIgnoreCase(check));
+  }
+
   public StorageViolationEvents filter(
     Predicate<? super StorageViolationEvent> predicate
   ) {

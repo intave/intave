@@ -31,7 +31,7 @@ public final class FeedbackSender extends Module {
   public static final int PING_MASK = 0xf5550000;
   private static final boolean USE_PING_PONG_PACKETS = MinecraftVersions.VER1_17_0.atOrAbove();
   private static final long OPTIONAL_PENDING_LIMIT = 20;
-  private static final long OPTIONAL_SENT_LIMIT = 100;
+  private static final long OPTIONAL_SENT_LIMIT = 200;
 
   private final ProtocolManager protocol = ProtocolLibrary.getProtocolManager();
 
@@ -273,7 +273,7 @@ public final class FeedbackSender extends Module {
     return feedbackEntry;
   }
 
-  private static final short ID_START = 0;//(short) (USE_PING_PONG_PACKETS ? 13 : TRANSACTION_MIN_CODE + ThreadLocalRandom.current().nextInt(0, 1000));
+  private static final short ID_START = TRANSACTION_MIN_CODE;//(short) (USE_PING_PONG_PACKETS ? 13 : TRANSACTION_MIN_CODE + ThreadLocalRandom.current().nextInt(0, 1000));
 
   private /* synchronized (is already always sync) */ short findAvailableTransactionIdFor(Player player) {
     User user = UserRepository.userOf(player);
@@ -309,7 +309,7 @@ public final class FeedbackSender extends Module {
     }
   }
 
-  // for the potentially billions of transaction packets we send, caching does make sense here
+  // for the billions of transaction packets we send, caching is easy and makes sense
   private final PacketContainer[] PACKET_CACHE = new PacketContainer[256];
 
   private void performRequest(Player receiver, FeedbackRequest<?> request) {

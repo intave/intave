@@ -165,7 +165,6 @@ public final class DebugStage extends CommandStage {
     }
   }
 
-
   @SubCommand(
     selectors = "jump",
     description = "Cause a physics false flag, resulting in a jump",

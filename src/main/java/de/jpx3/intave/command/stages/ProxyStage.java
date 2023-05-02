@@ -24,7 +24,7 @@ public final class ProxyStage extends CommandStage {
   }
 
   @SubCommand(
-    selectors = "proxcommand",
+    selectors = {"proxcommand", "command"},
     usage = "<player> <command...>",
     permission = "intave.command.proxy",
     description = "Remotely executes commands on the proxy"
@@ -41,7 +41,7 @@ public final class ProxyStage extends CommandStage {
   }
 
   @SubCommand(
-    selectors = "proxkick",
+    selectors = {"proxkick", "kick"},
     usage = "<player> [<message...>]",
     permission = "intave.command.proxy",
     description = "Remotely kicks the target player from the proxy"
@@ -57,7 +57,7 @@ public final class ProxyStage extends CommandStage {
   }
 
   @SubCommand(
-    selectors = "proxtempban",
+    selectors = {"proxtempban", "tempban"},
     usage = "<player> [<message...>]",
     permission = "intave.command.proxy",
     description = "Remotely temp-bans the target player from the proxy"
@@ -73,7 +73,7 @@ public final class ProxyStage extends CommandStage {
   }
 
   @SubCommand(
-    selectors = "proxban",
+    selectors = {"proxban", "ban"},
     usage = "<player> [<message...>]",
     permission = "intave.command.proxy",
     description = "Remotely bans the target player from the proxy"

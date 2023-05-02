@@ -14,9 +14,9 @@ import java.util.List;
 public final class PlayerInfoDataConverter {
   private static Constructor<?> constructor;
 
-  private static Class<?> gameProfileClass;
-  private static Class<?> gameModeClass;
-  private static Class<?> chatBaseComponentClass;
+  private static final Class<?> gameProfileClass = MinecraftReflection.getGameProfileClass();
+  private static final Class<?> gameModeClass = EnumWrappers.getGameModeClass();
+  private static final Class<?> chatBaseComponentClass = MinecraftReflection.getIChatBaseComponentClass();
   private static final EquivalentConverter<WrappedGameProfile> gameProfileConverter = BukkitConverters.getWrappedGameProfileConverter();
   private static final EquivalentConverter<EnumWrappers.NativeGameMode> gameModeConverter = EnumWrappers.getGameModeConverter();
   private static final EquivalentConverter<WrappedChatComponent> chatComponentConverter = BukkitConverters.getWrappedChatComponentConverter();
@@ -60,15 +60,8 @@ public final class PlayerInfoDataConverter {
       private StructureModifier<Object> gameProfileModifier;
 
       public synchronized PlayerInfoData getSpecific(Object generic) {
-        StructureModifier<Object> gameProfileModifier = this.gameProfileModifier;
-        if (gameProfileClass == null) {
-          gameModeClass = EnumWrappers.getGameModeClass();
-          chatBaseComponentClass = MinecraftReflection.getIChatBaseComponentClass();
-          this.gameProfileModifier = gameProfileModifier = new StructureModifier<>(generic.getClass(), null, false);
-          gameProfileClass = MinecraftReflection.getGameProfileClass();
-        }
         if (gameProfileModifier == null) {
-          throw new RuntimeException("Cannot find game profile modifier.");
+          gameProfileModifier = new StructureModifier<>(generic.getClass(), null, false);
         }
         StructureModifier<Object> modifier = gameProfileModifier.withTarget(generic);
         StructureModifier<WrappedGameProfile> gameProfiles = modifier.withType(gameProfileClass, gameProfileConverter);

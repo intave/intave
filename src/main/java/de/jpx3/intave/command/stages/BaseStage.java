@@ -182,12 +182,12 @@ public final class BaseStage extends CommandStage {
 //      if (isSameActionTarget) {
 //      }
       actionBar.unsubscribe(user);
-      player.sendMessage(IntavePlugin.prefix() + "Unsubscribed from " + ChatColor.RED + selectedPlayer.getName() + IntavePlugin.defaultColor() + "'s CPS");
+      player.sendMessage(IntavePlugin.prefix() + "Unsubscribed from " + ChatColor.RED + selectedPlayer.getName() + IntavePlugin.defaultColor() + "'s clicks");
       return;
     }
 
     actionBar.subscribe(user, UserRepository.userOf(selectedPlayer), DisplayType.CLICKS);
-    player.sendMessage(IntavePlugin.prefix() + "Subscribed to " + ChatColor.RED + selectedPlayer.getName() + IntavePlugin.defaultColor() + "'s CPS");
+    player.sendMessage(IntavePlugin.prefix() + "Subscribed to " + ChatColor.RED + selectedPlayer.getName() + IntavePlugin.defaultColor() + "'s clicks");
   }
 
   @SubCommand(
@@ -282,7 +282,7 @@ public final class BaseStage extends CommandStage {
         } else {
           Modules.storage().nullableManualStorageRequest(uuid, playerStorage -> {
             if (playerStorage == null) {
-              sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Player has never played before");
+              sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + playerName + " hasn't played yet");
             } else {
               outputHistory(sender, playerName, uuid, playerStorage.storageOf(ViolationStorage.class));
             }
@@ -299,17 +299,16 @@ public final class BaseStage extends CommandStage {
       sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "No violations found");
       return;
     }
-    // first naive approach
-    printHistory(sender, "Reach", filterByCheck("attackraytrace", violations));
-    printHistory(sender, "KillAura", filterByCheck("heuristics", violations));
-    printHistory(sender, "Fly/Speed", filterByCheck("physics", violations));
-    printHistory(sender, "Timer", filterByCheck("timer", violations));
-    printHistory(sender, "AutoClicker", filterByCheck("clickpatterns", violations));
-    printHistory(sender, "AutoClicker (speed)", filterByCheck("clickspeedlimiter", violations));
-    printHistory(sender, "FastBreak", filterByCheck("breakspeedlimiter", violations));
-    printHistory(sender, "BadPackets", filterByCheck("protocolscanner", violations));
-    printHistory(sender, "Scaffold", filterByCheck("placementanalysis", violations));
-    printHistory(sender, "ChestStealer", filterByCheck("inventoryAnalysis", violations));
+    printHistory(sender, "Reach", violations.fromCheck("attackraytrace"));
+    printHistory(sender, "KillAura", violations.fromCheck("heuristics"));
+    printHistory(sender, "Fly/Speed", violations.fromCheck("physics"));
+    printHistory(sender, "Timer", violations.fromCheck("timer"));
+    printHistory(sender, "AutoClicker", violations.fromCheck("clickpatterns"));
+    printHistory(sender, "AutoClicker (speed)", violations.fromCheck("clickspeedlimiter"));
+    printHistory(sender, "FastBreak", violations.fromCheck("breakspeedlimiter"));
+    printHistory(sender, "BadPackets", violations.fromCheck("protocolscanner"));
+    printHistory(sender, "Scaffold", violations.fromCheck("placementanalysis"));
+    printHistory(sender, "ChestStealer", violations.fromCheck("inventoryanalysis"));
   }
 
   private void printHistory(CommandSender sender, String cheat, StorageViolationEvents violations) {

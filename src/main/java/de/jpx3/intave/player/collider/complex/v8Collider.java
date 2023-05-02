@@ -6,7 +6,6 @@ import de.jpx3.intave.check.movement.physics.SimulationEnvironment;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.meta.MetadataBundle;
 import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.share.Direction.Axis.*;
@@ -15,7 +14,7 @@ public final class v8Collider implements Collider {
   @Override
   public ColliderResult collide(User user, SimulationEnvironment environment, Motion motion, double positionX, double positionY, double positionZ, boolean inWeb) {
     Player player = user.player();
-    MetadataBundle meta = user.meta();
+//    MetadataBundle meta = user.meta();
 //    MovementMetadata movement = meta.movement();
     if (inWeb) {
       motion.motionX *= 0.25D;

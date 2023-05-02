@@ -11,6 +11,9 @@ import de.jpx3.intave.diagnostic.ShapeAccessFlowStudy;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.world.WorldHeight;
+import it.unimi.dsi.fastutil.longs.*;
+import it.unimi.dsi.fastutil.objects.ObjectCollection;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -27,6 +30,17 @@ final class MultiChunkKeyExtendedBlockStateCache implements ExtendedBlockStateCa
   private final Player player;
   private final ShapeResolverPipeline shapeResolver;
   private final Map<Long, BlockState> blockCache = new ConcurrentHashMap<>(1024);
+//  private final Map<Long, BlockState> blockCache = Long2ObjectMaps.synchronize(new Long2ObjectOpenCustomHashMap<>(new LongHash.Strategy() {
+//    @Override
+//    public int hashCode(long l) {
+//      return Long.hashCode(l);
+//    }
+//
+//    @Override
+//    public boolean equals(long l, long l1) {
+//      return l == l1;
+//    }
+//  }));
   private final BlockStateReplacementCache<Long> replacementCache;
   private int originChunkX, originChunkZ;
   private int chunkX, chunkZ;

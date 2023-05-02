@@ -795,8 +795,9 @@ public final class MovementMetadata implements SimulationEnvironment {
       return null;
     }
     int positionHash = posX << 12 | posY << 8 | posZ;
-    if (shulkerDataHashCodeAccess.containsKey(positionHash)) {
-      return shulkerDataHashCodeAccess.get(positionHash);
+    ShulkerBox shulkerBox = shulkerDataHashCodeAccess.get(positionHash);
+    if (shulkerBox != null) {
+      return shulkerBox;
     }
     return shulkerData.get(new BlockPosition(posX, posY, posZ));
   }

@@ -67,77 +67,32 @@ public final class EntityTracker extends Module {
 
    TODO: maybe remove entities when their live gets below 0 for 20 ticks. Or debug if entities gets really removed in some kind of root command
    */
-  private final IntavePlugin plugin;
   private final EntityTypeResolver entityTypeResolver;
+  private final PeriodicEntityCoverageSelector coverageSelector;
 
-  private final boolean NEW_POSITION_PROCESSING_1_9 = ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0);
+  private final boolean NEW_POSITION_PROCESSING_1_9 = MinecraftVersions.VER1_9_0.atOrAbove();
 
   public EntityTracker(IntavePlugin plugin) {
     this.plugin = plugin;
     this.entityTypeResolver = new EntityTypeResolver(plugin);
-//    plugin.packetSubscriptionLinker().linkSubscriptionsIn(this);
-//    this.setupSynchronizer();
+    this.coverageSelector = PeriodicEntityCoverageSelector.builder()
+      .withRefreshIntervalInSeconds(1)
+      .withDistanceRequirement(16)
+      .withMaxTracedEntities(4)
+      .withMaxDoubleTracedEntities(1)
+      .withEntityAdditionListener(this::nayoroEntitySpawn)
+      .withEntityRemovalListener(this::nayoroEntityDespawn)
+      .build();
   }
 
   @Override
   public void enable() {
-    //noinspection deprecation
-    int taskId = Bukkit.getScheduler().scheduleAsyncRepeatingTask(plugin, this::reevaluateTracingEntities, 20, 20);
-    TaskTracker.begun(taskId);
+    coverageSelector.enableTask();
   }
 
-  private void reevaluateTracingEntities() {
-    for (Player player : Bukkit.getOnlinePlayers()) {
-      selectEntitiesToTraceFor(player);
-    }
-  }
-
-  private static final int REQUIRED_DISTANCE = 16;
-  private static final int MAX_TRACED_ENTITIES = 4;
-  private static final int MAX_DOUBLE_TRACED_ENTITIES = 1;
-
-  private void selectEntitiesToTraceFor(Player player) {
-    User user = UserRepository.userOf(player);
-    if (!user.hasPlayer()) {
-      return;
-    }
-    ConnectionMetadata synchronizeData = user.meta().connection();
-//    Vector location = new Vector(0, 0, 0);
-    Vector playerLocation = player.getLocation().toVector();
-    List<Entity> validEntities = new ArrayList<>();
-    for (Entity entity : synchronizeData.entities()) {
-      boolean firstSurvive = false;
-      if (entity.typeData() != null) {
-        double distance = entity.distanceTo(playerLocation);
-        if (distance <= REQUIRED_DISTANCE) {
-          validEntities.add(entity);
-          entity.distanceToPlayerCache = distance;
-          entity.doubleVerification = false;
-          firstSurvive = true;
-        }
-      }
-      if (entity.tracingEnabled() && !firstSurvive) {
-        nayoroEntityDespawn(user, entity);
-      }
-      entity.setResponseTracingEnabled(firstSurvive);
-    }
-    validEntities.sort(Comparator.comparingDouble(entity -> entity.distanceToPlayerCache));
-    int count = 0;
-    synchronizeData.tracedEntities().clear();
-    for (Entity entity : validEntities) {
-      boolean trace = count < MAX_TRACED_ENTITIES;
-      if (trace) {
-        synchronizeData.tracedEntities().add(entity);
-      }
-      if (trace && !entity.wasTracedLastCycle()) {
-        nayoroEntitySpawn(user, entity);
-      } else if (!trace && entity.wasTracedLastCycle()) {
-        nayoroEntityDespawn(user, entity);
-      }
-      entity.setResponseTracingEnabled(trace);
-      entity.doubleVerification = trace && count < MAX_DOUBLE_TRACED_ENTITIES;
-      count++;
-    }
+  @Override
+  public void disable() {
+    coverageSelector.disableTask();
   }
 
   @PacketSubscription(
@@ -386,12 +341,10 @@ public final class EntityTracker extends Module {
     },
     ignoreCancelled = false
   )
-  public void receiveEntityDestroy(PacketEvent event) {
-    Player player = event.getPlayer();
-    PacketContainer packet = event.getPacket();
-    EntityIterable reader = PacketReaders.readerOf(packet);
-    reader.forEach(entityId -> enterEntityDestroy(player, entityId));
-    reader.release();
+  public void receiveEntityDestroy(Player player, EntityIterable iterable) {
+    iterable.forEach(entityId ->
+      enterEntityDestroy(player, entityId)
+    );
   }
 
   private void enterEntityDestroy(Player player, int entityID) {
@@ -627,16 +580,9 @@ public final class EntityTracker extends Module {
     Entity.EntityPositionContext lastPosition = entity.lastPosition;
     EntityMoveEvent event = new EntityMoveEvent(
       entity.entityId(),
-      position.posX,
-      position.posY,
-      position.posZ,
-      lastPosition.posX,
-      lastPosition.posY,
-      lastPosition.posZ,
-      0,
-      0,
-      0,
-      0
+      position.posX, position.posY, position.posZ,
+      lastPosition.posX, lastPosition.posY, lastPosition.posZ,
+      0, 0, 0, 0
     );
     sinkCallback.accept(UserRepository.userOf(player), event::accept);
   }

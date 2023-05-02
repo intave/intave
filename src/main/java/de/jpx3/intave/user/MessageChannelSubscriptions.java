@@ -33,7 +33,7 @@ public final class MessageChannelSubscriptions {
   private static final Map<MessageChannel, Collection<Player>> messageChannelSubscriptions = new ConcurrentHashMap<>();
 
   public static Collection<Player> receiverOf(MessageChannel channel) {
-    return messageChannelSubscriptions.computeIfAbsent(channel, theChannel -> new CopyOnWriteArrayList<>());
+    return messageChannelSubscriptions.computeIfAbsent(channel, theChannel -> GarbageCollector.watch(new CopyOnWriteArrayList<>()));
   }
 
   public static void setChannelActivation(Player player, MessageChannel channel, boolean status) {
