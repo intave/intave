@@ -80,7 +80,7 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
     BlockingMeta meta = metaOf(user);
     PacketContainer packet = event.getPacket();
 
-    if (!user.meta().protocol().flyingPacketsAreSent() || user.meta().abilities().ignoringMovementPackets()) {
+    if (!user.meta().protocol().flyingPacketsAreSent() || user.meta().abilities().ignoringMovementPackets() || user.meta().movement().lastTeleport < 10) {
       return;
     }
 
@@ -156,7 +156,7 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
     BlockingMeta meta = metaOf(user);
     MovementMetadata movementData = user.meta().movement();
     ProtocolMetadata clientData = user.meta().protocol();
-    if (movementData.lastTeleport == 0) {
+    if (movementData.lastTeleport < 10) {
       return;
     }
     // checks if the client version is above 1.8 for disabling the check if the player is standing still

@@ -33,9 +33,9 @@ public final class AttackInInvalidStateHeuristic extends MetaCheckPart<Heuristic
   }
 
   @PacketSubscription(
-    packetsIn = {
-      USE_ENTITY
-    }
+      packetsIn = {
+          USE_ENTITY
+      }
   )
   public void receiveAttack(PacketEvent event) {
     Player player = event.getPlayer();
@@ -64,7 +64,7 @@ public final class AttackInInvalidStateHeuristic extends MetaCheckPart<Heuristic
       return;
     }
     // not checked yet
-    if (user.meta().inventory().handActive()) {
+    if (user.meta().inventory().handActive() && user.meta().movement().lastTeleport > 10) {
       Anomaly anomaly = Anomaly.anomalyOf("162", Confidence.NONE, Anomaly.Type.KILLAURA, "attacked whilst using an item");
       parentCheck().saveAnomaly(player, anomaly);
       //dmc28
