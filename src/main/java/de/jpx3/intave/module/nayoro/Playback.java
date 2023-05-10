@@ -49,7 +49,7 @@ abstract class Playback extends SinkEnvironment {
       Event event = EventRegistry.eventOf(packetId);
       event.deserialize(this, dataInputStream);
       event.withOffset(offset);
-      System.out.println("Read event: " + event.getClass().getSimpleName() + " with offset " + offset);
+//      System.out.println("Read event: " + event.getClass().getSimpleName() + " with offset " + offset);
       return event;
     } catch (IOException exception) {
       exception.printStackTrace();

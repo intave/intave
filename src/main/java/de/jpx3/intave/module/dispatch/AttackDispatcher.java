@@ -47,7 +47,7 @@ import static org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BLOCKING;
 @SplitMeUp
 public final class AttackDispatcher extends Module {
   public static boolean REDUCING_DISABLED;
-  public static boolean COMBAT_SAMPLING;
+  public static boolean COMBAT_SAMPLING = true;
 
   @Override
   public void enable() {

@@ -2,7 +2,8 @@ package de.jpx3.intave.module.nayoro;
 
 import com.google.common.collect.Sets;
 import de.jpx3.intave.IntaveLogger;
-import de.jpx3.intave.check.combat.Heuristics;
+import de.jpx3.intave.cleanup.GarbageCollector;
+import de.jpx3.intave.executor.BackgroundExecutor;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.executor.TaskTracker;
 import de.jpx3.intave.module.Module;
@@ -12,6 +13,7 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.nayoro.event.sink.EventSink;
 import de.jpx3.intave.module.nayoro.event.sink.ForwardEventSink;
 import de.jpx3.intave.resource.Resource;
+import de.jpx3.intave.resource.Resources;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
 import de.jpx3.intave.user.UserRepository;
@@ -22,11 +24,10 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
@@ -35,26 +36,43 @@ import java.util.stream.Collectors;
 import java.util.zip.InflaterInputStream;
 
 public final class Nayoro extends Module {
+  private static final Resource SAMPLE_UPLOAD_STATUS = Resources.localServiceCacheResource("samples/status", "sample-status", TimeUnit.DAYS.toMillis(1));
+  private static final boolean PUBLISH_SAMPLES = "accept".equalsIgnoreCase(SAMPLE_UPLOAD_STATUS.readAsString().trim());
+  private static final long GLOBAL_SCHEDULE_INTERVAL = TimeUnit.MINUTES.toSeconds(5);
+
   private final UserLocal<Set<EventSink>> eventSinks = UserLocal.withInitial(this::defaultSinksFor, this::disableRecordingFor);
   private final UserLocal<AtomicBoolean> recording = UserLocal.withInitial(new AtomicBoolean(false));
   private final UserLocal<AtomicLong> lastRecording = UserLocal.withInitial(() -> new AtomicLong(System.currentTimeMillis()));
   private final PacketEventDispatch packetEventDispatch = new PacketEventDispatch(sinkCallback());
   private final List<Playback> playbacks = new ArrayList<>();
 
-  private ReentrantLock globalRecordingLock = new ReentrantLock();
+  private final ReentrantLock globalRecordingLock = new ReentrantLock();
+  private final ReentrantLock localRecordingLock = new ReentrantLock();
   private boolean globalRecording = false;
   private int globalRecordingTaskId = -1;
 
-  private final List<Sample> samples = new ArrayList<>();
+  private final Map<UUID, Sample> samples = GarbageCollector.watch(new HashMap<>());
+  private final Set<Sample> completedSamples = new HashSet<>();
 
   @Override
   public void enable() {
     Modules.linker().packetEvents().linkSubscriptionsIn(packetEventDispatch);
   }
 
+  @Override
+  public void disable() {
+    disableGlobalRecording();
+    uploadSamples();
+    deleteAllSamples();
+    Modules.linker().packetEvents().removeSubscriptionsOf(packetEventDispatch);
+  }
+
   public void enableGlobalRecording() {
     try {
       globalRecordingLock.lock();
+      if (globalRecording) {
+        return;
+      }
       globalRecording = true;
       globalRecordingTaskId = Bukkit.getScheduler().scheduleAsyncRepeatingTask(plugin, () -> {
         Bukkit.getOnlinePlayers().forEach(player -> {
@@ -66,7 +84,8 @@ public final class Nayoro extends Module {
             });
           }
         });
-      }, 20 * 60 * 10, 20 * 60 * 10);
+        uploadSamples();
+      }, 20 * GLOBAL_SCHEDULE_INTERVAL, 20 * GLOBAL_SCHEDULE_INTERVAL);
       Synchronizer.synchronize(() -> {
         for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
           User user = UserRepository.userOf(onlinePlayer);
@@ -79,9 +98,52 @@ public final class Nayoro extends Module {
     }
   }
 
+  private void uploadSamples() {
+    if (PUBLISH_SAMPLES && !completedSamples.isEmpty()) {
+      IntaveLogger.logger().info("Uploading samples..");
+      AtomicLong length = new AtomicLong();
+      AtomicInteger count = new AtomicInteger();
+      for (Sample sample : completedSamples) {
+        BackgroundExecutor.execute(() -> {
+          try {
+            count.incrementAndGet();
+            length.addAndGet(sample.uploadAndDelete());
+            completedSamples.remove(sample);
+          } catch (IOException exception) {
+            throw new RuntimeException(exception);
+          }
+        });
+      }
+      BackgroundExecutor.execute(() -> {
+        IntaveLogger.logger().info(count.get() + " samples were uploaded (" + asReadableBytes(length.get()) + ")");
+        completedSamples.clear();
+      });
+    }
+  }
+
+  private String asReadableBytes(long bytes) {
+    String[] units = new String[]{"B", "KB", "MB", "GB", "TB"};
+    int unit = 0;
+    while (bytes > 1024) {
+      bytes /= 1024;
+      unit++;
+    }
+    return bytes + units[unit];
+  }
+
+  public void deleteAllSamples() {
+    completedSamples.forEach(Sample::delete);
+    completedSamples.clear();
+    samples.values().forEach(Sample::delete);
+    samples.clear();
+  }
+
   public void disableGlobalRecording() {
     try {
       globalRecordingLock.lock();
+      if (!globalRecording) {
+        return;
+      }
       globalRecording = false;
       Bukkit.getScheduler().cancelTask(globalRecordingTaskId);
       for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
@@ -114,50 +176,52 @@ public final class Nayoro extends Module {
     }
   }
 
-  @Override
-  public void disable() {
-    Modules.linker().packetEvents().removeSubscriptionsOf(packetEventDispatch);
-    IntaveLogger.logger().info("Uploading " + samples.size() + " samples");
-    for (Sample sample : samples) {
-      try {
-        sample.uploadAndDelete();
-      } catch (IOException exception) {
-        exception.printStackTrace();
-      }
-    }
-    samples.clear();
-  }
-
   public void enableRecordingFor(User user) {
-    if (!AttackDispatcher.COMBAT_SAMPLING || recordingActiveFor(user)) {
-      return;
+    localRecordingLock.lock();
+    try {
+      if (!AttackDispatcher.COMBAT_SAMPLING || recordingActiveFor(user)) {
+        return;
+      }
+      if (!Bukkit.isPrimaryThread()) {
+        Synchronizer.synchronize(() -> enableRecordingFor(user));
+        return;
+      }
+      Sample sample = new Sample();
+      samples.put(user.id(), sample);
+      Resource resource = sample.resource();
+      DataOutputStream dataOutput = new DataOutputStream(resource.writeStream());
+      RecordEventSink recordEventSink = new RecordEventSink(new LiveEnvironment(user), dataOutput);
+      eventSinks.get(user).add(recordEventSink);
+      lastRecording.get(user).set(System.currentTimeMillis());
+      recording.get(user).set(true);
+    } finally {
+      localRecordingLock.unlock();
     }
-    if (!Bukkit.isPrimaryThread()) {
-      Synchronizer.synchronize(() -> enableRecordingFor(user));
-    }
-    Sample sample = new Sample();
-    samples.add(sample);
-    Resource resource = sample.resource();
-    DataOutputStream dataOutput = new DataOutputStream(resource.writeStream());
-    RecordEventSink recordEventSink = new RecordEventSink(new LiveEnvironment(user), dataOutput);
-    eventSinks.get(user).add(recordEventSink);
-    lastRecording.get(user).set(System.currentTimeMillis());
-    recording.get(user).set(true);
   }
 
   public void disableRecordingFor(User user) {
-    if (!AttackDispatcher.COMBAT_SAMPLING || !recordingActiveFor(user)) {
-      return;
+    localRecordingLock.lock();
+    try {
+      if (!AttackDispatcher.COMBAT_SAMPLING || !recordingActiveFor(user)) {
+        return;
+      }
+      if (!Bukkit.isPrimaryThread()) {
+        Synchronizer.synchronize(() -> disableRecordingFor(user));
+        return;
+      }
+      List<EventSink> remove = eventSinks.get(user).stream()
+        .filter(eventSink -> eventSink instanceof RecordEventSink)
+        .peek(EventSink::close)
+        .collect(Collectors.toList());
+      remove.forEach(eventSinks.get(user)::remove);
+      Sample sample = samples.remove(user.id());
+      if (sample != null) {
+        completedSamples.add(sample);
+      }
+      recording.get(user).set(false);
+    } finally {
+      localRecordingLock.unlock();
     }
-    if (!Bukkit.isPrimaryThread()) {
-      Synchronizer.synchronize(() -> disableRecordingFor(user));
-    }
-    List<EventSink> remove = eventSinks.get(user).stream()
-      .filter(eventSink -> eventSink instanceof RecordEventSink)
-      .peek(EventSink::close)
-      .collect(Collectors.toList());
-    remove.forEach(eventSinks.get(user)::remove);
-    recording.get(user).set(false);
   }
 
   public boolean recordingActiveFor(User user) {
@@ -203,9 +267,5 @@ public final class Nayoro extends Module {
       user, new LiveEnvironment(user)
     );
     return Sets.newHashSet(new ForwardEventSink(player));
-  }
-
-  public List<Sample> samples() {
-    return samples;
   }
 }

@@ -1,6 +1,7 @@
 package de.jpx3.intave.module.nayoro;
 
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.connect.IntaveDomains;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
@@ -17,6 +18,7 @@ import java.net.URL;
 import java.util.Locale;
 import java.util.Scanner;
 import java.util.UUID;
+import java.util.zip.*;
 
 import static de.jpx3.intave.IntaveControl.GOMME_MODE;
 
@@ -30,6 +32,9 @@ public final class Sample {
   public Resource resource() {
     if (resource == null) {
       resource = writableSampleResource();
+      if (!resource.writeStreamSupported()) {
+        throw new IntaveInternalException("Sample resource does not support writing!");
+      }
     }
     return resource;
   }
@@ -38,7 +43,10 @@ public final class Sample {
     return id;
   }
 
-  public void uploadAndDelete() throws IOException {
+  public long uploadAndDelete() throws IOException {
+    if (resource == null) {
+      return 0;
+    }
     URL url = new URL("https://" + IntaveDomains.primaryServiceDomain() + "/samples/upload");
     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
     connection.setDoOutput(true);
@@ -47,14 +55,16 @@ public final class Sample {
     connection.setRequestProperty("Identifier", LicenseAccess.rawLicense());
     connection.setRequestProperty("Hardware", HWIDVerification.publicHardwareIdentifier());
     connection.setRequestProperty("User-Agent", "Intave/" + IntavePlugin.version());
+    long length = 0;
     try (
-      InputStream read = resource.read();
+      InputStream read = new DeflaterInputStream(resource.read(), new Deflater(Deflater.BEST_COMPRESSION));
       OutputStream outputStream = connection.getOutputStream()
     ) {
       int count;
       byte[] buffer = new byte[8192];
       while ((count = read.read(buffer)) != -1) {
         outputStream.write(buffer, 0, count);
+        length += count;
       }
     }
     InputStream inputStream = connection.getInputStream();
@@ -67,8 +77,15 @@ public final class Sample {
     if (!"SUCCESS".contentEquals(response)) {
       throw new RuntimeException("Server error: " + response);
     }
-    resource.delete();
-    resource = null;
+    delete();
+    return length;
+  }
+
+  public void delete() {
+    if (resource != null) {
+      resource.delete();
+      resource = null;
+    }
   }
 
   private Resource writableSampleResource() {

@@ -26,11 +26,8 @@ import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_8;
 
 @Reserved
 public final class AttackRequiredHeuristic extends MetaCheckPart<Heuristics, AttackRequiredHeuristic.AttackRequiredMeta> {
-  private final IntavePlugin plugin;
-
   public AttackRequiredHeuristic(Heuristics parentCheck) {
     super(parentCheck, AttackRequiredMeta.class);
-    this.plugin = IntavePlugin.singletonInstance();
   }
 
   @PacketSubscription(
@@ -118,13 +115,9 @@ public final class AttackRequiredHeuristic extends MetaCheckPart<Heuristics, Att
         long timeToLastFlag = System.currentTimeMillis() - meta.lastFlag;
         if (timeToLastFlag < 20_000 && timeToLastFlag > 1500) {
           int vl = (meta.vl += 200) / 200;
-          boolean flag = vl >= 2;
-          if (flag) {
+          if (vl >= 2) {
             Anomaly anomaly = Anomaly.anomalyOf("151", Confidence.LIKELY, Anomaly.Type.KILLAURA, "missed attack packet vl:" + vl);
             parentCheck().saveAnomaly(player, anomaly);
-            //dmc5
-            user.nerf(AttackNerfStrategy.HT_LIGHT, "5");
-            user.nerf(AttackNerfStrategy.CANCEL_FIRST_HIT, "5");
           }
         }
         meta.lastFlag = System.currentTimeMillis();

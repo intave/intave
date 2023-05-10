@@ -84,9 +84,9 @@ class RecordEventSink extends EventSink {
   @Override
   public void close() {
     try {
+      dataOutput.writeShort(0);
+      dataOutput.writeByte(-1);
       if (dataOutput instanceof Closeable) {
-        dataOutput.writeShort(0);
-        dataOutput.writeByte(-1);
         ((Closeable) dataOutput).close();
       }
     } catch (IOException exception) {

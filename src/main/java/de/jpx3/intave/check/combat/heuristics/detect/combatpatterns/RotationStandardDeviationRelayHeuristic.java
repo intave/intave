@@ -61,9 +61,9 @@ public final class RotationStandardDeviationRelayHeuristic extends MetaCheckPart
 
   @NayoroRelay
   public void onEntityMove(PlayerContainer player, EntityMoveEvent move) {
-    if (move.entityId() == player.lastAttackedEntity() && player.recentlyAttacked(500)) {
-      Bukkit.broadcastMessage(MathHelper.formatPosition(new Location(null, move.x(), move.y(), move.z())));
-    }
+//    if (move.entityId() == player.lastAttackedEntity() && player.recentlyAttacked(500)) {
+//      Bukkit.broadcastMessage(MathHelper.formatPosition(new Location(null, move.x(), move.y(), move.z())));
+//    }
   }
 
   private void evaluateYawPatterns(PlayerContainer player) {

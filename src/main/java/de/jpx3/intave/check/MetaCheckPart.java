@@ -63,7 +63,7 @@ public abstract class MetaCheckPart<P extends Check, M extends CheckCustomMetada
    * @return the meta instance
    */
   public M metaOf(Player player) {
-    return metaOf(UserRepository.userOf(player));
+    return metaOf(userOf(player));
   }
 
   /**

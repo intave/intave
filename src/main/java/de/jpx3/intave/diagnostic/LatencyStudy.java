@@ -35,7 +35,7 @@ public final class LatencyStudy {
     }
   }
 
-  public static long transactionPingAverage() {
+  public static long pingAverage() {
     return transPingNum == 0 ? 0 : transPingNum / transPingCount;
   }
 

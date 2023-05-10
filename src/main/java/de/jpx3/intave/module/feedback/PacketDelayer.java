@@ -19,7 +19,6 @@ import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.entity.Player;
 
 import java.util.Deque;
-import java.util.Queue;
 import java.util.concurrent.DelayQueue;
 
 import static de.jpx3.intave.access.player.trust.TrustFactor.RED;
@@ -115,7 +114,7 @@ public final class PacketDelayer extends Module {
       return;
     }
 
-    long playerLatencyGain = connection.transactionPingAverage() - LatencyStudy.transactionPingAverage();
+    long playerLatencyGain = connection.transactionPingAverage() - LatencyStudy.pingAverage();
     boolean lowToleranceMode = lowTolerance && user.trustFactor().atOrBelow(RED);
     boolean significantPingGain = playerLatencyGain * (lowToleranceMode ? 1.5 : 1) > user.trustFactorSetting("timer.pg"); // ping gain
     boolean delayRequested = System.currentTimeMillis() - connection.lastDelayRequest < 60 * 1000;
@@ -127,9 +126,9 @@ public final class PacketDelayer extends Module {
 
     long lagTolerance = user.trustFactorSetting("timer.lt");
 
-    boolean transactionTimeout = oldestTransactionPacket * (lowToleranceMode ? 1.25 : 1) > connection.transactionPingAverage() + ((double)LatencyStudy.transactionPingAverage() / 2d) + lagTolerance;
+    boolean transactionTimeout = oldestTransactionPacket * (lowToleranceMode ? 1.25 : 1) > lagTolerance + connection.transactionPingAverage() + ((double)LatencyStudy.pingAverage() / 2d);
     boolean riding = movement.isInVehicle();
-    long positionBlockTolerance = connection.transactionPingAverage() + LatencyStudy.transactionPingAverage() / 2 + lagTolerance + positionTimeoutTolerance;
+    long positionBlockTolerance = connection.transactionPingAverage() + LatencyStudy.pingAverage() / 2 + lagTolerance + positionTimeoutTolerance;
     boolean positionTimeout = !riding && lastMovementPacket > positionBlockTolerance;
 
     boolean idAddressed = packetType == PacketType.Play.Server.ANIMATION ||
@@ -152,8 +151,8 @@ public final class PacketDelayer extends Module {
     if (!requestBuffer && connection.lastBlinkState) {
       connection.blinkDeactivated = System.currentTimeMillis();
     }
-
     connection.lastBlinkState = requestBuffer;
+
     boolean activatePacketBuffer = !tooManyPackets && !player.isDead() && System.currentTimeMillis() - connection.lastRespawn > 3000 && (requestBuffer || (System.currentTimeMillis() - connection.blinkDeactivated < 750));
 
     if (activatePacketBuffer && reverseBlink) {

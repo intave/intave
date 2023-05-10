@@ -89,7 +89,7 @@ final class LockingLayer implements Resource {
       }
       int attemptsRemaining = 30 * 1000 / 50;
       while (lockFile.exists() && attemptsRemaining-- > 0) {
-        System.out.println("Waiting for "+lockFile.getAbsolutePath()+" release... " + attemptsRemaining + "rem");
+//        System.out.println("Waiting for "+lockFile.getAbsolutePath()+" release... " + attemptsRemaining + "rem");
         try {
           Thread.sleep(ThreadLocalRandom.current().nextLong(25, 100));
         } catch (InterruptedException exception) {
