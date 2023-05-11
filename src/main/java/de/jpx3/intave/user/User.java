@@ -152,10 +152,10 @@ public interface User {
    * Double tick-synchronization.
    * Sandwiches a packet between two feedback packets.
    * @param event the packet event
-   * @param callback first callback
-   * @param callback2 second callback
+   * @param before first before
+   * @param after second before
    */
-  void doubleTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2);
+  void doubleTickFeedback(PacketEvent event, EmptyFeedbackCallback before, EmptyFeedbackCallback after);
 
   /**
    * Same as {@link #doubleTickFeedback(PacketEvent, EmptyFeedbackCallback, EmptyFeedbackCallback)}, but with options

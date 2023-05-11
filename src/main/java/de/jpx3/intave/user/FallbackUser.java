@@ -391,7 +391,7 @@ final class FallbackUser implements User {
   }
 
   @Override
-  public void doubleTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2) {
+  public void doubleTickFeedback(PacketEvent event, EmptyFeedbackCallback before, EmptyFeedbackCallback after) {
 
   }
 

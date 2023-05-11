@@ -579,8 +579,8 @@ final class PlayerUser implements User {
   }
 
   @Override
-  public void doubleTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2) {
-    Modules.feedback().doubleSynchronize(player(), event, null, callback, callback2);
+  public void doubleTickFeedback(PacketEvent event, EmptyFeedbackCallback before, EmptyFeedbackCallback after) {
+    Modules.feedback().doubleSynchronize(player(), event, null, before, after);
   }
 
   @Override

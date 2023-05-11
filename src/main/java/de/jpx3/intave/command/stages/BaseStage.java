@@ -106,7 +106,7 @@ public final class BaseStage extends CommandStage {
   )
   @Native
   public void recordCommand(User user) {
-    if (IntaveControl.DISABLE_LICENSE_CHECK) {
+    if (IntaveControl.DISABLE_LICENSE_CHECK || IntavePlugin.singletonInstance().sibyl().isAuthenticated(user.player())) {
       Nayoro nayoro = Modules.nayoro();
       if (nayoro.isGlobalRecordingActive()) {
         nayoro.disableGlobalRecording();

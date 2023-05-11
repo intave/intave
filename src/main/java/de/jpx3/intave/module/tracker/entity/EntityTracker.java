@@ -223,7 +223,7 @@ public final class EntityTracker extends Module {
       PacketContainer oldPacket = event.getPacket();
       PacketContainer newPacket = oldPacket.deepClone();
       modifyWatchablesOf((makeOwnerInvisible ? oldPacket : newPacket));
-      //is this correct?
+      //is this correct? - yes it is
       connection.shouldNotBeAttacked.add(entityId);
       connection.decoySides.put(entityId, makeOwnerInvisible ? SECOND_IS_DECOY : FIRST_IS_DECOY);
       entity.duplicationId = newId;

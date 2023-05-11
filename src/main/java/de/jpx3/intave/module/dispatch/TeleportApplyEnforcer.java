@@ -106,7 +106,7 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
       TeleportFlag.writeFlags(packet, flags);
     }
 
-    boolean expectRotation = !flags.contains(TeleportFlag.X_ROT) && !flags.contains(TeleportFlag.Y_ROT);
+    boolean expectRotation = false;//!flags.contains(TeleportFlag.X_ROT) && !flags.contains(TeleportFlag.Y_ROT);
 
     if (IntaveControl.DEBUG_TELEPORT_PACKET_STACKTRACE) {
       System.out.println("Teleporting " + player.getName() + " to " + positionX + ", " + positionY + ", " + positionZ + " with flags " + flags + " and funkyBoolean " + funkyBoolean);
