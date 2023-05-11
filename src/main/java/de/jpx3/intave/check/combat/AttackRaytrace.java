@@ -28,6 +28,7 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
 import de.jpx3.intave.world.raytrace.Raytrace;
 import de.jpx3.intave.world.raytrace.Raytracing;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -46,9 +47,6 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
   private final CheckViolationLevelDecrementer hitboxDecrementer, reachDecrementer;
   private final double VL_DECREMENT_PER_ATTACK = 0.125;
   private static final int MAX_ALLOWED_PENDING_ATTACKS = 5;
-
-  //  private final static boolean HAS_MYTHIC_MOBS =
-  // Bukkit.getPluginManager().isPluginEnabled("MythicMobs");
 
   public AttackRaytrace(IntavePlugin plugin) {
     super("AttackRaytrace", "attackraytrace", AttackRaytraceMeta.class);
@@ -83,6 +81,14 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       if (entity == null
           || entity instanceof Entity.Destroyed
           || abilities.unsynchronizedHealth <= 0) {
+        return;
+      }
+      // Make a first attempt at ray-tracing to reduce compute time
+      Raytrace raytrace = fireRaytraceFor(user, entity, computeExpansionFor(user), false);
+      double blockReachDistance = Raytracing.reachDistance(user.meta());
+      if (raytrace.reach() <= blockReachDistance) {
+        hitboxDecrementer.decrement(user, VL_DECREMENT_PER_ATTACK);
+        reachDecrementer.decrement(user, VL_DECREMENT_PER_ATTACK);
         return;
       }
       PacketContainer clone = packet.deepClone();
