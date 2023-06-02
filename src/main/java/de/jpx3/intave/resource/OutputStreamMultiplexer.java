@@ -3,7 +3,7 @@ package de.jpx3.intave.resource;
 import java.io.IOException;
 import java.io.OutputStream;
 
-final class OutputStreamMultiplexer extends OutputStream {
+public final class OutputStreamMultiplexer extends OutputStream {
   private final OutputStream[] streams;
 
   public OutputStreamMultiplexer(OutputStream... streams) {
@@ -44,5 +44,9 @@ final class OutputStreamMultiplexer extends OutputStream {
     for (OutputStream stream : streams) {
       stream.close();
     }
+  }
+
+  public static OutputStreamMultiplexer of(OutputStream... streams) {
+    return new OutputStreamMultiplexer(streams);
   }
 }

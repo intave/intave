@@ -3,10 +3,7 @@ package de.jpx3.intave.trustfactor;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.access.player.trust.DefaultForwardingPermissionTrustFactorResolver;
-import de.jpx3.intave.access.player.trust.StorageTrustfactorResolver;
-import de.jpx3.intave.access.player.trust.TrustFactor;
-import de.jpx3.intave.access.player.trust.TrustFactorResolver;
+import de.jpx3.intave.access.player.trust.*;
 import de.jpx3.intave.annotate.HighOrderService;
 import de.jpx3.intave.diagnostic.ConsoleOutput;
 import de.jpx3.intave.diagnostic.message.DebugBroadcast;
@@ -14,6 +11,7 @@ import de.jpx3.intave.diagnostic.message.MessageCategory;
 import de.jpx3.intave.diagnostic.message.MessageSeverity;
 import de.jpx3.intave.executor.BackgroundExecutor;
 import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.library.Python;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
@@ -28,7 +26,9 @@ import org.bukkit.event.player.PlayerJoinEvent;
 @HighOrderService
 public final class TrustFactorService implements BukkitEventSubscriber {
   private static final TrustFactorResolver DEFAULT_RESOLVER = new DefaultForwardingPermissionTrustFactorResolver(new EmptyTrustFactorResolver());
-  private static final TrustFactorResolver AUTO_STORAGE_RESOLVER = new DefaultForwardingPermissionTrustFactorResolver(new StorageTrustfactorResolver());
+  private static final TrustFactorResolver AUTO_STORAGE_RESOLVER = new DefaultForwardingPermissionTrustFactorResolver(
+    Python.available() ? new DynamicStorageTrustfactorResolver() : new StorageTrustfactorResolver()
+  );
   private final IntavePlugin plugin;
   private TrustFactorResolver trustFactorResolver;
   private TrustFactorConfiguration trustFactorConfiguration;

@@ -26,6 +26,7 @@ import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.check.CheckService;
 import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.cleanup.ShutdownTasks;
+import de.jpx3.intave.cleanup.StartupTasks;
 import de.jpx3.intave.command.CommandForwarder;
 import de.jpx3.intave.config.ConfigurationService;
 import de.jpx3.intave.connect.IntaveDomains;
@@ -44,6 +45,7 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.executor.TaskTracker;
 import de.jpx3.intave.klass.locate.Locate;
 import de.jpx3.intave.library.Libraries;
+import de.jpx3.intave.library.Python;
 import de.jpx3.intave.library.asm.Frame;
 import de.jpx3.intave.math.SinusCache;
 import de.jpx3.intave.metric.Metrics;
@@ -96,7 +98,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
-import static de.jpx3.intave.IntaveControl.GOMME_MODE;
+import static de.jpx3.intave.IntaveControl.*;
 import static de.jpx3.intave.library.asm.ClassVisitor.LICENSE_NAME;
 import static de.jpx3.intave.security.InterceptorFilterPrintStream.foundInterceptor;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.MARKED_FOR_PLAYER_REPORT;
@@ -194,18 +196,21 @@ public final class IntavePlugin extends JavaPlugin {
 
     InterceptorDetection.setup();
 
-    System.out.println(1 + ClientMathHelper.calculateLogBaseTwo(ClientMathHelper.roundUpToPowerOfTwo(30000000)));
-
     try {
       // We need to put this here before setting up the Synchronizer
       componentLoader = new ComponentLoader(this);
       componentLoader.prepareComponents();
       componentLoader.loadComponents();
 
+      configurationService = new ConfigurationService(this);
+      String configurationKey = configurationService.configurationKey();
+
       ProtocolLibraryAdapter.checkIfOutdated();
 
       // check again, after ProtocolLibs availability is guaranteed
       logger.checkColorAvailability();
+
+      Python.setup();
 
       // version mambo jumbo
       // stage 5
@@ -233,8 +238,6 @@ public final class IntavePlugin extends JavaPlugin {
       BackgroundExecutor.start();
 
       // stage 7
-      configurationService = new ConfigurationService(this);
-      String configurationKey = configurationService.configurationKey();
 
       // causes interceptor output
       for (int i = 0; i < 1; i++) {
@@ -758,6 +761,13 @@ public final class IntavePlugin extends JavaPlugin {
       }
     }
 
+    if (SIBYL_ALLOW_ALL) {
+      logger.warn("Sibyl is current disabled");
+      if (!DISABLE_LICENSE_CHECK || GOMME_MODE) {
+        throw new IllegalStateException("Sibyl is disabled, but license check is enabled");
+      }
+    }
+
     registerNativeCheck();
     Modules.linker().packetEvents().refreshLinkages();
     displayVersionInformation();
@@ -768,6 +778,8 @@ public final class IntavePlugin extends JavaPlugin {
     Synchronizer.synchronize(() -> {
       // stage 11
       Modules.proceedBoot(BootSegment.STAGE_11);
+
+      StartupTasks.runAll();
 
       // perform a complete native self-check
       BackgroundExecutor.execute(NativeCheck::run);

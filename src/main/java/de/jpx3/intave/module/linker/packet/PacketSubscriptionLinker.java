@@ -41,7 +41,6 @@ public final class PacketSubscriptionLinker extends Module {
 
   public PacketSubscriptionLinker(IntavePlugin plugin) {
     this.plugin = plugin;
-    IGNORE_CHAT_PACKETS |= plugin.settings().getBoolean("command.fix-tab-kicks", false);
   }
 
   @Override

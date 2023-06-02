@@ -5,6 +5,7 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObje
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import de.jpx3.intave.adapter.MinecraftVersions;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,9 +18,11 @@ public final class EntityMetadataReader extends EntityReader {
     if (IT_WAS_NICE_WHILE_IT_LASTED) {
       return packet().getWatchableCollectionModifier().read(0);
     }
-    return metadataValues().stream()
-      .map(EntityMetadataReader::watchableObjectFromDataValue)
-      .collect(Collectors.toList());
+    List<WrappedWatchableObject> list = new ArrayList<>();
+    for (WrappedDataValue value : metadataValues()) {
+      list.add(watchableObjectFromDataValue(value));
+    }
+    return list;
   }
 
   public List<WrappedDataValue> metadataValues() {

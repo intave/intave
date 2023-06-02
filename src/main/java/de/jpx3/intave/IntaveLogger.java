@@ -2,9 +2,9 @@ package de.jpx3.intave;
 
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
+import de.jpx3.intave.cleanup.StartupTasks;
 import de.jpx3.intave.diagnostic.ConsoleOutput;
 import de.jpx3.intave.executor.BackgroundExecutor;
-import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.resource.FileArchiver;
 import de.jpx3.intave.version.JavaVersion;
 import org.bukkit.Bukkit;
@@ -16,6 +16,7 @@ import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,14 +24,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+import static de.jpx3.intave.IntaveLogger.FileLoggingState.UNRESOLVED;
+
 public final class IntaveLogger extends PluginLogger {
-  public static boolean FILE_OUTPUT = true;
+  public static FileLoggingState FILE_OUTPUT = UNRESOLVED;
   public static final boolean VIOLATION_CONSOLE_OUTPUT = IntaveControl.GOMME_MODE;
   public static boolean DISABLE_COLOR_OUTPUT = IntaveControl.GOMME_MODE || JavaVersion.current() > 8;
 
   private static final String LOG_PATH = "plugins" + File.separator + "Intave" + File.separator + "logs";
   private final IntavePlugin plugin;
-  private final FileArchiver archiver;
   private final List<PrintStream> outputStreams = new CopyOnWriteArrayList<>();
   private static IntaveLogger singletonInstance;
   private long lastNameCheck;
@@ -41,10 +43,15 @@ public final class IntaveLogger extends PluginLogger {
     super(plugin);
     singletonInstance = this;
     this.plugin = plugin;
-    this.archiver = new FileArchiver();
 //    outputStreams.add(System.out);
-    FILE_OUTPUT = plugin.settings().getBoolean("logging.file-log", true);
-    setup();
+
+    StartupTasks.add(() -> {
+      boolean enabled = plugin.settings().getBoolean("logging.file-log", true);
+      FILE_OUTPUT = FileLoggingState.fromBoolean(enabled);
+      if (enabled) {
+        setup();
+      }
+    });
   }
 
   public void checkColorAvailability() {
@@ -155,10 +162,29 @@ public final class IntaveLogger extends PluginLogger {
   }
 
   private static final DateTimeFormatter MESSAGE_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH.mm.ss.SSS");
+  private static final List<String> PENDING_LOG_ENTRIES = new ArrayList<>();
 
   private synchronized void logToFile(String message) {
-    if (!FILE_OUTPUT || !plugin.dataFolder().exists()) {
+    if (!plugin.dataFolder().exists()) {
       return;
+    }
+
+    switch (FILE_OUTPUT) {
+      case UNRESOLVED:
+        PENDING_LOG_ENTRIES.add(message);
+        return;
+      case DISABLED:
+        PENDING_LOG_ENTRIES.clear();
+        return;
+      case ENABLED:
+        if (PENDING_LOG_ENTRIES.size() > 0) {
+          String[] messages = PENDING_LOG_ENTRIES.toArray(new String[0]);
+          PENDING_LOG_ENTRIES.clear();
+          for (String pendingMessage : messages) {
+            logToFile(pendingMessage);
+          }
+        }
+        break;
     }
 
     try {
@@ -235,7 +261,7 @@ public final class IntaveLogger extends PluginLogger {
       File archiveFile = file.getValue();
 //      BackgroundExecutor.execute(() -> {
       if (originalFile.exists() && !archiveFile.exists()) {
-        archiver.archiveAndDeleteFile(originalFile, archiveFile);
+        FileArchiver.archiveAndDeleteFile(originalFile, archiveFile);
         info("Compressed \"" + originalFile + "\"");
       }
 //      });
@@ -277,5 +303,15 @@ public final class IntaveLogger extends PluginLogger {
 
   public static IntaveLogger logger() {
     return singletonInstance;
+  }
+
+  enum FileLoggingState {
+    UNRESOLVED,
+    ENABLED,
+    DISABLED;
+
+    private static FileLoggingState fromBoolean(boolean enabled) {
+      return enabled ? ENABLED : DISABLED;
+    }
   }
 }

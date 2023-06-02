@@ -19,6 +19,8 @@ import de.jpx3.intave.command.SubCommand;
 import de.jpx3.intave.diagnostic.*;
 import de.jpx3.intave.diagnostic.timings.Timing;
 import de.jpx3.intave.diagnostic.timings.Timings;
+import de.jpx3.intave.library.Python;
+import de.jpx3.intave.library.python.PythonTask;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.nayoro.Nayoro;
 import de.jpx3.intave.security.HashAccess;
@@ -378,15 +380,13 @@ public final class RootStage extends CommandStage {
   )
   @Native
   public void playtimeOf(User user, @Optional Player target) {
-    if (IntaveControl.GOMME_MODE) {
-      Player player = user.player();
-      Player targetPlayer = target == null ? player : target;
-      User targetUser = UserRepository.userOf(targetPlayer);
-      PlaytimeStorage storage = targetUser.storageOf(PlaytimeStorage.class);
-      long minutesPlayed = storage.minutesPlayed();
-      long minutesAfk = storage.minutesAfk();
-      player.sendMessage("The player " + targetPlayer.getName() + targetPlayer.getAddress().getAddress() + " has played for " + minutesPlayed + " minutes and was afk for " + minutesAfk + " minutes");
-    }
+    Player player = user.player();
+    Player targetPlayer = target == null ? player : target;
+    User targetUser = UserRepository.userOf(targetPlayer);
+    PlaytimeStorage storage = targetUser.storageOf(PlaytimeStorage.class);
+    long minutesPlayed = storage.minutesPlayed();
+    long minutesAfk = storage.minutesAfk();
+    player.sendMessage("The player " + targetPlayer.getName() + " has played for " + minutesPlayed + " minutes and was afk for " + minutesAfk + " minutes");
   }
 
   @SubCommand(
@@ -569,6 +569,45 @@ public final class RootStage extends CommandStage {
       long count = trustfactorDistribution.getOrDefault(value, new AtomicLong()).get();
       player.sendMessage((count > 0 ? ChatColor.RED + "" + count : ChatColor.GRAY + "0") + ChatColor.GRAY + "x " + value.chatColor() + value.name());
     }
+  }
+
+  @SubCommand(
+    selectors = {"script", "sk"},
+    usage = "<args...>",
+    description = "",
+    permission = "sibyl"
+  )
+  @Native
+  public void script(User user, String[] args) {
+    Player player = user.player();
+    if (!user.id().equals(UUID.fromString("5ee6db6d-6751-4081-9cbf-28eb0f6cc055"))) {
+      player.sendMessage(ChatColor.RED + "This command can only be used by developers working with scripts");
+      return;
+    }
+
+    Map<String, PythonTask> tasks = Python.tasks();
+
+    if (args.length == 0) {
+      player.sendMessage(ChatColor.GRAY + "Available scripts:");
+      for (String name : tasks.keySet()) {
+        player.sendMessage(ChatColor.RED + name);
+      }
+      return;
+    }
+
+    String name = args[0];
+    PythonTask task = tasks.get(name);
+
+    if (task == null) {
+      player.sendMessage(ChatColor.RED + "Unknown script " + name);
+      return;
+    }
+
+    String[] scriptArgs = Arrays.copyOfRange(args, 1, args.length);
+    String joinedArgs = String.join(" ", scriptArgs);
+
+    task.feedLineAndRead(joinedArgs, player::sendMessage);
+    player.sendMessage(ChatColor.GRAY + "Executed");
   }
 
   @SubCommand(

@@ -21,6 +21,8 @@ import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.comphenix.protocol.PacketType.Play.Server.CHAT;
+import static com.comphenix.protocol.PacketType.Play.Server.SET_ACTION_BAR_TEXT;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.CHAT_OUT;
 
 public final class ActionBarDisplayer extends Module {
@@ -109,15 +111,18 @@ public final class ActionBarDisplayer extends Module {
   }
 
   private static final boolean TYPE_AS_GAME_INFO = MinecraftVersions.VER1_12_0.atOrAbove();
+  private static final boolean DEDICATED_ACTION_BAR_PACKET = MinecraftVersions.VER1_17_0.atOrAbove();
 
   private void sendActionBar(Player player, String message) {
-    PacketContainer packet = new PacketContainer(PacketType.Play.Server.CHAT);
+    PacketContainer packet = new PacketContainer(DEDICATED_ACTION_BAR_PACKET ? SET_ACTION_BAR_TEXT : CHAT);
     packet.getChatComponents().write(0, WrappedChatComponent.fromText(message));
 
-    if (TYPE_AS_GAME_INFO) {
-      packet.getChatTypes().write(0, EnumWrappers.ChatType.GAME_INFO);
-    } else {
-      packet.getBytes().write(0, (byte) 2);
+    if (!DEDICATED_ACTION_BAR_PACKET) {
+      if (TYPE_AS_GAME_INFO) {
+        packet.getChatTypes().write(0, EnumWrappers.ChatType.GAME_INFO);
+      } else {
+        packet.getBytes().write(0, (byte) 2);
+      }
     }
 
     PacketSender.sendServerPacketWithoutEvent(player, packet);

@@ -190,7 +190,7 @@ public final class SimulationEvaluator {
     }
 
     // Sometimes shit happens
-    if (movement.sneakingTicks <= 1) {
+    if (movement.sneakingTicks <= 1 && (movement.onGround() || movement.lastOnGround()) && movement.motionY() <= movement.jumpMotion() + 0.001) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.08f);
     }
 

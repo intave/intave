@@ -23,6 +23,7 @@ public final class IntaveControl {
   public static final boolean RESET_HURT_TIME_ON_JOIN = true;
   public static final boolean IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT = false;
   public static final boolean SIBYL_DEBUG = false;
+  public static final boolean SIBYL_ALLOW_ALL = false;
   public static final boolean ENABLE_MEMTRACE = false;
   public static final boolean NETTY_DUMP_ON_TIMEOUT = false;
   public static final boolean FILL_UFOE_STACKTRACE = false;
@@ -34,6 +35,7 @@ public final class IntaveControl {
   public static final boolean DEBUG_BLUELIST = false;
   public static final boolean USE_DEBUG_LOCATE_RESOURCE = false;
   public static final boolean USE_DEBUG_TRUSTFACTOR_RESOURCE = false;
+  public static final boolean USE_DEBUG_SCRIPT_RESOURCES = false;
   public static final boolean DEBUG_OUTPUT_FOR_TESTS = false;
   public static final boolean DEBUG_VARIANT_COMPILATION = false;
   public static final boolean DEBUG_ENTITY_TRACKING = false;

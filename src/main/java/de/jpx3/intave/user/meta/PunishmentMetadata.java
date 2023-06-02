@@ -151,7 +151,7 @@ public final class PunishmentMetadata {
         return false;
       }
       List<String> contains = Arrays.asList(
-        "schnupi", "schnuppi", "beschuss", "eject", "icarus", "ryu", "_hyxz", "vierzwei", "augustus", "intave" // yes, Intave too
+        "schnupi", "schnuppi", "justin", "beschuss", "eject", "icarus", "ryu", "_hyxz", "vierzwei", "augustus", "intave", "auf180", "solumbus"
       );
       for (String contain : contains) {
         if (player.getName().toLowerCase().contains(contain)) {

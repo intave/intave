@@ -20,11 +20,13 @@ import static de.jpx3.intave.module.linker.packet.PacketId.Server.TAB_COMPLETE_O
 
 public final class CommandFilter extends Filter {
   private final boolean separateEnable;
+  private final boolean disabled;
   private final Map<String, String> redirects = new HashMap<>();
 
   public CommandFilter(IntavePlugin plugin) {
     super("command");
     separateEnable = plugin.settings().getBoolean("command.hide", true);
+    disabled = plugin.settings().getBoolean("command.fix-tab-kicks", false);
 
     ConfigurationSection reroute = plugin.settings().getConfigurationSection("command.reroute");
     if (reroute != null) {
@@ -110,6 +112,6 @@ public final class CommandFilter extends Filter {
 
   @Override
   protected boolean enabled() {
-    return super.enabled() || separateEnable;
+    return (super.enabled() || separateEnable) && !disabled;
   }
 }

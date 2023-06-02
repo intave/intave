@@ -141,7 +141,7 @@ check:
         - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat"
 
 storage:
-  # Set to ignore the "storelog" command and auto-store suggested violations instead?
+  # Set to ignore the "intave internals storelog" command and auto-store suggested violations instead
   auto-logs: false
 
   # Set to let Intave find a suitable trustfactor when you don't specify one
@@ -176,7 +176,7 @@ rejoin:
 
 # You should disable any of these options **ONLY**
 # when experiencing serious problems and **ONLY** after reporting the issue to us.
-# Leaving any of these disabled can result to severely reduced security and stability.
+# Leaving any of these disabled can result in severely reduced security and stability.
 fault-kicks:
   position-faults: true
   missing-position-update: true

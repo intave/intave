@@ -56,8 +56,11 @@ public final class ClickFeeder implements EventProcessor {
           if (actionTargetUser.hasPlayer()) {
             ClickBufferData otherBufferData = this.bufferData.get(actionTargetUser);
             otherBufferData.tab++;
-            otherBufferData.tab %= 3;
+            otherBufferData.tab %= otherBufferData.totalTabs;
             otherBufferData.frontVisible = 0;
+            otherBufferData.changeDisplayVisible = 0;
+
+            Arrays.fill(otherBufferData.tabVisibility, 0);
           }
         }
       } else {
@@ -95,38 +98,51 @@ public final class ClickFeeder implements EventProcessor {
     if (user.anyActionSubscriptions()) {
       bufferData.append(action, intensity);
       String text;
-      if (bufferData.mainVisible < 15) {
+      if (bufferData.anyVisible < 15) {
         text = ChatColor.GRAY + "Intave Recordbar Display";
-      } else if (bufferData.mainVisible < 30) {
+      } else if (bufferData.anyVisible < 30) {
         text = ChatColor.GRAY + "Cycle with Q on empty hand";
-      } else /*if (bufferData.frontVisible < 3) {
-        text = ChatColor.GRAY + "Display change";
-      } else*/ if ((bufferData.historyVisible > 0 || bufferData.frontVisible == 0) && bufferData.tab == 1 && bufferData.historyVisible < 10) {
+      } else if (bufferData.frontVisible < 10 && bufferData.changeDisplayVisible < 10) {
+        String[] tabNames = bufferData.tabNames;
+        StringBuilder textBuilder = new StringBuilder();
+        for (int i = 0; i < tabNames.length; i++) {
+          String tabName = tabNames[i];
+          if (i != 0) {
+            textBuilder.append(" | ");
+          }
+          if (i == bufferData.tab) {
+            textBuilder.append(ChatColor.GRAY).append(ChatColor.UNDERLINE).append(tabName).append(ChatColor.GRAY);
+          } else {
+            textBuilder.append(ChatColor.GRAY).append(tabName).append(ChatColor.GRAY);
+          }
+        }
+        text = textBuilder.toString();
+        bufferData.changeDisplayVisible++;
+        bufferData.frontVisible = 0;
+        Arrays.fill(bufferData.tabVisibility, 0);
+      } else if ((bufferData.tabVisibility[1] > 0 || bufferData.frontVisible == 0) && bufferData.tab == 1 && bufferData.tabVisibility[1] < 20) {
         text = ChatColor.GRAY + "C = Clicks, A = Attacks, P = Places, " + ChatColor.GREEN + "Once per tick" + ChatColor.GRAY + ", " + ChatColor.YELLOW + "Twice per tick" + ChatColor.GRAY + ", " + ChatColor.RED + "Three times per tick";
+        bufferData.frontVisible = 1;
+      } else if ((bufferData.tabVisibility[2] > 0 || bufferData.frontVisible == 0) && bufferData.tab == 2 && bufferData.tabVisibility[2] < 20) {
+        text = ChatColor.GRAY + "History with " + ChatColor.RED + "6(" + ChatColor.GRAY + "streak" + ChatColor.RED + ")" + ChatColor.GRAY + " display";
         bufferData.frontVisible = 1;
       } else {
         text = bufferData.buildActionBar();
       }
       user.pushActionDisplayToSubscribers(DisplayType.CLICKS, text);
-      bufferData.mainVisible++;
+      bufferData.anyVisible++;
       bufferData.frontVisible++;
-      if (bufferData.mainVisible >= 30) {
-        if (bufferData.tab == 0) {
-          bufferData.statsVisible = 0;
-          bufferData.historyVisible = 0;
-          bufferData.reducedVisible++;
-        } else if (bufferData.tab == 1) {
-          bufferData.reducedVisible = 0;
-          bufferData.statsVisible = 0;
-          bufferData.historyVisible++;
-        } else if (bufferData.tab == 2) {
-          bufferData.reducedVisible = 0;
-          bufferData.historyVisible = 0;
-          bufferData.statsVisible++;
+      if (bufferData.anyVisible >= 30) {
+        bufferData.tabVisibility[bufferData.tab]++;
+        for (int i = 0; i < bufferData.tabVisibility.length; i++) {
+          if (i == bufferData.tab) {
+            continue;
+          }
+          bufferData.tabVisibility[i] = 0;
         }
       }
     } else {
-      bufferData.mainVisible = 0;
+      bufferData.anyVisible = 0;
     }
     bufferData.attacks = 0;
     bufferData.clicks = 0;
@@ -138,20 +154,25 @@ public final class ClickFeeder implements EventProcessor {
     private final List<TickAction> tickActions = new LinkedList<>();
     private final List<Integer> tickIntensity = new LinkedList<>();
     private final List<Boolean> inBlockBreak = new LinkedList<>();
+    private final List<Integer> streakLength = new LinkedList<>();
     private int clicks, attacks, places;
     private boolean breakingBlock;
-    private int mainVisible = 0;
+    private int anyVisible = 0;
     private int frontVisible = 0;
-    private int reducedVisible = 0;
-    private int historyVisible = 0;
-    private int statsVisible = 0;
+    private int changeDisplayVisible = 0;
+    private final int totalTabs = 4;
+    private final int[] tabVisibility = new int[totalTabs];
+    private final String[] tabNames = {"Basic", "History", "Streak", "Stats"};
     private int tab = 0;
+
+    private int currentClickStreak;
 
     {
       for (int i = 0; i < 40; i++) {
         tickActions.add(TickAction.NOTHING);
         tickIntensity.add(0);
         inBlockBreak.add(false);
+        streakLength.add(0);
       }
     }
 
@@ -160,12 +181,27 @@ public final class ClickFeeder implements EventProcessor {
     }
 
     public synchronized void append(TickAction action, int intensity) {
-      tickActions.remove(0);
+      if (action == TickAction.NOTHING) {
+        breakingBlock = false;
+      }
+      Boolean inBlockBreak = this.inBlockBreak.remove(0);
+      this.inBlockBreak.add(breakingBlock);
+      TickAction removed = tickActions.remove(0);
+
+      if (removed == TickAction.NOTHING || inBlockBreak) {
+      } else {
+      }
+      this.streakLength.remove(0);
+      if (action == TickAction.NOTHING) {
+        this.streakLength.add(currentClickStreak > 4 ? currentClickStreak : 0);
+        currentClickStreak = 0;
+      } else {
+        this.streakLength.add(0);
+        currentClickStreak++;
+      }
       tickActions.add(action);
       tickIntensity.remove(0);
       tickIntensity.add(intensity);
-      inBlockBreak.remove(0);
-      inBlockBreak.add(breakingBlock);
     }
 
     public String buildActionBar() {
@@ -174,15 +210,16 @@ public final class ClickFeeder implements EventProcessor {
 
       for (int i = tickActions.size() - 1; i >= tickIntensity.size() / 2; i--) {
         TickAction tickAction = tickActions.get(i);
+        Integer intensity = tickIntensity.get(i);
         if (tickAction == TickAction.ATTACK) {
-          attackTicks++;
-          clickTicks++;
+          attackTicks += intensity;
+          clickTicks += intensity;
         }
         if (tickAction == TickAction.CLICK) {
-          clickTicks++;
+          clickTicks += intensity;
         }
         if (inBlockBreak.get(i)) {
-          whileBreaking++;
+          whileBreaking += intensity;
         }
       }
 
@@ -190,6 +227,9 @@ public final class ClickFeeder implements EventProcessor {
       builder.append("&c");
       builder.append(user.player().getName());
       builder.append(" &7| ");
+
+      int tabVisibility = this.tabVisibility[tab];
+
       if (attackTicks == 0 && clickTicks == 0 && (frontVisible / 20) % 2 == 0 && frontVisible <= 60) {
         builder.append("A/C");
       } else {
@@ -231,9 +271,135 @@ public final class ClickFeeder implements EventProcessor {
           builder.append(tickAction.repChar());
         }
       } else if (tab == 2) {
+        builder.append(" ").append(ChatColor.STRIKETHROUGH).append("|").append(ChatColor.GRAY).append(" ");
+
+        int currentStreak = 0;
+        int suspiciousStreak = 3;
+        int weirdStreak = 4;
+        int corruptStreak = 6;
+
+        StringBuilder clickBuilder = new StringBuilder();
+        boolean inClickStreak = false;
+        ChatColor streakIndicator = ChatColor.GRAY;
+
+        int[] suspiciousPauses = new int[tickIntensity.size()];
+
+        int repeatedPausesExpectedCount = -1;
+        int repeatedPausesCount = 0;
+        int vl = 0;
+
+        List<Integer> positionsInStreak = new LinkedList<>();
+
+        for (int i = tickActions.size() - 1; i >= 0; i--) {
+          TickAction tickAction = tickActions.get(i);
+
+          if (tickAction == TickAction.NOTHING) {
+            repeatedPausesCount++;
+          } else if (repeatedPausesCount > 0) {
+            if (repeatedPausesExpectedCount == -1) {
+              repeatedPausesExpectedCount = repeatedPausesCount;
+            }
+            if (repeatedPausesCount == repeatedPausesExpectedCount) {
+              positionsInStreak.add(i);
+              vl++;
+            } else {
+              if (vl > 2) {
+                for (Integer integer : positionsInStreak) {
+                  suspiciousPauses[integer] = vl;
+                }
+              }
+              repeatedPausesExpectedCount = repeatedPausesCount;
+              positionsInStreak.clear();
+              vl = 0;
+            }
+            repeatedPausesCount = 0;
+          }
+        }
+
+        if (positionsInStreak.size() > 0) {
+          for (Integer integer : positionsInStreak) {
+            suspiciousPauses[integer] = vl;
+          }
+        }
+
+        for (int i = tickIntensity.size() - 1; i >= 0; i--) {
+          TickAction tickAction = tickActions.get(i);
+
+          // just for the beginning streak
+          if (tickAction == TickAction.NOTHING) {
+            if (inClickStreak) {
+              inClickStreak = false;
+              clickBuilder.append(streakIndicator).append(") ");
+              continue;
+            }
+
+            if (currentStreak > 0) {
+              String text = "";
+              if (currentStreak > corruptStreak) {
+                text = ChatColor.RED + ")";
+              } else if (currentStreak > weirdStreak) {
+                text = ChatColor.YELLOW + ")";
+              } else if (currentStreak > suspiciousStreak) {
+                text = ")";
+              }
+              if (!"".equals(text)) {
+                clickBuilder.append(text);
+              }
+            } else if (streakLength.get(i) > 0) {
+              int pastClickStreak = streakLength.get(i);
+              String text = "";
+              ChatColor streakColor = ChatColor.GRAY;
+              if (pastClickStreak > corruptStreak) {
+                text = " " + ChatColor.RED + pastClickStreak + "(";
+                streakColor = ChatColor.RED;
+              } else if (pastClickStreak > weirdStreak) {
+                text = " " + ChatColor.YELLOW + pastClickStreak + "(";
+                streakColor = ChatColor.YELLOW;
+              } else if (pastClickStreak > suspiciousStreak) {
+                text = "(";
+              }
+              if (!"".equals(text)) {
+                clickBuilder.append(text);
+                inClickStreak = true;
+                streakIndicator = streakColor;
+                continue;
+              }
+            } else {
+//              if (suspiciousPauses[i] > 2) {
+//                clickBuilder.append(ChatColor.RED).append("-").append(ChatColor.GRAY);
+//                builder.append(clickBuilder);
+//                continue;
+//              }
+//              clickBuilder.append(ChatColor.GRAY).append(suspiciousPauses[i]).append(ChatColor.GRAY);
+//              continue;
+            }
+            currentStreak = -100000;
+          } else {
+            currentStreak++;
+          }
+
+          int intensity = tickIntensity.get(i);
+          if (intensity == 0) {
+            clickBuilder.append("&7");
+          } else if (intensity == 1) {
+            clickBuilder.append("&a");
+          } else if (intensity == 2) {
+            clickBuilder.append("&e");
+          } else if (intensity >= 3) {
+            clickBuilder.append("&c");
+          }
+          if (inBlockBreak.get(i)) {
+            clickBuilder.append(ChatColor.STRIKETHROUGH);
+          }
+          clickBuilder.append(tickAction.repChar());
+        }
+
+        builder.append(clickBuilder);
+
+      } else if (tab == 3) {
         builder.append(" | ");
         Kurtosis.KurtosisMeta kurtosis = (Kurtosis.KurtosisMeta) user.checkMetadata(Kurtosis.KurtosisMeta.class);
-        boolean displayMeaning = statsVisible / 20 % 2 == 0 && statsVisible <= 60;
+        boolean displayMeaning = tabVisibility / 20 % 2 == 0 && tabVisibility <= 60;
 
         if (displayMeaning) {
           builder.append("KURTOS");

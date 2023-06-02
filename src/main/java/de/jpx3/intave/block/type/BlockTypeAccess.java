@@ -49,7 +49,7 @@ public final class BlockTypeAccess {
   }
 
   private static final Resource MAPPING_RESOURCE = Resources.localServiceCacheResource("bbm/" + IntavePlugin.version(),  "bbm", TimeUnit.DAYS.toMillis(14));
-  private static final TypeTranslations TYPE_TRANSLATIONS = MAPPING_RESOURCE.collectLines(VerTraFileTypeTranslator.resourceCollector());
+  private static final TypeTranslations TYPE_TRANSLATIONS = MAPPING_RESOURCE.collectLines(VerTraFileTypeTranslator.lineCollector());
 
   public static void setupTranslationsFor(User user) {
     MinecraftVersion serverVersion = MinecraftVersion.getCurrentVersion();

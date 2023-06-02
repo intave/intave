@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 class RecordEventSink extends EventSink {
   private long last = System.currentTimeMillis();
@@ -18,6 +20,7 @@ class RecordEventSink extends EventSink {
   private final DataOutput dataOutput;
   private final Set<Integer> entities = new HashSet<>();
   private boolean setup = false;
+  private final Lock lock = new ReentrantLock();
 
   public RecordEventSink(Environment environment, DataOutput dataOutput) {
     this.environment = environment;
@@ -28,14 +31,17 @@ class RecordEventSink extends EventSink {
     if (!setup) {
       setup = true;
       try {
+        lock.lock();
         dataOutput.writeUTF("INTAVE/SAMPLE");
         dataOutput.writeUTF(LicenseAccess.network());
         UUID id = UUID.randomUUID();
         dataOutput.writeLong(id.getMostSignificantBits());
         dataOutput.writeLong(id.getLeastSignificantBits());
         dataOutput.writeLong(System.currentTimeMillis());
-      } catch (IOException e) {
-        throw new RuntimeException(e);
+      } catch (IOException exception) {
+        throw new RuntimeException(exception);
+      } finally {
+        lock.unlock();
       }
       visit(new PlayerInitEvent(environment.mainPlayer()));
       visit(new PropertiesEvent(environment.properties()));
@@ -51,6 +57,17 @@ class RecordEventSink extends EventSink {
   public void visit(EntitySpawnEvent event) {
     entities.add(event.id());
     visitAny(event);
+  }
+
+  @Override
+  public void visit(AttackEvent event) {
+    if (isIdInContextCurrent(event.source()) && isIdInContextCurrent(event.target())) {
+      visitAny(event);
+    }
+  }
+
+  private boolean isIdInContextCurrent(int id) {
+    return entities.contains(id) || environment.mainPlayer().id() == id;
   }
 
   @Override
@@ -71,6 +88,7 @@ class RecordEventSink extends EventSink {
   public void visitAny(Event event) {
     setupIfNeeded();
     try {
+      lock.lock();
       int duration = (int) Math.min(Short.MAX_VALUE, System.currentTimeMillis() - last);
       last = System.currentTimeMillis();
       dataOutput.writeShort(duration);
@@ -78,12 +96,16 @@ class RecordEventSink extends EventSink {
       event.serialize(environment, dataOutput);
     } catch (IOException exception) {
       throw new IllegalStateException("Could not serialize event " + event.getClass().getName(), exception);
+    } finally {
+      lock.unlock();
     }
   }
 
   @Override
   public void close() {
+    setupIfNeeded();
     try {
+      lock.lock();
       dataOutput.writeShort(0);
       dataOutput.writeByte(-1);
       if (dataOutput instanceof Closeable) {
@@ -91,6 +113,8 @@ class RecordEventSink extends EventSink {
       }
     } catch (IOException exception) {
       throw new IllegalStateException("Could not close data output", exception);
+    } finally {
+      lock.unlock();
     }
   }
 }
