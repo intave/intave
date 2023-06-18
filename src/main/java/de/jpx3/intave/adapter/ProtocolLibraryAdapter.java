@@ -25,6 +25,7 @@ public final class ProtocolLibraryAdapter {
   public static void checkIfOutdated() {
     boolean temporaryPlayer = Arrays.stream(PacketEvent.class.getMethods()).anyMatch(method -> method.getName().equalsIgnoreCase("isPlayerTemporary"));
     boolean specifiedEnumModifier = Arrays.stream(EnumWrappers.class.getMethods()).anyMatch(method -> method.getName().equalsIgnoreCase("getGenericConverter") && method.getParameterCount() == 2);
+    boolean byteBuddyExists = classExists("com.comphenix.net.bytebuddy.ByteBuddy");
 
     if (!specifiedEnumModifier) {
       throw new InvalidDependencyException(PROTOCOLLIB_OUTDATED + " (missing generic enum conversion)");
@@ -56,8 +57,17 @@ public final class ProtocolLibraryAdapter {
       }
     }
 
-    if (!temporaryPlayer) {
+    if (!temporaryPlayer || !byteBuddyExists) {
       IntaveLogger.logger().info("Consider updating ProtocolLib");
+    }
+  }
+
+  private static boolean classExists(String className) {
+    try {
+      Class.forName(className);
+      return true;
+    } catch (ClassNotFoundException exception) {
+      return false;
     }
   }
 

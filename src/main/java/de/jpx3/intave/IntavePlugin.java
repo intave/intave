@@ -45,7 +45,6 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.executor.TaskTracker;
 import de.jpx3.intave.klass.locate.Locate;
 import de.jpx3.intave.library.Libraries;
-import de.jpx3.intave.library.Python;
 import de.jpx3.intave.library.asm.Frame;
 import de.jpx3.intave.math.SinusCache;
 import de.jpx3.intave.metric.Metrics;
@@ -83,6 +82,12 @@ import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bytedeco.javacpp.Loader;
+import org.bytedeco.openblas.global.openblas;
+import org.bytedeco.openblas.global.openblas_nolapack;
+import smile.base.mlp.*;
+import smile.data.DataFrame;
+import smile.regression.MLP;
 
 import java.io.*;
 import java.lang.reflect.Field;
@@ -154,6 +159,9 @@ public final class IntavePlugin extends JavaPlugin {
     Modules.proceedBoot(BootSegment.STAGE_2);
     redirectPluginLogger();
     checkClassLoaderAvailability();
+
+    System.setProperty("org.bytedeco.javacpp.cachedir", integrityFolder().getAbsolutePath());
+
     Libraries.setupLibraries();
   }
 
@@ -169,11 +177,11 @@ public final class IntavePlugin extends JavaPlugin {
   public void onEnable() {
     logger.info("Please stand by..");
 
-    if (IntaveControl.DEBUG_SERVER_VERSION) {
-      MinecraftVersion version = MinecraftVersion.getCurrentVersion();
-      int ver = version.getMinor() * 10 + version.getBuild();
-      logger.info("[debug] Server version: " + version + " (" + ver + ")");
-    }
+//    if (IntaveControl.DEBUG_SERVER_VERSION) {
+//      MinecraftVersion version = MinecraftVersion.getCurrentVersion();
+//      int ver = version.getMinor() * 10 + version.getBuild();
+//      logger.info("[debug] Server version: " + version + " (" + ver + ")");
+//    }
 
     // stage 4
     Modules.proceedBoot(BootSegment.STAGE_4);
@@ -217,18 +225,38 @@ public final class IntavePlugin extends JavaPlugin {
 
       TaskTracker.setup();
       Locate.setup();
+
+      // for some reason, we get an ILLEGAL_ACCESS_VIOLATION if we don't sleep here
+      // I don't know why, I don't care why, but this approach works
+
       SinusCache.setup();
       ServerHealth.setup();
+
+      Thread.sleep(5);
+
       Synchronizer.setup();
       PacketReaders.setup();
+
+      Thread.sleep(5);
+
       SibylBroadcast.setup();
       ReflectiveAccess.setup();
+
+      Thread.sleep(5);
+
       IdentifierReserve.setup();
       EntityTypeDataAccessor.setup();
+
+      Thread.sleep(5);
+
       ChunkProviderServerAccess.setup();
+
+      Thread.sleep(5);
 
       trustFactorService = new TrustFactorService(this);
       blackListService = new PlayerListService(this);
+
+      Thread.sleep(5);
 
       // stage 6
       Modules.proceedBoot(BootSegment.STAGE_6);
@@ -760,21 +788,7 @@ public final class IntavePlugin extends JavaPlugin {
       }
     }
 
-    Map<String, Boolean> enforceDisabled = new HashMap<>();
-    enforceDisabled.put("S????? is enabled", SIBYL_ALLOW_ALL);
-    enforceDisabled.put("Heuristic debugging is enabled", DEBUG_HEURISTICS);
-    enforceDisabled.put("Movement debugging is enabled", DEBUG_MOVEMENT);
-    enforceDisabled.put("Red trustfactor is enabled globally", APPLY_GLOBAL_LOW_TRUSTFACTOR);
-
-    for (Map.Entry<String, Boolean> entry : enforceDisabled.entrySet()) {
-      if (entry.getValue()) {
-        logger.warn(entry.getKey());
-        if (!DISABLE_LICENSE_CHECK || GOMME_MODE) {
-          throw new IllegalStateException(entry.getKey() + ", but license check is disabled");
-        }
-      }
-    }
-
+    preventIncorrectStates();
     registerNativeCheck();
     Modules.linker().packetEvents().refreshLinkages();
     displayVersionInformation();
@@ -790,7 +804,67 @@ public final class IntavePlugin extends JavaPlugin {
 
       // perform a complete native self-check
       BackgroundExecutor.execute(NativeCheck::run);
+
+      testMLLibrary();
     });
+  }
+
+  private void testMLLibrary() {
+    try {
+      // load
+      Class<DataFrame> dataFrameClass = DataFrame.class;
+
+      logger.info("Beginning MLP test");
+
+      MLP mlp = new MLP(
+        InputLayer.input(80),
+        HiddenLayer.leaky(32),
+        HiddenLayer.leaky(16),
+        HiddenLayer.leaky(8),
+        new OutputLayerBuilder(1, OutputFunction.LINEAR, Cost.MEAN_SQUARED_ERROR)
+      );
+
+      try {
+        System.out.println(Loader.getCacheDir().getAbsolutePath());
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+
+      Class<openblas> openblasClass = openblas.class;
+      int cblasLeft = openblas_nolapack.CblasLeft;
+
+      System.out.println(cblasLeft);
+
+      double[] a = new double[80];
+      mlp.update(a, 1);
+
+      System.out.println(System.getProperty("java.version"));
+
+      System.out.println(mlp.predict(a));
+
+      logger.info("MLP test successful");
+    } catch (Throwable exception) {
+      logger.error("MLP test failed");
+      exception.printStackTrace();
+    }
+  }
+
+  private void preventIncorrectStates() {
+    // can - for some reason - not be native
+    Map<String, Boolean> enforceDisabled = new HashMap<>();
+    enforceDisabled.put("Debug SK is enabled", SIBYL_ALLOW_ALL);
+    enforceDisabled.put("Heuristic debugging is enabled", DEBUG_HEURISTICS);
+    enforceDisabled.put("Movement debugging is enabled", DEBUG_MOVEMENT);
+    enforceDisabled.put("Red trustfactor is enabled globally", APPLY_GLOBAL_LOW_TRUSTFACTOR);
+
+    for (Map.Entry<String, Boolean> entry : enforceDisabled.entrySet()) {
+      if (entry.getValue()) {
+        logger.warn(entry.getKey());
+        if (!DISABLE_LICENSE_CHECK || GOMME_MODE) {
+          throw new IllegalStateException(entry.getKey() + ", but license check is disabled");
+        }
+      }
+    }
   }
 
   private void registerNativeCheck() {
@@ -1034,6 +1108,20 @@ public final class IntavePlugin extends JavaPlugin {
     } catch (Exception ignored) {}
   }
 
+  private File integrityFolder() {
+    try {
+      // mark caches as deletable
+      Class<?> relocator = Class.forName("de.jpx3.relocator.Relocator");
+      File child = (File) relocator.getMethod("h").invoke(null, "a", "b");
+      return child.getParentFile();
+    } catch (Exception ignored) {}
+    try {
+      return Files.createTempDirectory("intave").toFile();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public IntaveAccess access() {
     return access;
   }
@@ -1073,11 +1161,6 @@ public final class IntavePlugin extends JavaPlugin {
   @Deprecated
   public BukkitEventSubscriptionLinker eventLinker() {
     return Modules.linker().bukkitEvents();
-  }
-
-  @Deprecated
-  public PacketSubscriptionLinker packetSubscriptionLinker() {
-    return Modules.linker().packetEvents();
   }
 
   public SibylIntegrationService sibyl() {

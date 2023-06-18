@@ -45,6 +45,12 @@ dependencies {
 
   compileOnly("com.github.haifengl:smile-base:3.0.1")
   compileOnly("com.github.haifengl:smile-core:3.0.1")
+
+  // add bytedeco
+  compileOnly("org.bytedeco:openblas:0.3.23-1.5.9")
+  compileOnly("org.bytedeco:openblas-platform:0.3.23-1.5.9")
+  compileOnly("org.bytedeco:javacpp:1.5.9")
+  compileOnly("org.bytedeco:javacpp-presets:1.5.9")
 }
 
 /*
