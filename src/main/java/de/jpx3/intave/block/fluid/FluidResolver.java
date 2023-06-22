@@ -40,21 +40,23 @@ public abstract class FluidResolver {
       for (int y = minY; y < maxY; ++y) {
         for (int z = minZ; z < maxZ; ++z) {
           Material blockClientSide = VolatileBlockAccess.typeAccess(user, world, x, y, z);
-          Fluid fluid = fluidAt(user, x, y, z);
-          if (fluid.isOfWater()) {
-            double d1 = (float) y + fluid.height();
-            if (d1 >= wrappedBoundingBox.minY) {
-              inWater = true;
-              d0 = Math.max(d1 - wrappedBoundingBox.minY, d0);
-              NativeVector flowVector = flowVectorAt(user, x, y, z);
-              if (d0 < 0.4) {
-                flowVector = flowVector.scale(d0);
+          if (MaterialMagic.isLiquid(blockClientSide)) {
+            Fluid fluid = fluidAt(user, x, y, z);
+            if (fluid.isOfWater()) {
+              double d1 = (float) y + fluid.height();
+              if (d1 >= wrappedBoundingBox.minY) {
+                inWater = true;
+                d0 = Math.max(d1 - wrappedBoundingBox.minY, d0);
+                NativeVector flowVector = flowVectorAt(user, x, y, z);
+                if (d0 < 0.4) {
+                  flowVector = flowVector.scale(d0);
+                }
+                waterFlowTotal = waterFlowTotal.add(flowVector);
+                ++countedWaterCollisions;
               }
-              waterFlowTotal = waterFlowTotal.add(flowVector);
-              ++countedWaterCollisions;
+            } else if (MaterialMagic.isWater(blockClientSide)) {
+              inWater = true;
             }
-          } else if (MaterialMagic.isWater(blockClientSide)) {
-            inWater = true;
           }
         }
       }

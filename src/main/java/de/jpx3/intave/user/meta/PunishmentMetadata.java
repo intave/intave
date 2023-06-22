@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static de.jpx3.intave.user.meta.PunishmentMetadata.EncapsulationClass.isRedlistedPlayer;
@@ -112,6 +113,16 @@ public final class PunishmentMetadata {
           return armor;
         });
       }),
+      new AttackNerfer(AttackNerfStrategy.DMG_ARMOR_INEFFECTIVE, DAMAGE_CANCEL_MEDIUM_DURATION, event -> {
+        DamageModify.modifyDamageApplier(event, ARMOR, (damage, armor) -> {
+          if (armor < -2) {
+            double actualDamage = damage + armor; // armor is negative
+            double armorBuff = actualDamage * 0.33;
+            return Math.min(armor + Math.max(armorBuff, 1), -1);
+          }
+          return armor;
+        });
+      }, true),
       new AttackNerfer(AttackNerfStrategy.GARBAGE_HITS, GARBAGE_HITS_DURATION, event -> {
         int entityId = event.getEntity().getEntityId();
         long lastValidAttack = System.currentTimeMillis() - lastTimeValidHurttimeAttack.computeIfAbsent(entityId, x -> 0L);
@@ -140,23 +151,28 @@ public final class PunishmentMetadata {
       nerferOfType(AttackNerfStrategy.BURN_LONGER).activatePermanently();
       nerferOfType(AttackNerfStrategy.CRITICALS).activatePermanently();
       nerferOfType(AttackNerfStrategy.BLOCKING).activatePermanently();
-      nerferOfType(AttackNerfStrategy.GARBAGE_HITS).activatePermanently();
+      nerferOfType(AttackNerfStrategy.DMG_ARMOR).activatePermanently();
     }
   }
 
   public static class EncapsulationClass {
+    private static final Pattern JUSTIN_PATTERN = Pattern.compile("j.+st.*n", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+
     @Native
     public static boolean isRedlistedPlayer(Player player) {
       if (player == null) {
         return false;
       }
       List<String> contains = Arrays.asList(
-        "schnupi", "schnuppi", "justin", "beschuss", "eject", "icarus", "ryu", "_hyxz", "vierzwei", "augustus", "intave", "auf180", "solumbus"
+        "schnupi", "schnubi", "schnubbi", "schnuppi", "jxstin", "justin", "beschuss", "eject", "icarus", "ryu", "_hyxz", "vierzwei", "augustus", "intave", "auf180", "solumbus"
       );
       for (String contain : contains) {
         if (player.getName().toLowerCase().contains(contain)) {
           return true;
         }
+      }
+      if (JUSTIN_PATTERN.matcher(player.getName()).find()) {
+        return true;
       }
       return false;
     }

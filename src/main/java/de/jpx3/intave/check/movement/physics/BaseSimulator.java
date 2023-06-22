@@ -270,11 +270,9 @@ class BaseSimulator extends Simulator {
       onGround = colliderResult.onGround();
 
       boolean jumpLessThanExpected = colliderResult.motionY() < jumpUpwardsMotion;
-      boolean jump =
-        onGround
-          && Math.abs(((colliderResult.motionY()) + jumpUpwardsMotion) - environment.motionY())
-          < 1e-5
-          && jumpLessThanExpected;
+      boolean jump = onGround
+        && Math.abs(((colliderResult.motionY()) + jumpUpwardsMotion) - environment.motionY()) < 0.00001
+        && jumpLessThanExpected;
 
       if (!flyingPacket(diffX, diffY, diffZ) && !jump) {
         break;
@@ -362,7 +360,7 @@ class BaseSimulator extends Simulator {
     }
   }
 
-  private static final double FLYING_DISTANCE = 0.0009;
+  private static final double FLYING_DISTANCE = 0.03 * 0.03;
 
   boolean flyingPacket(double diffX, double diffY, double diffZ) {
     double distance = diffX * diffX + diffY * diffY + diffZ * diffZ;

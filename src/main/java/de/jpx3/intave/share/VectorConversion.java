@@ -62,7 +62,7 @@ public class VectorConversion {
     }
   }
 
-  private final static Unsafe UNSAFE;
+  private static final Unsafe UNSAFE;
 
   static {
     Unsafe unsafe = null;

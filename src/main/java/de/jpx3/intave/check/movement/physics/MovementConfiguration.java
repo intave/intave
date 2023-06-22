@@ -120,6 +120,15 @@ final class MovementConfiguration {
   }
 
   @Override
+  public String toString() {
+    return "(" + forward + "/" + strafe + ") " +
+      (attackReduce ? "R" : "") +
+      (sprinting ? "S" : "") +
+      (jumped ? "J" : "") +
+      (handActive ? "H" : "");
+  }
+
+  @Override
   public int hashCode() {
     return index;
   }

@@ -25,6 +25,7 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   private boolean inWater, inLava;
   private boolean sprinting, sneaking;
   private boolean collidedHorizontally, collidedVertically;
+  private int pastInWeb = 100;
   private final float frictionPosSubtraction = 1;
   private double fallDistance;
   private boolean inWeb;
@@ -369,6 +370,11 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
+  public int pastInWeb() {
+    return pastInWeb;
+  }
+
+  @Override
   public void resetInWeb() {
     inWeb = false;
   }
@@ -394,8 +400,18 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
+  public boolean collidedWithBoat() {
+    return false;
+  }
+
+  @Override
   public double frictionPosSubtraction() {
     return frictionPosSubtraction;
+  }
+
+  @Override
+  public boolean receivedFlyingPacketIn(int ticks) {
+    return false;
   }
 
   @Override
@@ -440,6 +456,11 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
 
   @Override
   public int pastExternalVelocity() {
+    return 100;
+  }
+
+  @Override
+  public int pastNearbyCollisionInaccuracy() {
     return 100;
   }
 

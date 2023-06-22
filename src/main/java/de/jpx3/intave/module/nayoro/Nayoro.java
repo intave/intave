@@ -1,8 +1,10 @@
 package de.jpx3.intave.module.nayoro;
 
 import com.google.common.collect.Sets;
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.cleanup.GarbageCollector;
+import de.jpx3.intave.cleanup.StartupTasks;
 import de.jpx3.intave.executor.BackgroundExecutor;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.executor.TaskTracker;
@@ -35,9 +37,11 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.zip.InflaterInputStream;
 
+import static de.jpx3.intave.module.dispatch.AttackDispatcher.COMBAT_SAMPLING;
+
 public final class Nayoro extends Module {
   private static final Resource SAMPLE_UPLOAD_STATUS = Resources.localServiceCacheResource("samples/status", "sample-status", TimeUnit.DAYS.toMillis(1));
-  private static final boolean PUBLISH_SAMPLES = "accept".equalsIgnoreCase(SAMPLE_UPLOAD_STATUS.readAsString().trim());
+  private static final boolean PUBLISH_SAMPLES = "accept".equalsIgnoreCase(SAMPLE_UPLOAD_STATUS.readAsString().trim()) && !IntaveControl.GOMME_MODE;
   private static final long GLOBAL_SCHEDULE_INTERVAL = TimeUnit.MINUTES.toSeconds(5);
 
   private final UserLocal<Set<EventSink>> eventSinks = UserLocal.withInitial(this::defaultSinksFor, this::disableRecordingFor);
@@ -57,6 +61,11 @@ public final class Nayoro extends Module {
   @Override
   public void enable() {
     Modules.linker().packetEvents().linkSubscriptionsIn(packetEventDispatch);
+    if (!COMBAT_SAMPLING) {
+      return;
+    }
+    StartupTasks.add(this::enableGlobalRecording);
+
   }
 
   @Override
@@ -179,7 +188,7 @@ public final class Nayoro extends Module {
   public void enableRecordingFor(User user) {
     localRecordingLock.lock();
     try {
-      if (!AttackDispatcher.COMBAT_SAMPLING || recordingActiveFor(user)) {
+      if (!COMBAT_SAMPLING || recordingActiveFor(user)) {
         return;
       }
       if (!Bukkit.isPrimaryThread()) {
@@ -202,7 +211,7 @@ public final class Nayoro extends Module {
   public void disableRecordingFor(User user) {
     localRecordingLock.lock();
     try {
-      if (!AttackDispatcher.COMBAT_SAMPLING || !recordingActiveFor(user)) {
+      if (!COMBAT_SAMPLING || !recordingActiveFor(user)) {
         return;
       }
       if (!Bukkit.isPrimaryThread()) {
@@ -225,7 +234,7 @@ public final class Nayoro extends Module {
   }
 
   public boolean recordingActiveFor(User user) {
-    if (!AttackDispatcher.COMBAT_SAMPLING) {
+    if (!COMBAT_SAMPLING) {
       return false;
     }
     return recording.get(user).get();

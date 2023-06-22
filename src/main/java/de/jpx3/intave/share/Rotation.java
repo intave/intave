@@ -33,4 +33,10 @@ public final class Rotation implements Serializable {
     float pitchDistance = MathHelper.distanceInDegrees(pitch, rotation.pitch);
     return yawDistance + pitchDistance;
   }
+
+  private static final Rotation ZERO = new Rotation(0, 0);
+
+  public static Rotation zero() {
+    return ZERO;
+  }
 }

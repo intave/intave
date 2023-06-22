@@ -25,7 +25,6 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
   public final double minX, minY, minZ;
   public final double maxX, maxY, maxZ;
   private boolean originBox;
-  private List<BoundingBox> selfListReference;
 
   public BoundingBox(
     double x1, double y1, double z1,
@@ -320,13 +319,15 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
     return normalized;
   }
 
+  private List<BoundingBox> selfInListCache;
+
   @Override
   @Deprecated
   public List<BoundingBox> boundingBoxes() {
-    if (selfListReference == null) {
-      selfListReference = Collections.singletonList(this);
+    if (selfInListCache == null) {
+      selfInListCache = Collections.singletonList(this);
     }
-    return selfListReference;
+    return selfInListCache;
   }
 
   @Override

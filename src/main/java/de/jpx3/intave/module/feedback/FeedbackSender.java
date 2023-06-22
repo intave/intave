@@ -81,7 +81,7 @@ public final class FeedbackSender extends Module {
   public <T> void tracedDoubleSynchronize(
     Player player,
     PacketContainer encapsulate, T target,
-    FeedbackCallback<T> firstCallback, FeedbackCallback<T> secondCallback,
+    FeedbackCallback<? super T> firstCallback, FeedbackCallback<? super T> secondCallback,
     FeedbackObserver firstTracker, FeedbackObserver secondTracker,
     int options
   ) {
@@ -214,13 +214,13 @@ public final class FeedbackSender extends Module {
     if (pending > 500) {
       counter += pending;
     }
-    while (feedbackQueue.hasUserKey(counter) && counter >= 0 && attempts-- > 0) {
+    while (feedbackQueue.hasUserKey(counter) && counter >= MIN_USER_KEY && attempts-- > 0) {
       counter++;
     }
     if (attempts <= 0) {
       // should never ever happen, last resort
       attempts = 1000;
-      while (feedbackQueue.hasUserKey(counter) && counter >= 0 && attempts-- > 0) {
+      while (feedbackQueue.hasUserKey(counter) && counter >= MIN_USER_KEY && attempts-- > 0) {
         counter = (short) ThreadLocalRandom.current().nextInt(MIN_USER_KEY + pending, MAX_USER_KEY);
       }
       if (attempts <= 0) {

@@ -171,7 +171,7 @@ public final class InteractionEmulator implements EventProcessor {
     plugin.analytics().recorderOf(GlobalStatisticsRecorder.class).recordBlockPlaced();
     Location blockAgainstLocation = interaction.targetBlock().toLocation(world);
     Vector placementVector = Direction.getFront(interaction.targetDirectionIndex())
-      .getDirectionVec().convertToBukkitVec();
+      .directionVector().convertToBukkitVec();
     Location defaultPlacementLocation = blockAgainstLocation.clone().add(placementVector);
     int originBlockX = blockAgainstLocation.getBlockX();
     int originBlockY = blockAgainstLocation.getBlockY();
@@ -260,10 +260,10 @@ public final class InteractionEmulator implements EventProcessor {
       //        Synchronizer.synchronize(() -> blockStates.invalidateOverride(blockX, blockY,
       // blockZ));
       //      });
+      return EmulationResult.SUCCEEDED;
     } else {
       return EmulationResult.FAILED;
     }
-    return EmulationResult.SUCCEEDED;
   }
 
   private static final Set<Material> STEP_BLOCKS = MaterialSearch.materialsThatContain("STEP", "SLAB");
@@ -374,7 +374,7 @@ public final class InteractionEmulator implements EventProcessor {
     Block clickedBlock = clickedBlockLocation == null ? null : VolatileBlockAccess.blockAccess(clickedBlockLocation);
     Material itemTypeInHand = interaction.itemTypeInHand();
     Location placementLocation = clickedBlock == null ? null :
-      clickedBlockLocation.clone().add(Direction.getFront(interaction.targetDirectionIndex()).getDirectionVecAsVector());
+      clickedBlockLocation.clone().add(Direction.getFront(interaction.targetDirectionIndex()).directionVecAsVector());
     emulateItemInteraction(player, itemTypeInHand);
     if (clickedBlock != null) {
       emulateInteractWithHandItem(player, clickedBlock, placementLocation, itemTypeInHand);

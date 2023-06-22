@@ -39,6 +39,9 @@ final class v18b2FluidResolver extends FluidResolver {
   protected Fluid fluidAt(User user, int x, int y, int z) {
     MovementMetadata movementData = user.meta().movement();
     World world = (World) movementData.nmsWorld();
+    if (world == null) {
+      return Fluid.empty();
+    }
     IBlockAccess blockAccess = world.getChunkProvider().c(x >> 4, z >> 4);
     if (blockAccess == null) {
       return Fluid.empty();

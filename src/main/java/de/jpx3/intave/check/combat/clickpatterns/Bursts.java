@@ -1,12 +1,16 @@
 package de.jpx3.intave.check.combat.clickpatterns;
 
-import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.ClickPatterns;
-import de.jpx3.intave.user.meta.CheckCustomMetadata;
+import de.jpx3.intave.user.User;
 
 public final class Bursts extends TickAlignedHistoryBlueprint<Bursts.BurstMeta> {
   public Bursts(ClickPatterns parentCheck) {
     super(parentCheck, BurstMeta.class);
+  }
+
+  @Override
+  public void analyzeClicks(User user, BurstMeta meta) {
+
   }
 
   public static class BurstMeta extends TickAlignedMeta {

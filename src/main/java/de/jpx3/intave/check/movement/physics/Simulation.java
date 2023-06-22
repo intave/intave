@@ -60,7 +60,8 @@ public final class Simulation {
     return colliderResult;
   }
 
-  MovementConfiguration configuration() {
+  @Deprecated
+  public MovementConfiguration configuration() {
     return configuration;
   }
 

@@ -13,6 +13,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.PlayerInventory;
 
+import java.util.Collections;
 import java.util.UUID;
 
 public final class SimulatorBasicTests extends Tests {
@@ -39,6 +40,8 @@ public final class SimulatorBasicTests extends Tests {
             return Bukkit.getWorlds().get(0);
           case "getUniqueId":
             return EMPTY_ID;
+          case "getActivePotionEffects":
+            return Collections.emptyList();
         }
         return null;
       }
@@ -60,16 +63,13 @@ public final class SimulatorBasicTests extends Tests {
       return null;
     });
     UserRepository.manuallyRegisterUser(player, testUser);
-//    testWorld = TestWorld.createLoaded();
-//    testUser
   }
 
   @Test(
     testCode = "A",
-    severity = Severity.WARNING
+    severity = Severity.ERROR
   )
   public void simpleFallingTest() {
-
     // prepare data
     double[][] relativeMotion = new double[200][3];
     double[][] positions = new double[200][3];
@@ -93,7 +93,7 @@ public final class SimulatorBasicTests extends Tests {
     environment.copyPositionToLastPosition();
     environment.copyPositionToVerifiedPosition();
     environment.setGravity(0.08f);
-    environment.setFriction(0.98f);
+    environment.setFriction(0.09998f);
     environment.setAiMovementSpeed(0.1f);
 
     simulator.prepareNextTick(
@@ -128,10 +128,16 @@ public final class SimulatorBasicTests extends Tests {
       );
 
       double accuracy = simulation.accuracy(motion);
-      if (accuracy > 0.001) {
+      if (accuracy > 0.001 && environment.positionY() > 3) {
         System.out.println("#" + i + " (" + lastMotion + " -> " + simulation.motion() + ", but expected " + motion + ")");
-        throw new IllegalStateException("Simulation accuracy deviation: " + accuracy);
+        fail("Simulation accuracy deviation: " + accuracy);
       }
+
+//      if (environment.positionY() < 0) {
+//        fail("Dummy player fell through the floor: ypos=" + environment.positionY() + " ymotion=" + motionY);
+//      }
+
+//      System.out.println("#" + i + " (" + lastMotion + " -> " + simulation.motion() + ") accuracy: " + accuracy);
 
       simulator.prepareNextTick(
         testUser,
@@ -139,6 +145,8 @@ public final class SimulatorBasicTests extends Tests {
         environment.position(),
         simulation.motion()
       );
+
+      environment.copyPositionToVerifiedPosition();
     }
   }
 

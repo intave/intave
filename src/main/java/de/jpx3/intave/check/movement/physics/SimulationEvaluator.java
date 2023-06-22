@@ -12,6 +12,9 @@ import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.user.meta.ViolationMetadata;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.AsyncPlayerChatPreviewEvent;
 
 import static java.lang.Math.abs;
 
@@ -32,8 +35,8 @@ public final class SimulationEvaluator {
     ProtocolMetadata protocol = meta.protocol();
     MovementMetadata movement = meta.movement();
     double distanceMoved = MathHelper.resolveHorizontalDistance(
-        movement.positionX, movement.positionZ,
-        movement.verifiedPositionX, movement.verifiedPositionZ
+      movement.positionX, movement.positionZ,
+      movement.verifiedPositionX, movement.verifiedPositionZ
     );
     Pose pose = movement.pose();
     double receivedMotionX = movement.motionX();
@@ -233,11 +236,9 @@ public final class SimulationEvaluator {
 
   @SplitMeUp
   public double calculateHorizontalViolationIncrease(
-      User user,
-      double predictedX,
-      double predictedZ,
-      boolean onLadder,
-      boolean collidedWithBoat
+    User user,
+    double predictedX, double predictedZ,
+    boolean onLadder, boolean collidedWithBoat
   ) {
     Player player = user.player();
     MetadataBundle meta = user.meta();
@@ -265,7 +266,7 @@ public final class SimulationEvaluator {
     boolean pushedByWaterFlow = movement.pastPushedByWaterFlow <= 20;
     double horizontalLegitimateDeviation;
     if (movement.pastPlayerAttackPhysics <= 1) {
-      horizontalLegitimateDeviation = 0.01;
+      horizontalLegitimateDeviation = 0.005;
     } else {
       horizontalLegitimateDeviation = 0.0007;
       if (distance > 0.0007) {

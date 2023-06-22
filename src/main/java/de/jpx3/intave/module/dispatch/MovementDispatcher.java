@@ -14,12 +14,8 @@ import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.annotate.Relocate;
-import de.jpx3.intave.block.access.BlockAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
-import de.jpx3.intave.block.shape.BlockShape;
-import de.jpx3.intave.block.state.BlockStateCaches;
-import de.jpx3.intave.block.state.ExtendedBlockStateCache;
 import de.jpx3.intave.block.tick.ShulkerBox;
 import de.jpx3.intave.block.type.MaterialSearch;
 import de.jpx3.intave.block.variant.BlockVariant;
@@ -331,10 +327,10 @@ public final class MovementDispatcher extends Module {
   }
 
   @PacketSubscription(
-      priority = ListenerPriority.LOW,
-      packetsIn = {
-          FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
-      }
+    priority = ListenerPriority.LOW,
+    packetsIn = {
+      FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
+    }
   )
   public void receiveMovement(PacketEvent event) {
     Player player = event.getPlayer();
@@ -653,6 +649,9 @@ public final class MovementDispatcher extends Module {
 
     if (movement.isInVehicle() && !vehicleMove && hasRotation && !hasMovement) {
       movement.applyGroundInformationToPacket(packet);
+      movement.verifiedPositionX = movement.positionX;
+      movement.verifiedPositionY = movement.positionY;
+      movement.verifiedPositionZ = movement.positionZ;
       return;
     }
 
@@ -1075,7 +1074,7 @@ public final class MovementDispatcher extends Module {
       if (isExtending) {
         Modules.feedback().synchronize(player, nothing -> {
           // First off, check if the player is even affected by this
-          NativeVector directionVec = facing.getDirectionVec();
+          NativeVector directionVec = facing.directionVector();
           BoundingBox pistonCollisionArea = new BoundingBox(0, 0, 0, 1.1f, 1.1f, 1.1f);
           int expectedPistonX = (int) directionVec.xCoord + blockPosition.getX();
           int expectedPistonY = (int) directionVec.yCoord + blockPosition.getY();

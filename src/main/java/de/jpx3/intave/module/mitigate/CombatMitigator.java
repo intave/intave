@@ -30,8 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static de.jpx3.intave.access.player.trust.TrustFactor.RED;
-import static de.jpx3.intave.access.player.trust.TrustFactor.YELLOW;
+import static de.jpx3.intave.access.player.trust.TrustFactor.*;
 
 public final class CombatMitigator extends Module {
 
@@ -128,7 +127,7 @@ public final class CombatMitigator extends Module {
       String message = chat.getMessage();
       List<String> badWords = Arrays.asList("augustus", "ryu", "haze yt", "icarus", "eject");
       for (String badWord : badWords) {
-        if (message.toLowerCase().contains(badWord) && !user.trustFactor().atLeast(YELLOW)) {
+        if (message.toLowerCase().contains(badWord) && user.trustFactor().atOrBelow(ORANGE)) {
           mitigatePermanently(user, AttackNerfStrategy.CRITICALS, "64");
           mitigatePermanently(user, AttackNerfStrategy.BLOCKING, "64");
           mitigatePermanently(user, AttackNerfStrategy.BURN_LONGER, "64");

@@ -27,6 +27,12 @@ public final class WorldPermission {
   public static boolean blockPlacePermission(
     Player player, World world, boolean mainHand, int blockX, int blockY, int blockZ, int enumDirection, Material type, int variant
   ) {
+    if (IntaveControl.DISALLOW_ALL_BLOCK_PLACEMENTS) {
+//      Synchronizer.synchronize(() -> {
+//        player.sendMessage(ChatColor.GRAY + "Place of " + MathHelper.formatPosition(new Location(world, blockX, blockY, blockZ)) + " type "+type+"/"+variant+" with "+(mainHand ?"main":"off")+"hand facing "+enumDirection+" is denied");
+//      });
+      return false;
+    }
     boolean permission = blockPlacePermissionCheck.hasPermission(player, world, mainHand, blockX, blockY, blockZ, enumDirection, type, variant);
     if (IntaveControl.DEBUG_PLACE_AND_BREAK_PERMISSIONS) {
       Synchronizer.synchronize(() -> {

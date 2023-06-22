@@ -244,7 +244,7 @@ public final class FeedbackReceiver extends Module {
   public long oldestPendingTransaction(User user) {
     ConnectionMetadata connection = user.meta().connection();
     FeedbackRequest<?> peek = connection.feedbackQueue().peek();
-    return peek == null ? 0 : System.currentTimeMillis() - peek.requested();
+    return peek == null ? 0 : peek.passedTime();
   }
 
   public User userOf(Player player) {

@@ -26,6 +26,7 @@ import de.jpx3.intave.check.world.interaction.InteractionEmulator;
 import de.jpx3.intave.check.world.interaction.InteractionType;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.Lookup;
+import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketId;
@@ -145,6 +146,10 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       boolean mustPostValidate = interactionMeta.remainingBlockStart > 0;
       if (!mustPostValidate && preprocessInteraction(interaction)) {
         if (interactionEmulator.emulate(interaction) == FAILED) {
+          if (MinecraftVersions.VER1_19.atOrAbove()) {
+            int sequenceNumber = packet.getIntegers().read(0);
+            acknowledgeBlockChange(player, sequenceNumber);
+          }
           if (blockPosition != null) {
             refreshBlocksAround(player, blockPosition.toLocation(player.getWorld()));
           }
@@ -156,6 +161,10 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         boolean usable = ItemProperties.canItemBeUsed(player, heldItem)
           && !ItemProperties.isPotion(interaction.itemTypeInHand());
         if (!usable) {
+          if (MinecraftVersions.VER1_19.atOrAbove()) {
+            int sequenceNumber = packet.getIntegers().read(0);
+            acknowledgeBlockChange(player, sequenceNumber);
+          }
           event.setCancelled(true);
         }
       }
@@ -450,7 +459,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
             Material material = user.meta().inventory().heldItemType();
             int dat = 0;
             boolean replace = BlockInteractionAccess.replacedOnPlacement(world, player, new com.comphenix.protocol.wrappers.BlockPosition(raycastLocation.toVector()));
-            Location placementLocation = replace ? raycastLocation : raycastLocation.clone().add(raycastResult.sideHit.getDirectionVec().convertToBukkitVec());
+            Location placementLocation = replace ? raycastLocation : raycastLocation.clone().add(raycastResult.sideHit.directionVector().convertToBukkitVec());
             boolean raytraceCollidesWithPosition = material.isBlock() && Collision.playerInImaginaryBlock(
               user, world, placementLocation.getBlockX(), placementLocation.getBlockY(), placementLocation.getBlockZ(),
               material, dat
@@ -491,10 +500,19 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       player.updateInventory();
       refreshBlock(player, targetLocation);
       for (Direction direction : Direction.values()) {
-        Location placedBlock = targetLocation.clone().add(direction.getDirectionVec().convertToBukkitVec());
+        Location placedBlock = targetLocation.clone().add(direction.directionVecAsVector());
         refreshBlock(player, placedBlock);
       }
     });
+  }
+
+  private void acknowledgeBlockChange(Player player, int sequenceNumber) {
+    if (!MinecraftVersions.VER1_19.atOrAbove()) {
+      return;
+    }
+    PacketContainer ack = new PacketContainer(PacketType.Play.Server.BLOCK_CHANGED_ACK);
+    ack.getIntegers().write(0, sequenceNumber);
+    PacketSender.sendServerPacket(player, ack);
   }
 
   private boolean performFlag(

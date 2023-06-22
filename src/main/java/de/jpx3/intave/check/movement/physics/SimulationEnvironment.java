@@ -99,14 +99,16 @@ public interface SimulationEnvironment {
   boolean inWater();
   boolean inLava();
   boolean inWeb();
+  int pastInWeb();
   void resetInWeb();
   boolean onGround();
 
   boolean lastOnGround();
   boolean collidedHorizontally();
-
   boolean collidedVertically();
+  boolean collidedWithBoat();
   double frictionPosSubtraction();
+  boolean receivedFlyingPacketIn(int ticks);
 
   boolean blockOnPositionSoulSpeedAffected();
 
@@ -121,6 +123,7 @@ public interface SimulationEnvironment {
 
   int pastAnyVelocity();
   int pastExternalVelocity();
+  int pastNearbyCollisionInaccuracy();
 
   void increaseFlyingPacketTicks();
   void increaseEntityUseTicks();

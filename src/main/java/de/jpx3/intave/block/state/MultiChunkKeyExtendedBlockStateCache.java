@@ -81,7 +81,7 @@ final class MultiChunkKeyExtendedBlockStateCache implements ExtendedBlockStateCa
       World world = player.getWorld();
       Block block = VolatileBlockAccess.blockAccess(world, posX, posY, posZ);
       blockState = lookup(world, block, posX, posY, posZ);
-      if (!DISABLE_BLOCK_CACHING_ENTIRELY && block.getY() >= 0) {
+      if (!DISABLE_BLOCK_CACHING_ENTIRELY && block.getY() >= WorldHeight.LOWER_WORLD_LIMIT) {
         blockCache.put(key, blockState);
       }
     }
@@ -116,7 +116,7 @@ final class MultiChunkKeyExtendedBlockStateCache implements ExtendedBlockStateCa
       World world = player.getWorld();
       Block block = VolatileBlockAccess.blockAccess(world, posX, posY, posZ);
       blockState = lookup(world, block, posX, posY, posZ);
-      if (!DISABLE_BLOCK_CACHING_ENTIRELY && block.getY() >= 0) {
+      if (!DISABLE_BLOCK_CACHING_ENTIRELY && block.getY() >= WorldHeight.LOWER_WORLD_LIMIT) {
         blockCache.put(key, blockState);
       }
     }
@@ -151,7 +151,7 @@ final class MultiChunkKeyExtendedBlockStateCache implements ExtendedBlockStateCa
       World world = player.getWorld();
       Block block = VolatileBlockAccess.blockAccess(world, posX, posY, posZ);
       blockState = lookup(world, block, posX, posY, posZ);
-      if (!DISABLE_BLOCK_CACHING_ENTIRELY && block.getY() >= 0) {
+      if (!DISABLE_BLOCK_CACHING_ENTIRELY && block.getY() >= WorldHeight.LOWER_WORLD_LIMIT) {
         blockCache.put(key, blockState);
       }
     }
@@ -186,7 +186,7 @@ final class MultiChunkKeyExtendedBlockStateCache implements ExtendedBlockStateCa
       World world = player.getWorld();
       Block block = VolatileBlockAccess.blockAccess(world, posX, posY, posZ);
       blockState = lookup(world, block, posX, posY, posZ);
-      if (!DISABLE_BLOCK_CACHING_ENTIRELY && block.getY() >= 0) {
+      if (!DISABLE_BLOCK_CACHING_ENTIRELY && block.getY() >= WorldHeight.LOWER_WORLD_LIMIT) {
         blockCache.put(key, blockState);
       }
     }

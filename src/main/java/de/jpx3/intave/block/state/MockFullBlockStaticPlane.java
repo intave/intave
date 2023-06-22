@@ -10,15 +10,20 @@ import java.util.BitSet;
 
 public final class MockFullBlockStaticPlane implements ExtendedBlockStateCache {
   // 16 * 256 * 16
-  private final BitSet bitSet = new BitSet(65536);
+  private final BitSet bitSet = new BitSet(16 * 256 * 16);
 
   private boolean isStone(int posX, int posY, int posZ) {
-//    return bitSet.get(posX + (posZ << 4) + (posY << 8));
-    return false;
+    if (posY < 0 || posY >= 256 || posX < 0 || posX >= 16 || posZ < 0 || posZ >= 16) {
+      return false;
+    }
+    return bitSet.get(posX + (posZ << 4) + (posY << 8));
   }
 
   private void setStone(int posX, int posY, int posZ) {
-//    bitSet.set(posX + (posZ * 16) + (posY << 8));
+    if (posY < 0 || posY >= 256 || posX < 0 || posX >= 16 || posZ < 0 || posZ >= 16) {
+      throw new IllegalArgumentException("Invalid position: " + posX + ", " + posY + ", " + posZ);
+    }
+    bitSet.set(posX + (posZ << 4) + (posY << 8));
   }
 
   public void horizontalFill(int posY) {

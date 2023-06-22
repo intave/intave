@@ -125,7 +125,7 @@ public final class InventoryClickDelayAnalyzer extends MetaCheckPart<InventoryCl
         if (violationContext.violationLevelAfter() >= 50) {
           user.nerf(CRITICALS, "29");
           user.nerf(BURN_LONGER, "29");
-          user.nerf(DMG_ARMOR, "29");
+          user.nerf(DMG_ARMOR_INEFFECTIVE, "29");
           user.nerf(BLOCKING, "29");
         }
         if (violationContext.violationLevelAfter() >= 100) {

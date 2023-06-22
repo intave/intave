@@ -42,8 +42,9 @@ final class HopperPatch extends BoundingBoxPatch {
       if (MinecraftVersion.AQUATIC_UPDATE.atOrAbove()) {
         return originalShape;
       } else {
+        BlockVariant variant = BlockVariantRegister.variantOf(Material.HOPPER, blockState);
+        Direction direction = variant.enumProperty(Direction.class, "facing");
         BlockShape shape;
-        Direction direction = directionFrom(blockState);
         switch (direction) {
           case DOWN:
             shape = SHAPE_DOWN;
@@ -60,6 +61,8 @@ final class HopperPatch extends BoundingBoxPatch {
           case EAST:
             shape = SHAPE_EAST;
             break;
+          case UP:
+            throw new IllegalStateException("Hopper cannot be facing up");
           default:
             shape = MAIN_SHAPE;
             break;
@@ -73,11 +76,6 @@ final class HopperPatch extends BoundingBoxPatch {
         return originalShape;
       }
     }
-  }
-
-  private Direction directionFrom(int blockState) {
-    BlockVariant variant = BlockVariantRegister.variantOf(Material.HOPPER, blockState);
-    return variant.enumProperty(Direction.class, "facing");
   }
 
   @Override

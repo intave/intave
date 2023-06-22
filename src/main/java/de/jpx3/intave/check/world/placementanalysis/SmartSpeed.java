@@ -169,7 +169,7 @@ public class SmartSpeed extends MetaCheckPart<PlacementAnalysis, SmartSpeed.Smar
       movementData.rotationPitch != movementData.lastRotationPitch) {
       pastRotations.add(movementData.rotation());
     } else {
-      pastRotations.add(pastRotations.get(pastRotations.size() - 1));
+      pastRotations.add(pastRotations.size() > 1 ? pastRotations.get(pastRotations.size() - 1) : Rotation.zero());
     }
 
     // sneaking logic

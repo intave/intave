@@ -85,7 +85,7 @@ public final class FeedbackQueue {
     }
   }
 
-  // can be a bit expensive, shouldn't be used too often
+  // can be a bit expensive, shouldn't be used too often though
   public List<FeedbackRequest<?>> pollUpTo(long globalKey) {
     writeLock.lock();
     try {

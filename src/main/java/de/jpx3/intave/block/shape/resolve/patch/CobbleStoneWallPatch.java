@@ -109,9 +109,9 @@ class CobbleStoneWallPatch extends BoundingBoxPatch {
   private List<Direction> surroundedFacings(World world, int posX, int posY, int posZ) {
     List<Direction> connected = new ArrayList<>();
     Direction direction = UP;
-    int blockX = (int) (posX + direction.getDirectionVec().xCoord);
-    int blockY = (int) (posY + direction.getDirectionVec().yCoord);
-    int blockZ = (int) (posZ + direction.getDirectionVec().zCoord);
+    int blockX = (int) (posX + direction.directionVector().xCoord);
+    int blockY = (int) (posY + direction.directionVector().yCoord);
+    int blockZ = (int) (posZ + direction.directionVector().zCoord);
     Block block = VolatileBlockAccess.blockAccess(world, blockX, blockY, blockZ);
     Material blockType = block.getType();
     if (blockType != Material.AIR) {
@@ -120,7 +120,7 @@ class CobbleStoneWallPatch extends BoundingBoxPatch {
     for (Direction sideDirection : SIDE_DIRECTIONS) {
       if (connectResolver.canConnectTo(
           world,
-          new BlockPosition(posX, posY, posZ).add(sideDirection.getDirectionVec()),
+          new BlockPosition(posX, posY, posZ).add(sideDirection.directionVector()),
           sideDirection)) {
         connected.add(sideDirection);
       }

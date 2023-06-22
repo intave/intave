@@ -53,6 +53,7 @@ final class TestUser implements User {
       protocolVersion = 0;
     }
     this.poseSizes = Pose.poseSizesByVersion(protocolVersion);
+    meta.setup();
   }
 
   @Override

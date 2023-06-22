@@ -329,15 +329,15 @@ public enum Direction {
   /**
    * Get a normalized Vector that points in the direction of this Facing.
    */
-  public NativeVector getDirectionVec() {
+  public NativeVector directionVector() {
     return this.directionVec;
   }
 
-  public Motion getDirectionVecAsMotion() {
+  public Motion directionVecAsMotion() {
     return this.directionVecAsMotion;
   }
 
-  public Vector getDirectionVecAsVector() {
+  public Vector directionVecAsVector() {
     return this.directionVecAsVector;
   }
 

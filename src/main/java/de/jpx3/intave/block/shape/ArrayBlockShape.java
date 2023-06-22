@@ -94,19 +94,23 @@ final class ArrayBlockShape extends MemoryTraced implements BlockShape {
 
   @Override
   public List<BoundingBox> boundingBoxes() {
-    List<BoundingBox> boundingBoxes;
-    if ((boundingBoxes = boundingBoxCache.get()) == null) {
+    List<BoundingBox> boundingBoxes = boundingBoxCache.get();
+    if (boundingBoxes == null) {
       for (BlockShape content : contents) {
-        List<BoundingBox> added = content.boundingBoxes();
-        if (!added.isEmpty()) {
-          if (boundingBoxes == null) {
-            boundingBoxes = new ArrayList<>(contents.length);
-          }
-          if (added.size() == 1) {
-            boundingBoxes.add(added.get(0));
-          } else {
-            boundingBoxes.addAll(added);
-          }
+        if (content.isEmpty()) {
+          continue;
+        }
+        List<BoundingBox> newBoxes = content.boundingBoxes();
+        if (newBoxes.isEmpty()) {
+          continue;
+        }
+        if (boundingBoxes == null) {
+          boundingBoxes = new ArrayList<>(contents.length);
+        }
+        if (newBoxes.size() == 1) {
+          boundingBoxes.add(newBoxes.get(0));
+        } else {
+          boundingBoxes.addAll(newBoxes);
         }
       }
       boundingBoxCache = boundingBoxes == null ? EMPTY_REFERENCE : new WeakReference<>(boundingBoxes);
@@ -127,10 +131,7 @@ final class ArrayBlockShape extends MemoryTraced implements BlockShape {
 
   @Override
   public boolean isCubic() {
-    if (contents.length == 1) {
-      return contents[0].isCubic();
-    }
-    return false;
+    return contents.length == 1 && contents[0].isCubic();
   }
 
   @Override

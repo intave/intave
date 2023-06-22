@@ -151,6 +151,7 @@ public final class Collision {
               }
             }
           }
+
           if (resolve.intersectsWith(playerBox)) {
             if (container == null) {
               container = containerSupplier.get();

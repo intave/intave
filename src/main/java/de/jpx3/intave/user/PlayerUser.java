@@ -517,8 +517,9 @@ final class PlayerUser implements User {
       IntaveLogger.logger().info("This measure is a security-constraint necessity, but feel free to contact us if this happens too often");
     }
     Synchronizer.synchronize(() -> {
-      if (player().isOnline()) {
-        player().kickPlayer(reason);
+      Player player = player();
+      if (player.isOnline()) {
+        player.kickPlayer(reason);
       }
     });
   }

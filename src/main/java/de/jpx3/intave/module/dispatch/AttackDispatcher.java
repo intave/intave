@@ -7,6 +7,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedAttribute;
 import com.google.common.collect.Lists;
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.refactoring.SplitMeUp;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -53,7 +54,7 @@ public final class AttackDispatcher extends Module {
   public void enable() {
     REDUCING_DISABLED = !MinecraftVersions.VER1_9_0.atOrAbove() &&
       plugin.checks().searchCheck(Heuristics.class).configuration().settings().boolBy("disable-reducing", false);
-    COMBAT_SAMPLING = plugin.checks().searchCheck(Heuristics.class).configuration().settings().boolBy("combat-sampling", true);
+    COMBAT_SAMPLING = plugin.checks().searchCheck(Heuristics.class).configuration().settings().boolBy("combat-sampling", true) && !IntaveControl.GOMME_MODE;
     for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
       disableReducing(onlinePlayer);
     }
@@ -93,6 +94,9 @@ public final class AttackDispatcher extends Module {
     if (action == EnumWrappers.EntityUseAction.ATTACK) {
       attackData.setLastAttackedEntityID(entityId);
       if (entity.isPlayer) {
+//        Synchronizer.synchronize(() -> {
+//          player.sendMessage(ChatColor.RED + "Attacked " + entity.entityId() + " (" + entity.entityName() + ")");
+//        });
         movementData.pastPlayerAttackPhysics = 0;
         if (!REDUCING_DISABLED && knockbackEnchantment) {
           movementData.baseMotionX *= 0.6;

@@ -380,7 +380,7 @@ public final class Physics extends Check {
       && !movementData.inWater
       && !movementData.collidedWithBoat();
 
-    if (checkVelocity && movementData.pastExternalVelocity < 10 && !movementData.receivedFlyingPacketIn(2)) {
+    if (checkVelocity && !movementData.elytraFlying && movementData.pastExternalVelocity < 10 && !movementData.receivedFlyingPacketIn(2)) {
       boolean actuallyMoved = (Math.abs(predictedX) > 0.01 || Math.abs(predictedZ) > 0.01);
       if (distance > 0.005 && !onLadder) {
         if (actuallyMoved) {
@@ -409,13 +409,9 @@ public final class Physics extends Check {
       movementData.endMotionYOverrideValue = predictedY;
     }
 
-    if (movementData.elytraFlying) {
-      velocityDetected = false;
-    }
-
     // TODO: 05/28/22 check if this worked, and deal with adjustments
     // trustfactor limit is just temporary
-    boolean suspectSafeWalk = !user.trustFactor().atLeast(TrustFactor.YELLOW);
+    boolean suspectSafeWalk = user.trustFactor().atOrBelow(TrustFactor.YELLOW);
     if (distance > 0.008 && suspectSafeWalk && movementData.pastBlockPlacement <= 8 && horizontalViolationIncrease > 0.1 && !movementData.isSneaking()) {
       boolean smallMovement = (Math.abs(movementData.motionX()) < 0.08 || Math.abs(movementData.motionZ()) < 0.08) && movementData.onGround();
       if (smallMovement && !movementData.receivedFlyingPacketIn(3)) {
@@ -573,6 +569,13 @@ public final class Physics extends Check {
         .withVL(vl)
         .build();
       ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
+
+      if (violationContext.shouldCounterThreat()) {
+        // testing
+        String I_EXIST_FOR_THE_BREAKPOINT = "I_EXIST_FOR_THE_BREAKPOINT";
+        int val = I_EXIST_FOR_THE_BREAKPOINT.length();
+      }
+
 
       // a few helpful states
       boolean isMidAir = !movementData.onGround && !movementData.collidedHorizontally && !movementData.collidedVertically;
@@ -758,6 +761,9 @@ public final class Physics extends Check {
       }
       if (movementData.endMotionZOverride) {
         debug += ChatColor.ITALIC + " emz:" + MathHelper.formatDouble(movementData.endMotionZOverrideValue, 4) + chatColor;
+      }
+      if (Math.abs(movementData.motionY()) > 0.01) {
+        debug += simulation.configuration() + " ";
       }
 
 //      debug += " spr:" + (simulation.wasSprinting() ? 1 : 0);

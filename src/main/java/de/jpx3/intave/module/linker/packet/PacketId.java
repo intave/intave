@@ -1,5 +1,7 @@
 package de.jpx3.intave.module.linker.packet;
 
+import com.comphenix.protocol.PacketType;
+
 public final class PacketId {
   public enum Client {
     @Deprecated
@@ -80,6 +82,7 @@ public final class PacketId {
     BLOCK_BREAK("BLOCK_BREAK"),
     BLOCK_BREAK_ANIMATION("BLOCK_BREAK_ANIMATION"),
     BLOCK_CHANGE("BLOCK_CHANGE"),
+    BLOCK_CHANGED_ACK("BLOCK_CHANGED_ACK"),
     BOSS("BOSS"),
     CAMERA("CAMERA"),
     CHAT_OUT("CHAT"),

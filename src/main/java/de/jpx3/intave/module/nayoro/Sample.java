@@ -89,7 +89,7 @@ public final class Sample {
   }
 
   private Resource writableSampleResource() {
-    File dataFolder = dataFolder();
+    File dataFolder = sampleFolder();
     File sampleFile;
     do {
       sampleFile = new File(dataFolder, (id = randomId()) + ".sample");
@@ -101,7 +101,7 @@ public final class Sample {
     return UUID.randomUUID().toString().replace("-", "");
   }
 
-  private static File dataFolder() {
+  private static File sampleFolder() {
     String operatingSystem = System.getProperty("os.name").toLowerCase(Locale.ROOT);
     File workDirectory;
     String filePath;

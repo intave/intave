@@ -172,7 +172,6 @@ public final class MovementMetadata implements SimulationEnvironment {
   public volatile boolean transactionTeleportAllow = false;
   public boolean awaitClickMovementSkip;
   public Location teleportLocation;
-  public Vector teleportOffset = null;
   public int teleportResendCountdown = 20;
   public int outgoingTeleportCountdown = 5;
   public long lastRescueAttempt;
@@ -683,6 +682,11 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   @Override
+  public int pastInWeb() {
+    return pastInWeb;
+  }
+
+  @Override
   public void resetInWeb() {
     inWeb = false;
   }
@@ -1031,6 +1035,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     return simulator;
   }
 
+  @Override
   public Pose pose() {
     return pose;
   }
@@ -1236,5 +1241,10 @@ public final class MovementMetadata implements SimulationEnvironment {
   @Override
   public int pastExternalVelocity() {
     return pastExternalVelocity;
+  }
+
+  @Override
+  public int pastNearbyCollisionInaccuracy() {
+    return pastNearbyCollisionInaccuracy;
   }
 }

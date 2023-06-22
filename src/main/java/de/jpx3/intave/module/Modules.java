@@ -28,6 +28,7 @@ public final class Modules {
 
   @Native
   public static void proceedBoot(BootSegment bootSegment) {
+//    System.out.println("Proceeding boot segment " + bootSegment + "...");
     loader.loadRequests(bootSegment).forEach(pool::loadModule);
     pool.bootRequests(bootSegment).forEach(pool::enableModule);
   }

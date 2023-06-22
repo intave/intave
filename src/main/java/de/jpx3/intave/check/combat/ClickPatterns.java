@@ -5,10 +5,7 @@ import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
-import de.jpx3.intave.check.combat.clickpatterns.Kurtosis;
-import de.jpx3.intave.check.combat.clickpatterns.Skewness;
-import de.jpx3.intave.check.combat.clickpatterns.Spikes;
-import de.jpx3.intave.check.combat.clickpatterns.Variance;
+import de.jpx3.intave.check.combat.clickpatterns.*;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
@@ -38,6 +35,7 @@ public final class ClickPatterns extends Check {
       new Spikes(this),
       new Kurtosis(this)
     );
+    appendCheckPart(new EqualDelay(this));
   }
 
   @PacketSubscription(

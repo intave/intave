@@ -10,6 +10,7 @@ public enum AttackNerfStrategy {
   DMG_MEDIUM("dmg/medium"),
   DMG_LIGHT("dmg/light"),
   DMG_ARMOR("dmg/armor"),
+  DMG_ARMOR_INEFFECTIVE("dmg/armor/ineffective"),
   @Deprecated
   HT_MEDIUM("ht/medium"),
   HT_LIGHT("ht/light"),
