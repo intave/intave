@@ -40,7 +40,7 @@ public final class Evaluation {
       return EvaluationResult.empty();
     }
 
-    if (user.typeTranslationOf())
+//    if (user.typeTranslationOf())
 
     ViolationMetadata violationMetadata = user.meta().violationLevel();
 
@@ -75,7 +75,7 @@ public final class Evaluation {
 
     if (checkVelocity && !elytraFlying && movement.pastExternalVelocity() < 10 && !movement.receivedFlyingPacketIn(2)) {
       boolean actuallyMoved = (Math.abs(predictedX) > 0.01 || Math.abs(predictedZ) > 0.01);
-      if (totalDistance > 0.005 && !onLadder) {
+      if (totalDistance > 0.005 /*&& !onLadder*/) {
         if (actuallyMoved) {
           boolean aggressive = violationMetadata.physicsVelocityVL++ >= VELOCITY_VL_THRESHOLD || movement.pastExternalVelocity() == 0;
           if (aggressive || totalDistance > 0.01) {
@@ -106,7 +106,7 @@ public final class Evaluation {
     // TODO: 05/28/22 check if this worked, and deal with adjustments
     // trustfactor limit is just temporary
     boolean suspectSafeWalk = user.trustFactor().atOrBelow(TrustFactor.YELLOW);
-    if (totalDistance > 0.008 && suspectSafeWalk && movement.pastBlockPlacement <= 8 && horizontalVL > 0.1 && !movement.isSneaking()) {
+    if (totalDistance > 0.008 && suspectSafeWalk /*&& movement.pastBlockPlacement <= 8*/ && horizontalVL > 0.1 && !movement.isSneaking()) {
       boolean smallMovement = (Math.abs(movement.motionX()) < 0.08 || Math.abs(movement.motionZ()) < 0.08) && movement.onGround();
       if (smallMovement && !movement.receivedFlyingPacketIn(3)) {
         horizontalVL = Math.max(100, horizontalVL * 50);
@@ -120,6 +120,6 @@ public final class Evaluation {
       return EvaluationResult.empty();
     }
 
-    return
+    return EvaluationResult.empty();
   }
 }
