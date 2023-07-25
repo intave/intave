@@ -2,6 +2,7 @@
 
 # Whitelist source
 !docs/
+!docs/assets/
 !gradle/
 !libs/
 !src/

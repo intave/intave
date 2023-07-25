@@ -12,7 +12,7 @@ Client-Server communication that seek to give individual players advantages over
    project.
 3. For the Kotlin parts of this project (this includes `.kts` files), we
    use [ktmft](https://facebookincubator.github.io/ktfmt/). There is an IntelliJ plugin available.
-   Make sure to use the following settings: ![ktfmt settings](docs/ktfmt_settings.png)
+   Make sure to use the following settings: ![ktfmt settings](docs/assets/ktfmt_settings.png)
 
 **IMPORTANT:** Intave requires Windows to successfully build! If you are on Linux, you will have to
 use Wine to execute the `iacBuild` task.
@@ -28,7 +28,7 @@ This approach allows you to run the plugin directly in the IDE. Breakpoints and 
 enabled!
 
 **IMPORTANT:** In order for hotswapping to work, make sure to have the following build settings:
-![IntelliJ build settings](docs/ide_settings_gradle.png)
+![IntelliJ build settings](docs/assets/ide_settings_gradle.png)
 
 **WARNING:** Hotswapping not always delivers correct results. Better restart the gradle task
 before you're stuck debugging for hours!
