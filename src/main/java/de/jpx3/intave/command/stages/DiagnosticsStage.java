@@ -1,11 +1,18 @@
 package de.jpx3.intave.command.stages;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.annotate.Native;
 import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckStatistics;
+import de.jpx3.intave.cleanup.GarbageCollector;
+import de.jpx3.intave.cleanup.ShutdownTasks;
 import de.jpx3.intave.command.CommandStage;
 import de.jpx3.intave.command.Optional;
 import de.jpx3.intave.command.SubCommand;
@@ -230,10 +237,108 @@ public final class DiagnosticsStage extends CommandStage {
     sender.sendMessage(IntavePlugin.prefix() + "You can find it under " + threadDumpFile.getAbsolutePath());
   }
 
+  private final Map<String, UUID> packetLoggers = GarbageCollector.watch(new HashMap<>());
+  private final Map<UUID, PacketAdapter> adapterMap = GarbageCollector.watch(new HashMap<>());
+  private final Map<UUID, PrintStream> packetLogStreams = GarbageCollector.watch(new HashMap<>());
+
+  {
+    ShutdownTasks.add(() -> {
+      packetLogStreams.forEach((uuid, printStream) -> {
+        printStream.flush();
+        printStream.close();
+      });
+    });
+  }
+
+  @SubCommand(
+    selectors = {"packetlog", "pl"},
+    usage = "[<target>]",
+    permission = "intave.command.diagnostics.statistics",
+    description = "Create and save packet logs"
+  )
+  public void startPacketLog(CommandSender sender, Player target) {
+    File logsFolder = new File(plugin.dataFolder(), "packetlogs");
+    File packetLogFile = new File(logsFolder, packetLogFileName(target.getName()));
+
+    UUID userId = target.getUniqueId();
+    if (packetLoggers.containsKey(sender.getName())) {
+      sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "Packetlogging stopped for " + packetLoggers.get(sender.getName()).toString());
+      PacketAdapter remove1 = adapterMap.remove(userId);
+      ProtocolLibrary.getProtocolManager().removePacketListener(remove1);
+      packetLoggers.remove(sender.getName());
+      PrintStream remove = packetLogStreams.remove(userId);
+      if (remove != null) {
+        remove.flush();
+        remove.close();
+      }
+      return;
+    }
+
+    try {
+      logsFolder.mkdir();
+      packetLogFile.createNewFile();
+    } catch (IOException exception) {
+      exception.printStackTrace();
+      return;
+    }
+
+    try {
+      OutputStream stream = new FileOutputStream(packetLogFile);
+      stream = new BufferedOutputStream(stream);
+      PrintStream printStream = new PrintStream(stream);
+
+      PacketAdapter adapter = new PacketAdapter(
+        IntavePlugin.singletonInstance(),
+        PacketType.values()
+      ) {
+        @Override
+        public void onPacketSending(PacketEvent event) {
+          if (event.getPlayer().getUniqueId().equals(userId)) {
+            synchronized (printStream) {
+              printStream.println((System.currentTimeMillis() % 1000) + " --> " + event.getPacketType().name() + " " + packetContent(event.getPacket()));
+            }
+          }
+        }
+
+        @Override
+        public void onPacketReceiving(PacketEvent event) {
+          if (event.getPlayer().getUniqueId().equals(userId)) {
+            synchronized (printStream) {
+              printStream.println((System.currentTimeMillis() % 1000) + " <-- " + event.getPacketType().name() + " " + packetContent(event.getPacket()));
+            }
+          }
+        }
+      };
+      adapterMap.put(userId, adapter);
+      ProtocolLibrary.getProtocolManager().addPacketListener(adapter);
+
+      packetLoggers.put(sender.getName(), userId);
+      packetLogStreams.put(userId, printStream);
+
+    } catch (FileNotFoundException exception) {
+      exception.printStackTrace();
+    }
+    sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "Packetlogging started for " + target.getName());
+    sender.sendMessage(IntavePlugin.prefix() + "You can find it under " + packetLogFile.getAbsolutePath());
+  }
+
+  private static String packetContent(PacketContainer packet) {
+    String contents = packet.getModifier()
+      .getValues().stream()
+      .map(o -> o == null ? "null" : o.toString())
+      .filter(s -> !s.isEmpty())
+      .collect(Collectors.joining(", "));
+    return "{"+ contents + "}";
+  }
+
   private static final DateTimeFormatter FILE_MESSAGE_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy-HH-mm-ss");
 
   private static String threadDumpFileName() {
     return "intave-threaddump-" + LocalDateTime.now().format(FILE_MESSAGE_DATE_FORMATTER).toLowerCase(Locale.ROOT) + ".txt";
+  }
+
+  private static String packetLogFileName(String playername) {
+    return "intave-packetlog-" + playername + "-" + LocalDateTime.now().format(FILE_MESSAGE_DATE_FORMATTER).toLowerCase(Locale.ROOT) + ".txt";
   }
 
   @SubCommand(
