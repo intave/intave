@@ -51,7 +51,7 @@ public final class Bursts extends TickAlignedHistoryBlueprint<Bursts.BurstMeta> 
       }
     }
     if (!cancel && vl >= 8) {
-      flag(user, "exhibits click bursts" + (!anyDoubleClick ? " without double clicks" : ""), 1);
+      flag(user, "exhibits click bursts" + (!anyDoubleClick ? " without double clicks" : ""), 3);
     }
   }
 
