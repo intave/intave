@@ -156,25 +156,27 @@ fun dumpBuildConfig() {
   buildConfigFields.forEach { println("  ${it.name} = ${it.value.get()}") }
 }
 
-run {
-  registerServer("1.8.8", 8)
-  registerServer("1.9.4", 8)
-  registerServer("1.10.2", 8)
-  registerServer("1.11.2", 8)
-  registerServer("1.12.2", 8)
-  registerServer("1.13.2", 8)
-  registerServer("1.14.4", 8)
-  registerServer("1.15.2", 8)
-  registerServer("1.16.5", 8)
-  registerServer("1.17.1", 16)
-  registerServer("1.18.2", 17)
-  registerServer("1.19.4", 17)
-  registerServer("1.20.1", 17)
-}
+val serverVersions = mapOf(
+  Pair("1.8.8", 8),
+  Pair("1.9.4", 8),
+  Pair("1.10.2", 8),
+  Pair("1.11.2", 8),
+  Pair("1.12.2", 8),
+  Pair("1.13.2", 11),
+  Pair("1.14.4", 11),
+  Pair("1.15.2", 11),
+  Pair("1.16.5", 16),
+  Pair("1.17.1", 16),
+  Pair("1.18.2", 17),
+  Pair("1.19.4", 17),
+  Pair("1.20.1", 17),
+)
 
-fun registerServer(serverVersion: String, javaVersion: Int) {
-  registerTestTask(serverVersion, javaVersion)
-  registerServerTask(serverVersion, javaVersion)
+run {
+  serverVersions.forEach { server, java ->
+    registerTestTask(server, java)
+    registerServerTask(server, java)
+  }
 }
 
 fun registerTestTask(serverVersion: String, javaVersion: Int) {
@@ -193,6 +195,17 @@ fun registerTestTask(serverVersion: String, javaVersion: Int) {
         languageVersion.set(JavaLanguageVersion.of(javaVersion))
       }
     )
+  }
+}
+
+run {
+  registerTestAllTask()
+}
+
+fun registerTestAllTask() {
+  tasks.register("test_all") {
+    group = simpleName
+    dependsOn(serverVersions.keys.map { "test_$it" })
   }
 }
 
