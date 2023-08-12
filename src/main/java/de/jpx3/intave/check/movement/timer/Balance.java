@@ -96,7 +96,7 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
     if (timerData.timerBalance > overflowLimit && !user.meta().movement().isInVehicle()) {
       if (System.currentTimeMillis() - timerData.lastTimerFlag > 60 * 1000) {
         timerData.lastTimerFlag = System.currentTimeMillis();
-        timerData.timerBalance = overflowLimit;
+        timerData.timerBalance -= TimeUnit.MILLISECONDS.toNanos(50);
         return;
       }
 
@@ -123,7 +123,7 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
       if (timerData.timerBalance > 0) {
         // 1% timer = 50ms * 0.01 = 0.5ms
         // 0.5ms allowed per tick
-        timerData.timerBalance -= 500_000L;
+        timerData.timerBalance -= 750_000L;
       }
       if (System.currentTimeMillis() - timerData.lastTimerFlag > 10000) {
         decrementer.decrement(user, 0.01);
