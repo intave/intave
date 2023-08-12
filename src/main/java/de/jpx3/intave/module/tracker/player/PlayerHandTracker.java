@@ -224,7 +224,7 @@ public class PlayerHandTracker extends Module {
     boolean usedFoodItem = inventoryData.foodItem() && inventoryData.handActive();
     // Fix eating while sprinting bug: https://www.youtube.com/watch?v=5ZHMrVmtdNY
     if (digType == EnumWrappers.PlayerDigType.DROP_ITEM && usedFoodItem) {
-      PacketContainer unblockPacket = packet.deepClone();
+      PacketContainer unblockPacket = packet.shallowClone();
       unblockPacket.getPlayerDigTypes().write(0, EnumWrappers.PlayerDigType.RELEASE_USE_ITEM);
       user.ignoreNextInboundPacket();
       PacketSender.receiveClientPacketFrom(player, packet);

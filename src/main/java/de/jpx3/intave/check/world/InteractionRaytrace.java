@@ -132,7 +132,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       InteractionType type = interactionIsBlank ? InteractionType.EMPTY_INTERACT : (interactionIsPlacement ? InteractionType.PLACE : InteractionType.INTERACT);
       Interaction interaction =
         new Interaction(
-          packet.deepClone(),
+          packet.shallowClone(),
           player.getWorld(), player,
           blockPosition, enumDirection, type,
           typeUsedInHand,
@@ -231,7 +231,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     }
 
     Interaction interaction = new Interaction(
-      packet.deepClone(), player.getWorld(), player, blockPosition, enumDirection,
+      packet.shallowClone(), player.getWorld(), player, blockPosition, enumDirection,
       breakBlock ? InteractionType.BREAK : InteractionType.START_BREAK,
       inventoryData.heldItemType(), heldItemStack, EnumWrappers.Hand.MAIN_HAND, playerDigType,
       0.0f, 0.0f, 0.0f

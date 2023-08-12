@@ -110,7 +110,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         }
         event.setCancelled(true);
       }
-      PacketContainer clone = packet.deepClone();
+      PacketContainer clone = packet.shallowClone();
       Attack attack = new Attack(clone, entityId, resendLater, entity.pendingFeedbackPackets());
       // Only add attack to queue if queue size is small enough
       if (pendingAttacks.size() < MAX_ALLOWED_PENDING_ATTACKS) {
