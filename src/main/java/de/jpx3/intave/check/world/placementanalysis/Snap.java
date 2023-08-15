@@ -19,6 +19,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 
 import static de.jpx3.intave.check.world.PlacementAnalysis.COMMON_FLAG_MESSAGE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
+import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
 
 public final class Snap extends MetaCheckPart<PlacementAnalysis, Snap.SnapMeta> {
   public Snap(PlacementAnalysis parentCheck) {
@@ -99,6 +100,7 @@ public final class Snap extends MetaCheckPart<PlacementAnalysis, Snap.SnapMeta> 
           Violation violation = Violation.builderFor(ProtocolScanner.class)
             .forPlayer(player).withDefaultThreshold()
             .withMessage(COMMON_FLAG_MESSAGE).withDetails("back snap")
+            .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
             .withVL(0).build();
           Modules.violationProcessor().processViolation(violation);
         }

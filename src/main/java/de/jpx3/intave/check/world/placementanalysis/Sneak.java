@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static de.jpx3.intave.check.world.PlacementAnalysis.COMMON_FLAG_MESSAGE;
+import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
 
 public final class Sneak extends MetaCheckPart<PlacementAnalysis, Sneak.SneakMeta> {
   private static final int CHECK_LENGTH = 24;
@@ -71,6 +72,7 @@ public final class Sneak extends MetaCheckPart<PlacementAnalysis, Sneak.SneakMet
             .forPlayer(player).withDefaultThreshold()
             .withMessage(COMMON_FLAG_MESSAGE)
             .withDetails(ticksPerBlock + " t/b in a straight line without sneaking")
+            .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
             .withDefaultThreshold().withVL(3).build();
           ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
           if (violationContext.violationLevelAfter() > 20) {

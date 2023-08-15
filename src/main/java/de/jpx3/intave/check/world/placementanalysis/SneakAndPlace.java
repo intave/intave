@@ -27,6 +27,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static de.jpx3.intave.check.world.PlacementAnalysis.COMMON_FLAG_MESSAGE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
+import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
 
 @Reserved
 public final class SneakAndPlace extends MetaCheckPart<PlacementAnalysis, SneakAndPlace.SneakAndPlaceMeta> {
@@ -151,6 +152,7 @@ public final class SneakAndPlace extends MetaCheckPart<PlacementAnalysis, SneakA
             .forPlayer(player).withDefaultThreshold()
             .withMessage(COMMON_FLAG_MESSAGE)
             .withDetails("sneaking seems to be automated")
+            .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
             .withDefaultThreshold().withVL(Math.min(meta.violationLevel / 1.5, 5)).build();
         Modules.violationProcessor().processViolation(violation);
       }

@@ -20,6 +20,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 
 import static de.jpx3.intave.check.world.PlacementAnalysis.COMMON_FLAG_MESSAGE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.BLOCK_PLACE;
+import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
 
 public final class Facing extends CheckPart<PlacementAnalysis> {
   private final IntavePlugin plugin;
@@ -75,6 +76,7 @@ public final class Facing extends CheckPart<PlacementAnalysis> {
       Violation violation = Violation.builderFor(PlacementAnalysis.class)
         .forPlayer(player)
         .withMessage(COMMON_FLAG_MESSAGE)
+        .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
         .withDetails("repeated placement faults")
         .withVL(5 + facingFailedCounter)
         .build();

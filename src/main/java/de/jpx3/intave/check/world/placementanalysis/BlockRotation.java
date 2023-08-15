@@ -29,6 +29,7 @@ import java.util.List;
 import static de.jpx3.intave.check.world.PlacementAnalysis.COMMON_FLAG_MESSAGE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.BLOCK_PLACE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.USE_ITEM;
+import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
 
 public final class BlockRotation extends MetaCheckPart<PlacementAnalysis, BlockRotation.BlockRotationMeta> {
   private final IntavePlugin plugin;
@@ -92,6 +93,7 @@ public final class BlockRotation extends MetaCheckPart<PlacementAnalysis, BlockR
         String details = "pitch of " + pitch + " placing blocks in " + ticksPerBlock + " t/b";
         Violation violation = Violation.builderFor(PlacementAnalysis.class)
           .forPlayer(player).withMessage(COMMON_FLAG_MESSAGE).withDetails(details)
+          .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
           .withDefaultThreshold().withVL(10).build();
         Modules.violationProcessor().processViolation(violation);
       }

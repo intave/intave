@@ -31,6 +31,7 @@ import java.util.List;
 import static de.jpx3.intave.check.world.PlacementAnalysis.COMMON_FLAG_MESSAGE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.BLOCK_PLACE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.USE_ITEM;
+import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
 
 @Reserved
 public final class Speed extends MetaCheckPart<PlacementAnalysis, Speed.PlacementSpeedMeta> {
@@ -128,6 +129,7 @@ public final class Speed extends MetaCheckPart<PlacementAnalysis, Speed.Placemen
             .forPlayer(player).withDefaultThreshold()
             .withMessage(COMMON_FLAG_MESSAGE)
             .withDetails(((int) average / 50) + " t/b, limit at " + ((int) minAverage / 50) + " t/b")
+            .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
             .withDefaultThreshold().withVL(average > 400 ? 3 : average < 300 ? 5 : 4).build();
 
           ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);

@@ -25,6 +25,7 @@ import java.util.List;
 import static de.jpx3.intave.check.world.PlacementAnalysis.COMMON_FLAG_MESSAGE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.LOOK;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION_LOOK;
+import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
 
 @Reserved
 public final class SharpRotation extends MetaCheckPart<PlacementAnalysis, SharpRotation.SharpRotationMeta> {
@@ -72,6 +73,7 @@ public final class SharpRotation extends MetaCheckPart<PlacementAnalysis, SharpR
         String details = "maintains sharp 180deg rotations";
         Violation violation = Violation.builderFor(PlacementAnalysis.class)
           .forPlayer(player).withMessage(COMMON_FLAG_MESSAGE).withDetails(details)
+          .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
           .withDefaultThreshold().withVL(meta.sharpRotations > 10 ? 10 : 0).build();
         Modules.violationProcessor().processViolation(violation);
         place.setCancelled(true);

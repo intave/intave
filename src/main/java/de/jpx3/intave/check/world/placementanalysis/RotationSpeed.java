@@ -25,6 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static de.jpx3.intave.check.world.PlacementAnalysis.COMMON_FLAG_MESSAGE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.LOOK;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION_LOOK;
+import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
 
 public final class RotationSpeed extends MetaCheckPart<PlacementAnalysis, RotationSpeed.RotationSpeedMeta> {
   private final IntavePlugin plugin;
@@ -92,6 +93,7 @@ public final class RotationSpeed extends MetaCheckPart<PlacementAnalysis, Rotati
           .forPlayer(player).withDefaultThreshold()
           .withMessage(COMMON_FLAG_MESSAGE)
           .withDetails("high rotation activity while placing blocks") // + " (" + ((int) rotationSum) + " degrees)
+          .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
           .withDefaultThreshold().withVL(10).build();
         Modules.violationProcessor().processViolation(violation);
         meta.denyPlacementRequest = System.currentTimeMillis();

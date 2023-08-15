@@ -24,6 +24,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static de.jpx3.intave.check.world.PlacementAnalysis.COMMON_FLAG_MESSAGE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
+import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
 
 // this does not work yet, like at all
 
@@ -153,6 +154,7 @@ public final class JumpAndPlace extends MetaCheckPart<PlacementAnalysis, JumpAnd
           .forPlayer(player).withDefaultThreshold()
           .withMessage(COMMON_FLAG_MESSAGE)
           .withDetails("sneaking seems to be automated")
+          .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
           .withDefaultThreshold().withVL(Math.min(meta.violationLevel / 1.5, 5)).build();
         Modules.violationProcessor().processViolation(violation);
       }
