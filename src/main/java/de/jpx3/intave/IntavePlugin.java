@@ -115,6 +115,7 @@ public final class IntavePlugin extends JavaPlugin {
   private static String version = "UNKNOWN";
   private static String prefix = ChatColor.translateAlternateColorCodes('&', "&8[&c&lIntave&8]&7 ");
   private static String defaultColor = ChatColor.getLastColors(prefix);
+  private static final UUID gameId = UUID.randomUUID();
   private static boolean offlineMode = false, successfullyBooted = false;
 
   static {
@@ -1183,6 +1184,10 @@ public final class IntavePlugin extends JavaPlugin {
 
   public static String version() {
     return version;
+  }
+
+  public static UUID gameId() {
+    return gameId;
   }
 
   public static String prefix() {

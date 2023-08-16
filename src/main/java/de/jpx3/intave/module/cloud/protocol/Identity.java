@@ -1,14 +1,30 @@
 package de.jpx3.intave.module.cloud.protocol;
 
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import de.jpx3.intave.annotate.Nullable;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.UUID;
 
-public class Identity {
+public class Identity implements JsonSerializable {
   @Nullable
-  private final UUID id;
+  private UUID id;
   @Nullable
-  private final String name;
+  private String name;
+
+  private Identity() {
+  }
+
+  public Identity(String name) {
+    this.name = name;
+  }
+
+  public Identity(UUID id) {
+    this.id = id;
+  }
 
   public Identity(UUID id, String name) {
     this.id = id;
@@ -23,41 +39,93 @@ public class Identity {
     return name;
   }
 
-  public String toString() {
-    int type = 0;
-    if (id != null) {
-      type |= 1;
+  @Override
+  public void serialize(JsonWriter writer) {
+    try {
+      writer.beginObject();
+      if (id != null) {
+        writer.name("uuid").value(id.toString());
+      }
+      if (name != null) {
+        writer.name("name").value(name);
+      }
+      writer.endObject();
+    } catch (Exception e) {
+      e.printStackTrace();
     }
-    if (name != null) {
-      type |= 2;
-    }
-    String str = "ID-" + type;
-    if (id != null) {
-      str += "-" + id.toString().replace("-", "");
-    }
-    if (name != null) {
-      str += "-" + name;
-    }
-    return str;
   }
 
-  public static Identity fromString(String str) {
-    String[] parts = str.split("-");
-    if (parts.length < 3) {
-      throw new IllegalArgumentException("Invalid identity string: " + str);
+  @Override
+  public void deserialize(JsonReader reader) {
+    try {
+      reader.beginObject();
+      while (reader.hasNext()) {
+        switch (reader.nextName()) {
+          case "id":
+            id = UUID.fromString(reader.nextString());
+            break;
+          case "name":
+            name = reader.nextString();
+            break;
+        }
+      }
+      reader.endObject();
+    } catch (Exception e) {
+      e.printStackTrace();
     }
-    if (!"ID".equals(parts[0])) {
-      throw new IllegalArgumentException("Invalid identity string: " + str);
+  }
+
+  @Override
+  public void serialize(DataOutput buffer) {
+    try {
+      buffer.writeBoolean(id != null);
+      if (id != null) {
+        buffer.writeLong(id.getMostSignificantBits());
+        buffer.writeLong(id.getLeastSignificantBits());
+      }
+      buffer.writeBoolean(name != null);
+      if (name != null) {
+        buffer.writeUTF(name);
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
     }
-    int type = Integer.parseInt(parts[1]);
-    UUID id = null;
-    String name = null;
-    if ((type & 1) == 1) {
-      id = UUID.fromString(parts[2].substring(0, 8) + "-" + parts[2].substring(8, 12) + "-" + parts[2].substring(12, 16) + "-" + parts[2].substring(16, 20) + "-" + parts[2].substring(20, 32));
+  }
+
+  @Override
+  public void deserialize(DataInput buffer) {
+    try {
+      if (buffer.readBoolean()) {
+        id = new UUID(buffer.readLong(), buffer.readLong());
+      }
+      if (buffer.readBoolean()) {
+        name = buffer.readUTF();
+      }
+      if (id == null && name == null) {
+        throw new IOException("Identity is empty");
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
     }
-    if ((type & 2) == 2) {
-      name = parts[(type & 1) == 1 ? 3 : 2];
-    }
-    return new Identity(id, name);
+  }
+
+  public static Identity fromName(String name) {
+    return new Identity(name);
+  }
+
+  public static Identity from(UUID id) {
+    return new Identity(id);
+  }
+
+  public static Identity from(JsonReader reader) {
+    Identity identity = new Identity();
+    identity.deserialize(reader);
+    return identity;
+  }
+
+  public static Identity from(DataInput buffer) {
+    Identity identity = new Identity();
+    identity.deserialize(buffer);
+    return identity;
   }
 }
