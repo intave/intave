@@ -129,6 +129,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public int pastPlayerAttackPhysics = 100;
   public int pastInPowderSnow = 100;
   public int pastEdgeSneakTickGrants;
+  public int pastVehicleExitTicks = 100;
   public boolean physicsResetMotionX, physicsResetMotionZ;
   public int keyForward, keyStrafe;
   public int lastKeyForward, lastKeyStrafe;
@@ -859,6 +860,11 @@ public final class MovementMetadata implements SimulationEnvironment {
   @Override
   public void increaseEdgeSneakTickGrants() {
     pastEdgeSneakTickGrants++;
+  }
+
+  @Override
+  public void increaseVehicleTicks() {
+    pastVehicleExitTicks++;
   }
 
   @Override

@@ -1185,6 +1185,7 @@ public final class MovementDispatcher extends Module {
         if (System.currentTimeMillis() - punishmentData.timeLastSneakToggleCancel < 2000) {
           cancelable.setCancelled(true);
         }
+        movementData.pastVehicleExitTicks = 0;
         if (movementData.isInVehicle()) {
           movementData.dismountRidingEntity("Sneak exit");
           movementData.sneaking = false;

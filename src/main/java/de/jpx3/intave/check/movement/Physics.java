@@ -451,15 +451,18 @@ public final class Physics extends Check {
       } else {
         otherSimulation = simulationProcessor.simulateWithoutKeyPress(user, selectSimulator(user));
       }
-      Motion setbackMotion = otherSimulation.motion();
-      /*
-       * This will patch the hit-player-sneaking-on-a-block-edge bug (https://youtu.be/ONGnOwhQyac)
-       */
+
       Vector lastVelocity = movementData.sneakPatchVelocity;
-      if (movementData.isSneaking() &&
+      Motion setbackMotion = otherSimulation.motion();
+      if (movementData.pastVehicleExitTicks < 10 && distance > 0.8) {
+        predictedX = predictedY = predictedZ = 0;
+      } else if (movementData.isSneaking() &&
         !movementData.onGround() &&
         lastVelocity != null
       ) {
+        /*
+         * This will patch the hit-player-sneaking-on-a-block-edge bug (https://youtu.be/ONGnOwhQyac)
+         */
         predictedX = Math.abs(setbackMotion.motionX) < 0.05 ? setbackMotion.motionX + MathHelper.minmax(-0.05, lastVelocity.getX(), 0.05) : setbackMotion.motionX;
         predictedY = setbackMotion.motionY;
         predictedZ = Math.abs(setbackMotion.motionZ) < 0.05 ? setbackMotion.motionZ + MathHelper.minmax(-0.05, lastVelocity.getZ(), 0.05) : setbackMotion.motionZ;
@@ -546,7 +549,12 @@ public final class Physics extends Check {
       violationLevelIncrease = Math.min(200.0, violationLevelIncrease);
       violationLevelIncrease = Math.max(1, violationLevelIncrease);
       violationLevelData.physicsVL = MathHelper.minmax(0, violationLevelData.physicsVL + violationLevelIncrease, 200);
-      violationLevelData.physicsInvalidMovementsInRow++;
+      // if a player continuously flags smaller values, flag him after 2s
+      if (violationLevelData.physicsInvalidMovementsInRow > 40) {
+        violationLevelData.physicsVL += violationLevelData.physicsInvalidMovementsInRow;
+        violationLevelIncrease += violationLevelData.physicsInvalidMovementsInRow;
+      }
+      violationLevelData.physicsInvalidMovementsInRow = Math.min(50, violationLevelData.physicsInvalidMovementsInRow + 1);
       if (violationLevelData.physicsVL > 20) {
         if (!IntaveControl.IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT) {
           blockStateAccess.invalidateAll();
@@ -555,7 +563,7 @@ public final class Physics extends Check {
       // resend attributes
       statisticApply(user, CheckStatistics::increaseFails);
     } else {
-      violationLevelData.physicsInvalidMovementsInRow = 0;
+      violationLevelData.physicsInvalidMovementsInRow = Math.max(0, violationLevelData.physicsInvalidMovementsInRow - 0.25);
       statisticApply(user, CheckStatistics::increasePasses);
     }
 

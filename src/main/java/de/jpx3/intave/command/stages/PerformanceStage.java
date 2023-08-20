@@ -39,7 +39,7 @@ public final class PerformanceStage extends CommandStage {
     String fullSpecifier = specifier != null ? Arrays.stream(specifier).map(s -> s + " ").collect(Collectors.joining()).trim().toLowerCase(Locale.ROOT) : "";
 
     Player player = user.player();
-    if (plugin.sibyl().authentication().isAuthenticated(player)) {
+//    if (plugin.sibyl().authentication().isAuthenticated(player)) {
       player.sendMessage(ChatColor.RED + "Loading timings...");
 
       List<Timing> timings = new ArrayList<>(Timings.timingPool());
@@ -63,7 +63,7 @@ public final class PerformanceStage extends CommandStage {
         }
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
       });
-    }
+//    }
   }
 
   @SubCommand(
@@ -77,7 +77,7 @@ public final class PerformanceStage extends CommandStage {
     String fullSpecifier = specifier != null ? Arrays.stream(specifier).map(s -> s + " ").collect(Collectors.joining()).trim().toLowerCase(Locale.ROOT) : "";
 
     Player player = user.player();
-    if (plugin.sibyl().authentication().isAuthenticated(player)) {
+//    if (plugin.sibyl().authentication().isAuthenticated(player)) {
       player.sendMessage(ChatColor.RED + "Loading timings...");
 
       List<Timing> timings = new ArrayList<>(Timings.timingPool());
@@ -100,7 +100,7 @@ public final class PerformanceStage extends CommandStage {
         }
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
       });
-    }
+//    }
   }
 
   public static PerformanceStage singletonInstance() {

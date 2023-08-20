@@ -183,7 +183,8 @@ public final class InventoryMetadata {
     if (!inventoryOpen && clientData.supportsInventoryAchievementPacket()) {
       this.forceInventoryOnClickOpen = true;
     }
-    deactivateHand();
+//    deactivateHand();
+//    deactivateHand();
     this.inventoryOpen = inventoryOpen;
   }
 

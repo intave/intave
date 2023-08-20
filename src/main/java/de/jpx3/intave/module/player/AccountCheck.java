@@ -11,6 +11,7 @@ import de.jpx3.intave.executor.BackgroundExecutors;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.storage.AccountDataStorage;
@@ -117,35 +118,14 @@ public final class AccountCheck extends Module {
 
   @Native
   private void punishNewAccount(Player player) {
-//    Synchronizer.synchronize(() -> {
-//      String message = "&cDue to high recent abuse, your account needs to be at least few weeks old to join.";
-//      player.sendMessage(message);
-//      Synchronizer.synchronizeDelayed(() ->
-//        player.kickPlayer(message), 3
-//      );
-//    });
-
-    //
-    // A quick moral detour why reducing combat impact of new players is both problematic and necessary.
-    //
-    /*
-      Cheating has come to a point, where we can't really do anything about it anymore.
-      The main problem right now is the influx of generated accounts that basically make Gomme a cracked server.
-      The administration is very shy to implement verification, because of fears it could prevent normal players from participating in games.
-      So, we have to find a solution by ourselves.
-      The compromise is to reduce combat impact of new accounts, so that they can't do much too much damage.
-      Our assumption is that an account that is only a month old will not stand a change against normal players anyway.
-      New accounts will likely not use blocking and will not notice garbage hits, so it might not be a big deal for them.
-      The biggest nerf probably is the Criticals-block, since it is extremely hard for cheaters to detect, and it reduces damage by a lot.
-      This mechanic *has to be removed* when Gomme implements a proper verification system, that actually works.
-      In the unlikely event that this system gets leaked to the public, we will not deny its existence, take full blame and open a public discussion about it.
-     */
     if (IntaveControl.GOMME_MODE) {
       SibylBroadcast.broadcast(ChatColor.RED + player.getName() + " is a newly created account");
-//      User user = UserRepository.userOf(player);
-//      user.nerfPermanently(AttackNerfStrategy.BLOCKING, "86");
-//      user.nerfPermanently(AttackNerfStrategy.GARBAGE_HITS, "86");
-//      user.nerfPermanently(AttackNerfStrategy.BURN_LONGER, "86");
+      User user = UserRepository.userOf(player);
+      if (!user.meta().protocol().combatUpdate()) {
+        user.nerfPermanently(AttackNerfStrategy.BLOCKING, "86");
+        user.nerfPermanently(AttackNerfStrategy.GARBAGE_HITS, "86");
+        user.nerfPermanently(AttackNerfStrategy.BURN_LONGER, "86");
+      }
     }
   }
 

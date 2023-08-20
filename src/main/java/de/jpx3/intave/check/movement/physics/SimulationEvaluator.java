@@ -408,10 +408,10 @@ public final class SimulationEvaluator {
       abuseHorizontally *= 0.1;
     }
 
-    boolean movedTooQuicklyCheckable = (distanceMoved > 0.3 || violationLevelData.physicsInvalidMovementsInRow >= 8)
+    boolean movedTooQuicklyInRow = (distanceMoved > 0.3 || violationLevelData.physicsInvalidMovementsInRow >= 8)
         && !flewWithElytra;
 
-    if (movedTooQuickly && movedTooQuicklyCheckable && !movement.physicsUnpredictableVelocityExpected) {
+    if (movedTooQuickly && movedTooQuicklyInRow && !movement.physicsUnpredictableVelocityExpected) {
       //noinspection UnnecessaryLocalVariable
       double vl = abuseHorizontally > 0.2 ? 1000 : Math.max(30, abuseHorizontally * 300);
 //      Bukkit.broadcastMessage(user.player().getName() + " moved too quickly: vl+" + vl + " abuse:" + abuseHorizontally + " | un:" + movement.physicsUnpredictableVelocityExpected);

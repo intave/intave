@@ -140,6 +140,7 @@ public interface SimulationEnvironment {
   void resetPowderSnowTicks();
 
   void increaseEdgeSneakTickGrants();
+  void increaseVehicleTicks();
 
   void aquaticUpdateLavaReset();
 

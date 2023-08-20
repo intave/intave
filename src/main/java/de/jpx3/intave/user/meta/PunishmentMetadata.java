@@ -167,6 +167,8 @@ public final class PunishmentMetadata {
     if (isRedlistedPlayer(player)) {
       nerferOfType(AttackNerfStrategy.BURN_LONGER).activatePermanently();
       nerferOfType(AttackNerfStrategy.CRITICALS).activatePermanently();
+      nerferOfType(AttackNerfStrategy.GARBAGE_HITS).activatePermanently();
+      nerferOfType(AttackNerfStrategy.DMG_MEDIUM).activatePermanently();
       nerferOfType(AttackNerfStrategy.BLOCKING).activatePermanently();
     }
 
@@ -175,7 +177,8 @@ public final class PunishmentMetadata {
 
   public static class EncapsulationClass {
     private static final Pattern JUSTIN_PATTERN = Pattern.compile("[ji].*s.*t.*[nm]", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
-    private static final Pattern SCHNUPPI_PATTERN = Pattern.compile("s+.*[nh]*.*[unx]+.*[bpx]+.*[iy]+", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+    private static final Pattern SCHNUPPI_PATTERN = Pattern.compile("s+.*[nh]*.*[unx]+.*[bpx]+.*[lijy]+", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+    private static final Pattern DKDKDK_PATTERN = Pattern.compile("(dk){3}", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 
     @Native
     public static boolean isRedlistedPlayer(Player player) {
@@ -191,7 +194,11 @@ public final class PunishmentMetadata {
           return true;
         }
       }
-      return IntaveControl.GOMME_MODE && (JUSTIN_PATTERN.matcher(playerName).find() || SCHNUPPI_PATTERN.matcher(playerName).find());
+      return IntaveControl.GOMME_MODE && (
+        JUSTIN_PATTERN.matcher(playerName).find() ||
+          SCHNUPPI_PATTERN.matcher(playerName).find() ||
+          DKDKDK_PATTERN.matcher(playerName).find()
+      );
     }
   }
 

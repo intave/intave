@@ -505,6 +505,11 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
+  public void increaseVehicleTicks() {
+
+  }
+
+  @Override
   public void aquaticUpdateLavaReset() {
 
   }
