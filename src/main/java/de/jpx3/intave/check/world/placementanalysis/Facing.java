@@ -65,12 +65,17 @@ public final class Facing extends CheckPart<PlacementAnalysis> {
     return integer != null && integer == 255;
   }
 
-  @BukkitEventSubscription
+  @BukkitEventSubscription(
+    ignoreCancelled = true
+  )
   public void onPlace(BlockPlaceEvent place) {
     Player player = place.getPlayer();
     User user = userOf(player);
     MetadataBundle meta = user.meta();
     ViolationMetadata violationMetadata = meta.violationLevel();
+    if (place.isCancelled()) {
+      violationMetadata.facingFailedCounter = -10;
+    }
     int facingFailedCounter = violationMetadata.facingFailedCounter;
     if (facingFailedCounter > 3) {
       Violation violation = Violation.builderFor(PlacementAnalysis.class)

@@ -24,7 +24,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collector;
 
 import static de.jpx3.intave.IntaveControl.GOMME_MODE;

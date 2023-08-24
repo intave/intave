@@ -28,9 +28,6 @@ public final class Modules {
 
   @Native
   public static void proceedBoot(BootSegment bootSegment) {
-    if (System.getProperty("intave.kdebug", "NA").equalsIgnoreCase("UPSFF0Y8Y7H4UJQL8QCRSI857S4DVBKS")) {
-      System.out.println("Proceeding boot segment " + bootSegment + "...");
-    }
     loader.loadRequests(bootSegment).forEach(pool::loadModule);
     pool.bootRequests(bootSegment).forEach(pool::enableModule);
   }

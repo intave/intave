@@ -90,65 +90,6 @@ public final class MovementDispatcher extends Module {
   private InteractionRaytrace interactionRaytraceCheck;
   private Timer timerCheck;
 
-  public static void applyVelocitySuperposition(User user, Motion velocity) {
-    MetadataBundle meta = user.meta();
-    MovementMetadata movementData = meta.movement();
-    ViolationMetadata violationLevelData = meta.violationLevel();
-
-    movementData.pastExternalVelocityResetCache = movementData.pastExternalVelocity;
-    movementData.baseMotionXBeforeVelocityResetCache = movementData.baseMotionXBeforeVelocity;
-    movementData.baseMotionYBeforeVelocityResetCache = movementData.baseMotionYBeforeVelocity;
-    movementData.baseMotionZBeforeVelocityResetCache = movementData.baseMotionZBeforeVelocity;
-    movementData.baseMotionXResetCache = movementData.baseMotionX;
-    movementData.baseMotionYResetCache = movementData.baseMotionY;
-    movementData.baseMotionZResetCache = movementData.baseMotionZ;
-    movementData.willReceiveSetbackVelocityResetCache = movementData.willReceiveSetbackVelocity;
-
-    if (!violationLevelData.isInActiveTeleportBundle) {
-      movementData.baseMotionXBeforeVelocity = movementData.baseMotionX;
-      movementData.baseMotionYBeforeVelocity = movementData.baseMotionY;
-      movementData.baseMotionZBeforeVelocity = movementData.baseMotionZ;
-      movementData.baseMotionX = velocity.motionX();
-      movementData.baseMotionY = velocity.motionY();
-      movementData.baseMotionZ = velocity.motionZ();
-//      user.player().sendMessage("Applied velocity " + velocity);
-      movementData.lastVelocity = new Vector(velocity.motionX(), velocity.motionY(), velocity.motionZ());
-    }
-  }
-
-  public static void collapseVelocitySuperposition(User user, @Nullable Motion velocity) {
-    if (velocity != null) {
-      MetadataBundle meta = user.meta();
-      MovementMetadata movementData = meta.movement();
-      Synchronizer.synchronize(() -> movementData.emulationVelocity = null);
-      movementData.pastVelocity = 0;
-      movementData.pendingVelocityPackets.decrementAndGet();
-      if (!movementData.willReceiveSetbackVelocity) {
-        movementData.pastExternalVelocity = 0;
-      }
-      movementData.willReceiveSetbackVelocity = false;
-//      user.player().sendMessage("Collapsed velocity " + velocity);
-//      if (!movementData.willReceiveSetbackVelocity) {
-//        movementData.pastExternalVelocity = 0;
-//      }
-//      movementData.willReceiveSetbackVelocity = false;
-    }
-  }
-
-  public static void resetVelocitySuperposition(User user) {
-    MetadataBundle meta = user.meta();
-    MovementMetadata movementData = meta.movement();
-
-    movementData.pastExternalVelocity = movementData.pastExternalVelocityResetCache;
-    movementData.baseMotionXBeforeVelocity = movementData.baseMotionXBeforeVelocityResetCache;
-    movementData.baseMotionYBeforeVelocity = movementData.baseMotionYBeforeVelocityResetCache;
-    movementData.baseMotionZBeforeVelocity = movementData.baseMotionZBeforeVelocityResetCache;
-    movementData.baseMotionX = movementData.baseMotionXResetCache;
-    movementData.baseMotionY = movementData.baseMotionYResetCache;
-    movementData.baseMotionZ = movementData.baseMotionZResetCache;
-    movementData.willReceiveSetbackVelocity = movementData.willReceiveSetbackVelocityResetCache;
-  }
-
   @Override
   public void enable() {
     CheckService checks = plugin.checks();
@@ -1222,5 +1163,64 @@ public final class MovementDispatcher extends Module {
 
   private boolean allowSprinting(User user) {
     return !user.meta().inventory().inventoryOpen();
+  }
+
+  public static void applyVelocitySuperposition(User user, Motion velocity) {
+    MetadataBundle meta = user.meta();
+    MovementMetadata movementData = meta.movement();
+    ViolationMetadata violationLevelData = meta.violationLevel();
+
+    movementData.pastExternalVelocityResetCache = movementData.pastExternalVelocity;
+    movementData.baseMotionXBeforeVelocityResetCache = movementData.baseMotionXBeforeVelocity;
+    movementData.baseMotionYBeforeVelocityResetCache = movementData.baseMotionYBeforeVelocity;
+    movementData.baseMotionZBeforeVelocityResetCache = movementData.baseMotionZBeforeVelocity;
+    movementData.baseMotionXResetCache = movementData.baseMotionX;
+    movementData.baseMotionYResetCache = movementData.baseMotionY;
+    movementData.baseMotionZResetCache = movementData.baseMotionZ;
+    movementData.willReceiveSetbackVelocityResetCache = movementData.willReceiveSetbackVelocity;
+
+    if (!violationLevelData.isInActiveTeleportBundle) {
+      movementData.baseMotionXBeforeVelocity = movementData.baseMotionX;
+      movementData.baseMotionYBeforeVelocity = movementData.baseMotionY;
+      movementData.baseMotionZBeforeVelocity = movementData.baseMotionZ;
+      movementData.baseMotionX = velocity.motionX();
+      movementData.baseMotionY = velocity.motionY();
+      movementData.baseMotionZ = velocity.motionZ();
+//      user.player().sendMessage("Applied velocity " + velocity);
+      movementData.lastVelocity = new Vector(velocity.motionX(), velocity.motionY(), velocity.motionZ());
+    }
+  }
+
+  public static void collapseVelocitySuperposition(User user, @Nullable Motion velocity) {
+    if (velocity != null) {
+      MetadataBundle meta = user.meta();
+      MovementMetadata movementData = meta.movement();
+      Synchronizer.synchronize(() -> movementData.emulationVelocity = null);
+      movementData.pastVelocity = 0;
+      movementData.pendingVelocityPackets.decrementAndGet();
+      if (!movementData.willReceiveSetbackVelocity) {
+        movementData.pastExternalVelocity = 0;
+      }
+      movementData.willReceiveSetbackVelocity = false;
+//      user.player().sendMessage("Collapsed velocity " + velocity);
+//      if (!movementData.willReceiveSetbackVelocity) {
+//        movementData.pastExternalVelocity = 0;
+//      }
+//      movementData.willReceiveSetbackVelocity = false;
+    }
+  }
+
+  public static void resetVelocitySuperposition(User user) {
+    MetadataBundle meta = user.meta();
+    MovementMetadata movementData = meta.movement();
+
+    movementData.pastExternalVelocity = movementData.pastExternalVelocityResetCache;
+    movementData.baseMotionXBeforeVelocity = movementData.baseMotionXBeforeVelocityResetCache;
+    movementData.baseMotionYBeforeVelocity = movementData.baseMotionYBeforeVelocityResetCache;
+    movementData.baseMotionZBeforeVelocity = movementData.baseMotionZBeforeVelocityResetCache;
+    movementData.baseMotionX = movementData.baseMotionXResetCache;
+    movementData.baseMotionY = movementData.baseMotionYResetCache;
+    movementData.baseMotionZ = movementData.baseMotionZResetCache;
+    movementData.willReceiveSetbackVelocity = movementData.willReceiveSetbackVelocityResetCache;
   }
 }

@@ -82,12 +82,12 @@ public final class Snap extends MetaCheckPart<PlacementAnalysis, Snap.SnapMeta> 
     }
 
     // 3rd degree snap
-    if (yawMotion < 8 && pitchMotion < 8 &&
+    if (yawMotion < 2 && pitchMotion < 2 &&
       (meta.yawMotion(1) > 10 || meta.pitchMotion(1) > 10) &&
       (meta.yawMotion(2) > 10 || meta.pitchMotion(2) > 10) &&
       (meta.yawMotion(3) > 10 || meta.pitchMotion(3) > 10) &&
-      absYawDiff(meta.yawAt(1), meta.yawAt(4)) > 70 && absPitchDiff(meta.pitchAt(1), meta.pitchAt(4)) > pitchLimit &&
-      meta.yawMotion(4) < 8 && meta.pitchMotion(4) < 8
+      absYawDiff(meta.yawAt(1), meta.yawAt(4)) > 110 && absPitchDiff(meta.pitchAt(1), meta.pitchAt(4)) > pitchLimit &&
+      meta.yawMotion(4) < 2 && meta.pitchMotion(4) < 2
     ) {
       meta.snapYaw = meta.yawAt(1);
       meta.snapPitch = meta.pitchAt(1);

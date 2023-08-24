@@ -16,6 +16,7 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
+import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.entity.Player;
 
 import java.util.Deque;
@@ -101,6 +102,7 @@ public final class PacketDelayer extends Module {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     ConnectionMetadata connection = user.meta().connection();
+    ProtocolMetadata protocol = user.meta().protocol();
     MovementMetadata movement = user.meta().movement();
 
     PacketContainer packetContainer = event.getPacket();
@@ -122,7 +124,7 @@ public final class PacketDelayer extends Module {
 
     long lastMovementPacket = System.currentTimeMillis() - connection.lastMovementPacket();
     long oldestTransactionPacket = oldestPendingTransaction(user);
-    long positionTimeoutTolerance = user.meta().protocol().flyingPacketsAreSent() ? 0 : 1050;
+    long positionTimeoutTolerance = protocol.flyingPacketsAreSent() ? 0 : 1100;
 
     long lagTolerance = user.trustFactorSetting("timer.lt");
 
