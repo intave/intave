@@ -24,13 +24,7 @@ public final class StaticEntityCollisions {
   }
 
   public static void enterEntitySpawn(User user, Entity entity) {
-    Synchronizer.synchronize(() -> {
-      user.player().sendMessage("Spawned entity " + entity.entityName());
-    });
     if (collides(entity.typeData())) {
-      Synchronizer.synchronize(() -> {
-        user.player().sendMessage("Shulker spawned at " + entity.position.posX + "/" + entity.position.posY + "/" + entity.position.posZ);
-      });
       userData.get(user).addEntity(entity);
     }
   }
@@ -43,9 +37,6 @@ public final class StaticEntityCollisions {
 
   public static void enterEntityDespawn(User user, Entity entity) {
     if (collides(entity.typeData())) {
-      Synchronizer.synchronize(() -> {
-        user.player().sendMessage("Shulker despawned at " + entity.position.posX + "/" + entity.position.posY + "/" + entity.position.posZ);
-      });
       userData.get(user).removeEntity(entity);
     }
   }

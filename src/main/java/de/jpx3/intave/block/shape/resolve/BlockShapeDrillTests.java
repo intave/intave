@@ -66,6 +66,7 @@ public final class BlockShapeDrillTests extends Tests {
     assertTrue(blockShape.isEmpty());
   }
 
+  // todo fixme
   @Test(
     testCode = "D",
     severity = Severity.WARNING

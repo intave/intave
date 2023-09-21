@@ -168,16 +168,13 @@ public final class PunishmentMetadata {
       nerferOfType(AttackNerfStrategy.BURN_LONGER).activatePermanently();
       nerferOfType(AttackNerfStrategy.CRITICALS).activatePermanently();
       nerferOfType(AttackNerfStrategy.GARBAGE_HITS).activatePermanently();
-      nerferOfType(AttackNerfStrategy.DMG_MEDIUM).activatePermanently();
       nerferOfType(AttackNerfStrategy.BLOCKING).activatePermanently();
     }
-
-//    nerferOfType(AttackNerfStrategy.BLOCKING).activatePermanently();
   }
 
   public static class EncapsulationClass {
     private static final Pattern JUSTIN_PATTERN = Pattern.compile("[ji].*s.*t.*[nm]", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
-    private static final Pattern SCHNUPPI_PATTERN = Pattern.compile("s+.*[nh]*.*[unx]+.*[bpx]+.*[lijy]+", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
+    private static final Pattern SCHNUPPI_PATTERN = Pattern.compile("s+.*[nuh]+.*[unx]+.*[bpx]+.*[lijy]+", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
     private static final Pattern DKDKDK_PATTERN = Pattern.compile("(dk){3}", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 
     @Native
