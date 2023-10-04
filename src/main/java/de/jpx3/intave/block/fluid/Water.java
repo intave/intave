@@ -48,7 +48,7 @@ class Water implements Fluid {
 
   @Override
   public String toString() {
-    return "FlowingWater{" +
+    return "Water{" +
       "height=" + height +
       ", falling=" + falling +
       '}';

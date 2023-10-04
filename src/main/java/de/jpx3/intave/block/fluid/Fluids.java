@@ -59,6 +59,11 @@ public class Fluids {
             Fluid currentFluid = resolver.liquidFrom(value, variantIndex);
             variants.put(variantIndex, currentFluid);
             anyLiquid |= !currentFluid.isDry();
+            if (currentFluid.isOfWater()) {
+//              waterflow.add(value, variantIndex);
+//              System.out.println("Added water " + value + ":" + variantIndex);
+            }
+
           } catch (Exception exception) {
             BlockVariant properties = BlockVariantRegister.uncachedVariantOf(value, variantIndex);
             String propertyString = "{"+properties.propertyNames().stream().map(s -> s + ": " + properties.propertyOf(s)).collect(Collectors.joining(", ")) +"}";

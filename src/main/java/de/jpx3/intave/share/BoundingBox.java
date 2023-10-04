@@ -241,7 +241,7 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
     double d4 = this.maxY + y;
     double d5 = this.maxZ + z;
     BoundingBox resulting = new BoundingBox(d0, d1, d2, d3, d4, d5);
-    if (isOriginBox()) {
+    if (this.isOriginBox()) {
       resulting.makeOriginBox();
     }
     return resulting;

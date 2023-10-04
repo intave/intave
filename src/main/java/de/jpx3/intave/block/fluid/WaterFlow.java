@@ -28,11 +28,10 @@ public final class WaterFlow implements FluidFlow {
       for (int y = minY; y < maxY; ++y) {
         for (int z = minZ; z < maxZ; ++z) {
           Material type = VolatileBlockAccess.typeAccess(user, world, x, y, z);
-          if (MaterialMagic.isWater(type)) {
-            int level = VolatileBlockAccess.variantIndexAccess(user, world, x, y, z);
-
-            double d0 = (float) (y + 1) - resolveLiquidHeightPercentage(level);
-
+          int variantIndex = VolatileBlockAccess.variantIndexAccess(user, world, x, y, z);
+          Fluid fluid = Fluids.fluidStateOf(type, variantIndex);
+          if (fluid.isOfWater()) {
+            double d0 = (float) (y + 1) - resolveLiquidHeightPercentage(fluid.level());
             if ((double) maxY >= d0) {
               inWater = true;
               if (flowVector == null) {

@@ -503,44 +503,11 @@ class BaseSimulator extends Simulator {
     double positionY = environment.positionY();
     double positionZ = environment.positionZ();
 
-    int blockCollisionPosX = floor(positionX);
-    int blockCollisionPosY = floor(positionY - 0.2f);
-    int blockCollisionPosZ = floor(positionZ);
+//    int blockCollisionPosX = floor(positionX);
+//    int blockCollisionPosY = floor(positionY - 0.2f);
+//    int blockCollisionPosZ = floor(positionZ);
 
-    Material block;
-    if (clientData.trailsAndTailsUpdate()) {
-      BoundingBox boundingBox = environment.boundingBox();
-      BoundingBox secondBoundingBox = new BoundingBox(
-        boundingBox.minX, boundingBox.minY - 0.000001, boundingBox.minZ,
-        boundingBox.maxX, boundingBox.minY, boundingBox.maxZ
-      );
-      block = findSupportingBlock(user, environment, secondBoundingBox);
-      if (block == null) {
-        BoundingBox thirdBoundingBox = secondBoundingBox.move(-motion.motionX, 0.0, -motion.motionZ);
-        block = findSupportingBlock(user, environment, thirdBoundingBox);
-      }
-      if (block == null) {
-        block = Material.AIR;
-      }
-    } else {
-      block = VolatileBlockAccess.typeAccess(user, world, blockCollisionPosX, blockCollisionPosY, blockCollisionPosZ);
-
-//      if (IntaveControl.ENABLE_MOVEMENT_DEBUGGER_COLLECTOR) {
-//        MovementMetadata movement = meta.movement();
-//        Map<String, Double> serverMovementDebugValues = movement.serverMovementDebugValues;
-//        serverMovementDebugValues.put("MSB", 3d);
-//        serverMovementDebugValues.put("MSBY", (double) blockCollisionPosY);
-//      }
-//      collisionType = 3;
-    }
-//    System.out.println("block = " + block + ", type = " + collisionType + ", positionY = " + positionY + ", blockCollisionPosY = " + blockCollisionPosY);
-
-    if (block == Material.AIR) {
-      Material blockBelow = VolatileBlockAccess.typeAccess(user, world, blockCollisionPosX, blockCollisionPosY, blockCollisionPosZ);
-      if (blockBelow.name().contains("FENCE") || blockBelow.name().contains("WALL")) {
-        block = blockBelow;
-      }
-    }
+    Material block = environment.collideMaterial();
 
     if (IntaveControl.DEBUG_MOVEMENT_BLOCK_FALLEN_UPON) {
       if (block != null) {
@@ -607,104 +574,12 @@ class BaseSimulator extends Simulator {
     if (clientData.protocolVersion() >= VER_1_14 && environment.pose() != Pose.FALL_FLYING) {
       int soulSandModifier = Enchantments.resolveSoulSpeedModifier(player);
       if (soulSandModifier == 0 || !environment.blockOnPositionSoulSpeedAffected()) {
-        Material type = VolatileBlockAccess.typeAccess(
-          user, world, positionX, positionY - 0.5000001, positionZ
-        );
+        Material type = environment.frictionMaterial();
         float speedFactor = BlockProperties.of(type).speedFactor();
         motion.motionX *= speedFactor;
         motion.motionZ *= speedFactor;
       }
     }
-  }
-
-  @Nullable
-  private Material findSupportingBlock(
-    User user, SimulationEnvironment environment, BoundingBox box
-  ) {
-    World world = user.player().getWorld();
-    Material block = null;
-    int blockX = 0, blockY = 0, blockZ = 0;
-    double distance = Double.MAX_VALUE;
-
-    int startX = ClientMath.floor(box.minX - 0.0000001) - 1;
-    int endX = ClientMath.floor(box.maxX + 0.0000001) + 1;
-    int startY = ClientMath.floor(box.minY - 0.0000001) - 1;
-    int endY = ClientMath.floor(box.maxY + 0.0000001) + 1;
-    int startZ = ClientMath.floor(box.minZ - 0.0000001) - 1;
-    int endZ = ClientMath.floor(box.maxZ + 0.0000001) + 1;
-
-    double positionX = environment.positionX();
-    double positionY = environment.positionY();
-    double positionZ = environment.positionZ();
-
-    CubeIterator iterator = new CubeIterator(startX, startY, startZ, endX, endY, endZ);
-
-    while (iterator.advance()) {
-      int x = iterator.nextX();
-      int y = iterator.nextY();
-      int z = iterator.nextZ();
-      int type = iterator.nextType();
-
-      if (type == CubeIterator.TYPE_CORNER) {
-        continue;
-      }
-
-      BlockShape shape = user.blockStates().collisionShapeAt(x, y, z);
-      if (shape.isEmpty() || !shape.intersectsWith(box)) {
-        continue;
-      }
-
-      double distanceToCenter = distanceToCenter(x, y, z, positionX, positionY, positionZ);
-      int comparison = compare(x, y, z, blockX, blockY, blockZ);
-
-      if (distanceToCenter < distance || (distanceToCenter == distance && comparison < 0)) {
-        block = VolatileBlockAccess.typeAccess(user, world, x, y, z);
-        blockX = x;
-        blockY = y;
-        blockZ = z;
-        distance = distanceToCenter;
-      }
-    }
-    if (IntaveControl.ENABLE_MOVEMENT_DEBUGGER_COLLECTOR) {
-      MovementMetadata movement = user.meta().movement();
-      Map<String, Double> serverMovementDebugValues = movement.serverMovementDebugValues;
-      serverMovementDebugValues.put("MSB", 1d);
-//      serverMovementDebugValues.put("MSBY", (double) blockY);
-      serverMovementDebugValues.put("MSBKY", (double) positionY);
-    }
-
-    // If we found a block we should check if we need to use the block below
-    if (block != null) {
-      // We can ignore what minecraft does in the code usually (A stupid below < 1.0E-5 and below >= 0.5 check)
-      // Entity#getOnPos(float)
-      boolean requiresBlockBelow = !block.name().contains("FENCE") && !block.name().contains("WALL");
-      if (requiresBlockBelow) {
-        block = VolatileBlockAccess.typeAccess(user, world, blockX, ClientMath.floor(environment.positionY() - 0.2), blockZ);
-      }
-    }
-
-    return block;
-  }
-
-  private int compare(
-    int alphaX, int alphaY, int alphaZ,
-    int betaX, int betaY, int betaZ
-  ) {
-    if (alphaY == betaY) {
-      return alphaZ == betaZ ? alphaX - betaX : alphaZ - betaZ;
-    } else {
-      return alphaY - betaY;
-    }
-  }
-
-  private double distanceToCenter(
-    int blockX, int blockY, int blockZ,
-    double entityX, double entityY, double entityZ
-  ) {
-    double d0 = blockX + 0.5 - entityX;
-    double d1 = blockY + 0.5 - entityY;
-    double d2 = blockZ + 0.5 - entityZ;
-    return d0 * d0 + d1 * d1 + d2 * d2;
   }
 
   private void simulateWaterAfter(

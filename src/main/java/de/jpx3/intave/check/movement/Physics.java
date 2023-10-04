@@ -309,17 +309,12 @@ public final class Physics extends Check {
     MetadataBundle meta = user.meta();
     ProtocolMetadata clientData = meta.protocol();
     MovementMetadata movementData = meta.movement();
-    if (clientData.waterUpdate()) {
-      BoundingBox boundingBox = movementData.boundingBox().shrink(0.001D);
-      movementData.inWater = Fluids.waterflow().applyFlowTo(user, boundingBox);
-//      movementData.inWater = Fluids.handleFluidAcceleration(user, movementData.boundingBox());
-    } else {
-      BoundingBox boundingBox = movementData.boundingBox()
-        .grow(0.0D, -0.4000000059604645D, 0.0D)
-        .contract(0.001D, 0.001D, 0.001D);
-      movementData.inWater = Fluids.waterflow().applyFlowTo(user, boundingBox);
-//      movementData.inWater = LegacyWaterflow.handleMaterialAcceleration(user, boundingBox);
+    BoundingBox boundingBox = movementData.boundingBox();
+    if (!clientData.waterUpdate()) {
+      boundingBox = boundingBox.grow(0.0D, -0.4000000059604645D, 0.0D);
     }
+    boundingBox = boundingBox.shrink(0.001D);
+    movementData.inWater = Fluids.waterflow().applyFlowTo(user, boundingBox);
     if (movementData.inWater) {
       movementData.pastWaterMovement = 0;
       movementData.artificialFallDistance = 0;
@@ -776,6 +771,8 @@ public final class Physics extends Check {
       if (movementData.step) {
         debug += ChatColor.ITALIC + " stp:" + formatDouble(movementData.stepHeightThisMove, 5) + chatColor;
       }
+      debug += " fric:" + formatDouble(movementData.friction(), 2) + "@" + movementData.frictionMaterial();
+
 //      if (Math.abs(movementData.motionY()) > 0.01) {
 //        debug += simulation.configuration() + " ";
 //      }

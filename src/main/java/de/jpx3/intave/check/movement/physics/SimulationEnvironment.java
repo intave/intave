@@ -3,6 +3,7 @@ package de.jpx3.intave.check.movement.physics;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
+import org.bukkit.Material;
 import org.bukkit.util.Vector;
 
 public interface SimulationEnvironment {
@@ -115,6 +116,8 @@ public interface SimulationEnvironment {
   double frictionPosSubtraction();
   boolean receivedFlyingPacketIn(int ticks);
 
+  Material collideMaterial();
+  Material frictionMaterial();
   boolean blockOnPositionSoulSpeedAffected();
 
   double fallDistance();

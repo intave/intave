@@ -48,7 +48,7 @@ class Lava implements Fluid {
 
   @Override
   public String toString() {
-    return "FlowingLava{" +
+    return "Lava{" +
       "height=" + height +
       ", falling=" + falling +
       '}';

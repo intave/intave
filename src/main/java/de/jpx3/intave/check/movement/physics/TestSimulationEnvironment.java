@@ -2,6 +2,7 @@ package de.jpx3.intave.check.movement.physics;
 
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
+import org.bukkit.Material;
 import org.bukkit.util.Vector;
 
 import static de.jpx3.intave.share.ClientMath.cos;
@@ -412,6 +413,16 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   @Override
   public boolean receivedFlyingPacketIn(int ticks) {
     return false;
+  }
+
+  @Override
+  public Material collideMaterial() {
+    return Material.AIR;
+  }
+
+  @Override
+  public Material frictionMaterial() {
+    return Material.AIR;
   }
 
   @Override
