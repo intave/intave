@@ -189,10 +189,16 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
       );
       meta.movementAtTick[0] = tick;
 
-      for (Map.Entry<Integer, Entity> entry : user.meta().connection().entitiesById().entrySet()) {
-        Entity value = entry.getValue();
-        if (value != null && !(value instanceof Entity.Destroyed)) {
-          meta.entityPositions.put(entry.getKey(), value.positionHistory.get(Math.max(value.positionHistory.size() - 1, 0)));
+//      for (Map.Entry<Integer, Entity> entry : user.meta().connection().entitiesById().entrySet()) {
+//        Entity value = entry.getValue();
+//        if (value != null && !(value instanceof Entity.Destroyed)) {
+//          meta.entityPositions.put(entry.getKey(), value.positionHistory.get(Math.max(value.positionHistory.size() - 1, 0)));
+//        }
+//      }
+
+      for (Entity tracedEntity : user.meta().connection().tracedEntities()) {
+        if (tracedEntity != null && !(tracedEntity instanceof Entity.Destroyed)) {
+          meta.entityPositions.put(tracedEntity.entityId(), tracedEntity.positionHistory.get(Math.max(tracedEntity.positionHistory.size() - 1, 0)));
         }
       }
     }

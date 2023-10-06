@@ -29,9 +29,12 @@ public final class ConnectionMetadata {
   private final FeedbackQueue feedbackQueue = new FeedbackQueue();
   private final Map<Long, Queue<FeedbackRequest<?>>> transactionOptionalAppendMap = Maps.newConcurrentMap();
   private final Map<Integer, Entity> entitiesById = Maps.newConcurrentMap();
+  private final Map<Integer, Integer> entityVehicles = Maps.newConcurrentMap();
+  private final Map<Integer, Integer> entityMounts = Maps.newConcurrentMap();
+
   private final Set<Integer> entityIds = new HashSet<>();
-  private final List<Entity> entities = Lists.newCopyOnWriteArrayList();
   private final List<Entity> synchronizedEntities = Lists.newCopyOnWriteArrayList();
+  private List<Entity> cappedEntities = new ArrayList<>();
   private final Map<Long, Long> remainingPingPacketTimestamps = Maps.newConcurrentMap();
   private final List<Long> latencyDifferenceBalance = Lists.newCopyOnWriteArrayList();
 
@@ -285,13 +288,29 @@ public final class ConnectionMetadata {
     }
   }
 
-  @Deprecated
-  public Map<Integer, Entity> entitiesById() {
-    return entitiesById;
+  public void noteMount(int entityId, int vehicleId) {
+    entityVehicles.put(entityId, vehicleId);
+    entityMounts.put(vehicleId, entityId);
   }
 
+  public void noteDismount(int entityId) {
+    Integer vehicleId = entityVehicles.remove(entityId);
+    if (vehicleId != null) {
+      entityMounts.remove(vehicleId);
+    }
+  }
+
+  public Integer vehicleOf(int entityId) {
+    return entityVehicles.get(entityId);
+  }
+
+  public Integer sittingOn(int entityId) {
+    return entityMounts.get(entityId);
+  }
+
+  @Deprecated
   public Collection<Entity> entities() {
-    return entities;
+    return entitiesById.values();
   }
 
   public Entity entityBy(int identifier) {
@@ -301,7 +320,7 @@ public final class ConnectionMetadata {
   public void enterEntity(Entity entity) {
     entitiesById.put(entity.entityId(), entity);
     entityIds.add(entity.entityId());
-    entities.add(entity);
+//    entities.add(entity);
   }
 
   public Entity destroyEntity(int entityId) {
@@ -317,7 +336,7 @@ public final class ConnectionMetadata {
 //    }
 
     // using removeIf requires the least amount of locking and array modifications for CopyOnWriteArrayLists
-    entities.removeIf(entity -> entity.entityId() == entityId);
+//    entities.removeIf(entity -> entity.entityId() == entityId);
 
     return old;
   }
@@ -328,6 +347,14 @@ public final class ConnectionMetadata {
 
   public List<Entity> tracedEntities() {
     return synchronizedEntities;
+  }
+
+  public List<Entity> cappedEntities() {
+    return cappedEntities;
+  }
+
+  public void setCappedEntities(List<Entity> cappedEntities) {
+    this.cappedEntities = cappedEntities;
   }
 
   public Map<Long, Long> pingPackets() {
