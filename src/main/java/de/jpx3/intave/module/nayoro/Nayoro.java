@@ -4,7 +4,6 @@ import com.google.common.collect.Sets;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.cleanup.GarbageCollector;
-import de.jpx3.intave.cleanup.StartupTasks;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.executor.TaskTracker;
 import de.jpx3.intave.module.Module;
@@ -66,7 +65,7 @@ public final class Nayoro extends Module {
     if (!COMBAT_SAMPLING) {
       return;
     }
-    StartupTasks.add(this::enableGlobalRecording);
+//    StartupTasks.add(this::enableGlobalRecording);
   }
 
   @Override
@@ -90,7 +89,7 @@ public final class Nayoro extends Module {
           if (recordingActiveFor(user) && (System.currentTimeMillis() - lastRecording.get(user).get()) > (1000 * 45)) {
             Synchronizer.synchronize(() -> {
               disableRecordingFor(user);
-              enableRecordingFor(user);
+              enableRecordingFor(user, Classifier.UNKNOWN);
             });
           }
         });
@@ -98,7 +97,7 @@ public final class Nayoro extends Module {
       Synchronizer.synchronize(() -> {
         for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
           User user = UserRepository.userOf(onlinePlayer);
-          enableRecordingFor(user);
+          enableRecordingFor(user, Classifier.UNKNOWN);
         }
       });
       TaskTracker.begun(globalRecordingTaskId);
@@ -152,7 +151,7 @@ public final class Nayoro extends Module {
   public void on(PlayerJoinEvent join) {
     User user = UserRepository.userOf(join.getPlayer());
     if (globalRecording) {
-      enableRecordingFor(user);
+      enableRecordingFor(user, Classifier.UNKNOWN);
     }
   }
 
@@ -164,20 +163,20 @@ public final class Nayoro extends Module {
     }
   }
 
-  public void enableRecordingFor(User user) {
+  public synchronized void enableRecordingFor(User user, Classifier classifier) {
     localRecordingLock.lock();
     try {
       if (!COMBAT_SAMPLING || recordingActiveFor(user)) {
         return;
       }
       if (!Bukkit.isPrimaryThread()) {
-        Synchronizer.synchronize(() -> enableRecordingFor(user));
+        Synchronizer.synchronize(() -> enableRecordingFor(user, classifier));
         return;
       }
       Sample sample = new Sample();
       samples.put(user.id(), sample);
       OutputStream output = writeStreamFor(user.player(), sample);
-      RecordEventSink recordEventSink = new RecordEventSink(new LiveEnvironment(user), new DataOutputStream(output));
+      RecordEventSink recordEventSink = new RecordEventSink(new LiveEnvironment(user), new DataOutputStream(output), classifier);
       eventSinks.get(user).add(recordEventSink);
       lastRecording.get(user).set(System.currentTimeMillis());
       recording.get(user).set(true);
@@ -186,7 +185,7 @@ public final class Nayoro extends Module {
     }
   }
 
-  public void disableRecordingFor(User user) {
+  public synchronized void disableRecordingFor(User user) {
     localRecordingLock.lock();
     try {
       if (!COMBAT_SAMPLING || !recordingActiveFor(user)) {

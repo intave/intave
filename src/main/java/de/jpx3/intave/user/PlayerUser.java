@@ -611,6 +611,11 @@ final class PlayerUser implements User {
     PacketSender.sendServerPacket(player, packet);
   }
 
+  @Override
+  public int hashCode() {
+    return id().hashCode();
+  }
+
   private IntavePlugin plugin() {
     return IntavePlugin.singletonInstance();
   }

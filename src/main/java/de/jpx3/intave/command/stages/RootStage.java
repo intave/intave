@@ -24,6 +24,7 @@ import de.jpx3.intave.library.Python;
 import de.jpx3.intave.library.python.PythonTask;
 import de.jpx3.intave.math.Occurrences;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.nayoro.Classifier;
 import de.jpx3.intave.module.nayoro.Nayoro;
 import de.jpx3.intave.security.HashAccess;
 import de.jpx3.intave.share.BoundingBox;
@@ -192,7 +193,7 @@ public final class RootStage extends CommandStage {
     User targetUser = target != null ? UserRepository.userOf(target) : user;
     Nayoro nayoro = Modules.nayoro();
     if (!nayoro.recordingActiveFor(targetUser)) {
-      nayoro.enableRecordingFor(targetUser);
+      nayoro.enableRecordingFor(targetUser, Classifier.UNKNOWN);
       user.player().sendMessage(ChatColor.GREEN + "Recording enabled for " + ChatColor.RED + targetUser.player().getName());
     } else {
       nayoro.disableRecordingFor(targetUser);

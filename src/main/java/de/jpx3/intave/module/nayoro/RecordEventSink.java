@@ -4,7 +4,6 @@ import de.jpx3.intave.module.nayoro.event.*;
 import de.jpx3.intave.module.nayoro.event.sink.EventSink;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.security.LicenseAccess;
-import org.bukkit.entity.Player;
 
 import java.io.Closeable;
 import java.io.DataOutput;
@@ -12,7 +11,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -24,12 +22,20 @@ class RecordEventSink extends EventSink {
   private final DataOutput dataOutput;
   private final Set<Integer> entities = new HashSet<>();
   private boolean setup = false;
+  private final Classifier classifier;
   private final Lock writeLock = new ReentrantLock();
   private final boolean checkFullEventRead = true;
 
   public RecordEventSink(Environment environment, DataOutput dataOutput) {
     this.environment = environment;
     this.dataOutput = dataOutput;
+    this.classifier = Classifier.UNKNOWN;
+  }
+
+  public RecordEventSink(Environment environment, DataOutput dataOutput, Classifier classifier) {
+    this.environment = environment;
+    this.dataOutput = dataOutput;
+    this.classifier = classifier;
   }
 
   public synchronized void setupIfNeeded() {
@@ -43,24 +49,22 @@ class RecordEventSink extends EventSink {
         dataOutput.writeLong(id.getMostSignificantBits());
         dataOutput.writeLong(id.getLeastSignificantBits());
         dataOutput.writeLong(System.currentTimeMillis());
-        AtomicInteger flags = new AtomicInteger();
+        int flags = 0;
         if (checkFullEventRead) {
-          flags.updateAndGet(v -> v | EVENT_ZERO_BYTE_APPEND);
+          flags |= EVENT_ZERO_BYTE_APPEND;
         }
-
-        environment.mainPlayer().applyIfUserPresent(user -> {
-          Player player = user.player();
-          String playerName = player.getName().toLowerCase();
-          if (playerName.contains("jpx3") || playerName.contains("richy")) {
-            flags.getAndUpdate(v -> v | MARKED_LEGIT);
-            player.sendMessage("Hey Richy you are probably legit");
-          } else {
-            flags.getAndUpdate(v -> v | MARKED_CHEAT);
-            player.sendMessage("Hey Jirka you are probably cheating");
-          }
-        });
-        flags.updateAndGet(v -> v | MARKED_UNKNOWN);
-        dataOutput.writeInt(flags.get());
+        switch (classifier) {
+          case LEGIT:
+            flags |= MARKED_LEGIT;
+            break;
+          case CHEAT:
+            flags |= MARKED_CHEAT;
+            break;
+          case UNKNOWN:
+            flags |= MARKED_UNKNOWN;
+            break;
+        }
+        dataOutput.writeInt(flags);
       } catch (IOException exception) {
         throw new RuntimeException(exception);
       } finally {

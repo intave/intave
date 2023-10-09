@@ -6,10 +6,10 @@ import de.jpx3.intave.module.nayoro.event.sink.EventSink;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.security.Key;
 
 public final class PlayerMoveEvent extends Event {
-  private int flags;
+  private int transmissionFlags;
+  private int characteristicFlags;
   private KeyCombination keys;
   private double x;
   private double y;
@@ -34,6 +34,7 @@ public final class PlayerMoveEvent extends Event {
     float lastYaw, float lastPitch,
     double x, double y, double z,
     float yaw, float pitch,
+    int characteristicFlags,
     boolean forceSave
   ) {
     this.keys = KeyCombination.from(strafe, forward);
@@ -47,65 +48,68 @@ public final class PlayerMoveEvent extends Event {
     this.lastZ = lastZ;
     this.lastYaw = lastYaw;
     this.lastPitch = lastPitch;
-    int flags = 0;
+    this.characteristicFlags = characteristicFlags;
+    int transmissionFlags = 0;
     if (forceSave) {
-      flags |= Flag.X | Flag.Y | Flag.Z | Flag.YAW | Flag.PITCH;
+      transmissionFlags |= Flag.X | Flag.Y | Flag.Z | Flag.YAW | Flag.PITCH;
     } else {
       if (Math.abs(x - lastX) >= EPSILON) {
-        flags |= Flag.X;
+        transmissionFlags |= Flag.X;
       }
       if (Math.abs(y - lastY) >= EPSILON) {
-        flags |= Flag.Y;
+        transmissionFlags |= Flag.Y;
       }
       if (Math.abs(z - lastZ) >= EPSILON) {
-        flags |= Flag.Z;
+        transmissionFlags |= Flag.Z;
       }
       if (Math.abs(yaw - lastYaw) >= EPSILON) {
-        flags |= Flag.YAW;
+        transmissionFlags |= Flag.YAW;
       }
       if (Math.abs(pitch - lastPitch) >= EPSILON) {
-        flags |= Flag.PITCH;
+        transmissionFlags |= Flag.PITCH;
       }
     }
-    this.flags = flags;
+    this.transmissionFlags = transmissionFlags;
   }
 
   @Override
   public void serialize(Environment environment, DataOutput out) throws IOException {
-    out.writeByte(flags);
+    out.writeByte(transmissionFlags);
     conditionalWriteDouble(out, x, Flag.X);
     conditionalWriteDouble(out, y, Flag.Y);
     conditionalWriteDouble(out, z, Flag.Z);
     conditionalWriteFloat(out, yaw, Flag.YAW);
     conditionalWriteFloat(out, pitch, Flag.PITCH);
     keys.write(out);
+    out.writeShort(characteristicFlags);
   }
 
   private void conditionalWriteDouble(DataOutput out, double value, int flag) throws IOException {
-    if ((flags & flag) != 0) {
+    if ((transmissionFlags & flag) != 0) {
       out.writeDouble(value);
     }
   }
 
   private void conditionalWriteFloat(DataOutput out, float value, int flag) throws IOException {
-    if ((flags & flag) != 0) {
+    if ((transmissionFlags & flag) != 0) {
       out.writeFloat(value);
     }
   }
 
   @Override
   public void deserialize(Environment environment, DataInput in) throws IOException {
-    flags = in.readByte();
+    transmissionFlags = in.readByte();
     x = conditionalReadDouble(in, Flag.X);
     y = conditionalReadDouble(in, Flag.Y);
     z = conditionalReadDouble(in, Flag.Z);
     yaw = conditionalReadFloat(in, Flag.YAW);
     pitch = conditionalReadFloat(in, Flag.PITCH);
     keys = KeyCombination.read(in);
+    characteristicFlags = in.readShort();
   }
 
   private double conditionalReadDouble(DataInput in, int flag) throws IOException {
-    if ((flags & flag) != 0) {
+    if ((transmissionFlags & flag) != 0) {
       return in.readDouble();
     } else {
       return 0;
@@ -113,7 +117,7 @@ public final class PlayerMoveEvent extends Event {
   }
 
   private float conditionalReadFloat(DataInput in, int flag) throws IOException {
-    if ((flags & flag) != 0) {
+    if ((transmissionFlags & flag) != 0) {
       return in.readFloat();
     } else {
       return 0;
@@ -125,7 +129,7 @@ public final class PlayerMoveEvent extends Event {
   }
 
   public boolean applyX() {
-    return (flags & Flag.X) != 0;
+    return (transmissionFlags & Flag.X) != 0;
   }
 
   public void setX(double x) {
@@ -137,7 +141,7 @@ public final class PlayerMoveEvent extends Event {
   }
 
   public boolean applyY() {
-    return (flags & Flag.Y) != 0;
+    return (transmissionFlags & Flag.Y) != 0;
   }
 
   public void setY(double y) {
@@ -149,7 +153,7 @@ public final class PlayerMoveEvent extends Event {
   }
 
   public boolean applyZ() {
-    return (flags & Flag.Z) != 0;
+    return (transmissionFlags & Flag.Z) != 0;
   }
 
   public void setZ(double z) {
@@ -161,7 +165,7 @@ public final class PlayerMoveEvent extends Event {
   }
 
   public boolean applyYaw() {
-    return (flags & Flag.YAW) != 0;
+    return (transmissionFlags & Flag.YAW) != 0;
   }
 
   public void setYaw(float yaw) {
@@ -173,7 +177,7 @@ public final class PlayerMoveEvent extends Event {
   }
 
   public boolean applyPitch() {
-    return (flags & Flag.PITCH) != 0;
+    return (transmissionFlags & Flag.PITCH) != 0;
   }
 
   public void setPitch(float pitch) {
@@ -220,6 +224,38 @@ public final class PlayerMoveEvent extends Event {
     this.lastPitch = lastPitch;
   }
 
+  public boolean collidedHorizontally() {
+    return (characteristicFlags & 1) != 0;
+  }
+
+  public boolean collidedVertically() {
+    return (characteristicFlags & 2) != 0;
+  }
+
+  public boolean inWater() {
+    return (characteristicFlags & 4) != 0;
+  }
+
+  public boolean inLava() {
+    return (characteristicFlags & 8) != 0;
+  }
+
+  public boolean inVehicle() {
+    return (characteristicFlags & 16) != 0;
+  }
+
+  public boolean sneaking() {
+    return (characteristicFlags & 32) != 0;
+  }
+
+  public boolean recentlyTeleported() {
+    return (characteristicFlags & 64) != 0;
+  }
+
+  public boolean jumped() {
+    return (characteristicFlags & 128) != 0;
+  }
+
   @Override
   public void accept(EventSink sink) {
     sink.visit(this);
@@ -231,6 +267,7 @@ public final class PlayerMoveEvent extends Event {
     float lastYaw, float lastPitch,
     double x, double y, double z,
     float yaw, float pitch,
+    int characteristicFlags,
     boolean forceSave
   ) {
     return new PlayerMoveEvent(
@@ -239,6 +276,7 @@ public final class PlayerMoveEvent extends Event {
       lastYaw, lastPitch,
       x, y, z,
       yaw, pitch,
+      characteristicFlags,
       forceSave
     );
   }

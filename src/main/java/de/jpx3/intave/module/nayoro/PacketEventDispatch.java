@@ -3,6 +3,7 @@ package de.jpx3.intave.module.nayoro;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
+import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -26,6 +27,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import static de.jpx3.intave.check.movement.physics.Simulators.ELYTRA;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.SET_SLOT;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.WINDOW_ITEMS;
@@ -90,12 +92,34 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
     float lastPitch = movement.lastRotationPitch;
     int keyStrafe = movement.keyStrafe;
     int keyForward = movement.keyForward;
+
+    boolean collidedHorizontally = movement.collidedHorizontally;
+    boolean collidedVertically = movement.collidedVertically || movement.onGround();
+    boolean inWater = movement.inWater;
+    boolean inLava = movement.inLava();
+
+    boolean inVehicle = movement.isInVehicle();
+    boolean sneaking = movement.isSneaking();
+    boolean recentlyTeleported = movement.lastTeleport <= 3;
+    boolean jumped = movement.physicsJumped;
+
+    int movementFlags = 0;
+    movementFlags |= collidedHorizontally ? 1 : 0;
+    movementFlags |= collidedVertically ? 2 : 0;
+    movementFlags |= inWater ? 4 : 0;
+    movementFlags |= inLava ? 8 : 0;
+    movementFlags |= inVehicle ? 16 : 0;
+    movementFlags |= sneaking ? 32 : 0;
+    movementFlags |= recentlyTeleported ? 64 : 0;
+    movementFlags |= jumped ? 128 : 0;
+
     PlayerMoveEvent movementEvent = PlayerMoveEvent.create(
       keyStrafe, keyForward,
       x, y, z,
       yaw, pitch,
       lastX, lastY, lastZ,
       lastYaw, lastPitch,
+      movementFlags,
       movement.recordedMoves++ % 200 == 0
     );
     reverseSink.accept(user, movementEvent::accept);
@@ -137,7 +161,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
     User user, WindowClickReader reader
   ) {
     Player player = user.player();
-    player.sendMessage("Window click " + reader.windowId() + " " + reader.slot() + " " + reader.clickType() + " " + reader.shiftClick());
+//    player.sendMessage("Window click " + reader.windowId() + " " + reader.slot() + " " + reader.clickType() + " " + reader.shiftClick());
   }
 
   @PacketSubscription(
@@ -150,6 +174,6 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
     User user, WindowItemReader reader
   ) {
     Player player = user.player();
-    player.sendMessage("Window items " + reader.windowId() + " " + reader.itemMap());
+//    player.sendMessage("Window items " + reader.windowId() + " " + reader.itemMap());
   }
 }
