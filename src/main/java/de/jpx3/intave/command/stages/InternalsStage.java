@@ -142,7 +142,7 @@ public final class InternalsStage extends CommandStage {
   public void collectiveKick(CommandSender commandSender, Player target, String[] messageParts) {
     String message = Arrays.stream(messageParts).map(s -> s + " ").collect(Collectors.joining()).trim();
     for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-      if (!onlinePlayer.equals(target) && onlinePlayer.getAddress().equals(target.getAddress())) {
+      if (!onlinePlayer.equals(target) && onlinePlayer.getAddress().getAddress().equals(target.getAddress().getAddress())) {
         String parsedMessage = ChatColor.translateAlternateColorCodes('&', message);
         Synchronizer.synchronize(() -> onlinePlayer.kickPlayer(parsedMessage));
       }

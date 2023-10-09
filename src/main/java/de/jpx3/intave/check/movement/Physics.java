@@ -34,6 +34,7 @@ import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.feedback.Superposition;
+import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.violation.Violation;
@@ -46,6 +47,7 @@ import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.*;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -53,6 +55,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.util.Vector;
 
 import java.util.List;
@@ -63,6 +66,7 @@ import static de.jpx3.intave.diagnostic.message.MessageCategory.SIMFLT;
 import static de.jpx3.intave.diagnostic.message.MessageCategory.SIMFUL;
 import static de.jpx3.intave.math.MathHelper.*;
 import static de.jpx3.intave.share.ClientMath.floor;
+import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.ENDER_PEARL;
 
 @Relocate
 public final class Physics extends Check {
@@ -940,6 +944,20 @@ public final class Physics extends Check {
         movementData.allowFallDamage = false;
       });
       movementData.artificialFallDistance = 0F;
+    }
+  }
+
+  @BukkitEventSubscription
+  public void onEnderpearlTeleport(PlayerTeleportEvent teleport) {
+    Player player = teleport.getPlayer();
+    User user = UserRepository.userOf(player);
+    MovementMetadata movementData = user.meta().movement();
+    if (teleport.getCause() == ENDER_PEARL) {
+      Synchronizer.synchronize(() -> {
+        movementData.allowFallDamage = true;
+        fallDamageApplier.dealFallDamage(player, 8);
+        movementData.allowFallDamage = false;
+      });
     }
   }
 

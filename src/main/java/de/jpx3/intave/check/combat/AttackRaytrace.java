@@ -138,7 +138,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     List<Attack> pendingAttacks = meta.pendingAttacks;
     PacketContainer packet = event.getPacket();
     // Clear attacks if recently teleported
-    if (movement.lastTeleport == 0 || movement.awaitTeleport) {
+    if (movement.lastTeleport <= 1 || movement.awaitTeleport) {
       pendingAttacks.clear();
     }
     // Apply flying packets (first boolean)
@@ -183,7 +183,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     ViolationMetadata violations = meta.violationLevel();
     ConnectionMetadata connection = meta.connection();
 
-    int maximumPendingFeedbackPackets = trustFactorSetting("pending-allowance", player) + (int) MathHelper.minmax(0, LatencyStudy.cachedAverage(), 20);
+    int maximumPendingFeedbackPackets = trustFactorSetting("pending-allowance", player) + (int) MathHelper.minmax(1, LatencyStudy.cachedAverage(), 20);
 //    long pendingFeedbacks = attackedEntity.pendingFeedbackPackets();
     LatencyStudy.enterHit((short) pendingFeedbacks);
 
@@ -192,10 +192,10 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 
     long transactionPingAverage = connection.transactionPingAverage();
     double transactionTickAverage = transactionPingAverage / 50d;
-    int absoluteLimit = zeroNetworkTolerance ? 2 : 12;
+    int absoluteLimit = zeroNetworkTolerance ? 3 : 12;
     int historyBasedLimit = Math.min((int) ((LatencyStudy.cachedAverage() + transactionTickAverage + 0.5) * 0.6), absoluteLimit);
     boolean pendingOverAverage = transactionPingAverage > 0 && pendingFeedbacks > historyBasedLimit;
-    double trustfactorBaseDistanceLimit = trustFactorSetting("pending-distance", player) * 0.8;
+    double trustfactorBaseDistanceLimit = trustFactorSetting("pending-distance", player);
     double actualDistance = attackedEntity.immediateDistanceToClientPosition();
     boolean distanceOverLimit = actualDistance > trustfactorBaseDistanceLimit;
     // If something malicious was detected, block the attack

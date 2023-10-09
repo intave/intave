@@ -474,7 +474,7 @@ public final class MovementDispatcher extends Module {
       boolean collidedWithBoat = movementData.collidedWithBoat();
 
       if (!vehicleMove && !collidedWithBoat) {
-        movementData.applyGroundInformationToPacket(packet);
+//        movementData.applyGroundInformationToPacket(packet);
       }
 
       if (movementData.onGround && !clientOnGround && movementData.step) {

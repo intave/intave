@@ -289,7 +289,7 @@ public final class FeedbackSender extends Module {
       } catch (Exception exception) {
         throw new IllegalStateException("Unable to create feedback packet", exception);
       }
-      if (index < packetCache.length) {
+      if (index >= 0 && index < packetCache.length) {
         packetCache[index] = packet;
       }
     }

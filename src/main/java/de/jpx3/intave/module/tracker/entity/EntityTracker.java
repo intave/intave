@@ -135,12 +135,18 @@ public final class EntityTracker extends Module {
       // Another entity
       if (vehicleEntityID == -1) {
         // when an entity dismounts
-        user.tickFeedback(sittingEntity::unmountFromEntity);
+        user.tickFeedback(() -> {
+          sittingEntity.unmountFromEntity();
+          connection.noteDismount(entityID);
+        });
       } else {
         // mounts on entity
         Entity sittingOnEntity = connection.entityBy(vehicleEntityID);
         if (sittingOnEntity != null) {
-          user.tickFeedback(() -> sittingEntity.mountToEntity(sittingOnEntity));
+          user.tickFeedback(() -> {
+            sittingEntity.mountToEntity(sittingOnEntity);
+            connection.noteMount(entityID, vehicleEntityID);
+          });
         } else {
           if (IntaveControl.DISABLE_LICENSE_CHECK) {
             IntaveLogger.logger().error(String.format("mounted On Entity with id %d could not be found", vehicleEntityID));
@@ -393,15 +399,17 @@ public final class EntityTracker extends Module {
     if (attackData.lastAttackedEntity() != null && attackData.lastAttackedEntityID() == entityId) {
       attackData.nullifyLastAttackedEntity();
     }
+
     if (NEW_POSITION_PROCESSING_1_9) {
-      for (Entity entityShade : connection.entities()) {
-        if (entityShade.mountedEntity() != null) {
-          if (entityShade.mountedEntity().entityId() == entityId) {
-            entityShade.unmountFromEntity();
-          }
+      Integer sitter = connection.sittingOn(entityId);
+      if (sitter != null) {
+        Entity sitterEntity = connection.entityBy(sitter);
+        if (sitterEntity != null) {
+          sitterEntity.unmountFromEntity();
         }
       }
     }
+
     if (IntaveControl.DEBUG_ENTITY_TRACKING) {
       Synchronizer.synchronize(() -> {
         Player target = user.player();

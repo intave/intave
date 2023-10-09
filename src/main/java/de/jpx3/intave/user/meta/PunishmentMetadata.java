@@ -67,6 +67,10 @@ public final class PunishmentMetadata {
         event -> {}
       ),
       new AttackNerfer(AttackNerfStrategy.CRITICALS, NO_CRITICAL_HITS_DURATION, event -> {
+        User target = UserRepository.userOf(player);
+        if (target.meta().protocol().combatUpdate()) {
+          return;
+        }
         double attackDamage = DamageModify.attackDamageOf((Player) event.getDamager());
         ItemStack heldItem = UserRepository.userOf((Player) event.getDamager()).meta().inventory().heldItem();
         attackDamage += DamageModify.sharpnessDamageOf(heldItem);
@@ -102,6 +106,10 @@ public final class PunishmentMetadata {
 //        performEntityHurtTimeChange(event.getEntity());
 //      }),
       new AttackNerfer(AttackNerfStrategy.HT_LIGHT, DAMAGE_CANCEL_LIGHT_DURATION, event -> {
+        User target = UserRepository.userOf(player);
+        if (target.meta().protocol().combatUpdate()) {
+          return;
+        }
         // Perform hurt-time change
         int ticks = -ThreadLocalRandom.current().nextInt(0, 1);
         HurttimeModifier.applyHurtTimeChangeTo(player, (int) (DAMAGE_CANCEL_LIGHT_DURATION / 50), ticks);
@@ -132,7 +140,7 @@ public final class PunishmentMetadata {
           return armor;
         });
       }),
-      new AttackNerfer(AttackNerfStrategy.  DMG_ARMOR_INEFFECTIVE, DAMAGE_CANCEL_MEDIUM_DURATION, event -> {
+      new AttackNerfer(AttackNerfStrategy.DMG_ARMOR_INEFFECTIVE, DAMAGE_CANCEL_MEDIUM_DURATION, event -> {
         DamageModify.modifyDamageApplier(event, ARMOR, (damage, armor) -> {
           if (armor < -2) {
             double actualDamage = damage + armor; // armor is negative
@@ -143,6 +151,10 @@ public final class PunishmentMetadata {
         });
       }, true),
       new AttackNerfer(AttackNerfStrategy.GARBAGE_HITS, GARBAGE_HITS_DURATION, event -> {
+        User target = UserRepository.userOf(player);
+        if (target.meta().protocol().combatUpdate()) {
+          return;
+        }
         int entityId = event.getEntity().getEntityId();
         long lastValidAttack = System.currentTimeMillis() - lastTimeValidHurttimeAttack.computeIfAbsent(entityId, x -> 0L);
         if (lastValidAttack < delay) {

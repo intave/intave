@@ -25,6 +25,7 @@ import de.jpx3.intave.check.MetaCheck;
 import de.jpx3.intave.check.world.interaction.Interaction;
 import de.jpx3.intave.check.world.interaction.InteractionEmulator;
 import de.jpx3.intave.check.world.interaction.InteractionType;
+import de.jpx3.intave.executor.RateLimiter;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.module.Modules;
@@ -573,7 +574,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         }
         receiveExcludedPacket(player, packet);
         if (refreshBlocks && rewritePacket) {
-          Synchronizer.synchronize(() -> refreshBlocksAround(player, targetLocation));
+          refreshBlocksAround(player, targetLocation);
         }
       }
     } else {
@@ -588,14 +589,20 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
   }
 
   private void refreshBlocksAround(Player player, Location targetLocation) {
-    Synchronizer.synchronize(() -> {
-      player.updateInventory();
-      refreshBlock(player, targetLocation);
-      for (Direction direction : Direction.values()) {
-        Location placedBlock = targetLocation.clone().add(direction.directionVecAsVector());
-        refreshBlock(player, placedBlock);
-      }
-    });
+    // add rate limit
+    User user = userOf(player);
+    ConnectionMetadata connection = user.meta().connection();
+    RateLimiter refreshBlockRatelimit = connection.refreshBlockRatelimit;
+    if (refreshBlockRatelimit.checkCooldownAndAcquire()) {
+      Synchronizer.synchronize(() -> {
+        player.updateInventory();
+        refreshBlock(player, targetLocation);
+        for (Direction direction : Direction.values()) {
+          Location placedBlock = targetLocation.clone().add(direction.directionVecAsVector());
+          refreshBlock(player, placedBlock);
+        }
+      });
+    }
   }
 
   private void acknowledgeBlockChange(Player player, int sequenceNumber) {

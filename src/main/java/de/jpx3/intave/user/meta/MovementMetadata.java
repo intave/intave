@@ -578,11 +578,12 @@ public final class MovementMetadata implements SimulationEnvironment {
     return plate != null && plate.getType() == Material.ELYTRA;
   }
 
+  @Deprecated
   private void updateEntityMovement() {
-    ConnectionMetadata connectionMetadata = user.meta().connection();
-    for (Entity value : connectionMetadata.entities()) {
-      value.entityPlayerMoveUpdate();
-    }
+//    ConnectionMetadata connectionMetadata = user.meta().connection();
+//    for (Entity value : connectionMetadata.entities()) {
+//      value.entityPlayerMoveUpdate();
+//    }
 //    for (Map.Entry<Integer, WrappedEntity> entry : entityMap.entrySet()) {
 //      WrappedEntity entity = entry.getValue();
 //      entity.entityPlayerMoveUpdate();
