@@ -12,10 +12,7 @@ import de.jpx3.intave.connect.cloud.protocol.Packet;
 import de.jpx3.intave.connect.cloud.protocol.Shard;
 import de.jpx3.intave.connect.cloud.protocol.Token;
 import de.jpx3.intave.connect.cloud.protocol.listener.Serverbound;
-import de.jpx3.intave.connect.cloud.protocol.packets.ServerboundPassNayoroPacket;
-import de.jpx3.intave.connect.cloud.protocol.packets.ServerboundRequestStoragePacket;
-import de.jpx3.intave.connect.cloud.protocol.packets.ServerboundRequestTrustfactorPacket;
-import de.jpx3.intave.connect.cloud.protocol.packets.ServerboundUploadStoragePacket;
+import de.jpx3.intave.connect.cloud.protocol.packets.*;
 import de.jpx3.intave.connect.cloud.request.CloudStorageGateaway;
 import de.jpx3.intave.connect.cloud.request.CloudTrustfactorResolver;
 import de.jpx3.intave.connect.cloud.request.Request;
@@ -44,6 +41,7 @@ public final class Cloud {
   private final Map<Shard, Session> sessions = new HashMap<>();
   private final Map<UUID, Request<TrustFactor>> trustfactorRequests = new HashMap<>();
   private final Map<UUID, Request<ByteBuffer>> storageRequests = new HashMap<>();
+  private final Map<Integer, Request<String>> uploadLogRequests = new HashMap<>();
   private CloudConfig cloudConfig;
   private int taskId;
 
@@ -174,6 +172,23 @@ public final class Cloud {
     sendPacket(new ServerboundPassNayoroPacket(Identity.from(player), buffer));
   }
 
+  public void uploadPlayerLogs(Player player, int nonce, List<String> logs, Consumer<String> callback) {
+    Request<String> request = uploadLogRequests.get(nonce);
+    if (request == null) {
+      request = new Request<>();
+      uploadLogRequests.put(nonce, request);
+    }
+    request.subscribe(callback);
+    sendPacket(new ServerboundUploadLogsPacket(Identity.from(player), nonce, logs));
+  }
+
+  public void serveUploadPlayerLogs(Identity identity, int nonce, String logId) {
+    Request<String> request = uploadLogRequests.remove(nonce);
+    if (request != null) {
+      request.publish(logId);
+    }
+  }
+
   public void trustfactorRequest(Player player, Consumer<TrustFactor> callback) {
     UUID key = player.getUniqueId();
     Request<TrustFactor> request = trustfactorRequests.get(key);
@@ -215,5 +230,9 @@ public final class Cloud {
 
   public boolean isEnabled() {
     return cloudConfig.isEnabled();
+  }
+
+  public boolean available() {
+    return sessions.values().stream().anyMatch(Session::active);
   }
 }

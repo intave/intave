@@ -20,6 +20,7 @@ public final class PacketRegistry {
     registerClientbound(ClientboundSetTrustfactorPacket.class);
     registerClientbound(ClientboundViolationPacket.class);
     registerClientbound(ClientboundKeepAlivePacket.class);
+    registerClientbound(ClientboundLogReceivePacket.class);
 
     registerServerbound(ServerboundConfirmEncryptionPacket.class);
     registerServerbound(ServerboundHelloPacket.class);
@@ -28,6 +29,7 @@ public final class PacketRegistry {
     registerServerbound(ServerboundRequestTrustfactorPacket.class);
     registerServerbound(ServerboundUploadStoragePacket.class);
     registerServerbound(ServerboundKeepAlivePacket.class);
+    registerServerbound(ServerboundUploadLogsPacket.class);
   }
   
   private static void registerClientbound(Class<? extends Packet<?>> packetClass) {

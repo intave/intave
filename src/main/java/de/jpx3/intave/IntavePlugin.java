@@ -30,6 +30,7 @@ import de.jpx3.intave.command.CommandForwarder;
 import de.jpx3.intave.config.ConfigurationService;
 import de.jpx3.intave.connect.IntaveDomains;
 import de.jpx3.intave.connect.cloud.Cloud;
+import de.jpx3.intave.connect.cloud.LogTransmittor;
 import de.jpx3.intave.connect.customclient.CustomClientSupportService;
 import de.jpx3.intave.connect.proxy.ProxyMessenger;
 import de.jpx3.intave.connect.sibyl.SibylBroadcast;
@@ -119,6 +120,7 @@ public final class IntavePlugin extends JavaPlugin {
   }
 
   private IntaveLogger logger;
+  private LogTransmittor transmittor;
   private Cloud cloud;
 
   private ProxyMessenger proxyMessenger; // module candidate
@@ -255,6 +257,9 @@ public final class IntavePlugin extends JavaPlugin {
       blackListService = new PlayerListService(this);
       cloud = new Cloud();
       cloud.init();
+
+      transmittor = new LogTransmittor();
+      transmittor.init();
 
       Thread.sleep(5);
 
@@ -1186,6 +1191,10 @@ public final class IntavePlugin extends JavaPlugin {
 
   public Cloud cloud() {
     return cloud;
+  }
+
+  public LogTransmittor logTransmittor() {
+    return transmittor;
   }
 
   public ProxyMessenger proxy() {

@@ -1,7 +1,9 @@
 package de.jpx3.intave.module.violation.placeholder;
 
 import com.google.common.collect.ImmutableMap;
+import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.trust.TrustFactor;
+import de.jpx3.intave.connect.cloud.LogTransmittor;
 import de.jpx3.intave.user.User;
 import org.bukkit.entity.Player;
 

@@ -2,12 +2,14 @@ package de.jpx3.intave.module.violation;
 
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
+import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.check.event.IntaveCommandExecutionEvent;
 import de.jpx3.intave.access.check.event.IntaveViolationEvent;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.analytics.GlobalStatisticsRecorder;
 import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckStatistics;
+import de.jpx3.intave.connect.cloud.LogTransmittor;
 import de.jpx3.intave.connect.proxy.protocol.packets.IntavePacketOutKicked;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.MathHelper;
@@ -215,6 +217,8 @@ public final class ViolationProcessor extends Module {
       LOGGER_MESSAGE_LAYOUT, player.getName(), trustFactor,
       message, details, vlAdded, vlAfterViolation, checkName
     );
+    LogTransmittor logTransmittor = IntavePlugin.singletonInstance().logTransmittor();
+    logTransmittor.addPlayerLog(player, "(DET) " + consoleMessage);
     if (IntaveControl.GOMME_MODE) {
       consoleMessage += " | TPS: " + ServerHealth.stringFormattedTick() + " Ping: " + user.latency() + "ms";
     }
@@ -320,7 +324,18 @@ public final class ViolationProcessor extends Module {
           violationContext.violationLevelAfter()
         ));
       }
+
+      LogTransmittor logTransmittor = IntavePlugin.singletonInstance().logTransmittor();
+      logTransmittor.addPlayerLog(player, "(EXE) " + command);
+
       plugin.logger().commandExecution(command);
+
+      if (command.contains("{log-id}")) {
+        logTransmittor.awaitLogIdOf(player, logId -> {
+          String commandWithLogId = command.replace("{log-id}", logId);
+          Bukkit.dispatchCommand(Bukkit.getConsoleSender(), commandWithLogId);
+        });
+      }
       Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
     });
   }

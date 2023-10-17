@@ -58,6 +58,10 @@ public interface Clientbound extends PacketListener {
     onUncaught(packet);
   }
 
+  default void onLogReceive(ClientboundLogReceivePacket packet) {
+    onUncaught(packet);
+  }
+
   default void onUncaught(Packet<?> packet) {
 
   }

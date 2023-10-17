@@ -65,6 +65,11 @@ public final class StandardClientRetriever extends ChannelInboundHandlerAdapter 
   }
 
   @Override
+  public void onLogReceive(ClientboundLogReceivePacket packet) {
+    session.serverUploadPlayerLogsRequest(packet.id(), packet.packetNonceResult(), packet.logId());
+  }
+
+  @Override
   public void onShardsPacket(ClientboundShardsPacket packet) {
     session.onShardsAddition(packet.shards());
   }

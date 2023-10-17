@@ -8,6 +8,7 @@ import de.jpx3.intave.access.player.trust.DynamicStorageTrustfactorResolver;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.access.player.trust.TrustFactorResolver;
 import de.jpx3.intave.annotate.HighOrderService;
+import de.jpx3.intave.connect.cloud.LogTransmittor;
 import de.jpx3.intave.diagnostic.ConsoleOutput;
 import de.jpx3.intave.diagnostic.message.DebugBroadcast;
 import de.jpx3.intave.diagnostic.message.MessageCategory;
@@ -121,6 +122,9 @@ public final class TrustFactorService implements BukkitEventSubscriber {
       String message2 = ChatColor.RED + player.getName() + IntavePlugin.defaultColor() + " was assigned a " + trustFactor.coloredBaseName() + IntavePlugin.defaultColor() + " trustfactor by " + source;
       IntaveLogger.logger().info(message2);
     }
+
+    LogTransmittor logTransmittor = IntavePlugin.singletonInstance().logTransmittor();
+    logTransmittor.addPlayerLog(player, "(TRUST) " + message);
   }
 
   public int trustFactorSetting(String key, Player player) {

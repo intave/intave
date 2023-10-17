@@ -151,6 +151,10 @@ public final class Session {
     cloud.serveStorageRequest(id, buffer);
   }
 
+  public void serverUploadPlayerLogsRequest(Identity id, int nonce, String logId) {
+    cloud.serveUploadPlayerLogs(id, nonce, logId);
+  }
+
   public void onShardsAddition(List<? extends Shard> shards) {
     shards.forEach(shard -> cloud.openSession(shard));;
   }
