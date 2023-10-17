@@ -39,7 +39,6 @@ public final class ServerboundUploadLogsPacket extends BinaryPacket<Serverbound>
       } else {
         buffer.writeBoolean(false);
       }
-      System.out.println("logs.size() = " + logs.size());
       buffer.writeInt(logs.size());
       for (String log : logs) {
         buffer.writeUTF(log);
