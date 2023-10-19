@@ -152,7 +152,7 @@ public final class InteractionEmulator implements EventProcessor {
           user.meta().movement().checkWebStateAgainNextTick = true;
         }
       }
-      blockStateAccess.override(world, blockX, blockY, blockZ, Material.AIR, 0);
+      blockStateAccess.override(world, blockX, blockY, blockZ, Material.AIR, 0, "BREAK");
       blockStateAccess.invalidateCacheAt(blockX, blockY, blockZ);
     }
     return access ? EmulationResult.SUCCEEDED : EmulationResult.FAILED;
@@ -250,14 +250,15 @@ public final class InteractionEmulator implements EventProcessor {
        This hardcode is required
       */
       if (placedBlockType == BlockTypeAccess.WEB) {
-        boolean playerInsideWeb = Collision.playerInImaginaryBlock(user, world, blockX, blockY, blockZ, Material.STONE, 0);
-        if (playerInsideWeb) {
+//        boolean playerInsideWeb = Collision.playerInImaginaryBlock(user, world, blockX, blockY, blockZ, Material.STONE, 0);
+//        if (playerInsideWeb) {
           user.meta().movement().checkWebStateAgainNextTick = true;
-        }
+//        }
       }
       user.meta().movement().pastBlockPlacement = 0;
-      blockStates.override(world, blockX, blockY, blockZ, placedBlockType, variant);
+      blockStates.override(world, blockX, blockY, blockZ, placedBlockType, variant, "PLACE");
       blockStates.invalidateCacheAt(blockX, blockY, blockZ);
+      blockStates.lockOverride(blockX, blockY, blockZ);
       // enforce block reset later
       //      Synchronizer.synchronize(() -> {
       //        Synchronizer.synchronize(() -> blockStates.invalidateOverride(blockX, blockY,
@@ -313,14 +314,14 @@ public final class InteractionEmulator implements EventProcessor {
           Set<Integer> possibleIds = BlockVariantReverseLookup.variantsOfConfiguration(
             doubleSlabType, uniqueId, propertyName -> Objects.equals(propertyName, "variant") ? variant : null
           );
-          return new EstimationResult(doubleSlabType, possibleIds.size() >= 1 ? possibleIds.iterator().next() : 0);
+          return new EstimationResult(doubleSlabType, !possibleIds.isEmpty() ? possibleIds.iterator().next() : 0);
         }
       } else {boolean keep = targetDirection != Direction.DOWN && (targetDirection == Direction.UP || facingY <= 0.5);
         int uniqueId = Boolean.hashCode(keep);
         Set<Integer> possibleIds = BlockVariantReverseLookup.variantsOfConfiguration(
           placementType, uniqueId, propertyName -> Objects.equals(propertyName, STEP_PROPERTY_NAME) ? keep ? "BOTTOM" : "TOP" : null
         );
-        return new EstimationResult(placementType, possibleIds.size() >= 1 ? possibleIds.iterator().next() : 0);
+        return new EstimationResult(placementType, !possibleIds.isEmpty() ? possibleIds.iterator().next() : 0);
       }
     }
     return null;
@@ -396,6 +397,16 @@ public final class InteractionEmulator implements EventProcessor {
     }
   }
 
+  private final int fullWaterVariantIndex = BlockVariantReverseLookup.variantsOfConfiguration(
+    Material.WATER, 512,
+    propertyName -> Objects.equals(propertyName, "level") ? 7 : null
+  ).iterator().next();
+
+  private final int fullLavaVariantIndex = BlockVariantReverseLookup.variantsOfConfiguration(
+    Material.LAVA, 732,
+    propertyName -> Objects.equals(propertyName, "level") ? 7 : null
+  ).iterator().next();
+
   private void emulateInteractWithHandItem(
     Player player, Block clickedBlock,
     InteractionType type,
@@ -425,7 +436,8 @@ public final class InteractionEmulator implements EventProcessor {
               placementLocation.getBlockY(),
               placementLocation.getBlockZ(),
               Material.AIR,
-              0
+              0,
+              "BUCKET"
             );
           }
         }
@@ -453,7 +465,9 @@ public final class InteractionEmulator implements EventProcessor {
             placementLocation.getBlockY(),
             placementLocation.getBlockZ(),
             itemTypeInHand == Material.WATER_BUCKET ? Material.WATER : Material.LAVA,
-            15);
+            itemTypeInHand == Material.WATER_BUCKET ? fullWaterVariantIndex : fullLavaVariantIndex,
+            "BUCKET"
+          );
         }
         break;
       }

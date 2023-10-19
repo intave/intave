@@ -1,5 +1,6 @@
 package de.jpx3.intave.block.state;
 
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.annotate.DoNotFlowObfuscate;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.shape.BlockShape;
@@ -11,6 +12,7 @@ import de.jpx3.intave.diagnostic.ShapeAccessFlowStudy;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.world.WorldHeight;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -225,7 +227,7 @@ final class MultiChunkKeyExtendedBlockStateCache implements ExtendedBlockStateCa
   }
 
   @Override
-  public void override(World world, int posX, int posY, int posZ, Material type, int variant) {
+  public void override(World world, int posX, int posY, int posZ, Material type, int variant, String reason) {
 //    invalidateOverride(posX, posY, posZ);
     long key = bigKey(posX, posY, posZ);
     replacementCache.remove(key);
@@ -238,7 +240,9 @@ final class MultiChunkKeyExtendedBlockStateCache implements ExtendedBlockStateCa
     }
     Position position = new Position(posX, posY, posZ);
     replacementCache.insert(position, blockState);
-//    player.sendMessage(ChatColor.GOLD + "override("+posX+", "+posY+", "+posZ+", "+type+")");
+    if (IntaveControl.BLOCK_CACHE_DEBUG) {
+      player.sendMessage(ChatColor.LIGHT_PURPLE + "OVERRIDE " + ChatColor.AQUA  + type + ChatColor.LIGHT_PURPLE + " at " + ChatColor.GRAY + position + ChatColor.LIGHT_PURPLE + " for " + ChatColor.RED + reason);
+    }
   }
 
   @Override
@@ -256,6 +260,23 @@ final class MultiChunkKeyExtendedBlockStateCache implements ExtendedBlockStateCa
   public BlockState overrideOf(int posX, int posY, int posZ) {
     long key = bigKey(posX, posY, posZ);
     return replacementCache.byKey(key);
+  }
+
+  @Override
+  public void lockOverride(int posX, int posY, int posZ) {
+    replacementCache.lock(Position.of(posX, posY, posZ));
+    if (IntaveControl.BLOCK_CACHE_DEBUG) {
+      player.sendMessage(ChatColor.LIGHT_PURPLE + "LOCK " + ChatColor.GRAY + Position.of(posX, posY, posZ));
+    }
+  }
+
+  @Override
+  public void unlockOverride(int posX, int posY, int posZ) {
+    if (replacementCache.unlock(Position.of(posX, posY, posZ))) {
+      if (IntaveControl.BLOCK_CACHE_DEBUG) {
+        player.sendMessage(ChatColor.LIGHT_PURPLE + "UNLOCK " + ChatColor.GRAY + Position.of(posX, posY, posZ));
+      }
+    }
   }
 
   @Override

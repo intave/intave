@@ -112,12 +112,17 @@ public interface SimulationEnvironment {
   boolean lastOnGround();
   boolean collidedHorizontally();
   boolean collidedVertically();
+
+  void checkSupportingBlock();
+
   boolean collidedWithBoat();
   double frictionPosSubtraction();
   boolean receivedFlyingPacketIn(int ticks);
 
   Material collideMaterial();
   Material frictionMaterial();
+  Material previousCollideMaterial();
+  Material previousFrictionMaterial();
   boolean blockOnPositionSoulSpeedAffected();
 
   double fallDistance();

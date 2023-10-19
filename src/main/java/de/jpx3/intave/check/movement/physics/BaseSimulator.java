@@ -227,6 +227,7 @@ class BaseSimulator extends Simulator {
     }
   }
 
+  // moveRelative
   private void performRelativeMoveSimulationOfState(
     Motion motion,
     float friction,
@@ -394,7 +395,6 @@ class BaseSimulator extends Simulator {
     double motionZ
   ) {
     Player player = user.player();
-    World world = player.getWorld();
     MetadataBundle meta = user.meta();
     ViolationMetadata violationLevelData = meta.violationLevel();
     ProtocolMetadata clientData = meta.protocol();
@@ -415,10 +415,10 @@ class BaseSimulator extends Simulator {
     double slipperiness;
 
     if (environment.lastOnGround()) {
-      double blockPositionX = floor(environment.verifiedPositionX());
-      double blockPositionY = floor(environment.verifiedPositionY() - environment.frictionPosSubtraction());
-      double blockPositionZ = floor(environment.verifiedPositionZ());
-      slipperiness = MovementCharacteristics.currentSlipperiness(user, world, blockPositionX, blockPositionY, blockPositionZ);
+//      double blockPositionX = floor(environment.verifiedPositionX());
+//      double blockPositionY = floor(environment.verifiedPositionY() - environment.frictionPosSubtraction());
+//      double blockPositionZ = floor(environment.verifiedPositionZ());
+      slipperiness = BlockProperties.of(environment.frictionMaterial()).slipperiness() * 0.91f;
     } else {
       slipperiness = 0.91f;
     }
@@ -535,6 +535,8 @@ class BaseSimulator extends Simulator {
         motion.motionY = 0.0;
       }
     }
+
+//    environment.checkSupportingBlock();
 
     // EntityCollidedWithBlock
     if (environment.onGround() && !environment.isSneaking()) {

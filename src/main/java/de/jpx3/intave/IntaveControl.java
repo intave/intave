@@ -2,7 +2,7 @@ package de.jpx3.intave;
 
 public final class IntaveControl {
   public static final boolean APPLY_GLOBAL_LOW_TRUSTFACTOR = false;
-  public static final boolean DEBUG_MOVEMENT = false;
+  public static final boolean DEBUG_MOVEMENT = true;
   public static final boolean DEBUG_EMULATION = false;
   public static final boolean DEBUG_HEURISTICS = false;
   public static final boolean DEBUG_INTERACTION = false;
@@ -18,6 +18,7 @@ public final class IntaveControl {
   public static final boolean TELEPORT_FAR_AWAY_ON_Q_PRESS = false;
   public static final boolean DEBUG_INTAVE_TELEPORT_EVENT_CANCELS = false;
   public static final boolean DISABLE_BLOCK_CACHING_ENTIRELY = false;
+  public static final boolean BLOCK_CACHE_DEBUG = false;
   public static final boolean IGNORE_CHUNK_PACKETS = false;
   public static final boolean USE_MINING_STRATEGIES = false;
   public static final boolean DISABLE_AUTOCLICKER_CHECK = true;
@@ -53,6 +54,7 @@ public final class IntaveControl {
   public static final boolean DISALLOW_ALL_BLOCK_PLACEMENTS = false;
   public static final boolean ENABLE_MOVEMENT_DEBUGGER_COLLECTOR = false;
   public static final boolean MOVEMENT_DEBUGGER_COLLECTOR_POSTTICK_OUTPUT = false;
+  public static final boolean AUTHENTICATION_DEBUG_MODE = false;
 
   public static final boolean USE_EXTERNAL_CONFIGURATION_FILE = !IntaveBuildConfig.PRODUCTION;
   public static final boolean GOMME_MODE = IntaveBuildConfig.GOMME;

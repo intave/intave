@@ -134,7 +134,8 @@ public final class BlockUpdateTracker extends Module {
         }
         Material material = blockData.getType();
         int variant = BlockVariantNativeAccess.variantAccess(blockData);
-        blockStateAccess.override(world, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ(), material, variant);
+        blockStateAccess.unlockOverride(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
+        blockStateAccess.override(world, blockPosition.getX(), blockPosition.getY(), blockPosition.getZ(), material, variant, "UPDATE");
         blockStateAccess.invalidateCacheAt(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
       }
     };

@@ -80,6 +80,16 @@ public final class MockFullBlockStaticPlane implements ExtendedBlockStateCache {
   }
 
   @Override
+  public void lockOverride(int posX, int posY, int posZ) {
+
+  }
+
+  @Override
+  public void unlockOverride(int posX, int posY, int posZ) {
+
+  }
+
+  @Override
   public void invalidateOverride(int posX, int posY, int posZ) {
 
   }

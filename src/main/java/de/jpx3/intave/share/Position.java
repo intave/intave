@@ -43,6 +43,11 @@ public final class Position extends Vector implements Serializable {
   }
 
   @Override
+  public String toString() {
+    return "(" + x + ", " + y + ", " + z + ")";
+  }
+
+  @Override
   public Position clone() {
     return (Position) super.clone();
   }

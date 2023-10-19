@@ -25,7 +25,6 @@ public final class BlockRaytrace {
     return lengthOffset;
   }
 
-
   @Override
   public boolean equals(Object obj) {
     if (this == obj) return true;

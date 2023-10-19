@@ -388,11 +388,19 @@ public final class IntavePlugin extends JavaPlugin {
           connection.setConnectTimeout(2000);
           connection.setReadTimeout(2000);
           connection.connect();
+
+          if (IntaveControl.AUTHENTICATION_DEBUG_MODE) {
+            System.out.println("Requesting authentication from " + path);
+          }
+
           Scanner scanner2 = new Scanner(connection.getInputStream(), "UTF-8");
           StringBuilder raw2 = new StringBuilder();
           while (scanner2.hasNext())
             raw2.append(scanner2.next());
           response = raw2.toString();
+          if (IntaveControl.AUTHENTICATION_DEBUG_MODE) {
+            System.out.println("Response: " + response);
+          }
           if ("timeout".equalsIgnoreCase(response)) {
             response += "_";
           }
