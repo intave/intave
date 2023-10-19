@@ -347,6 +347,7 @@ public final class MovementMetadata implements SimulationEnvironment {
       }
     }
     checkSupportingBlock();
+    compileSpecialBlocks();
     lastRotationYaw = rotationYaw;
     lastRotationPitch = rotationPitch;
     if (hasRotation) {

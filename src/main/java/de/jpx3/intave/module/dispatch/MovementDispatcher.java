@@ -464,7 +464,7 @@ public final class MovementDispatcher extends Module {
       timerCheck.receiveMovement(event);
       interactionRaytraceCheck.receiveMovement(event);
 
-      movementData.compileSpecialBlocks();
+//      movementData.compileSpecialBlocks();
 //      movementData.recheckWebStateFromLastTick();
 
       if (hasMovement || hasRotation) {
