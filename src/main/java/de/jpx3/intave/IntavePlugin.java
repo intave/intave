@@ -388,11 +388,19 @@ public final class IntavePlugin extends JavaPlugin {
           connection.setConnectTimeout(2000);
           connection.setReadTimeout(2000);
           connection.connect();
+
+          if (IntaveControl.AUTHENTICATION_DEBUG_MODE) {
+            System.out.println("Requesting authentication from " + path);
+          }
+
           Scanner scanner2 = new Scanner(connection.getInputStream(), "UTF-8");
           StringBuilder raw2 = new StringBuilder();
           while (scanner2.hasNext())
             raw2.append(scanner2.next());
           response = raw2.toString();
+          if (IntaveControl.AUTHENTICATION_DEBUG_MODE) {
+            System.out.println("Response: " + response);
+          }
           if ("timeout".equalsIgnoreCase(response)) {
             response += "_";
           }
@@ -819,7 +827,7 @@ public final class IntavePlugin extends JavaPlugin {
     for (Map.Entry<String, Boolean> entry : enforceDisabled.entrySet()) {
       if (entry.getValue()) {
         logger.warn(entry.getKey());
-        if (!DISABLE_LICENSE_CHECK || GOMME_MODE) {
+        if (!DISABLE_LICENSE_CHECK /*|| GOMME_MODE*/) {
           throw new IllegalStateException(entry.getKey() + ", but license check is disabled");
         }
       }

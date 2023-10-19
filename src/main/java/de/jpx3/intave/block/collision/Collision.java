@@ -449,7 +449,7 @@ public final class Collision {
     BoundingBox boundingBox, Function<? super BlockPosition, Boolean> predicate
   ) {
     return collectRasterizedCollisions(
-      boundingBox, predicate, Boolean::booleanValue,
+      boundingBox, predicate, aBoolean -> !aBoolean,
       Collectors.reducing(true, Boolean::logicalAnd)
     );
   }

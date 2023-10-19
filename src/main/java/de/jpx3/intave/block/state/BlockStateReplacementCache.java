@@ -11,6 +11,7 @@ import java.util.function.Function;
 
 final class BlockStateReplacementCache<K> {
   private final Map<Position, BlockState> located = Maps.newConcurrentMap();
+  private final Map<Position, Long> locked = Maps.newConcurrentMap();
   private final Map<K, BlockState> indexed = Maps.newConcurrentMap();
   private final Set<Position> locations = Sets.newConcurrentHashSet();
 
@@ -32,6 +33,18 @@ final class BlockStateReplacementCache<K> {
     indexed.put(keyer.apply(position), blockState);
   }
 
+  public void lock(Position position) {
+    locked.put(position, System.currentTimeMillis());
+  }
+
+  public boolean unlock(Position position) {
+    return locked.remove(position) != null;
+  }
+
+  private boolean isLocked(Position position) {
+    return locked.containsKey(position) && System.currentTimeMillis() - locked.get(position) < 5000L;
+  }
+
   public void remove(K key) {
     indexed.remove(key);
   }
@@ -42,29 +55,37 @@ final class BlockStateReplacementCache<K> {
 
   public void internalRefresh() {
     for (Position location : locations) {
+      if (isLocked(location)) {
+        continue;
+      }
       BlockState blockState = located.get(location);
       if (blockState == null || blockState.expired()) {
-//        player.sendMessage("Refreshed " + location + " " + (blockState == null ? "null" : blockState.age()));
         locations.remove(location);
         located.remove(location);
         indexed.remove(keyer.apply(location));
+        locked.remove(location);
       }
     }
   }
 
   public void chunkReset(int chunkXMinPos, int chunkXMaxPos, int chunkZMinPos, int chunkZMaxPos) {
     for (Position location : located.keySet()) {
+      if (isLocked(location)) {
+        continue;
+      }
       if (location.getX() >= chunkXMinPos && location.getX() < chunkXMaxPos &&
         location.getZ() >= chunkZMinPos && location.getZ() < chunkZMaxPos) {
         K key = keyer.apply(location);
         located.remove(location);
         locations.remove(location);
         indexed.remove(key);
+        locked.remove(location);
       }
     }
   }
 
   public void clear() {
+    locked.clear();
     located.clear();
     indexed.clear();
     locations.clear();

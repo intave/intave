@@ -775,7 +775,10 @@ public final class Physics extends Check {
       if (movementData.step) {
         debug += ChatColor.ITALIC + " stp:" + formatDouble(movementData.stepHeightThisMove, 5) + chatColor;
       }
-      debug += " fric:" + formatDouble(movementData.friction(), 2) + "@" + movementData.frictionMaterial();
+      if (movementData.inWeb) {
+        debug += ChatColor.ITALIC + " web" + chatColor;
+      }
+//      debug += " fric:" + formatDouble(movementData.friction(), 2) + "@" + movementData.frictionMaterial();
 
 //      if (Math.abs(movementData.motionY()) > 0.01) {
 //        debug += simulation.configuration() + " ";

@@ -421,15 +421,15 @@ public final class BaseStage extends CommandStage {
     sendVersionMessage(commandSender);
   }
 
-  @SubCommand(
-    selectors = "ui",
-    usage = "",
-    permission = "intave.command",
-    description = "Open the Intave UI"
-  )
-  public void openUICommand(CommandSender commandSender) {
-
-  }
+//  @SubCommand(
+//    selectors = "ui",
+//    usage = "",
+//    permission = "intave.command",
+//    description = "Open the Intave UI"
+//  )
+//  public void openUICommand(CommandSender commandSender) {
+//
+//  }
 
   @SubCommand(
     selectors = "proxy",

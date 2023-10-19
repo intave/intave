@@ -207,8 +207,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   @Nullable
   private Position mainSupportingBlockPos = null;
   private boolean mainSupportingBlockPosLocking = false;
-  private Material frictionMaterial = Material.AIR;
-  private Material collideMaterial = Material.AIR;
+  private Material frictionMaterial = Material.AIR, previousFrictionMaterial = Material.AIR;
+  private Material collideMaterial = Material.AIR, previousCollideMaterial = Material.AIR;
 
   private volatile BoundingBox boundingBox = BoundingBox.fromBounds(0, 0, 0, 0, 0, 0);
   private boolean boundingBoxSetup = false;
@@ -327,9 +327,6 @@ public final class MovementMetadata implements SimulationEnvironment {
       motionX = positionX - verifiedPositionX;
       motionY = positionY - verifiedPositionY;
       motionZ = positionZ - verifiedPositionZ;
-      checkSupportingBlock();
-      frictionMaterial = compileFrictionBlock();
-      collideMaterial = compileCollideBlock();
       boolean falling = motionY() <= 0.0D;
       if (falling && Effects.slowFallingEffectActive(player)) {
         artificialFallDistance = 0f;
@@ -345,13 +342,11 @@ public final class MovementMetadata implements SimulationEnvironment {
         motionX = positionX - verifiedPositionX;
         motionY = positionY - verifiedPositionY;
         motionZ = positionZ - verifiedPositionZ;
-        checkSupportingBlock();
-        frictionMaterial = compileFrictionBlock();
-        collideMaterial = compileCollideBlock();
         updateEntityActionStates();
         updateMovementMetaData();
       }
     }
+    checkSupportingBlock();
     lastRotationYaw = rotationYaw;
     lastRotationPitch = rotationPitch;
     if (hasRotation) {
@@ -370,7 +365,8 @@ public final class MovementMetadata implements SimulationEnvironment {
     updateSlotSwitch();
   }
 
-  private void checkSupportingBlock() {
+  @Override
+  public void checkSupportingBlock() {
     MetadataBundle meta = user.meta();
     ProtocolMetadata clientData = meta.protocol();
     if (clientData.trailsAndTailsUpdate()) {
@@ -387,6 +383,13 @@ public final class MovementMetadata implements SimulationEnvironment {
       }
       mainSupportingBlockPos = block;
     }
+  }
+
+  public void compileSpecialBlocks() {
+    previousCollideMaterial = collideMaterial;
+    collideMaterial = compileCollideBlock();
+    previousFrictionMaterial = frictionMaterial;
+    frictionMaterial = compileFrictionBlock();
   }
 
   private Material compileCollideBlock() {
@@ -529,7 +532,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
   }
 
-  private void recheckWebStateFromLastTick() {
+  public void recheckWebStateFromLastTick() {
     if (!checkWebStateAgainNextTick) {
       return;
     }
@@ -1056,6 +1059,16 @@ public final class MovementMetadata implements SimulationEnvironment {
   @Override
   public Material frictionMaterial() {
     return frictionMaterial;
+  }
+
+  @Override
+  public Material previousCollideMaterial() {
+    return previousCollideMaterial;
+  }
+
+  @Override
+  public Material previousFrictionMaterial() {
+    return previousFrictionMaterial;
   }
 
   public boolean isInVehicle() {

@@ -210,6 +210,11 @@ public final class PacketSubscriptionLinker extends Module {
       return packetType == PacketType.Play.Server.MAP_CHUNK ||
         packetType == PacketType.Play.Server.MAP_CHUNK_BULK;
     }
+
+    if (packetType == PacketType.Play.Client.WINDOW_CLICK) {
+      return true;
+    }
+
     return false;
   }
 

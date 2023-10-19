@@ -1,10 +1,9 @@
 package de.jpx3.intave.connect;
 
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.resource.Resource;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,10 +35,16 @@ public final class DomainCache {
   }
 
   public String serviceDomain() {
+    if (IntaveControl.AUTHENTICATION_DEBUG_MODE) {
+      return "service.intave.de";
+    }
     return selectedServiceDomain;
   }
 
   public List<String> serviceDomains() {
+    if (IntaveControl.AUTHENTICATION_DEBUG_MODE) {
+      return Collections.singletonList(serviceDomain());
+    }
     return sortedServiceDomains;
   }
 

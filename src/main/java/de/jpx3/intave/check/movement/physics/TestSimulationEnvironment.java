@@ -406,6 +406,11 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
+  public void checkSupportingBlock() {
+
+  }
+
+  @Override
   public double frictionPosSubtraction() {
     return frictionPosSubtraction;
   }
@@ -422,6 +427,16 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
 
   @Override
   public Material frictionMaterial() {
+    return Material.AIR;
+  }
+
+  @Override
+  public Material previousCollideMaterial() {
+    return Material.AIR;
+  }
+
+  @Override
+  public Material previousFrictionMaterial() {
     return Material.AIR;
   }
 

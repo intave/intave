@@ -35,6 +35,10 @@ public interface OverridableBlockStateCache extends BlockStateCache {
   @Deprecated
   BlockState overrideOf(int posX, int posY, int posZ);
 
+  void lockOverride(int posX, int posY, int posZ);
+
+  void unlockOverride(int posX, int posY, int posZ);
+
   /**
    * Remove a blocks override
    *
@@ -48,6 +52,10 @@ public interface OverridableBlockStateCache extends BlockStateCache {
 
   int numOfLocatedReplacements();
 
+  default void override(World world, int posX, int posY, int posZ, Material type, int variant) {
+    override(world, posX, posY, posZ, type, variant, "unknown");
+  }
+
   /**
    * Override a block at a specific position with a custom type and variant.
    *
@@ -58,7 +66,9 @@ public interface OverridableBlockStateCache extends BlockStateCache {
    * @param type    the selected type
    * @param variant the selected variant
    */
-  void override(World world, int posX, int posY, int posZ, Material type, int variant);
+  default void override(World world, int posX, int posY, int posZ, Material type, int variant, String reason) {
+
+  };
 
   /**
    * Remove all overrides in specified chunk boundaries

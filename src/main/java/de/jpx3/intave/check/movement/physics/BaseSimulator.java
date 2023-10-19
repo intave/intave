@@ -95,7 +95,6 @@ class BaseSimulator extends Simulator {
         Position lastPosition = environment.lastPosition();
         double fluidHeight = 0.0d;
 
-
         float heightPercentage = resolveLiquidHeightPercentage(levelOfLiquidAt(user, lastPosition));
         double convertedPositionY = environment.positionY() + Math.abs(WorldHeight.LOWER_WORLD_LIMIT);
         heightPercentage += convertedPositionY % 1;
@@ -227,6 +226,7 @@ class BaseSimulator extends Simulator {
     }
   }
 
+  // moveRelative
   private void performRelativeMoveSimulationOfState(
     Motion motion,
     float friction,
@@ -394,7 +394,6 @@ class BaseSimulator extends Simulator {
     double motionZ
   ) {
     Player player = user.player();
-    World world = player.getWorld();
     MetadataBundle meta = user.meta();
     ViolationMetadata violationLevelData = meta.violationLevel();
     ProtocolMetadata clientData = meta.protocol();
@@ -418,7 +417,7 @@ class BaseSimulator extends Simulator {
       double blockPositionX = floor(environment.verifiedPositionX());
       double blockPositionY = floor(environment.verifiedPositionY() - environment.frictionPosSubtraction());
       double blockPositionZ = floor(environment.verifiedPositionZ());
-      slipperiness = MovementCharacteristics.currentSlipperiness(user, world, blockPositionX, blockPositionY, blockPositionZ);
+      slipperiness = MovementCharacteristics.currentSlipperiness(user, player.getWorld(), blockPositionX, blockPositionY, blockPositionZ);
     } else {
       slipperiness = 0.91f;
     }
@@ -535,6 +534,8 @@ class BaseSimulator extends Simulator {
         motion.motionY = 0.0;
       }
     }
+
+//    environment.checkSupportingBlock();
 
     // EntityCollidedWithBlock
     if (environment.onGround() && !environment.isSneaking()) {

@@ -612,14 +612,16 @@ public final class DiagnosticsStage extends CommandStage {
         return builder.toString();
       }
     } else if (object.toString().contains("DataWatcher@")) {
-      WrappedDataWatcher watcher = new WrappedDataWatcher(object);
-      return "DataWatcher{" + watcher.getWatchableObjects().stream().map(watchableObject -> {
-        String value = stringFromType(watchableObject.getValue());
-        return watchableObject.getIndex() + "=" + value;
-      }).collect(Collectors.joining(", ")) + "}";
+//      WrappedDataWatcher watcher = new WrappedDataWatcher(object);
+//      return "DataWatcher{" + watcher.getWatchableObjects().stream().map(watchableObject -> {
+//        String value = stringFromType(watchableObject.getValue());
+//        return watchableObject.getIndex() + "=" + value;
+//      }).collect(Collectors.joining(", ")) + "}";
+      return "DataWatcher{...}";
     } else if (object.toString().contains("WatchableObject@")) {
-      WrappedDataWatcher.WrappedDataWatcherObject watcherObject = new WrappedDataWatcher.WrappedDataWatcherObject(object);
-      return "WatchableObject{" + watcherObject.getIndex() + "=" + stringFromType(watcherObject.getHandle()) + "}";
+//      WrappedDataWatcher.WrappedDataWatcherObject watcherObject = new WrappedDataWatcher.WrappedDataWatcherObject(object);
+//      return "WatchableObject{" + watcherObject.getIndex() + "=" + stringFromType(watcherObject.getHandle()) + "}";
+      return "WatchableObject{...}";
     } else {
       return object.toString();
     }
