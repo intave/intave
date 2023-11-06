@@ -51,6 +51,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import static de.jpx3.intave.module.feedback.FeedbackOptions.APPEND_ON_OVERFLOW;
+import static de.jpx3.intave.module.feedback.FeedbackOptions.SELF_SYNCHRONIZATION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
@@ -66,6 +68,7 @@ public final class EntityTracker extends Module {
    */
   private final EntityTypeResolver entityTypeResolver;
   private final PeriodicEntityCoverageSelector coverageSelector;
+//  private final PeriodicTickedEntitySelector tickedEntitySelector;
 
   private final boolean NEW_POSITION_PROCESSING_1_9 = MinecraftVersions.VER1_9_0.atOrAbove();
 
@@ -80,16 +83,19 @@ public final class EntityTracker extends Module {
       .withEntityAdditionListener(this::nayoroEntitySpawn)
       .withEntityRemovalListener(this::nayoroEntityDespawn)
       .build();
+//    this.tickedEntitySelector = new PeriodicTickedEntitySelector(50);
   }
 
   @Override
   public void enable() {
     coverageSelector.enableTask();
+//    tickedEntitySelector.enableTask();
   }
 
   @Override
   public void disable() {
     coverageSelector.disableTask();
+//    tickedEntitySelector.disableTask();
   }
 
   @PacketSubscription(
@@ -388,7 +394,13 @@ public final class EntityTracker extends Module {
       PacketSender.sendServerPacket(player, packet);
     }
 
-    connection.destroyEntity(entityId);
+    connection.markForDeletion(entityId);
+
+    user.tickFeedback(() -> {
+      user.tickFeedback(() -> {
+        connection.removeEntityIfMarked(entityId);
+      }, APPEND_ON_OVERFLOW | SELF_SYNCHRONIZATION);
+    }, APPEND_ON_OVERFLOW | SELF_SYNCHRONIZATION);
 
     if (entity != null) {
       StaticEntityCollisions.enterEntityDespawn(user, entity);
@@ -434,11 +446,11 @@ public final class EntityTracker extends Module {
     if (movementData.lastTeleport == 0) {
       return;
     }
-    for (Entity value : synchronizeData.entities()) {
-      int ticksAfterPositionChange = value.position.newPosRotationIncrements;
-      value.onUpdate();
-      if (value.tracingEnabled() && ticksAfterPositionChange > 0) {
-        nayoroEntityPositionUpdate(player, value);
+    for (Entity entity : synchronizeData.entities()) {
+      int ticksAfterPositionChange = entity.position.newPosRotationIncrements;
+      entity.onUpdate();
+      if (entity.tracingEnabled() && ticksAfterPositionChange > 0) {
+        nayoroEntityPositionUpdate(player, entity);
       }
     }
   }

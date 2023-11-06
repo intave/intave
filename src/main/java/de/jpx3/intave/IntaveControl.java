@@ -1,11 +1,16 @@
 package de.jpx3.intave;
 
+import java.util.Arrays;
+import java.util.List;
+
 public final class IntaveControl {
   public static final boolean APPLY_GLOBAL_LOW_TRUSTFACTOR = false;
   public static final boolean DEBUG_MOVEMENT = false;
   public static final boolean DEBUG_EMULATION = false;
   public static final boolean DEBUG_HEURISTICS = false;
   public static final boolean DEBUG_INTERACTION = false;
+  public static final boolean DEBUG_INTERACTION_DISCREET = true;
+  public static final List<String> INTERACTION_DEBUG_NAMES = Arrays.asList("Jpx3", "aesthatic");
   public static final boolean DEBUG_STUCK_REVIVAL = false;
   public static final boolean LATENCY_PING_AS_XP_LEVEL = false;
   public static final boolean DEBUG_MOVEMENT_IGNORE = false;

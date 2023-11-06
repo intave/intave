@@ -484,10 +484,10 @@ public final class MovementDispatcher extends Module {
 
     if (!movementData.isTeleportConfirmationPacket) {
       timerCheck.receiveMovement(event);
-      interactionRaytraceCheck.receiveMovement(event);
-
-//      movementData.compileSpecialBlocks();
-//      movementData.recheckWebStateFromLastTick();
+      if (interactionRaytraceCheck.receiveMovement(event)) {
+        movementData.compileSpecialBlocks();
+        movementData.recheckWebStateFromLastTick();
+      }
 
       if (hasMovement || hasRotation) {
         physicsCheck.receiveMovement(user, hasMovement, hasRotation);

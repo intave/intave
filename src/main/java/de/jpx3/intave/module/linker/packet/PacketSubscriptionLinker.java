@@ -211,18 +211,18 @@ public final class PacketSubscriptionLinker extends Module {
         packetType == PacketType.Play.Server.MAP_CHUNK_BULK;
     }
 
-    if (
-      packetType == PacketType.Play.Client.WINDOW_CLICK ||
-        packetType == PacketType.Play.Client.CUSTOM_PAYLOAD ||
-        packetType == PacketType.Play.Client.CLOSE_WINDOW ||
-        packetType == PacketType.Play.Client.CLIENT_COMMAND ||
-        packetType == PacketType.Play.Server.WINDOW_DATA ||
-        packetType == PacketType.Play.Server.WINDOW_ITEMS ||
-        packetType == PacketType.Play.Server.OPEN_WINDOW ||
-        packetType == PacketType.Play.Server.CLOSE_WINDOW
-    ) {
-      return true;
-    }
+//    if (
+//      packetType == PacketType.Play.Client.WINDOW_CLICK ||
+//        packetType == PacketType.Play.Client.CUSTOM_PAYLOAD ||
+//        packetType == PacketType.Play.Client.CLOSE_WINDOW ||
+//        packetType == PacketType.Play.Client.CLIENT_COMMAND ||
+////        packetType == PacketType.Play.Server.WINDOW_DATA ||
+//        packetType == PacketType.Play.Server.WINDOW_ITEMS ||
+//        packetType == PacketType.Play.Server.OPEN_WINDOW ||
+//        packetType == PacketType.Play.Server.CLOSE_WINDOW
+//    ) {
+//      return true;
+//    }
 
     return false;
   }

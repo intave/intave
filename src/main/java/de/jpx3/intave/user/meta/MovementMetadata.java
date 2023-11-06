@@ -346,9 +346,9 @@ public final class MovementMetadata implements SimulationEnvironment {
         updateMovementMetaData();
       }
     }
-    if (!user.meta().protocol().trailsAndTailsUpdate()) {
+//    if (!user.meta().protocol().trailsAndTailsUpdate()) {
       compileSpecialBlocks();
-    }
+//    }
     lastRotationYaw = rotationYaw;
     lastRotationPitch = rotationPitch;
     if (hasRotation) {
@@ -437,8 +437,8 @@ public final class MovementMetadata implements SimulationEnvironment {
     } else {
       // 1.8 - 1.19
       Material blockType = VolatileBlockAccess.typeAccess(
-          user, player.getWorld(),
-          positionX, positionY - reduction, positionZ
+        user, player.getWorld(),
+        positionX, positionY - reduction, positionZ
       );
       ProtocolMetadata clientData = user.meta().protocol();
       if (blockType == Material.AIR && !clientData.trailsAndTailsUpdate()) {
@@ -545,7 +545,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
     checkWebStateAgainNextTick = false;
     // only check if we missed ticks
-    if (!receivedFlyingPacketIn(6)) {
+    if (!receivedFlyingPacketIn(3)) {
       return;
     }
     // boundingbox from last tick!

@@ -115,18 +115,26 @@ public class Fluids {
     return fluidAt(user, position.getBlockX(), position.getBlockY(), position.getBlockZ());
   }
 
+  @Deprecated
+  // use VolatileBlockAccess instead
   public static @NotNull Fluid fluidAt(User user, Location location) {
     return fluidAt(user, location.getBlockX(), location.getBlockY(), location.getBlockZ());
   }
 
+  @Deprecated
+  // use VolatileBlockAccess instead
   public static @NotNull Fluid fluidAt(User user, BlockPosition position) {
     return fluidAt(user, position.getX(), position.getY(), position.getZ());
   }
 
+  @Deprecated
+  // use VolatileBlockAccess instead
   public static @NotNull Fluid fluidAt(User user, double x, double y, double z) {
     return fluidAt(user, floor(x), floor(y), floor(z));
   }
 
+  @Deprecated
+  // use VolatileBlockAccess instead
   public static @NotNull Fluid fluidAt(User user, int x, int y, int z) {
     BlockStateCache states = user.blockStates();
     Material type = states.typeAt(x, y, z);

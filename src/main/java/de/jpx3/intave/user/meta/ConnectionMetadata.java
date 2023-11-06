@@ -8,6 +8,7 @@ import com.google.common.collect.Maps;
 import com.google.gson.JsonObject;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.annotate.DispatchTarget;
+import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.executor.RateLimiter;
 import de.jpx3.intave.math.Occurrences;
@@ -19,6 +20,7 @@ import de.jpx3.intave.packet.PacketSender;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -34,7 +36,7 @@ public final class ConnectionMetadata {
 
   private final Set<Integer> entityIds = new HashSet<>();
   private final List<Entity> synchronizedEntities = Lists.newCopyOnWriteArrayList();
-  private List<Entity> cappedEntities = new ArrayList<>();
+  private List<Entity> tickedEntities = new CopyOnWriteArrayList<>();
   private final Map<Long, Long> remainingPingPacketTimestamps = Maps.newConcurrentMap();
   private final List<Long> latencyDifferenceBalance = Lists.newCopyOnWriteArrayList();
 
@@ -313,6 +315,7 @@ public final class ConnectionMetadata {
     return entitiesById.values();
   }
 
+  @Nullable
   public Entity entityBy(int identifier) {
     return entitiesById.get(identifier);
   }
@@ -321,9 +324,10 @@ public final class ConnectionMetadata {
     entitiesById.put(entity.entityId(), entity);
     entityIds.add(entity.entityId());
 //    entities.add(entity);
+//    tickedEntities.add(entity);
   }
 
-  public Entity destroyEntity(int entityId) {
+  public Entity markForDeletion(int entityId) {
     Entity old = entitiesById.put(entityId, Entity.destroyedEntity());
     entityIds.remove(entityId);
 
@@ -341,6 +345,12 @@ public final class ConnectionMetadata {
     return old;
   }
 
+  public void removeEntityIfMarked(int entityId) {
+    if (entitiesById.get(entityId) instanceof Entity.Destroyed) {
+      entitiesById.remove(entityId);
+    }
+  }
+
   public DelayQueue<DelayedPacket> delayedPackets() {
     return delayQueue;
   }
@@ -349,12 +359,12 @@ public final class ConnectionMetadata {
     return synchronizedEntities;
   }
 
-  public List<Entity> cappedEntities() {
-    return cappedEntities;
+  public List<Entity> tickedEntities() {
+    return tickedEntities;
   }
 
-  public void setCappedEntities(List<Entity> cappedEntities) {
-    this.cappedEntities = cappedEntities;
+  public void setTickedEntities(List<Entity> ticked) {
+    this.tickedEntities = ticked;
   }
 
   public Map<Long, Long> pingPackets() {

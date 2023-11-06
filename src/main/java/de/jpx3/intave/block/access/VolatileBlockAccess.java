@@ -1,6 +1,8 @@
 package de.jpx3.intave.block.access;
 
 import de.jpx3.intave.annotate.Relocate;
+import de.jpx3.intave.block.fluid.Fluid;
+import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.variant.BlockVariant;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.cleanup.GarbageCollector;
@@ -126,6 +128,29 @@ public final class VolatileBlockAccess {
       return EMERGENCY_FALLBACK_BLOCKS.computeIfAbsent(world, FakeFallbackBlock::new);
     }
     return world.getBlockAt(spawnLocation.getBlockX(), LOWER_WORLD_LIMIT - 1, spawnLocation.getBlockZ());
+  }
+
+
+  public static Fluid fluidAccess(User user, Location location) {
+    return fluidAccess(user, location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ());
+  }
+
+  public static Fluid fluidAccess(User user, BlockPosition position) {
+    return fluidAccess(user, user.player().getWorld(), position.getBlockX(), position.getBlockY(), position.getBlockZ());
+  }
+
+  public static Fluid fluidAccess(User user, World blockAccess, double x, double y, double z) {
+    return fluidAccess(user, blockAccess, floor(x), floor(y), floor(z));
+  }
+
+  public static Fluid fluidAccess(User user, Position lastPosition) {
+    return fluidAccess(user, user.player().getWorld(), lastPosition.getBlockX(), lastPosition.getBlockY(), lastPosition.getBlockZ());
+  }
+
+  public static Fluid fluidAccess(User user, World world, int blockX, int blockY, int blockZ) {
+    Material type = typeAccess(user, world, blockX, blockY, blockZ);
+    int variantIndex = variantIndexAccess(user, world, blockX, blockY, blockZ);
+    return Fluids.fluidStateOf(type, variantIndex);
   }
 
   public static Material typeAccess(User user, Location location) {

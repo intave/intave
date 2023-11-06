@@ -3,6 +3,7 @@ package de.jpx3.intave.check.combat;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
+import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.trust.TrustFactor;
@@ -273,6 +274,13 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       }
       violations.backtrackVL -= 0.05;
     }
+
+    if (entityHasTimedOut) {
+      if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
+        System.out.println("TIMEOUT: " + player.getName() + " attacked " + attackedEntity.entityName() + " with " + pendingFeedbacks + " pending feedbacks (" +pendingOverAverage + "|" + distanceOverLimit + ")");
+      }
+    }
+
     return entityHasTimedOut;
   }
 
@@ -344,42 +352,47 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       User user, Entity entity, boolean currentPosition) {
     Player player = user.player();
     MetadataBundle meta = user.meta();
-    List<Entity.EntityPositionContext> history = entity.positionHistory;
-    int maximumPendingFeedbackPackets =
-        trustFactorSetting("pending-allowance", player)
-            + (int) MathHelper.minmax(0, LatencyStudy.cachedAverage(), 20);
-    double blockReachDistance = Raytracing.reachDistanceOf(meta);
     double minReach = 10;
-    boolean livingEntity = entity.typeData().isLivingEntity();
-    int from = history.size() - 1;
-    for (int i = from; i >= 0; i--) {
-      // If current position exceeds maximum pending packets skip this entity tick
-      if (from - i > maximumPendingFeedbackPackets) {
-        continue;
-      }
-      Entity.EntityPositionContext possiblePosition = history.get(i);
-      entity.position = possiblePosition.clone();
-      Raytrace resultWithoutIncrement = fireRaytraceFor(user, entity, 0.13f, currentPosition);
-      // Stop if a valid reach was found
-      if (resultWithoutIncrement.reach() < blockReachDistance) {
-        return resultWithoutIncrement.reach();
-      }
-      double minReachInItr = resultWithoutIncrement.reach();
-      int limit = 5;
-      while (entity.position.newPosRotationIncrements > 0 && livingEntity) {
-        // If limit exceeded stop to save performance
-        if (limit-- <= 0) {
-          break;
+    try {
+      entity.positionHistoryLock.lock();
+      List<Entity.EntityPositionContext> history = entity.positionHistory;
+      int maximumPendingFeedbackPackets =
+          trustFactorSetting("pending-allowance", player)
+              + (int) MathHelper.minmax(0, LatencyStudy.cachedAverage(), 20);
+      double blockReachDistance = Raytracing.reachDistanceOf(meta);
+      boolean livingEntity = entity.typeData().isLivingEntity();
+      int from = history.size() - 1;
+      for (int i = from; i >= 0; i--) {
+        // If current position exceeds maximum pending packets skip this entity tick
+        if (from - i > maximumPendingFeedbackPackets) {
+          continue;
         }
-        entity.onUpdate();
-        Raytrace result = fireRaytraceFor(user, entity, 0.13f, currentPosition);
+        Entity.EntityPositionContext possiblePosition = history.get(i);
+        entity.position = possiblePosition.clone();
+        Raytrace resultWithoutIncrement = fireRaytraceFor(user, entity, 0.13f, currentPosition);
         // Stop if a valid reach was found
-        if (result.reach() < blockReachDistance) {
-          return result.reach();
+        if (resultWithoutIncrement.reach() < blockReachDistance) {
+          return resultWithoutIncrement.reach();
         }
-        minReachInItr = Math.min(minReachInItr, result.reach());
+        double minReachInItr = resultWithoutIncrement.reach();
+        int limit = 5;
+        while (entity.position.newPosRotationIncrements > 0 && livingEntity) {
+          // If limit exceeded stop to save performance
+          if (limit-- <= 0) {
+            break;
+          }
+          entity.onUpdate();
+          Raytrace result = fireRaytraceFor(user, entity, 0.13f, currentPosition);
+          // Stop if a valid reach was found
+          if (result.reach() < blockReachDistance) {
+            return result.reach();
+          }
+          minReachInItr = Math.min(minReachInItr, result.reach());
+        }
+        minReach = Math.min(minReach, minReachInItr);
       }
-      minReach = Math.min(minReach, minReachInItr);
+    } finally {
+      entity.positionHistoryLock.unlock();
     }
     return minReach;
   }

@@ -16,9 +16,9 @@ import de.jpx3.intave.user.User;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Entity {
   /*
@@ -55,7 +55,8 @@ public class Entity {
   public EntityPositionContext position;
   public EntityPositionContext lastPosition;
   public EntityPositionContext alternativePosition;
-  public List<EntityPositionContext> positionHistory = new CopyOnWriteArrayList<>();
+  public ReentrantLock positionHistoryLock = new ReentrantLock();
+  public List<EntityPositionContext> positionHistory = new LinkedList<>();
   public boolean dead, fakeDead;
   public boolean verifiedPosition;
   public float health;
@@ -65,6 +66,7 @@ public class Entity {
   private Entity mountedOnEntity;
   private BoundingBox boundingBox;
   private boolean enabledResponseTracing;
+  private boolean ticked;
   private boolean wasTracedLastCycle;
 
   // experimental stuff
@@ -370,10 +372,15 @@ public class Entity {
 
   private synchronized void updatePositionHistory() {
     if (!temporaryCopy) {
-      if (positionHistory.size() > 25) {
-        positionHistory.remove(0);
+      try {
+        positionHistoryLock.lock();
+        if (positionHistory.size() > 25) {
+          positionHistory.remove(0);
+        }
+        positionHistory.add(position.clone());
+      } finally {
+        positionHistoryLock.unlock();
       }
-      positionHistory.add(position.clone());
     }
   }
 
@@ -451,6 +458,14 @@ public class Entity {
     return enabledResponseTracing;
   }
 
+  public boolean isTicked() {
+    return ticked;
+  }
+
+  public void setTicked(boolean ticked) {
+    this.ticked = ticked;
+  }
+
   public boolean wasTracedLastCycle() {
     return wasTracedLastCycle;
   }
@@ -490,15 +505,6 @@ public class Entity {
     }
     boundingBox = entityBoundingBoxFrom(position, this);
     return boundingBox;
-  }
-
-  public Entity temporaryCopy() {
-    Entity clone = new Entity(entityId, typeData(), isPlayer);
-    clone.temporaryCopy = true;
-    clone.position = position.clone();
-    clone.alternativePosition = alternativePosition.clone();
-    clone.positionHistory = new ArrayList<>(positionHistory); // CopyOnWriteArrayList seems to disobey our clone policy
-    return clone;
   }
 
   public static BoundingBox entityBoundingBoxFrom(EntityPositionContext position, Entity entity) {

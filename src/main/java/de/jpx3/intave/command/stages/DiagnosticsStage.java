@@ -4,7 +4,6 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.*;
 import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import de.jpx3.intave.IntaveControl;
@@ -27,6 +26,7 @@ import de.jpx3.intave.resource.ResourceRegistry;
 import de.jpx3.intave.security.HashAccess;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
+import de.jpx3.intave.user.meta.ConnectionMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -66,7 +66,6 @@ public final class DiagnosticsStage extends CommandStage {
     description = "Dumps environment infos to a players chat",
     permission = "intave.command.diagnostics.performance"
   )
-  @Native
   public void environment(CommandSender sender) {
     Player player = null;
     String playerVersion = "";
@@ -94,6 +93,22 @@ public final class DiagnosticsStage extends CommandStage {
       // Send the message to the player
       player.spigot().sendMessage(message);
     }
+  }
+
+  @SubCommand(
+    selectors = "entities",
+    usage = "",
+    description = "Output entity data",
+    permission = "intave.command.diagnostics.performance"
+  )
+  public void entityCommand(User user) {
+    Player player = user.player();
+
+    ConnectionMetadata connection = user.meta().connection();
+    int totalEntities = connection.entities().size();
+//    int tickedEntities = connection.tickedEntities().size();
+    int tracedEntities = connection.tracedEntities().size();
+    player.sendMessage(IntavePlugin.prefix() + "Monitoring " + ChatColor.RED + totalEntities + IntavePlugin.defaultColor() + " entities, tracing " + ChatColor.RED + tracedEntities + IntavePlugin.defaultColor() + " entities");
   }
 
   @SubCommand(

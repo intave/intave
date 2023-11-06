@@ -150,7 +150,8 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
 
       boolean mustPostValidate = interactionMeta.remainingBlockStart > 0;
       if (!mustPostValidate && preprocessInteraction(interaction)) {
-        if (interactionEmulator.emulate(interaction) == FAILED) {
+        InteractionEmulator.EmulationResult emulate = interactionEmulator.emulate(interaction);
+        if (emulate == FAILED) {
           if (MinecraftVersions.VER1_19.atOrAbove()) {
             int sequenceNumber = packet.getIntegers().read(0);
             acknowledgeBlockChange(player, sequenceNumber);
@@ -159,12 +160,22 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
             refreshBlocksAround(player, blockPosition.toLocation(player.getWorld()));
           }
           event.setCancelled(true);
+          if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
+            System.out.println("[Intave/DID] PLACE/INITIAL/PREPRO/EMU_FAILED " + type + " " + typeUsedInHand + " " + enumDirection);
+          }
+        } else {
+          if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
+            System.out.println("[Intave/DID] PLACE/INITIAL/PREPRO/EMU_SUCCESS " + type + " " + typeUsedInHand + " " + enumDirection);
+          }
         }
       } else {
         interactionMeta.interactionList.add(interaction);
         // For items which require longer consume time, the cancellation should be done after double-checking
         boolean usable = ItemProperties.canItemBeUsed(player, heldItem)
           && !ItemProperties.isPotion(interaction.itemTypeInHand());
+        if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
+          System.out.println("[Intave/DID] PLACE/INITIAL/POSTPONE " + type + " " + typeUsedInHand + " " + enumDirection + " " + usable);
+        }
         if (!usable) {
           if (MinecraftVersions.VER1_19.atOrAbove()) {
             int sequenceNumber = packet.getIntegers().read(0);
@@ -212,7 +223,14 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
 
     ItemStack heldItemStack = inventoryData.heldItem();
     Material heldItemType = inventoryData.heldItemType();
-    if (ItemProperties.isSwordItem(heldItemStack) && player.getGameMode() == GameMode.CREATIVE) {
+    if (ItemProperties.isSwordItem(heldItemStack) && user.meta().abilities().inGameMode(GameMode.CREATIVE)) {
+      Violation violation = Violation.builderFor(InteractionRaytrace.class)
+        .forPlayer(player)
+        .withVL(0)
+        .withMessage("performed invalid block break")
+        .withDetails("sword in creative mode")
+        .build();
+      Modules.violationProcessor().processViolation(violation);
       event.setCancelled(true);
       return;
     }
@@ -225,6 +243,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     EnumWrappers.Direction direction = packet.getDirections().readSafely(0);
     int enumDirection = direction == null ? 0 : direction.ordinal();
     boolean nullBlock = blockPosition.getX() == 0 && blockPosition.getY() == 0 && blockPosition.getZ() == 0;
+
     if (nullBlock && enumDirection == 0) {
       return;
     }
@@ -246,15 +265,22 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       packet.shallowClone(), player.getWorld(), player, blockPosition, enumDirection,
       type,
       heldItemType, heldItemStack, EnumWrappers.Hand.MAIN_HAND, playerDigType,
-      Float.NaN,  Float.NaN,  Float.NaN
+      Float.NaN, Float.NaN, Float.NaN
     );
+
 
     boolean mustPostValidate = interactionMeta.remainingBlockStart > 0;
     if (!mustPostValidate && preprocessInteraction(interaction)) {
+      if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
+        System.out.println("[Intave/DID] BREAK/INITIAL/PREPRO " + type + " " + heldItemType + " " + playerDigType);
+      }
       interactionEmulator.emulate(interaction);
     } else {
       interactionMeta.interactionList.add(interaction);
       event.setCancelled(true);
+      if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
+        System.out.println("[Intave/DID] BREAK/INITIAL/POSTPONE " + type + " " + heldItemType + " " + playerDigType);
+      }
       if (playerDigType == START_DESTROY_BLOCK) {
         interactionMeta.remainingBlockStart++;
       }
@@ -269,7 +295,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
   }
 
   @DispatchTarget
-  public void receiveMovement(PacketEvent event) {
+  public boolean receiveMovement(PacketEvent event) {
     Player player = event.getPlayer();
     World world = player.getWorld();
     User user = userOf(player);
@@ -277,7 +303,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     InteractionMeta interactionMeta = metaOf(user);
     List<Interaction> interactionList = interactionMeta.interactionList;
     if (interactionList.isEmpty()) {
-      return;
+      return false;
     }
     Location playerLocation = new Location(world, movementData.lastPositionX, movementData.lastPositionY, movementData.lastPositionZ);
     playerLocation.setYaw(movementData.rotationYaw);
@@ -288,6 +314,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       processInteraction(interaction, playerLocation, playerLocationmdf);
     }
     interactionList.clear();
+    return true;
   }
 
   private boolean preprocessInteraction(Interaction interaction) {
@@ -385,6 +412,10 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     }
     interaction.enter();
 
+    if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(interaction.player().getName())) {
+      System.out.println("[Intave/DID] PROC/" + interaction.type() + " " + interaction.itemTypeInHand() + " " + interaction.digType());
+    }
+
     World world = interaction.world();
     Player player = interaction.player();
     User user = userOf(player);
@@ -402,6 +433,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       interactionEmulator.emulate(interaction);
 //      player.sendMessage("No target block");
 //      System.out.println("No target block");
+
       return;
     }
 
@@ -432,6 +464,12 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       raycastLocation.distance(targetLocation) > 0 ||
       wrongBlockFace(interaction, firstRaytraceResult);
 
+    if (raytraceFailed) {
+      if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(interaction.player().getName())) {
+        System.out.println("[Intave/DID] PROC/" + interaction.type() + "/RAYTRACE_A_FAILED " + interaction.itemTypeInHand() + " " + interaction.digType() + " (" + hitMiss + "||" + (raycastLocation.distance(targetLocation) > 0) + "||" + wrongBlockFace(interaction, firstRaytraceResult) + "["+interaction.targetDirectionIndex()+"-"+firstRaytraceResult.sideHit.getIndex()+"])");
+      }
+    }
+
 //    System.out.println("PRIMARY raytraceFailed: " + raytraceFailed + " hitMiss: " + hitMiss);
 
     if (firstRaytraceResult != null && interaction.hasFacing()) {
@@ -458,6 +496,12 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         raycastLocation2.distance(targetLocation) > 0 ||
         wrongBlockFace(interaction, secondRaytraceResult);
 
+      if (raytraceFailed) {
+        if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(interaction.player().getName())) {
+          System.out.println("[Intave/DID] PROC/" + interaction.type() + "/RAYTRACE_B_FAILED " + interaction.itemTypeInHand() + " " + interaction.digType() + " (" + hitMiss2 + "||" + (raycastLocation2.distance(targetLocation) > 0) + "||" + wrongBlockFace(interaction, secondRaytraceResult) + ")");
+        }
+      }
+
       if (secondRaytraceResult != null && interaction.hasFacing() && failedFacingCheck) {
         float f = (float) (secondRaytraceResult.hitVec.xCoord - targetLocation.getX());
         float f1 = (float) (secondRaytraceResult.hitVec.yCoord - targetLocation.getY());
@@ -481,12 +525,16 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
 
     boolean flag, mustCancelPacket;
     if (!raytraceFailed) {
+      if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(interaction.player().getName())) {
+        System.out.println("[Intave/DID] PROC/" + interaction.type() + "/RAYTRACE_SUCCESS " + interaction.itemTypeInHand() + " " + interaction.digType());
+      }
       // everything is fine
       decrementer.decrement(user, 0.25);
       boolean emulationFailed = interactionEmulator.emulate(interaction) == FAILED;
       flag = mustCancelPacket = emulationFailed;
 //      mustCancelPacket = emulationFailed;
     } else {
+      // raytrace failed
 //      System.out.println(raycastLocation + " " + targetLocation);
 //      System.out.println(raycastLocation.distance(targetLocation) + " blocks difference");
       MovingObjectPosition movingObjectPosition = estimateMouseDelayFix ? raycastResultmdf : raycastResult;
@@ -500,6 +548,9 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       // As the interaction was not canceled for consumables, we have to do it now as the raytrace failed
       if (usable && interaction.type() == InteractionType.INTERACT) {
         meta.inventory().releaseItemNextTick();
+      }
+      if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(interaction.player().getName())) {
+        System.out.println("[Intave/DID] PROC/" + interaction.type() + "/RAYTRACE_FAILED " + interaction.itemTypeInHand() + " " + interaction.digType() + " flag:" + flag);
       }
     }
     if (!usable || interaction.type() != InteractionType.INTERACT) {
@@ -662,7 +713,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         double multiplier = trustFactorSetting("k-multiplier", player) / 100d;
         vl *= multiplier;
       }
-      message = "performed invalid break";// +" -" + append;
+      message = "performed invalid break";
       details = typeName + " block, " + append;
       mustFlag = true;
     } else if (type == InteractionType.PLACE) {
@@ -732,12 +783,21 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     User user = UserRepository.userOf(player);
     ProtocolMetadata protocol = user.meta().protocol();
 
-    int targetDirection = interaction.targetDirectionIndex();
-    boolean suppressDetection = protocol.oppositeBlockVectorBehavior()
-      && interactionInHead(user, interaction)
-      && targetDirection == rayTraceResult.sideHit.getOpposite().getIndex();
+    int computedIndex = rayTraceResult.sideHit.getIndex();
+    int sentIndex = interaction.targetDirectionIndex();
 
-    return !suppressDetection && rayTraceResult.sideHit.getIndex() != targetDirection;
+    if (protocol.oppositeBlockVectorBehavior()
+      && interactionInHead(user, interaction)
+      && sentIndex == rayTraceResult.sideHit.getOpposite().getIndex()) {
+      return false;
+    }
+
+    // they don't send a block face here, don't make unnecessary adjustments
+    if (interaction.digType() == ABORT_DESTROY_BLOCK && sentIndex == 0) {
+      return false;
+    }
+
+    return computedIndex != sentIndex;
   }
 
   private boolean interactionInHead(User user, Interaction interaction) {

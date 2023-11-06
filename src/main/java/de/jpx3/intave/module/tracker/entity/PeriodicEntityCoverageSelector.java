@@ -1,6 +1,7 @@
 package de.jpx3.intave.module.tracker.entity;
 
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.executor.BackgroundExecutors;
 import de.jpx3.intave.executor.TaskTracker;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -51,7 +52,7 @@ public final class PeriodicEntityCoverageSelector {
   public void enableTask() {
     taskId = Bukkit.getScheduler().scheduleAsyncRepeatingTask(IntavePlugin.singletonInstance(), () -> {
       for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-        selectEntitiesToTraceFor(onlinePlayer);
+        BackgroundExecutors.executeExternallyScheduled(() -> selectEntitiesToTraceFor(onlinePlayer));
       }
     }, ticks, ticks);
     TaskTracker.begun(taskId);

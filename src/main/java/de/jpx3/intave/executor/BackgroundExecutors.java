@@ -23,6 +23,7 @@ public final class BackgroundExecutors {
 
   public static void start() {
     executorServices.put(IN_TIME, Executors.newSingleThreadExecutor(IntaveThreadFactory.ofLowestPriority()));
+    executorServices.put(SCHEDULED, Executors.newSingleThreadScheduledExecutor(IntaveThreadFactory.ofLowestPriority()));
     executorServices.put(NO_TIME_REQUIREMENT, Executors.newSingleThreadExecutor(IntaveThreadFactory.ofLowestPriority()));
     executorServices.put(NO_TIME_AND_EXECUTION_REQUIREMENT, executorServices.get(NO_TIME_REQUIREMENT));
   }
@@ -43,6 +44,10 @@ public final class BackgroundExecutors {
 
   public static void tryExecuteWhenever(Runnable runnable) {
     execute(runnable, NO_TIME_AND_EXECUTION_REQUIREMENT);
+  }
+
+  public static void executeExternallyScheduled(Runnable runnable) {
+    execute(runnable, SCHEDULED);
   }
 
   private static void execute(Runnable runnable, ExecutorType type) {
@@ -127,6 +132,7 @@ public final class BackgroundExecutors {
   @KeepEnumInternalNames
   public enum ExecutorType {
     IN_TIME(Timings.EXE_BACKGROUND_PRIMARY, false, TimeUnit.MILLISECONDS),
+    SCHEDULED(Timings.EXE_BACKGROUND_TERTIARY, false, TimeUnit.SECONDS),
     NO_TIME_REQUIREMENT(Timings.EXE_BACKGROUND_SECONDARY, false, TimeUnit.DAYS),
     NO_TIME_AND_EXECUTION_REQUIREMENT(Timings.EXE_BACKGROUND_SECONDARY, true, TimeUnit.DAYS)
     ;

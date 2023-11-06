@@ -2,13 +2,17 @@ package de.jpx3.intave.block.fluid;
 
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.physics.MaterialMagic;
-import de.jpx3.intave.share.*;
+import de.jpx3.intave.share.BlockPosition;
+import de.jpx3.intave.share.BoundingBox;
+import de.jpx3.intave.share.Direction;
+import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.Material;
 import org.bukkit.World;
 
-import static de.jpx3.intave.share.ClientMath.*;
+import static de.jpx3.intave.share.ClientMath.ceil;
+import static de.jpx3.intave.share.ClientMath.floor;
 
 final class v13Waterflow implements FluidFlow {
   @Override
@@ -97,7 +101,7 @@ final class v13Waterflow implements FluidFlow {
         flowVector.add((position.xCoord - pos.xCoord) * l, (position.yCoord - pos.yCoord) * l, (position.zCoord - pos.zCoord) * l);
       }
     }
-    if (resolveLevel(user, pos) >= 8) {
+    if (Fluids.fluidAt(user, pos).falling()) {
       for (Direction facing : Direction.Plane.HORIZONTAL) {
         BlockPosition blockpos = pos.offset(facing);
         if (isBlockSolid(user, blockpos, facing) || isBlockSolid(user, blockpos.up(), facing)) {
