@@ -101,7 +101,7 @@ final class v13Waterflow implements FluidFlow {
         flowVector.add((position.xCoord - pos.xCoord) * l, (position.yCoord - pos.yCoord) * l, (position.zCoord - pos.zCoord) * l);
       }
     }
-    if (Fluids.fluidAt(user, pos).falling()) {
+    if (VolatileBlockAccess.fluidAccess(user, pos).falling()) {
       for (Direction facing : Direction.Plane.HORIZONTAL) {
         BlockPosition blockpos = pos.offset(facing);
         if (isBlockSolid(user, blockpos, facing) || isBlockSolid(user, blockpos.up(), facing)) {
