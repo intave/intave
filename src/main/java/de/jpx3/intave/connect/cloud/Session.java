@@ -7,6 +7,7 @@ import de.jpx3.intave.connect.cloud.protocol.listener.Clientbound;
 import de.jpx3.intave.connect.cloud.protocol.listener.Serverbound;
 import de.jpx3.intave.connect.cloud.protocol.packets.ServerboundKeepAlive;
 import de.jpx3.intave.connect.cloud.protocol.pipeline.*;
+import de.jpx3.intave.executor.IntaveThreadFactory;
 import de.jpx3.intave.module.nayoro.Classifier;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
@@ -56,7 +57,7 @@ public final class Session {
   }
 
   public void init(Consumer<Boolean> onFinal) {
-    EventLoopGroup group = new NioEventLoopGroup();
+    EventLoopGroup group = new NioEventLoopGroup(2, IntaveThreadFactory.ofPriority(3));
     Bootstrap bootstrap = new Bootstrap()
       .group(group)
       .channel(NioSocketChannel.class)
@@ -85,7 +86,7 @@ public final class Session {
         }
         channel = ((ChannelFuture) future).channel();
         channel.closeFuture().addListener(future2 -> {
-          System.out.println("Connection closed forcefully");
+          IntaveLogger.logger().info("Cloud connection closed forcefully");
           shutdownSubscribers.forEach(subscriber -> subscriber.accept(this));
           group.shutdownGracefully();
           onFinal.accept(false);
@@ -93,11 +94,12 @@ public final class Session {
         onFinal.accept(true);
       }).await(10, SECONDS);
       if (!connected) {
-        System.out.println("Failed to connect to cloud service");
+//        System.out.println("Failed to connect to cloud service");
+        IntaveLogger.logger().info("Cloud connection timed out");
         onFinal.accept(false);
       }
     } catch (Exception e) {
-      e.printStackTrace();
+      IntaveLogger.logger().info("Cloud disconnected");
       onFinal.accept(false);
     }
   }

@@ -4,6 +4,7 @@ import de.jpx3.intave.IntaveAccessor;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveAccess;
+import de.jpx3.intave.access.player.trust.DefaultForwardingPermissionTrustFactorResolver;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.annotate.HighOrderService;
 import de.jpx3.intave.cleanup.ShutdownTasks;
@@ -19,9 +20,12 @@ import de.jpx3.intave.connect.cloud.request.Request;
 import de.jpx3.intave.executor.BackgroundExecutors;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.executor.TaskTracker;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.nayoro.Classifier;
+import de.jpx3.intave.module.nayoro.Nayoro;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
+import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -83,6 +87,11 @@ public final class Cloud {
         int attempts = reconnectAttempts.getOrDefault(shard, 0);
         int retryingIn = (int) (Math.pow(2, attempts) * 2);
 
+        Nayoro nayoro = Modules.nayoro();
+        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+          nayoro.disableRecordingFor(UserRepository.userOf(onlinePlayer));
+        }
+
         IntaveLogger.logger().warning("Unable to connect to " + shard + ", retrying in " + retryingIn + " seconds, attempt " + attempts + "/10");
         if (attempts < 10) {
           reconnectAttempts.put(shard, attempts + 1);
@@ -108,7 +117,7 @@ public final class Cloud {
   private void setTrustAndStorage() {
     IntaveAccess unsafe = IntaveAccessor.unsafeAccess();
     if (cloudConfig.features().cloudTrustfactorEnabled())
-      unsafe.setTrustFactorResolver(new CloudTrustfactorResolver(this));
+      unsafe.setTrustFactorResolver(new DefaultForwardingPermissionTrustFactorResolver(new CloudTrustfactorResolver(this)));
     if (cloudConfig.features().cloudStorageEnabled())
       unsafe.setStorageGateway(new CloudStorageGateaway(this));
   }

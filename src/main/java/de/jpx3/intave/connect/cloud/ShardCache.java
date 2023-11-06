@@ -21,7 +21,8 @@ public final class ShardCache {
 
   public ShardCache() {
     if (IntaveControl.CLOUD_LOCALHOST_MASTER_SHARD) {
-      addShard("master", new Shard("master", "main.shard.intave.cloud", 2024, new Token(
+//      addShard("master", new Shard("master", "main.shard.intave.cloud", 2024, new Token(
+      addShard("master", new Shard("master", "127.0.0.1", 2024, new Token(
         Base64.getUrlDecoder().decode("AAABABsVY6xTLCflvwzo6Bo5WzbAS3QjpyTvQT8_bcEwKUpWilrocP5RihLpw3EMKMEY6nPaKHAWd5LgeTdXamfp8FM7P1u5Gsh1x2lSkAakzB4Ddo_K9rAoulskKJ3mNOGIg3L8McJm-aFPZn3xFUs8TF5Dm5TZy9rV8DiZfb2Hry9otapwqV3ygffpA3PYMaDmNByHqYSaZVSplyMlYboZwehBykT1qhT3p_uQcV-OFg2tIyTDLb0qprgC-fqJKpIxHrf-Ebkxp1IUeLO1H3NcgqFd_oTKgIktN4lUcGWYfW-2ZWefpFF6R4UAN-AIftob0j33uwrEnpKk7FLyiJj3fiQQDRfT0UVNiR6XNHKZ0T1TAAAAQPD1oCwW5azfCQ-TKfCbq6HYPAnOVgq912OPf3Wfr-gWzC8z9Wih0oofVCitfiNILZbMJkYAb19hcKrdjU21GHYAAAAgBMpg9tCbbmtB9z9sWSU-M43-hfFgcZWNlDWMXL6vme0="),
         System.currentTimeMillis()
       )));

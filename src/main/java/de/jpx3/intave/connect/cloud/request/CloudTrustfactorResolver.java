@@ -21,6 +21,6 @@ public final class CloudTrustfactorResolver implements TrustFactorResolver {
 
   @Override
   public String toString() {
-    return "CloudTrustfactorResolver{}";
+    return "CloudTrustfactorResolver";
   }
 }

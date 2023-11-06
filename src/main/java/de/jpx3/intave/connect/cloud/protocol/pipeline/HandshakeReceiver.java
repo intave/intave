@@ -1,5 +1,6 @@
 package de.jpx3.intave.connect.cloud.protocol.pipeline;
 
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.connect.cloud.Session;
 import de.jpx3.intave.connect.cloud.protocol.*;
 import de.jpx3.intave.connect.cloud.protocol.listener.Clientbound;
@@ -9,9 +10,12 @@ import de.jpx3.intave.connect.cloud.protocol.packets.ServerboundHello;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
-import javax.crypto.*;
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
 import javax.crypto.spec.IvParameterSpec;
-import java.security.*;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -122,8 +126,9 @@ public final class HandshakeReceiver extends ChannelInboundHandlerAdapter implem
 
   @Override
   public void exceptionCaught(ChannelHandlerContext channelHandlerContext, Throwable throwable) throws Exception {
-    channelHandlerContext.fireExceptionCaught(throwable);
-    throwable.printStackTrace();
+//    channelHandlerContext.fireExceptionCaught(throwable);
+//    throwable.printStackTrace();
+    IntaveLogger.logger().info("Exception caught in cloud connection " + channelHandlerContext.name() + ": " + throwable.getMessage());
     channelHandlerContext.close();
   }
 }
