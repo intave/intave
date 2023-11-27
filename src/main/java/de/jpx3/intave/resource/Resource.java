@@ -4,6 +4,7 @@ import de.jpx3.intave.resource.legacy.LegacyResource;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Scanner;
@@ -98,14 +99,18 @@ public interface Resource extends LegacyResource {
         throw new RuntimeException(exception);
       }
     } else {
-      write(resource.read());
+      try (InputStream read = resource.read()) {
+        write(read);
+      } catch (IOException exception) {
+        throw new RuntimeException(exception);
+      }
     }
   }
 
   InputStream read();
 
   default OutputStream writeStream() {
-    throw new UnsupportedOperationException("This resource does not support output streams");
+    throw new UnsupportedOperationException("This resource does not support write streams");
   }
 
   default boolean writeStreamSupported() {
@@ -120,6 +125,15 @@ public interface Resource extends LegacyResource {
 
   default List<String> readLines() {
     return collectLines(Collectors.toList());
+  }
+
+  default void replaceLines(Function<? super String, ? extends List<String>> lineReplacer) {
+    List<String> lines = readLines();
+    List<String> newLines = new ArrayList<>();
+    for (String line : lines) {
+      newLines.addAll(lineReplacer.apply(line));
+    }
+    write(newLines);
   }
 
   default <C, R> R collectLines(Collector<? super String, C, R> collector) {

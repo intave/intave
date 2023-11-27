@@ -97,7 +97,6 @@ final class FileResource implements Resource {
 //      return new ByteArrayInputStream(inputBytes.toByteArray());
       return Files.newInputStream(file.toPath());
     } catch (IOException exception) {
-//      throw new IllegalStateException(exception);
       return new ByteArrayInputStream(new byte[0]);
     }
   }

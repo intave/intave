@@ -7,7 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public final class ByteArrayResource implements Resource {
+public final class MemoryResource implements Resource {
   private byte[] data = new byte[0];
   private long lastModified = 0;
 

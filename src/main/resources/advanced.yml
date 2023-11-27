@@ -1,64 +1,87 @@
+# Before you change anything here:
+#
+# In the overwhelming majority of cases, changing stuff here will break things.
+# It is recommended not to change anything here unless you know exactly what you are doing.
+# When you experience false positives, report them to us, and we will fix them.
+# Before changing anything, please check the Intave console output for any warnings or instructions.
+# You can ban the following checks:
+#   - AttackRaytrace.reach at VL 200
+#   - Heuristics.! and Heuristics.!! at VL 100
+# If you have any questions, contact us on discord.
+
 version: "14.0.0"
 state: 0
 
 check:
   physics:
+    # Severely nerfs the physics check
+    #   This option should not be necessary, and will allow players to cheat
+    #   FALSE POSITIVES -> REPORT THEM
     high-tolerance: false
 
     # Mitigation mode
-    # Choose between AGGRESSIVE, CAREFUL, LENIENT and SILENT
-    # Trustfactor mappings and high-tolerance modes are supported throughout all of them
+    #   Choose between AGGRESSIVE, CAREFUL, LENIENT and SILENT
+    #   FALSE POSITIVES -> REPORT THEM
     mitigation: CAREFUL
 
     # Experimental feature, reduces feedback-related false positives
+    # Only enable if instructed to do so
     use-superpositions: false
 
-    # Experimental feature, detects NoSlowdown cheats
+    # Check for NoSlowdown cheats?
     enforce-item-slowdown: true
 
     on-detection:
+      # Can help reduce item-related false positives
       reset-item-usage: true
+      # Can help reduce inventory-related false positives
       close-inventory: true
+      # Can help reduce ghost-block related false positives
       refresh-nearby-blocks: true
 
+    # DO NOT BAN
     thresholds:
       100: "intave internals sendnotify &c{player}&7/{trust-color}&7 is moving incorrectly"
       400: "intave internals sendnotify &c{player}&7/{trust-color}&7 is moving incorrectly #2"
       500: "intave internals storelog {player} {check} {vl}"
       999:
-        - "intave internals kickip {player} &cYou have been kicked, as an account with your ip address was removed from the game"
-        - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat ({log-id})"
-
+        - $kick$
   timer:
+    # Disable if you have players abusing network lag
     high-tolerance: true
+    # Enable if you want to prevent players from using "Blink"
     reverse-blink: true
+    # Enable if you know what you are doing
     reverse-lag: false
+    # Enable if you have even more players abusing network lag
     low-tolerance: false
-    block-stutter-hits: false
 
+    # DO NOT BAN
     thresholds:
       50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is moving too frequently / is lagging"
       100: "intave internals sendnotify &c{player}&7/{trust-color}&7 is moving too frequently / is lagging for a long period"
 
   heuristics:
     enabled: true
-    combat-sampling: true
+    # Enable to remove attack slowdowns
     disable-reducing: false
     confidence-thresholds:
+      # BAN
       "!!":
         25:
           - "intave internals storelog {player} {check} {vl}"
           - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking suspiciously (!!) (heuristics)"
-          - "intave internals kickip {player} &cYou have been kicked, as an account with your ip address was removed from the game"
-          - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat ({log-id})"
+          - $ban$
+      # BAN
       "!":
         25:
           - "intave internals storelog {player} {check} {vl}"
           - "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously (!) (heuristics)"
         50:
           - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking suspiciously (!) (heuristics)"
-          - "intave internals kickip {player} &cYou have been kicked, as an account with your ip address was removed from the game"
-          - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat ({log-id})"
+          - $ban$
+
+      # DO NOT BAN
       "?!":
         50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously (?!) (heuristics)"
         75: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously #2 (?!) (heuristics)"
@@ -66,36 +89,39 @@ check:
   attackraytrace:
     enabled: true
     applicable-thresholds:
+      # BAN at high VL
       reach:
         50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously (reach)"
-        100:
+        150:
           - "intave internals storelog {player} {check} {vl}"
           - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking suspiciously (reach)"
-          - "intave internals kickip {player} &cYou have been kicked, as an account with your ip address was removed from the game"
-          - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat ({log-id})"
+          - $ban$
 
+      # BAN NOT NECESSARY
       hitbox:
         50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously (hitbox)"
         100: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously #2 (hitbox)"
 
+      # BAN NOT NECESSARY
       timeout:
         50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously (backtrack?)"
         100: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously #2 (backtrack?)"
 
   interactionraytrace:
     enabled: true
+    # BAN NOT NECESSARY
     thresholds:
       50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is interacting suspiciously"
       100: "intave internals sendnotify &c{player}&7/{trust-color}&7 is interacting suspiciously #2"
 
   clickpatterns:
     enabled: true
+    # DO NOT BAN
     thresholds:
-      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is clicking statistically anomalous (auto-clicker)"
+      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is clicking statistically anomalously (auto-clicker)"
       100:
-        - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for clicking statistically anomalous (auto-clicker)"
-        - "intave internals kickip {player} &cYou have been kicked, as an account with your ip address was removed from the game"
-        - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat ({log-id})"
+        - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for clicking statistically anomalously (auto-clicker)"
+        - $kick$
 
   clickspeedlimiter:
     enabled: true
@@ -104,62 +130,56 @@ check:
       50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking too quickly"
       100:
         - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking too quickly"
-        - "intave internals kickip {player} &cYou have been kicked, as an account with your ip address was removed from the game"
-        - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat ({log-id})"
+        - $kick$
 
   breakspeedlimiter:
     enabled: true
+    # BAN NOT NECESSARY
     thresholds:
       100: "intave internals sendnotify &c{player}&7/{trust-color}&7 is breaking blocks too quickly"
 
   protocolscanner:
     enabled: true
-    # Sent slot twice VL, was a requested option
-    sst-vl: 100
+    invokant: false
+    check_sent_slot_twice_vl: 100
     thresholds:
       50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is sending invalid packets"
       100:
         - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for sending invalid packets"
-        - "intave internals kickip {player} &cYou have been kicked, as an account with your ip address was removed from the game"
-        - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat ({log-id})"
+        - $ban$
 
   placementanalysis:
     enabled: true
-    check-timings: false
+    check_timings: false
     thresholds:
-      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is placing blocks incorrectly"
-      100:
+      100: "intave internals sendnotify &c{player}&7/{trust-color}&7 is placing blocks incorrectly"
+      200:
         - "intave internals storelog {player} {check} {vl}"
         - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for placing blocks incorrectly"
-        - "intave internals kickip {player} &cYou have been kicked, as an account with your ip address was removed from the game"
-        - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat ({log-id})"
+        - $ban$
 
   inventoryclickanalysis:
     enabled: true
     high-tolerance: true
+    # DO NOT BAN
     thresholds:
       50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is performing invalid item-operations"
       100:
         - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for clicking suspiciously on items"
-        - "intave internals kickip {player} &cYou have been kicked, as an account with your ip address was removed from the game"
-        - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat ({log-id})"
+        - $kick$
 
-# Cloud features
 cloud:
+  # Should Intave connect to the cloud?
   enabled: true
+
   features:
-    # Set to enable cloud storage
-    # This option is required for the cloud trustfactor feature
+    # Should Intave use the cloud to store logs?
     cloud-storage: true
-
-    # Set to enable cloud trustfactor
+    # Should Intave use the cloud to store trustfactors?
     cloud-trustfactor: true
-
-    # Set to enable cloud-based cheat detection
+    # Should Intave use the cloud for player analysis?
     cloud-heuristics: true
-
-    # Set to allow Intave to send logs to the cloud
-    # See https://logs.intave.ac for logs
+    # Should Intave use the cloud for logs?
     cloud-logs: true
 
 storage:
@@ -191,7 +211,7 @@ command:
   fix-tab-kicks: false
 
 rejoin:
-  # Don't forget to reset this value when you deactivate it
+  # DO NOT DISABLE IN PRODUCTION
   delay: 3600
   refresh: true
   message: "&cYou were removed recently, wait before connecting again"
@@ -234,8 +254,8 @@ logging:
   #feedback-dump: false
 
 analytics:
-  report-errors: true
-  report-usage: true
+  errorReporting: true
+  usageReporting: true
 
 layout:
   verbose: "{prefix} &c{player}&7/{trust-color}&7 {message} {details} (+{vladded} -> {vl})"

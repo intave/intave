@@ -1,0 +1,12 @@
+# Config Transfer Variables
+
++Variables
+physics-mm -> check.physics.mitigation
+rejoin-delay -> rejoin.delay
+prefix -> layout.prefix
+verbose -> layout.verbose
+notify -> layout.notify
+
++Placeholders
+kick-commands -> $kick$
+ban-commands -> $ban$

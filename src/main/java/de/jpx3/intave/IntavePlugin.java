@@ -125,14 +125,15 @@ public final class IntavePlugin extends JavaPlugin {
 
   private ProxyMessenger proxyMessenger; // module candidate
   private SibylIntegrationService sibylIntegrationService;
-  private ConfigurationService configurationService;
   private FakePlayerEventService fakePlayerEventService; // module candidate
+  private ConfigurationService configService;
   private CheckService checkService;
   private TrustFactorService trustFactorService; // module candidate
   private IntaveVersionList versions;
   private CustomClientSupportService customClientSupportService; // module candidate
   private IntaveAccessService accessService;
   private IntaveAccess access;
+  private YamlConfiguration configuration;
   private PlayerListService blackListService; // module candidate
   private ScheduledUploadService uploadService; // module candidate
   private Letis letis; // module candidate
@@ -163,6 +164,13 @@ public final class IntavePlugin extends JavaPlugin {
     System.setProperty("org.bytedeco.javacpp.cachedir", integrityFolder().getAbsolutePath());
 
     Libraries.setupLibraries();
+
+    configService = new ConfigurationService();
+    configService.init();
+
+    // preload
+    prefix = configService.configuration().getString("layout.prefix", prefix);
+    prefix = ChatColor.translateAlternateColorCodes('&', prefix);
   }
 
   @Native
@@ -209,8 +217,7 @@ public final class IntavePlugin extends JavaPlugin {
       componentLoader.prepareComponents();
       componentLoader.loadComponents();
 
-      configurationService = new ConfigurationService(this);
-      String configurationKey = configurationService.configurationKey();
+      String configurationKey = "file";//configurationService.configurationKey();
 
       ProtocolLibraryAdapter.checkIfOutdated();
 
@@ -664,12 +671,12 @@ public final class IntavePlugin extends JavaPlugin {
           }
         }
 
-        if (allowLeniency && !configurationService.loader().configurationCacheExists()) {
-          logger().error("Unable to boot: Intave requires an internet connection for first-time startup");
-          bootFailure("No internet connection");
-          performShutdown();
-          return;
-        }
+//        if (allowLeniency && !configurationService.loader().configurationCacheExists()) {
+//          logger().error("Unable to boot: Intave requires an internet connection for first-time startup");
+//          bootFailure("No internet connection");
+//          performShutdown();
+//          return;
+//        }
 
         if (!allowLeniency) {
           logger().error("Unable to boot: Internet connection required to proceed");
@@ -739,9 +746,10 @@ public final class IntavePlugin extends JavaPlugin {
 
       IntavePlugin.offlineMode = offlineMode;
 
-      // resolve config hash
-      configurationService.setupConfiguration(requiredState);
-      YamlConfiguration configuration = configurationService.configuration();
+      // load config
+
+      YamlConfiguration configuration = configService.configuration();
+
       prefix = configuration.getString("layout.prefix", prefix);
       prefix = ChatColor.translateAlternateColorCodes('&', prefix);
       defaultColor = ChatColor.getLastColors(prefix);
@@ -1134,9 +1142,6 @@ public final class IntavePlugin extends JavaPlugin {
     if (NativeCheck.checkActive()) {
       return;
     }
-    if (configurationService != null) {
-      configurationService.deleteCache();
-    }
     clearIntegrityGarbage();
   }
 
@@ -1160,6 +1165,9 @@ public final class IntavePlugin extends JavaPlugin {
   @Native
   public void performShutdown() {
     logger.info("Stopping Intave");
+    try {
+      configService.shutdown();
+    } catch (Exception ignored) {}
     Bukkit.getScheduler().cancelTasks(this);
     ShutdownTasks.runAll();
     BackgroundExecutors.stopAllBlocking();
@@ -1236,7 +1244,7 @@ public final class IntavePlugin extends JavaPlugin {
   }
 
   public YamlConfiguration settings() {
-    return configurationService.configuration();
+    return configService.configuration();
   }
 
   public FakePlayerEventService fakePlayerEventService() {

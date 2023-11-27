@@ -28,6 +28,18 @@ public final class Resources {
     return new FileResource(file);
   }
 
+  public static Resource resourceFromJar(String path) {
+    return new ClasspathResource(path);
+  }
+
+  public static Resource resourceFromJarWithFallback(String path, Resource fallback) {
+    return new ClasspathResource(path, fallback);
+  }
+
+  public static Resource resourceFromJarOrBuild(String path) {
+    return resourceFromJarWithFallback(path, resourceFromFile(new File("src/main/java/resources/"+path)));
+  }
+
   public static Resource hashProtected(String path, Resource target) {
     Resource hashResource = Resources.resourceFromFile(new File(path + ".hash"));
     return new HashProtectedLayer(path, target, hashResource);
@@ -49,8 +61,8 @@ public final class Resources {
     return new WebResource(url, fallback);
   }
 
-  public static Resource ramResource() {
-    return new ByteArrayResource();
+  public static Resource memoryResource() {
+    return new MemoryResource();
   }
 
   public static Resource resourceFromOneOf(URL[] urls) {

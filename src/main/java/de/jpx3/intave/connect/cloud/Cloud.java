@@ -91,10 +91,10 @@ public final class Cloud {
     Session session = new Session(shard, this);
     session.init(success -> {
       if (success) {
-        IntaveLogger.logger().info("Authenticating with " + shard + "..");
+//        IntaveLogger.logger().info("Authenticating with " + shard + "..");
         session.subscribeToStarted(unused -> {
           reconnectAttempts.remove(shard);
-          IntaveLogger.logger().info("Connected to " + shard);
+//          IntaveLogger.logger().info("Connected to " + shard);
           setTrustAndStorage();
         });
       } else {

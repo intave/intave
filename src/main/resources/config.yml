@@ -1,0 +1,28 @@
+# Selected config
+#   THIS     - use this config, disregard advanced.yml if it exists
+#   ADVANCED - use advanced.yml, disregard the rest of this file.
+#              The advanced.yml file will be generated when first selected,
+#              with the placeholders from this file
+#   ONLINE/[config-name] (planned) - use the cloud config
+config: THIS
+
+prefix: "&8[&c&lIntave&8]&7 "
+
+kick-commands:
+  - "intave internals kickip {player} &cYou have been kicked, as an account with your ip address was removed from the game"
+  - "kick {player} &cYou have been removed from the game based on data that was collected by the anti-cheat ({log-id})"
+
+ban-commands:
+  - "intave internals kickip {player} &cYou have been kicked, as an account with your ip address was removed from the game"
+  - "ban {player} Cheating (#{log-id})"
+
+# Movement setback sensitivity
+#   Choose between AGGRESSIVE, CAREFUL, LENIENT and SILENT
+#   FALSE POSITIVES? -> REPORT THEM
+physics-mm: CAREFUL
+
+# Rejoin delay after issued kick (in seconds)
+rejoin-delay: 3600
+
+verbose: "{prefix} &c{player}&7/{trust-color}&7 {message} {details} (+{vladded} -> {vl})"
+notify: "{prefix} &c&lInfo&8: &7{text}"

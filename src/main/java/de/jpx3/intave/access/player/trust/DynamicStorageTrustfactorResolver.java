@@ -33,8 +33,10 @@ public final class DynamicStorageTrustfactorResolver implements TrustFactorResol
   {
     KNN<double[]> classifier;
     try {
-      DataFrame frame = new Arff(new InputStreamReader(TREE_ARFF.read())).read();
-
+      DataFrame frame;
+      try (Arff arff = new Arff(new InputStreamReader(TREE_ARFF.read()))) {
+        frame = arff.read();
+      }
       double[][] x = new double[frame.size()][];
       int[] y = new int[frame.size()];
       for (int i = 0; i < frame.size(); i++) {
