@@ -67,8 +67,13 @@ public final class HandshakeReceiver extends ChannelInboundHandlerAdapter implem
       upEncryptCipher.init(Cipher.ENCRYPT_MODE, session.primaryKey(), new IvParameterSpec(iv));
       session.setEncryption(downDecryptCipher, upEncryptCipher);
 
-      session.setProcessor(new StandardClientRetriever(session));
+      StandardClientRetriever processor = new StandardClientRetriever(session);
+      session.setProcessor(processor);
       session.markStarted();
+
+      session.pendingIncoming().forEach(
+        clientboundPacket -> clientboundPacket.accept(processor)
+      );
     });
   }
 
@@ -86,8 +91,6 @@ public final class HandshakeReceiver extends ChannelInboundHandlerAdapter implem
       encryption = encryption.substring(0, encryption.indexOf("/"));
     }
     session.setEncryptionAlgorithm(encryption);
-//    System.out.println("Using " + session.encryptionAlgorithm() + " as " + session.encryptionScheme());
-
     session.setServerPublicKey(packet.publicKey());
     try {
       Key generatedKey = generateKey(session.encryptionAlgorithm(), 128);

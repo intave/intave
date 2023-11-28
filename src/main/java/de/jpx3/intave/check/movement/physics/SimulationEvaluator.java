@@ -161,6 +161,17 @@ public final class SimulationEvaluator {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.03);
     }
 
+    if (movement.receivedFlyingPacketIn(2) && (movement.inWater() || movement.inLava())) {
+      if (Math.abs(movement.motionY()) < 0.1 &&
+        Math.abs(movement.motionX()) < 0.1 &&
+        Math.abs(movement.motionZ()) < 0.1 &&
+        Math.abs(predictedY) < 0.1 &&
+        movement.pastExternalVelocity > 8
+      ) {
+        verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.1);
+      }
+    }
+
     verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, movement.estimatedAttachMovement());
 
     // Jump out of water
@@ -365,7 +376,7 @@ public final class SimulationEvaluator {
         boolean smallMovement = abs(movement.motionX()) < 0.08 && abs(movement.motionZ()) < 0.08 && movement.onGround();
         limit = movement.pastEdgeSneak <= 1 ? 0.12 : (smallMovement ? 0.099 : (movement.pastEdgeSneak < 10 ? 0.05 : 0.035));
         if (movement.motionY() >= 0.1 && protocol.cavesAndCliffsUpdate() && movement.pastEdgeSneak <= 1 && movement.sprinting && distanceMoved <= 0.5) {
-          limit = 0.3;
+          limit = 0.4;
         }
         if (abs(movement.motionY()) < 0.001) {
           limit = 0.08;
@@ -373,6 +384,7 @@ public final class SimulationEvaluator {
         if (movement.pastEdgeSneak <= 3 && !protocol.flyingPacketsAreSent()) {
           limit = Math.max(limit, 0.07);
         }
+//        player.sendMessage("Gave you " + limit + " tolerance for edge sneak");
       } else {
         if (movement.pastEdgeSneak <= 3 || (movement.pastEdgeSneak <= 10 && movement.onGround() && abs(motionY) < 0.01)) {
           boolean smallMovement = (abs(movement.motionX()) < 0.099 && abs(movement.motionZ()) < 0.21) || (abs(movement.motionZ()) < 0.099 && abs(movement.motionX()) < 0.21) && movement.onGround();

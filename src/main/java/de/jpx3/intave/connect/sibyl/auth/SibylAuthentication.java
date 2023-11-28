@@ -3,6 +3,7 @@ package de.jpx3.intave.connect.sibyl.auth;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.CustomPacketPayloadWrapper;
 import com.comphenix.protocol.wrappers.MinecraftKey;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
@@ -251,7 +252,24 @@ public final class SibylAuthentication implements BukkitEventSubscriber {
       Synchronizer.synchronize(() -> System.exit(0));
     }
     PacketContainer packetContainer = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.CUSTOM_PAYLOAD);
-    if (MinecraftVersions.VER1_13_0.atOrAbove()) {
+    if (MinecraftVersions.VER1_20_2.atOrAbove()) {
+      if (channel.startsWith("MC|")) {
+        channel = channel.substring(3);
+      }
+      MinecraftKey key;
+      if (channel.contains(":")) {
+        String[] parts = channel.toLowerCase(Locale.ROOT).split(":");
+        key = new MinecraftKey(parts[0], parts[1]);
+      } else {
+        key = new MinecraftKey(channel.toLowerCase(Locale.ROOT));
+      }
+      byte[] bytesToSend = LabyModChannelHelper.getBytesToSend(messageKey, jsonElement == null ? null : jsonElement.toString());
+      packetContainer.getCustomPacketPayloads().write(0, new CustomPacketPayloadWrapper(
+        bytesToSend, key
+      ));
+      Synchronizer.synchronize(() -> PacketSender.sendServerPacket(player, packetContainer));
+      return;
+    } else if (MinecraftVersions.VER1_13_0.atOrAbove()) {
       if (channel.startsWith("MC|")) {
         channel = channel.substring(3);
       }

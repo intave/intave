@@ -1,6 +1,7 @@
 package de.jpx3.intave.connect.cloud.protocol.packets;
 
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import de.jpx3.intave.connect.cloud.protocol.Direction;
 import de.jpx3.intave.connect.cloud.protocol.Identity;
@@ -66,19 +67,24 @@ public final class ServerboundSampleTransmissionRequest extends JsonPacket<Serve
 		try {
 			reader.beginObject();
 			while (reader.hasNext()) {
-				switch (reader.nextName()) {
-					case "id":
-						identity = Identity.from(reader);
-						break;
-					case "scenario":
-						scenarioOrCheat = reader.nextString();
-						break;
-					case "classifier":
-						classifier = Classifier.valueOf(reader.nextString());
-						break;
-					case "version":
-						version = reader.nextString();
-						break;
+				while (reader.peek() == JsonToken.NAME) {
+					switch (reader.nextName()) {
+						case "id":
+							identity = Identity.from(reader);
+							break;
+						case "classifier":
+							classifier = Classifier.valueOf(reader.nextString());
+							break;
+						case "scenario":
+							scenarioOrCheat = reader.nextString();
+							break;
+						case "version":
+							version = reader.nextString();
+							break;
+					}
+				}
+				if (reader.hasNext()) {
+					reader.skipValue();
 				}
 			}
 			reader.endObject();

@@ -1,6 +1,7 @@
 package de.jpx3.intave.connect.cloud.protocol;
 
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import de.jpx3.intave.annotate.Nullable;
 import org.bukkit.entity.Player;
@@ -61,13 +62,18 @@ public class Identity implements JsonSerializable {
     try {
       reader.beginObject();
       while (reader.hasNext()) {
-        switch (reader.nextName()) {
-          case "uuid":
-            uuid = UUID.fromString(reader.nextString());
-            break;
-          case "name":
-            name = reader.nextString();
-            break;
+        while (reader.peek() == JsonToken.NAME) {
+          switch (reader.nextName()) {
+            case "uuid":
+              uuid = UUID.fromString(reader.nextString());
+              break;
+            case "name":
+              name = reader.nextString();
+              break;
+          }
+        }
+        if (reader.hasNext()) {
+          reader.skipValue();
         }
       }
       reader.endObject();

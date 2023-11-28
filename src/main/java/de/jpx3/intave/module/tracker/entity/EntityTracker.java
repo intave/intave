@@ -51,7 +51,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import static de.jpx3.intave.module.feedback.FeedbackOptions.APPEND_ON_OVERFLOW;
+import static de.jpx3.intave.module.feedback.FeedbackOptions.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
@@ -494,8 +494,8 @@ public final class EntityTracker extends Module {
 ////        Modules.feedback().tracedDoubleSynchronize(player, event, event, task, verificationTask, feedbackTracker, feedbackTracker);
 ////      } else {
 //      Modules.feedback().tracedSingleSynchronize(player, event, task, observer);
-      user.tracedTickFeedback(task, observer);
-
+      int options = entity.distanceToPlayerCache < 6 ? TRACER_ENTITY_NEAR : TRACER_ENTITY_FAR;
+      user.tracedTickFeedback(task, observer, options);
 ////      }
     } else {
       entity.handleEntityTeleport(user, packet);
@@ -562,7 +562,9 @@ public final class EntityTracker extends Module {
 ////        Modules.feedback().tracedDoubleSynchronize(player, event, event, task, verificationTask, tracker, tracker);
 ////      } else {
 //      Modules.feedback().tracedSingleSynchronize(player, event, task, tracker);
-      user.tracedTickFeedback(task, tracker);
+
+      int options = entity.distanceToPlayerCache < 6 ? TRACER_ENTITY_NEAR : TRACER_ENTITY_FAR;
+      user.tracedTickFeedback(task, tracker, options);
 ////      }
     } else {
       entity.handleEntityMovement(packet);

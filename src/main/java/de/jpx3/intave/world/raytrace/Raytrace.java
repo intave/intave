@@ -14,11 +14,11 @@ public final class Raytrace {
     this.reach = distance;
   }
 
-  public Position eyePosition() {
+  public Position from() {
     return from;
   }
 
-  public Position targetPosition() {
+  public Position to() {
     return to;
   }
 

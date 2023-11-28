@@ -73,7 +73,7 @@ public final class CommandExecutor {
       Annotation[] parameterAnnotation = parameterAnnotations[i];
       boolean isOptional = Arrays.stream(parameterAnnotation).anyMatch(annotation -> annotation.annotationType() == Optional.class);
       if (!isOptional && optionalBefore) {
-        throw new IntaveInternalException();
+        throw new IntaveInternalException("Required parameter after optional parameter");
       }
       optionalBefore = isOptional;
       if (!optionalBefore) {

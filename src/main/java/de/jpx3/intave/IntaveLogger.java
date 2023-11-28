@@ -118,7 +118,6 @@ public final class IntaveLogger extends PluginLogger {
     }
     logToFile("(WARN) " + message);
   }
-
   public void violation(String violation) {
     if (VIOLATION_CONSOLE_OUTPUT) {
       printLine("[Intave] Violation: " + violation);

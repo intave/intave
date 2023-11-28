@@ -10,6 +10,7 @@ public final class Storages {
     storage.append(HeuristicsStorage.class);
     storage.append(NerferStorage.class);
     storage.append(AccountDataStorage.class);
+    storage.append(FeedbackAnalysisStorage.class);
     return storage;
   }
 }

@@ -9,6 +9,7 @@ import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Module;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -166,18 +167,18 @@ public final class FeedbackSender extends Module {
       append = true;//pendingTransactions(userOf(player)) > 0;
     }
     if (append) {
-      appendRequest(player, target, callback);
+      appendRequest(player, target, callback, options);
       return;
     }
     countTransactionPacket(player);
-    FeedbackRequest<T> request = createRequest(player, target, callback, tracker);
+    FeedbackRequest<T> request = createRequest(player, target, callback, tracker, options);
     performRequest(player, request);
   }
 
   private static final Object FALLBACK_OBJECT = new Object();
 
   private <T> void appendRequest(
-    Player player, T obj, FeedbackCallback<T> callback
+    Player player, T obj, FeedbackCallback<T> callback, int options
   ) {
     User user = UserRepository.userOf(player);
     if (!user.hasPlayer()) {
@@ -191,11 +192,11 @@ public final class FeedbackSender extends Module {
       //noinspection unchecked
       obj = (T) FALLBACK_OBJECT;
     }
-    queue.add(new FeedbackRequest<>(callback, null, obj, (short) -1, -1));
+    queue.add(new FeedbackRequest<>(callback, null, obj, (short) -1, -1, options));
   }
 
   private /*synchronized*/ <T> FeedbackRequest<T> createRequest(
-    Player player, T obj, FeedbackCallback<T> callback, FeedbackObserver tracker
+    Player player, T obj, FeedbackCallback<T> callback, FeedbackObserver tracker, int options
   ) {
     User user = UserRepository.userOf(player);
     ConnectionMetadata connection = user.meta().connection();
@@ -205,7 +206,7 @@ public final class FeedbackSender extends Module {
     }
     short userKey = findUserKey(player);
     long transactionNumCounter = connection.transactionNumCounter++;
-    FeedbackRequest<T> feedbackEntry = new FeedbackRequest<T>(callback, tracker, obj, userKey, transactionNumCounter);
+    FeedbackRequest<T> feedbackEntry = new FeedbackRequest<T>(callback, tracker, obj, userKey, transactionNumCounter, options);
     connection.feedbackQueue().add(feedbackEntry);
     return feedbackEntry;
   }
@@ -296,6 +297,7 @@ public final class FeedbackSender extends Module {
     if (dumpFeedback) {
       Thread.dumpStack();
     }
+    Modules.feedbackAnalysis().sentTransaction(user, request);
     if (IntaveControl.DEBUG_FEEDBACK_PACKETS) {
 //      System.out.println("Received " + transactionIdentifier + "/" +transactionResponse.num() + " from " + player.getName());
       System.out.println("Sent " + id + "/"+request.num() + " to " + receiver.getName());

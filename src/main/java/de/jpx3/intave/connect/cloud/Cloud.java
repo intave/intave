@@ -48,14 +48,13 @@ public final class Cloud {
   private static final ShardCache shardCache = SHARD_STORAGE_RESOURCE.collectLines(ShardCache.resourceCollector());
 
   private final Map<Shard, Session> sessions = new HashMap<>();
+  private final Map<Shard, Integer> reconnectAttempts = new ConcurrentHashMap<>();
   private final Map<UUID, Request<TrustFactor>> trustfactorRequests = new HashMap<>();
   private final Map<UUID, Request<ByteBuffer>> storageRequests = new HashMap<>();
-  private final Map<Integer, Request<String>> uploadLogRequests = new HashMap<>();
   private final Map<UUID, Request<Classifier>> sampleTransmissionRequests = new HashMap<>();
+  private final Map<Integer, Request<String>> uploadLogRequests = new HashMap<>();
   private CloudConfig cloudConfig;
   private int taskId;
-
-  private final Map<Shard, Integer> reconnectAttempts = new ConcurrentHashMap<>();
 
   public void init() {
     setupKeepAliveTick();
@@ -87,7 +86,6 @@ public final class Cloud {
     if (shard == null) {
       throw new IllegalArgumentException("Shard cannot be null");
     }
-//    IntaveLogger.logger().info("Connecting to " + shard);
     Session session = new Session(shard, this);
     session.init(success -> {
       if (success) {
@@ -135,11 +133,14 @@ public final class Cloud {
   }
 
   private void setTrustAndStorage() {
-    IntaveAccess unsafe = IntaveAccessor.unsafeAccess();
-    if (cloudConfig.features().cloudTrustfactorEnabled())
-      unsafe.setTrustFactorResolver(new DefaultForwardingPermissionTrustFactorResolver(new CloudTrustfactorResolver(this)));
-    if (cloudConfig.features().cloudStorageEnabled())
-      unsafe.setStorageGateway(new CloudStorageGateaway(this));
+    IntaveAccess access = IntaveAccessor.unsafeAccess();
+    CloudConfig.CloudFeatures features = cloudConfig.features();
+    if (features.cloudTrustfactorEnabled()) {
+      access.setTrustFactorResolver(new DefaultForwardingPermissionTrustFactorResolver(new CloudTrustfactorResolver(this)));
+    }
+    if (features.cloudStorageEnabled()) {
+      access.setStorageGateway(new CloudStorageGateaway(this));
+    }
   }
 
   public void setMasterShard(

@@ -6,6 +6,10 @@ public final class FeedbackOptions {
   @Deprecated
   public static int APPEND = 4;
 
+  public static int TRACER_ENTITY_NEAR_COMBAT = 1 << 16;
+  public static int TRACER_ENTITY_NEAR = 1 << 17;
+  public static int TRACER_ENTITY_FAR = 1 << 18;
+
   public static boolean matches(int option, int options) {
     return (options & option) != 0;
   }

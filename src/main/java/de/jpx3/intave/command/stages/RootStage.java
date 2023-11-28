@@ -24,9 +24,7 @@ import de.jpx3.intave.library.Python;
 import de.jpx3.intave.library.python.PythonTask;
 import de.jpx3.intave.math.Occurrences;
 import de.jpx3.intave.module.Modules;
-import de.jpx3.intave.module.nayoro.Classifier;
 import de.jpx3.intave.module.nayoro.Nayoro;
-import de.jpx3.intave.module.nayoro.OperationalMode;
 import de.jpx3.intave.security.HashAccess;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.user.User;
@@ -180,25 +178,6 @@ public final class RootStage extends CommandStage {
     Player player = user.player();
     if (plugin.sibyl().authentication().isAuthenticated(player)) {
       player.sendMessage(ChatColor.GRAY + "Hash is " + ChatColor.COLOR_CHAR + JAR_HASH);
-    }
-  }
-
-  @SubCommand(
-    selectors = "record",
-    usage = "",
-    description = "Record timings",
-    permission = "sibyl"
-  )
-  @Native
-  public void recordCommand(User user, @Optional Player target) {
-    User targetUser = target != null ? UserRepository.userOf(target) : user;
-    Nayoro nayoro = Modules.nayoro();
-    if (!nayoro.recordingActiveFor(targetUser)) {
-      nayoro.enableRecordingFor(targetUser, Classifier.UNKNOWN, OperationalMode.LOCAL_STORAGE);
-      user.player().sendMessage(ChatColor.GREEN + "Recording enabled for " + ChatColor.RED + targetUser.player().getName());
-    } else {
-      nayoro.disableRecordingFor(targetUser);
-      user.player().sendMessage(ChatColor.GREEN + "Recording disabled for " + ChatColor.RED + targetUser.player().getName());
     }
   }
 

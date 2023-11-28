@@ -1,6 +1,7 @@
 package de.jpx3.intave.connect.cloud.protocol.packets;
 
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.connect.cloud.protocol.Direction;
@@ -24,33 +25,36 @@ public final class ClientboundSetTrustfactor extends JsonPacket<Clientbound> {
   }
 
   @Override
-  public void serialize(JsonWriter jsonWriter) {
+  public void serialize(JsonWriter writer) {
     try {
-      jsonWriter.beginObject();
-      jsonWriter.name("id");
-      id.serialize(jsonWriter);
-      jsonWriter.name("factor").value(trustFactor.name());
-      jsonWriter.endObject();
+      writer.beginObject();
+      writer.name("id");
+      id.serialize(writer);
+      writer.name("factor").value(trustFactor.name());
+      writer.endObject();
     } catch (Exception e) {
       e.printStackTrace();
     }
   }
 
   @Override
-  public void deserialize(JsonReader jsonReader) {
+  public void deserialize(JsonReader reader) {
     try {
-      jsonReader.beginObject();
-      while (jsonReader.hasNext()) {
-        switch (jsonReader.nextName()) {
+      reader.beginObject();
+      while (reader.peek() == JsonToken.NAME) {
+        switch (reader.nextName()) {
           case "id":
-            id = Identity.from(jsonReader);
+            id = Identity.from(reader);
             break;
           case "factor":
-            trustFactor = TrustFactor.valueOf(jsonReader.nextString());
+            trustFactor = TrustFactor.valueOf(reader.nextString());
             break;
         }
       }
-      jsonReader.endObject();
+      while (reader.hasNext()) {
+        reader.skipValue();
+      }
+      reader.endObject();
     } catch (Exception e) {
       e.printStackTrace();
     }

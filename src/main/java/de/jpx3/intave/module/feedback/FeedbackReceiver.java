@@ -10,6 +10,7 @@ import de.jpx3.intave.check.movement.timer.Balance;
 import de.jpx3.intave.diagnostic.LatencyStudy;
 import de.jpx3.intave.executor.TaskTracker;
 import de.jpx3.intave.module.Module;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.player.FaultKicks;
@@ -119,11 +120,17 @@ public final class FeedbackReceiver extends Module {
 
     short userKey = userKeyFrom(packet);
     if (userKey == -1) {
+      if (IntaveControl.DEBUG_FEEDBACK_PACKETS) {
+        System.out.println("Received " + packet.getIntegers().readSafely(0) + " from " + player.getName() + " but no user key was found");
+      }
       return;
     }
 
     FeedbackRequest<?> response = feedbackQueue.peek(userKey);
     if (response == null) {
+      if (IntaveControl.DEBUG_FEEDBACK_PACKETS) {
+        System.out.println("Received " + userKey + "/" + packet.getIntegers().readSafely(0) + " from " + player.getName() + " but no request was found");
+      }
       return;
     }
 
@@ -152,6 +159,7 @@ public final class FeedbackReceiver extends Module {
     long passedTime = response.passedTime();
     long passedTimeNs = response.passedTimeAs(TimeUnit.NANOSECONDS);
     connection.receivedTransactionAfter(passedTime);
+    Modules.feedbackAnalysis().receivedTransaction(user, response);
 
     Balance.BalanceMeta balanceMeta = (Balance.BalanceMeta) user.checkMetadata(Balance.BalanceMeta.class);
 

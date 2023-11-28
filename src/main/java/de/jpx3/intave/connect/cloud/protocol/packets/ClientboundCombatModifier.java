@@ -1,6 +1,7 @@
 package de.jpx3.intave.connect.cloud.protocol.packets;
 
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import de.jpx3.intave.connect.cloud.protocol.Identity;
 import de.jpx3.intave.connect.cloud.protocol.JsonPacket;
@@ -35,16 +36,21 @@ public final class ClientboundCombatModifier extends JsonPacket<Clientbound> {
     try {
       reader.beginObject();
       while (reader.hasNext()) {
-        switch (reader.nextName()) {
-          case "id":
-            id = Identity.from(reader);
-            break;
-          case "modifier":
-            modifier = reader.nextString();
-            break;
-          case "duration":
-            duration = reader.nextInt();
-            break;
+        while (reader.peek() == JsonToken.NAME) {
+          switch (reader.nextName()) {
+            case "id":
+              id = Identity.from(reader);
+              break;
+            case "modifier":
+              modifier = reader.nextString();
+              break;
+            case "duration":
+              duration = reader.nextInt();
+              break;
+          }
+        }
+        if (reader.hasNext()) {
+          reader.skipValue();
         }
       }
       reader.endObject();

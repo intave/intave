@@ -59,12 +59,12 @@ public final class CloudStage extends CommandStage {
 
   @SubCommand(
     selectors = "record",
-    usage = "[<target>] [<classifier>] [<scenario/cheat>]",
+    usage = "[<target>] [<classifier>] <client> <scenario/cheat>",
     permission = "intave.command",
     description = "Record players"
   )
   @Native
-  public void recordCommand(User user, @Optional Player target, @Optional Classifier classifier, @Optional String scenario) {
+  public void recordCommand(User user, @Optional Player target, @Optional Classifier classifier, @Optional String client, @Optional String scenario) {
     Nayoro nayoro = Modules.nayoro();
     Player player = user.player();
     if (IntaveControl.GOMME_MODE || !IntaveControl.DISABLE_LICENSE_CHECK && !IntavePlugin.singletonInstance().sibyl().isAuthenticated(player)) {
@@ -80,15 +80,19 @@ public final class CloudStage extends CommandStage {
       player.sendMessage(ChatColor.RED + "Recording disabled for " + target.getName());
     } else {
       if (scenario == null) {
-        user.player().sendMessage(ChatColor.RED + "Please specify a scenario");
+        user.player().sendMessage(ChatColor.RED + "Please specify a scenario, usage: /iac cloud [<target>] [<classifier>] <client> <scenario/cheat>");
         return;
       }
       if (classifier == null || classifier == Classifier.UNKNOWN) {
-        user.player().sendMessage(ChatColor.RED + "Please specify a valid classifier (CHEAT or LEGIT)");
+        user.player().sendMessage(ChatColor.RED + "Please specify a valid classifier (CHEAT or LEGIT), usage: /iac cloud [<target>] [<classifier>] <client> <scenario/cheat>");
+        return;
+      }
+      if (client == null) {
+        user.player().sendMessage(ChatColor.RED + "Please specify a client, usage: /iac cloud [<target>] [<classifier>] <client> <scenario/cheat>");
         return;
       }
       Cloud cloud = IntavePlugin.singletonInstance().cloud();
-      cloud.requestSampleTransmission(target, classifier, scenario, targetUser.meta().protocol().versionString(), classifier1 -> {
+      cloud.requestSampleTransmission(target, classifier, scenario, client + "@" + targetUser.meta().protocol().versionString(), classifier1 -> {
         nayoro.enableRecordingFor(targetUser, classifier, OperationalMode.CLOUD_STORAGE);
         player.sendMessage(ChatColor.GREEN + "Recording with label \"" + classifier + "\"/"+scenario+" granted by cloud.");
       });

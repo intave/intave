@@ -5,6 +5,7 @@ import org.bukkit.util.Vector;
 
 import java.io.Serializable;
 
+import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.share.ClientMath.floor;
 
 public final class Position extends Vector implements Serializable {
@@ -44,7 +45,7 @@ public final class Position extends Vector implements Serializable {
 
   @Override
   public String toString() {
-    return "(" + x + ", " + y + ", " + z + ")";
+    return  formatDouble(x, 1) + ", " + formatDouble(y,1) + ", " + formatDouble(z,1);
   }
 
   @Override

@@ -4,7 +4,6 @@ import de.jpx3.intave.annotate.Reserved;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
 import de.jpx3.intave.check.combat.heuristics.Confidence;
-import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.user.User;
 
 import java.util.List;
@@ -27,12 +26,12 @@ public final class SwingLimitHeuristics extends SwingBlueprint<SwingLimitBluepri
         Anomaly anomaly = Anomaly.anomalyOf("300", Confidence.NONE, Anomaly.Type.AUTOCLICKER, description);
         parentCheck().saveAnomaly(user.player(), anomaly);
         //dmc29
-        if (meta.vl >= 5) {
-          user.nerf(AttackNerfStrategy.DMG_LIGHT, "29");
-        }
-//        user.applyAttackNerfer(AttackNerfStrategy.DMG_MEDIUM, "29");
-        user.nerf(AttackNerfStrategy.GARBAGE_HITS, "29");
-        user.nerf(AttackNerfStrategy.BLOCKING, "29");
+//        if (meta.vl >= 5) {
+//          user.nerf(AttackNerfStrategy.DMG_LIGHT, "29");
+//        }
+////        user.applyAttackNerfer(AttackNerfStrategy.DMG_MEDIUM, "29");
+//        user.nerf(AttackNerfStrategy.GARBAGE_HITS, "29");
+//        user.nerf(AttackNerfStrategy.BLOCKING, "29");
       }
     } else {
       meta.vl = Math.max(0, meta.vl - 0.25);

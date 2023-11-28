@@ -901,15 +901,16 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   public boolean applyJumpCM() {
-    if (!REPLACE_JOAP_SETBACK_WITH_CM) {
-      return false;
-    }
-    InventoryMetadata inventoryData = user.meta().inventory();
-    if (inventoryData.inventoryOpen()) {
-      return true;
-    }
-    int trustFactorSetting = user.trustFactorSetting("physics.joap-limit");
-    return pastVelocity == 0 && sprinting && lastVelocityApplicableForJumpDenial() && physicsJumpedOverrideVL >= trustFactorSetting;
+//    if (!REPLACE_JOAP_SETBACK_WITH_CM) {
+//      return false;
+//    }
+//    InventoryMetadata inventoryData = user.meta().inventory();
+//    if (inventoryData.inventoryOpen()) {
+//      return true;
+//    }
+//    int trustFactorSetting = user.trustFactorSetting("physics.joap-limit");
+//    return pastVelocity == 0 && sprinting && lastVelocityApplicableForJumpDenial() && physicsJumpedOverrideVL >= trustFactorSetting;
+    return false;
   }
 
   public boolean lastVelocityApplicableForJumpDenial() {

@@ -861,6 +861,13 @@ public final class IntavePlugin extends JavaPlugin {
     randomExitMessages = Resources.localServiceCacheResource("exitmessages","exitmessages", TimeUnit.DAYS.toMillis(7)).readLines();
     logger.info("Intave booted successfully");
 
+    String network = LicenseAccess.network();
+    if ("Intavede".equalsIgnoreCase(network) || "Survivalgamescz".equalsIgnoreCase(network)) {
+      IntaveLogger.logger().info("Enabling Intave debug mode");
+      DEBUG_TELEPORT_LOCKS = true;
+      DEBUG_MOVEMENT_IGNORE = true;
+    }
+
     Synchronizer.synchronize(() -> {
       // stage 11
       Modules.proceedBoot(BootSegment.STAGE_11);

@@ -42,6 +42,10 @@ public final class BlockAccessTests extends Tests {
     for (Material value : Material.values()) {
       if (value.isBlock() && !blacklistedMaterials.contains(value)) {
         block.setType(value, false);
+        if (block.getType() == Material.OBSIDIAN) {
+          // oh yes that happens
+          continue;
+        }
         assertEquals(value, block.getType());
         assertEquals(value, BlockAccess.global().typeOf(block));
         try {

@@ -782,7 +782,9 @@ public final class Physics extends Check {
       if (movementData.inWater) {
         Fluid fluid = Fluids.fluidAt(user, positionX, positionY, positionZ);
         debug += ChatColor.ITALIC + " "+(fluid.falling() ? "falling" : "")+"water@" + MathHelper.formatDouble(fluid.height(),2) + "/"+fluid.level() + chatColor;
-
+      }
+      if (movementData.physicsJumped) {
+        debug += ChatColor.ITALIC + " jmp" + chatColor;
       }
 //      debug += " fric:" + formatDouble(movementData.friction(), 2) + "@" + movementData.frictionMaterial();
 

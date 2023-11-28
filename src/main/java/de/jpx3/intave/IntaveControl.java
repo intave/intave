@@ -15,14 +15,14 @@ public final class IntaveControl {
   public static final boolean DEBUG_HEURISTICS = false;
   public static final boolean DEBUG_INTERACTION = false;
   public static final boolean DEBUG_INTERACTION_DISCREET = true;
-  public static final List<String> INTERACTION_DEBUG_NAMES = Arrays.asList("Jpx3", "aesthatic");
+  public static final List<String> INTERACTION_DEBUG_NAMES = Arrays.asList("Jpx3", "aesthatic", "Richy", "egirlAllergiker");
   public static final boolean DEBUG_STUCK_REVIVAL = false;
   public static final boolean LATENCY_PING_AS_XP_LEVEL = false;
-  public static final boolean DEBUG_MOVEMENT_IGNORE = false;
+  public static boolean DEBUG_MOVEMENT_IGNORE = false; // if SG
   public static final boolean DEBUG_MOUNTING = false;
   public static final boolean DEBUG_ELYTRA = false;
   public static final boolean DEBUG_PLAYER_ACTIONS = false;
-  public static final boolean DEBUG_TELEPORT_LOCKS = false;
+  public static boolean DEBUG_TELEPORT_LOCKS = false; // if SG
   public static final boolean DEBUG_TELEPORT_CAUSE_AND_CAUSER = false;
   public static final boolean DEBUG_TELEPORT_PACKET_STACKTRACE = false;
   public static final boolean TELEPORT_FAR_AWAY_ON_Q_PRESS = false;

@@ -1,14 +1,12 @@
 package de.jpx3.intave.connect.sibyl;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.packet.reader.PayloadInReader;
 import io.netty.buffer.ByteBuf;
 import org.bukkit.entity.Player;
 
@@ -35,28 +33,12 @@ public final class LabymodClientListener implements PacketEventSubscriber {
       CUSTOM_PAYLOAD_IN
     }
   )
-  public void receivePayloadPacket(PacketEvent event) {
-    Player player = event.getPlayer();
-    PacketContainer packet = event.getPacket();
-    String tag;
-    if (packet.getStrings().getValues().isEmpty()) {
-      Object minecraftKey = packet.getMinecraftKeys().getValues().get(0);
-      try {
-        tag = (String) minecraftKey.getClass().getMethod("getFullKey").invoke(minecraftKey);
-      } catch (Exception exception) {
-        exception.printStackTrace();
-        tag = "error";
-      }
-    } else {
-      tag = packet.getStrings().getValues().get(0);
-    }
-    if (tag.startsWith("minecraft:")) {
-      tag = tag.substring(10);
-    }
+  public void receivePayloadPacket(Player player, PayloadInReader reader) {
+    String tag = reader.tag();
     if (!tag.equalsIgnoreCase("LMC") && !tag.equalsIgnoreCase("labymod3:main")) {
       return;
     }
-    ByteBuf bytes = (ByteBuf) packet.getSpecificModifier(Lookup.serverClass("PacketDataSerializer")).getValues().get(0);
+    ByteBuf bytes = reader.readBytes();
     try {
       bytes.markReaderIndex();
       String messageKey = LabyModChannelHelper.readString(bytes, Short.MAX_VALUE);

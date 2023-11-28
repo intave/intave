@@ -143,13 +143,13 @@ public final class Raytracing {
    * entity -1 means the player hit outside of the hitbox of the entity greater than 0 means the reach of the player
    */
   public static Raytrace entityRaytrace(
-      Player player,
-      BoundingBox entityBoundingBox,
-      double alternativeYDifference,
-      double prevPosX, double prevPosY, double prevPosZ,
-      float prevYaw, float pitch,
-      double boundingBoxExpansion,
-      EntityRaytraceBlockConstraint rayTraceBlocks
+    Player player,
+    BoundingBox entityBoundingBox,
+    double alternativeYDifference,
+    double prevPosX, double prevPosY, double prevPosZ,
+    float prevYaw, float pitch,
+    double boundingBoxExpansion,
+    EntityRaytraceBlockConstraint rayTraceBlocks
   ) {
     Timings.SERVICE_RAYTRACER_ENTITY.start();
     NativeVector eyeVector = positionEyes(player, prevPosX, prevPosY, prevPosZ);

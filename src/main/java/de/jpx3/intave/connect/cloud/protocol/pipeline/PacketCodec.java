@@ -24,6 +24,9 @@ public final class PacketCodec extends ByteToMessageCodec<Packet<?>> {
 
   @Override
   protected void encode(ChannelHandlerContext channelHandlerContext, Packet<?> packet, ByteBuf byteBuf) {
+    if (packet.direction() != sending) {
+      throw new RuntimeException("Packet " + packet.name() + " is not " + sending.name().toLowerCase());
+    }
     if (protocol.packetIdsKnownFor(sending)) {
       int id = protocol.packetId(sending, packet.name());
       if (id == -1) {
@@ -35,9 +38,6 @@ public final class PacketCodec extends ByteToMessageCodec<Packet<?>> {
     } else {
       byteBuf.writeByte(-1);
       writeString(packet.name(), byteBuf);
-    }
-    if (packet.direction() != sending) {
-      throw new RuntimeException("Packet " + packet.name() + " is not " + sending.name().toLowerCase());
     }
     packet.serialize(new ByteBufOutputStream(byteBuf));
     byteBuf.writeByte(-1);

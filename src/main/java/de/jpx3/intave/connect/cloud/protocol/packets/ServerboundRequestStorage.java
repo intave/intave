@@ -1,10 +1,11 @@
 package de.jpx3.intave.connect.cloud.protocol.packets;
 
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
-import de.jpx3.intave.connect.cloud.protocol.listener.Serverbound;
 import de.jpx3.intave.connect.cloud.protocol.Identity;
 import de.jpx3.intave.connect.cloud.protocol.JsonPacket;
+import de.jpx3.intave.connect.cloud.protocol.listener.Serverbound;
 
 import static de.jpx3.intave.connect.cloud.protocol.Direction.SERVERBOUND;
 
@@ -33,17 +34,22 @@ public final class ServerboundRequestStorage extends JsonPacket<Serverbound> {
   }
 
   @Override
-  public void deserialize(JsonReader jsonReader) {
+  public void deserialize(JsonReader reader) {
     try {
-      jsonReader.beginObject();
-      while (jsonReader.hasNext()) {
-        switch (jsonReader.nextName()) {
-          case "id":
-            id = Identity.from(jsonReader);
-            break;
+      reader.beginObject();
+      while (reader.hasNext()) {
+        while (reader.peek() == JsonToken.NAME) {
+          switch (reader.nextName()) {
+            case "id":
+              id = Identity.from(reader);
+              break;
+          }
+        }
+        if (reader.hasNext()) {
+          reader.skipValue();
         }
       }
-      jsonReader.endObject();
+      reader.endObject();
     } catch (Exception e) {
       e.printStackTrace();
     }

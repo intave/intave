@@ -1,6 +1,7 @@
 package de.jpx3.intave.connect.cloud.protocol.packets;
 
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import de.jpx3.intave.annotate.KeepEnumInternalNames;
 import de.jpx3.intave.connect.cloud.protocol.Direction;
@@ -11,7 +12,6 @@ import de.jpx3.intave.connect.cloud.protocol.listener.Clientbound;
 public final class ClientboundSampleTransmissionAcknowledgement extends JsonPacket<Clientbound> {
 	private Identity identity;
 	private AcceptedState state = AcceptedState.ACCEPTED;
-	private Classification classification;
 
 	public ClientboundSampleTransmissionAcknowledgement() {
 		super(Direction.CLIENTBOUND, "SAMPLE_TRANSMISSION_ACKNOWLEDGEMENT", "1");
@@ -25,10 +25,6 @@ public final class ClientboundSampleTransmissionAcknowledgement extends JsonPack
 		return state;
 	}
 
-	public Classification classification() {
-		return classification;
-	}
-
 	@Override
 	public void serialize(JsonWriter writer) {
 		try {
@@ -37,8 +33,6 @@ public final class ClientboundSampleTransmissionAcknowledgement extends JsonPack
 			identity.serialize(writer);
 			writer.name("state");
 			writer.value(state.name());
-			writer.name("classification");
-			writer.value(classification.name());
 			writer.endObject();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -50,16 +44,18 @@ public final class ClientboundSampleTransmissionAcknowledgement extends JsonPack
 		try {
 			reader.beginObject();
 			while (reader.hasNext()) {
-				switch (reader.nextName()) {
-					case "id":
-						identity = Identity.from(reader);
-						break;
-					case "state":
-						state = AcceptedState.valueOf(reader.nextString());
-						break;
-					case "classification":
-						classification = Classification.valueOf(reader.nextString());
-						break;
+				while (reader.peek() == JsonToken.NAME) {
+					switch (reader.nextName()) {
+						case "id":
+							identity = Identity.from(reader);
+							break;
+						case "state":
+							state = AcceptedState.valueOf(reader.nextString());
+							break;
+					}
+				}
+				if (reader.hasNext()) {
+					reader.skipValue();
 				}
 			}
 			reader.endObject();

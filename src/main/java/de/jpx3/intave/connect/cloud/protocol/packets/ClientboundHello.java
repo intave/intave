@@ -75,6 +75,9 @@ public final class ClientboundHello extends BinaryPacket<Clientbound> {
       compressionAlgorithm = buffer.readUTF();
       hmacAlgorithm = buffer.readUTF();
       int size = buffer.readInt();
+      if (size > 1024 * 8) {
+        throw new RuntimeException("Invalid public key size");
+      }
       byte[] publicKey = new byte[size];
       buffer.readFully(publicKey, 0, size);
       // get the public key of key exchange algorithm
@@ -82,6 +85,9 @@ public final class ClientboundHello extends BinaryPacket<Clientbound> {
       X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKey);
       this.publicKey = keyFactory.generatePublic(keySpec);
       size = buffer.readInt();
+      if (size > 1024 * 8) {
+        throw new RuntimeException("Invalid verify token size");
+      }
       verifyToken = new byte[size];
       buffer.readFully(verifyToken, 0, size);
     } catch (Exception e) {

@@ -10,6 +10,9 @@ import de.jpx3.intave.command.SubCommand;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.actionbar.ActionBarDisplayer;
 import de.jpx3.intave.module.actionbar.DisplayType;
+import de.jpx3.intave.module.nayoro.Classifier;
+import de.jpx3.intave.module.nayoro.Nayoro;
+import de.jpx3.intave.module.nayoro.OperationalMode;
 import de.jpx3.intave.module.violation.ViolationVerboseMode;
 import de.jpx3.intave.player.ProfileLookup;
 import de.jpx3.intave.security.LicenseAccess;
@@ -146,6 +149,33 @@ public final class BaseStage extends CommandStage {
     }
   }
   */
+
+  @SubCommand(
+    selectors = "record",
+    usage = "",
+    description = "Record players"
+  )
+  @Native
+  public void recordCommand(User user, @Optional Player target, @Optional Classifier classifier) {
+    if (!IntaveControl.DISABLE_LICENSE_CHECK) {
+      user.player().sendMessage(ChatColor.RED + "This command is not available");
+      return;
+    }
+    if (classifier == null) {
+      user.player().sendMessage(ChatColor.RED + "Please specify a classifier");
+      return;
+    }
+
+    User targetUser = target != null ? UserRepository.userOf(target) : user;
+    Nayoro nayoro = Modules.nayoro();
+    if (!nayoro.recordingActiveFor(targetUser)) {
+      nayoro.enableRecordingFor(targetUser, classifier, OperationalMode.LOCAL_STORAGE);
+      user.player().sendMessage(ChatColor.GREEN + "Recording enabled for " + ChatColor.RED + targetUser.player().getName());
+    } else {
+      nayoro.disableRecordingFor(targetUser);
+      user.player().sendMessage(ChatColor.GREEN + "Recording disabled for " + ChatColor.RED + targetUser.player().getName());
+    }
+  }
 
   @SubCommand(
     selectors = {"cps", "clicks"},

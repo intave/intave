@@ -12,9 +12,11 @@ import de.jpx3.intave.diagnostic.message.MessageSeverity;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.tracker.player.AbilityTracker;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
+import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.entity.Player;
@@ -101,9 +103,10 @@ public final class PacketDelayer extends Module {
   public void enqueueOutgoingPackets(PacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    ConnectionMetadata connection = user.meta().connection();
-    ProtocolMetadata protocol = user.meta().protocol();
-    MovementMetadata movement = user.meta().movement();
+    MetadataBundle meta = user.meta();
+    ConnectionMetadata connection = meta.connection();
+    ProtocolMetadata protocol = meta.protocol();
+    MovementMetadata movement = meta.movement();
 
     PacketContainer packetContainer = event.getPacket();
     PacketType packetType = event.getPacketType();
@@ -129,9 +132,9 @@ public final class PacketDelayer extends Module {
     long lagTolerance = user.trustFactorSetting("timer.lt");
 
     boolean transactionTimeout = oldestTransactionPacket * (lowToleranceMode ? 1.25 : 1) > lagTolerance + connection.transactionPingAverage() + ((double)LatencyStudy.pingAverage() / 2d);
-    boolean riding = movement.isInVehicle();
+    boolean activeExclude = movement.isInVehicle() || meta.abilities().inGameModeIncludePending(AbilityTracker.GameMode.SPECTATOR);
     long positionBlockTolerance = connection.transactionPingAverage() + LatencyStudy.pingAverage() / 2 + lagTolerance + positionTimeoutTolerance;
-    boolean positionTimeout = !riding && lastMovementPacket > positionBlockTolerance;
+    boolean positionTimeout = !activeExclude && lastMovementPacket > positionBlockTolerance;
 
     boolean idAddressed = packetType == PacketType.Play.Server.ANIMATION ||
       packetType == PacketType.Play.Server.ENTITY_STATUS ||

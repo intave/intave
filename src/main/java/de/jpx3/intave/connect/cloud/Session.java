@@ -82,8 +82,6 @@ public final class Session {
     try {
       boolean connected = bootstrap.connect(shard.domain(), shard.port()).await().addListener(future -> {
         if (!future.isSuccess()) {
-//          IntaveLogger.logger().info("Failure connecting to cloud");
-//          future.cause().printStackTrace();
           onFinal.accept(false);
           return;
         }
@@ -97,7 +95,6 @@ public final class Session {
         onFinal.accept(true);
       }).await(10, SECONDS);
       if (!connected) {
-//        System.out.println("Failed to connect to cloud service");
         IntaveLogger.logger().info("Cloud connection timed out");
         onFinal.accept(false);
       }
@@ -124,7 +121,6 @@ public final class Session {
     protocol = new ProtocolSpecification();
     pendingIncoming.clear();
     pendingOutgoing.clear();
-//    shutdownSubscribers.clear();
   }
 
   public void send(Packet<Serverbound> packet) {
@@ -133,11 +129,8 @@ public final class Session {
       return;
     }
     while (!pendingOutgoing.isEmpty()) {
-      Packet<Serverbound> pending = pendingOutgoing.poll();
-//      System.out.println("[Intave/Cloud] Sent queued " + pending.name());
-      channel.writeAndFlush(pending);
+      channel.writeAndFlush(pendingOutgoing.poll());
     }
-//    System.out.println("[Intave/Cloud] Sent " + packet.name());
     channel.writeAndFlush(packet);
   }
 

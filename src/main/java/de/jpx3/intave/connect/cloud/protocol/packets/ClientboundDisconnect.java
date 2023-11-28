@@ -5,6 +5,7 @@ import com.google.gson.stream.JsonWriter;
 import de.jpx3.intave.connect.cloud.protocol.JsonPacket;
 import de.jpx3.intave.connect.cloud.protocol.listener.Clientbound;
 
+import static com.google.gson.stream.JsonToken.NAME;
 import static de.jpx3.intave.connect.cloud.protocol.Direction.CLIENTBOUND;
 
 public final class ClientboundDisconnect extends JsonPacket<Clientbound> {
@@ -30,10 +31,15 @@ public final class ClientboundDisconnect extends JsonPacket<Clientbound> {
     try {
       reader.beginObject();
       while (reader.hasNext()) {
-        switch (reader.nextName()) {
-          case "reason":
-            reason = reader.nextString();
-            break;
+        while (reader.peek() == NAME) {
+          switch (reader.nextName()) {
+            case "reason":
+              reason = reader.nextString();
+              break;
+          }
+        }
+        if (reader.hasNext()) {
+          reader.skipValue();
         }
       }
       reader.endObject();

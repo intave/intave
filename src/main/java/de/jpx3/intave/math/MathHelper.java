@@ -43,8 +43,8 @@ public final class MathHelper {
     return Math.max(min, Math.min(val, max));
   }
 
-  public static int minmax(int min, int val, int map) {
-    return Math.max(min, Math.min(val, map));
+  public static int minmax(int min, int val, int max) {
+    return Math.max(min, Math.min(val, max));
   }
 
   public static long minmax(long min, long val, long max) {

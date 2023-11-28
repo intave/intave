@@ -250,9 +250,6 @@ public final class SetbackSimulator extends Module {
        * because it would allow the client to disable the entire movement system.
        * however, we have a teleport packet after, requiring the client to respond
        */
-//      Modules.feedback().synchronize(player, (player1, nothing) -> {
-//        violationLevelData.disableActiveTeleportBundleNextTick = true;
-//      });
       user.tickFeedback(
         () -> violationLevelData.disableActiveTeleportBundleNextTick = true
       );

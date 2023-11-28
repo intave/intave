@@ -166,6 +166,7 @@ public final class InteractionEmulator implements EventProcessor {
   }
 
   private static final String STEP_PROPERTY_NAME = MinecraftVersions.VER1_13_0.atOrAbove() ? "type" : "half";
+  private static final Set<Material> IGNORE_SET_IN_SELF = MaterialSearch.materialsThatContain("BUTTON", "PLATE");
 
   private EmulationResult emulatePlacement(Player player, Interaction interaction) {
     User user = userOf(player);
@@ -230,7 +231,7 @@ public final class InteractionEmulator implements EventProcessor {
       user, world,
       blockX, blockY, blockZ,
       placedBlockType, variant
-    );
+    ) && !IGNORE_SET_IN_SELF.contains(placedBlockType);
     if (raytraceCollidesWithPosition) {
       if (IntaveControl.DEBUG_VARIANT_COMPILATION) {
         System.out.println("[variant/debug] Failed to place block due to raytrace collision (replacing: " + replace + ")");

@@ -28,8 +28,6 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -48,8 +46,8 @@ public final class Nayoro extends Module {
 //  private static final boolean PUBLISH_SAMPLES = COMBAT_SAMPLING &= "accept".equalsIgnoreCase(SAMPLE_UPLOAD_STATUS.readAsString().trim()) && !IntaveControl.GOMME_MODE;
 
   private final UserLocal<Set<EventSink>> eventSinks = UserLocal.withInitial(this::defaultSinksFor, this::disableRecordingFor);
-  private final UserLocal<AtomicBoolean> recording = UserLocal.withInitial(new AtomicBoolean(false));
-  private final UserLocal<AtomicLong> lastRecording = UserLocal.withInitial(() -> new AtomicLong(System.currentTimeMillis()));
+  private final UserLocal<Holder<Boolean>> recording = UserLocal.withInitial(new Holder<>(false));
+  private final UserLocal<Holder<Long>> lastRecording = UserLocal.withInitial(new Holder<>(System.currentTimeMillis()));
   private final PacketEventDispatch packetEventDispatch = new PacketEventDispatch(sinkCallback());
   private final List<Playback> playbacks = new ArrayList<>();
 
@@ -138,7 +136,6 @@ public final class Nayoro extends Module {
       if (!COMBAT_SAMPLING || recordingActiveFor(user)) {
         return;
       }
-//      System.out.println("Enabling recording for " + user.player().getName());
       recording.get(user).set(true);
       Sample sample = new Sample();
       samples.put(user.id(), sample);
@@ -218,7 +215,6 @@ public final class Nayoro extends Module {
           @Override
           public void write(byte @NotNull [] b, int off, int len) {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-//            outputStream.write(1);
             outputStream.write(b, off, len);
             byte[] writeStream = outputStream.toByteArray();
             ByteBuffer buffer = ByteBuffer.wrap(writeStream);
@@ -243,7 +239,6 @@ public final class Nayoro extends Module {
       return false;
     }
     return recording.get(user).get();
-//    return eventSinks.get(user).stream().anyMatch(eventSink -> eventSink instanceof RecordEventSink);
   }
 
   public void instantPlayback(User user) {
@@ -281,5 +276,21 @@ public final class Nayoro extends Module {
       user, new LiveEnvironment(user)
     );
     return Sets.newHashSet(new ForwardEventSink(player));
+  }
+
+  public static class Holder<T> {
+    private T value;
+
+    public Holder(T value) {
+      this.value = value;
+    }
+
+    public T get() {
+      return value;
+    }
+
+    public void set(T value) {
+      this.value = value;
+    }
   }
 }

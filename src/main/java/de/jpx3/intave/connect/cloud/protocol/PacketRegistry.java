@@ -5,11 +5,14 @@ import de.jpx3.intave.connect.cloud.protocol.listener.Clientbound;
 import de.jpx3.intave.connect.cloud.protocol.listener.Serverbound;
 import de.jpx3.intave.connect.cloud.protocol.packets.*;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public final class PacketRegistry {
   private static final Map<Direction, Map<Class<? extends Packet<?>>, String>> nameByPacket = Maps.newHashMap();
-  private static final Map<Direction, Map<String, Class<? extends Packet<?>>>> packetsByName = Maps.newEnumMap(Direction.class);
+  private static final Map<Direction, Map<String, Class<? extends Packet<?>>>> packetByName = Maps.newEnumMap(Direction.class);
   private static final Map<Direction, Map<String, PacketSpecification>> specifications = Maps.newEnumMap(Direction.class);
 
   static {
@@ -47,12 +50,10 @@ public final class PacketRegistry {
     try {
       Packet<?> packet = packetClass.newInstance();
       String packetName = packet.name();
-      nameByPacket.computeIfAbsent(direction, x -> new HashMap<>())
-        .put(packetClass, packetName);
-      packetsByName.computeIfAbsent(direction, x -> new HashMap<>())
-        .put(packetName, packetClass);
-      specifications.computeIfAbsent(direction, x -> new HashMap<>())
-        .put(packetName, PacketSpecification.from(packet));
+      PacketSpecification packetSpecification = PacketSpecification.from(packet);
+      nameByPacket.computeIfAbsent(direction, x -> new HashMap<>()).put(packetClass, packetName);
+      packetByName.computeIfAbsent(direction, x -> new HashMap<>()).put(packetName, packetClass);
+      specifications.computeIfAbsent(direction, x -> new HashMap<>()).put(packetName, packetSpecification);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -60,7 +61,7 @@ public final class PacketRegistry {
 
   public static Packet<?> fromName(Direction direction, String name) {
     try {
-      return packetsByName.get(direction).get(name).newInstance();
+      return packetByName.get(direction).get(name).newInstance();
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -75,7 +76,7 @@ public final class PacketRegistry {
   }
 
   public static Set<String> packetNamesOf(Direction direction) {
-    return new HashSet<>(packetsByName.get(direction).keySet());
+    return new HashSet<>(packetByName.get(direction).keySet());
   }
 
   public static Packet<?> fromAssignedId(ProtocolSpecification protocol, Direction direction, int id) {

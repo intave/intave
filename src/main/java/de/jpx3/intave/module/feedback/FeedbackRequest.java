@@ -13,13 +13,20 @@ public class FeedbackRequest<T> {
   private final short userKey;
   private final long key;
   private final long created;
+  private final int options;
 
-  FeedbackRequest(FeedbackCallback<T> callback, FeedbackObserver observer, T obj, short userKey, long key) {
+  FeedbackRequest(
+    FeedbackCallback<T> callback,
+    FeedbackObserver observer,
+    T obj, short userKey,
+    long key, int options
+  ) {
     this.callback = callback;
     this.observer = observer;
     this.obj = obj;
     this.userKey = userKey;
     this.key = key;
+    this.options = options;
     this.created = System.nanoTime();
   }
 
@@ -69,5 +76,9 @@ public class FeedbackRequest<T> {
 
   public long passedTimeAs(TimeUnit unit) {
     return unit.convert(System.nanoTime() - created, TimeUnit.NANOSECONDS);
+  }
+
+  public int options() {
+    return options;
   }
 }

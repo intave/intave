@@ -6,6 +6,7 @@ import de.jpx3.intave.connect.cloud.protocol.Identity;
 import de.jpx3.intave.connect.cloud.protocol.JsonPacket;
 import de.jpx3.intave.connect.cloud.protocol.listener.Clientbound;
 
+import static com.google.gson.stream.JsonToken.NAME;
 import static de.jpx3.intave.connect.cloud.protocol.Direction.CLIENTBOUND;
 
 public final class ClientboundViolation extends JsonPacket<Clientbound> {
@@ -52,26 +53,32 @@ public final class ClientboundViolation extends JsonPacket<Clientbound> {
   public void deserialize(JsonReader reader) {
     try {
       reader.beginObject();
+
       while (reader.hasNext()) {
-        switch (reader.nextName()) {
-          case "id":
-            id = Identity.from(reader);
-            break;
-          case "check":
-            check = reader.nextString();
-            break;
-          case "threshold":
-            threshold = reader.nextString();
-            break;
-          case "message":
-            message = reader.nextString();
-            break;
-          case "details":
-            details = reader.nextString();
-            break;
-          case "vl":
-            vl = reader.nextInt();
-            break;
+        while (reader.peek() == NAME) {
+          switch (reader.nextName()) {
+            case "id":
+              id = Identity.from(reader);
+              break;
+            case "check":
+              check = reader.nextString();
+              break;
+            case "threshold":
+              threshold = reader.nextString();
+              break;
+            case "message":
+              message = reader.nextString();
+              break;
+            case "details":
+              details = reader.nextString();
+              break;
+            case "vl":
+              vl = reader.nextInt();
+              break;
+          }
+        }
+        if (reader.hasNext()) {
+          reader.skipValue();
         }
       }
       reader.endObject();

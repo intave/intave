@@ -32,6 +32,7 @@ final class ModuleLoader {
 
     // feedback
     prepareModule("de.jpx3.intave.module.feedback.FeedbackSender", lateBoot);
+    prepareModule("de.jpx3.intave.module.feedback.FeedbackAnalysis", lateBoot);
     prepareModule("de.jpx3.intave.module.feedback.FeedbackReceiver", defaultBoot);
     prepareModule("de.jpx3.intave.module.feedback.PacketDelayer", lateBoot);
 

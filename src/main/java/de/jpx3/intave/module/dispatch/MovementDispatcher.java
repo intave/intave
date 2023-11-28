@@ -10,6 +10,7 @@ import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import de.jpx3.intave.IntaveControl;
+import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.Nullable;
@@ -379,9 +380,11 @@ public final class MovementDispatcher extends Module {
         double yawDifference = MathHelper.noAbsDistanceInDegrees(movementData.lastRotationYaw, yaw);
         double pitchDifference = MathHelper.noAbsDistanceInDegrees(movementData.lastRotationPitch, pitch);
         if (DEBUG_MOVEMENT_IGNORE) {
-          Synchronizer.synchronize(() -> {
-            player.sendMessage("Click movement ignore distance: " + distance + " yaw: " + yawDifference + " pitch: " + pitchDifference);
-          });
+//          Synchronizer.synchronize(() -> {
+//            player.sendMessage("Click movement ignore distance: " + distance + " yaw: " + yawDifference + " pitch: " + pitchDifference);
+//          });
+          System.out.println("[Intave] Click movement ignore distance: " + distance + " yaw: " + yawDifference + " pitch: " + pitchDifference);
+          IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) Click movement ignore distance: " + distance + " yaw: " + yawDifference + " pitch: " + pitchDifference);
         }
 
         if (!MinecraftVersions.VER1_9_0.atOrAbove()) {
@@ -416,8 +419,9 @@ public final class MovementDispatcher extends Module {
 
     if (movementData.awaitTeleport || movementData.awaitOutgoingTeleport) {
       if (DEBUG_MOVEMENT_IGNORE) {
-        player.sendMessage("Teleport movement ignore " + movementData.awaitTeleport + " " + movementData.awaitOutgoingTeleport);
+        System.out.println("[Intave] Teleport movement ignore " + movementData.awaitTeleport + " " + movementData.awaitOutgoingTeleport);
       }
+      IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) Teleport movement ignore " + movementData.awaitTeleport + " " + movementData.awaitOutgoingTeleport);
       event.setCancelled(true);
       movementData.dropPostTickMotionProcessing = true;
       return;
@@ -429,7 +433,9 @@ public final class MovementDispatcher extends Module {
     );
     if (distance > 50) {
       if (DEBUG_MOVEMENT_IGNORE) {
-        player.sendMessage("Distance movement ignore: " + distance);
+//        player.sendMessage("Distance movement ignore: " + distance);
+        System.out.println("[Intave] Distance movement ignore: " + distance);
+        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) Distance movement ignore: " + distance);
       }
       event.setCancelled(true);
       Vector vector = new Vector(movementData.baseMotionX, movementData.baseMotionY, movementData.baseMotionZ);
@@ -458,7 +464,9 @@ public final class MovementDispatcher extends Module {
 
     if (violationLevelData.isInActiveTeleportBundle) {
       if (DEBUG_MOVEMENT_IGNORE) {
-        player.sendMessage("Teleport bundle movement ignore");
+//        player.sendMessage("Teleport bundle movement ignore");
+        System.out.println("[Intave] Teleport bundle movement ignore");
+        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) Teleport bundle movement ignore");
       }
       event.setCancelled(true);
       return;
@@ -474,7 +482,9 @@ public final class MovementDispatcher extends Module {
       movementData.motionZ() == 0
     ) {
       if (DEBUG_MOVEMENT_IGNORE) {
-        player.sendMessage("Movement reset ignore");
+//        player.sendMessage("Movement reset ignore");
+        System.out.println("[Intave] Movement reset ignore");
+        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) Movement reset ignore");
       }
       movementData.canResetMotion = false;
       return;
@@ -525,7 +535,9 @@ public final class MovementDispatcher extends Module {
       movementData.canResetMotion = false;
     } else {
       if (DEBUG_MOVEMENT_IGNORE) {
-        player.sendMessage("Basic reset movement ignore");
+//        player.sendMessage("Basic reset movement ignore");
+        System.out.println("[Intave] Basic reset movement ignore");
+        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) Basic reset movement ignore");
       }
       movementData.canResetMotion = true;
     }
@@ -1139,9 +1151,11 @@ public final class MovementDispatcher extends Module {
     if (heldType != Material.AIR || offhandType != Material.AIR) {
       user.meta().movement().awaitClickMovementSkip = true;
       if (DEBUG_MOVEMENT_IGNORE) {
-        Synchronizer.synchronize(() -> {
-          user.player().sendMessage("Item Usage Tick");
-        });
+//        Synchronizer.synchronize(() -> {
+//          user.player().sendMessage("Item Usage Tick");
+//        });
+        System.out.println("[Intave] Item Usage Tick");
+        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(user.player(), "(DEBUG/MOVEMENTIGNORE) Item Usage Tick");
       }
     }
   }
