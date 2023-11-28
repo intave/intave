@@ -42,7 +42,7 @@ public final class ClientWarningModule extends Module {
     String tag = reader.tag();
 
     if (tag.endsWith("Brand")) {
-      String brand = reader.readString();
+      String brand = reader.readStringWithExtraByte();
       ClientData clientData = clientDataOfBrand(brand);
       if (clientData != null) {
         Synchronizer.synchronize(() -> warn(player, clientData));

@@ -418,10 +418,9 @@ public final class MovementDispatcher extends Module {
     }
 
     if (movementData.awaitTeleport || movementData.awaitOutgoingTeleport) {
-//      if (DEBUG_MOVEMENT_IGNORE) {
-//        player.sendMessage("Teleport movement ignore " + movementData.awaitTeleport + " " + movementData.awaitOutgoingTeleport);
-//      }
-      System.out.println("[Intave] Teleport movement ignore " + movementData.awaitTeleport + " " + movementData.awaitOutgoingTeleport);
+      if (DEBUG_MOVEMENT_IGNORE) {
+        System.out.println("[Intave] Teleport movement ignore " + movementData.awaitTeleport + " " + movementData.awaitOutgoingTeleport);
+      }
       IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/MOVEMENTIGNORE) Teleport movement ignore " + movementData.awaitTeleport + " " + movementData.awaitOutgoingTeleport);
       event.setCancelled(true);
       movementData.dropPostTickMotionProcessing = true;

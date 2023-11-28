@@ -33,6 +33,11 @@ public final class SkinBlinker extends CheckPart<ProtocolScanner> {
   public void receiveClientOptions(PacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
+
+    if (MinecraftVersions.VER1_20_2.atOrAbove()) {
+      return;
+    }
+
     PacketContainer packet = event.getPacket();
     ProtocolMetadata clientData = user.meta().protocol();
     if (HAS_OFF_HAND && clientData.combatUpdate()) {

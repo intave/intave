@@ -236,67 +236,28 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       String entityName = attackedEntity.entityName();
       Violation violation = Violation.builderFor(AttackRaytrace.class)
         .forPlayer(player).withCustomThreshold("timeout")
-//        .withVL(1)
-        .withVL(0)
+        .withVL(1)
+//        .withVL(0)
         .withMessage("attacked expired position of " + resolveArticle(entityName) + " " + entityName.toLowerCase(Locale.ROOT))
         .withDetails(pendingFeedbacks + "t attack, " + discrepancyInMs + "ms discrepancy")
         .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
         .build();
       ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
       double after = violationContext.violationLevelAfter();
-//      if (after > 10) {
+//      if (after > 25) {
 //        entityHasTimedOut = true;
 //      }
+      if (IntaveControl.GOMME_MODE) {
+        System.out.println("TIMEOUT_X: " + player.getName() + " attacked " + attackedEntity.entityName() + " with " + pendingFeedbacks + " pending feedbacks (" + pendingOverAverage + "|" + distanceOverLimit + " | " + maximumPendingFeedbackPackets + ")");
+      }
     }
 
-//    if (ticksOverLimit > 0) {
-//      /*
-//      attacks are always CLIENT -> SERVER, transaction ping is always SERVER -> CLIENT -> SERVER, so double
-//      to limit the attack latency, we can assume transaction ping is always 2x the attack latency, so we come with 200% margin
-//       */
-//      boolean recentlyIncreased = System.currentTimeMillis() - violations.lastIncreaseBacktrackVL > 800;
-//      if (recentlyIncreased) {
-//        violations.backtrackVL += Math.min(3, unroundedTicksOverLimit);
-//        violations.lastIncreaseBacktrackVL = System.currentTimeMillis();
-//      } else {
-//        violations.backtrackVL += Math.min(3, unroundedTicksOverLimit) / 3d;
-//      }
-//      if (violations.backtrackVL >= 10 || unroundedTicksOverLimit >= 3) {
-//        //entityHasTimedOut = true;
-//      }
-//      if (violations.backtrackVL > 25) {
-//        violations.backtrackVL = 30;
-//        if (recentlyIncreased) {
-////          String entityName = attackedEntity.entityName();
-////          Violation violation = Violation.builderFor(AttackRaytrace.class)
-////              .forPlayer(player).withCustomThreshold("timeout")
-////              .withVL(0)
-////              .withMessage("attacked expired position of " + resolveArticle(entityName) + " " + entityName.toLowerCase(Locale.ROOT))
-////              .withDetails(pendingFeedbacks + "t attack, " + formatDouble(shortTransactionPingAverage, 2) + "*" + formatDouble(multiplier, 2) + "t latency")
-////              .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-////              .build();
-////          ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
-////          double after = violationContext.violationLevelAfter();
-////          if (after > 10) {
-//////            user.nerf(AttackNerfStrategy.HT_SPOOF, "internal");
-////          }
-//        }
-//      }
-////      Synchronizer.synchronize(() -> {
-////        player.sendMessage("BacktrackVL: " + violations.backtrackVL + " multiplier: " + formatDouble(multiplier, 2));
-////      });
-//    } else if (violations.backtrackVL > 0) {
-//      if (System.currentTimeMillis() - violations.lastIncreaseBacktrackVL > 20 * 1000) {
-//        violations.backtrackVL = Math.max(0, violations.backtrackVL - 5);
-//        violations.lastIncreaseBacktrackVL = System.currentTimeMillis();
-//      }
-//      violations.backtrackVL -= 0.05;
-//    }
-
     if (entityHasTimedOut) {
-      if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
+//      if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
+      if (IntaveControl.GOMME_MODE) {
         System.out.println("TIMEOUT: " + player.getName() + " attacked " + attackedEntity.entityName() + " with " + pendingFeedbacks + " pending feedbacks (" + pendingOverAverage + "|" + distanceOverLimit + " | " + maximumPendingFeedbackPackets + ")");
       }
+//      }
     }
 
     return entityHasTimedOut;

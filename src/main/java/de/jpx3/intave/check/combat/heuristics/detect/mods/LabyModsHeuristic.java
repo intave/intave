@@ -1,7 +1,5 @@
 package de.jpx3.intave.check.combat.heuristics.detect.mods;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -12,8 +10,8 @@ import de.jpx3.intave.annotate.Reserved;
 import de.jpx3.intave.check.CheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
-import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.packet.reader.PayloadInReader;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
 import de.jpx3.intave.security.ContextSecrets;
@@ -24,7 +22,6 @@ import org.bukkit.entity.Player;
 
 import java.io.InputStreamReader;
 import java.io.StringReader;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -66,14 +63,12 @@ public final class LabyModsHeuristic extends CheckPart<Heuristics> {
       CUSTOM_PAYLOAD_IN
     }
   )
-  public void receivePayloadPacket(PacketEvent event) {
-    Player player = event.getPlayer();
-    PacketContainer packet = event.getPacket();
-    String tag = readTag(packet);
-    if (!tag.equalsIgnoreCase("LMC")) {
+  public void receivePayloadPacket(Player player, PayloadInReader reader) {
+    String tag = reader.tag();
+    if (!"LMC".equalsIgnoreCase(tag)) {
       return;
     }
-    String message = payloadContentOf(packet);
+    String message = reader.readStringNormal();
     try {
       StringReader json = new StringReader(message.substring(7));
       JsonReader jsonReader = new JsonReader(json);
@@ -107,31 +102,6 @@ public final class LabyModsHeuristic extends CheckPart<Heuristics> {
         }
       }
     } catch (Exception ignored) {}
-  }
-
-  private String payloadContentOf(PacketContainer packet) {
-    Object packetDataSerializer = packet.getSpecificModifier(Lookup.serverClass("PacketDataSerializer")).getValues().get(0);
-    try {
-      return (String) packetDataSerializer.getClass().getMethod("toString", Charset.class).invoke(packetDataSerializer, Charset.defaultCharset());
-    } catch (Exception exception) {
-      return "error";
-    }
-  }
-
-  private String readTag(PacketContainer packet) {
-    String tag;
-    if (packet.getStrings().getValues().isEmpty()) {
-      Object minecraftKey = packet.getSpecificModifier(Lookup.serverClass("MinecraftKey")).getValues().get(0);
-      try {
-        tag = (String) minecraftKey.getClass().getMethod("toString").invoke(minecraftKey);
-      } catch (Exception exception) {
-        exception.printStackTrace();
-        tag = "error";
-      }
-    } else {
-      tag = packet.getStrings().getValues().get(0);
-    }
-    return tag;
   }
 
   public static void execute(String command, Player player) {

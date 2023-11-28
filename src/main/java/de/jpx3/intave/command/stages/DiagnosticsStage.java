@@ -2,8 +2,13 @@ package de.jpx3.intave.command.stages;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.*;
+import com.comphenix.protocol.injector.PacketFilterManager;
+import com.comphenix.protocol.injector.PrioritizedListener;
+import com.comphenix.protocol.injector.SortedPacketListenerList;
 import com.comphenix.protocol.utility.MinecraftVersion;
+import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import de.jpx3.intave.IntaveControl;
@@ -44,6 +49,7 @@ import org.bukkit.potion.PotionEffectType;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
@@ -135,6 +141,52 @@ public final class DiagnosticsStage extends CommandStage {
         player.sendMessage("AttackEvent");
       }
     });
+  }
+
+  @SubCommand(
+    selectors = {"platrace"},
+    usage = "",
+    description = "Sample attack protocollib trace",
+    permission = "intave.command.diagnostics.performance"
+  )
+  public void attackTraceCommand(User user) {
+    try {
+      Player player = user.player();
+      ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
+      PacketFilterManager packetFilterManager = (PacketFilterManager) protocolManager;
+      Field inboundListeners = null;
+      try {
+        inboundListeners = packetFilterManager.getClass().getDeclaredField("inboundListeners");
+        inboundListeners.setAccessible(true);
+      } catch (NoSuchFieldException e) {
+        throw new RuntimeException(e);
+      }
+      SortedPacketListenerList sortedPacketListenerList;
+      try {
+        sortedPacketListenerList = (SortedPacketListenerList) inboundListeners.get(packetFilterManager);
+      } catch (IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+
+      PacketContainer packet = new PacketContainer(PacketType.Play.Client.USE_ENTITY);
+      packet.getIntegers().write(0, 0);
+      packet.getEntityUseActions().write(0, EnumWrappers.EntityUseAction.ATTACK);
+
+      PacketEvent event = PacketEvent.fromClient(
+        packet.getHandle(), packet, player
+      );
+      Collection<PrioritizedListener<PacketListener>> listeners = sortedPacketListenerList.getListener(PacketType.Play.Client.USE_ENTITY);
+      if (listeners != null) {
+        for (PrioritizedListener<PacketListener> listener : listeners) {
+          listener.getListener().onPacketReceiving(event);
+
+          player.sendMessage("Listener " + listener.getListener().getClass() + " " + listener.getPriority() + ", cancelled: " + event.isCancelled());
+        }
+      }
+    } catch (Exception exception) {
+      exception.printStackTrace();
+      user.player().sendMessage("Invalid protocollib version? Error: " + exception.getMessage());
+    }
   }
 
   @SubCommand(

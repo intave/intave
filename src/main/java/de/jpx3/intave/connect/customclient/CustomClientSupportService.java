@@ -3,7 +3,6 @@ package de.jpx3.intave.connect.customclient;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.MinecraftKey;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -17,6 +16,7 @@ import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.reader.PayloadInReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
@@ -50,28 +50,12 @@ public final class CustomClientSupportService implements EventProcessor {
       CUSTOM_PAYLOAD_IN
     }
   )
-  public void receivePayloadPacket(PacketEvent event) {
-    Player player = event.getPlayer();
-    PacketContainer packet = event.getPacket();
-    String tag;
-    if (packet.getStrings().getValues().isEmpty()) {
-      Object minecraftKey = packet.getMinecraftKeys().getValues().get(0);
-      try {
-        tag = (String) minecraftKey.getClass().getMethod("toString").invoke(minecraftKey);
-      } catch (Exception exception) {
-        exception.printStackTrace();
-        tag = "error";
-      }
-    } else {
-      tag = packet.getStrings().getValues().get(0);
-    }
-    if (tag.startsWith("minecraft:")) {
-      tag = tag.substring(10);
-    }
+  public void receivePayloadPacket(Player player, PayloadInReader reader) {
+    String tag = reader.tag();
     if (!tag.equalsIgnoreCase("intave")) {
       return;
     }
-    ByteBuf bytes = (ByteBuf) packet.getSpecificModifier(Lookup.serverClass("PacketDataSerializer")).getValues().get(0);
+    ByteBuf bytes = reader.readBytes();
     try {
       bytes.markReaderIndex();
       String messageKey = LabyModChannelHelper.readString(bytes, 100);
