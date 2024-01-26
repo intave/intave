@@ -1,15 +1,11 @@
 package de.jpx3.intave.check.movement.timer;
 
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.ConnectionSide;
-import com.comphenix.protocol.events.MonitorAdapter;
 import com.comphenix.protocol.events.PacketEvent;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.check.CheckStatistics;
+import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.movement.Timer;
-import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.feedback.FeedbackObserver;
 import de.jpx3.intave.module.feedback.FeedbackOptions;
@@ -22,12 +18,7 @@ import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.meta.AbilityMetadata;
-import de.jpx3.intave.user.meta.CheckCustomMetadata;
-import de.jpx3.intave.user.meta.ConnectionMetadata;
-import de.jpx3.intave.user.meta.MetadataBundle;
-import de.jpx3.intave.user.meta.MovementMetadata;
-import de.jpx3.intave.user.meta.ViolationMetadata;
+import de.jpx3.intave.user.meta.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -47,18 +38,20 @@ import static de.jpx3.intave.module.linker.packet.PacketId.Server.LOGIN;
 
 public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> {
   private static final long DEFAULT_DELAY = 500;
-  private static final long DEFAULT_THRESHOLD = 5;
+  private static final long DEFAULT_THRESHOLD = 10;
   private final Map<UUID, Long> playerJoinTimeCache = new HashMap<>();
+  private final CheckViolationLevelDecrementer decrementer;
 
   public PlayerTime(Timer parentCheck) {
     super(parentCheck, PlayerTimeMeta.class);
+    decrementer = parentCheck.decrementer();
   }
 
   @PacketSubscription(
-      priority = ListenerPriority.HIGHEST,
-      packetsOut = {
-          LOGIN
-      }
+    priority = ListenerPriority.HIGHEST,
+    packetsOut = {
+      LOGIN
+    }
   )
   public void receiveLogin(PacketEvent event) {
     Player player = event.getPlayer();
@@ -114,30 +107,36 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
     // Exclude players in certain states such as creative, spectator or teleport
     // We also have to check if the player received the initial join packet due to proxies doing weird things
     if (!checkMeta.gameJoinReceived || movementData.lastTeleport == 0
-        || abilityData.inGameModeIncludePending(AbilityTracker.GameMode.CREATIVE) || abilityData.ignoringMovementPackets()) {
+      || abilityData.inGameModeIncludePending(AbilityTracker.GameMode.CREATIVE) || abilityData.ignoringMovementPackets()) {
       return;
     }
-    checkMeta.time += 50_000_000;
+    checkMeta.time += 49_950_000;
     checkMeta.limitToBeApplied = checkMeta.queuedLimit;
     long diff = checkMeta.time - System.nanoTime();
+//    ChatColor color = diff > 10_000_000 ? ChatColor.RED : ChatColor.GRAY;
+//    player.sendMessage(color + "" + ((double)diff / 1_000_000L) + "ms ");
     // We could most likely flag for > 1_000_000 but let's be safe
-    if (diff > 10_000_000 && !user.meta().movement().isInVehicle()) {
-      double displayValue = diff / 50_000_000f;
+    if (diff > (10 * 1_000_000) && !user.meta().movement().isInVehicle()) {
+      double displayValue = diff / (50 * 1_000_000f);
       if (displayValue < 0.01) {
         displayValue = 0.01;
       }
       String balanceAsString = formatDouble(displayValue, 2);
       statisticApply(user, CheckStatistics::increaseFails);
       Violation violation = Violation.builderFor(Timer.class).forPlayer(player)
-          .withMessage("moved too frequently").withDetails(balanceAsString + " ticks ahead")
-          .withVL(1)
-          .build();
+        .withMessage("moved too frequently").withDetails(balanceAsString + " ticks ahead")
+        .withVL(Math.min(displayValue, 2))
+        .build();
       ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
       if (violationContext.shouldCounterThreat()) {
+        checkMeta.lastTimerFlag = System.currentTimeMillis();
         movementData.invalidMovement = true;
         Vector setback = new Vector(0, 0, 0);
         Modules.mitigate().movement().emulationSetBack(player, setback, 3, 2, false);
       }
+      checkMeta.time -= 1_000_000;
+    } else if (System.currentTimeMillis() - checkMeta.lastTimerFlag > 10000) {
+      decrementer.decrement(user, 0.005);
     }
   }
 
