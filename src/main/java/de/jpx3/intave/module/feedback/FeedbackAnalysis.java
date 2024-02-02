@@ -1,14 +1,17 @@
 package de.jpx3.intave.module.feedback;
 
+import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserLocal;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.storage.FeedbackAnalysisStorage;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,6 +54,8 @@ public final class FeedbackAnalysis extends Module {
     // unimportant
   }
 
+  private UserLocal<File> latencyAnalysisFile = UserLocal.withInitial(user -> new File(IntavePlugin.singletonInstance().dataFolder(), user.id() + "-latency.csv"));
+
   public void receivedTransaction(User user, FeedbackRequest<?> request) {
     FeedbackAnalysisMeta meta = metaOf(user);
     FeedbackCategory category = FeedbackCategory.fromFeedbackOptions(request.options());
@@ -59,9 +64,61 @@ public final class FeedbackAnalysis extends Module {
     LatencyAnalysis analysis = latencyAnalysisMap.get(category);
     LatencyAnalysis combatNearAnalysis = latencyAnalysisMap.get(ENTITY_NEAR);
 
+
+    long passedTime = request.passedTime();
+
+    /*
+    boolean attacked = FeedbackOptions.matches(TRACER_ENTITY_NEAR, request.options());
+    boolean exclude = !attacked && user.meta().attack().recentlyAttacked(500);
+
+    BackgroundExecutors.executeWhenever(() -> {
+      // append to file, [latency, combatNear]
+      File file = latencyAnalysisFile.get(user);
+      if (!file.exists()) {
+        try {
+          file.createNewFile();
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+        // write header
+        FileWriter writer = null;
+        try {
+          writer = new FileWriter(file);
+          writer.write("latency,combatNear\n");
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        } finally {
+          if (writer != null) {
+            try {
+              writer.close();
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+          }
+        }
+      }
+      if (!exclude) {
+        FileWriter writer = null;
+        try {
+          writer = new FileWriter(file, true);
+          writer.write(passedTime + "," + (attacked ? 1 : 0) + "\n");
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        } finally {
+          if (writer != null) {
+            try {
+              writer.close();
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+          }
+        }
+      }
+    });*/
+
     if (category == ENTITY_NEAR ||
       System.currentTimeMillis() - combatNearAnalysis.lastEntry() > 1500) {
-      analysis.addLatency(request.passedTime());
+      analysis.addLatency(passedTime);
     }
   }
 

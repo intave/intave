@@ -101,14 +101,15 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       boolean inTeleport = movement.lastTeleport == 0 || violationMeta.isInActiveTeleportBundle;
       boolean firstRaytraceSuccessful = false;
       if (!inTeleport && !entityInTimeout(user, entity, entity.pendingFeedbackPackets())) {
-        // Make a first attempt at ray-tracing to reduce compute time
-        Raytrace raytrace = fireRaytraceFor(user, entity, computeExpansionFor(user), true);
+        // Make a first attempt at ray-tracing to enhance player experience
+        Raytrace raytrace = fireRaytraceFor(user, entity, computeExpansionFor(user, true), true);
         double blockReachDistance = Raytracing.reachDistanceOf(user);
         if (raytrace.reach() <= blockReachDistance) {
           firstRaytraceSuccessful = true;
         }
       }
-      boolean resendLater = !firstRaytraceSuccessful;
+      boolean pendingPushable = pendingActions.size() < MAX_ALLOWED_PENDING_ATTACKS;
+      boolean resendLater = !firstRaytraceSuccessful || !pendingPushable;
       if (resendLater) {
         // Cancel attack and redirect it
         if (event.isReadOnly()) {
@@ -116,11 +117,19 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         }
         event.setCancelled(true);
       }
-      PacketContainer clone = packet.shallowClone();
-      Attack attack = new Attack(clone, entityId, resendLater, entity.pendingFeedbackPackets());
       // Only add attack to queue if queue size is small enough
-      if (pendingActions.size() < MAX_ALLOWED_PENDING_ATTACKS) {
+      if (pendingPushable) {
+        PacketContainer clone = packet.shallowClone();
+        Attack attack = new Attack(clone, entityId, resendLater, entity.pendingFeedbackPackets());
         pendingActions.add(attack);
+      } else {
+        Violation violation = Violation.builderFor(AttackRaytrace.class)
+          .forPlayer(player).withMessage("attacked too many entities at once")
+          .withDetails("queued " + pendingActions.size() + " attacks")
+          .withVL(0)
+          .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
+          .build();
+        Modules.violationProcessor().processViolation(violation);
       }
     }
     reader.release();
@@ -197,7 +206,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
           if (entityOutOfSync) {
             processAttackRaytraceBruteforceFor(user, attackedEntity, pendingAttack);
           } else {
-            processAttackRaytraceFor(user, attackedEntity, pendingAttack, computeExpansionFor(user));
+            processAttackRaytraceFor(user, attackedEntity, pendingAttack, computeExpansionFor(user, false));
           }
         }
       } else if (pendingAction instanceof ArmAnimation) {
@@ -460,6 +469,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
           "%s/%d missed hit on %s",
           player.getName(), user.protocolVersion(), entityName.toLowerCase()
         );
+        metaOf(user).lastReachDetection = System.currentTimeMillis();
         reach = 10;
         break;
       }
@@ -480,6 +490,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
           player.getName(), user.protocolVersion(), entityName.toLowerCase(), displayReach
         );
         reach = raytrace.reach();
+        metaOf(user).lastReachDetection = System.currentTimeMillis();
         break;
       }
       default: {
@@ -613,17 +624,24 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
    * @param user The user which is used to compute the expansion
    * @return The expansion
    */
-  private float computeExpansionFor(User user) {
+  private float computeExpansionFor(User user, boolean isPre) {
     MetadataBundle meta = user.meta();
     ProtocolMetadata clientData = meta.protocol();
     MovementMetadata movement = meta.movement();
     AttackRaytraceMeta attackRaytraceMeta = metaOf(user);
+
+    float baseline = 0;
     // Process 1.8 and lower
     if (clientData.flyingPacketsAreSent()) {
-      return attackRaytraceMeta.flyingPacketCounter > 0 ? 0.13f : 0.1f;
+      baseline = attackRaytraceMeta.flyingPacketCounter > 0 ? 0.13f : 0.1f;
     } else {
-      return 0.13f;
+      baseline = 0.13f;
     }
+    // Process 1.9 and higher
+    if (isPre && System.currentTimeMillis() - attackRaytraceMeta.lastReachDetection > 20_000) {
+      baseline += 0.75f;
+    }
+    return baseline;
   }
 
   /**
@@ -654,6 +672,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     public int flyingPacketCounter = 0;
     public List<Action> queuedActions = new ArrayList<>();
     public Position lastPosition;
+    public long lastReachDetection = 0;
   }
 
   /**

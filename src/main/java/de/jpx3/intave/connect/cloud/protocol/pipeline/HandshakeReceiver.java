@@ -39,7 +39,7 @@ public final class HandshakeReceiver extends ChannelInboundHandlerAdapter implem
       .supportedEncryptionAlgorithms(Security.getAlgorithms("Cipher").stream().filter(s -> s.startsWith("AES")).collect(Collectors.toList()))
       .supportedEncryptionKeySizes(Collections.singletonList(128))
       .supportedCompressionAlgorithms(Collections.singletonList("GZIP"))
-      .supportedHMACAlgorithms(new ArrayList<>(Security.getAlgorithms("Mac")))
+      .supportedHMACAlgorithms(new ArrayList<>(Security.getAlgorithms("Mac2")))
       .clientboundProtocol(PacketRegistry.packetSpecsFor(CLIENTBOUND))
       .serverboundProtocol(PacketRegistry.packetSpecsFor(SERVERBOUND))
       .build();

@@ -457,6 +457,10 @@ public final class InteractionEmulator implements EventProcessor {
         // remove liquid on location if exists
         if (MaterialMagic.isLavaOrWater(placementType) && type == InteractionType.INTERACT) {
           // emulate
+//
+//          Synchronizer.synchronize(() -> {
+//            player.sendMessage(ChatColor.DARK_PURPLE + "Emulating bucket empty");
+//          });
           if (WorldPermission.bukkitActionPermission(
             player,
             BucketAction.FILL_BUCKET,
@@ -482,9 +486,12 @@ public final class InteractionEmulator implements EventProcessor {
       case LAVA_BUCKET: {
         Material placementType = VolatileBlockAccess.typeAccess(user, placementLocation);
         boolean adventureMode = user.meta().abilities().inGameMode(AbilityTracker.GameMode.ADVENTURE);
-
+//        Synchronizer.synchronize(() -> {
+//          player.sendMessage(ChatColor.DARK_PURPLE + "Emulating bucket place");
+//        });
         // emulate
-        if (placementType == Material.AIR
+        if (
+          !MaterialMagic.blockSolid(placementType)
           && !adventureMode
           && type == InteractionType.INTERACT
           && WorldPermission.bukkitActionPermission(
@@ -503,6 +510,9 @@ public final class InteractionEmulator implements EventProcessor {
             itemTypeInHand == Material.WATER_BUCKET ? fullWaterVariantIndex : fullLavaVariantIndex,
             "BUCKET"
           );
+//          Synchronizer.synchronize(() -> {
+//            player.sendMessage(ChatColor.DARK_PURPLE + "OVERRIDE " + fullWaterVariantIndex);
+//          });
         }
         break;
       }
@@ -510,7 +520,7 @@ public final class InteractionEmulator implements EventProcessor {
   }
 
   private void emulatePhysicalInteract(Player player, Block block) {
-    World world = player.getWorld();
+//    World world = player.getWorld();
     ExtendedBlockStateCache blockStateAccess = userOf(player).blockStates();
     Material clickedType = BlockTypeAccess.typeAccess(block, player);
 

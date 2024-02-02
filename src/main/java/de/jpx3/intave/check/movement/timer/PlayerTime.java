@@ -107,7 +107,7 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
     AbilityMetadata abilityData = user.meta().abilities();
     user.tracedTickFeedback(() -> {
       connectionData.queueToNextTransaction(() -> {
-        checkMeta.time = Math.max(checkMeta.time, checkMeta.limitToBeApplied);
+        checkMeta.time = Math.max(checkMeta.time, checkMeta.limitToBeApplied - 00_100_000);
         checkMeta.queuedLimit = checkMeta.lastSentTransaction;
       });
     }, new FeedbackObserver() {
@@ -132,21 +132,24 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
       || abilityData.inGameModeIncludePending(AbilityTracker.GameMode.CREATIVE) || abilityData.ignoringMovementPackets()) {
       return;
     }
-    checkMeta.time += 49_990_000; // allow 0.01ms clock error
+    checkMeta.time += 49_950_000; // allow constant 0.05ms clock error = give 1s every 2000s (33min)
     checkMeta.limitToBeApplied = checkMeta.queuedLimit;
     long diff = checkMeta.time - System.nanoTime();
 //    ChatColor color = diff > 10_000_000 ? ChatColor.RED : ChatColor.GRAY;
 //    player.sendMessage(color + "" + ((double)diff / 1_000_000L) + "ms ");
     // We could most likely flag for > 1_000_000 but let's be safe
-    if (diff > (10 * 1_000_000) && !user.meta().movement().isInVehicle()) {
+//    player.setLevel(Math.max(0, (int) (diff / 1_000_000L) + 100000));
+    statisticApply(user, CheckStatistics::increaseTotal);
+
+    if ((diff > 50_000_000) && !user.meta().movement().isInVehicle()) {
       double displayValue = diff / (50 * 1_000_000f);
       if (displayValue < 0.01) {
         displayValue = 0.01;
       }
       String balanceAsString = formatDouble(displayValue, 2);
-      statisticApply(user, CheckStatistics::increaseFails);
       Violation violation = Violation.builderFor(Timer.class).forPlayer(player)
-        .withMessage("moved too frequently").withDetails(balanceAsString + " ticks ahead")
+        .withMessage("moved too frequently")
+        .withDetails(balanceAsString + " ticks ahead")
         .withVL(Math.min(displayValue, 2))
         .build();
       ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
@@ -157,9 +160,12 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
         Modules.mitigate().movement().emulationSetBack(player, setback, 3, 2, false);
       }
       checkMeta.time -= 1_000_000;
+      statisticApply(user, CheckStatistics::increaseFails);
+      return;
     } else if (System.currentTimeMillis() - checkMeta.lastTimerFlag > 10000) {
       decrementer.decrement(user, 0.005);
     }
+    statisticApply(user, CheckStatistics::increasePasses);
   }
 
   @BukkitEventSubscription

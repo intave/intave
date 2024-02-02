@@ -563,6 +563,9 @@ public final class IntavePlugin extends JavaPlugin {
             String domain = split1[0];
             int port = Integer.parseInt(split1[1]);
             String token = split1[2];
+            if (AUTHENTICATION_DEBUG_MODE) {
+              System.out.println("Master shard: " + domain + ":" + port);
+            }
             String[] tokenSplit = token.split("\\.");
             byte[] tokenBytes = Base64.getUrlDecoder().decode(tokenSplit[0]);
 //            System.out.println("Token: " + tokenSplit[0]);

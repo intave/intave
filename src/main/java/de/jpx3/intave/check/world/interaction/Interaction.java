@@ -24,6 +24,8 @@ public final class Interaction {
   private final float facingX, facingY, facingZ;
   private boolean entered = false;
 
+  private boolean sendPacket = true;
+
   private MovingObjectPosition raytraceResult;
 
   public Interaction(
@@ -96,6 +98,14 @@ public final class Interaction {
 
   public EnumWrappers.PlayerDigType digType() {
     return digType;
+  }
+
+  public boolean shouldSendPacket() {
+    return sendPacket;
+  }
+
+  public void doNotSendPacket() {
+    sendPacket = false;
   }
 
   public boolean hasFacing() {

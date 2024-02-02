@@ -2,7 +2,6 @@ package de.jpx3.intave.check.movement.physics;
 
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.annotate.refactoring.IdoNotBelongHere;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
@@ -11,7 +10,6 @@ import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.physics.BlockPhysics;
 import de.jpx3.intave.block.physics.BlockProperties;
 import de.jpx3.intave.block.physics.MaterialMagic;
-import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.type.MaterialSearch;
 import de.jpx3.intave.block.variant.BlockVariant;
 import de.jpx3.intave.executor.Synchronizer;
@@ -22,7 +20,10 @@ import de.jpx3.intave.player.Enchantments;
 import de.jpx3.intave.player.collider.Colliders;
 import de.jpx3.intave.player.collider.complex.ColliderResult;
 import de.jpx3.intave.player.collider.simple.SimpleColliderResult;
-import de.jpx3.intave.share.*;
+import de.jpx3.intave.share.BoundingBox;
+import de.jpx3.intave.share.ClientMath;
+import de.jpx3.intave.share.Motion;
+import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -36,7 +37,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 import java.util.Collection;
-import java.util.Map;
 
 import static de.jpx3.intave.share.ClientMath.clamp_double;
 import static de.jpx3.intave.share.ClientMath.floor;
@@ -497,6 +497,11 @@ class BaseSimulator extends Simulator {
       physics().updateAquatics(user);
     }
     if (onGround) {
+//      if (movementData.artificialFallDistance > 3) {
+//        Synchronizer.synchronize(() -> {
+//          user.player().sendMessage(movementData.inWater() + "/" + Collision.rasterizedLiquidPresentSearch(user, movementData.boundingBox())+ " " + movementData.inLava() + " " + movementData.inWeb() + " " + movementData.onGround());
+//        });
+//      }
       physics().applyFallDamageUpdate(user);
       movementData.artificialFallDistance = 0;
     } else if (motionY < 0.0D) {

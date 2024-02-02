@@ -11,6 +11,7 @@ public final class Storages {
     storage.append(NerferStorage.class);
     storage.append(AccountDataStorage.class);
     storage.append(FeedbackAnalysisStorage.class);
+    storage.append(ViolationBufferStorage.class);
     return storage;
   }
 }

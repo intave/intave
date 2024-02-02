@@ -289,7 +289,7 @@ public final class SimulationEvaluator {
       if (distance > 0.0007) {
         boolean collides = Collision.nearSolidBlock(user, movement.boundingBox().growHorizontally(0.001));
         if (collides) {
-          horizontalLegitimateDeviation = distanceMoved < 0.04 ? 0.04 : 0.002;
+          horizontalLegitimateDeviation = distanceMoved < 0.04 ? 0.04 : 0.003;
         }
       }
       if (user.meta().protocol().beeUpdate() && (abs(motionX) < 0.09 || abs(motionZ) < 0.09)) {
@@ -332,7 +332,8 @@ public final class SimulationEvaluator {
     // Flying packet
     if (movement.receivedFlyingPacketIn(2)) {
       if (movement.onGround) {
-        boolean lessThanExpected = distanceMoved <= predictedDistanceMoved + 0.02;
+        boolean lessThanExpected = /*distanceMoved <= predictedDistanceMoved + 0.02 ||*/ distanceMoved < 0.15;
+//        System.out.println(distanceMoved + " " + predictedDistanceMoved + " " + lessThanExpected);
         horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, lessThanExpected ? 0.115 : 0.005);
       } else {
         horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, 0.05);
@@ -413,6 +414,13 @@ public final class SimulationEvaluator {
       movedTooQuickly = movedTooQuickly && distanceMoved > baseMoveSpeed;
     }
 
+    // A+D spam
+//    if (movement.pastFlyingPacketAccurate < 1 && predictedDistanceMoved < 0.15 && distanceMoved < 0.15 && abuseHorizontally < 0.15 && Math.abs(motionY) < 0.01) {
+//      movedTooQuickly = false;
+//      abuseHorizontally = 0;
+//      Bukkit.broadcastMessage(predictedDistanceMoved + " " + distanceMoved + " " + abuseHorizontally);
+//    }
+
     Pose pose = movement.pose();
     boolean flewWithElytra = movement.pastElytraFlying <= 3;
 
@@ -428,13 +436,11 @@ public final class SimulationEvaluator {
       abuseHorizontally *= 0.1;
     }
 
-    boolean movedTooQuicklyCheckable = (distanceMoved > 0.05 || violationLevelData.physicsInvalidMovementsInRow >= 8)
+    boolean movedTooQuicklyCheckable = (distanceMoved > 0.125 || violationLevelData.physicsInvalidMovementsInRow >= 8)
         && !flewWithElytra;
 
     if (movedTooQuickly && movedTooQuicklyCheckable && !movement.physicsUnpredictableVelocityExpected) {
-      double vl = abuseHorizontally > 0.2 ? 1000 : Math.max(30, abuseHorizontally * 300);
-//      Bukkit.broadcastMessage(user.player().getName() + " moved too quickly: vl+" + vl + " abuse:" + abuseHorizontally + " | un:" + movement.physicsUnpredictableVelocityExpected);
-      return vl;
+      return abuseHorizontally > 0.2 ? 1000 : Math.max(20, abuseHorizontally * 200);
     }
     boolean noCollisions = Collision.nonePresent(player, BoundingBox.fromPosition(user, movement, movement.positionX, movement.positionY, movement.positionZ).grow(0.1));
     double multiplier = (abuseHorizontally > 0.1 ? 20.0 : 10.0) * (noCollisions ? 3 : 2);

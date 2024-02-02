@@ -49,6 +49,7 @@ import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.*;
+import de.jpx3.intave.user.storage.ViolationBufferStorage;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -65,13 +66,20 @@ import java.util.stream.Collectors;
 import static de.jpx3.intave.diagnostic.message.MessageCategory.SIMFLT;
 import static de.jpx3.intave.diagnostic.message.MessageCategory.SIMFUL;
 import static de.jpx3.intave.math.MathHelper.*;
+import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
 import static de.jpx3.intave.share.ClientMath.floor;
 import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.ENDER_PEARL;
 
 @Relocate
 public final class Physics extends Check {
-  private static final double VL_DECREMENT_PER_VALID_MOVE = 0.05;
+  private static final double VL_DECREMENT_PER_VALID_MOVE = 0.08;
   private static final double VELOCITY_VL_THRESHOLD = 6;
+
+  private static final long TOTAL_RESET = 1000 * 60 * 60;
+  private static final int AVAILABLE_POINTS = 8;
+  private static final long BURST_WINDOW = 8000;
+  private static final long BURST_CONGESTION = 2;
+
   public static boolean USE_SUPERPOSITIONS = false;
 
   private final IntavePlugin plugin;
@@ -164,7 +172,7 @@ public final class Physics extends Check {
     // evaluation
     evaluateBestSimulation(user, simulation);
     Timings.CHECK_PHYSICS_EVAL.stop();
-    if (withMovement) {
+    if (withMovement && movementData.motion().length() > 0.1) {
       movementData.lastMovement = System.currentTimeMillis();
     }
     if (withRotation) {
@@ -320,6 +328,7 @@ public final class Physics extends Check {
     boundingBox = boundingBox.shrink(0.001D);
     movementData.inWater = user.waterflow().applyFlowTo(user, boundingBox);
     if (movementData.inWater) {
+      movementData.inWaterSinceFallDamagePostCheck = true;
       movementData.pastWaterMovement = 0;
       movementData.artificialFallDistance = 0;
     }
@@ -627,7 +636,7 @@ public final class Physics extends Check {
           manualOverrideDistance = 0.75;
           break;
         case BARELY:
-          boolean freeOfColliders = !Collision.nearSolidBlock(user, currentBoundingBox.grow(1));
+          boolean freeOfColliders = currentBoundingBox == null || !Collision.nearSolidBlock(user, currentBoundingBox.grow(1));
           boolean flagAnywayss = freeOfColliders && ((isMidAir && violationLevelAfter > 60) || (verticalViolationIncrease >= 100 && predictedY < 0 && violationLevelAfter >= 100));
           boolean velocityFlag = velocityDetected && violationLevelAfter > 30 && (verticalViolationIncrease >= 100 || horizontalViolationIncrease >= 100);
           setback =
@@ -639,6 +648,27 @@ public final class Physics extends Check {
           setback = false;
           manualOverrideDistance = 1.25;
           break;
+      }
+
+      // reduce setbacks
+      if (
+        setback && !velocityDetected &&
+        Math.abs(predictedX - receivedMotionX) < 0.3 &&
+        Math.abs(predictedY - receivedMotionY) < 0.3 &&
+        Math.abs(predictedZ - receivedMotionZ) < 0.3 &&
+        distance < 0.5 &&
+        user.trustFactor().atLeast(TrustFactor.ORANGE) &&
+        violationLevelAfter < 100
+      ) {
+        ViolationBufferStorage buffer = user.storageOf(ViolationBufferStorage.class);
+        // check for reset
+        buffer.checkReset(name(), AVAILABLE_POINTS, TOTAL_RESET);
+        if (buffer.trySpendPoint(name(), BURST_WINDOW, BURST_CONGESTION)) {
+          setback = false;
+//          Synchronizer.synchronize(() -> {
+//            player.sendMessage(ChatColor.YELLOW + "Spent point");
+//          });
+        }
       }
 
       // Apply manual setback override when the deviation is greater than a certain amount of blocks
@@ -774,6 +804,9 @@ public final class Physics extends Check {
         // velocity low tolerance
         debug += ChatColor.ITALIC + " vlt:" + movementData.pastExternalVelocity + chatColor;
       }
+      if (movementData.artificialFallDistance > 2) {
+        debug += ChatColor.ITALIC + " fd:" + formatDouble(movementData.artificialFallDistance, 2) + chatColor;
+      }
       if (flyingJump) {
         debug += ChatColor.ITALIC + " fjp" + chatColor;
       }
@@ -795,6 +828,9 @@ public final class Physics extends Check {
       if (movementData.inWater) {
         Fluid fluid = Fluids.fluidAt(user, positionX, positionY, positionZ);
         debug += ChatColor.ITALIC + " "+(fluid.falling() ? "falling" : "")+"water@" + MathHelper.formatDouble(fluid.height(),2) + "/"+fluid.level() + chatColor;
+      }
+      if (movementData.pastFlyingPacketAccurate < 5) {
+        debug += ChatColor.ITALIC + " fpa:" + movementData.pastFlyingPacketAccurate + chatColor;
       }
       if (movementData.physicsJumped) {
         debug += ChatColor.ITALIC + " jmp" + chatColor;
@@ -961,13 +997,38 @@ public final class Physics extends Check {
     MovementMetadata movementData = user.meta().movement();
     if (movementData.artificialFallDistance > 3.0F) {
       float fallDistance = movementData.artificialFallDistance;
-      Synchronizer.synchronize(() -> {
-        Player player = user.player();
-        movementData.allowFallDamage = true;
-        fallDamageApplier.dealFallDamage(player, fallDistance);
-        movementData.allowFallDamage = false;
-      });
+      movementData.seenFallDamage = 0;
+      movementData.inWaterSinceFallDamagePostCheck = false;
+      Synchronizer.synchronizeDelayed(() -> user.tickFeedback(() -> {
+        Synchronizer.synchronize(() -> postCheckFalldamage(user, movementData, fallDistance));
+      }), 2);
       movementData.artificialFallDistance = 0F;
+    }
+  }
+
+  private void postCheckFalldamage(User user, MovementMetadata movementData, float fallDistance) {
+    Player player = user.player();
+    if (!movementData.inWaterSinceFallDamagePostCheck) {
+      float seenDamage = movementData.seenFallDamage;
+      float estimatedDamage = fallDamageApplier.distanceToDamage(player, fallDistance);
+//      player.sendMessage("Fall damage: " + seenDamage + " / " + estimatedDamage + " (" + fallDistance + ")");
+      if (seenDamage < estimatedDamage - 0.5F) {
+        float missingDistance = fallDamageApplier.remainingDistance(player, seenDamage, estimatedDamage);
+//        player.sendMessage("Missing distance: " + missingDistance);
+        if (missingDistance > 0.0F) {
+          Violation violation = Violation.builderFor(Physics.class)
+            .forPlayer(player)
+            .withMessage("did not take sufficient fall damage")
+            .withDetails("missing " + formatDouble(missingDistance, 2) + " blocks")
+            .withVL(0)
+            .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
+            .build();
+          Modules.violationProcessor().processViolation(violation);
+          movementData.dealCustomFallDamage = true;
+          player.damage(estimatedDamage - seenDamage);
+          movementData.dealCustomFallDamage = false;
+        }
+      }
     }
   }
 
@@ -978,9 +1039,9 @@ public final class Physics extends Check {
     MovementMetadata movementData = user.meta().movement();
     if (teleport.getCause() == ENDER_PEARL) {
       Synchronizer.synchronize(() -> {
-        movementData.allowFallDamage = true;
-        fallDamageApplier.dealFallDamage(player, 8);
-        movementData.allowFallDamage = false;
+        movementData.dealCustomFallDamage = true;
+//        fallDamageApplier.dealFallDamage(player, 8);
+        movementData.dealCustomFallDamage = false;
       });
     }
   }

@@ -14,6 +14,7 @@ import de.jpx3.intave.user.meta.InventoryMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
+import org.bukkit.Material;
 
 import java.util.List;
 
@@ -373,7 +374,8 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
     boolean lastOnGround = movementData.lastOnGround();
     boolean estimatedJump = Math.abs(movementData.motionY() - (1 - user.sizeOf(movementData.pose()).height() % 1)) < 1e-5 || Math.abs(movementData.motionY() - movementData.jumpMotion()) < 0.0001;
     boolean skipUseItem = (!protocol.sprintWhenHandActive() && movementData.sprinting) || !inventoryData.usableItemInEitherHand();
-    boolean requireUseItem = !protocol.combatUpdate() && inventoryData.handActive() && inventoryData.pastHotBarSlotChange > 20;
+    // dont require use item for bows
+    boolean requireUseItem = !protocol.combatUpdate() && inventoryData.handActive() && inventoryData.pastHotBarSlotChange > 20 && (inventoryData.heldItem() == null || inventoryData.heldItem().getType() != Material.BOW);
 
     if (requireUseItem && movementData.pastEntityUse <= inventoryData.handActiveTicks) {
       requireUseItem = false;

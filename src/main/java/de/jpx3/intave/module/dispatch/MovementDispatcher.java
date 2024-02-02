@@ -358,7 +358,7 @@ public final class MovementDispatcher extends Module {
 
     // see MultiPlayerGameMode#useItem
     if (protocol.cavesAndCliffsUpdate() && !movementData.awaitTeleport
-      && !movementData.awaitOutgoingTeleport
+//      && !movementData.awaitOutgoingTeleport
       && packet.getType() == PacketType.Play.Client.POSITION_LOOK
     ) {
       StructureModifier<Double> modifier = packet.getDoubles();
@@ -377,9 +377,9 @@ public final class MovementDispatcher extends Module {
         movementData.rotationYaw = yaw;
         movementData.rotationPitch = pitch;
 
-        double yawDifference = MathHelper.noAbsDistanceInDegrees(movementData.lastRotationYaw, yaw);
-        double pitchDifference = MathHelper.noAbsDistanceInDegrees(movementData.lastRotationPitch, pitch);
         if (DEBUG_MOVEMENT_IGNORE) {
+          double yawDifference = MathHelper.noAbsDistanceInDegrees(movementData.lastRotationYaw, yaw);
+          double pitchDifference = MathHelper.noAbsDistanceInDegrees(movementData.lastRotationPitch, pitch);
 //          Synchronizer.synchronize(() -> {
 //            player.sendMessage("Click movement ignore distance: " + distance + " yaw: " + yawDifference + " pitch: " + pitchDifference);
 //          });
@@ -388,17 +388,6 @@ public final class MovementDispatcher extends Module {
         }
 
         if (!MinecraftVersions.VER1_9_0.atOrAbove()) {
-//          Synchronizer.synchronize(() -> {
-//            try {
-//              Object playerHandle = user.playerHandle();
-//              Field yawField = Lookup.serverField("Entity", "yaw");
-//              Field pitchField = Lookup.serverField("Entity", "pitch");
-//              yawField.set(playerHandle, (float)yaw % 360.0F);
-//              pitchField.set(playerHandle, (float)MathHelper.minmax(-90.0F, pitch, 90.0F) % 360.0F);
-//            } catch (Exception exception) {
-//              exception.printStackTrace();
-//            }
-//          });
           event.setCancelled(true);
         }
         return;
@@ -431,6 +420,7 @@ public final class MovementDispatcher extends Module {
       movementData.verifiedPositionX, movementData.verifiedPositionY, movementData.verifiedPositionZ,
       movementData.positionX, movementData.positionY, movementData.positionZ
     );
+
     if (distance > 50) {
       if (DEBUG_MOVEMENT_IGNORE) {
 //        player.sendMessage("Distance movement ignore: " + distance);
@@ -925,15 +915,18 @@ public final class MovementDispatcher extends Module {
     reader.release();
   }
 
-  @BukkitEventSubscription(priority = EventPriority.LOWEST)
+  @BukkitEventSubscription(
+    priority = EventPriority.LOWEST,
+    ignoreCancelled = false // this is correct
+  )
   public void preventVanillaFallDamage(EntityDamageEvent event) {
     if (!(event.getEntity() instanceof Player)) {
       return;
     }
     User user = UserRepository.userOf((Player) event.getEntity());
     MovementMetadata movementData = user.meta().movement();
-    if (event.getCause() == EntityDamageEvent.DamageCause.FALL && !movementData.allowFallDamage) {
-      event.setCancelled(true);
+    if (event.getCause() == EntityDamageEvent.DamageCause.FALL && !movementData.dealCustomFallDamage) {
+      movementData.seenFallDamage = (float) event.getOriginalDamage(EntityDamageEvent.DamageModifier.BASE);
     }
   }
 

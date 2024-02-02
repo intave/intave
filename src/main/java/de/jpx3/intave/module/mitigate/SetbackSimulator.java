@@ -463,6 +463,9 @@ public final class SetbackSimulator extends Module {
     World world = player.getWorld();
     MovementMetadata movementData = user.meta().movement();
     movementData.inWater = Collision.rasterizedLiquidPresentSearch(user, movementData.boundingBox());
+    if (movementData.inWater) {
+      movementData.inWaterSinceFallDamagePostCheck = true;
+    }
   }
 
   private synchronized void rotationlessTeleport(Player player, Location to, float nativeYaw, float nativePitch) {

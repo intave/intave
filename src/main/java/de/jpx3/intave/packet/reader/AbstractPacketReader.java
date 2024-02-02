@@ -29,7 +29,8 @@ public abstract class AbstractPacketReader implements PacketReader {
   @Override
   public void releaseSafe() {
     if (packet == null) {
-      throw new IllegalStateException("Double reader flush of " + getClass());
+//      throw new IllegalStateException("Double reader flush of " + getClass());
+      return;
     }
     release();
   }

@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.RESPAWN;
 
+@Deprecated
 public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
   private final CheckViolationLevelDecrementer decrementer;
   private final boolean highToleranceMode;
@@ -98,7 +99,6 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
         timerData.timerBalance -= TimeUnit.MILLISECONDS.toNanos(50);
         return;
       }
-
       double displayValue = TimeUnit.NANOSECONDS.toMillis(timerData.timerBalance) / 50d;
       if (displayValue < 0.01) {
         displayValue = 0.01;

@@ -15,6 +15,8 @@ public final class IntaveControl {
   public static final boolean DEBUG_EMULATION = false;
   public static final boolean DEBUG_HEURISTICS = false;
   public static final boolean DEBUG_INTERACTION = false;
+  public static final boolean DEBUG_INTERACTION_REFRESHES = false;
+  public static final boolean DEBUG_INTERACTION_PACKET_ROUTING = false;
   public static final boolean DEBUG_INTERACTION_DISCREET = true;
   public static final List<String> INTERACTION_DEBUG_NAMES = Arrays.asList("Jpx3", "aesthatic", "Richy", "egirlAllergiker");
   public static final boolean DEBUG_STUCK_REVIVAL = false;

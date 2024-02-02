@@ -94,8 +94,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       }
       int enumDirection = reader.enumDirection();
       if (enumDirection == 255) {
-        // dump entire packet
-//        player.sendMessage(String.valueOf(packet.getModifier().getValues()));
+        // INTERACT IS EMPTY
       }
 
       float facingX = -1;
@@ -169,6 +168,13 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
           if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
             System.out.println("[Intave/DID] PLACE/INITIAL/PREPRO/EMU_FAILED " + type + " " + typeUsedInHand + " " + enumDirection + " " + blockPosition.getY());
           }
+          Violation violation = Violation.builderFor(InteractionRaytrace.class)
+            .forPlayer(player)
+            .withVL(0)
+            .withMessage("performed erroneous block placement")
+            .withDetails("emulation failed for " + type + " with " + typeUsedInHand + " in hand, direction " + enumDirection + " at y " + blockPosition.getY())
+            .build();
+          Modules.violationProcessor().processViolation(violation);
         } else {
           if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
             System.out.println("[Intave/DID] PLACE/INITIAL/PREPRO/EMU_SUCCESS " + type + " " + typeUsedInHand + " " + enumDirection + " " + blockPosition.getY());
@@ -182,12 +188,15 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
           System.out.println("[Intave/DID] PLACE/INITIAL/POSTPONE " + type + " " + typeUsedInHand + " " + enumDirection + " " + usable + " " + blockPosition.getY());
         }
-        if (!usable) {
-          if (MinecraftVersions.VER1_19.atOrAbove()) {
+        if (!usable || type == EMPTY_INTERACT) {
+          if (MinecraftVersions.VER1_19.atOrAbove() && enumDirection != 255) {
             int sequenceNumber = packet.getIntegers().read(0);
             acknowledgeBlockChange(player, sequenceNumber);
           }
           event.setCancelled(true);
+        } else {
+          interaction.doNotSendPacket();
+          // because it is already sent
         }
       }
     } finally {
@@ -214,7 +223,6 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
 
     PacketContainer packet = event.getPacket();
 
-//    com.comphenix.protocol.wrappers.BlockPosition blockPosition = packet.getBlockPositionModifier().readSafely(0);
     com.comphenix.protocol.wrappers.BlockPosition blockPosition = event.getPacket().getModifier()
       .withType(Lookup.serverClass("BlockPosition"), BlockPositionConverter.threadConverter())
       .read(0);
@@ -227,9 +235,11 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       return;
     }
 
+    EnumWrappers.PlayerDigType playerDigType = packet.getPlayerDigTypes().readSafely(0);
+    boolean blockInteraction = playerDigType == START_DESTROY_BLOCK || playerDigType == STOP_DESTROY_BLOCK || playerDigType == ABORT_DESTROY_BLOCK;
     ItemStack heldItemStack = inventoryData.heldItem();
     Material heldItemType = inventoryData.heldItemType();
-    if (ItemProperties.isSwordItem(heldItemStack) && user.meta().abilities().inGameMode(GameMode.CREATIVE)) {
+    if (blockInteraction && ItemProperties.isSwordItem(heldItemStack) && user.meta().abilities().inGameMode(GameMode.CREATIVE)) {
       Violation violation = Violation.builderFor(InteractionRaytrace.class)
         .forPlayer(player)
         .withVL(0)
@@ -241,7 +251,6 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       return;
     }
 
-    EnumWrappers.PlayerDigType playerDigType = packet.getPlayerDigTypes().readSafely(0);
     float blockDamage = BlockInteractionAccess.blockDamage(player, inventoryData.heldItem(), blockPosition);
     boolean instantBreak = blockDamage >= 1.0f || abilityData.inGameMode(CREATIVE);
     boolean breakBlock = instantBreak || playerDigType == STOP_DESTROY_BLOCK;
@@ -555,7 +564,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         System.out.println("[Intave/DID] PROC/" + interaction.type() + "/RAYTRACE_FAILED " + interaction.itemTypeInHand() + " " + interaction.digType() + " flag:" + flag);
       }
     }
-    if (!usableItemInHand || interaction.type() != InteractionType.INTERACT) {
+    if (interaction.shouldSendPacket()/*!usableItemInHand || interaction.type() != InteractionType.INTERACT*/) {
       forwardInteractionToServer(interaction, raycastResult, targetLocation, raycastLocation, hitMiss, flag, mustCancelPacket);
     } else if (flag) {
       if (IntaveControl.DEBUG_INTERACTION) {
@@ -663,6 +672,9 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     RateLimiter refreshBlockRatelimit = connection.refreshBlockRatelimit;
     if (refreshBlockRatelimit.checkCooldownAndAcquire()) {
       Synchronizer.synchronize(() -> {
+        if (IntaveControl.DEBUG_INTERACTION_REFRESHES) {
+          player.sendMessage("Refreshed blocks around " + targetLocation);
+        }
         player.updateInventory();
         refreshBlock(player, targetLocation);
         for (Direction direction : Direction.values()) {
@@ -874,9 +886,15 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     packet.getBlockData().write(0, blockData);
     packet.getBlockPositionModifier().write(0, position);
     PacketSender.sendServerPacket(player, packet);
+    if (IntaveControl.DEBUG_INTERACTION_PACKET_ROUTING) {
+      System.out.println("[Intave/DIPR] REFRESHED BLOCK " + location);
+    }
   }
 
   private void receiveExcludedPacket(Player player, PacketContainer packet) {
+    if (IntaveControl.DEBUG_INTERACTION_PACKET_ROUTING) {
+      System.out.println("[Intave/DIPR] ROUTED PACKET " + packet.getType() + " " + packet.getHandle().getClass().getSimpleName());
+    }
     userOf(player).ignoreNextInboundPacket();
     PacketSender.receiveClientPacketFrom(player, packet);
   }

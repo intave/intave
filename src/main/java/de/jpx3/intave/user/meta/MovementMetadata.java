@@ -72,7 +72,9 @@ public final class MovementMetadata implements SimulationEnvironment {
   public boolean onGround, lastOnGround, step, onGroundWithRiptide;
   public boolean collidedHorizontally, collidedVertically;
   public float artificialFallDistance;
-  public boolean allowFallDamage;
+  public boolean dealCustomFallDamage;
+  public boolean inWaterSinceFallDamagePostCheck;
+  public float seenFallDamage;
   public double gravity;
   public boolean outsideBorder = true;
   public Motion motionProcessorContext = new Motion();
@@ -771,7 +773,8 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   @DispatchTarget
   public void applyGroundInformationToPacket(PacketContainer packet) {
-    packet.getBooleans().write(0, onGround);
+    // be gone
+    //    packet.getBooleans().write(0, onGround);
   }
 
   private void updateMovementMetaData() {
