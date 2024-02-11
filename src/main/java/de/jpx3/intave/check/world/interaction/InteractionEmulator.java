@@ -104,26 +104,20 @@ public final class InteractionEmulator implements EventProcessor {
 
   public EmulationResult emulate(Interaction interaction) {
     Player player = interaction.player();
-    EmulationResult emulationResult;
     InteractionType interactionType = interaction.type();
     switch (interactionType) {
       case PLACE:
-        emulationResult = emulatePlacement(player, interaction);
-        break;
+        return emulatePlacement(player, interaction);
       case START_BREAK:
       case INTERACT:
-        emulationResult = emulateInteraction(player, interaction);
-        break;
+        return emulateInteraction(player, interaction);
       case EMPTY_INTERACT:
-        emulationResult = emulateEmptyInteraction(player, interaction);
+        return emulateEmptyInteraction(player, interaction);
       case BREAK:
-        emulationResult = emulateBreak(player, interaction);
-        break;
+        return emulateBreak(player, interaction);
       default:
-        emulationResult = EmulationResult.FAILED;
-        break;
+        return EmulationResult.FAILED_NON_CRITICAL;
     }
-    return emulationResult;
   }
 
   private EmulationResult emulateBreak(Player player, Interaction interaction) {
@@ -159,7 +153,7 @@ public final class InteractionEmulator implements EventProcessor {
       blockStateAccess.override(world, blockX, blockY, blockZ, Material.AIR, 0, "BREAK");
       blockStateAccess.invalidateCacheAround(blockX, blockY, blockZ);
     }
-    return access ? EmulationResult.SUCCEEDED : EmulationResult.FAILED;
+    return access ? EmulationResult.SUCCEEDED : EmulationResult.FAILED_CRITICAL;
   }
 
   private static double distance(Location playerLocation, BlockPosition blockPosition) {
@@ -240,7 +234,8 @@ public final class InteractionEmulator implements EventProcessor {
       if (IntaveControl.DEBUG_VARIANT_COMPILATION) {
         System.out.println("[variant/debug] Failed to place block due to raytrace collision (replacing: " + replace + ")");
       }
-      return EmulationResult.FAILED;
+      // only failed, not critical failed, this should not be possible to abuse
+      return EmulationResult.FAILED_NON_CRITICAL;
     }
     EnumWrappers.Hand hand = interaction.hand();
     boolean access = WorldPermission.blockPlacePermission(
@@ -261,6 +256,13 @@ public final class InteractionEmulator implements EventProcessor {
           movement.checkWebStateAgainNextTick = true;
 //        }
       }
+
+      if (!movement.placementTrustChain.tryAction(
+        new de.jpx3.intave.share.BlockPosition(blockPlacementLocation),
+        new de.jpx3.intave.share.BlockPosition(blockAgainstLocation))) {
+        return EmulationResult.FAILED_CRITICAL;
+      }
+
       movement.pastBlockPlacement = 0;
       blockStates.override(world, blockX, blockY, blockZ, placedBlockType, variant, "PLACE");
       blockStates.invalidateCacheAround(blockX, blockY, blockZ);
@@ -296,7 +298,7 @@ public final class InteractionEmulator implements EventProcessor {
       nayoro.sinkCallback().accept(user, placeEvent::accept);
       return EmulationResult.SUCCEEDED;
     } else {
-      return EmulationResult.FAILED;
+      return EmulationResult.FAILED_CRITICAL;
     }
   }
 
@@ -317,7 +319,7 @@ public final class InteractionEmulator implements EventProcessor {
       Set<Integer> possibleIds = BlockVariantReverseLookup.variantsOfConfiguration(
         placementType, uniqueId, propertyName -> Objects.equals(propertyName, "facing") ? playerDirection : null
       );
-      return new EstimationResult(placementType, possibleIds.size() >= 1 ? possibleIds.iterator().next() : 0);
+      return new EstimationResult(placementType, !possibleIds.isEmpty() ? possibleIds.iterator().next() : 0);
     }
     if (STEP_BLOCKS.contains(placementType)) {
       boolean isSlab = presentType == placementType;
@@ -329,7 +331,7 @@ public final class InteractionEmulator implements EventProcessor {
           Set<Integer> possibleIds = BlockVariantReverseLookup.variantsOfConfiguration(
             placementType, uniqueId, propertyName -> Objects.equals(propertyName, STEP_PROPERTY_NAME) ? "DOUBLE" : Objects.equals(propertyName, "variant") ? variant : null
           );
-          return new EstimationResult(placementType, possibleIds.size() >= 1 ? possibleIds.iterator().next() : 0);
+          return new EstimationResult(placementType, !possibleIds.isEmpty() ? possibleIds.iterator().next() : 0);
         } else {
           String enumName = placementType.name();
           boolean isSlab2 = enumName.contains("SLAB2");
@@ -346,7 +348,8 @@ public final class InteractionEmulator implements EventProcessor {
           );
           return new EstimationResult(doubleSlabType, !possibleIds.isEmpty() ? possibleIds.iterator().next() : 0);
         }
-      } else {boolean keep = targetDirection != Direction.DOWN && (targetDirection == Direction.UP || facingY <= 0.5);
+      } else {
+        boolean keep = targetDirection != Direction.DOWN && (targetDirection == Direction.UP || facingY <= 0.5);
         int uniqueId = Boolean.hashCode(keep);
         Set<Integer> possibleIds = BlockVariantReverseLookup.variantsOfConfiguration(
           placementType, uniqueId, propertyName -> Objects.equals(propertyName, STEP_PROPERTY_NAME) ? keep ? "BOTTOM" : "TOP" : null
@@ -457,7 +460,6 @@ public final class InteractionEmulator implements EventProcessor {
         // remove liquid on location if exists
         if (MaterialMagic.isLavaOrWater(placementType) && type == InteractionType.INTERACT) {
           // emulate
-//
 //          Synchronizer.synchronize(() -> {
 //            player.sendMessage(ChatColor.DARK_PURPLE + "Emulating bucket empty");
 //          });
@@ -599,6 +601,17 @@ public final class InteractionEmulator implements EventProcessor {
 
   public enum EmulationResult {
     SUCCEEDED,
-    FAILED
+    FAILED_NON_CRITICAL,
+    FAILED_CRITICAL
+
+    ;
+
+    public boolean isSuccessful() {
+      return this == SUCCEEDED;
+    }
+
+    public boolean denyForward() {
+      return this == FAILED_CRITICAL;
+    }
   }
 }

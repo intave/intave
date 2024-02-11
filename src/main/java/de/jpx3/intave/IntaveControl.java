@@ -15,6 +15,7 @@ public final class IntaveControl {
   public static final boolean DEBUG_EMULATION = false;
   public static final boolean DEBUG_HEURISTICS = false;
   public static final boolean DEBUG_INTERACTION = false;
+  public static final boolean DEBUG_INTERACTION_TRUST_CHAIN = false;
   public static final boolean DEBUG_INTERACTION_REFRESHES = false;
   public static final boolean DEBUG_INTERACTION_PACKET_ROUTING = false;
   public static final boolean DEBUG_INTERACTION_DISCREET = true;

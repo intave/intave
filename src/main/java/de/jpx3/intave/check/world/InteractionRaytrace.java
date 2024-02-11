@@ -22,6 +22,7 @@ import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.MetaCheck;
+import de.jpx3.intave.check.world.interaction.BlockTrustChain;
 import de.jpx3.intave.check.world.interaction.Interaction;
 import de.jpx3.intave.check.world.interaction.InteractionEmulator;
 import de.jpx3.intave.check.world.interaction.InteractionType;
@@ -29,6 +30,7 @@ import de.jpx3.intave.executor.RateLimiter;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
@@ -48,13 +50,14 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.*;
-import static de.jpx3.intave.check.world.interaction.InteractionEmulator.EmulationResult.FAILED;
 import static de.jpx3.intave.check.world.interaction.InteractionType.EMPTY_INTERACT;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.BLOCK_BREAK_ANIMATION;
@@ -156,7 +159,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       boolean mustPostValidate = interactionMeta.remainingBlockStart > 0;
       if (!mustPostValidate && preprocessInteraction(interaction)) {
         InteractionEmulator.EmulationResult emulate = interactionEmulator.emulate(interaction);
-        if (emulate == FAILED) {
+        if (emulate.denyForward()) {
           if (MinecraftVersions.VER1_19.atOrAbove()) {
             int sequenceNumber = packet.getIntegers().read(0);
             acknowledgeBlockChange(player, sequenceNumber);
@@ -171,6 +174,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
           Violation violation = Violation.builderFor(InteractionRaytrace.class)
             .forPlayer(player)
             .withVL(0)
+//            .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
             .withMessage("performed erroneous block placement")
             .withDetails("emulation failed for " + type + " with " + typeUsedInHand + " in hand, direction " + enumDirection + " at y " + blockPosition.getY())
             .build();
@@ -545,7 +549,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       }
       // everything is fine
       decrementer.decrement(user, 0.25);
-      boolean emulationFailed = interactionEmulator.emulate(interaction) == FAILED;
+      boolean emulationFailed = interactionEmulator.emulate(interaction).denyForward();
       flag = mustCancelPacket = emulationFailed;
 //      mustCancelPacket = emulationFailed;
     } else {
@@ -804,6 +808,22 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       if (!metaOf(breakingUser).isBreakingBlock) {
         packet.getIntegers().write(1, 11);
       }
+    }
+  }
+
+  @BukkitEventSubscription(
+    priority = EventPriority.MONITOR
+  )
+  public void onBlockPlace(BlockPlaceEvent event) {
+    Player player = event.getPlayer();
+    User user = userOf(player);
+    BlockTrustChain trustChain = user.meta().movement().placementTrustChain;
+    BlockPosition blockPosition = new BlockPosition(event.getBlockPlaced().getLocation());
+    boolean requireFeedbackTimedRemoval = trustChain.collapseState(blockPosition, !event.isCancelled());
+    if (requireFeedbackTimedRemoval) {
+      // next tick
+      Synchronizer.synchronize(() ->
+        user.tickFeedback(() -> trustChain.removeCollapsedState(blockPosition)));
     }
   }
 

@@ -12,7 +12,9 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static de.jpx3.intave.module.feedback.FeedbackAnalysis.FeedbackCategory.*;
@@ -58,14 +60,22 @@ public final class FeedbackAnalysis extends Module {
 
   public void receivedTransaction(User user, FeedbackRequest<?> request) {
     FeedbackAnalysisMeta meta = metaOf(user);
-    FeedbackCategory category = FeedbackCategory.fromFeedbackOptions(request.options());
+    FeedbackCategory category = fromFeedbackOptions(request.options());
     Map<FeedbackCategory, LatencyAnalysis> latencyAnalysisMap = meta.latencyAnalysisMap;
 
     LatencyAnalysis analysis = latencyAnalysisMap.get(category);
     LatencyAnalysis combatNearAnalysis = latencyAnalysisMap.get(ENTITY_NEAR);
 
-
     long passedTime = request.passedTime();
+    meta.fullLatencyAnalysis.addLatency(passedTime);
+
+    if (category == ENTITY_NEAR && user.meta().attack().recentlyAttacked(1000)) {
+      double probability = meta.fullLatencyAnalysis.biasedProbabilityOf(passedTime, 300);
+      // 1 in 50_000
+      if (probability < 0.00005) {
+        meta.suspiciousLatencies.add(new FeedbackAnalysisMeta.LatencyInfo(passedTime));
+      }
+    }
 
     /*
     boolean attacked = FeedbackOptions.matches(TRACER_ENTITY_NEAR, request.options());
@@ -141,7 +151,6 @@ public final class FeedbackAnalysis extends Module {
     long entityNearLatency = entityNear.averageLatency();
 //    long entityNearCombatLatency = meta.latencyAnalysisMap.getOrDefault(ENTITY_NEAR_COMBAT, general).averageLatency();
 //    entityNearLatency = (entityNearLatency + entityNearCombatLatency) / 2;
-    //    user.player().sendMessage(discrepancy + "ms discrepancy, general: " + generalLatency + ", near: " + entityNearLatency);
     if (entityNear.count < 100) {
       return -1;
     } else if (general.count < 100) {
@@ -150,6 +159,30 @@ public final class FeedbackAnalysis extends Module {
       return -3;
     }*/
     return entityNearLatency - generalLatency;
+  }
+
+  public long entityNearLatency(User user) {
+    return metaOf(user).latencyAnalysisMap.get(ENTITY_NEAR).averageLatency();
+  }
+
+  public long generalLatency(User user) {
+    return metaOf(user).latencyAnalysisMap.get(GENERAL).averageLatency();
+  }
+
+  public List<FeedbackAnalysisMeta.LatencyInfo> suspiciousLatencies(User user) {
+    return metaOf(user).suspiciousLatencies;
+  }
+
+  public double meanLatency(User user) {
+    return metaOf(user).fullLatencyAnalysis.mean();
+  }
+
+  public double stdDev(User user) {
+    return metaOf(user).fullLatencyAnalysis.biasedStdDev(300);
+  }
+
+  public double latencyProbability(User user, long latency) {
+    return metaOf(user).fullLatencyAnalysis.biasedProbabilityOf(latency, 300);
   }
 
   public FeedbackAnalysisMeta metaOf(User user) {
@@ -163,6 +196,24 @@ public final class FeedbackAnalysis extends Module {
       latencyAnalysisMap.put(ENTITY_FAR, new LatencyAnalysis(500));
       latencyAnalysisMap.put(ENTITY_NEAR, new LatencyAnalysis(250));
       latencyAnalysisMap.put(ENTITY_NEAR_COMBAT, new LatencyAnalysis(250));
+    }
+    private final LongLatencyAnalysis fullLatencyAnalysis = new LongLatencyAnalysis();
+    private final List<LatencyInfo> suspiciousLatencies = new ArrayList<>(50);
+    public static class LatencyInfo {
+      private final long latency;
+      private final long time = System.currentTimeMillis();
+
+      public LatencyInfo(long latency) {
+        this.latency = latency;
+      }
+
+      public long latency() {
+        return latency;
+      }
+
+      public long issued() {
+        return time;
+      }
     }
   }
 
@@ -199,8 +250,98 @@ public final class FeedbackAnalysis extends Module {
       return accumulatedLatency / count;
     }
 
+    public double mean() {
+      return (double) accumulatedLatency / count;
+    }
+
     public long lastEntry() {
       return lastEntry;
+    }
+  }
+
+  public static class LongLatencyAnalysis {
+    private static final int MAX_LATENCY = 1000;
+    private static final int LATENCY_BUCKETS = 100;
+    private final long[] latencyOccurrences = new long[LATENCY_BUCKETS + 1];
+    private long size = 0;
+
+    public boolean addLatency(long latency) {
+      if (latency > MAX_LATENCY) {
+        return false;
+      }
+      latencyOccurrences[(int) asDiscrete(latency)]++;
+      size++;
+      if (size > 10_000) {
+        // divide all by 2
+        for (int i = 0; i < LATENCY_BUCKETS; i++) {
+          latencyOccurrences[i] /= 2;
+        }
+        size /= 2;
+      }
+      return true;
+    }
+
+    private long asDiscrete(long latency) {
+      return Math.min(latency, MAX_LATENCY) / (MAX_LATENCY / LATENCY_BUCKETS);
+    }
+
+    public double mean() {
+      long sum = 0;
+      int scalingFactor = MAX_LATENCY / LATENCY_BUCKETS;
+      for (int i = 0; i < LATENCY_BUCKETS; i++) {
+        sum += latencyOccurrences[i] * i * scalingFactor;
+      }
+      return (double) sum / size;
+    }
+
+    public long stdDev() {
+      return stdDev(mean());
+    }
+
+    public long stdDev(double mean) {
+      double sum = 0;
+      int scalingFactor = MAX_LATENCY / LATENCY_BUCKETS;
+      for (int i = 0; i < LATENCY_BUCKETS; i++) {
+        sum += Math.pow(i*scalingFactor - mean, 2) * latencyOccurrences[i];
+      }
+      return (long) Math.sqrt(sum / size);
+    }
+
+    public double biasedStdDev(double requiredDistance) {
+      return biasedStdDev(mean(), requiredDistance);
+    }
+
+    public double biasedStdDev(double mean, double requiredDistance) {
+      double sum = 0;
+      int scalingFactor = MAX_LATENCY / LATENCY_BUCKETS;
+      for (int i = 0; i < LATENCY_BUCKETS; i++) {
+        double dist = Math.abs(i*scalingFactor - mean);
+        double weight = Math.exp(-dist / requiredDistance);
+        sum += Math.pow(dist, 2) * latencyOccurrences[i] * weight;
+      }
+      return Math.sqrt(sum / size);
+    }
+
+    public double likelihoodOf(long latency) {
+      return latencyOccurrences[(int) asDiscrete(latency)] / (double) size;
+    }
+
+    public double probabilityOf(long latency) {
+      double mean = mean();
+      double stdDev = stdDev(mean);
+      return Math.exp(-Math.pow(latency - mean, 2) / (2 * Math.pow(stdDev, 2))) / (stdDev * Math.sqrt(2 * Math.PI));
+    }
+
+    public double biasedProbabilityOf(long latency, double biasDistance) {
+      double mean = mean();
+      if (latency < mean) {
+        return 100;
+      }
+      double stdDev = biasedStdDev(mean, biasDistance);
+      if (latency < mean + stdDev) {
+        return 100;
+      }
+      return Math.exp(-Math.pow(latency - mean, 2) / (2 * Math.pow(stdDev, 2))) / (stdDev * Math.sqrt(2 * Math.PI));
     }
   }
 
@@ -213,13 +354,13 @@ public final class FeedbackAnalysis extends Module {
     ;
 
     public static FeedbackCategory fromFeedbackOptions(int options) {
-      if (FeedbackOptions.matches(TRACER_ENTITY_FAR, options)) {
+      if (matches(TRACER_ENTITY_FAR, options)) {
         return ENTITY_FAR;
       }
-      if (FeedbackOptions.matches(TRACER_ENTITY_NEAR, options)) {
+      if (matches(TRACER_ENTITY_NEAR, options)) {
         return ENTITY_NEAR;
       }
-      if (FeedbackOptions.matches(TRACER_ENTITY_NEAR_COMBAT, options)) {
+      if (matches(TRACER_ENTITY_NEAR_COMBAT, options)) {
         return ENTITY_NEAR_COMBAT;
       }
       return GENERAL;

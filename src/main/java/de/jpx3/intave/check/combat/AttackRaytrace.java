@@ -17,6 +17,8 @@ import de.jpx3.intave.diagnostic.message.MessageCategory;
 import de.jpx3.intave.diagnostic.message.MessageSeverity;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.feedback.FeedbackAnalysis;
+import de.jpx3.intave.module.feedback.FeedbackAnalysis.FeedbackAnalysisMeta.LatencyInfo;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.tracker.entity.Entity;
@@ -34,6 +36,7 @@ import de.jpx3.intave.world.raytrace.Raytracing;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Function;
@@ -51,7 +54,7 @@ import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_9;
 public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytraceMeta> {
   private static final char[] VOCALS = "aeiou".toCharArray();
   private final IntavePlugin plugin;
-  private final CheckViolationLevelDecrementer hitboxDecrementer, reachDecrementer;
+  private final CheckViolationLevelDecrementer hitboxDecrementer, reachDecrementer, timeoutDecrementer;
   private final boolean zeroNetworkTolerance;
   private final double VL_DECREMENT_PER_ATTACK = 0.125;
   private static final int MAX_ALLOWED_PENDING_ATTACKS = 10;
@@ -61,6 +64,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     this.plugin = plugin;
     this.hitboxDecrementer = new CheckViolationLevelDecrementer(this, "applicable-thresholds.hitbox", VL_DECREMENT_PER_ATTACK * 0.5);
     this.reachDecrementer = new CheckViolationLevelDecrementer(this, "applicable-thresholds.reach", VL_DECREMENT_PER_ATTACK * 2);
+    this.timeoutDecrementer = new CheckViolationLevelDecrementer(this, "applicable-thresholds.timeout", VL_DECREMENT_PER_ATTACK * 1.5);
     this.zeroNetworkTolerance = plugin.getConfig().getBoolean("checks.timer.low-tolerance", false) && plugin.getConfig().getBoolean("checks.timer.block-stutter-hits", false);
     // Send a notice message to the server owner if zero tolerance is enabled
     if (zeroNetworkTolerance) {
@@ -220,6 +224,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
   private boolean entityInTimeout(User user, Entity attackedEntity, long pendingFeedbacks) {
     Player player = user.player();
     MetadataBundle meta = user.meta();
+    ViolationMetadata violationLevel = meta.violationLevel();
     ConnectionMetadata connection = meta.connection();
 
     if (!attackedEntity.typeData().isLivingEntity()) {
@@ -266,22 +271,23 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     double unroundedTicksOverLimit = pendingFeedbacks - Math.ceil((largerTransactionPingAverage * multiplier)/* + 0.25*/);
     int ticksOverLimit = (int) Math.floor(unroundedTicksOverLimit);
 
-    long discrepancyInMs = Modules.feedbackAnalysis().entityLatencyDiscrepancy(user);
-
+    FeedbackAnalysis feedbackAnalysis = Modules.feedbackAnalysis();
+    long discrepancyInMs = feedbackAnalysis.entityLatencyDiscrepancy(user);
     if (discrepancyInMs > 50 && ticksOverLimit >= 0) {
-      String entityName = attackedEntity.entityName();
+      double general = feedbackAnalysis.generalLatency(user);
+      double combat = feedbackAnalysis.entityNearLatency(user);
+
       Violation violation = Violation.builderFor(AttackRaytrace.class)
         .forPlayer(player).withCustomThreshold("timeout")
-        .withVL(1)
-//        .withVL(0)
-        .withMessage("attacked expired position of " + resolveArticle(entityName) + " " + entityName.toLowerCase(Locale.ROOT))
-        .withDetails(pendingFeedbacks + "t attack, " + discrepancyInMs + "ms discrepancy")
+        .withVL(2)
+        .withMessage("has different combat/idle latency")
+        .withDetails(((int)general) + "ms to " + ((int)combat) + "ms combat")
         .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
         .build();
       ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
       double after = violationContext.violationLevelAfter();
 
-      if (after > 25 && !IntaveControl.GOMME_MODE) {
+      if (after > 30 && !IntaveControl.GOMME_MODE) {
         entityHasTimedOut = true;
         user.nerf(AttackNerfStrategy.DMG_HIGH, "67");
       }
@@ -289,6 +295,62 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       if (IntaveControl.GOMME_MODE) {
         System.out.println("TIMEOUT_X: " + player.getName() + " attacked " + attackedEntity.entityName() + " with " + pendingFeedbacks + " pending feedbacks (" + pendingOverAverage + "|" + distanceOverLimit + " | " + maximumPendingFeedbackPackets + ")");
       }
+    }
+
+    List<LatencyInfo> suspiciousLatencies = feedbackAnalysis.suspiciousLatencies(user);
+    if (!suspiciousLatencies.isEmpty() /*&& ticksOverLimit >= 0*/) {
+      Comparator<LatencyInfo> comp = Comparator.comparing(LatencyInfo::latency);
+      // sort, highest first
+      suspiciousLatencies.sort(comp.reversed());
+      suspiciousLatencies.removeIf(latencyInfo -> System.currentTimeMillis() - latencyInfo.issued() > 3000);
+
+      if (!suspiciousLatencies.isEmpty()) {
+        String entityName = attackedEntity.entityName();
+        long highest = suspiciousLatencies.get(0).latency();
+        double mean = feedbackAnalysis.meanLatency(user);
+        double stdDev = feedbackAnalysis.stdDev(user);
+        double zScore = (highest - mean) / stdDev;
+//        double latencyProbability = feedbackAnalysis.latencyProbability(user, highest);
+//        player.sendMessage(violationLevel.backtrackVL + " | " + formatDouble(latencyProbability * 100, 8) + "%");
+        violationLevel.backtrackVL = Math.min(violationLevel.backtrackVL + 1, 11);
+        if (violationLevel.backtrackVL > 3) {
+          // Message: attacked expired position of <entity>
+          // Details: Latency ~ N(μ, σ²) shows attack outlier probability of <probability>%
+          Violation violation = Violation.builderFor(AttackRaytrace.class)
+            .forPlayer(player).withCustomThreshold("timeout")
+            .withVL((violationLevel.backtrackVL - 3) * 0.5)
+            .withMessage("delayed " + entityName.toLowerCase(Locale.ROOT) + " movement packets")
+//            .withDetails("N("+((int)highest)+" | " + ((int)mean) + ", " + ((int)stdDev) + ") = " + formatDouble(latencyProbability * 100, 9) + "%")
+//            .withDetails(((int) highest) + "ms unlikely: " + formatDouble(latencyProbability * 100, 9) + "%")
+            .withDetails(((int) highest) + ", "+((int) mean) + ", " + ((int) stdDev) + " = " + formatDouble(zScore, 2))
+            .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
+            .build();
+
+          ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
+          double after = violationContext.violationLevelAfter();
+          if (after > 30 && !IntaveControl.GOMME_MODE) {
+            entityHasTimedOut = true;
+            violationLevel.lastBacktrackHitCancelRequest = System.currentTimeMillis();
+            user.nerf(AttackNerfStrategy.DMG_HIGH, "67");
+          }
+          violationLevel.lastBacktrackVLChange = System.currentTimeMillis();
+        }
+      }
+      suspiciousLatencies.clear();
+    }
+
+    if (ticksOverLimit >= -1 &&
+      System.currentTimeMillis() - violationLevel.lastBacktrackHitCancelRequest < 5_000) {
+      entityHasTimedOut = true;
+    }
+
+    if (!entityHasTimedOut) {
+      timeoutDecrementer.decrement(user, 0.01);
+    }
+
+    if (System.currentTimeMillis() - violationLevel.lastBacktrackVLChange > 10_000) {
+      violationLevel.backtrackVL = Math.max(0, violationLevel.backtrackVL - 1);
+      violationLevel.lastBacktrackVLChange = System.currentTimeMillis();
     }
 
     if (entityHasTimedOut) {

@@ -21,6 +21,7 @@ import de.jpx3.intave.block.tick.ShulkerBox;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.check.movement.Physics;
 import de.jpx3.intave.check.movement.physics.*;
+import de.jpx3.intave.check.world.interaction.BlockTrustChain;
 import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.entity.datawatcher.DataWatcherAccess;
 import de.jpx3.intave.executor.Synchronizer;
@@ -59,6 +60,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   // superposition
   private final Superposition<Motion> velocitySuperposition;
   private final List<Superposition<?>> superpositions;
+  public final BlockTrustChain placementTrustChain = new BlockTrustChain();
   public final Map<String, Double> serverMovementDebugValues = new HashMap<>();
   public final Map<String, Double> clientMovementDebugValues = new HashMap<>();
   public boolean disabledFlying;

@@ -31,7 +31,7 @@ public final class BlockPosition extends NativeVector {
   }
 
   public BlockPosition(Location source) {
-    this(source.getX(), source.getY(), source.getZ());
+    this(source.getBlockX(), source.getBlockY(), source.getBlockZ());
   }
 
   /**
@@ -228,6 +228,25 @@ public final class BlockPosition extends NativeVector {
 
   public int getZ() {
     return (int) zCoord;
+  }
+
+
+  @Override
+  public int hashCode() {
+    long i = (long) (this.xCoord * 3129871) ^ (long) this.zCoord * 116129781L ^ (long) this.yCoord;
+    return (int) (i ^ i >> 32);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    } else if (!(obj instanceof BlockPosition)) {
+      return false;
+    } else {
+      BlockPosition blockPos = (BlockPosition) obj;
+      return this.xCoord == blockPos.xCoord && this.yCoord == blockPos.yCoord && this.zCoord == blockPos.zCoord;
+    }
   }
 
   /**

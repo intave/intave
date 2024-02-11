@@ -16,7 +16,8 @@ public final class ViolationMetadata {
   public volatile boolean ignorePostTickMotionReset;
 
   public double backtrackVL;
-  public long lastIncreaseBacktrackVL;
+  public long lastBacktrackVLChange;
+  public long lastBacktrackHitCancelRequest;
 
   public int detectionCounter;
   public long detectionCounterReset;

@@ -107,7 +107,7 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
     AbilityMetadata abilityData = user.meta().abilities();
     user.tracedTickFeedback(() -> {
       connectionData.queueToNextTransaction(() -> {
-        checkMeta.time = Math.max(checkMeta.time, checkMeta.limitToBeApplied - 00_100_000);
+        checkMeta.time = Math.max(checkMeta.time, checkMeta.limitToBeApplied - 01_000_000);
         checkMeta.queuedLimit = checkMeta.lastSentTransaction;
       });
     }, new FeedbackObserver() {
