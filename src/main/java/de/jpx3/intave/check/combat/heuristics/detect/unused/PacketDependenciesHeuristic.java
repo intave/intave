@@ -63,9 +63,7 @@ public final class PacketDependenciesHeuristic extends MetaCheckPart<Heuristics,
       List<PacketType> firstPacketTypes = meta.packetTypeList.get(firstTick);
       if (firstPacketTypes != null) {
         Map<Integer, SaveOneTick> dependencies = new HashMap<>();
-        /*
-        Speicher pro PacketType ein anderes packetType was davor gesendet wurde in der abhängigkeit mit dem ersten packetType ab.
-         */
+        // Stores per PacketType another packetType which was sent before in dependency with the first packetType.
         for (int secondTick = firstTick - 1; secondTick > meta.currentTick - TICKS_TO_SAVE; secondTick--) {
           List<PacketType> secondPacketTypes = meta.packetTypeList.get(secondTick);
           if (secondPacketTypes != null) {

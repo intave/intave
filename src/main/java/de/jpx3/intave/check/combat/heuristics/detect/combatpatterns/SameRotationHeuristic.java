@@ -112,11 +112,11 @@ public final class SameRotationHeuristic extends MetaCheckPart<Heuristics, SameR
   }
 
   private void checkExactRotationYaw(SameRotationHeuristicMeta meta, Player player) {
-    // Guckt ob die alte Rotation Yaw oder Pitch eine ganze Zahl ist
-    // Wird genutzt um false flaggs zu vermeiden wenn die alte Rotation eine Ganzezahl war und man sich mit einer ganzen Zahl rotiert hat.
+    // Checks whether the last rotation yaw or pitch is an integer
+    // Used to avoid false positives if the old rotation was an integer and the rotation is done with an integer.
     boolean lastYawMotionExactNumber = meta.lastLastTick.yawMotion % 1 == 0;
 
-    // Guckt ob die rotation Yaw oder Pitch eine ganze Zahl ist
+    // Checks whether the rotation yaw or pitch is an integer
     boolean yawExactNumber = meta.lastTick.yaw % 1 == 0;
 
     if (yawExactNumber && !lastYawMotionExactNumber) {
@@ -128,10 +128,10 @@ public final class SameRotationHeuristic extends MetaCheckPart<Heuristics, SameR
   }
 
   private void checkExactRotationPitch(SameRotationHeuristicMeta meta, Player player) {
-    // Guckt ob die alte Rotation Yaw oder Pitch eine ganze Zahl ist
-    // Wird genutzt um false flaggs zu vermeiden wenn die alte Rotation eine Ganzezahl war und man sich mit einer ganzen Zahl rotiert hat.
+    // Checks whether the last rotation yaw or pitch is an integer
+    // Used to avoid false positives if the old rotation was an integer and the rotation is done with a integer.
     boolean lastPitchMotionExactNumber = meta.lastLastTick.pitchMotion % 1 == 0;
-    // Guckt ob die rotation Yaw oder Pitch eine ganze Zahl ist
+    // Checks whether the rotation yaw or pitch is an integer
     boolean pitchExactNumber = meta.lastTick.pitch % 1 == 0;
 
     if (pitchExactNumber && Math.abs(meta.lastTick.pitch) != 90 && !lastPitchMotionExactNumber) {
@@ -143,7 +143,7 @@ public final class SameRotationHeuristic extends MetaCheckPart<Heuristics, SameR
   }
 
   private void checkSameRotationYaw(SameRotationHeuristicMeta meta, Player player) {
-    // Guckt ob die rotation die ein Spieler hat schon mal zuvor gesendet wurde wärend der Spieler sich schnell gedreht hat
+    // Checks if the rotation a player maintains has been sent before while the player was turning fast
     boolean containedYaw = meta.yawRotations.contains(meta.lastTick.yaw);
 
     if (containedYaw) {
@@ -155,11 +155,11 @@ public final class SameRotationHeuristic extends MetaCheckPart<Heuristics, SameR
   }
 
   private void checkSameRotationPitch(SameRotationHeuristicMeta meta, Player player) {
-    // Guckt ob die rotation die ein Spieler hat schon mal zuvor gesendet wurde wärend der Spieler sich schnell gedreht hat
+    // Checks if the rotation a player maintains has been sent before while the player was turning fast
+    // INFO: This check has been disabled due to false positives with LabyMod
+    // The false positives are caused by using the emote wheel (X Key) and moving your mouse up, if a player is not moving the mouse and the x key gets released it's causing a flag.
 //    boolean containedPitch = meta.pitchRotations.contains(meta.lastTick.pitch);
 
-    //INFO: This check got disabled because of flaggs caused by labymod
-    // the flaggs from labymod are caused by choosing an emote from the X key and then moving the mouse up, if the mouse is still and the x key gets released its causing a flag.
 
 //    if (containedPitch && Math.abs(meta.lastTick.pitch) != 90) {
 //      meta.violationLevel += transformViolation(60);

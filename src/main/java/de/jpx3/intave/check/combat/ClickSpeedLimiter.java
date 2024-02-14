@@ -70,7 +70,7 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
     }
   )
   public void clientTickUpdate(PacketEvent event) {
-    // TODO: Angel rechts links klick spam überprüfen
+    // TODO: Check rod right click spam
     Player player = event.getPlayer();
     User user = userOf(player);
     ClickSpeedLimiterMeta meta = metaOf(user);
@@ -99,10 +99,10 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
           newIndex += 20;
         meta.attackArrayIndex = newIndex;
 
-        //lösche alle hits aus dem attackCountArray die zwischen dem letztem packet move und jetzt waren
-        //fülle das attackCountArray mit allen einträgen aus der attacksDuringFlyingPackets Liste
+        // Delete all hits from the attackCountArray that were between the last packet move and now
+        // Fill the attackCountArray with all entries from the attacksDuringFlyingPackets list
 
-        //TODO: wenn man still steht und wieder weiter geht dann gehen die cps auf 1.9+ nach oben obwohl sie nicht so hoch sind
+        //TODO: If you stand still and move on again, the cps on 1.9+ go up although they are not that high
         for (int i = 1; i <= ticks; i++) {
           int index = meta.attackArrayIndex - i;
 

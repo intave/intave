@@ -152,11 +152,11 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
     }
 
     if (meta.swingsThisTick > 0 && !meta.resetedLeftClickCounterThisTick) {
-      /*TODO: Überprüfen ob der Spieler im letztem Tick auch ein Swing-packet gesendet hat
-         oder er ein Stop-break Packet im Tick davor gesendet hat. (Um so wenig Raytracing wie
-         möglich zu machen)
+      /*TODO: Check whether the player has also sent a swing packet in the last tick
+         or if he has sent a stop-break packet in the tick before. (To do as little raytracing as
+         possible)
 
-         Gibt auch ein Minecraft Bug bei dem man nach dem man ein Block abgebaut hat für 5 Ticks noch Swing-packets sendet.
+         There is also a Minecraft bug where you send swing packets for 5 ticks after you have dismantled a block.
       **/
       World world = event.getPlayer().getWorld();
       MovementMetadata movementData = user.meta().movement();
@@ -176,7 +176,7 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
       }
 
       if (error || (raycastResult != null && raycastResult.hitVec != NativeVector.ZERO)) {
-        // TODO: check if meta.lastDiggedBlock is the same as from the raycastResult (geht nur wenn man den mc bug fixt der für 5 ticks flaggt wenn man ein block abgebaut hat)
+        // TODO: check if meta.lastDiggedBlock is the same as from the raycastResult (only works if you fix the mc bug that flags for 5 ticks when you have dismantled a block)
 
 //        player.sendMessage("Is digging client side but not server side");
         meta.resetedLeftClickCounterThisTick = true;

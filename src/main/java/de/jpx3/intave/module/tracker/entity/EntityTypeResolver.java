@@ -119,7 +119,7 @@ public final class EntityTypeResolver {
     } else {
       if (DATA_WATCHER_ACCESS_UNDER_1_15) {
         WrappedDataWatcher dataWatcher = packet.getDataWatcherModifier().read(0);
-        // Guckt ob das Packet ein Datawatcher hat
+        // Checks if the packet has a Datawatcher
         if (dataWatcher != null && dataWatchesIncludesEntity(dataWatcher)) {
           return entityTypeDataOfDataWatcher(dataWatcher, true);
         } else {
