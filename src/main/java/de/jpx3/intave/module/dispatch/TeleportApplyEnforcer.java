@@ -343,6 +343,7 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
     movementData.awaitTeleport = false;
+    movementData.expectTeleport = false;
     movementData.transactionTeleportAllow = false;
     movementData.isTeleportConfirmationPacket = true;
   }

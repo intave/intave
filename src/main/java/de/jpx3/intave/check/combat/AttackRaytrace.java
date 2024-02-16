@@ -328,7 +328,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 
           ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
           double after = violationContext.violationLevelAfter();
-          if (after > 30 && !IntaveControl.GOMME_MODE) {
+          if (after > 50 /*&& !IntaveControl.GOMME_MODE*/) {
             entityHasTimedOut = true;
             violationLevel.lastBacktrackHitCancelRequest = System.currentTimeMillis();
             user.nerf(AttackNerfStrategy.DMG_HIGH, "67");

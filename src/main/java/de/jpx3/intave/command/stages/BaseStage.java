@@ -97,7 +97,7 @@ public final class BaseStage extends CommandStage {
   }
 
   @SubCommand(
-    selectors = {"combatmodifiers", "cms"},
+    selectors = {"cms", "combatmodifiers"},
     usage = "",
     description = "Toggle combat modifier debugs",
     permission = "intave.command.combatmodifiers"

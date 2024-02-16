@@ -69,7 +69,7 @@ public final class FeedbackAnalysis extends Module {
     long passedTime = request.passedTime();
     meta.fullLatencyAnalysis.addLatency(passedTime);
 
-    if (category == ENTITY_NEAR && user.meta().attack().recentlyAttacked(1000)) {
+    if (category == ENTITY_NEAR && user.meta().attack().recentlyAttacked(1000) && passedTime > 100) {
       double probability = meta.fullLatencyAnalysis.biasedProbabilityOf(passedTime, 300);
       // 1 in 50_000
       if (probability < 0.00005) {
@@ -319,7 +319,7 @@ public final class FeedbackAnalysis extends Module {
         double weight = Math.exp(-dist / requiredDistance);
         sum += Math.pow(dist, 2) * latencyOccurrences[i] * weight;
       }
-      return Math.sqrt(sum / size);
+      return Math.max(Math.sqrt(sum / size), 25);
     }
 
     public double likelihoodOf(long latency) {
