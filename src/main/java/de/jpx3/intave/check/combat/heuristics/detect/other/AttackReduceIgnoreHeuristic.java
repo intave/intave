@@ -72,9 +72,8 @@ public final class AttackReduceIgnoreHeuristic extends MetaCheckPart<Heuristics,
           parentCheck().saveAnomaly(player, anomaly);
           heuristicMeta.vl = 0;
           //dmc4
-          user.nerf(AttackNerfStrategy.DMG_HIGH, "4");
+          user.nerf(AttackNerfStrategy.CRITICALS, "4");
           user.nerf(AttackNerfStrategy.BURN_LONGER, "4");
-          user.nerf(AttackNerfStrategy.BLOCKING, "4");
         }
       } else if (heuristicMeta.vl > 0) {
         heuristicMeta.vl--;

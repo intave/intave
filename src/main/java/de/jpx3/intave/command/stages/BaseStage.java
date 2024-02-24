@@ -519,7 +519,8 @@ public final class BaseStage extends CommandStage {
   @SubCommand(
     selectors = {"performance", "timings"},
     usage = "",
-    description = "Performance data output"
+    description = "Performance data output",
+    permission = "intave.command.diagnostics.*"
   )
   @Forward(
     target = PerformanceStage.class

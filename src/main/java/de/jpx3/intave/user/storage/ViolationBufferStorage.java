@@ -85,6 +85,16 @@ public class ViolationBufferStorage implements Storage {
     }
   }
 
+  @Override
+  public int id() {
+    return 10;
+  }
+
+  @Override
+  public int version() {
+    return 0;
+  }
+
   private CheckBufferStorage prepareBuffer(String checkName) {
     CheckBufferStorage buffer = getBuffer(checkName);
     if (buffer == null) {

@@ -15,7 +15,7 @@ public final class FeedbackQueue {
   private final Lock readLock = lock.readLock();
   private final Lock writeLock = lock.writeLock();
 
-  public void add(FeedbackRequest<?> request) {
+  public synchronized void add(FeedbackRequest<?> request) {
     FeedbackEntry entry = new FeedbackEntry(request);
     writeLock.lock();
     try {
@@ -37,7 +37,7 @@ public final class FeedbackQueue {
     }
   }
 
-  public FeedbackRequest<?> peek() {
+  public synchronized FeedbackRequest<?> peek() {
     readLock.lock();
     try {
       return head == null ? null : head.request;
@@ -46,7 +46,7 @@ public final class FeedbackQueue {
     }
   }
 
-  public FeedbackRequest<?> peek(short userKey) {
+  public synchronized FeedbackRequest<?> peek(short userKey) {
     readLock.lock();
     try {
       FeedbackEntry entry;
@@ -61,7 +61,7 @@ public final class FeedbackQueue {
     }
   }
 
-  public FeedbackRequest<?> poll() {
+  public synchronized FeedbackRequest<?> poll() {
     writeLock.lock();
     try {
       if (head == null) {
@@ -86,7 +86,7 @@ public final class FeedbackQueue {
   }
 
   // can be a bit expensive, shouldn't be used too often though
-  public List<FeedbackRequest<?>> pollUpTo(long globalKey) {
+  public synchronized List<FeedbackRequest<?>> pollUpTo(long globalKey) {
     writeLock.lock();
     try {
       if (head == null) {
@@ -118,7 +118,7 @@ public final class FeedbackQueue {
     }
   }
 
-  public boolean hasUserKey(short userKey) {
+  public synchronized boolean hasUserKey(short userKey) {
     readLock.lock();
     try {
       if (userKey >= 0 && userKey < MAX_DIRECT_SIZE) {
@@ -131,7 +131,7 @@ public final class FeedbackQueue {
     }
   }
 
-  public int size() {
+  public synchronized int size() {
     readLock.lock();
     try {
       return size;

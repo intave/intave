@@ -752,9 +752,9 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     } else if (type == InteractionType.PLACE) {
       String typeAgainstName = shortenTypeName(targetLocationBlockType);
       String typeName = shortenTypeName(user.meta().inventory().heldItemType());
-
+      boolean impossibleFacing = placementWasBehindTargetedBlock(user, targetLocationBlock, interaction.targetDirectionIndex());
       String append = "";
-      if (hitMiss || (raycastLocation.getBlockX() == 0 && raycastLocation.getBlockY() == 0 && raycastLocation.getBlockZ() == 0)) {
+      if (hitMiss || raycastResult == null || (raycastLocation.getBlockX() == 0 && raycastLocation.getBlockY() == 0 && raycastLocation.getBlockZ() == 0)) {
         append = "looking in air";
         vl = 5;
       } else if (raycastLocation.distance(targetLocation) > 0) {
@@ -765,10 +765,10 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         append = "looking at " + blockName + " block";
         vl = 2.5;
       } else if (interaction.targetDirectionIndex() != raycastResult.sideHit.getIndex()) {
-        append = "invalid block face";
-        vl = 2.5;
+        vl = impossibleFacing ? 5 : 2.5;
+        append = impossibleFacing ? "impossible block face" : "invalid block face";
       }
-      if (lookingAtBlock) {
+      if (lookingAtBlock && !impossibleFacing) {
         double multiplier = trustFactorSetting("k-multiplier", player) / 100d;
         vl *= multiplier;
       }
@@ -792,6 +792,26 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       .build();
     ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
     return violationContext.shouldCounterThreat() || mustFlag;
+  }
+
+  private boolean placementWasBehindTargetedBlock(User user, Block targetBlock, int index) {
+    Position playerPos = user.meta().movement().position();
+    if (playerPos == null || index > 10) {
+      return false;
+    }
+    BlockPosition targetBlockPos = new BlockPosition(targetBlock.getLocation().clone());
+    Direction direction = Direction.getFront(index);
+    BlockPosition placedBlockPos = targetBlockPos.offset(direction);
+    return horizontalDistance(placedBlockPos, playerPos) > horizontalDistance(targetBlockPos, playerPos) ||
+      verticalDistance(placedBlockPos, playerPos) > verticalDistance(targetBlockPos, playerPos);
+  }
+
+  private double horizontalDistance(BlockPosition pos, Position playerPos) {
+    return Math.sqrt(Math.pow(pos.getX() - playerPos.getX(), 2) + Math.pow(pos.getZ() - playerPos.getZ(), 2));
+  }
+
+  private double verticalDistance(BlockPosition pos, Position playerPos) {
+    return Math.abs(pos.getY() - playerPos.getY());
   }
 
   @PacketSubscription(

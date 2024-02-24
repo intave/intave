@@ -420,9 +420,9 @@ public final class Physics extends Check {
       }
     }
 
-    if (differenceY > 0.01/* && differenceY < 0.03*/ && (movementData.lastOnGround() || movementData.onGround())) {
+//    if (differenceY > 0.01/* && differenceY < 0.03*/ && (movementData.lastOnGround() || movementData.onGround())) {
 //      player.sendMessage(differenceY + " " + Math.abs(predictedX) + "/" + Math.abs(predictedZ) + " @" +Math.abs(predictedY - movementData.jumpMotion()) + " " + movementData.receivedFlyingPacketIn(6) + " " + movementData.pastFlyingPacketAccurate);
-    }
+//    }
     boolean flyingJump = false;
     if ((Math.abs(predictedX) < 0.1 && Math.abs(predictedZ) < 0.1) && Math.abs(predictedY - movementData.jumpMotion()) < 0.05 &&
       differenceY > 0.01 && differenceY < 0.03 /* only allow positive differenceY */ && (movementData.lastOnGround() || movementData.onGround()) /*&& movementData.receivedFlyingPacketIn(6)*/) {
@@ -443,6 +443,10 @@ public final class Physics extends Check {
       }
     }
 
+    if (violationLevelData.physicsInsignificantBufferVL > 0) {
+      violationLevelData.physicsInsignificantBufferVL -= 0.0008;
+    }
+
     if (violationLevelData.physicsVelocityVL > 10) {
       violationLevelData.physicsVelocityVL = 10;
     }
@@ -454,7 +458,7 @@ public final class Physics extends Check {
     if (movementData.simulator() == Simulators.HORSE) {
       violationLevelIncrease = 0;
     }
-    if (distance > 1e-3) {
+    if (distance > 0.001) {
       movementData.suspiciousMovement = true;
       for (Superposition<?> superposition : movementData.superpositions()) {
         superposition.collapseVariation(0);
@@ -487,6 +491,32 @@ public final class Physics extends Check {
 
     if (flying || spectator) {
       violationLevelIncrease = 0;
+    }
+
+    if (violationLevelData.physicsInsignificantBufferVL < 3 &&
+      violationLevelData.physicsVL + violationLevelIncrease > 50 &&
+      violationLevelIncrease > 0 && !movementData.inWeb && !movementData.inWater &&
+      distance > 0.001
+    ) {
+      boolean predictedNoHorizontalMovement = Math.abs(predictedX) < 0.05 && Math.abs(predictedZ) < 0.05;
+      boolean horizontalFasterThanExpected = Math.abs(predictedX) < Math.abs(receivedMotionX) - 0.05 || Math.abs(predictedZ) < Math.abs(receivedMotionZ) - 0.05;
+
+      double gainMultiplier = 1;
+      if (predictedNoHorizontalMovement) {
+        gainMultiplier *= 1.5;
+      }
+      if (horizontalFasterThanExpected) {
+        gainMultiplier *= 0.5;
+      }
+
+      if (Math.abs(differenceY) < 0.1 && receivedMotionY < predictedY + 0.01 &&
+        Math.abs(differenceX) < 0.15 * gainMultiplier && Math.abs(differenceZ) < 0.15 * gainMultiplier &&
+        Math.abs(differenceX) + Math.abs(differenceZ) < 0.2 * gainMultiplier &&
+        distance < 0.25
+      ) {
+        violationLevelData.physicsInsignificantBufferVL += (distance < 0.05 ? 0.5 : 1);
+        violationLevelIncrease = 0;
+      }
     }
 
     if (violationLevelIncrease == 0 && violationLevelData.physicsVL > 0) {
@@ -560,17 +590,16 @@ public final class Physics extends Check {
       violationLevelIncrease = Math.min(200.0, violationLevelIncrease);
       violationLevelIncrease = Math.max(1, violationLevelIncrease);
       violationLevelData.physicsVL = MathHelper.minmax(0, violationLevelData.physicsVL + violationLevelIncrease, 200);
-      violationLevelData.physicsInvalidMovementsInRow++;
+      violationLevelData.physicsInvalidMovementsInRow += (distance < 0.01 ? 0.25 : (distance < 0.05 ? 0.5 : 1));
       if (violationLevelData.physicsVL > 20) {
         if (!IntaveControl.IGNORE_CACHE_REFRESH_ON_SIMULATION_FAULT) {
           blockStateAccess.invalidateAll();
         }
       }
-      // resend attributes
-      statisticApply(user, CheckStatistics::increaseFails);
     } else {
       if (violationLevelData.physicsInvalidMovementsInRow >= 0) {
-        violationLevelData.physicsInvalidMovementsInRow -= 0.3;
+        violationLevelData.physicsInvalidMovementsInRow *= 0.95;
+        violationLevelData.physicsInvalidMovementsInRow -= movementData.motion().horizontalLength() > 0.1 ? .15 : .05;
       }
       statisticApply(user, CheckStatistics::increasePasses);
     }
@@ -582,6 +611,10 @@ public final class Physics extends Check {
       String expected = formatPosition(predictedX, predictedY, predictedZ);
       String message = "moved incorrectly";
       String details = received + " actual: " + expected;
+
+      if (violationLevelData.physicsInsignificantBufferVL > 2) {
+        details += ", it:" + formatDouble(violationLevelData.physicsInsignificantBufferVL, 1);
+      }
 
       if (velocityDetected) {
         details += ", strict";
@@ -615,6 +648,8 @@ public final class Physics extends Check {
       double violationLevelBefore = violationContext.violationLevelBefore();
       double violationLevelAfter = violationContext.violationLevelAfter();
 
+      boolean freeOfColliders = !Collision.nearSolidBlock(user, currentBoundingBox.grow(1));
+
       MitigationStrategy mitigationStrategy = mitigationStrategy();
 
       double manualOverrideDistance = 0;
@@ -624,19 +659,20 @@ public final class Physics extends Check {
           manualOverrideDistance = 0.75;
           break;
         case CAREFUL:
-          setback = deepPitchViolationOverflow || (highPitchViolationOverflow && (violationLevelAfter > 20 || highPitchAggressiveViolationOverflow || !user.trustFactor().atLeast(TrustFactor.YELLOW) || user.justJoined()));
+          setback = deepPitchViolationOverflow || (highPitchViolationOverflow && (violationLevelAfter > 20 || highPitchAggressiveViolationOverflow || user.justJoined()));
           if (receivedMotionY > Math.max(0.42f, movementData.jumpMotion()) + 0.01) {
             setback = true;
           }
           manualOverrideDistance = 0.75;
           break;
         case LENIENT:
-          boolean flagAnyways = (verticalViolationIncrease >= 100 && predictedY < 0 && violationLevelAfter > 30)/* || (verticalViolationIncrease >= 100)*/;
-          setback = (distanceMoved > (violationLevelAfter > 30 ? 0.4 : 0.6) || violationLevelAfter > 200 || user.justJoined() || flagAnyways) && deepPitchViolationOverflow && (highPitchAggressiveViolationOverflow || violationLevelAfter > 100);
+          setback = deepPitchViolationOverflow || (highPitchViolationOverflow && (freeOfColliders || violationLevelIncrease > 50) && (violationLevelAfter > 30 || highPitchAggressiveViolationOverflow || user.justJoined()));
+          if (receivedMotionY > Math.max(0.42f, movementData.jumpMotion()) + 0.01) {
+            setback = true;
+          }
           manualOverrideDistance = 0.75;
           break;
         case BARELY:
-          boolean freeOfColliders = currentBoundingBox == null || !Collision.nearSolidBlock(user, currentBoundingBox.grow(1));
           boolean flagAnywayss = freeOfColliders && ((isMidAir && violationLevelAfter > 60) || (verticalViolationIncrease >= 100 && predictedY < 0 && violationLevelAfter >= 100));
           boolean velocityFlag = velocityDetected && violationLevelAfter > 30 && (verticalViolationIncrease >= 100 || horizontalViolationIncrease >= 100);
           setback =
@@ -653,10 +689,11 @@ public final class Physics extends Check {
       // reduce setbacks
       if (
         setback && !velocityDetected &&
-        Math.abs(predictedX - receivedMotionX) < 0.3 &&
-        Math.abs(predictedY - receivedMotionY) < 0.3 &&
-        Math.abs(predictedZ - receivedMotionZ) < 0.3 &&
-        distance < 0.5 &&
+        Math.abs(predictedX - receivedMotionX) < 0.25 &&
+        Math.abs(predictedY - receivedMotionY) < 0.25 &&
+        Math.abs(predictedZ - receivedMotionZ) < 0.25 &&
+        distance < 0.4 &&
+        movementData.pastBlockPlacement >= 8 &&
         user.trustFactor().atLeast(TrustFactor.ORANGE) &&
         violationLevelAfter < 100
       ) {
@@ -681,6 +718,9 @@ public final class Physics extends Check {
       }
 
       if (setback) {
+        // resend attributes
+        statisticApply(user, CheckStatistics::increaseFails);
+
         MovementMetadata movement = user.meta().movement();
         Simulator simulator = movement.simulator();
         simulator.setback(user, movement, predictedX, predictedY, predictedZ);
@@ -702,7 +742,7 @@ public final class Physics extends Check {
       decrementer.decrement(user, VL_DECREMENT_PER_VALID_MOVE);
     }
 
-    violationLevelData.physicsVL = MathHelper.minmax(0, violationLevelData.physicsVL, 100);
+    violationLevelData.physicsVL = MathHelper.minmax(0, violationLevelData.physicsVL, 150);
 
     Pose pose = movementData.pose();
     if (movementData.onLadderLast || pose == Pose.FALL_FLYING || flying) {
@@ -834,6 +874,9 @@ public final class Physics extends Check {
       }
       if (movementData.physicsJumped) {
         debug += ChatColor.ITALIC + " jmp" + chatColor;
+      }
+      if (violationLevelData.physicsInvalidMovementsInRow > 0.1) {
+        debug += ChatColor.ITALIC + " ivm:" + formatDouble(violationLevelData.physicsInvalidMovementsInRow, 2) + chatColor;
       }
 //      debug += " fric:" + formatDouble(movementData.friction(), 2) + "@" + movementData.frictionMaterial();
 
@@ -1012,7 +1055,7 @@ public final class Physics extends Check {
       float seenDamage = movementData.seenFallDamage;
       float estimatedDamage = fallDamageApplier.distanceToDamage(player, fallDistance);
 //      player.sendMessage("Fall damage: " + seenDamage + " / " + estimatedDamage + " (" + fallDistance + ")");
-      if (seenDamage < estimatedDamage - 0.5F) {
+      if (seenDamage < estimatedDamage - 1.2F) {
         float missingDistance = fallDamageApplier.remainingDistance(player, seenDamage, estimatedDamage);
 //        player.sendMessage("Missing distance: " + missingDistance);
         if (missingDistance > 0.0F) {

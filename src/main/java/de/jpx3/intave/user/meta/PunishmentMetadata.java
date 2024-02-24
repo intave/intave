@@ -1,8 +1,6 @@
 package de.jpx3.intave.user.meta;
 
 import com.google.common.collect.Lists;
-import de.jpx3.intave.IntaveControl;
-import de.jpx3.intave.annotate.Native;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.mitigate.HurttimeModifier;
@@ -14,17 +12,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static de.jpx3.intave.user.meta.PunishmentMetadata.EncapsulationClass.isRedlistedPlayer;
 import static org.bukkit.event.entity.EntityDamageEvent.DamageModifier.*;
 
 @Relocate
@@ -64,7 +59,8 @@ public final class PunishmentMetadata {
       ),
       new AttackNerfer(
         AttackNerfStrategy.CANCEL_FIRST_HIT, DAMAGE_CANCEL_FIRST_HIT_DURATION,
-        event -> {}
+        event -> {
+        }
       ),
       new AttackNerfer(AttackNerfStrategy.CRITICALS, NO_CRITICAL_HITS_DURATION, event -> {
         User target = UserRepository.userOf(player);
@@ -114,7 +110,8 @@ public final class PunishmentMetadata {
         int ticks = -ThreadLocalRandom.current().nextInt(0, 1);
         HurttimeModifier.applyHurtTimeChangeTo(player, (int) (DAMAGE_CANCEL_LIGHT_DURATION / 50), ticks);
       }),
-      new AttackNerfer(AttackNerfStrategy.BURN_LONGER, BURN_LONGER_DURATION, event -> {}),
+      new AttackNerfer(AttackNerfStrategy.BURN_LONGER, BURN_LONGER_DURATION, event -> {
+      }),
       new AttackNerfer(AttackNerfStrategy.BLOCKING, BLOCKING_DAMAGE_CANCEL_DURATION, event -> {
         Entity damaged = event.getEntity();
         if (damaged instanceof Player) {
@@ -176,39 +173,6 @@ public final class PunishmentMetadata {
     );
     for (AttackNerfer attackNerfer : attackNerfers) {
       this.attackNerfersMap.put(attackNerfer.type, attackNerfer);
-    }
-    if (isRedlistedPlayer(player)) {
-//      nerferOfType(AttackNerfStrategy.BURN_LONGER).activatePermanently();
-//      nerferOfType(AttackNerfStrategy.CRITICALS).activatePermanently();
-//      nerferOfType(AttackNerfStrategy.GARBAGE_HITS).activatePermanently();
-//      nerferOfType(AttackNerfStrategy.BLOCKING).activatePermanently();
-    }
-  }
-
-  public static class EncapsulationClass {
-    private static final Pattern JUSTIN_PATTERN = Pattern.compile("[ji].*s.*t.*[nm]", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
-    private static final Pattern SCHNUPPI_PATTERN = Pattern.compile("s+.*[nuh]+.*[unx]+.*[bpx]+.*[lijy]+", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
-    private static final Pattern DKDKDK_PATTERN = Pattern.compile("(dk){3}", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
-
-    @Native
-    public static boolean isRedlistedPlayer(Player player) {
-      if (player == null) {
-        return false;
-      }
-      List<String> contains = Arrays.asList(
-        "beschuss", "eject", "icarus", "ryu", "vitja", "_hyxz", "vierzwei", "augustus", "intave", "auf180", "solumbus", "istdie1", "aufdie1"
-      );
-      String playerName = player.getName();
-      for (String contain : contains) {
-        if (playerName.toLowerCase().contains(contain)) {
-          return true;
-        }
-      }
-      return IntaveControl.GOMME_MODE && (
-        JUSTIN_PATTERN.matcher(playerName).find() ||
-          SCHNUPPI_PATTERN.matcher(playerName).find() ||
-          DKDKDK_PATTERN.matcher(playerName).find()
-      );
     }
   }
 

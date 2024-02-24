@@ -84,7 +84,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   public double verifiedPositionX, verifiedPositionY, verifiedPositionZ;
   public double lastPositionX, lastPositionY, lastPositionZ;
   public double positionX, positionY, positionZ;
-  public boolean sprinting, lastSprinting, /*sprintMove, lastSprintMove,*/ hasSprintSpeed, sneaking, lastSneaking;
+  public boolean sprinting, lastSprinting, /*sprintMove, lastSprintMove,*/
+    hasSprintSpeed, sneaking, lastSneaking;
   public int sprintSneakFaults;
   public boolean acceptSneakFaults = true;
   public int ticksSneaking;
@@ -170,7 +171,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public float boatGlide, momentum;
   public double waterLevel;
   public BoatSimulator.Status boatStatus = BoatSimulator.Status.ON_LAND,
-      previousBoatStatus = BoatSimulator.Status.ON_LAND;
+    previousBoatStatus = BoatSimulator.Status.ON_LAND;
   public boolean isTeleportConfirmationPacket;
   public boolean dropPostTickMotionProcessing;
   public boolean willReceiveSetbackVelocity;
@@ -234,14 +235,14 @@ public final class MovementMetadata implements SimulationEnvironment {
     this.player = player;
     this.user = user;
     this.velocitySuperposition = Superposition
-        .builderFor(Motion.class)
-        .apply(MovementDispatcher::applyVelocitySuperposition)
-        .collapse(MovementDispatcher::collapseVelocitySuperposition)
-        .reset(MovementDispatcher::resetVelocitySuperposition)
-        .overrideMerge()
-        .user(user)
-        .timeout(2)
-        .build();
+      .builderFor(Motion.class)
+      .apply(MovementDispatcher::applyVelocitySuperposition)
+      .collapse(MovementDispatcher::collapseVelocitySuperposition)
+      .reset(MovementDispatcher::resetVelocitySuperposition)
+      .overrideMerge()
+      .user(user)
+      .timeout(2)
+      .build();
     if (Physics.USE_SUPERPOSITIONS) {
       superpositions = ImmutableList.of(velocitySuperposition);
     } else {
@@ -310,8 +311,8 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   @DispatchTarget
   public void updateMovement(
-      PacketContainer packet,
-      boolean hasMovement, boolean hasRotation
+    PacketContainer packet,
+    boolean hasMovement, boolean hasRotation
   ) {
     if (!boundingBoxSetup) {
       setupDefaults();
@@ -352,7 +353,7 @@ public final class MovementMetadata implements SimulationEnvironment {
       }
     }
 //    if (!user.meta().protocol().trailsAndTailsUpdate()) {
-      compileSpecialBlocks();
+    compileSpecialBlocks();
 //    }
     lastRotationYaw = rotationYaw;
     lastRotationPitch = rotationPitch;
@@ -367,8 +368,9 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
     recheckWebStateFromLastTick();
     updateEntityMovement();
-
-    updatePose();
+    if (hasMovement || hasRotation) {
+      updatePose();
+    }
     updateSlotSwitch();
   }
 
@@ -380,8 +382,8 @@ public final class MovementMetadata implements SimulationEnvironment {
       Position block;
       BoundingBox boundingBox = BoundingBox.fromPosition(user, this, positionX, positionY, positionZ);
       BoundingBox secondBoundingBox = new BoundingBox(
-          boundingBox.minX, boundingBox.minY - 0.000001, boundingBox.minZ,
-          boundingBox.maxX, boundingBox.minY, boundingBox.maxZ
+        boundingBox.minX, boundingBox.minY - 0.000001, boundingBox.minZ,
+        boundingBox.maxX, boundingBox.minY, boundingBox.maxZ
       );
       block = findSupportingBlock(user, secondBoundingBox);
       if (block == null) {
@@ -420,7 +422,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     if (mainSupportingBlockPos != null) {
       // 1.20
       Material blockType = VolatileBlockAccess.typeAccess(
-          user, player.getWorld(), mainSupportingBlockPos
+        user, player.getWorld(), mainSupportingBlockPos
       );
       if (reduction > 0.00001f) {
         String typeName = blockType.name();
@@ -431,10 +433,10 @@ public final class MovementMetadata implements SimulationEnvironment {
           return blockType;
         }
         return VolatileBlockAccess.typeAccess(
-            user, player.getWorld(),
-            mainSupportingBlockPos.getBlockX(),
-            blockCollisionPosY,
-            mainSupportingBlockPos.getBlockZ()
+          user, player.getWorld(),
+          mainSupportingBlockPos.getBlockX(),
+          blockCollisionPosY,
+          mainSupportingBlockPos.getBlockZ()
         );
       } else {
         return blockType;
@@ -458,7 +460,7 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   @Nullable
   private Position findSupportingBlock(
-      User user, BoundingBox box
+    User user, BoundingBox box
   ) {
     Position block = null;
     int blockX = 0, blockY = 0, blockZ = 0;
@@ -502,8 +504,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   private int compare(
-      int alphaX, int alphaY, int alphaZ,
-      int betaX, int betaY, int betaZ
+    int alphaX, int alphaY, int alphaZ,
+    int betaX, int betaY, int betaZ
   ) {
     if (alphaY == betaY) {
       return alphaZ == betaZ ? alphaX - betaX : alphaZ - betaZ;
@@ -513,8 +515,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   private double distanceToCenter(
-      int blockX, int blockY, int blockZ,
-      double entityX, double entityY, double entityZ
+    int blockX, int blockY, int blockZ,
+    double entityX, double entityY, double entityZ
   ) {
     double d0 = blockX + 0.5 - entityX;
     double d1 = blockY + 0.5 - entityY;
@@ -840,9 +842,9 @@ public final class MovementMetadata implements SimulationEnvironment {
       return aquaticUpdateInLava;
     } else {
       BoundingBox lavaBoundingBox = boundingBox.grow(
-          -0.1f,
-          -0.4000000059604645D,
-          -0.1f
+        -0.1f,
+        -0.4000000059604645D,
+        -0.1f
       );
       return Collision.rasterizedLiquidSearch(user, lavaBoundingBox, Fluid::isOfLava);
     }

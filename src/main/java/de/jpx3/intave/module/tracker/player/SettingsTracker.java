@@ -2,6 +2,7 @@ package de.jpx3.intave.module.tracker.player;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.user.User;
@@ -21,6 +22,9 @@ public final class SettingsTracker extends Module {
     Player player = event.getPlayer();
     User user = userOf(player);
     PacketContainer packet = event.getPacket();
+    if (MinecraftVersions.VER1_20_2.atOrAbove()) {
+      return;
+    }
     ProtocolMetadata clientData = user.meta().protocol();
     String locale = packet.getStrings().read(0);
     clientData.setLocale(locale);

@@ -154,8 +154,10 @@ public final class SimulationEvaluator {
         && movement.positionY % 1 > 0.1
         && movement.pastExternalVelocity != 0;
 
+    boolean movingUpwardsInWeb = movement.inWeb && movement.motionY() > 0.05 && (movement.positionY + movement.motionY()) % 1 < 0.1 && movement.positionY % 1 > 0.8;
+
     if (movement.inWeb) {
-      verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, /*criticalWeb ? 0.000001 : */0.13);
+      verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, movingUpwardsInWeb ? 0.00001 :/*criticalWeb ? 0.000001 : */0.13);
     }
 
     if (movement.pastInWeb < 10 && !movement.inWeb && differenceY < 0.1) {
@@ -202,7 +204,7 @@ public final class SimulationEvaluator {
     }
 
     // Sometimes shit happens
-    if (movement.ticksSneaking <= 1 && (movement.onGround() || movement.lastOnGround()) && movement.motionY() <= 0 && movement.motionY() >= -0.5 && movement.lastSneaking) {
+    if (movement.ticksSneaking <= 1 && !movement.inWater && !movement.inWeb && (movement.onGround() || movement.lastOnGround()) && movement.motionY() <= 0 && movement.motionY() >= -0.5 && movement.lastSneaking) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.08f);
     }
 
@@ -400,6 +402,9 @@ public final class SimulationEvaluator {
           limit = smallMovement ? 0.2 : 0.02;
         }
       }
+      if (movement.inWater || movement.inWeb) {
+        limit *= 0.25;
+      }
       horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, limit);
     }
 
@@ -411,7 +416,7 @@ public final class SimulationEvaluator {
     boolean movedTooQuickly = distanceMoved > predictedDistanceMoved * 1.0005 && abuseHorizontally > 0;
 
     if (inLiquid) {
-      movedTooQuickly = movedTooQuickly && distanceMoved > baseMoveSpeed;
+      movedTooQuickly &= distanceMoved > baseMoveSpeed;
     }
 
     // A+D spam
@@ -436,14 +441,29 @@ public final class SimulationEvaluator {
       abuseHorizontally *= 0.1;
     }
 
-    boolean movedTooQuicklyCheckable = (distanceMoved > 0.125 || violationLevelData.physicsInvalidMovementsInRow >= 8)
+    double stackMultiplier = Math.exp(-Math.min(violationLevelData.physicsInvalidMovementsInRow, 4) / 2);
+
+    boolean movedTooQuicklyCheckable = (distanceMoved > 0.125 * stackMultiplier || violationLevelData.physicsInvalidMovementsInRow >= 8)
         && !flewWithElytra;
 
     if (movedTooQuickly && movedTooQuicklyCheckable && !movement.physicsUnpredictableVelocityExpected) {
-      return abuseHorizontally > 0.2 ? 1000 : Math.max(20, abuseHorizontally * 200);
+//      player.sendMessage("moved too quickly: " + distanceMoved + " " + predictedDistanceMoved + " " + abuseHorizontally + " " + stackMultiplier);
+      if (abuseHorizontally > 0.2 * stackMultiplier) {
+        return 1000;
+      }
+      if (distanceMoved - 0.1 > predictedDistanceMoved && distanceMoved > 0.3) {
+        return 1000;
+      }
+      return Math.max(15, abuseHorizontally * 250);
     }
     boolean noCollisions = Collision.nonePresent(player, BoundingBox.fromPosition(user, movement, movement.positionX, movement.positionY, movement.positionZ).grow(0.1));
-    double multiplier = (abuseHorizontally > 0.1 ? 20.0 : 10.0) * (noCollisions ? 3 : 2);
+    double multiplier = (abuseHorizontally > 0.1 ? 20.0 : 10.0) *
+      (noCollisions ? 3 : 2) *
+      (1/stackMultiplier);
+//    player.sendMessage("abuseHorizontally: " + abuseHorizontally + " multiplier: " + multiplier);
+    if (abuseHorizontally < 0.1 && Math.abs(motionX) + Math.abs(motionZ) < 0.1 && !inLiquid && !movement.inWeb) {
+      multiplier *= 0.1;
+    }
     return abuseHorizontally * multiplier;
   }
 

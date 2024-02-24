@@ -319,8 +319,12 @@ public final class PacketSubscriptionLinker extends Module {
         }
         PacketReader packetReader = null;
         if (packetReaderParameterPosition != -1) {
-          packetReader = PacketReaders.readerOf(event.getPacket());
-          arguments[packetReaderParameterPosition] = packetReader;
+          try {
+            packetReader = PacketReaders.readerOf(event.getPacket());
+            arguments[packetReaderParameterPosition] = packetReader;
+          } catch (Exception e) {
+            throw new RuntimeException("Failed to create packet reader for packet " + event.getPacketType() + " in " + subscriber.getClass().getCanonicalName(), e);
+          }
         }
         if (packetEventParameterPosition != -1) {
           arguments[packetEventParameterPosition] = event;

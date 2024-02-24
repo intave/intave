@@ -96,7 +96,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       // Allow attacks on invalid entity states
       if (entity == null
         || entity instanceof Entity.Destroyed
-        || !entity.isEntityAlive()
+        || entity.isInVehicle() || !entity.isEntityAlive()
         || abilities.unsynchronizedHealth <= 0) {
         // check again?
         reader.release();
@@ -195,7 +195,9 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         if (entityHealth <= 0
           || attackedEntity == null
           || attackedEntity instanceof Entity.Destroyed
-          || (attackedEntity.hasTypeData() && attackedEntity.typeData().fireball())) {
+          || (attackedEntity.hasTypeData() && attackedEntity.typeData().fireball())
+        ) {
+          redirectValidPacket(player, pendingAction.packet());
           continue;
         }
 
@@ -286,12 +288,10 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         .build();
       ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
       double after = violationContext.violationLevelAfter();
-
-      if (after > 30 && !IntaveControl.GOMME_MODE) {
+      if (after > 30 /*&& !IntaveControl.GOMME_MODE*/) {
         entityHasTimedOut = true;
         user.nerf(AttackNerfStrategy.DMG_HIGH, "67");
       }
-
       if (IntaveControl.GOMME_MODE) {
         System.out.println("TIMEOUT_X: " + player.getName() + " attacked " + attackedEntity.entityName() + " with " + pendingFeedbacks + " pending feedbacks (" + pendingOverAverage + "|" + distanceOverLimit + " | " + maximumPendingFeedbackPackets + ")");
       }
@@ -328,7 +328,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 
           ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
           double after = violationContext.violationLevelAfter();
-          if (after > 50 /*&& !IntaveControl.GOMME_MODE*/) {
+          if (after > 30 /*&& !IntaveControl.GOMME_MODE*/) {
             entityHasTimedOut = true;
             violationLevel.lastBacktrackHitCancelRequest = System.currentTimeMillis();
             user.nerf(AttackNerfStrategy.DMG_HIGH, "67");

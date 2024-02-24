@@ -8,6 +8,7 @@ import java.util.Map;
 @Relocate
 public final class ViolationMetadata {
   public double physicsVL;
+  public double physicsInsignificantBufferVL;
   public double physicsVelocityVL;
   public double physicsVehicleVL;
   public double physicsInvalidMovementsInRow;

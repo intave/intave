@@ -150,17 +150,17 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
       Violation violation = Violation.builderFor(Timer.class).forPlayer(player)
         .withMessage("moved too frequently")
         .withDetails(balanceAsString + " ticks ahead")
-        .withVL(Math.min(displayValue, 2))
+        .withVL(Math.min(displayValue, 4))
         .build();
       ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
       if (violationContext.shouldCounterThreat()) {
         checkMeta.lastTimerFlag = System.currentTimeMillis();
         movementData.invalidMovement = true;
         Vector setback = new Vector(0, 0, 0);
+        statisticApply(user, CheckStatistics::increaseFails);
         Modules.mitigate().movement().emulationSetBack(player, setback, 3, 2, false);
       }
-      checkMeta.time -= 1_000_000;
-      statisticApply(user, CheckStatistics::increaseFails);
+      checkMeta.time -= 1_250_000;
       return;
     } else if (System.currentTimeMillis() - checkMeta.lastTimerFlag > 10000) {
       decrementer.decrement(user, 0.005);

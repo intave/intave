@@ -41,8 +41,8 @@ import static de.jpx3.intave.share.ClientMath.floor;
 @Relocate
 @DoNotFlowObfuscate
 public final class Collision {
-  // usually we collide with 8 blocks, so a limit of 256 comes with a very big margin
-  private static final int COLLISION_CHECK_LIMIT = 256;
+  // usually we collide with 8 blocks, so a limit of 32 comes with a very big margin
+  private static final int COLLISION_CHECK_LIMIT = 32;
 
   private static final Collector<BlockShape, ?, BlockShape> SHAPE_COMPILATION =
     Collectors.collectingAndThen(Collectors.toList(), BlockShapes::merge);
@@ -83,6 +83,10 @@ public final class Collision {
     int maxY = floor(playerBox.maxY);
     int minZ = floor(playerBox.minZ);
     int maxZ = floor(playerBox.maxZ);
+    // can be larger than 3x3x3
+    if (Math.abs(maxX - minX) > 3 || Math.abs(maxY - minY) > 3 || Math.abs(maxZ - minZ) > 3) {
+      return escapeReturn.get();
+    }
     int ystart = Math.max(minY - 1, WorldHeight.LOWER_WORLD_LIMIT);
     User user = UserRepository.userOf(player);
     World world = player.getWorld();

@@ -454,6 +454,10 @@ public class Entity {
     return mountedOnEntity;
   }
 
+  public boolean isInVehicle() {
+    return mountedOnEntity != null;
+  }
+
   public boolean tracingEnabled() {
     return enabledResponseTracing;
   }

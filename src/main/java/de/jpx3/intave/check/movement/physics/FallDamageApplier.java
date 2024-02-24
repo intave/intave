@@ -50,14 +50,17 @@ public final class FallDamageApplier {
       throw new IllegalStateException(exception);
     }
     if (MinecraftVersions.VER1_20.atOrAbove()) {
+      Object source = null;
       try {
         World world = Bukkit.getWorlds().get(0);
         Object handle = world.getClass().getMethod("getHandle").invoke(world);
         Object damageSources = handle.getClass().getMethod("ag").invoke(handle);
-        fallDamageSource = Lookup.serverClass("DamageSources").getMethod("k").invoke(damageSources);
+        source = Lookup.serverClass("DamageSources").getMethod("k").invoke(damageSources);
       } catch (Exception exception) {
-        throw new IntaveInternalException(exception);
+//        throw new IntaveInternalException(exception);
+//        fallDamageSource = null;
       }
+      fallDamageSource = source;
     } else if (MinecraftVersions.VER1_19_4.atOrAbove()) {
       try {
         World world = Bukkit.getWorlds().get(0);
