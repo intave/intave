@@ -665,8 +665,8 @@ class BaseSimulator extends Simulator {
         context.motionY + 0.6f - positionY + environment.verifiedPositionY(),
         context.motionZ
       );
-    if (collidedHorizontally && offsetPositionInLiquid) {
-      context.motionY = 0.30000001192092896D;
+    if (collidedHorizontally && !offsetPositionInLiquid) {
+//      context.motionY = 0.3000001192092896D;
     }
   }
 

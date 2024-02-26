@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.*;
+import static de.jpx3.intave.module.feedback.FeedbackOptions.APPEND_ON_OVERFLOW;
 import static de.jpx3.intave.module.feedback.FeedbackOptions.SELF_SYNCHRONIZATION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
@@ -55,7 +56,7 @@ public final class BlockUpdateTracker extends Module {
           BlockUpdateTracker.this.chunkInvalidate(player, xCoordinates[k], zCoordinates[k]);
         }
       },
-      /*APPEND_ON_OVERFLOW |*/ SELF_SYNCHRONIZATION
+      APPEND_ON_OVERFLOW | SELF_SYNCHRONIZATION
     );
   }
 

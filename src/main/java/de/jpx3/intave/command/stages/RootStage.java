@@ -149,7 +149,7 @@ public final class RootStage extends CommandStage {
     description = "Output diagnostic messages",
     permission = "sibyl"
   )
-  @Forward(target = DebugStage.class)
+  @Forward(target = InternalDebugStage.class)
   public void debugStage() {
 
   }

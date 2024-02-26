@@ -110,7 +110,7 @@ public final class FeedbackSender extends Module {
     }
     tracedSingleSynchronize(player, target, firstCallback, firstTracker, options);
     user.ignoreNextOutboundPacket();
-    sendPacket(player, encapsulate);
+    sendPacket(player, encapsulate.shallowClone());
     user.receiveNextOutboundPacketAgain();
     tracedSingleSynchronize(player, target, secondCallback, secondTracker, options);
   }

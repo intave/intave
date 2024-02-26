@@ -11,10 +11,10 @@ import org.bukkit.entity.Player;
 
 import java.util.Locale;
 
-public final class DebugStage extends CommandStage {
-  private static DebugStage singletonInstance;
+public final class InternalDebugStage extends CommandStage {
+  private static InternalDebugStage singletonInstance;
 
-  private DebugStage() {
+  private InternalDebugStage() {
     super(RootStage.singletonInstance(), "debug");
   }
 
@@ -174,9 +174,9 @@ public final class DebugStage extends CommandStage {
     user.meta().movement().baseMotionY = 2;
   }
 
-  public static DebugStage singletonInstance() {
+  public static InternalDebugStage singletonInstance() {
     if (singletonInstance == null) {
-      singletonInstance = new DebugStage();
+      singletonInstance = new InternalDebugStage();
     }
     return singletonInstance;
   }

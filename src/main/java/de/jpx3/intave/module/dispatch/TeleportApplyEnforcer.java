@@ -21,9 +21,11 @@ import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
@@ -38,8 +40,22 @@ import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.NETHER_P
 public final class TeleportApplyEnforcer implements PacketEventSubscriber {
   private static final boolean NEW_TELEPORTATION = MinecraftVersions.VER1_9_0.atOrAbove();
 
+  private boolean teleportFeedbackSyncEnforcement = true;
+
   public void setup() {
+    YamlConfiguration settings = IntavePlugin.singletonInstance().settings();
+    String path = "compatibility.position-feedback-sync-enforcement";
+
     Modules.linker().packetEvents().linkSubscriptionsIn(this);
+
+    boolean defaultSetting = true;
+
+    if (Bukkit.getName().contains("Airplane") || Bukkit.getName().contains("Guard")) {
+      IntavePlugin.singletonInstance().logger().info("Detected GuardSpigot server, disabling position feedback sync enforcement");
+      teleportFeedbackSyncEnforcement = false;
+    } else {
+      teleportFeedbackSyncEnforcement = settings.getBoolean(path, defaultSetting);
+    }
   }
 
   @PacketSubscription(
@@ -131,11 +147,15 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
      * ViaBackwards messes up the order of teleportation packets, so we need to account for that
      */
     if (!user.meta().protocol().outdatedClient()) {
-      user.doubleTickFeedback(
-        event,
-        () -> movementData.transactionTeleportAllow = true,
-        () -> movementData.transactionTeleportAllow = false
-      );
+      if (teleportFeedbackSyncEnforcement) {
+        user.doubleTickFeedback(
+          event,
+          () -> movementData.transactionTeleportAllow = true,
+          () -> movementData.transactionTeleportAllow = false
+        );
+      } else {
+        movementData.transactionTeleportAllow = true;
+      }
     } else {
       movementData.transactionTeleportAllow = true;
     }

@@ -186,7 +186,7 @@ public final class SimulationEvaluator {
     verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, movement.estimatedAttachMovement());
 
     // Jump out of water
-    if (movement.pastWaterMovement <= 3) {
+    if (movement.pastWaterMovement <= 3 || movement.pastLavaMovement <= 3) {
       double liquidMotionY;
       if (protocol.waterUpdate()) {
         liquidMotionY = receivedMotionY + 0.6f - movement.positionY + movement.verifiedPositionY;
@@ -197,7 +197,7 @@ public final class SimulationEvaluator {
         player, movement.boundingBox(), receivedMotionX, liquidMotionY, receivedMotionZ
       );
       boolean maybeCollidedHorizontally = Collision.nearSolidBlock(user, movement.boundingBox().grow(0.2));
-      boolean targetMotion = Math.abs(receivedMotionY - 0.3) < 0.001 || Math.abs(receivedMotionY - 0.34) < 0.001;
+      boolean targetMotion = Math.abs(receivedMotionY - 0.3) < 0.001 || Math.abs(receivedMotionY - 0.34) < 0.001 || Math.abs(receivedMotionY - 0.2470) < 0.001;
       if (maybeCollidedHorizontally && offsetPositionInLiquid && targetMotion) {
         verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.7f);
       }
@@ -348,6 +348,7 @@ public final class SimulationEvaluator {
     // Riptide
     if (movement.pastRiptideSpin < 4) {
       horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, resolveRiptideDeviation(movement));
+      player.sendMessage(Collision.present(player, BoundingBox.fromPosition(user, movement, movement.positionX, movement.positionY, movement.positionZ).grow(0.1)) + " " + movement.pastRiptideSpin);
     }
 
     horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, movement.estimatedAttachMovement());

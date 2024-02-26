@@ -729,6 +729,7 @@ public final class MovementDispatcher extends Module {
     inventoryData.pastHotBarSlotChange++;
     inventoryData.pastItemUsageTransition++;
     movement.pastWaterMovement++;
+    movement.pastLavaMovement++;
     movement.pastVelocity++;
     movement.pastStep++;
     movement.pastEdgeSneak++;

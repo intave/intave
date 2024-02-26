@@ -309,6 +309,7 @@ public final class Physics extends Check {
   public void updateAquatics(User user) {
     MovementMetadata movementData = user.meta().movement();
     updateInWater(user);
+    updateInLava(user);
     movementData.updateEyesInWater();
   }
 
@@ -331,6 +332,13 @@ public final class Physics extends Check {
       movementData.inWaterSinceFallDamagePostCheck = true;
       movementData.pastWaterMovement = 0;
       movementData.artificialFallDistance = 0;
+    }
+  }
+
+  private void updateInLava(User user) {
+    MovementMetadata movementData = user.meta().movement();
+    if (movementData.inLava()) {
+      movementData.pastLavaMovement = 0;
     }
   }
 

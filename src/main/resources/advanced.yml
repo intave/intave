@@ -196,6 +196,12 @@ proxy:
 clientwarning:
   enable: true
 
+compatibility:
+  # Position-feedback synchronization enforcement
+  # Disable for GuardSpigot compatibility,
+  # but note that this will reduce security slightly
+  position-feedback-sync-enforcement: true
+
 command:
   hide: true
   reroute:
