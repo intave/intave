@@ -34,6 +34,10 @@ public final class BlockPosition extends NativeVector {
     this(source.getBlockX(), source.getBlockY(), source.getBlockZ());
   }
 
+  public BlockPosition(com.comphenix.protocol.wrappers.BlockPosition blockPosition) {
+    this(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
+  }
+
   /**
    * Add the given coordinates to the coordinates of this BlockPos
    */

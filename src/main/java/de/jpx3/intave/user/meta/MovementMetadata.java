@@ -762,6 +762,10 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   public float eyeHeight() {
+    return eyeHeight(pose);
+  }
+
+  public float eyeHeight(Pose pose) {
     switch (pose) {
       case SWIMMING:
       case FALL_FLYING:

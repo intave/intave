@@ -64,4 +64,8 @@ public final class Position extends Vector implements Serializable {
   public static Position empty() {
     return new Position();
   }
+
+  public NativeVector toNativeVec() {
+    return new NativeVector(x, y, z);
+  }
 }

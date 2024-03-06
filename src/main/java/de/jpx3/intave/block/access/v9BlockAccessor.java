@@ -5,8 +5,6 @@ import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.klass.rewrite.PatchyAutoTranslation;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
-import net.minecraft.server.v1_9_R2.Chunk;
-import net.minecraft.server.v1_9_R2.EntityPlayer;
 import net.minecraft.server.v1_9_R2.IBlockData;
 import net.minecraft.server.v1_9_R2.WorldServer;
 import org.bukkit.Location;
@@ -49,13 +47,13 @@ public final class v9BlockAccessor implements BlockAccessor {
   @PatchyAutoTranslation
   public float blockDamage(World world, Player player, ItemStack itemInHand, BlockPosition blockPosition) {
     WorldServer worldServer = ((CraftWorld) world).getHandle();
-    Chunk chunk = worldServer.getChunkIfLoaded(blockPosition.getX() >> 4, blockPosition.getZ() >> 4);
-    if (chunk == null) {
-      return 0.0f;
-    }
     net.minecraft.server.v1_9_R2.BlockPosition blockposition = new net.minecraft.server.v1_9_R2.BlockPosition(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
-    EntityPlayer handle = player == null ? null : ((CraftPlayer) player).getHandle();
-    return chunk.getBlockData(blockposition).getBlock().getDamage(chunk.getBlockData(blockposition), handle, worldServer, blockposition);
+    User user = UserRepository.userOf(player);
+    Location location = blockPosition.toLocation(world);
+    Material material = VolatileBlockAccess.typeAccess(user, location);
+    int variant = VolatileBlockAccess.variantIndexAccess(user, location);
+    IBlockData rawVariant = (IBlockData) BlockVariantRegister.rawVariantOf(material, variant);
+    return rawVariant.getBlock().getDamage(rawVariant, ((CraftPlayer) player).getHandle(), worldServer, blockposition);
   }
 
   @Override

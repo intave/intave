@@ -1,6 +1,7 @@
 package de.jpx3.intave.world.raytrace;
 
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.klass.rewrite.PatchyLoadingInjector;
 import de.jpx3.intave.math.SinusCache;
@@ -238,6 +239,12 @@ public final class Raytracing {
     return blockRayTrace(player, playerLocation, playerLocation, blockReachDistance, eyeHeight, 1.0f);
   }
 
+  public static MovingObjectPosition blockRayTrace(Player player, Location playerLocation, Pose pose) {
+    double blockReachDistance = resolveBlockReachDistance(player.getGameMode());
+    double eyeHeight = resolvePlayerEyeHeight(player, pose);
+    return blockRayTrace(player, playerLocation, playerLocation, blockReachDistance, eyeHeight, 1.0f);
+  }
+
   public static MovingObjectPosition blockRayTrace(Player player, Location location, Location prevLocation, double blockReachDistance, double eyeHeight, float partialTicks) {
     NativeVector eyeVector = resolvePositionEyes(location, prevLocation, eyeHeight, partialTicks);
     NativeVector vec4 = resolveLookVector(location, prevLocation, partialTicks);
@@ -323,9 +330,14 @@ public final class Raytracing {
     return new NativeVector(f2 * f3, f4, f * f3);
   }
 
-  private static double resolvePlayerEyeHeight(Player player) {
+  public static double resolvePlayerEyeHeight(Player player) {
     User user = UserRepository.userOf(player);
     return user.meta().movement().eyeHeight();
+  }
+
+  public static double resolvePlayerEyeHeight(Player player, Pose pose) {
+    User user = UserRepository.userOf(player);
+    return user.meta().movement().eyeHeight(pose);
   }
 
   private static double resolveBlockReachDistance(GameMode gameMode) {

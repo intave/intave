@@ -11,7 +11,6 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.world.WorldHeight;
 import net.minecraft.server.level.ChunkProviderServer;
-import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.IBlockAccess;
@@ -103,14 +102,13 @@ public final class v20BlockAccessor implements BlockAccessor {
   @PatchyAutoTranslation
   public float blockDamage(World world, Player player, ItemStack itemInHand, BlockPosition nativeBlockPosition) {
     WorldServer worldServer = ((CraftWorld) world).getHandle();
-    IBlockAccess blockAccess = findChunk(worldServer.getChunkProvider(), nativeBlockPosition.getX() >> 4, nativeBlockPosition.getZ() >> 4);
-    if (blockAccess == null) {
-      return 0.0f;
-    }
-    net.minecraft.core.BlockPosition blockPosition = positionOfNative(nativeBlockPosition);
-    IBlockData blockData = blockAccess.getType(blockPosition);
-    EntityPlayer entityPlayer = player == null ? null : ((CraftPlayer) player).getHandle();
-    return blockData.getBlock().getDamage(blockData, entityPlayer, blockAccess, blockPosition);
+    net.minecraft.core.BlockPosition blockposition = positionOfNative(nativeBlockPosition);
+    User user = UserRepository.userOf(player);
+    Location location = nativeBlockPosition.toLocation(world);
+    Material material = VolatileBlockAccess.typeAccess(user, location);
+    int variant = VolatileBlockAccess.variantIndexAccess(user, location);
+    IBlockData rawVariant = (IBlockData) BlockVariantRegister.rawVariantOf(material, variant);
+    return rawVariant.getBlock().getDamage(rawVariant, ((org.bukkit.craftbukkit.v1_20_R1.entity.CraftPlayer) player).getHandle(), worldServer, blockposition);
   }
 
   private static final Method isReplaceableMethod = Lookup.serverMethod("BlockData", "isReplaceable", boolean.class);

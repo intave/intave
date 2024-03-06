@@ -93,14 +93,13 @@ public final class v14BlockAccessor implements BlockAccessor {
   @PatchyAutoTranslation
   public float blockDamage(World world, Player player, ItemStack itemInHand, BlockPosition nativeBlockPosition) {
     WorldServer worldServer = ((CraftWorld) world).getHandle();
-    IBlockAccess blockAccess = worldServer.getChunkProvider().c(nativeBlockPosition.getX() >> 4, nativeBlockPosition.getZ() >> 4);
-    if (blockAccess == null) {
-      return 0.0f;
-    }
-    net.minecraft.server.v1_14_R1.BlockPosition blockPosition = positionOfNative(nativeBlockPosition);
-    IBlockData blockData = blockAccess.getType(blockPosition);
-    EntityPlayer entityPlayer = player == null ? null : ((CraftPlayer) player).getHandle();
-    return blockData.getBlock().getDamage(blockData, entityPlayer, blockAccess, blockPosition);
+    net.minecraft.server.v1_14_R1.BlockPosition blockposition = positionOfNative(nativeBlockPosition);
+    User user = UserRepository.userOf(player);
+    Location location = nativeBlockPosition.toLocation(world);
+    Material material = VolatileBlockAccess.typeAccess(user, location);
+    int variant = VolatileBlockAccess.variantIndexAccess(user, location);
+    IBlockData rawVariant = (IBlockData) BlockVariantRegister.rawVariantOf(material, variant);
+    return rawVariant.getBlock().getDamage(rawVariant, ((org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer) player).getHandle(), worldServer, blockposition);
   }
 
   @Override

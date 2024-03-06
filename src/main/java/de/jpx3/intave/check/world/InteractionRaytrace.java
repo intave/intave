@@ -22,6 +22,7 @@ import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.MetaCheck;
+import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.world.interaction.BlockTrustChain;
 import de.jpx3.intave.check.world.interaction.Interaction;
 import de.jpx3.intave.check.world.interaction.InteractionEmulator;
@@ -54,11 +55,14 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.*;
 import static de.jpx3.intave.check.world.interaction.InteractionType.EMPTY_INTERACT;
+import static de.jpx3.intave.check.world.interaction.InteractionType.START_BREAK;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.BLOCK_BREAK_ANIMATION;
 import static de.jpx3.intave.module.tracker.player.AbilityTracker.GameMode.CREATIVE;
@@ -157,51 +161,62 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         );
 
       boolean mustPostValidate = interactionMeta.remainingBlockStart > 0;
-      if (!mustPostValidate && preprocessInteraction(interaction)) {
-        InteractionEmulator.EmulationResult emulate = interactionEmulator.emulate(interaction);
-        if (emulate.denyForward()) {
-          if (MinecraftVersions.VER1_19.atOrAbove()) {
-            int sequenceNumber = packet.getIntegers().read(0);
-            acknowledgeBlockChange(player, sequenceNumber);
-          }
-          if (blockPosition != null) {
-            refreshBlocksAround(player, blockPosition.toLocation(player.getWorld()));
-          }
-          event.setCancelled(true);
-          if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
-            System.out.println("[Intave/DID] PLACE/INITIAL/PREPRO/EMU_FAILED " + type + " " + typeUsedInHand + " " + enumDirection + " " + blockPosition.getY());
-          }
-          Violation violation = Violation.builderFor(InteractionRaytrace.class)
-            .forPlayer(player)
-            .withVL(0)
-//            .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-            .withMessage("performed erroneous block placement")
-            .withDetails("emulation failed for " + type + " with " + typeUsedInHand + " in hand, direction " + enumDirection + " at y " + blockPosition.getY())
-            .build();
-          Modules.violationProcessor().processViolation(violation);
-        } else {
-          if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
-            System.out.println("[Intave/DID] PLACE/INITIAL/PREPRO/EMU_SUCCESS " + type + " " + typeUsedInHand + " " + enumDirection + " " + blockPosition.getY());
-          }
-        }
-      } else {
-        interactionMeta.interactionList.add(interaction);
-        // For items which require longer consume time, the cancellation should be done after double-checking
-        boolean usable = ItemProperties.canItemBeUsed(player, heldItem)
-          && !ItemProperties.isPotion(interaction.itemTypeInHand());
-        if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
-          System.out.println("[Intave/DID] PLACE/INITIAL/POSTPONE " + type + " " + typeUsedInHand + " " + enumDirection + " " + usable + " " + blockPosition.getY());
-        }
-        if (!usable || type == EMPTY_INTERACT) {
-          if (MinecraftVersions.VER1_19.atOrAbove() && enumDirection != 255) {
-            int sequenceNumber = packet.getIntegers().read(0);
-            acknowledgeBlockChange(player, sequenceNumber);
-          }
-          event.setCancelled(true);
-        } else {
+      PreprocessResult result = mustPostValidate ? PreprocessResult.ENFORCE_ROUTING : preprocessInteraction(interaction);
+
+//      player.sendMessage("receiveInteraction " + result + " " + interactionMeta.remainingBlockStart);
+
+      switch (result) {
+        case FAILED_MINOR:
+          interactionMeta.interactionList.add(interaction);
           interaction.doNotSendPacket();
-          // because it is already sent
-        }
+        case OK:
+          InteractionEmulator.EmulationResult emulate = interactionEmulator.emulate(interaction);
+          if (emulate.denyForward()) {
+            if (MinecraftVersions.VER1_19.atOrAbove()) {
+              int sequenceNumber = packet.getIntegers().read(0);
+              acknowledgeBlockChange(player, sequenceNumber);
+            }
+            if (blockPosition != null) {
+              refreshBlocksAround(player, blockPosition.toLocation(player.getWorld()));
+            }
+            event.setCancelled(true);
+            if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
+              System.out.println("[Intave/DID] PLACE/INITIAL/PREPRO/EMU_FAILED " + type + " " + typeUsedInHand + " " + enumDirection + " " + blockPosition.getY());
+            }
+            Violation violation = Violation.builderFor(InteractionRaytrace.class)
+              .forPlayer(player)
+              .withVL(0)
+  //            .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
+              .withMessage("performed erroneous block placement")
+              .withDetails("emulation failed for " + type + " with " + typeUsedInHand + " in hand, direction " + enumDirection + " at y " + blockPosition.getY())
+              .build();
+            Modules.violationProcessor().processViolation(violation);
+          } else {
+            if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
+              System.out.println("[Intave/DID] PLACE/INITIAL/PREPRO/EMU_SUCCESS " + type + " " + typeUsedInHand + " " + enumDirection + " " + blockPosition.getY());
+            }
+          }
+          break;
+        case FAILED_CRITICAL:
+        case ENFORCE_ROUTING:
+          interactionMeta.interactionList.add(interaction);
+          boolean usable = ItemProperties.canItemBeUsed(player, heldItem)
+            && !ItemProperties.isPotion(interaction.itemTypeInHand());
+          if (!usable || type == EMPTY_INTERACT) {
+            if (MinecraftVersions.VER1_19.atOrAbove() && enumDirection != 255) {
+              int sequenceNumber = packet.getIntegers().read(0);
+              acknowledgeBlockChange(player, sequenceNumber);
+            }
+            event.setCancelled(true);
+          } else {
+            interaction.doNotSendPacket();
+          }
+          if (interaction.type() == InteractionType.PLACE) {
+            interactionMeta.remainingBlockStart = 0;
+          }
+          break;
+        default:
+          break;
       }
     } finally {
       reader.release();
@@ -277,7 +292,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
 
     InteractionType type = breakBlock ? InteractionType.BREAK : InteractionType.START_BREAK;
     if (IntaveControl.DEBUG_INTERACTION) {
-      player.sendMessage(type + " " + heldItemType + " " + playerDigType);
+      player.sendMessage(type + "@"+user.blockStates().typeAt(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ()) + "/"+blockDamage+" " + heldItemType + " " + playerDigType);
     }
 
     Interaction interaction = new Interaction(
@@ -287,25 +302,38 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       Float.NaN, Float.NaN, Float.NaN
     );
 
-    boolean mustPostValidate = interactionMeta.remainingBlockStart > 0;
-    if (!mustPostValidate && preprocessInteraction(interaction)) {
-      if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
-        System.out.println("[Intave/DID] BREAK/INITIAL/PREPRO " + type + " " + heldItemType + " " + playerDigType);
-      }
-      interactionEmulator.emulate(interaction);
-    } else {
-      interactionMeta.interactionList.add(interaction);
-      event.setCancelled(true);
-      if (MinecraftVersions.VER1_19.atOrAbove()) {
-        int sequenceNumber = packet.getIntegers().read(0);
-        acknowledgeBlockChange(player, sequenceNumber);
-      }
-      if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
-        System.out.println("[Intave/DID] BREAK/INITIAL/POSTPONE " + type + " " + heldItemType + " " + playerDigType);
-      }
-      if (playerDigType == START_DESTROY_BLOCK) {
-        interactionMeta.remainingBlockStart++;
-      }
+    if (interactionMeta.interactionList.isEmpty()) {
+      interactionMeta.remainingBlockStart = 0;
+    }
+
+    boolean enforceRouting = interactionMeta.remainingBlockStart > 0;
+    PreprocessResult preprocess = enforceRouting ? PreprocessResult.ENFORCE_ROUTING : preprocessInteraction(interaction);
+
+    if (IntaveControl.DEBUG_INTERACTION) {
+      player.sendMessage("receiveBreak " + preprocess + " " + interactionMeta.remainingBlockStart);
+    }
+
+    switch (preprocess) {
+      case OK:
+        interactionEmulator.emulate(interaction);
+        break;
+      case FAILED_MINOR:
+        interactionEmulator.emulate(interaction);
+        interaction.doNotSendPacket();
+        interactionMeta.interactionList.add(interaction);
+        break;
+      case FAILED_CRITICAL:
+      case ENFORCE_ROUTING:
+        interactionMeta.interactionList.add(interaction);
+        event.setCancelled(true);
+        if (MinecraftVersions.VER1_19.atOrAbove()) {
+          int sequenceNumber = packet.getIntegers().read(0);
+          acknowledgeBlockChange(player, sequenceNumber);
+        }
+        if (type == START_BREAK) {
+          interactionMeta.remainingBlockStart++;
+        }
+        break;
     }
 
     if (breakBlock || playerDigType == ABORT_DESTROY_BLOCK) {
@@ -339,94 +367,167 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     return true;
   }
 
-  private boolean preprocessInteraction(Interaction interaction) {
-    World world = interaction.world();
+  private PreprocessResult preprocessInteraction(Interaction interaction) {
     Player player = interaction.player();
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();
     InteractionMeta interactionMeta = metaOf(user);
 
+    if (interaction.type() == START_BREAK && interaction.digType() == ABORT_DESTROY_BLOCK) {
+      // the block will be invalid regardless
+      return PreprocessResult.OK;
+    }
+
     if (interaction.hasTargetBlock()) {
-      Location playerLocation = new Location(player.getWorld(), movementData.lastPositionX, movementData.lastPositionY, movementData.lastPositionZ);
-      playerLocation.setYaw(movementData.rotationYaw);
-      playerLocation.setPitch(movementData.rotationPitch);
-      Location playerLocationmdf = playerLocation.clone();
-      playerLocationmdf.setYaw(movementData.lastRotationYaw);
+      List<RaytraceEvaluation> evaluations = new CopyOnWriteArrayList<>();
 
-      MovingObjectPosition raycastResult;
-      MovingObjectPosition raycastResultmdf;
-      try {
-        raycastResult = Raytracing.blockRayTrace(player, playerLocation);
-        raycastResultmdf = Raytracing.blockRayTrace(player, playerLocationmdf);
-      } catch (Exception exception) {
-        exception.printStackTrace();
-        return interaction.targetBlock().toLocation(world).distance(player.getLocation()) >= 6;
-      }
-      boolean estimateMouseDelayFix = interactionMeta.estimateMouseDelayFix;
+      Location lastPlayerLocation = new Location(player.getWorld(), movementData.lastPositionX, movementData.lastPositionY, movementData.lastPositionZ);
+      Location currentLocation = new Location(player.getWorld(), movementData.positionX, movementData.positionY, movementData.positionZ);
+      boolean highRisk = lastPlayerLocation.distance(currentLocation) > 1;
 
-      // first raytrace check
-      MovingObjectPosition firstRaytraceResult = estimateMouseDelayFix ? raycastResultmdf : raycastResult;
-      boolean hitMiss = (firstRaytraceResult == null || firstRaytraceResult.hitVec == NativeVector.ZERO);
-      BlockPosition raycastVector = hitMiss ? BlockPosition.ORIGIN : firstRaytraceResult.getBlockPos();
-      Location raycastLocation = raycastVector.toLocation(world);
-      Location targetLocation = interaction.targetBlock().toLocation(world);
-      boolean raytraceFailed = hitMiss ||
-        positionMismatch(interaction, raycastLocation, targetLocation) ||
-        wrongBlockFace(interaction, firstRaytraceResult);
-
-      if (firstRaytraceResult != null && interaction.hasFacing()) {
-        float f = (float) (firstRaytraceResult.hitVec.xCoord - targetLocation.getX());
-        float f1 = (float) (firstRaytraceResult.hitVec.yCoord - targetLocation.getY());
-        float f2 = (float) (firstRaytraceResult.hitVec.zCoord - targetLocation.getZ());
-
-        if (Math.abs(compressAndDecompress(f) - interaction.facingX()) > 0.01 ||
-          Math.abs(compressAndDecompress(f1) - interaction.facingY()) > 0.01 ||
-          Math.abs(compressAndDecompress(f2) - interaction.facingZ()) > 0.01) {
-          raytraceFailed = true;
+      for (int i = 0; i < (highRisk ? 1 : 2); i++) {
+        Location playerLocation;
+        switch (i) {
+          case 0:
+            playerLocation = lastPlayerLocation;
+            break;
+          case 1:
+            playerLocation = currentLocation;
+            break;
+          default:
+            throw new IllegalStateException("Unexpected value: " + i);
         }
-      }
 
-//      System.out.println("PREPROCESS raytraceFailed: " + raytraceFailed + " hitMiss: " + hitMiss + " raycastLocation: " + raycastLocation + " targetLocation: " + targetLocation + " wrongBlockFace: " + wrongBlockFace(interaction, firstRaytraceResult));
-      // if first raytrace failed..
-      if (raytraceFailed) {
-        // ..try again with mouse delay fix toggled differently
-        MovingObjectPosition secondRaytraceResult = estimateMouseDelayFix ? raycastResult : raycastResultmdf;
-        boolean hitMiss2 = secondRaytraceResult == null || secondRaytraceResult.hitVec == NativeVector.ZERO;
-        BlockPosition raycastVector2 = hitMiss2 ? BlockPosition.ORIGIN : secondRaytraceResult.getBlockPos();
-        Location raycastLocation2 = raycastVector2.toLocation(world);
-        raytraceFailed = hitMiss2 ||
-          positionMismatch(interaction, raycastLocation2, targetLocation) ||
-          wrongBlockFace(interaction, secondRaytraceResult);
+        playerLocation.setYaw(movementData.rotationYaw);
+        playerLocation.setPitch(movementData.rotationPitch);
+        Location playerLocationmdf = playerLocation.clone();
+        playerLocationmdf.setYaw(movementData.lastRotationYaw);
 
-        if (secondRaytraceResult != null && interaction.hasFacing()) {
-          float f = (float) (secondRaytraceResult.hitVec.xCoord - targetLocation.getX());
-          float f1 = (float) (secondRaytraceResult.hitVec.yCoord - targetLocation.getY());
-          float f2 = (float) (secondRaytraceResult.hitVec.zCoord - targetLocation.getZ());
-          if (Math.abs(compressAndDecompress(f) - interaction.facingX()) > 0.01 ||
-            Math.abs(compressAndDecompress(f1) - interaction.facingY()) > 0.01 ||
-            Math.abs(compressAndDecompress(f2) - interaction.facingZ()) > 0.01) {
-            raytraceFailed = true;
+        double[] possibleXDisplacements = new double[] { 0, 0.03, -0.03, 0.06, -0.06 };
+        double[] possibleZDisplacements = new double[] { 0, 0.03, -0.03, 0.06, -0.06 };
+        int numChecks = possibleXDisplacements.length * possibleZDisplacements.length;
+
+        boolean estimateMouseDelayFix = interactionMeta.estimateMouseDelayFix;
+        int index = 0;
+        do {
+          double xDisplacement = possibleXDisplacements[index / possibleZDisplacements.length];
+          double zDisplacement = possibleZDisplacements[index % possibleZDisplacements.length];
+          Location shiftedPlayerLocation = playerLocation.clone();
+          Location shiftedPlayerLocationmdf = playerLocationmdf.clone();
+          if (xDisplacement != 0 || zDisplacement != 0) {
+            shiftedPlayerLocation.add(xDisplacement, 0, zDisplacement);
+            shiftedPlayerLocationmdf.add(xDisplacement, 0, zDisplacement);
           }
-        }
-        if (!raytraceFailed) {
-          interaction.setRaytraceResult(secondRaytraceResult);
-        }
-      } else {
-        interaction.setRaytraceResult(firstRaytraceResult);
+          RaytraceEvaluation evaluation = singleRaytrace(user, interaction, estimateMouseDelayFix ? shiftedPlayerLocationmdf : shiftedPlayerLocation);
+          if (evaluation == null) {
+            return PreprocessResult.OK;
+          }
+          evaluations.add(evaluation);
+          if (evaluation.isInvalid()) {
+            // try again with mouse delay fix toggled differently
+            estimateMouseDelayFix = !estimateMouseDelayFix;
+            evaluation = singleRaytrace(user, interaction, estimateMouseDelayFix ? shiftedPlayerLocationmdf : shiftedPlayerLocation);
+            if (evaluation == null) {
+              // critical error, ignore the detection
+              return PreprocessResult.OK;
+            }
+            evaluations.add(evaluation);
+            if (evaluation.isValid()) {
+//            interactionMeta.estimateMouseDelayFix = estimateMouseDelayFix;
+              break;
+            }
+          } else {
+            break;
+          }
+          index++;
+          // Limit the amount of shifted locations granted when they are used excessively
+          if (index > 8 && interactionMeta.speculativePositionsUsed > 8) {
+            break;
+          }
+          if (index > 16 && interactionMeta.speculativePositionsUsed > 4) {
+            break;
+          }
+        } while (index < numChecks);
       }
+
+      RaytraceEvaluation bestRaytrace = evaluations.stream().filter(e -> !e.isInvalid()).findFirst().orElse(/* find random, is never empty and result is never null */ evaluations.get(0));
+      boolean raytraceFailed = bestRaytrace.isInvalid();
+
       if (IntaveControl.DEBUG_INTERACTION) {
         if (raytraceFailed) {
-          player.sendMessage(ChatColor.GRAY + "Preprocess failed");
+          // check if target block appears in any raytrace
+          boolean targetBlockAppears = evaluations.stream().anyMatch(e -> e.raycastResult() != null && e.raycastResult().getBlockPos().distanceTo(interaction.targetBlock().toVector()) < 0.1);
+          boolean reverseRaytrace = reverseRaytrace(user, new Position(movementData.positionX, movementData.positionY + Raytracing.resolvePlayerEyeHeight(player), movementData.positionZ), interaction);
+          boolean incorrectButNotBadBlockFace = placementWasBehindTargetedBlock(user, interaction.targetBlockAsPosition(), interaction.targetDirection().getIndex());
+          boolean recentlyFlagged = System.currentTimeMillis() - metaOf(user).lastInteractionFlag < 10_000;
+
+//          player.sendMessage(ChatColor.GRAY + "Preprocess failed " + (targetBlockAppears ? "but target block appears" : "and target block does not appear") + (reverseRaytrace ? " and reverse raytrace succeeded" : " and reverse raytrace failed"));
+
+          if ((targetBlockAppears || reverseRaytrace || incorrectButNotBadBlockFace) && !recentlyFlagged) {
+//            player.sendMessage(ChatColor.YELLOW + "Preprocess succeeded partially");
+            return PreprocessResult.FAILED_MINOR;
+          }
+
+//          player.sendMessage(ChatColor.RED + "Preprocess failed");
         } else {
-          player.sendMessage(ChatColor.GREEN + "Preprocess succeeded");
+//          player.sendMessage(ChatColor.GREEN + "Preprocess succeeded");
         }
       }
-      return !raytraceFailed;
+      return raytraceFailed ? PreprocessResult.FAILED_CRITICAL : PreprocessResult.OK;
     }
     if (IntaveControl.DEBUG_INTERACTION) {
       player.sendMessage(ChatColor.GREEN + "No target block, preprocess succeeded");
     }
-    return true;
+    return PreprocessResult.OK;
+  }
+
+  private enum PreprocessResult {
+    OK,
+    FAILED_MINOR,
+    FAILED_CRITICAL,
+    ENFORCE_ROUTING
+
+    ;
+
+    public boolean checkPacketAfter() {
+      return this == FAILED_MINOR || this == FAILED_CRITICAL || this == ENFORCE_ROUTING;
+    }
+
+    public boolean awaitMovement() {
+      return this == FAILED_CRITICAL || this == ENFORCE_ROUTING;
+    }
+  }
+
+  private boolean reverseRaytrace(User user, Position playerEyes, Interaction interaction) {
+    if (!interaction.hasTargetBlock()) {
+      return false;
+    }
+//    user.player().sendMessage(interaction.targetBlock() + " ");
+    NativeVector playerEyesNativeVec = playerEyes.toNativeVec();
+    List<Position> edges = edgesOf(interaction.targetBlockAsPosition());
+    Player player = user.player();
+    World world = player.getWorld();
+    for (Position from : edges) {
+      double naturalDistance = from.distance(playerEyes);
+      MovingObjectPosition mop = Raytracing.blockRayTrace(world, player, from.toNativeVec(), playerEyesNativeVec);
+      double raytraceDistance = mop == null ? Double.MAX_VALUE : mop.hitVec.distanceTo(from.toNativeVec());
+      if (raytraceDistance > naturalDistance) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private List<Position> edgesOf(BlockPosition block) {
+    List<Position> edges = new ArrayList<>();
+    for (int i = 0; i < 8; i++) {
+      edges.add(new Position(
+        block.getX() + (i & 1),
+        block.getY() + (i >> 1 & 1),
+        block.getZ() + (i >> 2 & 1)
+      ));
+    }
+    return edges;
   }
 
   private void processInteraction(
@@ -445,6 +546,11 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
 
     World world = interaction.world();
     Player player = interaction.player();
+
+//    Synchronizer.synchronize(() -> {
+//      player.sendMessage(ChatColor.GRAY + "Post processing " + interaction.type());
+//    });
+
     User user = userOf(player);
     MetadataBundle meta = user.meta();
     ViolationMetadata violationMetadata = meta.violationLevel();
@@ -453,70 +559,80 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       && !ItemProperties.isPotion(interaction.itemTypeInHand());
     Location targetLocation = interaction.targetBlock().toLocation(world);
 
-    if (interaction.digType() == START_DESTROY_BLOCK) {
+    if (interaction.digType() == STOP_DESTROY_BLOCK || interaction.digType() == ABORT_DESTROY_BLOCK) {
       interactionMeta.remainingBlockStart--;
     }
     if (!interaction.hasTargetBlock()) {
       interactionEmulator.emulate(interaction);
+//      player.sendMessage(ChatColor.GRAY + "No target block, interaction processed");
       return;
     }
 
+    Pose currentPose = user.meta().movement().pose();
+    boolean sneakUncertainty = user.meta().protocol().delayedSneak() && (currentPose == Pose.STANDING || currentPose == Pose.CROUCHING);
     List<RaytraceEvaluation> evaluations = new CopyOnWriteArrayList<>();
     double[] possibleXDisplacements = new double[] { 0, 0.005, -0.005, 0.01, -0.01, 0.03, -0.03, 0.06, -0.06 };
     double[] possibleZDisplacements = new double[] { 0, 0.005, -0.005, 0.01, -0.01, 0.03, -0.03, 0.06, -0.06 };
+    boolean ratelimited = false;
     int numChecks = possibleXDisplacements.length * possibleZDisplacements.length;
 
-    boolean estimateMouseDelayFix = interactionMeta.estimateMouseDelayFix;
-    boolean ratelimited = false;
     int index = 0;
-    do {
-      double xDisplacement = possibleXDisplacements[index / possibleZDisplacements.length];
-      double zDisplacement = possibleZDisplacements[index % possibleZDisplacements.length];
-      Location shiftedPlayerLocation = playerLocation.clone();
-      Location shiftedPlayerLocationmdf = playerLocationmdf.clone();
-      if (xDisplacement != 0 || zDisplacement != 0) {
-        shiftedPlayerLocation.add(xDisplacement, 0, zDisplacement);
-        shiftedPlayerLocationmdf.add(xDisplacement, 0, zDisplacement);
-      }
-      RaytraceEvaluation evaluation = singleRaytrace(user, interaction, estimateMouseDelayFix ? shiftedPlayerLocationmdf : shiftedPlayerLocation);
-      if (evaluation == null) {
-        // critical error, ignore detection
-        if (interaction.targetBlock().toLocation(world).distance(player.getLocation()) < 6) {
-          forwardInteractionToServer(interaction, null, interaction.targetBlock().toLocation(world), interaction.targetBlock().toLocation(world), false, false, false);
+    boolean estimateMouseDelayFix = interactionMeta.estimateMouseDelayFix;
+    for (int poses = 0; poses < (sneakUncertainty ? 2 : 1); poses++) POSE: {
+      Pose selectedPose = sneakUncertainty ? (poses == 0 ? Pose.STANDING : Pose.CROUCHING) : currentPose;
+      estimateMouseDelayFix = interactionMeta.estimateMouseDelayFix;
+      index = 0;
+      do {
+        double xDisplacement = possibleXDisplacements[index / possibleZDisplacements.length];
+        double zDisplacement = possibleZDisplacements[index % possibleZDisplacements.length];
+        Location shiftedPlayerLocation = playerLocation.clone();
+        Location shiftedPlayerLocationmdf = playerLocationmdf.clone();
+        if (xDisplacement != 0 || zDisplacement != 0) {
+          shiftedPlayerLocation.add(xDisplacement, 0, zDisplacement);
+          shiftedPlayerLocationmdf.add(xDisplacement, 0, zDisplacement);
         }
-        return;
-      }
-      evaluations.add(evaluation);
-      if (evaluation.isInvalid()) {
-        // try again with mouse delay fix toggled differently
-        estimateMouseDelayFix = !estimateMouseDelayFix;
-        evaluation = singleRaytrace(user, interaction, estimateMouseDelayFix ? shiftedPlayerLocationmdf : shiftedPlayerLocation);
+        RaytraceEvaluation evaluation = singleRaytrace(user, interaction, estimateMouseDelayFix ? shiftedPlayerLocationmdf : shiftedPlayerLocation, selectedPose);
         if (evaluation == null) {
-          // critical error, ignore the detection
+          // critical error, ignore detection
           if (interaction.targetBlock().toLocation(world).distance(player.getLocation()) < 6) {
             forwardInteractionToServer(interaction, null, interaction.targetBlock().toLocation(world), interaction.targetBlock().toLocation(world), false, false, false);
           }
+//          player.sendMessage(ChatColor.RED + "Critical error, interaction ignored");
           return;
         }
         evaluations.add(evaluation);
-        if (evaluation.isValid()) {
-          interactionMeta.estimateMouseDelayFix = estimateMouseDelayFix;
+        if (evaluation.isInvalid()) {
+          // try again with mouse delay fix toggled differently
+          estimateMouseDelayFix = !estimateMouseDelayFix;
+          evaluation = singleRaytrace(user, interaction, estimateMouseDelayFix ? shiftedPlayerLocationmdf : shiftedPlayerLocation, selectedPose);
+          if (evaluation == null) {
+            // critical error, ignore the detection
+            if (interaction.targetBlock().toLocation(world).distance(player.getLocation()) < 6) {
+              forwardInteractionToServer(interaction, null, interaction.targetBlock().toLocation(world), interaction.targetBlock().toLocation(world), false, false, false);
+            }
+//            player.sendMessage(ChatColor.RED + "Critical error, interaction ignored");
+            return;
+          }
+          evaluations.add(evaluation);
+          if (evaluation.isValid()) {
+            interactionMeta.estimateMouseDelayFix = estimateMouseDelayFix;
+            break POSE;
+          }
+        } else {
+          break POSE;
+        }
+        index++;
+        // Limit the amount of shifted locations granted when they are used excessively
+        if (index > 8 && interactionMeta.speculativePositionsUsed > 8) {
+          ratelimited = true;
           break;
         }
-      } else {
-        break;
-      }
-      index++;
-      // Limit the amount of shifted locations granted when they are used excessively
-      if (index > 8 && interactionMeta.speculativePositionsUsed > 8) {
-        ratelimited = true;
-        break;
-      }
-      if (index > 16 && interactionMeta.speculativePositionsUsed > 4) {
-        ratelimited = true;
-        break;
-      }
-    } while (index < numChecks);
+        if (index > 16 && interactionMeta.speculativePositionsUsed > 4) {
+          ratelimited = true;
+          break;
+        }
+      } while (index < numChecks);
+    }
 
     if (index > 1) {
       // used a shifted location
@@ -528,13 +644,17 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     }
 
     RaytraceEvaluation bestRaytrace = evaluations.stream().filter(e -> !e.isInvalid()).findFirst().orElse(/* find random, is never empty and result is never null */ evaluations.get(0));
-
+    int bestIndex = evaluations.indexOf(bestRaytrace);
+    interaction.setRaytraceResult(bestRaytrace.raycastResult());
     // this is bogus
     if (bestRaytrace.isValid() && bestRaytrace.facingCheckFailed() && !user.meta().abilities().inGameModeIncludePending(CREATIVE)) {
       violationMetadata.facingFailedCounter++;
     } else {
       violationMetadata.facingFailedCounter = 0;
     }
+
+//    float yaw = playerLocation.getYaw();
+//    float pitch = playerLocation.getPitch();
 
     boolean flag, mustCancelPacket;
     if (bestRaytrace.isValid()) {
@@ -546,6 +666,9 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       boolean emulationFailed = interactionEmulator.emulate(interaction).denyForward();
       flag = mustCancelPacket = emulationFailed;
 //      mustCancelPacket = emulationFailed;
+//      Synchronizer.synchronize(() -> {
+//        player.sendMessage(ChatColor.GREEN + "" + interaction.type() + "@"+user.blockStates().typeAt(targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ())+ "   RAYCAST:" + formatPosition(bestRaytrace.raycastLocation) + " TOLD" + formatPosition(targetLocation) + " " +yaw + " " +pitch );
+//      });
     } else {
       // raytrace failed
       MovingObjectPosition movingObjectPosition = bestRaytrace.raycastResult();
@@ -558,6 +681,9 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       if (usableItemInHand && interaction.type() == InteractionType.INTERACT) {
         meta.inventory().releaseItemNextTick();
       }
+//      Synchronizer.synchronize(() -> {
+//        player.sendMessage(ChatColor.RED + "" + interaction.type() + "@"+user.blockStates().typeAt(targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ())+ "!!"+bestIndex+"   RAYCAST:" + formatPosition(bestRaytrace.raycastLocation) + " TOLD" + formatPosition(targetLocation) + " " + bestRaytrace.wrongBlockFace() + " " + yaw + " " + pitch);
+//      });
       if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(interaction.player().getName())) {
         System.out.println("[Intave/DID] PROC/" + interaction.type() + "/RAYTRACE_FAILED " + interaction.itemTypeInHand() + " " + interaction.digType() + " flag:" + flag);
       }
@@ -566,7 +692,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       forwardInteractionToServer(interaction, bestRaytrace.raycastResult(), targetLocation, bestRaytrace.raycastLocation(), bestRaytrace.hitMiss(), flag, mustCancelPacket);
     } else if (flag) {
       if (IntaveControl.DEBUG_INTERACTION) {
-        player.sendMessage("Failed interaction with usableItemInHand item, but not forwarding");
+//        player.sendMessage("Failed interaction with usableItemInHand item, but not forwarding");
       }
     }
   }
@@ -649,14 +775,46 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       }
       return invalidCache = (hitMiss() || positionMismatch() || wrongBlockFace());
     }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      RaytraceEvaluation that = (RaytraceEvaluation) o;
+
+      if (airHit != that.airHit) return false;
+      if (!Objects.equals(origin, that.origin)) return false;
+      if (!Objects.equals(raycastResult, that.raycastResult)) return false;
+      if (!Objects.equals(raycastLocation, that.raycastLocation))
+        return false;
+      if (!Objects.equals(targetLocation, that.targetLocation))
+        return false;
+      return Objects.equals(invalidCache, that.invalidCache);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = origin != null ? origin.hashCode() : 0;
+      result = 31 * result + (raycastResult != null ? raycastResult.hashCode() : 0);
+      result = 31 * result + (airHit ? 1 : 0);
+      result = 31 * result + (raycastLocation != null ? raycastLocation.hashCode() : 0);
+      result = 31 * result + (targetLocation != null ? targetLocation.hashCode() : 0);
+      result = 31 * result + (invalidCache != null ? invalidCache.hashCode() : 0);
+      return result;
+    }
   }
 
   public RaytraceEvaluation singleRaytrace(User user, Interaction interaction, Location playerLocation) {
+    return singleRaytrace(user, interaction, playerLocation, user.meta().movement().pose());
+  }
+
+  public RaytraceEvaluation singleRaytrace(User user, Interaction interaction, Location playerLocation, Pose pose) {
     World world = interaction.world();
     Player player = interaction.player();
     MovingObjectPosition raycastResult;
     try {
-      raycastResult = Raytracing.blockRayTrace(player, playerLocation);
+      raycastResult = Raytracing.blockRayTrace(player, playerLocation, pose);
     } catch (Exception exception) {
       return null;
     }
@@ -828,11 +986,11 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         append = "invalid block face";
         vl = longBreakDuration ? 20 : 15;
       }
-      float blockDamage = BlockInteractionAccess.blockDamage(player, user.meta().inventory().heldItem(), interaction.targetBlock());
-      boolean instantBreak = blockDamage >= 1.0f || user.meta().abilities().inGameMode(CREATIVE);
-      if (instantBreak) {
-        vl = 0;
-      }
+//      float blockDamage = BlockInteractionAccess.blockDamage(player, user.meta().inventory().heldItem(), interaction.targetBlock());
+//      boolean instantBreak = blockDamage >= 1.0f || user.meta().abilities().inGameMode(CREATIVE);
+//      if (instantBreak) {
+//        vl = 0;
+//      }
       if (lookingAtBlock) {
         double multiplier = trustFactorSetting("k-multiplier", player) / 100d;
         vl *= multiplier;
@@ -878,11 +1036,12 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     if (user.meta().movement().awaitTeleport) {
       mustFlag = true;
     }
-//    details += ", " + searches + " searches";
+    details += ", " + searches + " searches";
     Violation violation = Violation.builderFor(InteractionRaytrace.class)
       .forPlayer(player).withMessage(message).withDetails(details).withVL(vl)
       .build();
     ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
+    metaOf(user).lastInteractionFlag = System.currentTimeMillis();
     return violationContext.shouldCounterThreat() || mustFlag;
   }
 
@@ -892,6 +1051,14 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       return false;
     }
     BlockPosition targetBlockPos = new BlockPosition(targetBlock.getLocation().clone());
+    return placementWasBehindTargetedBlock(user, targetBlockPos, index);
+  }
+
+  private boolean placementWasBehindTargetedBlock(User user, BlockPosition targetBlockPos, int index) {
+    Position playerPos = user.meta().movement().position();
+    if (playerPos == null || index > 10) {
+      return false;
+    }
     Direction direction = Direction.getFront(index);
     BlockPosition placedBlockPos = targetBlockPos.offset(direction);
     return horizontalDistance(placedBlockPos, playerPos) > horizontalDistance(targetBlockPos, playerPos) ||
@@ -1074,5 +1241,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     public long remainingBlockStart = 0;
     public double speculativePositionsUsed = 0;
     public long lastSpeculativePositionReset = 0;
+
+    public long lastInteractionFlag = 0;
   }
 }

@@ -375,6 +375,8 @@ public final class MovementDispatcher extends Module {
         movementData.dropPostTickMotionProcessing = true;
         Float yaw = packet.getFloat().read(0);
         Float pitch = packet.getFloat().read(1);
+//        movementData.lastRotationYaw = movementData.rotationYaw;
+//        movementData.lastRotationPitch = movementData.rotationPitch;
         movementData.rotationYaw = yaw;
         movementData.rotationPitch = pitch;
 
