@@ -73,12 +73,12 @@ public final class Fluctuation extends MetaCheckPart<ClickPatterns, Fluctuation.
             double cps = cpsOf(attacks);
 
             double difference = cps - meta.lastCPS;
-            if (difference > 0.5) {
+            if (difference > 0.6) {
                 meta.spikes++;
                 meta.spikeTimestamps.add(System.currentTimeMillis());
             }
 
-            if (difference < -0.5) {
+            if (difference < -0.6) {
                 meta.drops++;
                 meta.dropTimestamps.add(System.currentTimeMillis());
             }
@@ -91,8 +91,7 @@ public final class Fluctuation extends MetaCheckPart<ClickPatterns, Fluctuation.
         if (meta.spikeTimestamps.size() >= 3) {
             double std = standardDeviationOf(meta.spikeTimestamps);
             meta.spikeTimestamps.clear();
-            // After days of testing, the long 6000 is pretty solid for a middle-graph between false positives and detection
-            if (std < 6000) {
+            if (std < 4000) {
                 if (++meta.vl > 1) {
                     parentCheck().makeDetection(
                             player,
@@ -111,8 +110,7 @@ public final class Fluctuation extends MetaCheckPart<ClickPatterns, Fluctuation.
         if (meta.dropTimestamps.size() >= 3) {
             double std = standardDeviationOf(meta.dropTimestamps);
             meta.dropTimestamps.clear();
-            // After days of testing, the long 6000 is pretty solid for a middle-graph between false positives and detection
-            if (std < 6000) {
+            if (std < 4000) {
                 if (++meta.vl > 1) {
                     parentCheck().makeDetection(
                             player,
