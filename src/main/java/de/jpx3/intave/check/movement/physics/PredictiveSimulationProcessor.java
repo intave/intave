@@ -143,6 +143,7 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
     MetadataBundle meta = user.meta();
     MovementMetadata movementData = meta.movement();
     InventoryMetadata inventoryData = meta.inventory();
+    ProtocolMetadata protocol = meta.protocol();
 //    if (movementData.pastPlayerReduceAttackPhysics == 0 && simulationStack.sprinted()/*movementData.sprinting*/ && !simulationStack.reduced()) {
 //      movementData.ignoredAttackReduce = true;
 //    }
@@ -157,6 +158,16 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
         meta.inventory().releaseItemNextTick();
       }
     }
+
+    boolean canExpectCorrectReduce = !protocol.combatUpdate() && movementData.pastVelocity > 1;
+    boolean invalidReduceTicks = simulationStack.reduceTicks() != movementData.reduceTicks;
+    if (canExpectCorrectReduce && invalidReduceTicks) {
+      movementData.invalidReduceVL = Math.min(movementData.invalidReduceVL + 1, 10);
+    } else if (movementData.invalidReduceVL > 0) {
+      movementData.invalidReduceVL -= 0.25;
+    }
+    movementData.forceCorrectReduce = movementData.invalidReduceVL > 5;
+
     movementData.keyForward = simulationStack.forward();
     movementData.keyStrafe = simulationStack.strafe();
     movementData.physicsJumped = simulationStack.jumped();
@@ -217,7 +228,7 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
       configuration = configuration.withActiveHand();
     }
     // reducing
-    configuration = configuration.withReducing(protocol.combatUpdate() ? movementData.reduceTicks : 0);
+    configuration = configuration.withReducing(movementData.reduceTicks);
     // block omnisprint
     if (sprinting && configuration.forward() != 1) {
       configuration = configuration.withoutKeypress();
@@ -308,7 +319,7 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
     // keys
     configuration = configuration.withKeyPress(keyForward, keyStrafe);
     // reducing
-    configuration = configuration.withReducing(protocol.combatUpdate() ? movementData.reduceTicks : 0);
+    configuration = configuration.withReducing(movementData.reduceTicks);
     boolean sprinting = movementData.sprintingAllowed();
     // jump
     if (movementData.lastOnGround && !movementData.denyJump()) {
@@ -437,9 +448,13 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
               continue;
             }
             IterativeStudy.USE_ITEM_ITERATOR.run();
-            boolean reducingDonePrior = !protocol.combatUpdate();
+            boolean canExpectCorrectReduce = !protocol.combatUpdate() && movementData.pastVelocity > 2;
+            boolean enforceCorrectReduction = movementData.forceCorrectReduce && canExpectCorrectReduce;
             for (int reduceIndex = 0; reduceIndex <= movementData.reduceTicks; reduceIndex++) {
-              if (reducingDonePrior && reduceIndex > 0) {
+              if (enforceCorrectReduction && reduceIndex != movementData.reduceTicks) {
+                continue;
+              }
+              if (!sprinting && reduceIndex > 0) {
                 continue;
               }
               IterativeStudy.ATTACK_REDUCE_ITERATOR.run();

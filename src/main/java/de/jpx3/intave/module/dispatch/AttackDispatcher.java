@@ -110,10 +110,6 @@ public final class AttackDispatcher extends Module {
         movementData.pastPlayerReduceAttackPhysics = 0;
         if (movementData.reduceTicks == 0 || !limitedToOneAttack) {
           movementData.reduceTicks++;
-          if (!protocol.combatUpdate()) {
-            movementData.baseMotionX *= 0.6;
-            movementData.baseMotionZ *= 0.6;
-          }
         }
       }
       FakePlayer fakePlayer = attackData.fakePlayer();

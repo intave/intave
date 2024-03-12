@@ -203,6 +203,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   public int clientForwardKey = 0;
   public int clientStrafeKey = 0;
   public boolean clientPressedJump = false;
+  public boolean forceCorrectReduce = false;
+  public double invalidReduceVL = 0;
   private volatile WeakReference<Object> nmsWorld;
   private boolean hasJumpFactor;
   private double resetMotion, frictionPosSubtraction;
