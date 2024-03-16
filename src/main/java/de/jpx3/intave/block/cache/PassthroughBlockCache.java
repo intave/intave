@@ -1,57 +1,54 @@
-package de.jpx3.intave.block.state;
+package de.jpx3.intave.block.cache;
 
+import de.jpx3.intave.block.access.BlockAccess;
+import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.shape.BlockShape;
-import de.jpx3.intave.block.shape.BlockShapes;
+import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.BitSet;
+final class PassthroughBlockCache implements BlockCache {
+  private final Player player;
+  private final ShapeResolverPipeline resolver;
 
-public final class MockFullBlockStaticPlane implements ExtendedBlockStateCache {
-  // 16 * 256 * 16
-  private final BitSet bitSet = new BitSet(16 * 256 * 16);
-
-  private boolean isStone(int posX, int posY, int posZ) {
-    if (posY < 0 || posY >= 256 || posX < 0 || posX >= 16 || posZ < 0 || posZ >= 16) {
-      return false;
-    }
-    return bitSet.get(posX + (posZ << 4) + (posY << 8));
-  }
-
-  private void setStone(int posX, int posY, int posZ) {
-    if (posY < 0 || posY >= 256 || posX < 0 || posX >= 16 || posZ < 0 || posZ >= 16) {
-      throw new IllegalArgumentException("Invalid position: " + posX + ", " + posY + ", " + posZ);
-    }
-    bitSet.set(posX + (posZ << 4) + (posY << 8));
-  }
-
-  public void horizontalFill(int posY) {
-    for (int x = 0; x < 16; x++) {
-      for (int z = 0; z < 16; z++) {
-        setStone(x, posY, z);
-      }
-    }
+  public PassthroughBlockCache(Player player, ShapeResolverPipeline resolver) {
+    this.player = player;
+    this.resolver = resolver;
   }
 
   @Override
   public @NotNull BlockShape outlineShapeAt(int posX, int posY, int posZ) {
-    return isStone(posX, posY, posZ) ? BlockShapes.cubeAt(posX, posY, posZ) : BlockShapes.emptyShape();
+    Block block = VolatileBlockAccess.blockAccess(player.getWorld(), posX, posY, posZ);
+    Material type = block.getType();
+    int variant = BlockAccess.global().variantIndexOf(block);
+
+    return resolver.outlineShapeOf(
+      player.getWorld(), player, type, variant, posX, posY, posZ
+    );
   }
 
   @Override
   public @NotNull BlockShape collisionShapeAt(int posX, int posY, int posZ) {
-    return isStone(posX, posY, posZ) ? BlockShapes.cubeAt(posX, posY, posZ) : BlockShapes.emptyShape();
+    Block block = VolatileBlockAccess.blockAccess(player.getWorld(), posX, posY, posZ);
+    Material type = block.getType();
+    int variant = BlockAccess.global().variantIndexOf(block);
+
+    return resolver.collisionShapeOf(
+      player.getWorld(), player, type, variant, posX, posY, posZ
+    );
   }
 
   @Override
   public @NotNull Material typeAt(int posX, int posY, int posZ) {
-    return isStone(posX, posY, posZ) ? Material.STONE : Material.AIR;
+    return VolatileBlockAccess.blockAccess(player.getWorld(), posX, posY, posZ).getType();
   }
 
   @Override
   public int variantIndexAt(int posX, int posY, int posZ) {
-    return 0;
+    return BlockAccess.global().variantIndexOf(VolatileBlockAccess.blockAccess(player.getWorld(), posX, posY, posZ));
   }
 
   @Override
@@ -76,7 +73,7 @@ public final class MockFullBlockStaticPlane implements ExtendedBlockStateCache {
 
   @Override
   public BlockState overrideOf(int posX, int posY, int posZ) {
-    return null;
+    return BlockState.empty();
   }
 
   @Override

@@ -3,6 +3,7 @@ package de.jpx3.intave.block.collision;
 import de.jpx3.intave.annotate.DoNotFlowObfuscate;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
+import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.block.collision.entity.StaticEntityCollisions;
 import de.jpx3.intave.block.collision.modifier.CollisionModifiers;
 import de.jpx3.intave.block.fluid.Fluid;
@@ -12,7 +13,6 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.block.shape.resolve.ShapeResolver;
-import de.jpx3.intave.block.state.ExtendedBlockStateCache;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.share.BlockPosition;
@@ -87,7 +87,7 @@ public final class Collision {
     User user = UserRepository.userOf(player);
     World world = player.getWorld();
     MovementMetadata movementData = user.meta().movement();
-    ExtendedBlockStateCache stateAccess = user.blockStates();
+    BlockCache stateAccess = user.blockCache();
     boolean outsideBorderLast = movementData.outsideBorder;
     boolean outsideBorderCurrent = playerOutsideBorder(user);
     // this works, but why?
@@ -172,7 +172,7 @@ public final class Collision {
     int maxZ = floor(playerBox.maxZ);
     int ystart = Math.max(minY - 1, WorldHeight.LOWER_WORLD_LIMIT);
     User user = UserRepository.userOf(player);
-    ExtendedBlockStateCache stateAccess = user.blockStates();
+    BlockCache stateAccess = user.blockCache();
     int blocksRemaining = COLLISION_CHECK_LIMIT;
     int collisionsRemaining = Math.min(collisionLimit, COLLISION_CHECK_LIMIT);
     exit:
@@ -263,7 +263,7 @@ public final class Collision {
     } else if (!outsideBorderLast && !outsideBorderCurrent) {
       movementData.outsideBorder = true;
     }
-    ExtendedBlockStateCache stateAccess = user.blockStates();
+    BlockCache stateAccess = user.blockCache();
     World world = player.getWorld();
     int blockRemaining = COLLISION_CHECK_LIMIT;
     exit:

@@ -1,10 +1,9 @@
-package de.jpx3.intave.block.state;
+package de.jpx3.intave.block.cache;
 
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.annotate.DoNotFlowObfuscate;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.shape.BlockShape;
-import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
@@ -26,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static de.jpx3.intave.IntaveControl.DISABLE_BLOCK_CACHING_ENTIRELY;
 
 @DoNotFlowObfuscate
-final class MultiChunkKeyExtendedBlockStateCache implements ExtendedBlockStateCache {
+final class MultiChunkKeyBlockCache implements BlockCache {
   private final Player player;
   private final ShapeResolverPipeline shapeResolver;
   private final Map<Long, BlockState> blockCache = new ConcurrentHashMap<>(1024);
@@ -35,155 +34,70 @@ final class MultiChunkKeyExtendedBlockStateCache implements ExtendedBlockStateCa
   private int originChunkX, originChunkZ;
   private int chunkX, chunkZ;
 
-  public MultiChunkKeyExtendedBlockStateCache(
+  public MultiChunkKeyBlockCache(
     Player player, ShapeResolverPipeline resolver
   ) {
     this.player = player;
     this.shapeResolver = resolver;
-    this.replacementCache = new BlockStateReplacementCache<>(player, MultiChunkKeyExtendedBlockStateCache::bigKey);
+    this.replacementCache = new BlockStateReplacementCache<>(player, MultiChunkKeyBlockCache::bigKey);
+  }
+
+  @Override
+  public @NotNull BlockState stateAt(int posX, int posY, int posZ) {
+    if (posY < WorldHeight.LOWER_WORLD_LIMIT || WorldHeight.UPPER_WORLD_LIMIT < posY) {
+      return BlockState.empty();
+    }
+    int chunkX = posX >> 4, chunkZ = posZ >> 4;
+    ShapeAccessFlowStudy.requests++;
+    if ((chunkX != this.chunkX || chunkZ != this.chunkZ)) {
+      this.chunkX = chunkX;
+      this.chunkZ = chunkZ;
+      double distance = Hypot.fast(chunkX - originChunkX, chunkZ - originChunkZ);
+      if (distance > 2 || blockCache.size() > 4096) {
+        this.originChunkX = chunkX;
+        this.originChunkZ = chunkZ;
+        blockCache.clear();
+      }
+      purgeOverrides();
+    }
+    long key = bigKey(posX, posY, posZ);
+    BlockState blockState = replacementCache.byKey(key);
+    if (blockState != null) {
+      return blockState;
+    }
+    blockState = blockCache.get(key);
+    if (blockState == null) {
+      World world = player.getWorld();
+      Block block = VolatileBlockAccess.blockAccess(world, posX, posY, posZ);
+      blockState = resolveStateAt(world, block, posX, posY, posZ);
+      if (!DISABLE_BLOCK_CACHING_ENTIRELY && block.getY() >= WorldHeight.LOWER_WORLD_LIMIT) {
+        blockCache.put(key, blockState);
+      }
+    }
+    return blockState;
   }
 
   @Override
   public @NotNull BlockShape collisionShapeAt(int posX, int posY, int posZ) {
-    if (posY < WorldHeight.LOWER_WORLD_LIMIT || WorldHeight.UPPER_WORLD_LIMIT < posY) {
-      return BlockShapes.emptyShape();
-    }
-    int chunkX = posX >> 4, chunkZ = posZ >> 4;
-    ShapeAccessFlowStudy.requests++;
-    if ((chunkX != this.chunkX || chunkZ != this.chunkZ)) {
-      this.chunkX = chunkX;
-      this.chunkZ = chunkZ;
-      double distance = Hypot.fast(chunkX - originChunkX, chunkZ - originChunkZ);
-      if (distance > 2 || blockCache.size() > 4096) {
-        this.originChunkX = chunkX;
-        this.originChunkZ = chunkZ;
-        blockCache.clear();
-      }
-      purgeOverrides();
-    }
-    long key = bigKey(posX, posY, posZ);
-    BlockState blockState = replacementCache.byKey(key);
-    if (blockState != null) {
-      return blockState.collisionShape();
-    }
-    blockState = blockCache.get(key);
-    if (blockState == null) {
-      World world = player.getWorld();
-      Block block = VolatileBlockAccess.blockAccess(world, posX, posY, posZ);
-      blockState = lookup(world, block, posX, posY, posZ);
-      if (!DISABLE_BLOCK_CACHING_ENTIRELY && block.getY() >= WorldHeight.LOWER_WORLD_LIMIT) {
-        blockCache.put(key, blockState);
-      }
-    }
-    return blockState.collisionShape();
+    return stateAt(posX, posY, posZ).collisionShape();
   }
 
   @Override
   public @NotNull BlockShape outlineShapeAt(int posX, int posY, int posZ) {
-    if (posY < WorldHeight.LOWER_WORLD_LIMIT || WorldHeight.UPPER_WORLD_LIMIT < posY) {
-      return BlockShapes.emptyShape();
-    }
-    int chunkX = posX >> 4, chunkZ = posZ >> 4;
-    ShapeAccessFlowStudy.requests++;
-    if ((chunkX != this.chunkX || chunkZ != this.chunkZ)) {
-      this.chunkX = chunkX;
-      this.chunkZ = chunkZ;
-      double distance = Hypot.fast(chunkX - originChunkX, chunkZ - originChunkZ);
-      if (distance > 2 || blockCache.size() > 4096) {
-        this.originChunkX = chunkX;
-        this.originChunkZ = chunkZ;
-        blockCache.clear();
-      }
-      purgeOverrides();
-    }
-    long key = bigKey(posX, posY, posZ);
-    BlockState blockState = replacementCache.byKey(key);
-    if (blockState != null) {
-      return blockState.outlineShape();
-    }
-    blockState = blockCache.get(key);
-    if (blockState == null) {
-      World world = player.getWorld();
-      Block block = VolatileBlockAccess.blockAccess(world, posX, posY, posZ);
-      blockState = lookup(world, block, posX, posY, posZ);
-      if (!DISABLE_BLOCK_CACHING_ENTIRELY && block.getY() >= WorldHeight.LOWER_WORLD_LIMIT) {
-        blockCache.put(key, blockState);
-      }
-    }
-    return blockState.outlineShape();
+    return stateAt(posX, posY, posZ).outlineShape();
   }
 
   @Override
   public @NotNull Material typeAt(int posX, int posY, int posZ) {
-    if (posY < WorldHeight.LOWER_WORLD_LIMIT || WorldHeight.UPPER_WORLD_LIMIT < posY) {
-      return Material.AIR;
-    }
-    int chunkX = posX >> 4, chunkZ = posZ >> 4;
-    ShapeAccessFlowStudy.requests++;
-    if ((chunkX != this.chunkX || chunkZ != this.chunkZ)) {
-      this.chunkX = chunkX;
-      this.chunkZ = chunkZ;
-      double distance = Hypot.fast(chunkX - originChunkX, chunkZ - originChunkZ);
-      if (distance > 2 || blockCache.size() > 4096) {
-        this.originChunkX = chunkX;
-        this.originChunkZ = chunkZ;
-        blockCache.clear();
-      }
-      purgeOverrides();
-    }
-    long key = bigKey(posX, posY, posZ);
-    BlockState blockState = replacementCache.byKey(key);
-    if (blockState != null) {
-      return blockState.type();
-    }
-    blockState = blockCache.get(key);
-    if (blockState == null) {
-      World world = player.getWorld();
-      Block block = VolatileBlockAccess.blockAccess(world, posX, posY, posZ);
-      blockState = lookup(world, block, posX, posY, posZ);
-      if (!DISABLE_BLOCK_CACHING_ENTIRELY && block.getY() >= WorldHeight.LOWER_WORLD_LIMIT) {
-        blockCache.put(key, blockState);
-      }
-    }
-    return blockState.type();
+    return stateAt(posX, posY, posZ).type();
   }
 
   @Override
   public int variantIndexAt(int posX, int posY, int posZ) {
-    if (posY < WorldHeight.LOWER_WORLD_LIMIT || WorldHeight.UPPER_WORLD_LIMIT < posY) {
-      return 0;
-    }
-    int chunkX = posX >> 4, chunkZ = posZ >> 4;
-    ShapeAccessFlowStudy.requests++;
-    if ((chunkX != this.chunkX || chunkZ != this.chunkZ)) {
-      this.chunkX = chunkX;
-      this.chunkZ = chunkZ;
-      double distance = Hypot.fast(chunkX - originChunkX, chunkZ - originChunkZ);
-      if (distance > 2 || blockCache.size() > 4096) {
-        this.originChunkX = chunkX;
-        this.originChunkZ = chunkZ;
-        blockCache.clear();
-      }
-      purgeOverrides();
-    }
-    long key = bigKey(posX, posY, posZ);
-    BlockState blockState = replacementCache.byKey(key);
-    if (blockState != null) {
-      return blockState.variantIndex();
-    }
-    blockState = blockCache.get(key);
-    if (blockState == null) {
-      World world = player.getWorld();
-      Block block = VolatileBlockAccess.blockAccess(world, posX, posY, posZ);
-      blockState = lookup(world, block, posX, posY, posZ);
-      if (!DISABLE_BLOCK_CACHING_ENTIRELY && block.getY() >= WorldHeight.LOWER_WORLD_LIMIT) {
-        blockCache.put(key, blockState);
-      }
-    }
-    return blockState.variantIndex();
+    return stateAt(posX, posY, posZ).variantIndex();
   }
 
-  private BlockState lookup(World world, Block block, int posX, int posY, int posZ) {
+  private BlockState resolveStateAt(World world, Block block, int posX, int posY, int posZ) {
     if (block.getY() < WorldHeight.LOWER_WORLD_LIMIT) {
       return BlockState.empty();
     }

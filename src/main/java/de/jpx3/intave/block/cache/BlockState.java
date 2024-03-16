@@ -1,4 +1,4 @@
-package de.jpx3.intave.block.state;
+package de.jpx3.intave.block.cache;
 
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.block.shape.BlockShape;
@@ -15,7 +15,7 @@ import java.util.Objects;
  * the type and variant index of a block. It is primarily used for block-caching and
  * block-overrides.
  *
- * @see BlockStateCache
+ * @see BlockCache
  * @see BoundingBox
  * @see Material
  * @see BlockVariantRegister

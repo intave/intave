@@ -1,4 +1,4 @@
-package de.jpx3.intave.block.state;
+package de.jpx3.intave.block.cache;
 
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
@@ -6,7 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
-final class EmptyExtendedBlockStateCache implements ExtendedBlockStateCache {
+final class EmptyExtendedBlockStateCache implements BlockCache {
   @Override
   public @NotNull BlockShape outlineShapeAt(int posX, int posY, int posZ) {
     return BlockShapes.emptyShape();

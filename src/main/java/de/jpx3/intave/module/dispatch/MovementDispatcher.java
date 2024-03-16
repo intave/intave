@@ -180,7 +180,7 @@ public final class MovementDispatcher extends Module {
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
     movementData.updateWorld();
-    user.blockStates().invalidateAll();
+    user.blockCache().invalidateAll();
     user.refreshSprintState();
   }
 
@@ -242,7 +242,7 @@ public final class MovementDispatcher extends Module {
       movement.baseMotionX = 0;
       movement.baseMotionY = 0;
       movement.baseMotionZ = 0;
-      user.blockStates().invalidateAll();
+      user.blockCache().invalidateAll();
       user.meta().potions().clearPotionEffects();
     });
   }

@@ -10,10 +10,10 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.annotate.Relocate;
+import de.jpx3.intave.block.cache.BlockCache;
+import de.jpx3.intave.block.cache.BlockCaches;
 import de.jpx3.intave.block.fluid.FluidFlow;
 import de.jpx3.intave.block.fluid.Fluids;
-import de.jpx3.intave.block.state.BlockStateCaches;
-import de.jpx3.intave.block.state.ExtendedBlockStateCache;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.cleanup.GarbageCollector;
@@ -76,7 +76,7 @@ final class PlayerUser implements User {
   private final List<MessageChannel> receivingUserChannels = new ArrayList<>();
   private final Map<MessageChannel, Predicate<Player>> channelConstraints = Maps.newEnumMap(MessageChannel.class);
   private final Map<Material, Material> typeTranslations = Maps.newEnumMap(Material.class);
-  private final ExtendedBlockStateCache blockStateAccess;
+  private final BlockCache blockStateAccess;
   private final long birth = System.currentTimeMillis();
   private final Map<UUID, DisplayType> actionSubscriptions = GarbageCollector.watch(Maps.newConcurrentMap());
   private final Map<DisplayType, String> actionDisplay = Maps.newConcurrentMap();
@@ -104,7 +104,7 @@ final class PlayerUser implements User {
     this.playerConnection = new WeakReference<>(ReflectiveHandleAccess.playerConnectionOf(player));
     this.metadata = new MetadataBundle(player, this);
     this.permissionCache = ExpiringPermissionCache.withDefaultExpirationTime();
-    this.blockStateAccess = BlockStateCaches.cacheForPlayer(player);
+    this.blockStateAccess = BlockCaches.cacheForPlayer(player);
     this.collider = Colliders.suitableComplexColliderProcessorFor(this);
     this.waterflow = Fluids.suitableWaterflowFor(this);
     this.simpleCollider = Colliders.suitableSimpleColliderProcessorFor(this);
@@ -312,7 +312,7 @@ final class PlayerUser implements User {
   }
 
   @Override
-  public ExtendedBlockStateCache blockStates() {
+  public BlockCache blockCache() {
     return blockStateAccess;
   }
 

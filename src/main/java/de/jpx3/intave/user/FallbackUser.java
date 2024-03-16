@@ -4,10 +4,10 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.access.UnsupportedFallbackOperationException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.annotate.Relocate;
+import de.jpx3.intave.block.cache.BlockCache;
+import de.jpx3.intave.block.cache.BlockCaches;
 import de.jpx3.intave.block.fluid.FluidFlow;
 import de.jpx3.intave.block.fluid.Fluids;
-import de.jpx3.intave.block.state.BlockStateCaches;
-import de.jpx3.intave.block.state.ExtendedBlockStateCache;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.connect.customclient.CustomClientSupportConfig;
 import de.jpx3.intave.entity.size.HitboxSize;
@@ -44,7 +44,7 @@ final class FallbackUser implements User {
   private final FluidFlow fluidFlow;
   private final SimpleCollider simpleCollider;
   private final Map<Pose, HitboxSize> poseSizes;
-  private final ExtendedBlockStateCache blockStateAccess;
+  private final BlockCache blockStateAccess;
 
   private final UserContext userContext = new UserContext(this);
   private final PlayerContext playerContext = PlayerContext.empty();
@@ -54,7 +54,7 @@ final class FallbackUser implements User {
   FallbackUser() {
     this.metadata = new MetadataBundle(null, this);
     this.permissionCache = ExpiringPermissionCache.withDefaultExpirationTime();
-    this.blockStateAccess = BlockStateCaches.emptyCache();
+    this.blockStateAccess = BlockCaches.emptyCache();
     this.collider = Colliders.suitableComplexColliderProcessorFor(this);
     this.fluidFlow = Fluids.suitableWaterflowFor(this);
     this.simpleCollider = Colliders.suitableSimpleColliderProcessorFor(this);
@@ -181,7 +181,7 @@ final class FallbackUser implements User {
   }
 
   @Override
-  public ExtendedBlockStateCache blockStates() {
+  public BlockCache blockCache() {
     return blockStateAccess;
   }
 

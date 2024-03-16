@@ -1,16 +1,14 @@
 package de.jpx3.intave.block.fluid;
 
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.block.state.BlockStateCaches;
-import de.jpx3.intave.block.state.ExtendedBlockStateCache;
-import de.jpx3.intave.block.type.BlockTypeAccess;
+import de.jpx3.intave.block.cache.BlockCache;
+import de.jpx3.intave.block.cache.BlockCaches;
 import de.jpx3.intave.test.BlockStorage;
 import de.jpx3.intave.test.FakePlayerFactory;
 import de.jpx3.intave.test.Test;
 import de.jpx3.intave.test.Tests;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserFactory;
-import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -81,12 +79,12 @@ public final class FluidTests extends Tests {
       }
       return null;
     });
-    ExtendedBlockStateCache blockStateCache = BlockStateCaches.passthroughCacheWithNativeDrill(player);
+    BlockCache blockStateCache = BlockCaches.passthroughCacheWithNativeDrill(player);
     User user = UserFactory.createTestUserFor(player, s -> {
       if (s.equals("protocolVersion")) {
         return 477;
       }
-      if (s.equals("blockStates")) {
+      if (s.equals("blockCache")) {
         return blockStateCache;
       }
       return null;

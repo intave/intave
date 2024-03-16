@@ -4,11 +4,8 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.access.UnsupportedFallbackOperationException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.access.player.trust.TrustFactorResolver;
+import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.block.fluid.FluidFlow;
-import de.jpx3.intave.block.state.BlockStateCache;
-import de.jpx3.intave.block.state.ExtendedBlockStateCache;
-import de.jpx3.intave.block.state.InvalidatableBlockStateCache;
-import de.jpx3.intave.block.state.OverridableBlockStateCache;
 import de.jpx3.intave.check.MetaCheck;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.movement.physics.Pose;
@@ -272,11 +269,9 @@ public interface User {
    * Retrieve the player's block state cache
    *
    * @return the player's block state cache
-   * @see BlockStateCache
-   * @see InvalidatableBlockStateCache
-   * @see OverridableBlockStateCache
+   * @see BlockCache
    */
-  ExtendedBlockStateCache blockStates();
+  BlockCache blockCache();
 
   /**
    * Retrieve the {@link User}-associated {@link Collider}

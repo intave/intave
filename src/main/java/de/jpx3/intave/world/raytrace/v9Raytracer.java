@@ -1,6 +1,6 @@
 package de.jpx3.intave.world.raytrace;
 
-import de.jpx3.intave.block.state.ExtendedBlockStateCache;
+import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.klass.rewrite.PatchyAutoTranslation;
 import de.jpx3.intave.klass.rewrite.PatchyTranslateParameters;
@@ -146,7 +146,7 @@ public final class v9Raytracer implements Raytracer {
   @PatchyAutoTranslation
   @PatchyTranslateParameters
   private IBlockData typeOf(Player player, WorldServer world, BlockPosition blockPosition) {
-    ExtendedBlockStateCache blockStates = UserRepository.userOf(player).blockStates();
+    BlockCache blockStates = UserRepository.userOf(player).blockCache();
     int positionX = blockPosition.getX();
     int positionY = blockPosition.getY();
     int positionZ = blockPosition.getZ();

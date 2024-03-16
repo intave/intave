@@ -5,7 +5,6 @@ import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.annotate.Native;
-import de.jpx3.intave.block.state.ExtendedBlockStateCache;
 import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckStatistics;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -436,7 +435,7 @@ public final class RootStage extends CommandStage {
   @Native
   public void outputReplacements(User user) {
     Player player = user.player();
-    ExtendedBlockStateCache bba = user.blockStates();
+    BlockShape bba = user.blockCache();
     player.sendMessage(ChatColor.RED + "You have " + bba.numOfLocatedReplacements() + "/" + bba.numOfIndexedReplacements() + " replacements");
   }
 
@@ -648,7 +647,7 @@ public final class RootStage extends CommandStage {
   public void invisibleBlock(User user) {
     Player player = user.player();
     Location location = player.getLocation();
-    user.blockStates().override(player.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), Material.OBSIDIAN, 0);
+    user.blockCache().override(player.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), Material.OBSIDIAN, 0);
     player.sendMessage(ChatColor.GREEN + "Block summoned");
   }
 

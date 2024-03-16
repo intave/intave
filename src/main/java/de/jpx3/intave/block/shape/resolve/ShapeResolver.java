@@ -1,7 +1,7 @@
 package de.jpx3.intave.block.shape.resolve;
 
+import de.jpx3.intave.block.cache.ExtendedBlockStateCache;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
-import de.jpx3.intave.block.state.ExtendedBlockStateCache;
 
 import static de.jpx3.intave.adapter.MinecraftVersions.VER1_13_0;
 

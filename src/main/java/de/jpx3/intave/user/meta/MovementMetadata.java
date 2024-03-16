@@ -486,7 +486,7 @@ public final class MovementMetadata implements SimulationEnvironment {
       if (type == CubeIterator.TYPE_CORNER) {
         continue;
       }
-      BlockShape shape = user.blockStates().collisionShapeAt(x, y, z);
+      BlockShape shape = user.blockCache().collisionShapeAt(x, y, z);
       if (shape.isEmpty() || !box.intersectsWith(BoundingBox.fromBounds(x, y, z, x + 1, y + 1, z + 1))) {
         continue;
       }

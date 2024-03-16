@@ -1,4 +1,4 @@
-package de.jpx3.intave.block.state;
+package de.jpx3.intave.block.cache;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
