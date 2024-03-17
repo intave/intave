@@ -12,7 +12,7 @@ plugins {
 
 val simpleName = "Intave"
 group = "de.jpx3"
-version = "14.7.4-b2"
+version = "14.7.5-b1"
 description = "Automated cheat detection and prevention"
 
 /*
@@ -57,7 +57,7 @@ dependencies {
  */
 bukkit {
   name = simpleName
-  authors = listOf("DarkAndBlue", "Jpx3", "vento", "lennoxlotl", "NotLucky", "Trattue")
+  authors = listOf("DarkAndBlue", "Jpx3", "vento", "vxcus", "lennoxlotl", "NotLucky", "Trattue")
   version = "${rootProject.version}"
   description = "${rootProject.description}"
 

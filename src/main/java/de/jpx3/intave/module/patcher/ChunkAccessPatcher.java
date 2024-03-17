@@ -23,7 +23,7 @@ import java.util.Iterator;
 public final class ChunkAccessPatcher extends Module {
   private static final boolean ENABLED = !MinecraftVersions.VER1_14_0.atOrAbove();
 
-  {
+  static {
     if (ENABLED) {
       ClassLoader classLoader = IntavePlugin.class.getClassLoader();
       PatchyLoadingInjector.loadUnloadedClassPatched(classLoader, "de.jpx3.intave.module.patcher.SynchronizedBukkitLongHashSet");

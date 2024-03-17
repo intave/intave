@@ -9,10 +9,10 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 
-abstract class BoundingBoxPatch {
+abstract class BlockShapePatch {
   private final Material[] materials;
 
-  protected BoundingBoxPatch(Material... materials) {
+  protected BlockShapePatch(Material... materials) {
     this.materials = materials;
   }
 
@@ -32,6 +32,25 @@ abstract class BoundingBoxPatch {
 
   @Deprecated
   protected List<BoundingBox> collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, List<BoundingBox> bbs) {
+    return bbs;
+  }
+
+  protected BlockShape outlinePatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
+    // this method should be overridden
+    // calls bb outline patch function if not
+
+    List<BoundingBox> input = shape.boundingBoxes();
+    List<BoundingBox> output = outlinePatch(world, player, posX, posY, posZ, type, blockState, input);
+
+    if (input.equals(output)) {
+      return shape;
+    } else {
+      return BlockShapes.merge(output);
+    }
+  }
+
+  @Deprecated
+  protected List<BoundingBox> outlinePatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, List<BoundingBox> bbs) {
     return bbs;
   }
 

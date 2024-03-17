@@ -63,7 +63,7 @@ public final class AttackReduceIgnoreHeuristic extends MetaCheckPart<Heuristics,
       return;
     }
 
-    if (movementData.lastSprinting && movementData.sprinting && movementData.pastPlayerAttackPhysics == 0) {
+    if (movementData.lastSprinting && movementData.sprinting && movementData.pastPlayerReduceAttackPhysics == 0) {
       if (movementData.ignoredAttackReduce) {
         if (heuristicMeta.vl++ > 5) {
           String description = "did not reduce when attacking a player";

@@ -59,7 +59,7 @@ public final class ReshapedJumpHeuristic extends MetaCheckPart<Heuristics, Resha
       ItemStack itemStack = inventoryData.heldItem();
       boolean knockbackEnchantment = itemStack != null && itemStack.containsEnchantment(Enchantment.KNOCKBACK);
 
-      if (!knockbackEnchantment && movementData.pastPlayerAttackPhysics == 0) {
+      if (!knockbackEnchantment && movementData.pastPlayerReduceAttackPhysics == 0) {
         physicsMotionX *= 0.6;
         physicsMotionZ *= 0.6;
       }

@@ -2,11 +2,9 @@ package de.jpx3.intave.check.movement;
 
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntaveControl;
-import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckConfiguration.CheckSettings;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
-import de.jpx3.intave.check.movement.timer.Balance;
 import de.jpx3.intave.check.movement.timer.PlayerTime;
 
 public final class Timer extends Check {
@@ -16,29 +14,24 @@ public final class Timer extends Check {
   private final boolean reverseBlink;
   private final boolean reverseLag;
   private final boolean lowTolerance;
-  private final boolean stutterPatch;
+  private final int blinkLimit;
+  private final boolean detectPulseBlink;
   private final PlayerTime playerTime;
 
   public Timer() {
     super("Timer", "timer");
     this.decrementer = new CheckViolationLevelDecrementer(this, 0.2);
     CheckSettings settings = configuration().settings();
+
+    reverseBlink = settings.boolBy("reverse-blink", true);
+
+    // deprecated
     highToleranceMode = settings.boolBy("high-tolerance", false);
     lowTolerance = settings.boolBy("low-tolerance", IntaveControl.GOMME_MODE);
-    reverseBlink = settings.boolBy("reverse-blink", true);
-    reverseLag = settings.boolBy("reverse-lag", IntaveControl.GOMME_MODE);
-    stutterPatch = settings.boolBy("block-stutter-hits", false);
+    reverseLag = settings.boolBy("reverse-lag", false);
 
-    if (highToleranceMode && lowTolerance) {
-      IntaveLogger.logger().info("Conflicting tolerance settings: must either be high or low.");
-    } else if (highToleranceMode) {
-      IntaveLogger.logger().info("Enabled high ping tolerance");
-    } else if (lowTolerance) {
-      IntaveLogger.logger().info("Enabled low network tolerance mode");
-    }
-    if (stutterPatch) {
-      IntaveLogger.logger().info("Enabled stutter hits prevention");
-    }
+    blinkLimit = settings.intBy("blink-limit", (lowTolerance ? 100 : -1));
+    detectPulseBlink = settings.boolBy("block-pulse-blink", lowTolerance);
 
     this.playerTime = new PlayerTime(this);
     appendCheckPart(playerTime);
@@ -78,8 +71,12 @@ public final class Timer extends Check {
     return lowTolerance;
   }
 
-  public boolean stutterPatch() {
-    return stutterPatch;
+  public int blinkLimit() {
+    return blinkLimit;
+  }
+
+  public boolean detectPulseBlink() {
+    return detectPulseBlink;
   }
 
   public CheckViolationLevelDecrementer decrementer() {

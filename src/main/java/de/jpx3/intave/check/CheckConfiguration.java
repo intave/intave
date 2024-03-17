@@ -100,7 +100,14 @@ public final class CheckConfiguration {
 
     public boolean boolBy(String key, boolean def) {
       try {
-        return (boolean) uncheckedResolveOrDefault(key, def);
+        Object val = uncheckedResolveOrDefault(key, def);
+        if (val instanceof String) {
+          return Boolean.parseBoolean((String) val);
+        }
+        if (val instanceof Number) {
+          return ((Number) val).intValue() != 0;
+        }
+        return (boolean) val;
       } catch (ClassCastException exception) {
         throw new IntaveBootFailureException(new InvalidConfigurationException("Expected " + key + " in check " + configurationCache.check().name() + " to be a boolean expression", exception));
       }

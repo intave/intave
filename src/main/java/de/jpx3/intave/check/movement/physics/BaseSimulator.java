@@ -55,9 +55,9 @@ class BaseSimulator extends Simulator {
     float forward = configuration.forward() * 0.98f;
     float strafe = configuration.strafe() * 0.98f;
     boolean handActive = configuration.isHandActive();
-    boolean attackReduce = configuration.isReducing();
     boolean jumped = configuration.isJumping();
     boolean sprinting = configuration.isSprinting();
+    int reduceTicks = configuration.reduceTicks();
 
     // static movement configuration
     MetadataBundle meta = user.meta();
@@ -85,10 +85,24 @@ class BaseSimulator extends Simulator {
       forward *= 0.2f;
       strafe *= 0.2f;
     }
-    if (attackReduce) {
+    for (int i = 0; i < reduceTicks; i++) {
       motion.motionX *= 0.6;
       motion.motionZ *= 0.6;
     }
+    if (reduceTicks > 0) {
+      // perform motion clamping (reducing inaccuracy prefetched)
+      double resetMotion = environment.resetMotion();
+      if (Math.abs(motion.motionX) < resetMotion) {
+        motion.motionX = 0.0;
+      }
+      if (Math.abs(motion.motionY) < resetMotion) {
+        motion.motionY = 0.0;
+      }
+      if (Math.abs(motion.motionZ) < resetMotion) {
+        motion.motionZ = 0.0;
+      }
+    }
+
     if (jumped) {
       boolean allowJumpInLiquid = false;
       if (protocol.waterUpdate() && inWater && environment.onGround()) {

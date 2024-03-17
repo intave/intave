@@ -123,10 +123,10 @@ public final class LinearRegressionHeuristic extends MetaCheckPart<Heuristics, L
         @Override
         public void paint(Graphics g) {
           super.paint(g);
-          String newTitle = "Value count: " + meta.vectorList.size();
+          StringBuilder newTitle = new StringBuilder("Value count: " + meta.vectorList.size());
           for (int i = newTitle.length(); i < 30; i++)
-            newTitle += " ";
-          window.setTitle(newTitle);
+            newTitle.append(" ");
+          window.setTitle(newTitle.toString());
 
           Graphics2D g2d = ((Graphics2D) g);
           g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);

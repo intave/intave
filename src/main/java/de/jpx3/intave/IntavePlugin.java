@@ -18,7 +18,7 @@ import de.jpx3.intave.block.collision.modifier.CollisionModifiers;
 import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.physics.BlockPhysics;
 import de.jpx3.intave.block.physics.BlockProperties;
-import de.jpx3.intave.block.shape.resolve.patch.BoundingBoxPatcher;
+import de.jpx3.intave.block.shape.resolve.patch.BlockShapePatcher;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
@@ -116,7 +116,7 @@ public final class IntavePlugin extends JavaPlugin {
   private static boolean offlineMode = false, successfullyBooted = false;
 
   static {
-    // stage 1
+    // stage 1 (unused)
   }
 
   private IntaveLogger logger;
@@ -732,7 +732,7 @@ public final class IntavePlugin extends JavaPlugin {
       BlockPhysics.setup();
       BlockProperties.setup();
       ItemProperties.setup();
-      BoundingBoxPatcher.setup();
+      BlockShapePatcher.setup();
       EntityLookup.setup();
 
       versions = new IntaveVersionList();
@@ -894,7 +894,7 @@ public final class IntavePlugin extends JavaPlugin {
     for (Map.Entry<String, Boolean> entry : enforceDisabled.entrySet()) {
       if (entry.getValue()) {
         logger.warn(entry.getKey());
-        if (!DISABLE_LICENSE_CHECK /*|| GOMME_MODE*/) {
+        if (!DISABLE_LICENSE_CHECK && !AUTHENTICATION_DEBUG_MODE/*|| GOMME_MODE*/) {
           throw new IllegalStateException(entry.getKey() + ", but license check is disabled");
         }
       }

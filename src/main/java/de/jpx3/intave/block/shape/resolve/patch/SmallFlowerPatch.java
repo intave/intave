@@ -7,24 +7,17 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
+import java.util.Collections;
+import java.util.Set;
+
 import static de.jpx3.intave.share.ClientMath.coordinateRandom;
 
-final class BambooBlockPatch extends BlockShapePatch {
-  private static final BoundingBox LEAF = BoundingBox.originFromX16(6.5D, 0.0D, 6.5D, 9.5D, 16.0, 9.5D);
+public class SmallFlowerPatch extends BlockShapePatch {
+  private static final BoundingBox LEAF = BoundingBox.originFromX16(5.0D, 0.0D, 5.0D, 11.0D, 10.0D, 11.0D);
   private static final BlockShape[][] CACHE = new BlockShape[16][16];
 
   @Override
-  public BlockShape collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
-    return shapePatch(world, player, posX, posY, posZ, type, blockState, shape);
-  }
-
-  @Override
-  public BlockShape outlinePatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
-    return shapePatch(world, player, posX, posY, posZ, type, blockState, shape);
-  }
-
-  private BlockShape shapePatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
-    // Small Bamboo Leaves
+  protected BlockShape outlinePatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
     if (shape.isEmpty()) {
       return shape;
     }
@@ -43,8 +36,26 @@ final class BambooBlockPatch extends BlockShapePatch {
   }
 
   @Override
-  public boolean appliesTo(Material material) {
-    String name = material.name();
-    return "BAMBOO".equals(name);
+  protected boolean appliesTo(Material material) {
+    return smallFlowers.contains(material);
+  }
+
+  private boolean dontTryAgain = false;
+  private final Set<Material> smallFlowers = smallFlowers();
+
+  private Set<Material> smallFlowers() {
+    if (dontTryAgain) {
+      return Collections.emptySet();
+    }
+    try {
+      Class<?> myClass = Class.forName("org.bukkit.Tag");
+      // noinspection JavaReflectionMemberAccess
+      Object tag = myClass.getField("SMALL_FLOWERS").get(null);
+      // noinspection unchecked
+      return (Set<Material>) myClass.getMethod("getValues").invoke(tag);
+    } catch (Exception e) {
+      dontTryAgain = true;
+      return Collections.emptySet();
+    }
   }
 }

@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.List;
 
-final class ThinBlockPatch extends BoundingBoxPatch {
+final class ThinBlockPatch extends BlockShapePatch {
   private static final BoundingBox[] STATES_8 = new BoundingBox[] {
     BoundingBox.originFrom(0.0F, 0.0F, 0.4375F, 1.0F, 1.0F, 0.5625F), // full ew connection
     BoundingBox.originFrom(0.4375F, 0.0F, 0.0F, 0.5625F, 1.0F, 1.0F), // full ns connection

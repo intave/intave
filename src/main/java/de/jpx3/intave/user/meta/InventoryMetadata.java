@@ -30,6 +30,7 @@ public final class InventoryMetadata {
   public int windowClickCounter;
   public boolean forceInventoryOnClickOpen = true;
   public boolean blockNextArrow = false;
+  public long lastBlockArrowRequest;
   public long lastFoodConsumptionBlockRequest;
   public boolean releaseItemNextTick = false;
   public Material releaseItemType = Material.AIR;

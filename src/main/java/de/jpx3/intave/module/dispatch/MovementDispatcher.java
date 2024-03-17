@@ -375,6 +375,8 @@ public final class MovementDispatcher extends Module {
         movementData.dropPostTickMotionProcessing = true;
         Float yaw = packet.getFloat().read(0);
         Float pitch = packet.getFloat().read(1);
+//        movementData.lastRotationYaw = movementData.rotationYaw;
+//        movementData.lastRotationPitch = movementData.rotationPitch;
         movementData.rotationYaw = yaw;
         movementData.rotationPitch = pitch;
 
@@ -577,7 +579,10 @@ public final class MovementDispatcher extends Module {
     Player player = user.player();
     ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
     InventoryMetadata inventory = user.meta().inventory();
-    inventory.blockNextArrow = inventory.pastHotBarSlotChange < 4 && ItemProperties.isBow(inventory.releaseItemType) || ItemProperties.isBow(inventory.activeItemType());
+    if (ItemProperties.isBow(inventory.releaseItemType) || ItemProperties.isBow(inventory.activeItemType())) {
+      inventory.blockNextArrow = true;
+      inventory.lastBlockArrowRequest = System.currentTimeMillis();
+    }
     inventory.lastFoodConsumptionBlockRequest = System.currentTimeMillis();
     PacketContainer packet = protocolManager.createPacket(PacketType.Play.Client.BLOCK_DIG);
     packet.getBlockPositionModifier().write(0, new BlockPosition(0, 0, 0));
@@ -761,6 +766,7 @@ public final class MovementDispatcher extends Module {
     } else {
       movement.waterTicks = 0;
     }
+    movement.reduceTicks = 0;
     movement.ignoredAttackReduce = false;
     if (hasMovement || hasRotation) {
       movement.pastExternalVelocity++;

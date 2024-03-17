@@ -239,4 +239,8 @@ public final class ProtocolMetadata {
   public MinecraftVersion minecraftVersion() {
     return minecraftVersion;
   }
+
+  public boolean viaVersionShieldBlockReplacement() {
+    return protocolVersion >= VER_1_9 && !MinecraftVersions.VER1_9_0.atOrAbove();
+  }
 }

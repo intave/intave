@@ -384,7 +384,7 @@ public class Entity {
     }
   }
 
-  public double immediateDistanceToClientPosition() {
+  public double serverClientPositionOffset() {
     return distance(
       immediateServerPosition.getX(),
       immediateServerPosition.getY(),

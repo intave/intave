@@ -22,17 +22,12 @@ public final class BackgroundExecutors {
   private static Map<ExecutorType, ExecutorService> executorServices = Maps.newEnumMap(ExecutorType.class);
 
   public static void start() {
-    executorServices.put(IN_TIME, Executors.newSingleThreadExecutor(IntaveThreadFactory.ofLowestPriority()));
-    executorServices.put(SCHEDULED, Executors.newSingleThreadScheduledExecutor(IntaveThreadFactory.ofLowestPriority()));
-    executorServices.put(NO_TIME_REQUIREMENT, Executors.newSingleThreadExecutor(IntaveThreadFactory.ofLowestPriority()));
+    IntaveThreadFactory lpFactory = IntaveThreadFactory.ofLowestPriority();
+    executorServices.put(IN_TIME, Executors.newSingleThreadExecutor(lpFactory));
+    executorServices.put(SCHEDULED, Executors.newSingleThreadScheduledExecutor(lpFactory));
+    executorServices.put(NO_TIME_REQUIREMENT, Executors.newSingleThreadExecutor(lpFactory));
     executorServices.put(NO_TIME_AND_EXECUTION_REQUIREMENT, executorServices.get(NO_TIME_REQUIREMENT));
   }
-
-  /*
-    Primary: Must execute in a maximum of 5 seconds
-    Seconardy: Might never return
-
-   */
 
   public static void execute(Runnable runnable) {
     execute(runnable, IN_TIME);

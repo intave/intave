@@ -8,6 +8,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
+@Deprecated
 public final class Occurrences<T extends Number> implements Iterable<T> {
   private long count;
   private long purgeDelay = 1000 * 60 * 3;

@@ -29,9 +29,10 @@ public final class v14Raytracer implements Raytracer {
       ((CraftPlayer) player).getHandle()
     );
     MovingObjectPositionBlock movingObjectPositionBlock =
-//      traceProcess(UserRepository.userOf(player), raytraceConfiguration);
       ((CraftWorld) world).getHandle().rayTrace(raytraceConfiguration);
-    return MovingObjectPosition.fromNativeMovingObjectPosition(movingObjectPositionBlock);
+    MovingObjectPosition output = MovingObjectPosition.fromNativeMovingObjectPosition(movingObjectPositionBlock);
+//    player.sendMessage(eyeVector + " -> " + targetVector + " = " + output.getBlockPos());
+    return output;
   }
 
   @PatchyAutoTranslation

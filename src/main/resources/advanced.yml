@@ -43,15 +43,18 @@ check:
       500: "intave internals storelog {player} {check} {vl}"
       999:
         - $kick$
+
   timer:
-    # Disable if you have players abusing network lag
-    high-tolerance: true
-    # Enable if you want to prevent players from using "Blink"
+    # Enable if you want to halt outgoing packets if a player is not sending packets to us
+    # Very effective against blink in combat
     reverse-blink: true
-    # Enable if you know what you are doing
-    reverse-lag: false
-    # Enable if you have even more players abusing network lag
-    low-tolerance: false
+
+    # The maximum ticks a player is allowed to exist behind server tick, aka. "blink", -1 to disable
+    # 200 = Allow 10 second lag
+    blink-limit: -1
+
+    # Do you want to
+    block-pulse-blink: true
 
     # DO NOT BAN
     thresholds:
@@ -60,8 +63,7 @@ check:
 
   heuristics:
     enabled: true
-    # Enable to remove attack slowdowns
-    disable-reducing: false
+
     confidence-thresholds:
       # BAN
       "!!":

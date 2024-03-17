@@ -81,6 +81,9 @@ public final class AbilityMetadata {
   public void setupAttributes() {
     boolean atLeastMinecraft16 = MinecraftVersions.VER1_16_0.atOrAbove();
     setupAttribute("generic.movementSpeed", atLeastMinecraft16 ? (double) 0.1F : 0.1D);
+    setupAttribute("generic.maxHealth", 20.0D);
+    setupAttribute("generic.knockbackResistance", 0.0D);
+    setupAttribute("generic.attackDamage", 1.0D);
   }
 
   private void setupAttribute(String name, double baseValue) {

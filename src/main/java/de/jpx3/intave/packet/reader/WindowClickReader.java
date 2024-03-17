@@ -72,6 +72,17 @@ public final class WindowClickReader extends AbstractPacketReader {
     }
   }
 
+  public boolean missingItemStack() {
+    switch (clickType()) {
+      case QUICK_MOVE:
+      case SWAP:
+//      case PICKUP_ALL:
+        return true;
+      default:
+        return false;
+    }
+  }
+
   @KeepEnumInternalNames
   public enum InventoryClickType {
     PICKUP,

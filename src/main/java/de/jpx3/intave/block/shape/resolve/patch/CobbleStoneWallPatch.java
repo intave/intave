@@ -20,7 +20,7 @@ import java.util.List;
 
 import static de.jpx3.intave.share.Direction.*;
 
-class CobbleStoneWallPatch extends BoundingBoxPatch {
+class CobbleStoneWallPatch extends BlockShapePatch {
   private static final boolean VILLAGE_UPDATE = MinecraftVersions.VER1_14_0.atOrAbove();
   private static final boolean AQUATIC_UPDATE = MinecraftVersions.VER1_13_0.atOrAbove();
   private static final boolean COLOR_UPDATE = MinecraftVersions.VER1_12_0.atOrAbove();

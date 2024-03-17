@@ -13,7 +13,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
-final class AnvilBlockPatch extends BoundingBoxPatch {
+final class AnvilBlockPatch extends BlockShapePatch {
   public AnvilBlockPatch() {
     super(Material.ANVIL);
   }

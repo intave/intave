@@ -37,13 +37,11 @@ import static de.jpx3.intave.module.linker.packet.PacketId.Server.RESPAWN;
 public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
   private final CheckViolationLevelDecrementer decrementer;
   private final boolean highToleranceMode;
-  private final boolean antiStutter;
 
   public Balance(Timer parentCheck) {
     super(parentCheck, BalanceMeta.class);
     this.decrementer = parentCheck.decrementer();
     this.highToleranceMode = parentCheck().highToleranceMode();
-    this.antiStutter = parentCheck().stutterPatch();
   }
 
   @PacketSubscription(

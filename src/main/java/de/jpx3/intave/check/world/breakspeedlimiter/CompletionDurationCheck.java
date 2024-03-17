@@ -137,6 +137,10 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
           blockPosition = meta.targetBlockPosition;
         }
 
+        if (blockPosition == null) {
+          return;
+        }
+
         long requiredDuration = resolveMillisecondsOf(resolveBlockDamageOnGround(player, heldItem, blockPosition));
         long actualDuration = System.currentTimeMillis() - meta.breakProcessStartTime;
         long exceeded = Math.max(0, requiredDuration - actualDuration);

@@ -17,7 +17,7 @@ import java.util.List;
 
 import static net.minecraft.server.v1_12_R1.BlockStairs.*;
 
-class StairPatch extends BoundingBoxPatch {
+class StairPatch extends BlockShapePatch {
   private static final boolean AQUATIC_UPDATE = MinecraftVersions.VER1_13_0.atOrAbove();
   private static final boolean COLOR_UPDATE = MinecraftVersions.VER1_12_0.atOrAbove();
 

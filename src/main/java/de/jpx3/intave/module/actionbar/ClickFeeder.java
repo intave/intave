@@ -30,7 +30,7 @@ public final class ClickFeeder implements EventProcessor {
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsIn = {
-      USE_ENTITY, ARM_ANIMATION, BLOCK_DIG
+      USE_ENTITY, ARM_ANIMATION, BLOCK_DIG, USE_ITEM
     }
   )
   public void clientClickUpdate(PacketEvent event) {
@@ -69,6 +69,9 @@ public final class ClickFeeder implements EventProcessor {
         bufferData.breakingBlock = user.meta().attack().inBreakProcess;
         bufferData.places++;
       }
+    } else {
+      bufferData.breakingBlock = user.meta().attack().inBreakProcess;
+      bufferData.places++;
     }
   }
 

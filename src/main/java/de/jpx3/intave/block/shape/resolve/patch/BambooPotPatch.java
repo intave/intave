@@ -6,7 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
-final class FlowerPotPatch extends BoundingBoxPatch {
+final class BambooPotPatch extends BlockShapePatch {
   private static final BlockShape FLOWER_POT_SHAPE = BoundingBox.originFromX16(5.0, 0.0, 5.0, 11.0, 6.0, 11.0);
 
   @Override

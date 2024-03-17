@@ -119,6 +119,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public int pastStep = 100;
   public int pastEntityUse = 100;
   public int waterTicks = 0;
+  public int reduceTicks = 0;
   public boolean onLadderLast;
   public boolean aquaticUpdateInLava;
   public boolean sprintResetNextTick;
@@ -133,7 +134,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   public double endMotionXOverrideValue, endMotionYOverrideValue, endMotionZOverrideValue;
   public int pastRiptideSpin = 100;
   public int highestLocalRiptideLevel = 0;
-  public int pastPlayerAttackPhysics = 100;
+  public int pastPlayerReduceAttackPhysics = 100;
   public int pastInPowderSnow = 100;
   public int pastEdgeSneakTickGrants;
   public int pastVehicleExitTicks = 100;
@@ -202,6 +203,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   public int clientForwardKey = 0;
   public int clientStrafeKey = 0;
   public boolean clientPressedJump = false;
+  public boolean forceCorrectReduce = false;
+  public double invalidReduceVL = 0;
   private volatile WeakReference<Object> nmsWorld;
   private boolean hasJumpFactor;
   private double resetMotion, frictionPosSubtraction;
@@ -762,6 +765,10 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   public float eyeHeight() {
+    return eyeHeight(pose);
+  }
+
+  public float eyeHeight(Pose pose) {
     switch (pose) {
       case SWIMMING:
       case FALL_FLYING:
@@ -1005,8 +1012,8 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   @Override
   public void increasePlayerAttackTicks() {
-    if (pastPlayerAttackPhysics < 100) {
-      pastPlayerAttackPhysics++;
+    if (pastPlayerReduceAttackPhysics < 100) {
+      pastPlayerReduceAttackPhysics++;
     }
   }
 

@@ -3,6 +3,7 @@ package de.jpx3.intave.block.access;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.block.fluid.Fluids;
+import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.variant.BlockVariant;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.cleanup.GarbageCollector;
@@ -224,6 +225,22 @@ public final class VolatileBlockAccess {
       return user.blockCache().variantIndexAt(blockX, blockY, blockZ);
     }
     return 0;
+  }
+
+  public static BlockShape collisionShapeAccess(User user, Location location) {
+    return user.blockStates().collisionShapeAt(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+  }
+
+  public static BlockShape collisionShapeAccess(User user, BlockPosition position) {
+    return collisionShapeAccess(user, position.xCoord, position.yCoord, position.zCoord);
+  }
+
+  public static BlockShape collisionShapeAccess(User user, double x, double y, double z) {
+    return user.blockStates().collisionShapeAt(floor(x), floor(y), floor(z));
+  }
+
+  public static BlockShape collisionShapeAccess(User user, Position position) {
+    return collisionShapeAccess(user, position.getBlockX(), position.getBlockY(), position.getBlockZ());
   }
 
   private static int floor(double value) {

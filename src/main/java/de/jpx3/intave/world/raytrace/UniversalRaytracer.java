@@ -1,158 +1,161 @@
 package de.jpx3.intave.world.raytrace;
 
-import de.jpx3.intave.block.cache.BlockCache;
+import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.shape.BlockRaytrace;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.share.*;
-import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
-import org.bukkit.Effect;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
-import static de.jpx3.intave.share.ClientMath.floor;
-import static de.jpx3.intave.share.Direction.*;
-
-public final class UniversalRaytracer implements Raytracer {
+public class UniversalRaytracer implements Raytracer {
   @Override
   public MovingObjectPosition raytrace(World world, Player player, NativeVector eyeVector, NativeVector targetVector) {
-    return raytrace(player, eyeVector.toPosition(), targetVector.toPosition());
+    if (eyeVector == null || targetVector == null) {
+      return null;
+    }
+    if (includesInvalidCoordinate(eyeVector) || includesInvalidCoordinate(targetVector)) {
+      return null;
+    }
+    Position eyePosition = new Position(eyeVector.xCoord, eyeVector.yCoord, eyeVector.zCoord);
+    Position targetPosition = new Position(targetVector.xCoord, targetVector.yCoord, targetVector.zCoord);
+    return performRaytrace(player, eyePosition, targetPosition);
   }
 
-  public MovingObjectPosition raytrace(Player player, Position observerPosition, Position targetPosition) {
-    User user = UserRepository.userOf(player);
-    BlockCache blockStateAccess = user.blockCache();
-    if (observerPosition.hasNaNCoordinate() || targetPosition.hasNaNCoordinate()) {
-      return MovingObjectPosition.none();
+
+  private MovingObjectPosition performRaytrace(Player player, Position eyePosition, Position targetPosition) {
+    BlockShape eyeShape = shapeAt(player, eyePosition);
+    if (!eyeShape.isEmpty()) {
+      BlockRaytrace raytrace = eyeShape.raytrace(eyePosition, targetPosition);
+      if (raytrace != null) {
+        return MovingObjectPosition.fromBlockRaytrace(raytrace, eyePosition, targetPosition, eyePosition.toBlockPosition());
+      }
     }
-    Position initialPosition = observerPosition.clone();
-    MovingObjectPosition movingObjectPosition;
+
+    Position contextPosition = eyePosition;
     int targetX = floor(targetPosition.getX());
     int targetY = floor(targetPosition.getY());
     int targetZ = floor(targetPosition.getZ());
-    int lookX = floor(observerPosition.getX());
-    int lookY = floor(observerPosition.getY());
-    int lookZ = floor(observerPosition.getZ());
-    BlockPosition blockposition = observerPosition.toBlockPosition();
-    BlockShape currentShape = blockStateAccess.outlineShapeAt(lookX, lookY, lookZ);
-    Material material = blockStateAccess.typeAt(lookX, lookY, lookZ);
-    movingObjectPosition = innerBlockRaytrace(material, currentShape, blockposition, initialPosition, observerPosition, targetPosition);
-    if (movingObjectPosition != MovingObjectPosition.none()) {
-      player.playEffect(movingObjectPosition.hitVec.toLocation(player.getWorld()), Effect.HAPPY_VILLAGER, 1);
-      return movingObjectPosition;
-    }
-    int jumps = 50;
-    while (jumps-- >= 0) {
-      Direction direction;
-      if (observerPosition.hasNaNCoordinate()) {
+    int contextX = floor(contextPosition.getX());
+    int contextY = floor(contextPosition.getY());
+    int contextZ = floor(contextPosition.getZ());
+
+    int hops = 50;
+    while (hops-- >= 0) {
+      if (includesInvalidCoordinate(contextPosition)) {
         return MovingObjectPosition.none();
       }
-      if (lookX == targetX && lookY == targetY && lookZ == targetZ) {
+      if (contextX == targetX && contextY == targetY && contextZ == targetZ) {
         return MovingObjectPosition.none();
       }
       boolean arrivedAtX = true;
       boolean arrivedAtY = true;
       boolean arrivedAtZ = true;
-      double lookXStep = 999.0;
-      double lookYStep = 999.0;
-      double lookZStep = 999.0;
-      if (targetX > lookX) {
-        lookXStep = (double) lookX + 1.0;
-      } else if (targetX < lookX) {
-        lookXStep = (double) lookX + 0.0;
+      double lookXStep = 999.0D;
+      double lookYStep = 999.0D;
+      double lookZStep = 999.0D;
+      if (targetX > contextX) {
+        lookXStep = contextX + 1;
+      } else if (targetX < contextX) {
+        lookXStep = contextX;
       } else {
         arrivedAtX = false;
       }
-      if (targetY > lookY) {
-        lookYStep = (double) lookY + 1.0;
-      } else if (targetY < lookY) {
-        lookYStep = (double) lookY + 0.0;
+      if (targetY > contextY) {
+        lookYStep = contextY + 1;
+      } else if (targetY < contextY) {
+        lookYStep = contextY;
       } else {
         arrivedAtY = false;
       }
-      if (targetZ > lookZ) {
-        lookZStep = (double) lookZ + 1.0;
-      } else if (targetZ < lookZ) {
-        lookZStep = (double) lookZ + 0.0;
+      if (targetZ > contextZ) {
+        lookZStep = contextZ + 1;
+      } else if (targetZ < contextZ) {
+        lookZStep = contextZ;
       } else {
         arrivedAtZ = false;
       }
-      double stepScaleX = 999.0;
-      double stepScaleY = 999.0;
-      double stepScaleZ = 999.0;
-      double finalDistanceX = targetPosition.getX() - observerPosition.getX();
-      double finalDistanceY = targetPosition.getY() - observerPosition.getY();
-      double finalDistanceZ = targetPosition.getZ() - observerPosition.getZ();
+      double stepScaleX = 999.0D;
+      double stepScaleY = 999.0D;
+      double stepScaleZ = 999.0D;
+      double finalDistanceX = targetPosition.getX() - contextPosition.getX();
+      double finalDistanceY = targetPosition.getY() - contextPosition.getY();
+      double finalDistanceZ = targetPosition.getZ() - contextPosition.getZ();
       if (arrivedAtX) {
-        stepScaleX = (lookXStep - observerPosition.getX()) / finalDistanceX;
+        stepScaleX = (lookXStep - contextPosition.getX()) / finalDistanceX;
       }
       if (arrivedAtY) {
-        stepScaleY = (lookYStep - observerPosition.getY()) / finalDistanceY;
+        stepScaleY = (lookYStep - contextPosition.getY()) / finalDistanceY;
       }
       if (arrivedAtZ) {
-        stepScaleZ = (lookZStep - observerPosition.getZ()) / finalDistanceZ;
+        stepScaleZ = (lookZStep - contextPosition.getZ()) / finalDistanceZ;
       }
-      if (stepScaleX == -0.0) {
-        stepScaleX = -0.0001;
+      if (stepScaleX == -0.0D) {
+        stepScaleX = -0.0001D;
       }
-      if (stepScaleY == -0.0) {
-        stepScaleY = -0.0001;
+      if (stepScaleY == -0.0D) {
+        stepScaleY = -0.0001D;
       }
-      if (stepScaleZ == -0.0) {
-        stepScaleZ = -0.0001;
+      if (stepScaleZ == -0.0D) {
+        stepScaleZ = -0.0001D;
       }
+      Direction direction;
       if (stepScaleX < stepScaleY && stepScaleX < stepScaleZ) {
-        direction = targetX > lookX ? WEST : EAST;
-        observerPosition = new Position(lookXStep, observerPosition.getY() + finalDistanceY * stepScaleX, observerPosition.getZ() + finalDistanceZ * stepScaleX);
+        direction = targetX > contextX ? Direction.WEST : Direction.EAST;
+        contextPosition = new Position(lookXStep, contextPosition.getY() + stepScaleX * finalDistanceY, contextPosition.getZ() + stepScaleX * finalDistanceZ);
       } else if (stepScaleY < stepScaleZ) {
-        direction = targetY > lookY ? DOWN : UP;
-        observerPosition = new Position(observerPosition.getX() + finalDistanceX * stepScaleY, lookYStep, observerPosition.getZ() + finalDistanceZ * stepScaleY);
+        direction = targetY > contextY ? Direction.DOWN : Direction.UP;
+        contextPosition = new Position(contextPosition.getX() + stepScaleY * finalDistanceX, lookYStep, contextPosition.getZ() + stepScaleY * finalDistanceZ);
       } else {
-        direction = targetZ > lookZ ? NORTH : SOUTH;
-        observerPosition = new Position(observerPosition.getX() + finalDistanceX * stepScaleZ, observerPosition.getY() + finalDistanceY * stepScaleZ, lookZStep);
+        direction = targetZ > contextZ ? Direction.NORTH : Direction.SOUTH;
+        contextPosition = new Position(contextPosition.getX() + stepScaleZ * finalDistanceX, contextPosition.getY() + stepScaleZ * finalDistanceY, lookZStep);
       }
-//      player.playEffect(observerPosition.toLocation(player.getWorld()), Effect.HAPPY_VILLAGER, 1);
-      lookX = floor(observerPosition.getX()) - (direction == EAST ? 1 : 0);
-      lookY = floor(observerPosition.getY()) - (direction == UP ? 1 : 0);
-      lookZ = floor(observerPosition.getZ()) - (direction == SOUTH ? 1 : 0);
-      blockposition = new BlockPosition(lookX, lookY, lookZ);
-      currentShape = blockStateAccess.outlineShapeAt(lookX, lookY, lookZ);
-      material = blockStateAccess.typeAt(lookX, lookY, lookZ);
-      movingObjectPosition = innerBlockRaytrace(material, currentShape, blockposition, initialPosition, observerPosition, targetPosition);
-      if (movingObjectPosition != MovingObjectPosition.none()) {
-        player.playEffect(movingObjectPosition.hitVec.toLocation(player.getWorld()), Effect.HAPPY_VILLAGER, 1);
-//        player.spigot().playEffect(movingObjectPosition.hitVec.toLocation(player.getWorld()), Effect.CLICK1, 1, 1, 0, 0, 0, 0, 100, 0);
-        return movingObjectPosition;
+      if (includesInvalidCoordinate(contextPosition)) {
+        return MovingObjectPosition.none();
+      }
+      contextX = floor(contextPosition.getX() - (direction == Direction.EAST ? 1 : 0));
+      contextY = floor(contextPosition.getY() - (direction == Direction.UP ? 1 : 0));
+      contextZ = floor(contextPosition.getZ() - (direction == Direction.SOUTH ? 1 : 0));
+
+      BlockShape shape = shapeAt(player, contextX, contextY, contextZ);
+      if (!shape.isEmpty()) {
+        BlockRaytrace raytrace = innerRaytrace(shape, contextPosition, targetPosition);
+        if (raytrace != null) {
+          return MovingObjectPosition.fromBlockRaytrace(raytrace, contextPosition, targetPosition, new BlockPosition(contextX, contextY, contextZ));
+        }
       }
     }
-    System.out.println("No hit found");
+
     return MovingObjectPosition.none();
   }
 
-  private MovingObjectPosition innerBlockRaytrace(Material material, BlockShape shape, BlockPosition blockPosition, Position initialObserverPosition, Position currentObserverPosition, Position targetPosition) {
-    if (shape.isEmpty()) {
-      System.out.println("Empty shape at " + blockPosition);
-      return MovingObjectPosition.none();
-    }
-    System.out.println("Penetrating " + material + " at " + blockPosition + ", shape " + shape);
-//    System.out.println("Raytracing " + shape + " at " + blockPosition);
-    BlockRaytrace raytrace = shape.raytrace(currentObserverPosition, targetPosition);
-    if (raytrace == BlockRaytrace.none()) {
-      System.out.println("No raytrace");
-      return MovingObjectPosition.none();
-    }
-    double lengthFactor = raytrace.lengthOffset();
-    double differenceX = (targetPosition.getX() - initialObserverPosition.getX()) * lengthFactor;
-    double differenceY = (targetPosition.getY() - initialObserverPosition.getY()) * lengthFactor;
-    double differenceZ = (targetPosition.getZ() - initialObserverPosition.getZ()) * lengthFactor;
-//    System.out.println(new NativeVector(differenceX, differenceY, differenceZ));
-    double positionX = initialObserverPosition.getX() + differenceX;
-    double positionY = initialObserverPosition.getY() + differenceY;
-    double positionZ = initialObserverPosition.getZ() + differenceZ;
-    BlockPosition finalPosition = new BlockPosition(positionX, positionY, positionZ);
-    BlockPosition finalPositionFloored = new BlockPosition(floor(positionX), floor(positionY), floor(positionZ));
-    System.out.println("Raytrace ended at " + finalPosition + " " + new NativeVector(differenceX, differenceY, differenceZ));
-    return new MovingObjectPosition(finalPosition, raytrace.direction(), finalPositionFloored);
+  public static int floor(double var0) {
+    int var2 = (int)var0;
+    return var0 < (double)var2 ? var2 - 1 : var2;
+  }
+
+  private BlockRaytrace innerRaytrace(BlockShape shape, Position eyePosition, Position targetPosition) {
+    return shape.raytrace(eyePosition, targetPosition);
+  }
+
+  private Material typeAt(Player player, int x, int y, int z) {
+    return VolatileBlockAccess.typeAccess(UserRepository.userOf(player), x, y, z);
+  }
+
+  private BlockShape shapeAt(Player player, int x, int y, int z) {
+    return UserRepository.userOf(player).blockStates().outlineShapeAt(x, y, z);
+  }
+
+  private BlockShape shapeAt(Player player, Position position) {
+    return shapeAt(player, position.getBlockX(), position.getBlockY(), position.getBlockZ());
+  }
+
+  private boolean includesInvalidCoordinate(NativeVector nativeVector) {
+    return Double.isNaN(nativeVector.xCoord) || Double.isNaN(nativeVector.yCoord) || Double.isNaN(nativeVector.zCoord);
+  }
+
+  private boolean includesInvalidCoordinate(Position position) {
+    return Double.isNaN(position.getX()) || Double.isNaN(position.getY()) || Double.isNaN(position.getZ());
   }
 }

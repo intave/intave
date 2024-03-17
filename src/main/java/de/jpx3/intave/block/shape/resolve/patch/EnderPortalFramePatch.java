@@ -14,7 +14,7 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.List;
 
-final class EnderPortalFramePatch extends BoundingBoxPatch {
+final class EnderPortalFramePatch extends BlockShapePatch {
   private final BoundingBox baseShape = BoundingBox.originFromX16(0, 0, 0, 16, 13, 16);
   private final BoundingBox eye8 = BoundingBox.originFromX16(5, 13, 5, 11, 16, 11);
   private final BoundingBox eye13 = BoundingBox.originFromX16(4, 13, 4, 12, 16, 12);

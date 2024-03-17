@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.block.shape.resolve.patch.TrapdoorBlockPatch.EnumTrapdoorHalf.TOP;
 
-final class TrapdoorBlockPatch extends BoundingBoxPatch {
+final class TrapdoorBlockPatch extends BlockShapePatch {
 
   /*
    makes variant-control constraint redundant

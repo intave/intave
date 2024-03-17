@@ -2,11 +2,13 @@ package de.jpx3.intave.share;
 
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.KeepEnumInternalNames;
+import de.jpx3.intave.block.shape.BlockRaytrace;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.share.link.WrapperConverter;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
+import org.bukkit.util.Vector;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -53,15 +55,31 @@ public class MovingObjectPosition {
     NativeVector hitVecIn, Direction sideHitIn, BlockPosition blockPosIn
   ) {
     this.typeOfHit = typeOfHitIn;
-    this.blockPos = blockPosIn;
     this.sideHit = sideHitIn;
     this.hitVec = new NativeVector(hitVecIn.xCoord, hitVecIn.yCoord, hitVecIn.zCoord);
+    this.blockPos = blockPosIn;
   }
 
   public MovingObjectPosition(Entity entityHitIn, NativeVector hitVecIn) {
     this.typeOfHit = MovingObjectPosition.MovingObjectType.ENTITY;
     this.entityHit = entityHitIn;
     this.hitVec = hitVecIn;
+  }
+
+  public static MovingObjectPosition fromBlockRaytrace(BlockRaytrace blockRaytrace, Position from, Position to, BlockPosition blockPos) {
+    if (blockRaytrace == null) {
+      return none();
+    }
+    Vector direction = to.clone().subtract(from).normalize();
+    double distance = blockRaytrace.lengthOffset();
+    Position hit = Position.of(from.clone().add(direction.multiply(distance)));
+
+    return new MovingObjectPosition(
+      MovingObjectType.BLOCK,
+      new NativeVector(hit.getX(), hit.getY(), hit.getZ()),
+      blockRaytrace.direction(),
+      blockPos
+    );
   }
 
   public BlockPosition getBlockPos() {

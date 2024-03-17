@@ -21,6 +21,7 @@ public final class InventoryClickAnalysis extends Check {
     appendCheckPart(new OnMoveCheck(this));
     appendCheckPart(new NotOpenCheck(this));
     appendCheckPart(new DelayAnalyzer(this, highToleranceMode));
+    appendCheckPart(new RegrDelayAnalyzer(this));
     appendCheckPart(new PacketDelayAnalyzer(this));
     appendCheckPart(new AutoTotem(this));
   }

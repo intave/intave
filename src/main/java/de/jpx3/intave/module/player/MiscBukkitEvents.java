@@ -117,7 +117,7 @@ public final class MiscBukkitEvents extends Module {
     User user = UserRepository.userOf((Player) event.getEntity());
     InventoryMetadata inventory = user.meta().inventory();
     if (inventory.blockNextArrow) {
-      boolean applyArrowBlock = inventory.pastHotBarSlotChange < 4;
+      boolean applyArrowBlock = System.currentTimeMillis() - inventory.lastBlockArrowRequest < 800L;
       if (applyArrowBlock) {
         event.setCancelled(true);
       }

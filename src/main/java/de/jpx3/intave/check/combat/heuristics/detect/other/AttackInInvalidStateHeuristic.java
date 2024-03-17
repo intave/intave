@@ -33,9 +33,9 @@ public final class AttackInInvalidStateHeuristic extends MetaCheckPart<Heuristic
   }
 
   @PacketSubscription(
-      packetsIn = {
-          USE_ENTITY
-      }
+    packetsIn = {
+      USE_ENTITY
+    }
   )
   public void receiveAttack(PacketEvent event) {
     Player player = event.getPlayer();

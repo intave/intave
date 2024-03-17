@@ -13,7 +13,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
-final class LadderBlockPatch extends BoundingBoxPatch {
+final class LadderBlockPatch extends BlockShapePatch {
   private static final boolean MODERN_PATCH_REDUNDANT = MinecraftVersions.VER1_13_0.atOrAbove();
 
   public LadderBlockPatch() {

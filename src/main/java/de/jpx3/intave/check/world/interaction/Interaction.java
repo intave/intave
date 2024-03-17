@@ -84,8 +84,12 @@ public final class Interaction {
     return targetBlock;
   }
 
+  public de.jpx3.intave.share.BlockPosition targetBlockAsPosition() {
+    return new de.jpx3.intave.share.BlockPosition(targetBlock);
+  }
+
   public boolean hasTargetBlock() {
-    return targetBlock != null;
+    return targetBlock != null && (targetBlock.getX() != -1 && targetBlock.getY() != -1 && targetBlock.getZ() != -1 && targetDirection != 255) ;
   }
 
   public Direction targetDirection() {

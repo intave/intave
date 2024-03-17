@@ -8,6 +8,7 @@ import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AttackMetadata;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -35,21 +36,33 @@ public final class Variance extends MetaCheckPart<ClickPatterns, Variance.Varian
     Player player = event.getPlayer();
     User user = userOf(player);
     VarianceMeta meta = metaOf(user);
+
+    // Calculating when the last swing was
     long lastSwing = meta.lastSwing;
     long swingDifference = System.currentTimeMillis() - lastSwing;
     meta.lastSwing = System.currentTimeMillis();
+
     Queue<Long> attacks = meta.attacks;
+
+    // When the check is disabled, there is no need to check
     if (checkDeactivated(user, swingDifference)) {
       attacks.clear();
       return;
     }
+
     if (attacks.isEmpty()) {
       meta.started = System.currentTimeMillis();
     }
     attacks.add(swingDifference);
+
+    // If the attacks queue reached the buffer length, Intave is going to check if the player clicks with a low variance
     if (attacks.size() >= BUFFER_LENGTH) {
       long length = System.currentTimeMillis() - meta.started;
+
       double standardDeviation = standardDeviation(attacks);
+      // Necessary for the statistically low variance check
+      meta.deviations.add((long) standardDeviation);
+
       if (standardDeviation < 166 && length < 4000) {
         int vlAdd = standardDeviation < 10 ? 2 : 1;
         meta.vl += vlAdd;
@@ -66,6 +79,31 @@ public final class Variance extends MetaCheckPart<ClickPatterns, Variance.Varian
         meta.vl *= 0.98;
       }
       attacks.clear();
+    }
+
+    // After we got 4 deviation samples, we are going to check the deviation of these samples, if it's too low, the player is performing a long-term consistency
+    if (meta.deviations.size() >= 4) {
+      double std = standardDeviation(meta.deviations);
+
+      long length = System.currentTimeMillis() - meta.started;
+
+      // After one hour of testing, < 35 seems to be a good value
+      if (std < 35 && length < 4000) {
+        int vlAdd = std < 10 ? 2 : 1;
+        meta.vl += vlAdd;
+        if (meta.vl > 2) {
+          parentCheck().makeDetection(
+                  player,
+                  "statistically low variance",
+                  "sd:" + formatDouble(std, 3) + " t:" + formatDouble(length / 1000d, 2),
+                  meta.vl > 8 ? 5 : 0
+          );
+        }
+      } else if (meta.vl > 0) {
+        meta.vl -= 0.2;
+        meta.vl *= 0.98;
+      }
+      meta.deviations.clear();
     }
   }
 
@@ -95,6 +133,7 @@ public final class Variance extends MetaCheckPart<ClickPatterns, Variance.Varian
 
   public static class VarianceMeta extends CheckCustomMetadata {
     private final Queue<Long> attacks = new ArrayDeque<>();
+    private final Queue<Long> deviations = new ArrayDeque<>();
     private double vl = 0;
     private long lastSwing = 0;
     private long started = System.currentTimeMillis();

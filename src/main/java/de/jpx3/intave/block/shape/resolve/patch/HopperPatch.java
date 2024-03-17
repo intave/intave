@@ -15,7 +15,7 @@ import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_13;
 
-final class HopperPatch extends BoundingBoxPatch {
+final class HopperPatch extends BlockShapePatch {
   private static final float WALL_WIDTH = 2.0f;
   private static final float BOX_HEIGHT = 5.0f;
   private static final BlockShape SHAPE_A = BoundingBox.originFromX16(0, 16 - BOX_HEIGHT, 0, WALL_WIDTH, 16, 16);

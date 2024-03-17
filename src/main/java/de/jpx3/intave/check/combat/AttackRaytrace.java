@@ -233,36 +233,46 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       return false;
     }
 
+    boolean isPlayer = attackedEntity.isPlayer;
+
     int maximumPendingFeedbackPackets = trustFactorSetting("pending-allowance", player) + (int) MathHelper.minmax(1, LatencyStudy.cachedAverage(), 20);
-//    long pendingFeedbacks = attackedEntity.pendingFeedbackPackets();
     LatencyStudy.enterHit((short) pendingFeedbacks);
 
     // protection 1: absolute limit
-    boolean entityHasTimedOut = pendingFeedbacks >= maximumPendingFeedbackPackets;
+    boolean entityHasTimedOut = false;
 
-    long transactionPingAverage = connection.transactionPingAverage();
-    double transactionTickAverage = transactionPingAverage / 50d;
-    int absoluteLimit = zeroNetworkTolerance ? 3 : 12;
-    int historyBasedLimit = Math.min((int) ((LatencyStudy.cachedAverage() + transactionTickAverage + 0.5) * 0.6) + 2, absoluteLimit);
-    boolean pendingOverAverage = transactionPingAverage > 0 && pendingFeedbacks > historyBasedLimit;
-    double trustfactorBaseDistanceLimit = trustFactorSetting("pending-distance", player);
-    double actualDistance = attackedEntity.immediateDistanceToClientPosition();
-    boolean distanceOverLimit = actualDistance > trustfactorBaseDistanceLimit;
-    // If something malicious was detected, block the attack
-    if (pendingOverAverage || distanceOverLimit) {
-      boolean needsToBeBlocked = user.trustFactor().atOrBelow(TrustFactor.RED);
-      String message = player.getName() + " attack latency (" + (needsToBeBlocked ? "blocked, " : "") + pendingFeedbacks + "/"
-        + historyBasedLimit + "p @" + transactionPingAverage + "ms, " + formatDouble(actualDistance, 2) + "/"
-        + formatDouble(trustfactorBaseDistanceLimit, 2) + "blocks)";
-      String shortMessage = player.getName() + " attacked " + pendingFeedbacks + " > " + historyBasedLimit + " @ " + transactionPingAverage + "ms";
-      MessageSeverity severity = Math.abs(pendingFeedbacks - historyBasedLimit) < 4 ? MessageSeverity.LOW : MessageSeverity.MEDIUM;
-      DebugBroadcast.broadcast(player, MessageCategory.ATLALI, severity, message, shortMessage);
-      // Block entity hit if required
-      if (needsToBeBlocked) {
-        // protection 2: environment based limit
-        entityHasTimedOut = true;
-      }
+    if (pendingFeedbacks >= maximumPendingFeedbackPackets + 2 && isPlayer) {
+      Violation violation = Violation.builderFor(AttackRaytrace.class)
+        .forPlayer(player).withCustomThreshold("timeout")
+        .withVL(0.5)
+        .withMessage("attacked player position too old")
+        .withDetails("already " + pendingFeedbacks + " new packets")
+        .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
+        .build();
+      Modules.violationProcessor().processViolation(violation);
+      entityHasTimedOut = true;
     }
+
+    // protection 2: entity too far away
+    double trustfactorBaseDistanceLimit = trustFactorSetting("pending-distance", player);
+    double actualDistance = attackedEntity.serverClientPositionOffset();
+    boolean distanceOverLimit = actualDistance > trustfactorBaseDistanceLimit;
+
+//    if (distanceOverLimit && isPlayer) {
+//      boolean needsToBeBlocked = user.trustFactor().atOrBelow(TrustFactor.RED);
+//
+//      Violation violation = Violation.builderFor(AttackRaytrace.class)
+//        .forPlayer(player).withCustomThreshold("timeout")
+//        .withVL(0.5)
+//        .withMessage("attacked high-risk player position")
+//        .withDetails("client/server offset is " + formatDouble(actualDistance, 2) + " blocks")
+//        .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
+//        .build();
+//      Modules.violationProcessor().processViolation(violation);
+//      if (needsToBeBlocked) {
+//        entityHasTimedOut = true;
+//      }
+//    }
 
     // protection 3: short transaction ping based limit
     double multiplier = 0.95;// - ((violations.backtrackVL / 30) * 0.1);
@@ -288,12 +298,12 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         .build();
       ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
       double after = violationContext.violationLevelAfter();
-      if (after > 30 /*&& !IntaveControl.GOMME_MODE*/) {
+      if (after > 30) {
         entityHasTimedOut = true;
         user.nerf(AttackNerfStrategy.DMG_HIGH, "67");
       }
       if (IntaveControl.GOMME_MODE) {
-        System.out.println("TIMEOUT_X: " + player.getName() + " attacked " + attackedEntity.entityName() + " with " + pendingFeedbacks + " pending feedbacks (" + pendingOverAverage + "|" + distanceOverLimit + " | " + maximumPendingFeedbackPackets + ")");
+//        System.out.println("TIMEOUT_X: " + player.getName() + " attacked " + attackedEntity.entityName() + " with " + pendingFeedbacks + " pending feedbacks (" + distanceOverLimit + " | " + maximumPendingFeedbackPackets + ")");
       }
     }
 
@@ -312,7 +322,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         double zScore = (highest - mean) / stdDev;
 //        double latencyProbability = feedbackAnalysis.latencyProbability(user, highest);
 //        player.sendMessage(violationLevel.backtrackVL + " | " + formatDouble(latencyProbability * 100, 8) + "%");
-        violationLevel.backtrackVL = Math.min(violationLevel.backtrackVL + 1, 11);
+        violationLevel.backtrackVL = Math.min(violationLevel.backtrackVL + 1, 13);
         if (violationLevel.backtrackVL > 3) {
           // Message: attacked expired position of <entity>
           // Details: Latency ~ N(μ, σ²) shows attack outlier probability of <probability>%
@@ -328,7 +338,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 
           ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
           double after = violationContext.violationLevelAfter();
-          if (after > 30 /*&& !IntaveControl.GOMME_MODE*/) {
+          if (after > 20 /*&& !IntaveControl.GOMME_MODE*/) {
             entityHasTimedOut = true;
             violationLevel.lastBacktrackHitCancelRequest = System.currentTimeMillis();
             user.nerf(AttackNerfStrategy.DMG_HIGH, "67");
@@ -356,7 +366,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     if (entityHasTimedOut) {
 //      if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
       if (IntaveControl.GOMME_MODE) {
-        System.out.println("TIMEOUT: " + player.getName() + " attacked " + attackedEntity.entityName() + " with " + pendingFeedbacks + " pending feedbacks (" + pendingOverAverage + "|" + distanceOverLimit + " | " + maximumPendingFeedbackPackets + ")");
+//        System.out.println("TIMEOUT: " + player.getName() + " attacked " + attackedEntity.entityName() + " with " + pendingFeedbacks + " pending feedbacks (" + distanceOverLimit + " | " + maximumPendingFeedbackPackets + ")");
       }
 //      }
     }

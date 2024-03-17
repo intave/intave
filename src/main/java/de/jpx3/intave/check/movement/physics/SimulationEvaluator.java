@@ -284,7 +284,7 @@ public final class SimulationEvaluator {
     double distance = MathHelper.resolveHorizontalDistance(predictedX, predictedZ, motionX, motionZ);
     boolean pushedByWaterFlow = movement.pastPushedByWaterFlow <= 20;
     double horizontalLegitimateDeviation;
-    if (movement.pastPlayerAttackPhysics <= 1) {
+    if (movement.pastPlayerReduceAttackPhysics <= 1) {
       horizontalLegitimateDeviation = 0.005;
     } else {
       horizontalLegitimateDeviation = 0.0007;
@@ -336,7 +336,8 @@ public final class SimulationEvaluator {
       if (movement.onGround) {
         boolean lessThanExpected = /*distanceMoved <= predictedDistanceMoved + 0.02 ||*/ distanceMoved < 0.15;
 //        System.out.println(distanceMoved + " " + predictedDistanceMoved + " " + lessThanExpected);
-        horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, lessThanExpected ? 0.115 : 0.005);
+//        player.sendMessage(" " + );
+        horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, lessThanExpected ? 0.115 : 0.05);
       } else {
         horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, 0.05);
       }
@@ -348,7 +349,7 @@ public final class SimulationEvaluator {
     // Riptide
     if (movement.pastRiptideSpin < 4) {
       horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, resolveRiptideDeviation(movement));
-      player.sendMessage(Collision.present(player, BoundingBox.fromPosition(user, movement, movement.positionX, movement.positionY, movement.positionZ).grow(0.1)) + " " + movement.pastRiptideSpin);
+//      player.sendMessage(Collision.present(player, BoundingBox.fromPosition(user, movement, movement.positionX, movement.positionY, movement.positionZ).grow(0.1)) + " " + movement.pastRiptideSpin);
     }
 
     horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, movement.estimatedAttachMovement());
@@ -375,9 +376,6 @@ public final class SimulationEvaluator {
     }
 
     if (movement.physicsUnpredictableVelocityExpected) {
-//      Vector lastVelocity = movement.lastVelocity;
-//      double velocityDistance = Hypot.fast(lastVelocity.getX(), lastVelocity.getZ());
-//      distance -= velocityDistance;
       horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, 0.1);
 //      player.sendMessage("Gave you " + (velocityDistance * 1.2 - distanceMoved) + " tolerance for velocity, plus extra " + velocityDistance + " for distance, " + distanceMoved + " for distance moved");
     }
@@ -396,7 +394,6 @@ public final class SimulationEvaluator {
         if (movement.pastEdgeSneak <= 3 && !protocol.flyingPacketsAreSent()) {
           limit = Math.max(limit, 0.07);
         }
-//        player.sendMessage("Gave you " + limit + " tolerance for edge sneak");
       } else {
         if (movement.pastEdgeSneak <= 3 || (movement.pastEdgeSneak <= 10 && movement.onGround() && abs(motionY) < 0.01)) {
           boolean smallMovement = (abs(movement.motionX()) < 0.099 && abs(movement.motionZ()) < 0.21) || (abs(movement.motionZ()) < 0.099 && abs(movement.motionX()) < 0.21) && movement.onGround();

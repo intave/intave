@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public final class BoundingBoxPatcher {
-  private static final Map<Material, BoundingBoxPatch> patches = new HashMap<>();
+public final class BlockShapePatcher {
+  private static final Map<Material, BlockShapePatch> patches = new HashMap<>();
 
   public static void setup() {
     add(TrapdoorBlockPatch.class);
@@ -31,12 +31,14 @@ public final class BoundingBoxPatcher {
     add(CarpetPatch.class);
     add(HopperPatch.class);
     add(CobbleStoneWallPatch.class);
-    add(FlowerPotPatch.class);
+    add(BambooPotPatch.class);
+    add(SmallFlowerPatch.class);
+    add(MangrovePropagulePatch.class);
 //    add(StairPatch.class);
 //    add(BlockDoorPatch.class);
   }
 
-  private static void add(Class<? extends BoundingBoxPatch> patchClass) {
+  private static void add(Class<? extends BlockShapePatch> patchClass) {
     try {
       add(patchClass.newInstance());
     } catch (Exception | Error exception) {
@@ -45,7 +47,7 @@ public final class BoundingBoxPatcher {
     }
   }
 
-  private static void add(BoundingBoxPatch patch) {
+  private static void add(BlockShapePatch patch) {
     List<Material> materials = Arrays.stream(Material.values()).filter(patch::appliesTo).collect(Collectors.toList());
     if (materials.isEmpty() && IntaveControl.DISABLE_LICENSE_CHECK) {
 //      IntaveLogger.logger().info("[debug] no material matches patch " + patch.getClass().getName());
@@ -53,8 +55,8 @@ public final class BoundingBoxPatcher {
     materials.forEach(type -> patches.put(type, patch));
   }
 
-  public static BlockShape patch(World world, Player player, int blockX, int blockY, int blockZ, Material type, int blockState, BlockShape shape) {
-    BoundingBoxPatch blockPatch = patches.get(type);
+  public static BlockShape patchCollision(World world, Player player, int blockX, int blockY, int blockZ, Material type, int blockState, BlockShape shape) {
+    BlockShapePatch blockPatch = patches.get(type);
     if (blockPatch == null) {
       return shape;
     } else {
@@ -64,7 +66,18 @@ public final class BoundingBoxPatcher {
     }
   }
 
-  private static BlockShape normalize(BoundingBoxPatch patch, BlockShape input, int posX, int posY, int posZ) {
+  public static BlockShape patchOutline(World world, Player player, int blockX, int blockY, int blockZ, Material type, int blockState, BlockShape shape) {
+    BlockShapePatch blockPatch = patches.get(type);
+    if (blockPatch == null) {
+      return shape;
+    } else {
+      BlockShape normalized = normalize(blockPatch, shape, blockX, blockY, blockZ);
+      BlockShape patched = blockPatch.outlinePatch(world, player, blockX, blockY, blockZ, type, blockState, normalized);
+      return contextualize(patched, blockX, blockY, blockZ);
+    }
+  }
+
+  private static BlockShape normalize(BlockShapePatch patch, BlockShape input, int posX, int posY, int posZ) {
     return patch.requireNormalization() ? input.normalized(posX, posY, posZ) : input;
   }
 

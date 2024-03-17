@@ -35,15 +35,22 @@ public final class Kurtosis extends MetaCheckPart<ClickPatterns, Kurtosis.Kurtos
     Player player = event.getPlayer();
     User user = userOf(player);
     KurtosisMeta meta = metaOf(user);
+
+    // Calculating when the last swing was
     long lastSwing = meta.lastSwing;
     long swingDifference = System.currentTimeMillis() - lastSwing;
     meta.lastSwing = System.currentTimeMillis();
+
     Deque<Long> attacks = meta.attacks;
+
+    // When the check is disabled, there is no need to check
     if (checkDeactivated(user, swingDifference)) {
       attacks.clear();
       return;
     }
     attacks.offerFirst(swingDifference);
+
+    // If the attacks queue reached the buffer length, Intave will calculate the kurtosis and check if the kurtosis (german: wölbung) is too low
     if (attacks.size() >= BUFFER_LENGTH) {
       double kurtosis = kurtosisOf(attacks) / 1000d;
       if (kurtosis < 13) {

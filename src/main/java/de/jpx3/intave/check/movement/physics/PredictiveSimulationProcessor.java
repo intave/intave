@@ -5,7 +5,6 @@ import de.jpx3.intave.diagnostic.IterativeStudy;
 import de.jpx3.intave.diagnostic.KeyPressStudy;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.math.Hypot;
-import de.jpx3.intave.module.dispatch.AttackDispatcher;
 import de.jpx3.intave.module.feedback.Superposition;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.share.Motion;
@@ -72,8 +71,8 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
     Motion motion = movementData.motionProcessorContext.copy();
     motion.setToBaseMotionFrom(movementData);
     MovementConfiguration configuration = MovementConfiguration.select(
-      forward, strafe,
-      false, movementData.sprintingAllowed(),
+      forward, strafe, 0,
+      movementData.sprintingAllowed(),
       jumped, meta.inventory().handActive()
     );
     Simulation simulate = simulator.simulate(user, motion, movementData, configuration);
@@ -87,7 +86,7 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
   }
 
   private static final double REQUIRED_ACCURACY_FOR_QUICK_PROC_EXIT = 0.002;
-  private static final double REQUIRED_ACCURACY_FOR_FLYING_PROC_EXIT = 0.02;
+  private static final double REQUIRED_ACCURACY_FOR_FLYING_PROC_EXIT = 0.008;
 
   private Simulation performKeySearchSimulation(User user, Simulator simulator) {
     MovementMetadata movementData = user.meta().movement();
@@ -144,19 +143,31 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
     MetadataBundle meta = user.meta();
     MovementMetadata movementData = meta.movement();
     InventoryMetadata inventoryData = meta.inventory();
-    if (movementData.pastPlayerAttackPhysics == 0 && simulationStack.sprinted()/*movementData.sprinting*/ && !simulationStack.reduced()) {
-      movementData.ignoredAttackReduce = true;
-    }
+    ProtocolMetadata protocol = meta.protocol();
+//    if (movementData.pastPlayerReduceAttackPhysics == 0 && simulationStack.sprinted()/*movementData.sprinting*/ && !simulationStack.reduced()) {
+//      movementData.ignoredAttackReduce = true;
+//    }
     /* misplaced - please solve this otherwise */
     boolean movementSuggestsHandIsActive = simulationStack.handActive();
     boolean packetsSuggestsHandIsActive = inventoryData.handActive();
     if (packetsSuggestsHandIsActive && !movementSuggestsHandIsActive) {
       boolean releaseHandConditions = Hypot.fast(movementData.motionX(), movementData.motionZ()) > 0.3 || movementData.lastTeleport >= 2;
       boolean itemIsBow = ItemProperties.isBow(meta.inventory().activeItemType()) || ItemProperties.isBow(meta.inventory().offhandItemType());
-      if (releaseHandConditions && !itemIsBow && itemUsageReset) {
+      boolean viaVersionBlockReplacement = meta.protocol().viaVersionShieldBlockReplacement();
+      if (releaseHandConditions && (!itemIsBow || (inventoryData.handActiveTicks > 3 && !viaVersionBlockReplacement)) && itemUsageReset) {
         meta.inventory().releaseItemNextTick();
       }
     }
+
+    boolean canExpectCorrectReduce = !protocol.combatUpdate() && movementData.pastVelocity > 1;
+    boolean invalidReduceTicks = simulationStack.reduceTicks() != movementData.reduceTicks;
+    if (canExpectCorrectReduce && invalidReduceTicks) {
+      movementData.invalidReduceVL = Math.min(movementData.invalidReduceVL + 1, 10);
+    } else if (movementData.invalidReduceVL > 0) {
+      movementData.invalidReduceVL -= 0.25;
+    }
+    movementData.forceCorrectReduce = movementData.invalidReduceVL > 5;
+
     movementData.keyForward = simulationStack.forward();
     movementData.keyStrafe = simulationStack.strafe();
     movementData.physicsJumped = simulationStack.jumped();
@@ -168,9 +179,10 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
   private Simulation simulateMovementKeyPredictionBiased(User user, Simulator simulator) {
     Timings.CHECK_PHYSICS_PROC_BIA.start();
     Timings.CHECK_PHYSICS_PROC_PRED_BIA.start();
-    MovementMetadata movementData = user.meta().movement();
-    InventoryMetadata inventoryData = user.meta().inventory();
-    ProtocolMetadata protocol = user.meta().protocol();
+    MetadataBundle meta = user.meta();
+    MovementMetadata movementData = meta.movement();
+    InventoryMetadata inventoryData = meta.inventory();
+    ProtocolMetadata protocol = meta.protocol();
     Motion motion = movementData.motionProcessorContext;
     double lastMotionX = movementData.baseMotionX;
     double lastMotionZ = movementData.baseMotionZ;
@@ -216,9 +228,7 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
       configuration = configuration.withActiveHand();
     }
     // reducing
-    if (!AttackDispatcher.REDUCING_DISABLED /*&& movementData.sprintingAllowed()*/ && movementData.pastPlayerAttackPhysics == 0) {
-      configuration = configuration.withReducing();
-    }
+    configuration = configuration.withReducing(movementData.reduceTicks);
     // block omnisprint
     if (sprinting && configuration.forward() != 1) {
       configuration = configuration.withoutKeypress();
@@ -235,7 +245,6 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
       configuration = configuration.withoutKeypress();
     }
     movementData.physicsJumped = jumped;
-//    movementData.sprintMove = sprinting;
     motion.setTo(movementData.baseMotion());
     movementData.keyForward = configuration.forward();
     movementData.keyStrafe = configuration.strafe();
@@ -290,8 +299,10 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
   private Simulation simulateMovementLastKeyBiased(User user, Simulator simulator) {
     Timings.CHECK_PHYSICS_PROC_BIA.start();
     Timings.CHECK_PHYSICS_PROC_LK_BIA.start();
-    MovementMetadata movementData = user.meta().movement();
-    InventoryMetadata inventoryData = user.meta().inventory();
+    MetadataBundle meta = user.meta();
+    MovementMetadata movementData = meta.movement();
+    InventoryMetadata inventoryData = meta.inventory();
+    ProtocolMetadata protocol = meta.protocol();
     Motion motion = movementData.motionProcessorContext;
 
     int keyForward = movementData.lastKeyForward;
@@ -308,10 +319,7 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
     // keys
     configuration = configuration.withKeyPress(keyForward, keyStrafe);
     // reducing
-//    boolean sprintRequirement = user.protocolVersion() > VER_1_8 ? movementData.sprintingAllowed() : movementData.isSprinting();
-    if (!AttackDispatcher.REDUCING_DISABLED/* && movementData.sprintingAllowed()*/ && user.meta().movement().pastPlayerAttackPhysics == 0) {
-      configuration = configuration.withReducing();
-    }
+    configuration = configuration.withReducing(movementData.reduceTicks);
     boolean sprinting = movementData.sprintingAllowed();
     // jump
     if (movementData.lastOnGround && !movementData.denyJump()) {
@@ -373,9 +381,13 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
     boolean inWater = movementData.inWater();
     boolean lastOnGround = movementData.lastOnGround();
     boolean estimatedJump = Math.abs(movementData.motionY() - (1 - user.sizeOf(movementData.pose()).height() % 1)) < 1e-5 || Math.abs(movementData.motionY() - movementData.jumpMotion()) < 0.0001;
-    boolean skipUseItem = (!protocol.sprintWhenHandActive() && movementData.sprinting) || !inventoryData.usableItemInEitherHand();
+    boolean skipUseItem = (!protocol.sprintWhenHandActive() && movementData.sprinting && !protocol.viaVersionShieldBlockReplacement())
+      || !inventoryData.usableItemInEitherHand();
     // dont require use item for bows
-    boolean requireUseItem = !protocol.combatUpdate() && inventoryData.handActive() && inventoryData.pastHotBarSlotChange > 20 && (inventoryData.heldItem() == null || inventoryData.heldItem().getType() != Material.BOW);
+    boolean requireUseItem = !protocol.combatUpdate() && inventoryData.handActive() && inventoryData.pastHotBarSlotChange > 20
+      && (inventoryData.heldItem() == null || inventoryData.heldItem().getType() != Material.BOW)
+    ;
+//    boolean requireUseItem = inventoryData.handActive() && inventoryData.pastHotBarSlotChange > 20 && (!protocol.combatUpdate() || inventoryData.heldItemType() != Material.BOW);
 
     if (requireUseItem && movementData.pastEntityUse <= inventoryData.handActiveTicks) {
       requireUseItem = false;
@@ -436,13 +448,15 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
               continue;
             }
             IterativeStudy.USE_ITEM_ITERATOR.run();
-            for (boolean attackReduce : PESSIMISTIC) {
-              if (attackReduce && (movementData.pastPlayerAttackPhysics >= 1 || AttackDispatcher.REDUCING_DISABLED)) {
+            boolean canExpectCorrectReduce = !protocol.combatUpdate() && movementData.pastVelocity > 2;
+            boolean enforceCorrectReduction = movementData.forceCorrectReduce && canExpectCorrectReduce;
+            for (int reduceIndex = 0; reduceIndex <= movementData.reduceTicks; reduceIndex++) {
+              if (enforceCorrectReduction && reduceIndex != movementData.reduceTicks) {
                 continue;
               }
-//              if (attackReduce && sprinting && movementData.lastSprinting) {
-//                continue;
-//              }
+              if (!sprinting && reduceIndex > 0) {
+                continue;
+              }
               IterativeStudy.ATTACK_REDUCE_ITERATOR.run();
               for (boolean jumped : estimatedJump ? OPTIMISTIC : PESSIMISTIC) {
                 // Jumps are only allowed on the ground :(
@@ -453,6 +467,9 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
                   continue;
                 }
                 if (sprinting && movementData.isSneaking() && !jumped) {
+                  continue;
+                }
+                if (reduceIndex > 0 && !sprinting) {
                   continue;
                 }
                 IterativeStudy.JUMP_ITERATOR.run();
@@ -476,7 +493,7 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
                   }
                   iterativeRuns++;
                   MovementConfiguration movementConfiguration = MovementConfiguration.select(
-                    keyForward, keyStrafe, attackReduce, sprinting, jumped, useItemState
+                    keyForward, keyStrafe, reduceIndex, sprinting, jumped, useItemState
                   );
                   Simulation simulation = simulateAndAppend(
                     user, simulator,

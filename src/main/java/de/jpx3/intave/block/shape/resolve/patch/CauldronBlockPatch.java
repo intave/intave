@@ -13,7 +13,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Locale;
 
-final class CauldronBlockPatch extends BoundingBoxPatch {
+final class CauldronBlockPatch extends BlockShapePatch {
   private static final BlockShape shape8;
   private static final BlockShape shape13;
 

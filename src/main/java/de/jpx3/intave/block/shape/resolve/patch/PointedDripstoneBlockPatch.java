@@ -12,7 +12,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
-final class PointedDripstoneBlockPatch extends BoundingBoxPatch {
+final class PointedDripstoneBlockPatch extends BlockShapePatch {
   private final BoundingBox TIP_MERGE_SHAPE = BoundingBox.originFromX16(5.0D, 0.0D, 5.0D, 11.0D, 16.0D, 11.0D);
   private final BoundingBox TIP_UP_SHAPE = BoundingBox.originFromX16(5.0D, 0.0D, 5.0D, 11.0D, 11.0D, 11.0D);
   private final BoundingBox TIP_DOWN_SHAPE = BoundingBox.originFromX16(5.0D, 5.0D, 5.0D, 11.0D, 16.0D, 11.0D);
@@ -23,6 +23,15 @@ final class PointedDripstoneBlockPatch extends BoundingBoxPatch {
 
   @Override
   public BlockShape collisionPatch(World world, Player player, int x, int y, int z, Material type, int variantIndex, BlockShape shape) {
+    return shapePatch(world, player, x, y, z, type, variantIndex, shape);
+  }
+
+  @Override
+  public BlockShape outlinePatch(World world, Player player, int x, int y, int z, Material type, int variantIndex, BlockShape shape) {
+    return shapePatch(world, player, x, y, z, type, variantIndex, shape);
+  }
+
+  private BlockShape shapePatch(World world, Player player, int x, int y, int z, Material type, int variantIndex, BlockShape shape) {
     BlockVariant variant = BlockVariantRegister.variantOf(type, variantIndex);
     DripstoneThickness thickness = variant.enumProperty(DripstoneThickness.class, "thickness");
     Direction verticalDirection = variant.enumProperty(Direction.class, "vertical_direction");

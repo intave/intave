@@ -66,6 +66,10 @@ final class SimulationStack {
     return configuration().isReducing();
   }
 
+  int reduceTicks() {
+    return configuration().reduceTicks();
+  }
+
   boolean handActive() {
     return configuration().isHandActive();
   }

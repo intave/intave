@@ -6,6 +6,7 @@ import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.annotate.DoNotFlowObfuscate;
 import de.jpx3.intave.klass.create.IRXClassFactory;
@@ -24,6 +25,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
 
@@ -293,7 +295,12 @@ public final class PacketSubscriptionLinker extends Module {
       int packetEventParameterPosition = findParameterPosition(parameterTypes, PacketEvent.class);
       int packetTypeParameterPosition = findParameterPosition(parameterTypes, PacketType.class);
 
+      AtomicBoolean block = new AtomicBoolean(false);
+
       return (subscriber, event) -> {
+        if (block.get()) {
+          return;
+        }
         Player player = event.getPlayer();
 
         Map<Integer, Boolean> locks = argumentLocks.get();
@@ -323,7 +330,10 @@ public final class PacketSubscriptionLinker extends Module {
             packetReader = PacketReaders.readerOf(event.getPacket());
             arguments[packetReaderParameterPosition] = packetReader;
           } catch (Exception e) {
-            throw new RuntimeException("Failed to create packet reader for packet " + event.getPacketType() + " in " + subscriber.getClass().getCanonicalName(), e);
+//            throw new RuntimeException("Failed to create packet reader for packet " + event.getPacketType() + " in " + subscriber.getClass().getCanonicalName(), e);
+            block.set(true);
+            IntaveLogger.logger().error("Failed to create packet reader for packet " + event.getPacketType() + " in " + subscriber.getClass().getCanonicalName());
+            IntaveLogger.logger().error("This is probably because ProtocolLib has not caught up with the latest version of Minecraft.");
           }
         }
         if (packetEventParameterPosition != -1) {

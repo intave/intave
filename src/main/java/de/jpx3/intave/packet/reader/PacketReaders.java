@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.function.Supplier;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client;
+import static de.jpx3.intave.module.linker.packet.PacketId.Client.CLOSE_WINDOW;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
@@ -49,6 +50,7 @@ public final class PacketReaders {
     setup(NAMED_ENTITY_SPAWN, EntityReader::new);
     setup(OPEN_WINDOW, OpenWindowReader::new);
     setup(OPEN_WINDOW_HORSE, OpenWindowReader::new);
+    setup(CLOSE_WINDOW, WindowCloseReader::new);
     setup(PLAYER_INFO, PlayerInfoReader::new);
     setup(PLAYER_INFO_REMOVE, PlayerInfoRemoveReader::new);
     setup(REMOVE_ENTITY_EFFECT, EntityReader::new);

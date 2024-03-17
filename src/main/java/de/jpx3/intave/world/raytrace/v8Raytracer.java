@@ -163,6 +163,7 @@ public final class v8Raytracer implements Raytracer {
   private Object movingObjectPosition(WorldServer world, Block block, BlockPosition blockPosition, Vec3D lookVector, Vec3D targetVector) {
     try {
       // inner block raytrace
+      //      System.out.println("v8 | inner block raytrace at " + blockPosition + " -> " + res);
       return block.a(world, blockPosition, lookVector, targetVector);
     } catch (Exception | Error exception) {
       return Blocks.STONE.a(world, blockPosition, lookVector, targetVector);

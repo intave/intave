@@ -10,10 +10,10 @@ import de.jpx3.intave.user.User;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
-import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 
+import static de.jpx3.intave.share.ClientMath.floor;
 import static de.jpx3.intave.share.Direction.Axis.*;
 
 public final class BoundingBox extends MemoryTraced implements BlockShape {
@@ -36,32 +36,6 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
     this.maxX = Math.max(x1, x2);
     this.maxY = Math.max(y1, y2);
     this.maxZ = Math.max(z1, z2);
-  }
-
-  @Nullable
-  private static Direction directionRaytrace(
-    double[] distanceStorage,
-    @Nullable Direction inheritDirection,
-    double differenceMain, double differenceUp, double differenceRight,
-    double minMain,
-    double minUp, double maxUp,
-    double minRight, double maxRight,
-    Direction selectedDirection,
-    double targetMain, double targetUp, double targetRight
-  ) {
-    double normalizedStepMain = (minMain - targetMain) / differenceMain;
-    if (0.0 < normalizedStepMain && normalizedStepMain < distanceStorage[0]) {
-      double normalizedStepUp = targetUp + normalizedStepMain * differenceUp;
-      double normalizedStepRight = targetRight + normalizedStepMain * differenceRight;
-      if (
-        minUp - TOLERANCE < normalizedStepUp && normalizedStepUp < maxUp + TOLERANCE &&
-          minRight - TOLERANCE < normalizedStepRight && normalizedStepRight < maxRight + TOLERANCE
-      ) {
-        distanceStorage[0] = normalizedStepMain;
-        return selectedDirection;
-      }
-    }
-    return inheritDirection;
   }
 
   public static BoundingBox fromBounds(
@@ -410,46 +384,6 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
     return new BoundingBox(d0, d1, d2, d3, d4, d5);
   }
 
-  @Override
-  public BlockRaytrace raytrace(Position origin, Position target) {
-    double[] distanceStorage = {1.0};
-    double differenceX = origin.getX() - target.getX();
-    double differenceY = origin.getY() - target.getY();
-    double differenceZ = origin.getZ() - target.getZ();
-    Direction direction = xyzDirectionRaytrace(target, distanceStorage, differenceX, differenceY, differenceZ);
-    return direction == null ? null : BlockRaytrace.from(direction, distanceStorage[0]);
-  }
-
-  @SuppressWarnings({"SuspiciousNameCombination", "ConstantConditions"})
-  @Nullable
-  private Direction xyzDirectionRaytrace(Position targetPosition, double[] distanceStorage, double differenceX, double differenceY, double differenceZ) {
-    double minX = this.minX;
-    double maxX = this.maxX;
-    double minY = this.minY;
-    double maxY = this.maxY;
-    double minZ = this.minZ;
-    double maxZ = this.maxZ;
-    double targetPositionX = targetPosition.getX();
-    double targetPositionY = targetPosition.getY();
-    double targetPositionZ = targetPosition.getZ();
-    Direction direction = null;
-    if (differenceX > TOLERANCE) {
-      direction = directionRaytrace(distanceStorage, direction, differenceX, differenceY, differenceZ, minX, minY, maxY, minZ, maxZ, Direction.WEST, targetPositionX, targetPositionY, targetPositionZ);
-    } else if (differenceX < -TOLERANCE) {
-      direction = directionRaytrace(distanceStorage, direction, differenceX, differenceY, differenceZ, maxX, minY, maxY, minZ, maxZ, Direction.EAST, targetPositionX, targetPositionY, targetPositionZ);
-    }
-    if (differenceY > TOLERANCE) {
-      direction = directionRaytrace(distanceStorage, direction, differenceY, differenceZ, differenceX, minY, minZ, maxZ, minX, maxX, Direction.DOWN, targetPositionY, targetPositionZ, targetPositionX);
-    } else if (differenceY < -TOLERANCE) {
-      direction = directionRaytrace(distanceStorage, direction, differenceY, differenceZ, differenceX, maxY, minZ, maxZ, minX, maxX, Direction.UP, targetPositionY, targetPositionZ, targetPositionX);
-    }
-    if (differenceZ > TOLERANCE) {
-      direction = directionRaytrace(distanceStorage, direction, differenceZ, differenceX, differenceY, minZ, minX, maxX, minY, maxY, Direction.NORTH, targetPositionZ, targetPositionX, targetPositionY);
-    } else if (differenceZ < -TOLERANCE) {
-      direction = directionRaytrace(distanceStorage, direction, differenceZ, differenceX, differenceY, maxZ, minX, maxX, minY, maxY, Direction.SOUTH, targetPositionZ, targetPositionX, targetPositionY);
-    }
-    return direction;
-  }
 
   public MovingObjectPosition calculateIntercept(NativeVector vecA, NativeVector vecB) {
     NativeVector vec3 = vecA.getIntermediateWithXValue(vecB, this.minX);
@@ -513,6 +447,168 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
         enumfacing = Direction.SOUTH;
       }
       return new MovingObjectPosition(vec36, enumfacing);
+    }
+  }
+
+  @Override
+  public BlockRaytrace raytrace(Position origin, Position target) {
+    int blockX = floor(origin.getX());
+    int blockY = floor(origin.getY());
+    int blockZ = floor(origin.getZ());
+    origin = new Position(origin.getX() - blockX, origin.getY() - blockY, origin.getZ() - blockZ);
+    target = new Position(target.getX() - blockX, target.getY() - blockY, target.getZ() - blockZ);
+
+    Position xMin = raytraceX(origin, target, minX - blockX);
+    Position xMax = raytraceX(origin, target, maxX - blockX);
+    Position yMin = raytraceY(origin, target, minY - blockY);
+    Position yMax = raytraceY(origin, target, maxY - blockY);
+    Position zMin = raytraceZ(origin, target, minZ - blockZ);
+    Position zMax = raytraceZ(origin, target, maxZ - blockZ);
+
+    if (!xIntersectsWith(xMax, blockY, blockZ)) {
+      xMax = null;
+    }
+    if (!xIntersectsWith(xMin, blockY, blockZ)) {
+      xMin = null;
+    }
+
+    if (!yIntersectsWith(yMax, blockX, blockZ)) {
+      yMax = null;
+    }
+    if (!yIntersectsWith(yMin, blockX, blockZ)) {
+      yMin = null;
+    }
+
+    if (!zIntersectsWith(zMax, blockX, blockY)) {
+      zMax = null;
+    }
+    if (!zIntersectsWith(zMin, blockX, blockY)) {
+      zMin = null;
+    }
+
+    Position closest = null;
+    if (xMin != null/* && (closest == null || origin.distanceSquared(xMin) < origin.distanceSquared(closest))*/) {
+      closest = xMin;
+    }
+    if (xMax != null && (closest == null || origin.distanceSquared(xMax) < origin.distanceSquared(closest))) {
+      closest = xMax;
+    }
+
+    if (yMin != null && (closest == null || origin.distanceSquared(yMin) < origin.distanceSquared(closest))) {
+      closest = yMin;
+    }
+    if (yMax != null && (closest == null || origin.distanceSquared(yMax) < origin.distanceSquared(closest))) {
+      closest = yMax;
+    }
+
+    if (zMin != null && (closest == null || origin.distanceSquared(zMin) < origin.distanceSquared(closest))) {
+      closest = zMin;
+    }
+    if (zMax != null && (closest == null || origin.distanceSquared(zMax) < origin.distanceSquared(closest))) {
+      closest = zMax;
+    }
+
+    if (closest == null) {
+      return null;
+    }
+
+    Direction direction = null;
+
+    if (closest == xMin) {
+      direction = Direction.WEST;
+    } else if (closest == xMax) {
+      direction = Direction.EAST;
+    } else if (closest == yMin) {
+      direction = Direction.DOWN;
+    } else if (closest == yMax) {
+      direction = Direction.UP;
+    } else if (closest == zMin) {
+      direction = Direction.NORTH;
+    } else if (closest == zMax) {
+      direction = Direction.SOUTH;
+    }
+
+    return new BlockRaytrace(direction, closest.distance(origin));
+  }
+
+  private boolean xIntersectsWith(Position position, int blockY, int blockZ) {
+    if (position == null) {
+      return false;
+    }
+    return position.getY() >= minY - blockY && position.getY() <= maxY - blockY && position.getZ() >= minZ - blockZ && position.getZ() <= maxZ - blockZ;
+  }
+
+  private boolean yIntersectsWith(Position position, int blockX, int blockZ) {
+    if (position == null) {
+      return false;
+    }
+    return position.getX() >= minX - blockX && position.getX() <= maxX - blockX && position.getZ() >= minZ - blockZ && position.getZ() <= maxZ - blockZ;
+  }
+
+  private boolean zIntersectsWith(Position position, int blockX, int blockY) {
+    if (position == null) {
+      return false;
+    }
+    return position.getX() >= minX - blockX && position.getX() <= maxX - blockX && position.getY() >= minY - blockY && position.getY() <= maxY - blockY;
+  }
+
+  private Position raytraceX(Position on, Position target, double k) {
+    double distanceX = target.getX() - on.getX();
+    double distanceY = target.getY() - on.getY();
+    double distanceZ = target.getZ() - on.getZ();
+    if (distanceX * distanceX < 1.0E-7D) {
+      return null;
+    } else {
+      double k1 = (k - on.getX()) / distanceX;
+      if (k1 < 0.0D || k1 > 1.0D) {
+        return null;
+      } else {
+        return new Position(
+          on.getX() + distanceX * k1,
+          on.getY() + distanceY * k1,
+          on.getZ() + distanceZ * k1
+        );
+      }
+    }
+  }
+
+  private Position raytraceY(Position on, Position target, double k) {
+    double distanceX = target.getX() - on.getX();
+    double distanceY = target.getY() - on.getY();
+    double distanceZ = target.getZ() - on.getZ();
+    if (distanceY * distanceY < 1.0E-7D) {
+      return null;
+    } else {
+      double k1 = (k - on.getY()) / distanceY;
+      if (k1 < 0.0D || k1 > 1.0D) {
+        return null;
+      } else {
+        return new Position(
+          on.getX() + distanceX * k1,
+          on.getY() + distanceY * k1,
+          on.getZ() + distanceZ * k1
+        );
+      }
+    }
+  }
+
+  private Position raytraceZ(Position on, Position target, double k) {
+    double distanceX = target.getX() - on.getX();
+    double distanceY = target.getY() - on.getY();
+    double distanceZ = target.getZ() - on.getZ();
+    if (distanceZ * distanceZ < 1.0E-7D) {
+      return null;
+    } else {
+      double scale = (k - on.getZ()) / distanceZ;
+      if (scale < 0.0D || scale > 1.0D) {
+        return null;
+      } else {
+        return new Position(
+          on.getX() + distanceX * scale,
+          on.getY() + distanceY * scale,
+          on.getZ() + distanceZ * scale
+        );
+      }
     }
   }
 

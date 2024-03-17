@@ -4,10 +4,12 @@ import com.comphenix.protocol.wrappers.BlockPosition;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.annotate.Nullable;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -24,9 +26,9 @@ public final class BlockInteractionAccess {
     return clickableMaterials.contains(type);
   }
 
-  public static float blockDamage(Player player, ItemStack itemInHand, BlockPosition blockPosition) {
-    if (player == null || itemInHand == null || blockPosition == null) {
-      return 0;
+  public static float blockDamage(@NotNull Player player, @Nullable ItemStack itemInHand, @NotNull BlockPosition blockPosition) {
+    if (player == null || blockPosition == null) {
+      throw new IllegalArgumentException("Player and block position must not be null: " + player + ", " + blockPosition);
     }
     return BlockAccess.global().blockDamage(player.getWorld(), player, itemInHand, blockPosition);
   }

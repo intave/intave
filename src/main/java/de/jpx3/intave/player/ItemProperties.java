@@ -10,6 +10,7 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
+import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -123,7 +124,8 @@ public final class ItemProperties {
 
   public static boolean swordBlockable(Player player, Material material) {
     User user = UserRepository.userOf(player);
-    return !user.meta().protocol().combatUpdate();
+    ProtocolMetadata protocol = user.meta().protocol();
+    return !protocol.combatUpdate() || protocol.viaVersionShieldBlockReplacement();
   }
 
   public static boolean foodConsumable(Player player, Material type) {

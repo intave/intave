@@ -35,20 +35,29 @@ public final class Skewness extends MetaCheckPart<ClickPatterns, Skewness.Skewne
     Player player = event.getPlayer();
     User user = userOf(player);
     SkewnessMeta meta = metaOf(user);
+
+    // Calculating when the last swing was
     long lastSwing = meta.lastSwing;
     long swingDifference = System.currentTimeMillis() - lastSwing;
     meta.lastSwing = System.currentTimeMillis();
+
     Queue<Long> attacks = meta.attacks;
+
+    // When the check is disabled, there is no need to check
     if (checkDeactivated(user, swingDifference)) {
       attacks.clear();
       return;
     }
+
     if (attacks.isEmpty()) {
       meta.started = System.currentTimeMillis();
     }
     attacks.add(swingDifference);
+
+    // If the attacks queue reached the buffer length, Intave will calculate the skewness and check if the skewness (german: schräglage) is under the skewness limit
     if (attacks.size() >= BUFFER_LENGTH) {
       long length = System.currentTimeMillis() - meta.started;
+
       double skewness = skewnessOf(attacks);
       if (skewness < LOWER_SKEWNESS_LIMIT && length < 6000) {
         int vlAdd = abs(skewness) < 0.1 ? 2 : 1;
