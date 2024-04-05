@@ -72,12 +72,12 @@ public final class Fluctuation extends MetaCheckPart<ClickPatterns, Fluctuation.
             double cps = cpsOf(attacks);
 
             double difference = cps - meta.lastCPS;
-            if (difference > 0.4) {
+            if (difference > 0.45) {
                 meta.spikes++;
                 meta.spikeTimestamps.add(System.currentTimeMillis());
             }
 
-            if (difference < -0.4) {
+            if (difference < -0.45) {
                 meta.drops++;
                 meta.dropTimestamps.add(System.currentTimeMillis());
             }
@@ -90,13 +90,13 @@ public final class Fluctuation extends MetaCheckPart<ClickPatterns, Fluctuation.
         if (meta.spikeTimestamps.size() >= 3) {
             double std = standardDeviationOf(meta.spikeTimestamps);
             meta.spikeTimestamps.clear();
-            if (std < 4000) {
+            if (std < 2500) {
                 if (++meta.vl > 5) {
                     parentCheck().makeDetection(
                             player,
                             "balanced fluctuation",
                             "std:" + formatDouble(std, 3),
-                            meta.vl > 8 ? 1 : 0
+                            meta.vl > 8 ? 4 : 0
                     );
                 }
             } else if (meta.vl > 0) {
@@ -109,13 +109,13 @@ public final class Fluctuation extends MetaCheckPart<ClickPatterns, Fluctuation.
         if (meta.dropTimestamps.size() >= 3) {
             double std = standardDeviationOf(meta.dropTimestamps);
             meta.dropTimestamps.clear();
-            if (std < 4000) {
+            if (std < 2500) {
                 if (++meta.vl > 5) {
                     parentCheck().makeDetection(
                             player,
                             "balanced fluctuation",
                             "std:" + formatDouble(std, 3),
-                            meta.vl > 8 ? 1 : 0
+                            meta.vl > 8 ? 4 : 0
                     );
                 }
             } else if (meta.vl > 0) {
