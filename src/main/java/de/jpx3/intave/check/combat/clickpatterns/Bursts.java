@@ -60,7 +60,7 @@ public final class Bursts extends TickAlignedHistoryBlueprint<Bursts.BurstMeta> 
     }
 
     // We will flag the player if the tick action is not place and reached the violation limit
-    if (!cancel && vl >= 15) {
+    if (!cancel && vl >= 20) {
       flag(user, "exhibits click bursts" + (!anyDoubleClick ? " without double clicks" : ""), 5);
     }
   }

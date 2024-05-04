@@ -67,7 +67,7 @@ public final class Entropy extends MetaCheckPart<ClickPatterns, Entropy.EntropyM
                             player,
                             "low entropy",
                             "e:" + formatDouble(entropy, 3) + " t:" + formatDouble(length / 1000d, 2),
-                            meta.vl > 8 ? 1 : 0
+                            meta.vl > 0 ? 5 : 0
                     );
                 }
             } else if (meta.vl > 0) {
@@ -92,7 +92,7 @@ public final class Entropy extends MetaCheckPart<ClickPatterns, Entropy.EntropyM
                             player,
                             "balanced entropy",
                             "sd:" + formatDouble(std, 3) + " t:" + formatDouble(length / 1000d, 2),
-                            meta.vl > 8 ? 1 : 0
+                            meta.vl > 0 ? 5 : 0
                     );
                 }
             } else if (meta.vl > 0) {

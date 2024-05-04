@@ -94,7 +94,7 @@ public final class Fluctuation extends MetaCheckPart<ClickPatterns, Fluctuation.
                 if (++meta.vl > 4) {
                     parentCheck().makeDetection(
                             player,
-                            "balanced fluctuation",
+                            "balanced randomization",
                             "std:" + formatDouble(std, 3),
                             meta.vl > 0 ? 5 : 0
                     );
@@ -113,7 +113,7 @@ public final class Fluctuation extends MetaCheckPart<ClickPatterns, Fluctuation.
                 if (++meta.vl > 4) {
                     parentCheck().makeDetection(
                             player,
-                            "balanced fluctuation",
+                            "balanced randomization",
                             "std:" + formatDouble(std, 3),
                             meta.vl > 0 ? 5 : 0
                     );

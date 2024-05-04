@@ -34,6 +34,7 @@ public final class ClickPatterns extends Check {
       new Entropy(this),
       new Fluctuation(this),
       new Repetitive(this),
+      new Outliers(this),
       new Kurtosis(this)
     );
     appendCheckParts(

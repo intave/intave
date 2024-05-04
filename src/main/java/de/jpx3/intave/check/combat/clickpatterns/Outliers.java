@@ -20,12 +20,12 @@ import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.ARM_ANIMATION;
 
 @Relocate
-public final class Deviation extends MetaCheckPart<ClickPatterns, Deviation.DeviationMeta> {
+public final class Outliers extends MetaCheckPart<ClickPatterns, Outliers.OutliersMeta> {
     private static final int BUFFER_TIMEOUT = 4000;
     private static final int BUFFER_LENGTH = 50;
 
-    public Deviation(ClickPatterns parentCheck) {
-        super(parentCheck, DeviationMeta.class);
+    public Outliers(ClickPatterns parentCheck) {
+        super(parentCheck, OutliersMeta.class);
     }
 
     @PacketSubscription(
@@ -34,7 +34,7 @@ public final class Deviation extends MetaCheckPart<ClickPatterns, Deviation.Devi
     public void receiveSwing(PacketEvent event) {
         Player player = event.getPlayer();
         User user = userOf(player);
-        DeviationMeta meta = metaOf(user);
+        OutliersMeta meta = metaOf(user);
 
         // Calculating when the last swing was
         long lastSwing = meta.lastSwing;
@@ -57,26 +57,18 @@ public final class Deviation extends MetaCheckPart<ClickPatterns, Deviation.Devi
         if (attacks.size() >= BUFFER_LENGTH) {
             long length = System.currentTimeMillis() - meta.started;
 
-            double standardDeviation = standardDeviation(attacks);
-            // Necessary for the statistically low variance check
-            meta.deviations.add((long) standardDeviation);
-            attacks.clear();
-        }
+            int outliers = (int) attacks.stream()
+                    .filter(delay -> delay > 3)
+                    .count();
 
-        // After we got 4 deviation samples, we are going to check the deviation of these samples, if it's too low, the player is performing a long-term consistency
-        if (meta.deviations.size() >= 4) {
-            double std = standardDeviation(meta.deviations);
-
-            long length = System.currentTimeMillis() - meta.started;
-
-            if (std < 45 && length < 4000) {
-                int vlAdd = std < 10 ? 2 : 1;
+            if (outliers < 2 && length < 4000) {
+                int vlAdd = outliers < 10 ? 2 : 1;
                 meta.vl += vlAdd;
-                if (meta.vl > 2) {
+                if (meta.vl > 1) {
                     parentCheck().makeDetection(
                             player,
-                            "low deviation",
-                            "sd:" + formatDouble(std, 3) + " t:" + formatDouble(length / 1000d, 2),
+                            "low outliers",
+                            "o:" + formatDouble(outliers, 3) + " t:" + formatDouble(length / 1000d, 2),
                             meta.vl > 0 ? 10 : 0
                     );
                 }
@@ -84,7 +76,8 @@ public final class Deviation extends MetaCheckPart<ClickPatterns, Deviation.Devi
                 meta.vl -= 0.2;
                 meta.vl *= 0.98;
             }
-            meta.deviations.clear();
+
+            attacks.clear();
         }
     }
 
@@ -100,21 +93,9 @@ public final class Deviation extends MetaCheckPart<ClickPatterns, Deviation.Devi
                 (heldItem != null && heldItem.getType() == Material.FISHING_ROD);
     }
 
-    private double standardDeviation(Collection<? extends Number> sd) {
-        double sum = 0, newSum = 0;
-        for (Number v : sd) {
-            sum = sum + v.doubleValue();
-        }
-        double mean = sum / sd.size();
-        for (Number v : sd) {
-            newSum = newSum + (v.doubleValue() - mean) * (v.doubleValue() - mean);
-        }
-        return Math.sqrt(newSum / sd.size());
-    }
-
-    public static class DeviationMeta extends CheckCustomMetadata {
+    public static class OutliersMeta extends CheckCustomMetadata {
         private final Queue<Long> attacks = new ArrayDeque<>();
-        private final Queue<Long> deviations = new ArrayDeque<>();
+
         private double vl = 0;
         private long lastSwing = 0;
         private long started = System.currentTimeMillis();
