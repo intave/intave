@@ -47,7 +47,7 @@ public final class PlacementAnalysis extends Check {
         appendCheckPart(new Snap(this));
         appendCheckPart(new SharpRotation(this));
         appendCheckPart(new BlockRotation(this));
-        appendCheckPart(new SneakAndPlace(this));
+        // appendCheckPart(new SneakAndPlace(this));
 //      }
     } catch (Exception | Error e) {
       // classes might be missing
