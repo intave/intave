@@ -78,7 +78,7 @@ public final class Position extends Vector implements Serializable {
   }
 
   public Rotation rotationTo(Position otherPoint) {
-    float yaw = (float) Math.toDegrees(Math.atan2(otherPoint.z - z, otherPoint.x - x));
+    float yaw = (float) Math.toDegrees(Math.atan2(otherPoint.z - z, otherPoint.x - x) - 90f);
     float pitch = -(float) Math.toDegrees(Math.atan2(otherPoint.y - y, Math.sqrt(Math.pow(otherPoint.x - x, 2) + Math.pow(otherPoint.z - z, 2))));
     return new Rotation(yaw, pitch);
   }

@@ -41,6 +41,7 @@ import de.jpx3.intave.packet.reader.EntityReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.share.*;
+import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
 import de.jpx3.intave.user.UserRepository;
@@ -782,6 +783,10 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       // As the interaction was not canceled for consumables, we have to do it now as the raytrace failed
       if (usableItemInHand && interaction.type() == InteractionType.INTERACT) {
         meta.inventory().releaseItemNextTick();
+
+        if (user.receives(MessageChannel.DEBUG_ITEM_RESETS)) {
+          user.player().sendMessage(IntavePlugin.prefix() + "Requesting item usage reset as " + ChatColor.RED + "raytrace failed ");
+        }
       }
 //      Synchronizer.synchronize(() -> {
 //        player.sendMessage(ChatColor.RED + "" + interaction.type() + "@"+user.blockStates().typeAt(targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ())+ "!!"+bestIndex+"   RAYCAST:" + formatPosition(bestRaytrace.raycastLocation) + " TOLD" + formatPosition(targetLocation) + " " + bestRaytrace.wrongBlockFace() + " " + yaw + " " + pitch);
@@ -1023,16 +1028,16 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     granulars.put("actual_block", MathHelper.formatPosition(raycastLocation));
     granulars.put("actual_direction", raycastResult == null ? "null" : raycastResult.sideHit.name());
 
-
-    //    details += ", " + searches + " rays";
-
-    Violation violation = Violation.builderFor(InteractionRaytrace.class)
-      .forPlayer(player).withMessage(message).withDetails(details).withVL(vl)
-      .withGranulars(granulars)
-      .build();
-    ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
+    boolean shouldCounterFlag = false;
+    if (vl >= 0.1) {
+      Violation violation = Violation.builderFor(InteractionRaytrace.class)
+        .forPlayer(player).withMessage(message).withDetails(details)
+        .withVL(vl).withGranulars(granulars).build();
+      ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
+      shouldCounterFlag = violationContext.shouldCounterThreat();
+    }
     metaOf(user).lastInteractionFlag = System.currentTimeMillis();
-    return violationContext.shouldCounterThreat() || mustFlag;
+    return shouldCounterFlag || mustFlag;
   }
 
   private boolean placementWasBehindTargetedBlock(User user, Block targetBlock, int index) {

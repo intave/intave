@@ -1,5 +1,6 @@
 package de.jpx3.intave.module.mitigate;
 
+import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
@@ -10,6 +11,11 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.module.linker.packet.PacketId;
+import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.packet.reader.EntityVelocityReader;
+import de.jpx3.intave.share.Position;
+import de.jpx3.intave.share.Rotation;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.MessageChannelSubscriptions;
 import de.jpx3.intave.user.User;
@@ -17,6 +23,7 @@ import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.PunishmentMetadata;
 import de.jpx3.intave.user.meta.PunishmentMetadata.AttackNerfer;
 import de.jpx3.intave.user.storage.NerferStorage;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -32,10 +39,12 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static de.jpx3.intave.access.player.trust.TrustFactor.ORANGE;
 import static de.jpx3.intave.access.player.trust.TrustFactor.RED;
 import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.HT_SPOOF;
+import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.RECEIVE_MORE_KNOCKBACK;
 
 public final class CombatMitigator extends Module {
 
@@ -80,6 +89,108 @@ public final class CombatMitigator extends Module {
     }
   }
 
+  // [-0.36565704  1.19629782 -1.41612646  0.65648595]
+  private final double[] velocityPolynomialCoefficients = new double[] {
+    -0.36565704, 1.19629782, -1.41612646, 0.65648595
+  };
+
+  private double polyEval(double x) {
+    /*
+        for pv in p:
+        y = y * x + pv
+     */
+    double y = 0;
+    for (double pv : velocityPolynomialCoefficients) {
+      y = y * x + pv;
+    }
+    return y;
+  }
+
+  @PacketSubscription(
+    packetsIn = PacketId.Client.ARM_ANIMATION
+  )
+  public void onArmAnimationPacket(
+    User user, PacketEvent event
+  ) {
+    user.meta().punishment().lastSwing = System.currentTimeMillis();
+  }
+
+  @PacketSubscription(
+    packetsOut = PacketId.Server.ENTITY_VELOCITY
+  )
+  public void onVelocityPacket(
+    User user, PacketEvent event, EntityVelocityReader reader
+  ) {
+    int entityId = user.player().getEntityId();
+    if (reader.entityId() != entityId) {
+      return;
+    }
+    for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+      User otherUser = UserRepository.userOf(onlinePlayer);
+      int lastAttacked = otherUser.meta().punishment().lastLowVelocityApplyId;
+      if (lastAttacked != entityId) {
+        continue;
+      }
+
+      otherUser.meta().punishment().lastLowVelocityApplyId = -1;
+
+      long sinceLastSwing = System.currentTimeMillis() - user.meta().punishment().lastSwing;
+
+      Position legitPosition = user.meta().movement().position();
+      Position cheatPosition = otherUser.meta().movement().position();
+
+      Rotation rotation = legitPosition.rotationTo(cheatPosition);
+      float yawRequired = rotation.yaw();
+      float actualYaw = user.meta().movement().rotationYaw();
+
+      double yawDiff = MathHelper.distanceInDegrees(yawRequired, actualYaw);
+      if (yawDiff > 60 || sinceLastSwing > 1000) {
+        continue;
+      }
+
+      double motionX = reader.motionX();
+      double motionZ = reader.motionZ();
+
+      double ratio = 1;
+      int reduceTicks = ThreadLocalRandom.current().nextInt(0, 3);
+      if (reduceTicks == 0) {
+        ratio = 0.8;
+      }
+      for (int i = 0; i < reduceTicks; i++) {
+        ratio *= 0.6;
+      }
+      reader.setMotionX(motionX * ratio);
+      reader.setMotionZ(motionZ * ratio);
+      return;
+    }
+
+    PunishmentMetadata punishment = user.meta().punishment();
+    if (
+      punishment.nerferOfType(RECEIVE_MORE_KNOCKBACK).active() &&
+      punishment.velocityIncreaseTokens > 0
+    ) {
+      double motionX = reader.motionX();
+      double motionZ = reader.motionZ();
+
+      double horizontal = Math.sqrt(motionX * motionX + motionZ * motionZ);
+      double velocityAdd = polyEval(MathHelper.minmax(0, horizontal, 1));
+
+      // randomize a bit
+      velocityAdd += ThreadLocalRandom.current().nextGaussian() * 0.333;
+
+      double factor = (MathHelper.minmax(0, velocityAdd,0.6) + 1);
+      reader.setMotionX(motionX * factor);
+      reader.setMotionZ(motionZ * factor);
+      punishment.velocityIncreaseTokens--;
+    }
+
+    long lastVelocityIncreaseReset = punishment.lastVelocityIncreaseReset;
+    // reset 1 token per 10 seconds
+    double tokenGain = (System.currentTimeMillis() - lastVelocityIncreaseReset) / 10000d;
+    punishment.velocityIncreaseTokens = MathHelper.minmax(-1, punishment.velocityIncreaseTokens + tokenGain, 6);
+    punishment.lastVelocityIncreaseReset = System.currentTimeMillis();
+  }
+
   @BukkitEventSubscription(priority = EventPriority.LOWEST)
   public void receiveAttack(EntityDamageByEntityEvent event) {
     Entity attacker = event.getDamager();
@@ -111,6 +222,10 @@ public final class CombatMitigator extends Module {
 
     if (!(attacked instanceof Player)) {
       return;
+    }
+
+    if (((Player) attacked).getHealth() - event.getFinalDamage() < 0) {
+      punishmentData.velocityIncreaseTokens = 6;
     }
 
     Player attackedPlayer = (Player) attacked;

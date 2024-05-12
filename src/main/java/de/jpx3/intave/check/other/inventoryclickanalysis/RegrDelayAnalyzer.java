@@ -71,10 +71,10 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
     ItemStack itemStack = windowClick.itemStack();
     Material clickedItemType = itemStack == null ? Material.AIR : itemStack.getType();
     boolean isDrop = windowClick.isDrop();
-//    player.sendMessage("Clicked slot: " + slot + " with item: " + clickedItemType + " click type: " + windowClick.clickType() + " is drop: " + isDrop);
     if (slot != -999 && meta.lastSlot != -999) {
-      if ((clickedItemType != meta.lastClickedItemType || isDrop || windowClick.missingItemStack()) && meta.lastClickedTimestamp != 0) {
-        if (windowClick.clickType() != WindowClickReader.InventoryClickType.SWAP) {
+      if ((clickedItemType != meta.lastClickedItemType || isDrop || windowClick.missingItemStack()) && clickedItemType != Material.AIR && meta.lastClickedTimestamp != 0) {
+        if (windowClick.clickType() != WindowClickReader.InventoryClickType.SWAP &&
+          windowClick.clickType() != WindowClickReader.InventoryClickType.QUICK_CRAFT) {
           checkWindowClick(player, meta, slot);
         }
       }

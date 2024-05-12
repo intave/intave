@@ -10,7 +10,19 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 public final class Lookup {
-  private static final String VERSION = Bukkit.getServer().getClass().getPackage().getName().substring(23);
+  private static final String VERSION;
+
+  static {
+    String l;
+    try {
+      l = Bukkit.getServer().getClass().getPackage().getName().substring(23);
+    } catch (Exception exception) {
+      l = "v1_8_R3";
+      System.out.println(Bukkit.getServer().getClass().getPackage().getName());
+    }
+    VERSION = l;
+  }
+
   private static final String CRAFT_BUKKIT_PREFIX = "org.bukkit.craftbukkit." + VERSION;
 
   public static Method serverMethod(String classKey, String name, Class<?> returnType) {

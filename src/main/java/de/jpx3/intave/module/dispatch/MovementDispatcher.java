@@ -49,6 +49,7 @@ import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.NativeVector;
+import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.*;
@@ -462,6 +463,8 @@ public final class MovementDispatcher extends Module {
       if (violationLevelData.wrappedNoSlowdownVL++ > 5) {
         user.nerfPermanently(AttackNerfStrategy.DMG_HIGH, "No slowdown");
         user.nerfPermanently(AttackNerfStrategy.BLOCKING, "No slowdown");
+        user.nerfPermanently(AttackNerfStrategy.RECEIVE_MORE_KNOCKBACK, "No slowdown");
+        user.nerfPermanently(AttackNerfStrategy.APPLY_LESS_KNOCKBACK, "No slowdown");
         inventoryData.blockNextArrow = true;
         inventoryData.lastBlockArrowRequest = System.currentTimeMillis();
       }
@@ -602,12 +605,18 @@ public final class MovementDispatcher extends Module {
   }
 
   private void releaseItem(User user) {
+    if (user.receives(MessageChannel.DEBUG_ITEM_RESETS)) {
+      user.player().sendMessage(IntavePlugin.prefix() + "Applying item usage reset as requested");
+    }
     Player player = user.player();
     ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
     InventoryMetadata inventory = user.meta().inventory();
     if (ItemProperties.isBow(inventory.releaseItemType) || ItemProperties.isBow(inventory.activeItemType())) {
       inventory.blockNextArrow = true;
       inventory.lastBlockArrowRequest = System.currentTimeMillis();
+      if (user.receives(MessageChannel.DEBUG_ITEM_RESETS)) {
+        user.player().sendMessage(IntavePlugin.prefix() + "Requesting arrow block as player is also holding a bow on item usage reset");
+      }
     }
     inventory.lastFoodConsumptionBlockRequest = System.currentTimeMillis();
     PacketContainer packet = protocolManager.createPacket(PacketType.Play.Client.BLOCK_DIG);
@@ -1039,20 +1048,20 @@ public final class MovementDispatcher extends Module {
           .build();
 
         Modules.violationProcessor().processViolation(violation);
-//        if (pendingVelocityPackets < 6) {
-//          velocity.setX(velocity.getX() / pendingVelocityPackets);
-//          velocity.setY(Math.min(0, velocity.getY()));
-//          velocity.setZ(velocity.getZ() / pendingVelocityPackets);
-//          integers.writeSafely(1, (int) (velocity.getX() * 8000d));
-//          integers.writeSafely(2, (int) (velocity.getY() * 8000d));
-//          integers.writeSafely(3, (int) (velocity.getZ() * 8000d));
-//        } else {
-//          if (event.isReadOnly()) {
-//            event.setReadOnly(false);
-//          }
-//          event.setCancelled(true);
-//          return;
-//        }
+        if (pendingVelocityPackets < 6) {
+          velocity.setX(velocity.getX() / pendingVelocityPackets);
+          velocity.setY(Math.min(0, velocity.getY()));
+          velocity.setZ(velocity.getZ() / pendingVelocityPackets);
+          integers.writeSafely(1, (int) (velocity.getX() * 8000d));
+          integers.writeSafely(2, (int) (velocity.getY() * 8000d));
+          integers.writeSafely(3, (int) (velocity.getZ() * 8000d));
+        } else {
+          if (event.isReadOnly()) {
+            event.setReadOnly(false);
+          }
+          event.setCancelled(true);
+          return;
+        }
       }
 
       movementData.pendingVelocityPackets.incrementAndGet();

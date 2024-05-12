@@ -39,7 +39,7 @@ public final class PacketReaders {
     setup(ENTITY_STATUS, EntityReader::new);
     setup(ENTITY_SOUND, EntityReader::new);
     setup(ENTITY_TELEPORT, EntityReader::new);
-    setup(ENTITY_VELOCITY, EntityReader::new);
+    setup(ENTITY_VELOCITY, EntityVelocityReader::new);
     setup(GAME_STATE_CHANGE, GameStateChangeReader::new);
     setup(LOGIN, EntityReader::new);
     setup(LOOK_AT, EntityReader::new);

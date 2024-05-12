@@ -10,6 +10,7 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.reader.EntityMetadataReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
+import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 
@@ -40,6 +41,10 @@ public final class HealthFilter extends Filter {
     EntityMetadataReader reader = PacketReaders.readerOf(packet);
     Entity entity = reader.entityBy(event);
     if (entity == null) {
+      reader.release();
+      return;
+    }
+    if (entity instanceof EnderDragon) {
       reader.release();
       return;
     }

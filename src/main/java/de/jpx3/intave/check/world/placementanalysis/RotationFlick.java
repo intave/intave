@@ -134,7 +134,6 @@ public class RotationFlick extends PlayerCheckPart<PlacementAnalysis> {
         if (movement.rotationPitch > 89.5) {
           vl += 5;
         }
-
         if (vl > 100) {
           Violation violation = Violation.builderFor(PlacementAnalysis.class)
             .forPlayer(player).withDefaultThreshold()
@@ -146,12 +145,14 @@ public class RotationFlick extends PlayerCheckPart<PlacementAnalysis> {
           Modules.violationProcessor().processViolation(violation);
 //          user.meta().violationLevel().lastBlockPlaceDenyRequest = System.currentTimeMillis();
           vl -= 10;
+          user.nerfPermanently(AttackNerfStrategy.RECEIVE_MORE_KNOCKBACK, "mpa");
+          user.nerfPermanently(AttackNerfStrategy.APPLY_LESS_KNOCKBACK, "mpa");
         }
 
         if (vl > 250) {
           //dmc35
           user.nerf(AttackNerfStrategy.GARBAGE_HITS, "35");
-          user.nerf(AttackNerfStrategy.DMG_LIGHT, "35");
+          user.nerfPermanently(AttackNerfStrategy.DMG_HIGH, "35");
         }
       }
 //      player.sendMessage(ChatColor.RED + "Rotation flick " + movement.rotationYaw + " " + movement.rotationPitch + " +-" + pitchDiff + " " + verticalLineLength + " " + average + " " + rotationSum + " -> " + vl);

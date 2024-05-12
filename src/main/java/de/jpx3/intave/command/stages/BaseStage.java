@@ -151,7 +151,8 @@ public final class BaseStage extends CommandStage {
   @KeepEnumInternalNames
   public enum DebugType {
     TELEPORT(MessageChannel.DEBUG_TELEPORT),
-    MOUNTS(MessageChannel.DEBUG_MOUNTS)
+    MOUNTS(MessageChannel.DEBUG_MOUNTS),
+    ITEM_RESETS(MessageChannel.DEBUG_ITEM_RESETS),
 
     ;
 

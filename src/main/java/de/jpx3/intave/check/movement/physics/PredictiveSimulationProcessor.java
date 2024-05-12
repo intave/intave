@@ -1,5 +1,6 @@
 package de.jpx3.intave.check.movement.physics;
 
+import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.annotate.Relocate;
 import de.jpx3.intave.diagnostic.IterativeStudy;
 import de.jpx3.intave.diagnostic.KeyPressStudy;
@@ -8,8 +9,10 @@ import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.module.feedback.Superposition;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.share.Motion;
+import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 
 import java.util.List;
@@ -153,6 +156,10 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
       boolean viaVersionBlockReplacement = meta.protocol().viaVersionShieldBlockReplacement();
       if (releaseHandConditions && (!itemIsBow || (inventoryData.handActiveTicks > 3 && !viaVersionBlockReplacement)) && itemUsageReset) {
         meta.inventory().releaseItemNextTick();
+
+        if (user.receives(MessageChannel.DEBUG_ITEM_RESETS)) {
+          user.player().sendMessage(IntavePlugin.prefix() + "Requesting item usage reset as " + ChatColor.RED + "movement/state discrepancy ");
+        }
       }
     }
 

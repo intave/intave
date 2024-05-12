@@ -29,6 +29,7 @@ import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.nayoro.Nayoro;
 import de.jpx3.intave.module.nayoro.event.AttackEvent;
 import de.jpx3.intave.module.nayoro.event.BlockPlaceEvent;
@@ -144,6 +145,30 @@ public final class DiagnosticsStage extends CommandStage {
         user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "No active nerfers");
       } else {
         user.player().sendMessage(IntavePlugin.prefix() + "Active nerfers: " + attackNerfers.stream().map(nerfer -> nerfer.strategy().typeName()).collect(Collectors.joining(", ")));
+      }
+    } else {
+      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Currently unavailable");
+    }
+  }
+
+  @SubCommand(
+    selectors = "nerf",
+    usage = "",
+    description = "Output active nerfers",
+    permission = "intave.command.diagnostics.performance"
+  )
+  public void nerf(User user, String type) {
+    if (IntaveControl.DISABLE_LICENSE_CHECK || IntaveControl.AUTHENTICATION_DEBUG_MODE) {
+      try {
+        AttackNerfStrategy strategy = AttackNerfStrategy.byName(type);
+        if (strategy == null) {
+          user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Invalid nerf type");
+          return;
+        }
+        user.nerfPermanently(strategy, "command");
+        user.player().sendMessage(IntavePlugin.prefix() + "Nerf " + strategy.typeName() + " applied");
+      } catch (Exception exception) {
+        user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Invalid nerf type");
       }
     } else {
       user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Currently unavailable");

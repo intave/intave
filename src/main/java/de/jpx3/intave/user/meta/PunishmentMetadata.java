@@ -44,6 +44,12 @@ public final class PunishmentMetadata {
   public long timeLastBlockCancel;
   public long timeLastSneakToggleCancel;
 
+  public double velocityIncreaseTokens = 6;
+  public long lastVelocityIncreaseReset = System.currentTimeMillis();
+
+  public int lastLowVelocityApplyId = -1;
+  public long lastSwing = 0;
+
   private final Map<Integer, Long> lastTimeValidHurttimeAttack = new ConcurrentHashMap<>();
   private long delay = 600;
 
@@ -80,6 +86,17 @@ public final class PunishmentMetadata {
         event -> {
           event.setDamage(BASE, event.getDamage(BASE) * 0.5);
           DamageModify.refreshModifiers(event);
+        }
+      ),
+      new AttackNerfer(
+        AttackNerfStrategy.RECEIVE_MORE_KNOCKBACK, DAMAGE_CANCEL_LIGHT_DURATION,
+        event -> {}
+      ),
+      new AttackNerfer(
+        AttackNerfStrategy.APPLY_LESS_KNOCKBACK, DAMAGE_CANCEL_LIGHT_DURATION,
+        event -> {
+          User target = UserRepository.userOf((Player) event.getDamager());
+          target.meta().punishment().lastLowVelocityApplyId = event.getEntity().getEntityId();
         }
       ),
       new AttackNerfer(

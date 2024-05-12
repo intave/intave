@@ -129,7 +129,7 @@ public final class Physics extends Check {
       this.refreshNearbyBlocks = settings.boolBy("refresh-nearby-blocks-on-detection", true);
     }
 
-    this.useSuperpositions = !settings.boolBy("no-speculative-velocity", false);
+    this.useSuperpositions = !settings.boolBy("no-speculative-velocity", true);
     this.detectNoSlowdown = settings.boolBy("enforce-item-slowdown", true);
     Physics.USE_SUPERPOSITIONS = useSuperpositions;
 

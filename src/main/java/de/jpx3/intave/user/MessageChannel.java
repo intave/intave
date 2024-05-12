@@ -11,6 +11,7 @@ public enum MessageChannel {
   COMBAT_MODIFIERS("intave.command.combatmodifiers", false),
   DEBUG_TELEPORT("intave.command.verbose", false),
   DEBUG_MOUNTS("intave.command.verbose", false),
+  DEBUG_ITEM_RESETS("intave.command.verbose", false),
 
   ;
 

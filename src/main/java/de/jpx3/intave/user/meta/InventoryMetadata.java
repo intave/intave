@@ -1,6 +1,7 @@
 package de.jpx3.intave.user.meta;
 
 import de.jpx3.intave.IntaveControl;
+import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.annotate.Relocate;
@@ -8,8 +9,10 @@ import de.jpx3.intave.block.type.MaterialSearch;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.player.Enchantments;
 import de.jpx3.intave.player.ItemProperties;
+import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -206,6 +209,10 @@ public final class InventoryMetadata {
     }
 //    deactivateHand();
     releaseItemNextTick();
+
+    if (user.receives(MessageChannel.DEBUG_ITEM_RESETS)) {
+      user.player().sendMessage(IntavePlugin.prefix() + "Requesting item usage reset as " + ChatColor.RED + " inventory was toggled ");
+    }
     this.inventoryOpen = inventoryOpen;
   }
 

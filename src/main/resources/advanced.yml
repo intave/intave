@@ -28,7 +28,7 @@ check:
     enforce-item-slowdown: true
 
     # Disable tick leniency for velocity packets
-    no-speculative-velocity: false
+    no-speculative-velocity: true
 
     on-detection:
       # Can help reduce item-related false positives
