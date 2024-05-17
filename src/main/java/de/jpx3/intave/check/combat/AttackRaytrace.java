@@ -562,11 +562,11 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
           "attacked %s %s from too far away %s",
           resolveArticle(entityName), entityName.toLowerCase(), estimationSuffix
         );
-        if (IntaveControl.GOMME_MODE) {
+//        if (IntaveControl.GOMME_MODE) {
           details = displayReach + " blocks";
-        } else {
-          details = raytrace.from() + " ray to " + (raytrace.to() == null ? "/" + attacked.position.toPosition() + "/" : raytrace.to()) + " :: " + displayReach + " blocks";
-        }
+//        } else {
+//          details = raytrace.from() + " ray to " + (raytrace.to() == null ? "/" + attacked.position.toPosition() + "/" : raytrace.to()) + " :: " + displayReach + " blocks";
+//        }
         thresholdKey = "applicable-thresholds.reach";
         sibyl = String.format(
           "%s/%d attacked %s from %s",
