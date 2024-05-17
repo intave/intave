@@ -248,6 +248,9 @@ public final class PacketDelayer extends Module {
   }
 
   private void sendPacket(Player player, Object packet) {
+    if (packet == null) {
+      return;
+    }
     ProtocolLibrary.getProtocolManager().sendServerPacket(player, PacketContainer.fromPacket(packet), true);
   }
 
