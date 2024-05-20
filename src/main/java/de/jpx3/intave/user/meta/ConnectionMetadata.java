@@ -106,6 +106,7 @@ public final class ConnectionMetadata {
   public long feedbackFaults = 0;
 
   public int nextWindowOpenSlots = 0;
+  public boolean assumeWindowOpen = false;
 
   // Lag identification
   private long lastMovementTimestamps;
