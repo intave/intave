@@ -820,6 +820,7 @@ public final class MovementDispatcher extends Module {
     movement.lastSneaking = movement.sneaking;
     movement.fireworkRocketsTicks++;
     movement.attachVehicleTicks++;
+    movement.detachVehicleTicks++;
 
     if (!inventoryData.handActive() && inventoryData.pastHandActiveTicks > 2) {
       movement.physicsEatingSlotSwitchVL = 0;

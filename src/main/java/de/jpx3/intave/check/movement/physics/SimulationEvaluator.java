@@ -211,7 +211,13 @@ public final class SimulationEvaluator {
       tags.add(EvaluationTag.WATERFLOW);
     }
 
-    verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, movement.estimatedAttachMovement());
+//    if (movement.attachVehicleTicks <= 1 && Math.abs(receivedMotionY - 0.35) < 0.1) {
+//      verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, movement.estimatedAttachMovement());
+//    }
+
+    if (movement.detachVehicleTicks <= 2 && Math.abs(movement.motionY()) < 0.1) {
+      verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.3);
+    }
 
     // Jump out of water
     if (movement.pastWaterMovement <= 3 || movement.pastLavaMovement <= 3) {
@@ -402,7 +408,9 @@ public final class SimulationEvaluator {
       tags.add(EvaluationTag.RIPTIDE);
     }
 
-    horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, movement.estimatedAttachMovement());
+//    if (movement.attachVehicleTicks <= 1) {
+//      horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, movement.estimatedAttachMovement());
+//    }
 
     boolean recentlySentFlying = movement.receivedFlyingPacketIn(2);
     double baseMoveSpeed = movement.baseMoveSpeed();

@@ -173,7 +173,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   // Entity collision
   public boolean enforceBoatStep;
   public volatile Location nearestBoatLocation = null;
-  public int attachVehicleTicks = 100;
+  public int attachVehicleTicks = 100, detachVehicleTicks = 100;
   public float boatGlide, momentum;
   public double waterLevel;
   public BoatSimulator.Status boatStatus = BoatSimulator.Status.ON_LAND,
@@ -240,8 +240,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   private double attachMoveDistance;
   // Flight disallow protection
   public int criticalFlyingDisallowStacks;
-  public boolean criticalFlyingDisallowWasTeleported;
-  public double criticalEnterPosX, criticalEnterPosY, criticalEnterPosZ;
+//  public boolean criticalFlyingDisallowWasTeleported;
+//  public double criticalEnterPosX, criticalEnterPosY, criticalEnterPosZ;
   private volatile Location verifiedLocation;
 
   public MovementMetadata(Player player, User user) {
@@ -1474,6 +1474,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     if (user.receives(MessageChannel.DEBUG_MOUNTS)) {
       player.sendMessage(IntavePlugin.prefix() + "Unmounting " + vehicle.entityName() + " for " + reason.toLowerCase() + " " + (positionReset ? "(with position reset)" : ""));
     }
+    detachVehicleTicks = 0;
     this.vehicle = null;
   }
 
