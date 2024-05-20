@@ -285,6 +285,9 @@ public final class InteractionEmulator implements EventProcessor {
 
       if (presentType != placedBlockType) {
         interaction.markPlacementEmulated();
+        interaction.setEmulationPosition(
+          new BlockPosition(blockX, blockY, blockZ)
+        );
       }
       // enforce block reset later
       //      Synchronizer.synchronize(() -> {
@@ -325,17 +328,18 @@ public final class InteractionEmulator implements EventProcessor {
     User user = userOf(player);
     World world = player.getWorld();
     BlockCache blockStates = user.blockCache();
-    BlockPosition blockPosition = interaction.targetBlock();
-    int blockX = blockPosition.getX();
-    int blockY = blockPosition.getY();
-    int blockZ = blockPosition.getZ();
     if (interaction.wasPlacementEmulated()) {
+      BlockPosition blockPosition = interaction.emulationBlockPosition();
+      int blockX = blockPosition.getX();
+      int blockY = blockPosition.getY();
+      int blockZ = blockPosition.getZ();
       if (user.meta().protocol().clientSpeculativeBlocks()) {
         blockStates.undoClientSpeculation(world, blockX, blockY, blockZ);
       }
 //      blockStates.unlockOverride(blockX, blockY, blockZ);
       blockStates.invalidateCacheAround(blockX, blockY, blockZ);
       blockStates.override(world, blockX, blockY, blockZ, Material.AIR, 0, "UNDO_PLACE");
+//      player.sendMessage("Undo placement at " + blockX + ", " + blockY + ", " + blockZ);
     }
 //    player.sendMessage(blockStates.typeAt(blockX, blockY, blockZ) + "");
   }

@@ -27,6 +27,7 @@ public final class Interaction {
 
   private boolean sendPacket = true;
   private boolean hasBeenEmulated = false;
+  private BlockPosition emulationPosition;
 
   private final int sequenceNumber;
   private boolean blockPlacementEmulation = false;
@@ -183,5 +184,13 @@ public final class Interaction {
 
   public void markPlacementEmulated() {
     blockPlacementEmulation = true;
+  }
+
+  public void setEmulationPosition(BlockPosition blockPosition) {
+    emulationPosition = blockPosition;
+  }
+
+  public BlockPosition emulationBlockPosition() {
+    return emulationPosition;
   }
 }

@@ -292,7 +292,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     InventoryMetadata inventoryData = meta.inventory();
     ProtocolMetadata protocol = meta.protocol();
 
-    receivedAnyTickContextPacket(user, false);
+    receivedAnyTickContextPacket(user, false, "BLOCK_DIG");
 
     PacketContainer packet = event.getPacket();
 
@@ -406,7 +406,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();
     InteractionMeta interactionMeta = metaOf(user);
-    receivedAnyTickContextPacket(user, false);
+    receivedAnyTickContextPacket(user, false, "MOVEMENT");
     List<Interaction> interactionList = interactionMeta.interactionList;
     if (interactionList.isEmpty()) {
       return false;
@@ -442,11 +442,11 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
   public void receiveAnyTickContextPacket(PacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
-    receivedAnyTickContextPacket(user, event.getPacket().getType() == PacketType.Play.Client.ARM_ANIMATION);
+    receivedAnyTickContextPacket(user, event.getPacket().getType() == PacketType.Play.Client.ARM_ANIMATION, event.getPacketType().name());
   }
 
   private void receivedAnyTickContextPacket(
-    User user, boolean isAnimation
+    User user, boolean isAnimation, String debugMessage
   ) {
     InteractionMeta interactionMeta = metaOf(user);
     if (interactionMeta.speculativeInteraction != null) {
@@ -460,7 +460,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       } else {
         // placement but no animation, undo
         if (IntaveControl.DEBUG_INTERACTION) {
-          user.player().sendMessage(ChatColor.RED + "Speculative interaction failed, emulated: " + speculativeInteraction.hasBeenEmulated() + "/" + speculativeInteraction.wasPlacementEmulated());
+          user.player().sendMessage(ChatColor.RED + "Speculative interaction failed was: "+debugMessage+", emulated: " + speculativeInteraction.hasBeenEmulated() + "/" + speculativeInteraction.wasPlacementEmulated());
         }
         if (speculativeInteraction.hasBeenEmulated()) {
           interactionEmulator.undo(speculativeInteraction);
