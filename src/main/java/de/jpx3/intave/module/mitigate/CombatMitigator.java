@@ -43,7 +43,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static de.jpx3.intave.access.player.trust.TrustFactor.ORANGE;
 import static de.jpx3.intave.access.player.trust.TrustFactor.RED;
-import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.HT_SPOOF;
 import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.RECEIVE_MORE_KNOCKBACK;
 
 public final class CombatMitigator extends Module {
@@ -324,9 +323,9 @@ public final class CombatMitigator extends Module {
     }
 
     // nope
-    if (attackNerfer.strategy() == HT_SPOOF) {
-      return;
-    }
+//    if (attackNerfer.strategy() == HT_SPOOF) {
+//      return;
+//    }
 
     Player player = user.player();
     long expiry = attackNerfer.expiry();
@@ -360,8 +359,10 @@ public final class CombatMitigator extends Module {
       }
     }
 
-    if (IntaveControl.GOMME_MODE && !hide) {
+    if (IntaveControl.GOMME_MODE /*&& !hide*/) {
       IntaveLogger.logger().printLine("[Intave] " + ChatColor.stripColor(message));
+      IntavePlugin.singletonInstance().logTransmittor()
+        .addPlayerLog(player, message);
     }
 
     for (Player authenticatedPlayer : MessageChannelSubscriptions.sibylReceivers()/*Bukkit.getOnlinePlayers()*/) {
