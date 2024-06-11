@@ -102,10 +102,16 @@ public final class MiscBukkitEvents extends Module {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     ItemStack item = player.getItemOnCursor();
+    Material type = item.getType();
+    boolean problematic = false;
     if (ItemProperties.isSwordItem(item) && !ViaVersionAdapter.ignoreBlocking(user.player())) {
-      Material material = item.getType();
+      problematic = true;
+    } else if (ItemProperties.isBow(type) || ItemProperties.foodConsumable(player, type)) {
+      problematic = true;
+    }
+    if (problematic) {
       user.meta().inventory().releaseItemNextTick = true;
-      user.meta().inventory().releaseItemType = material;
+      user.meta().inventory().releaseItemType = type;
     }
   }
 
