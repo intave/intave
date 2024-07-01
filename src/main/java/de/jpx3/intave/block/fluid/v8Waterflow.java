@@ -54,6 +54,11 @@ final class v8Waterflow implements FluidFlow {
     return inWater;
   }
 
+  @Override
+  public double fluidDepthAt(User user, BoundingBox boundingBox) {
+    return 0.0D; // not needed here
+  }
+
   public Motion modifyAcceleration(User user, BlockPosition pos, Motion motion) {
     return motion.add(pushMotionAt(user, pos.getBlockX(), pos.getBlockY(), pos.getBlockZ()));
   }

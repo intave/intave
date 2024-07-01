@@ -10,6 +10,10 @@ public interface Fluid {
   boolean falling();
   boolean isSource();
 
+  default boolean affectsFlow(Fluid other) {
+    return other.isOfWater() || other.similarTo(this);
+  }
+
   default boolean similarTo(Fluid other) {
     return isOfWater() == other.isOfWater() && isOfLava() == other.isOfLava();
   }

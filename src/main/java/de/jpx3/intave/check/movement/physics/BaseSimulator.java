@@ -9,9 +9,7 @@ import de.jpx3.intave.block.collision.modifier.PowderSnowCollisionModifier;
 import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.physics.BlockPhysics;
 import de.jpx3.intave.block.physics.BlockProperties;
-import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.block.type.MaterialSearch;
-import de.jpx3.intave.block.variant.BlockVariant;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.tracker.entity.Entity;
@@ -29,7 +27,6 @@ import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.user.meta.ViolationMetadata;
-import de.jpx3.intave.world.WorldHeight;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -105,22 +102,22 @@ class BaseSimulator extends Simulator {
 
     if (jumped) {
       boolean allowJumpInLiquid = false;
-      if (protocol.waterUpdate() && inWater && environment.onGround()) {
+      if (
+        protocol.waterUpdate() && inWater &&
+        environment.onGround() && environment.pose().height(user) >= 0.4
+      ) {
         Position lastPosition = environment.lastPosition();
-        double fluidHeight = 0.0d;
-
-        float heightPercentage = resolveLiquidHeightPercentage(levelOfLiquidAt(user, lastPosition));
-        double convertedPositionY = environment.positionY() + Math.abs(WorldHeight.LOWER_WORLD_LIMIT);
-        heightPercentage += convertedPositionY % 1;
+        double fluidDepth = user.waterflow().fluidDepthAt(
+          user, BoundingBox.fromPosition(user, environment, lastPosition)
+        );
         boolean fluidStateEmpty = !Fluids.fluidPresentAt(user, lastPosition);
-
-        allowJumpInLiquid = fluidStateEmpty || heightPercentage > 0.5;
+        allowJumpInLiquid = fluidStateEmpty || fluidDepth <= 0.4;
       }
       if (inWater && !allowJumpInLiquid) {
         motion.motionY += 0.04F;
       } else if (inLava) {
         // #handleJumpLava
-        motion.motionY += 0.03999999910593033D;
+        motion.motionY += 0.04F;
       } else {
         motion.motionY = environment.jumpMotion();
         if (/*movementData.sprintingAllowed()*/ sprinting) {
@@ -150,23 +147,6 @@ class BaseSimulator extends Simulator {
     ColliderResult collisionResult = Colliders.collision(user, environment, motion, environment.inWeb(), positionX, positionY, positionZ);
     notePossibleFlyingPacket(user, collisionResult);
     return Simulation.of(user, configuration, collisionResult);
-  }
-
-  private static int levelOfLiquidAt(User user, Position position) {
-    Material material = VolatileBlockAccess.typeAccess(user, user.player().getWorld(), position);
-    if (MaterialMagic.isLavaOrWater(material)) {
-      BlockVariant variant = VolatileBlockAccess.variantAccess(user, position);
-      return variant == null ? -1 : variant.propertyOf("level");
-    } else {
-      return -1;
-    }
-  }
-
-  private static float resolveLiquidHeightPercentage(int level) {
-    if (level >= 8) {
-      level = 0;
-    }
-    return (float) (level + 1) / 9.0F;
   }
 
   private void performSimulationInWaterOfState(

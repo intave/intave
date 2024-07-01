@@ -1,5 +1,6 @@
 package de.jpx3.intave.block.fluid;
 
+import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.block.variant.BlockVariant;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.klass.rewrite.PatchyAutoTranslation;
@@ -25,11 +26,11 @@ final class v16FluidResolver implements FluidResolver {
     boolean isWater = fluid.a(TagsFluid.WATER);
     boolean isLava = fluid.a(TagsFluid.LAVA);
     boolean source = fluid.isSource();
+    int level = fluid.e();
     Boolean fallingProperty = dry ? null : variant.propertyOf("falling");
     if (fallingProperty == null) {
-      fallingProperty = false;
+      fallingProperty = !dry && MaterialMagic.isLavaOrWater(type) && level >= 8;
     }
-    int level = fluid.e();
     float height = level / 9f;
     return select(isWater, isLava, dry, fallingProperty, height, level);
   }

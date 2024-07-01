@@ -63,10 +63,10 @@ final class v18b2FluidResolver implements FluidResolver {
       float height = fluid.d();
       BlockVariant variant = BlockVariantRegister.variantOf(type, variantIndex);
       Boolean fallingProperty = dry ? null : variant.propertyOf("falling");
-      if (fallingProperty == null) {
-        fallingProperty = false;
-      }
       int level = MaterialMagic.isLavaOrWater(type) ? variant.propertyOf("level") : 8;
+      if (fallingProperty == null) {
+        fallingProperty = !dry && MaterialMagic.isLavaOrWater(type) && level >= 8;
+      }
       return select(isWater, isLava, dry, fallingProperty, height, level);
     } catch (Throwable throwable) {
       throwable.printStackTrace();

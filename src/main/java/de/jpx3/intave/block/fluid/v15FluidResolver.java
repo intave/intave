@@ -27,11 +27,11 @@ final class v15FluidResolver implements FluidResolver {
     boolean isLava = fluid.a(TagsFluid.LAVA);
     boolean source = fluid.isSource();
     Boolean fallingProperty = dry ? null : variant.propertyOf("falling");
+    int level = MaterialMagic.isLavaOrWater(type) ? variant.propertyOf("level") : 8;
     if (fallingProperty == null) {
-      fallingProperty = false;
+      fallingProperty = !dry && MaterialMagic.isLavaOrWater(type) && level >= 8;
     }
     float height = fluid.f();
-    int level = MaterialMagic.isLavaOrWater(type) ? variant.propertyOf("level") : 8;
     return select(isWater, isLava, dry, fallingProperty, height, level);
   }
 }

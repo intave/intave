@@ -1085,6 +1085,11 @@ public final class Physics extends Check {
       }
       debug += " d:" + distanceOutput;
 
+      // horizontal and vertical distance difference
+//      debug += " h:" + formatDouble(Math.abs(differenceX) + Math.abs(differenceZ), 3);
+//      debug += " v:" + formatDouble(Math.abs(differenceY), 3);
+
+
       if (debug.startsWith(" ")) {
         debug = debug.substring(1);
       }

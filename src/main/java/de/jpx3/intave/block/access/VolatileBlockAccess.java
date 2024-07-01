@@ -144,8 +144,16 @@ public final class VolatileBlockAccess {
     return fluidAccess(user, blockAccess, floor(x), floor(y), floor(z));
   }
 
+  public static Fluid fluidAccess(User user, double x, double y, double z) {
+    return fluidAccess(user, user.player().getWorld(), floor(x), floor(y), floor(z));
+  }
+
   public static Fluid fluidAccess(User user, Position lastPosition) {
     return fluidAccess(user, user.player().getWorld(), lastPosition.getBlockX(), lastPosition.getBlockY(), lastPosition.getBlockZ());
+  }
+
+  public static Fluid fluidAccess(User user, int blockX, int blockY, int blockZ) {
+    return fluidAccess(user, user.player().getWorld(), blockX, blockY, blockZ);
   }
 
   public static Fluid fluidAccess(User user, World world, int blockX, int blockY, int blockZ) {
