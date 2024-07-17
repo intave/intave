@@ -21,7 +21,16 @@ final class EnderPortalFramePatch extends BlockShapePatch {
 
   @Override
   protected BlockShape collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int variantIndex, BlockShape shape) {
-    BlockVariant variant = BlockVariantRegister.variantOf(type, variantIndex);
+    return patch(player, type, variantIndex);
+  }
+
+  @Override
+  protected BlockShape outlinePatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
+    return patch(player, type, blockState);
+  }
+
+  private BlockShape patch(Player player, Material type, int blockState) {
+    BlockVariant variant = BlockVariantRegister.variantOf(type, blockState);
     boolean eye = variant.propertyOf("eye");
     List<BoundingBox> boundingBoxes = new ArrayList<>();
     boundingBoxes.add(baseShape);
