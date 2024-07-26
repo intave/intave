@@ -21,10 +21,13 @@ public final class FallDamageApplier {
   private final Object fallDamageSource;
 
   {
+    MethodHandle fallDamageInvokeMethod;
     Class<?> entityLivingClass = Lookup.serverClass("EntityLiving");
     // Search method name
     String methodName = "e";
-    if (MinecraftVersions.VER1_17_0.atOrAbove()) {
+    if (MinecraftVersions.VER1_21.atOrAbove()) {
+      methodName = "causeFallDamage";
+    } else if (MinecraftVersions.VER1_17_0.atOrAbove()) {
       methodName = "a";
     } else if (MinecraftVersions.VER1_14_0.atOrAbove()) {
       // >= 1.14
@@ -47,8 +50,9 @@ public final class FallDamageApplier {
     try {
       fallDamageInvokeMethod = MethodHandles.lookup().findVirtual(entityLivingClass, methodName, methodType);
     } catch (NoSuchMethodException | IllegalAccessException exception) {
-      throw new IllegalStateException(exception);
+      fallDamageInvokeMethod = null;
     }
+    this.fallDamageInvokeMethod = fallDamageInvokeMethod;
     if (MinecraftVersions.VER1_20.atOrAbove()) {
       Object source = null;
       try {

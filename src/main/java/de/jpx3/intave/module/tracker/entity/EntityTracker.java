@@ -63,7 +63,6 @@ public final class EntityTracker extends Module {
   /*
   TODO: when a entity gets spawned and the spawn packet gets send to the client and the entity gets teleported right after,
    the check will try to create the entity by the teleport packet bevor the entity spawn packet can be executed
-
    TODO: maybe remove entities when their live gets below 0 for 20 ticks. Or debug if entities gets really removed in some kind of root command
    */
   private final EntityTypeResolver entityTypeResolver;
@@ -199,6 +198,8 @@ public final class EntityTracker extends Module {
      */
 //    plugin.eventService().transactionFeedbackService().requestPong(event.getPlayer(), event, this::processEntitySpawn);
 //    Thread.dumpStack();
+
+
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     ConnectionMetadata connection = user.meta().connection();
@@ -730,7 +731,6 @@ public final class EntityTracker extends Module {
     boolean player
   ) {
     ConnectionMetadata synchronizeData = user.meta().connection();
-//    Map<Integer, WrappedEntity> entities = synchronizeData.entities();
     double posX = serverPosX / 32d;
     double posY = serverPosY / 32d;
     double posZ = serverPosZ / 32d;
@@ -739,7 +739,6 @@ public final class EntityTracker extends Module {
     entity.serverPosY = serverPosY;
     entity.serverPosZ = serverPosZ;
     entity.setPositionAndRotationSpawnMob(posX, posY, posZ, posY);
-//    entities.put(entityId, entity);
     synchronizeData.enterEntity(entity);
     StaticEntityCollisions.enterEntitySpawn(user, entity);
     return entity;
