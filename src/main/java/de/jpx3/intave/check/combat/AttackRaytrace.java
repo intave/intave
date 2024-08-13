@@ -301,7 +301,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         double after = violationContext.violationLevelAfter();
         if (after > 30) {
           entityHasTimedOut = true;
-          user.nerf(AttackNerfStrategy.DMG_HIGH, "67");
+          user.nerf(AttackNerfStrategy.CANCEL, "67");
         }
         if (IntaveControl.GOMME_MODE) {
 //        System.out.println("TIMEOUT_X: " + player.getName() + " attacked " + attackedEntity.entityName() + " with " + pendingFeedbacks + " pending feedbacks (" + distanceOverLimit + " | " + maximumPendingFeedbackPackets + ")");
@@ -367,12 +367,6 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
           if (after > 30 /*&& !IntaveControl.GOMME_MODE*/) {
             entityHasTimedOut = true;
             violationLevel.lastBacktrackHitCancelRequest = System.currentTimeMillis();
-            user.nerf(AttackNerfStrategy.DMG_HIGH, "67");
-          }
-          if (after > 80) {
-            violationLevel.lastBacktrackHitCancelRequest = System.currentTimeMillis();
-            user.nerf(AttackNerfStrategy.DMG_MEDIUM, "67");
-            user.nerf(AttackNerfStrategy.CRITICALS, "67");
             user.nerf(AttackNerfStrategy.CANCEL, "67");
           }
 

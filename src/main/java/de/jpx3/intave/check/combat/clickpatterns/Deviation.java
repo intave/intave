@@ -63,21 +63,21 @@ public final class Deviation extends MetaCheckPart<ClickPatterns, Deviation.Devi
             attacks.clear();
         }
 
-        // After we got 4 deviation samples, we are going to check the deviation of these samples, if it's too low, the player is performing a long-term consistency
-        if (meta.deviations.size() >= 4) {
+        // After we got 3 deviation samples, we are going to check the deviation of these samples, if it's too low, the player is performing a long-term consistency
+        if (meta.deviations.size() >= 3) {
             double std = standardDeviation(meta.deviations);
 
             long length = System.currentTimeMillis() - meta.started;
 
-            if (std < 30 && length < 4000) {
+            if (std < 25 && length < 4000) {
                 int vlAdd = std < 10 ? 2 : 1;
                 meta.vl += vlAdd;
-                if (meta.vl > 1) {
+                if (meta.vl > 2) {
                     parentCheck().makeDetection(
                             player,
                             "low deviation",
                             "sd:" + formatDouble(std, 3) + " t:" + formatDouble(length / 1000d, 2),
-                            meta.vl > 0 ? 20 : 0
+                            meta.vl > 0 ? 10 : 0
                     );
                 }
             } else if (meta.vl > 0) {

@@ -67,7 +67,7 @@ public final class ClickPatterns extends Check {
       .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES).withVL(vl).withDefaultThreshold().build();
     double vlAfter = Modules.violationProcessor().processViolation(violation).violationLevelAfter();
     if (vlAfter > 50) {
-      user.nerf(APPLY_LESS_KNOCKBACK, "75");
+      user.nerf(RECEIVE_MORE_KNOCKBACK, "75");
     }
   }
 }
