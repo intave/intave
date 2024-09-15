@@ -397,6 +397,10 @@ public final class MovementDispatcher extends Module {
 
         if (!MinecraftVersions.VER1_9_0.atOrAbove()) {
           event.setCancelled(true);
+        } else {
+          modifier.write(0, movementData.positionX);
+          modifier.write(1, movementData.positionY);
+          modifier.write(2, movementData.positionZ);
         }
         return;
       }
