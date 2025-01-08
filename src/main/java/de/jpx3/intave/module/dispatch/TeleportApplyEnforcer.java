@@ -75,6 +75,7 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
     PacketContainer packet = event.getPacket();
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
+    boolean vectors = MinecraftVersions.VER1_21_4.atOrAbove();
 
     StructureModifier<Double> doubles = packet.getDoubles();
     Double positionX;
@@ -83,7 +84,7 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
     StructureModifier<Float> floats = packet.getFloat();
     Float yaw;
     Float pitch;
-    if (MinecraftVersions.VER1_21_4.atOrAbove()) {
+    if (vectors) {
       InternalStructure posRot = packet.getStructures().read(0);
       Vector position = posRot.getVectors().read(0);
       positionX = position.getX();
@@ -122,21 +123,36 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
 
     if (relativeX) {
       positionX += user.meta().movement().verifiedPositionX();
-      doubles.write(0, positionX);
+      if (vectors) {
+        Vector vec = packet.getStructures().read(0).getVectors().read(0);
+        vec.setX(positionX);
+      } else {
+        doubles.write(0, positionX);
+      }
       flags.remove(TeleportFlag.X);
       flagModification = true;
     }
 
     if (relativeY) {
       positionY += user.meta().movement().verifiedPositionY();
-      doubles.write(1, positionY);
+      if (vectors) {
+        Vector vec = packet.getStructures().read(0).getVectors().read(0);
+        vec.setY(positionY);
+      } else {
+        doubles.write(1, positionY);
+      }
       flags.remove(TeleportFlag.Y);
       flagModification = true;
     }
 
     if (relativeZ) {
       positionZ += user.meta().movement().verifiedPositionZ();
-      doubles.write(2, positionZ);
+      if (vectors) {
+        Vector vec = packet.getStructures().read(0).getVectors().read(0);
+        vec.setZ(positionZ);
+      } else {
+        doubles.write(2, positionZ);
+      }
       flags.remove(TeleportFlag.Z);
       flagModification = true;
     }

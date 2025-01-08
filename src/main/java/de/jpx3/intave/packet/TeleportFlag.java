@@ -17,7 +17,11 @@ public enum TeleportFlag {
   Y(1),
   Z(2),
   Y_ROT(3),
-  X_ROT(4);
+  X_ROT(4),
+  DELTA_X(5),
+  DELTA_Y(6),
+  DELTA_Z(7),
+  ROTATE_DELTA(8);
 
   private final int slot;
 
