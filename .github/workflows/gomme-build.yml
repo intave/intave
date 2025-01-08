@@ -28,7 +28,7 @@ jobs:
           name: raw-intave-jar
           path: build/libs/Intave.jar
   obfuscate:
-    runs-on: self-hosted
+    runs-on: docker
     container:
       image: registry.lennoxlotl.dev/intave/obfuscation-lite:1.0.1
       credentials:
