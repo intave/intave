@@ -29,6 +29,7 @@ jobs:
           path: build/libs/Intave.jar
   obfuscate:
     runs-on: docker
+    needs: build
     container:
       image: registry.lennoxlotl.dev/intave/obfuscation-lite:1.0.1
       credentials:
