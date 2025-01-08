@@ -36,12 +36,14 @@ jobs:
       credentials:
         username: ${{ secrets.INTAVE_REGISTRY_USERNAME }}
         password: ${{ secrets.INTAVE_REGISTRY_PASSWORD }}
+      volumes:
+        - ${{ github.workspace }}/files:/app/io
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: raw-intave-jar
-          path: app/io/input.jar
+          path: files/input.jar
       - name: Run ZKM
         shell: sh
         working-directory: /app
