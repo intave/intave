@@ -112,6 +112,7 @@ public final class DesyncWatchdog extends Module {
       this.serverPosition = serverPosition;
       this.intaveAcceptedPosition = intaveAcceptedPosition;
       this.prefilteredPendingPosition = prefilteredPendingPosition;
+      this.inVehicle = inVehicle;
     }
 
     public Position serverPosition() {
