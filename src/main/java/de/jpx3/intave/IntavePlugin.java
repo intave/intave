@@ -1086,7 +1086,6 @@ public final class IntavePlugin extends JavaPlugin {
           try {
             file.delete();
           } catch (Exception exception) {
-            exception.printStackTrace();
           }
         });
       // clear empty directories
@@ -1101,13 +1100,13 @@ public final class IntavePlugin extends JavaPlugin {
           try {
             file.delete();
           } catch (Exception exception) {
-            exception.printStackTrace();
+//            exception.printStackTrace();
           }
         });
     } catch (NoSuchFileException ignored) {
       // ignore
     } catch (Exception | Error throwable) {
-      throwable.printStackTrace();
+//      throwable.printStackTrace();
     }
   }
 
@@ -1175,7 +1174,7 @@ public final class IntavePlugin extends JavaPlugin {
           try {
             file.delete();
           } catch (Exception exception) {
-            exception.printStackTrace();
+//            exception.printStackTrace();
           }
         });
       // clear empty directories
@@ -1190,13 +1189,13 @@ public final class IntavePlugin extends JavaPlugin {
           try {
             file.delete();
           } catch (Exception exception) {
-            exception.printStackTrace();
+//            exception.printStackTrace();
           }
         });
     } catch (NoSuchFileException ignored) {
       // ignore
     } catch (Exception | Error throwable) {
-      throwable.printStackTrace();
+//      throwable.printStackTrace();
     }
   }
 
