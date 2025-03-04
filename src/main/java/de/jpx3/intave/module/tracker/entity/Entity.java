@@ -28,7 +28,7 @@ public class Entity {
   private static Entity DESTROYED_ENTITY;
   private static final boolean POSITION_PROCESSING_1_9 = MinecraftVersions.VER1_9_0.atOrAbove();
   private static final boolean POSITION_PROCESSING_1_14 = MinecraftVersions.VER1_14_0.atOrAbove();
-  private static final boolean POSITION_PROCESSING_1_21_4 = MinecraftVersions.VER1_21_4.atOrAbove();
+  private static final boolean POSITION_PROCESSING_1_21_3 = MinecraftVersions.VER1_21_3.atOrAbove();
   private EntityTypeData typeData;
 
   private final int entityId;
@@ -183,7 +183,7 @@ public class Entity {
     double newPosX;
     double newPosY;
     double newPosZ;
-    if (POSITION_PROCESSING_1_21_4) {
+    if (POSITION_PROCESSING_1_21_3) {
       PositionMoveRotation posMoveRot = PositionMoveRotation.firstFrom(packet);
       Set<Relative> flags = Relative.flagsFrom(packet);
       Position old = immediateServerPosition.filtered(flags);
@@ -233,7 +233,7 @@ public class Entity {
     double newPosY;
     double newPosZ;
     boolean immediateTeleport = false;
-    if (POSITION_PROCESSING_1_21_4) {
+    if (POSITION_PROCESSING_1_21_3) {
       PositionMoveRotation posMoveRot = PositionMoveRotation.firstFrom(packet);
       Set<Relative> flags = Relative.flagsFrom(packet);
       Position old = position.toPosition().filtered(flags);
