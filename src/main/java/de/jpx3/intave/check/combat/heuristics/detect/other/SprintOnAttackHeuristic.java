@@ -72,7 +72,7 @@ public final class SprintOnAttackHeuristic extends MetaCheckPart<Heuristics, Spr
 
         if (resprintDelayHistogram.size() > 40 && uniformMse < 3.5) {
           //player.sendMessage(ChatColor.RED + "Too uniform resprint delay  " + uniformMse + " " + Arrays.toString(resprintDelayHistogram.bins()));
-          user.nerfPermanently(AttackNerfStrategy.APPLY_LESS_KNOCKBACK, "SOA1");
+//          user.nerfPermanently(AttackNerfStrategy.APPLY_LESS_KNOCKBACK, "SOA1");
           if (uniformMse < 2) {
             user.nerfPermanently(AttackNerfStrategy.DMG_LIGHT, "SOA1");
           }
@@ -80,13 +80,13 @@ public final class SprintOnAttackHeuristic extends MetaCheckPart<Heuristics, Spr
 
         if (resprintDelayHistogram.size() > 30 && (var < 0.225 && criticalVar < 0.225)) {
           //player.sendMessage(ChatColor.RED + "Low variance resprint delay " + var + " " + criticalVar + " " + Arrays.toString(resprintDelayHistogram.bins()));
-          user.nerfPermanently(AttackNerfStrategy.APPLY_LESS_KNOCKBACK, "SOA2");
+//          user.nerfPermanently(AttackNerfStrategy.APPLY_LESS_KNOCKBACK, "SOA2");
           if (var < 0.1 && criticalVar < 0.1) {
             user.nerfPermanently(AttackNerfStrategy.DMG_LIGHT, "SOA2");
           }
         } else if (resprintDelayHistogram.size() > 10 && (var < 0.1 && criticalVar < 0.1)) {
           //player.sendMessage(ChatColor.RED + "Low variance resprint delay 2" + var + " " + criticalVar + " " + Arrays.toString(resprintDelayHistogram.bins()));
-          user.nerfPermanently(AttackNerfStrategy.APPLY_LESS_KNOCKBACK, "SOA3");
+//          user.nerfPermanently(AttackNerfStrategy.APPLY_LESS_KNOCKBACK, "SOA3");
         }
       }
     } else if (action == PlayerAction.STOP_SPRINTING) {
