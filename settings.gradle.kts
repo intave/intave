@@ -1,4 +1,4 @@
-rootProject.name = "Intave-14"
+rootProject.name = "Intave"
 
 pluginManagement {
     repositories {

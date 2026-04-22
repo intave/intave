@@ -1,11 +1,12 @@
 # Intave
 
-Intave is an enterprise and lightweight anticheat built on years of experience protecting the world's largest
-Minecraft servers. See the full documentation [here](https://docs.intave.ac/).
+Intave is an enterprise anticheat plugin for Minecraft servers in development since 2016.
+After almost a decade of use on the world's largest Minecraft servers
+and shutting down in mid-2025, we now decided to give back to the community by making Intave source available to everyone.
 
-For more information, you can join our discord [server](https://intave.ac/go/discord).
+## General
 
-### Checks
+### How Intave works
 
 Unlike traditional module-based anticheats, Intave accurately simulates player movement, client-side entity and block
 data to detect even the smallest manipulations. Through this approach, Intave successfully prevents any kind of combat,
@@ -20,17 +21,38 @@ checks [here](https://docs.intave.ac/mechanics/checks-01-overview.html).
 
 ## Development
 
-### Project Setup
+### Setup
 
-1. Clone the project: `git clone https://github.com/intave/Intave.git`.
+1. Clone the project: `git clone https://github.com/intave/intave.git`.
 2. Open the project as Gradle project; wait a few minutes for IntelliJ to index and build the
    project.
 
-### Start a testserver
+### Testing
 
-Choose one of the `run_X.X.X` gradle tasks corresponding to the Minecraft server version
+Choose one of the `intave/run_X.X.X` gradle tasks corresponding to the Minecraft server version
 you want to test. Intave is then automatically installed on that server. In case of Intave failing to download
 ProtocolLib, make sure you manually install ProtocolLib on the server by moving it into the `plugins` directory.
 
 By doing so, you can run the plugin directly in the IDE. Breakpoints and hotswapping is
 enabled!
+We use [this IntelliJ plugin](https://plugins.jetbrains.com/plugin/14832-single-hotswap) for efficient hotswapping, which
+can swap method contents that don't have an indy lambda or anonymous class.
+
+## Contributing
+
+We accept contributions to the project, but please make sure to read the [contributing guidelines](docs/CONTRIBUTING.md) before doing so.
+For a high-level overview of the project organization, see [this document](docs/STRUCTURE.md).
+A cheatsheet can be found [here](docs/CHEATSHEET.md) to quickly find your way around the codebase, contributions welcome!
+Our block system is briefly outlined in [this document](docs/BLOCK_SYSTEM.md).
+If you have any questions, feel free to get in touch with us on [Discord](https://intave.ac/go/discord).
+
+## License
+We want to make Intave completely free and open source, available for everyone.
+However, as we've seen with other copy-cat anticheats, we don't want
+others to take our work, rebrand it and sell it as their own creation.
+We've seen this happen multiple times with other anticheats, and we explicitly forbid this kind of behavior.
+Still, we want to allow Minecraft servers commercial use of Intave and
+the ability to modify and adapt it to their needs, as long as they don't compete with us by selling it as a product.
+Therefore, we decided to use the [Polyform Perimeter License 1.0.0](LICENSE.md),
+prohibiting any form of competitive use.
+Please note that Intave uses third-party libraries, which are licensed under their respective licenses.
