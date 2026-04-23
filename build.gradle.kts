@@ -326,9 +326,8 @@ fun registerServerTask(serverVersion: String, javaVersion: Int) {
  * Gradle Task Configuration
  */
 java {
-  toolchain {
-    languageVersion.set(JavaLanguageVersion.of(21))
-  }
+  toolchain.languageVersion = JavaLanguageVersion.of(21)
+  disableAutoTargetJvm()
 }
 
 tasks {
@@ -344,6 +343,12 @@ tasks {
       attributes("paperweight-mappings-namespace" to "mojang")
       attributes("Main-Class" to "de.jpx3.intave.IntaveApplication")
     }
+  }
+
+  compileJava {
+    options.encoding = Charsets.UTF_8.name()
+    sourceCompatibility = "1.8"
+    targetCompatibility = "1.8"
   }
 
   shadowJar {
