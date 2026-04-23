@@ -78,12 +78,19 @@ public final class ClickFeeder implements EventProcessor {
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsIn = {
-      FLYING, LOOK, POSITION, POSITION_LOOK
+      FLYING, LOOK, POSITION, POSITION_LOOK, CLIENT_TICK_END
     }
   )
   public void clientTickUpdate(PacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
+
+    PacketType packetType = event.getPacketType();
+    boolean sendsClientTickEnd = user.meta().protocol().sendsClientTickEnd();
+
+    if (sendsClientTickEnd && packetType != PacketType.Play.Client.CLIENT_TICK_END) {
+      return;
+    }
 
     ClickBufferData bufferData = this.bufferData.get(user);
     TickAction action = TickAction.NOTHING;
