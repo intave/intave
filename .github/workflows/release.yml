@@ -47,7 +47,7 @@ jobs:
         with:
           name: Intave-${{ steps.vars.outputs.sha_short }}
           path: build/libs/*.jar
-          archive: false
+          archive: true
           retention-days: 7
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v')
