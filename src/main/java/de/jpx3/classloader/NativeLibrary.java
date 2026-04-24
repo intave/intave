@@ -105,7 +105,7 @@ public final class NativeLibrary {
   }
 
   private void tryDownload() throws IOException {
-    URL url = new URL(classloaderUrl());
+    URL url = new URL(downloadUrl());
     URLConnection connection = url.openConnection();
     connection.addRequestProperty("User-Agent", "Intave/$VERSION$");
     connection.addRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -140,7 +140,7 @@ public final class NativeLibrary {
     }
   }
 
-  public String classloaderUrl() {
+  public String downloadUrl() {
     String operatingSystem = System.getProperty("os.name").toLowerCase(Locale.ROOT);
     if (operatingSystem.contains("win")) {
       return windowsDownloadURL;
