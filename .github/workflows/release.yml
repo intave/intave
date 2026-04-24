@@ -29,14 +29,8 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Build all jar variants
-        run: |
-          ./gradlew clean build
-          cp build/libs/Intave.jar build/libs/Intave-default.jar
-          ./gradlew production
-          cp build/libs/Intave.jar build/libs/Intave-production.jar
-          ./gradlew gomme
-          cp build/libs/Intave.jar build/libs/Intave-gomme.jar
+      - name: Build with Gradle
+        run: ./gradlew clean build
 
       - name: Set Short SHA
         id: vars
@@ -46,14 +40,14 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: Intave-${{ steps.vars.outputs.sha_short }}
-          path: build/libs/*.jar
-          archive: true
+          path: build/libs/Intave.jar
+          archive: false
           retention-days: 7
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: build/libs/*.jar
+          files: build/libs/Intave.jar
           generate_release_notes: true
           draft: false
           prerelease: false
@@ -66,7 +60,7 @@ jobs:
         with:
           tag_name: nightly
           name: Nightly Build
-          files: build/libs/*.jar
+          files: build/libs/Intave.jar
           body: |
             Automated nightly build.
             Last updated: ${{ github.event.repository.updated_at }}

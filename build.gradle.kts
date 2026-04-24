@@ -4,7 +4,6 @@ import xyz.jpenilla.runpaper.task.RunServer
 
 plugins {
   java
-  id("com.github.gmazzo.buildconfig") version "6.0.9"
   id("net.minecrell.plugin-yml.bukkit") version "0.6.0"
   id("com.gradleup.shadow") version "9.4.1"
   id("xyz.jpenilla.run-paper") version "3.0.2"
@@ -44,16 +43,6 @@ dependencies {
   // random shit
   compileOnly("org.jetbrains:annotations:23.1.0")
   compileOnly("it.unimi.dsi:fastutil:8.5.12")
-
-  // smile
-  compileOnly("com.github.haifengl:smile-base:3.0.1")
-  compileOnly("com.github.haifengl:smile-core:3.0.1")
-
-  // add bytedeco
-  compileOnly("org.bytedeco:openblas:0.3.23-1.5.9")
-  compileOnly("org.bytedeco:openblas-platform:0.3.23-1.5.9")
-  compileOnly("org.bytedeco:javacpp:1.5.9")
-  compileOnly("org.bytedeco:javacpp-presets:1.5.9")
 
   compileOnly("org.spigotmc:spigot-api:1.21.1-R0.1-SNAPSHOT")
 
@@ -120,115 +109,6 @@ bukkit {
     register("intave.command.internals.collectivekick") { default = FALSE }
     register("intave.command.internals.bot") { default = FALSE }
   }
-}
-
-/*
- * Intave Gradle Tasks
- */
-
-tasks.register("production") {
-  group = "deploy"
-  dependsOn(tasks.build)
-  buildConfigFieldSafe("boolean", "PRODUCTION", "true")
-  dumpBuildConfig()
-}
-
-tasks.register<RunServer>("authtest") {
-  group = "intave"
-  dependsOn(tasks.build)
-  buildConfigFieldSafe("boolean", "PRODUCTION", "true")
-  buildConfigFieldSafe("boolean", "AUTHTEST", "true")
-  dumpBuildConfig()
-
-  pluginJars.from("build/libs/$simpleName.jar")
-  minecraftVersion("1.8.8")
-  runDirectory(File("runs/authtest"))
-  jvmArgs("-Dcom.mojang.eula.agree=true")
-//  jvmArgs("-Dintave.test.success=shutdown")
-  javaLauncher.set(
-    project.javaToolchains.launcherFor {
-      // Sets the JDK version for the Minecraft server, Intave is still built using Java
-      // 1.8
-      languageVersion.set(JavaLanguageVersion.of(17))
-    }
-  )
-}
-
-tasks.register<RunServer>("gommetest") {
-  group = "intave"
-  dependsOn(tasks.build)
-  buildConfigFieldSafe("boolean", "GOMME", "true")
-  dumpBuildConfig()
-
-  pluginJars.from("build/libs/$simpleName.jar")
-  minecraftVersion("1.8.8")
-  runDirectory(File("runs/gommetest"))
-  jvmArgs("-Dcom.mojang.eula.agree=true")
-//  jvmArgs("-Dintave.test.success=shutdown")
-  javaLauncher.set(
-    project.javaToolchains.launcherFor {
-      // Sets the JDK version for the Minecraft server, Intave is still built using Java
-      // 1.8
-      languageVersion.set(JavaLanguageVersion.of(8))
-    }
-  )
-}
-
-
-tasks.register<RunServer>("authtest_1.20.1") {
-  group = "intave"
-  dependsOn(tasks.build)
-  buildConfigFieldSafe("boolean", "PRODUCTION", "true")
-  buildConfigFieldSafe("boolean", "AUTHTEST", "true")
-  dumpBuildConfig()
-
-  pluginJars.from("build/libs/$simpleName.jar")
-  minecraftVersion("1.20.1")
-  runDirectory(File("runs/authtest_1.20.1"))
-  jvmArgs("-Dcom.mojang.eula.agree=true")
-//  jvmArgs("-Dintave.test.success=shutdown")
-  javaLauncher.set(
-    project.javaToolchains.launcherFor {
-      // Sets the JDK version for the Minecraft server, Intave is still built using Java
-      // 1.8
-      languageVersion.set(JavaLanguageVersion.of(17))
-    }
-  )
-}
-
-tasks.register("gomme") {
-  group = "deploy"
-  dependsOn(tasks.build)
-  buildConfigFieldSafe("boolean", "GOMME", "true")
-  dumpBuildConfig()
-}
-
-/*
- * IntaveSettings build config
- */
-buildConfig {
-  className("IntaveBuildConfig")
-  packageName("de.jpx3.intave")
-  useJavaOutput()
-
-  buildConfigFieldSafe("boolean", "PRODUCTION", "false");
-  buildConfigFieldSafe("boolean", "AUTHTEST", "false");
-  buildConfigFieldSafe("boolean", "GOMME", "false")
-  buildConfigFieldSafe("String", "VERSION", "\"${rootProject.version}\"")
-}
-
-fun buildConfigFieldSafe(type: String, name: String, value: String) {
-  val buildConfig = buildConfig
-  val buildConfigFields = buildConfig.buildConfigFields
-  buildConfigFields.removeIf { it.name == name }
-  buildConfig.buildConfigField(type, name, value)
-}
-
-fun dumpBuildConfig() {
-  val buildConfig = buildConfig
-  val buildConfigFields = buildConfig.buildConfigFields
-  println(">> BuildConfig:")
-  buildConfigFields.forEach { println("  ${it.name} = ${it.value.get()}") }
 }
 
 val serverVersions = mapOf(

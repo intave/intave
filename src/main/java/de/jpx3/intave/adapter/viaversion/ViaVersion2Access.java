@@ -32,7 +32,7 @@ public final class ViaVersion2Access implements ViaVersionAccess {
       Class<?> configurationClass = Class.forName("us.myles.ViaVersion.api.configuration.ConfigurationProvider");
       configurationClass.getMethod("set", String.class, Object.class).invoke(configuration, "tracking-warning-pps", 300);
     } catch (Exception exception) {
-      throw new IllegalStateException("Failed to alter ViaVersion configuration", exception);
+      warnPatchConfigurationFailure();
     }
   }
 

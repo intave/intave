@@ -2,15 +2,15 @@ package de.jpx3.intave;
 
 import de.jpx3.intave.module.nayoro.OperationalMode;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static de.jpx3.intave.IntaveBuildConfig.*;
-import static de.jpx3.intave.module.nayoro.OperationalMode.CLOUD_STORAGE;
 import static de.jpx3.intave.module.nayoro.OperationalMode.LOCAL_STORAGE;
 
 public final class IntaveControl {
+  public static final boolean PRODUCTION = false;
+  public static final boolean GOMME = false;
+  public static final boolean AUTHTEST = false;
   public static final boolean APPLY_GLOBAL_LOW_TRUSTFACTOR = false;
   public static final boolean DEBUG_MOVEMENT = false;
   public static final boolean DEBUG_EMULATION = false;
@@ -69,18 +69,18 @@ public final class IntaveControl {
   public static final boolean DEBUG_VELOCITY_RECEIVE = false;
   public static final boolean DEBUG_PLACE_AND_BREAK_PERMISSIONS = false;
   public static final boolean DEBUG_SERVER_VERSION = false;
-  public static final boolean CLOUD_LOCALHOST_MASTER_SHARD = !PRODUCTION && !GOMME;
+  public static final boolean CLOUD_LOCALHOST_MASTER_SHARD = true;
   public static final boolean REPLACE_JOAP_SETBACK_WITH_CM = true;
   public static final boolean DISALLOW_ALL_BLOCK_PLACEMENTS = false;
   public static final boolean DISALLOW_ALL_BLOCK_PLACEMENTS_WITH_EVENT = false;
   public static final boolean ENABLE_MOVEMENT_DEBUGGER_COLLECTOR = false;
   public static final boolean MOVEMENT_DEBUGGER_COLLECTOR_POSTTICK_OUTPUT = false;
-  public static final boolean AUTHENTICATION_DEBUG_MODE = AUTHTEST;
+  public static final boolean AUTHENTICATION_DEBUG_MODE = false;
   public static final boolean CLIENT_KEEP_ALIVE_NETTY_CHECK = false;
-  public static final boolean NOTIFY_MISSING_PACKET_FLUSHES = !PRODUCTION;
+  public static final boolean NOTIFY_MISSING_PACKET_FLUSHES = true;
 
-  public static final OperationalMode SAMPLE_OPERATIONAL_MODE = GOMME ? /*GOMME_UPLOAD*/CLOUD_STORAGE : (PRODUCTION ? CLOUD_STORAGE : LOCAL_STORAGE);
+  public static final OperationalMode SAMPLE_OPERATIONAL_MODE = LOCAL_STORAGE;
 
-  public static final boolean USE_EXTERNAL_CONFIGURATION_FILE = !PRODUCTION;
-  public static final boolean DISABLE_LICENSE_CHECK = !PRODUCTION;
+  public static final boolean USE_EXTERNAL_CONFIGURATION_FILE = true;
+  public static final boolean DISABLE_LICENSE_CHECK = true;
 }
