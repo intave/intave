@@ -2,10 +2,10 @@ name: Build and Release
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "**" ]
     tags: [ "v*" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "**" ]
   schedule:
     - cron: '0 0 * * *'
 
@@ -28,8 +28,14 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Build with Gradle
-        run: ./gradlew build
+      - name: Build all jar variants
+        run: |
+          ./gradlew clean build
+          cp build/libs/Intave.jar build/libs/Intave-default.jar
+          ./gradlew production
+          cp build/libs/Intave.jar build/libs/Intave-production.jar
+          ./gradlew gomme
+          cp build/libs/Intave.jar build/libs/Intave-gomme.jar
 
       - name: Set Short SHA
         id: vars
@@ -38,8 +44,8 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
-          name: Intave-${{ steps.vars.outputs.sha_short }}.jar
-          path: build/libs/Intave.jar
+          name: Intave-${{ steps.vars.outputs.sha_short }}
+          path: build/libs/*.jar
           archive: false
           retention-days: 7
       - name: Create Release
