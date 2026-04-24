@@ -28,16 +28,8 @@ public class Fluids {
 
   public static void setup() {
     String className;
-    if (VER1_18_2.atOrAbove()) {
-      className = "de.jpx3.intave.block.fluid.v18b2FluidResolver";
-    } else if (VER1_16_0.atOrAbove()) {
-      className = "de.jpx3.intave.block.fluid.v16FluidResolver";
-    } else if (VER1_15_0.atOrAbove()) {
-      className = "de.jpx3.intave.block.fluid.v15FluidResolver";
-    } else if (VER1_14_0.atOrAbove()) {
-      className = "de.jpx3.intave.block.fluid.v14FluidResolver";
-    } else if (VER1_13_0.atOrAbove()) {
-      className = "de.jpx3.intave.block.fluid.v13FluidResolver";
+    if (VER1_13_0.atOrAbove()) {
+      className = "de.jpx3.intave.block.fluid.ModernFluidResolver";
     } else if (VER1_12_0.atOrAbove()) {
       className = "de.jpx3.intave.block.fluid.v12FluidResolver";
     } else {

@@ -1,27 +1,14 @@
 package de.jpx3.intave.config;
 
-import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveBootFailureException;
-import de.jpx3.intave.connect.IntaveDomains;
-import de.jpx3.intave.resource.legacy.EncryptedLegacyResource;
-import de.jpx3.intave.security.LicenseAccess;
 import org.bukkit.configuration.file.YamlConfiguration;
 
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.*;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
-import java.security.SecureRandom;
-import java.security.spec.KeySpec;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -29,8 +16,7 @@ import java.util.UUID;
 import java.util.stream.Collector;
 
 public final class OldConfigurationLoader {
-  private static final String CONF_CACHE_FILE_SUFFIX = "x";
-  private static final String SECRET_KEY = "AES/GCM/NoPadding";
+  private static final String CONF_CACHE_FILE_SUFFIX = ".yml";
   private static final Collector<String, Map<String, Integer>, Map<String, Integer>> STATE_COLLECTOR = Collector.of(HashMap::new, (map, line) -> {
     if (line.contains(":")) {
       String[] split = line.split(":");
@@ -40,269 +26,95 @@ public final class OldConfigurationLoader {
     map1.putAll(map2);
     return map1;
   });
-  private final String configurationKey;
-  private final EncryptedLegacyResource configurationStates = new EncryptedLegacyResource("configuration-states", true);
-  private YamlConfiguration configuration;
 
-/*  @Native
-  @Nullable
-  public String precomputeConfigurationHash() {
-    if (!configurationCacheExists()) {
-      return null;
-    }
-    try {
-      FileInputStream fileInputStream = new FileInputStream(configurationCache());
-      ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-      byte[] buf = new byte[4096];
-      int read;
-      while ((read = fileInputStream.read(buf)) != -1) {
-        byteArrayOutputStream.write(buf, 0, read);
-      }
-      fileInputStream.close();
-      byteArrayOutputStream.close();
-      ByteBuffer byteBuffer = ByteBuffer.wrap(byteArrayOutputStream.toByteArray());
-      byte[] iv = new byte[byteBuffer.getInt()];
-      byteBuffer.get(iv);
-      SecretKey secretKey = generateSecretKey(iv);
-      byte[] cipherBytes = new byte[byteBuffer.remaining()];
-      byteBuffer.get(cipherBytes);
-      Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-      cipher.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(128, iv));
-      byte[] output = cipher.doFinal(cipherBytes);
-      //noinspection UnstableApiUsage
-      return Hashing.sha256().hashBytes(output).toString();
-    } catch (Exception exception) {
-      return null;
-    }
-  }*/
+  private final String configurationKey;
+  private YamlConfiguration configuration;
 
   public OldConfigurationLoader(String configurationKey) {
     this.configurationKey = configurationKey;
   }
 
   public int latestState() {
-    if (!configurationStates.exists()) {
-      return 0;
-    }
-    Map<String, Integer> mappings = configurationStates.collectLines(STATE_COLLECTOR);
-    if (!mappings.containsKey(configurationKey)) {
-      return -1;
-    }
-    return mappings.get(configurationKey.toLowerCase());
+    return stateMappings().getOrDefault(configurationKey.toLowerCase(Locale.ROOT), 0);
   }
 
   public void saveState(int state) {
-    Map<String, Integer> mappings = new HashMap<>();
-    if (configurationStates.exists()) {
-      mappings = configurationStates.collectLines(STATE_COLLECTOR);
-    }
-    mappings.put(configurationKey.toLowerCase(), state);
+    Map<String, Integer> mappings = stateMappings();
+    mappings.put(configurationKey.toLowerCase(Locale.ROOT), state);
     StringBuilder content = new StringBuilder();
-    mappings.forEach((key, value) -> content.append(key).append(":").append(value).append("\r\n"));
-    configurationStates.write(new ByteArrayInputStream(content.toString().getBytes(StandardCharsets.UTF_8)));
+    mappings.forEach((key, value) -> content.append(key).append(":").append(value).append(System.lineSeparator()));
+    try {
+      Files.write(stateFile().toPath(), content.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    } catch (IOException exception) {
+      throw new IllegalStateException(exception);
+    }
   }
 
   public void loadConfigurationUpdatedForcefully() {
-    YamlConfiguration configuration = tryDownloadConfiguration();
-    if (configuration == null) {
-      try {
-        configuration = (YamlConfiguration) readConfiguration();
-      } catch (IllegalStateException exception) {
-        throw new IllegalStateException("Unable to prepare configuration");
-      }
-    } else {
-      saveConfiguration(configuration);
-    }
-    this.configuration = configuration;
+    loadConfiguration();
   }
 
   public void loadConfiguration() {
-    YamlConfiguration configuration;
-    if (!configurationCacheExists()) {
-      configuration = tryDownloadConfiguration();
-      if (configuration == null) {
-        try {
-          configuration = (YamlConfiguration) readConfiguration();
-        } catch (IllegalStateException exception) {
-          throw new IllegalStateException("Unable to prepare configuration");
-        }
+    File settingFile = new File(IntavePlugin.singletonInstance().dataFolder(), "settings.yml");
+    if (!settingFile.exists()) {
+      if (getResource("settings.yml") != null) {
+        saveResource("settings.yml", false);
+      } else if (getResource("advanced.yml") != null) {
+        saveResource("advanced.yml", false);
+        settingFile = new File(IntavePlugin.singletonInstance().dataFolder(), "advanced.yml");
       } else {
-        saveConfiguration(configuration);
-      }
-    } else {
-      try {
-        configuration = (YamlConfiguration) readConfiguration();
-      } catch (IllegalStateException exception) {
-        configuration = tryDownloadConfiguration();
-        if (configuration == null) {
-          throw exception;
-        }
-        saveConfiguration(configuration);
+        throw new IntaveBootFailureException("No embedded configuration file is available");
       }
     }
-    this.configuration = configuration;
+    configuration = YamlConfiguration.loadConfiguration(new InputStreamReader(read(settingFile)));
+    saveConfiguration(configuration);
   }
 
-  private YamlConfiguration tryDownloadConfiguration() {
-    try {
-      InputStream inputStream;
-      boolean useExternalConfigurationFile = ("file".equalsIgnoreCase(configurationKey)/* && enterprise*/) || IntaveControl.USE_EXTERNAL_CONFIGURATION_FILE;
-      if (useExternalConfigurationFile) {
-        IntavePlugin plugin = IntavePlugin.singletonInstance();
-        File settingFile = new File(plugin.dataFolder(), "settings.yml");
-        if (!settingFile.exists()) {
-          if (plugin.getResource("settings.yml") != null) {
-            saveResource("settings.yml", false);
-          } else {
-            throw new IntaveBootFailureException("Please download Intave again to use file configurations");
-          }
-        }
-        inputStream = Files.newInputStream(settingFile.toPath());
-      } else if (IntaveControl.USE_DEBUG_TRUSTFACTOR_RESOURCE) {
-        inputStream = OldConfigurationLoader.class.getResourceAsStream("/settings.yml");
-        if (inputStream == null) {
-          throw new IntaveBootFailureException("Debug resources not found");
-        }
-      } else {
-        URL url = new URL("https://" + IntaveDomains.primaryServiceDomain() + "/settings/download");
-        URLConnection urlConnection = url.openConnection();
-        urlConnection.addRequestProperty("User-Agent", "Intave/" + IntavePlugin.version());
-        urlConnection.addRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate");
-        urlConnection.setUseCaches(false);
-        urlConnection.addRequestProperty("Pragma", "no-cache");
-        urlConnection.addRequestProperty("Identifier", LicenseAccess.rawLicense());
-        urlConnection.addRequestProperty("ConfigKey", configurationKey);
-        urlConnection.setConnectTimeout(3000);
-        urlConnection.setReadTimeout(3000);
-        urlConnection.connect();
-        inputStream = urlConnection.getInputStream();
-      }
-      return YamlConfiguration.loadConfiguration(new InputStreamReader(inputStream));
-    } catch (Exception exception) {
-      return null;
-    }
-  }
-
-  // stolen from bukkit
   public void saveResource(String resourcePath, boolean replace) {
-    if (resourcePath != null && !resourcePath.equals("")) {
-      resourcePath = resourcePath.replace('\\', '/');
-      InputStream in = this.getResource(resourcePath);
-      if (in == null) {
-        throw new IllegalArgumentException("The embedded resource '" + resourcePath + "' cannot be found");
-      } else {
-        File dataFolder = IntavePlugin.singletonInstance().dataFolder();
-        File outFile = new File(dataFolder, resourcePath);
-        int lastIndex = resourcePath.lastIndexOf(47);
-        File outDir = new File(dataFolder, resourcePath.substring(0, Math.max(lastIndex, 0)));
-        if (!outDir.exists()) {
-          outDir.mkdirs();
-        }
-        try {
-          if (!outFile.exists() || replace) {
-            OutputStream out = Files.newOutputStream(outFile.toPath());
-            byte[] buf = new byte[1024];
-            int len;
-            while ((len = in.read(buf)) != -1) {
-              out.write(buf, 0, len);
-            }
-            out.close();
-            in.close();
-          }
-        } catch (IOException ignored) {
-        }
-      }
-    } else {
+    if (resourcePath == null || resourcePath.isEmpty()) {
       throw new IllegalArgumentException("ResourcePath cannot be null or empty");
+    }
+    resourcePath = resourcePath.replace('\\', '/');
+    InputStream in = getResource(resourcePath);
+    if (in == null) {
+      throw new IllegalArgumentException("The embedded resource '" + resourcePath + "' cannot be found");
+    }
+    File dataFolder = IntavePlugin.singletonInstance().dataFolder();
+    File outFile = new File(dataFolder, resourcePath);
+    File outDir = outFile.getParentFile();
+    if (!outDir.exists()) {
+      outDir.mkdirs();
+    }
+    if (outFile.exists() && !replace) {
+      return;
+    }
+    try (InputStream input = in) {
+      Files.copy(input, outFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+    } catch (IOException exception) {
+      throw new IllegalStateException(exception);
     }
   }
 
   public InputStream getResource(String filename) {
     if (filename == null) {
       throw new IllegalArgumentException("Filename cannot be null");
-    } else {
-      try {
-        URL url = this.getClass().getClassLoader().getResource(filename);
-        if (url == null) {
-          return null;
-        } else {
-          URLConnection connection = url.openConnection();
-          connection.setUseCaches(false);
-          return connection.getInputStream();
-        }
-      } catch (IOException var4) {
-        return null;
-      }
+    }
+    return getClass().getClassLoader().getResourceAsStream(filename);
+  }
+
+  private InputStream read(File file) {
+    try {
+      return Files.newInputStream(file.toPath());
+    } catch (IOException exception) {
+      throw new IllegalStateException(exception);
     }
   }
 
-  private Object readConfiguration() {
+  private void saveConfiguration(YamlConfiguration configuration) {
     try {
-      File configurationCache = configurationCache();
-      if (!configurationCache.exists()) {
-        throw new IllegalStateException();
-      }
-      configurationCache.setLastModified(System.currentTimeMillis());
-      FileInputStream fileInputStream = new FileInputStream(configurationCache);
-      ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-      byte[] buf = new byte[4096];
-      int read;
-      while ((read = fileInputStream.read(buf)) != -1) {
-        byteArrayOutputStream.write(buf, 0, read);
-      }
-      fileInputStream.close();
-      byteArrayOutputStream.close();
-      ByteBuffer byteBuffer = ByteBuffer.wrap(byteArrayOutputStream.toByteArray());
-      byte[] iv = new byte[byteBuffer.getInt()];
-      byteBuffer.get(iv);
-      KeySpec spec = new PBEKeySpec(OldConfigurationLoader.SECRET_KEY.toCharArray(), iv, 65536, 128); // AES-128
-      SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-      byte[] key = secretKeyFactory.generateSecret(spec).getEncoded();
-      SecretKey secretKey = new SecretKeySpec(key, "AES");
-      byte[] cipherBytes = new byte[byteBuffer.remaining()];
-      byteBuffer.get(cipherBytes);
-      Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-      cipher.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(128, iv));
-      byte[] output = cipher.doFinal(cipherBytes);
-      InputStreamReader reader = new InputStreamReader(new ByteArrayInputStream(output));
-      return YamlConfiguration.loadConfiguration(reader);
-    } catch (Exception exception) {
-      throw new IllegalStateException(/*exception*/);
-    }
-  }
-
-  private void saveConfiguration(Object configurationObj) {
-    try {
-      YamlConfiguration configuration = (YamlConfiguration) configurationObj;
-      int state = configuration.getInt("variant");
-      if (state != latestState()) {
-        saveState(state);
-      }
-      File configurationCache = configurationCache();
-      if (configurationCache.exists()) {
-        configurationCache.delete();
-      }
-      configurationCache.createNewFile();
-      String configurationContent = configuration.saveToString();
-      SecureRandom secureRandom = new SecureRandom();
-      byte[] iv = new byte[12];
-      secureRandom.nextBytes(iv);
-      KeySpec spec = new PBEKeySpec(OldConfigurationLoader.SECRET_KEY.toCharArray(), iv, 65536, 128); // AES-128
-      SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-      byte[] key = secretKeyFactory.generateSecret(spec).getEncoded();
-      SecretKey secretKey = new SecretKeySpec(key, "AES");
-      Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-      GCMParameterSpec parameterSpec = new GCMParameterSpec(128, iv);
-      cipher.init(Cipher.ENCRYPT_MODE, secretKey, parameterSpec);
-      byte[] encryptedData = cipher.doFinal(configurationContent.getBytes(StandardCharsets.UTF_8));
-      ByteBuffer byteBuffer = ByteBuffer.allocate(4 + iv.length + encryptedData.length);
-      byteBuffer.putInt(iv.length);
-      byteBuffer.put(iv);
-      byteBuffer.put(encryptedData);
-      FileOutputStream fileOutputStream = new FileOutputStream(configurationCache);
-      fileOutputStream.write(byteBuffer.array());
-      fileOutputStream.close();
-    } catch (Exception exception) {
+      configuration.save(configurationCache());
+      saveState(configuration.getInt("variant", latestState()));
+    } catch (IOException exception) {
       throw new IllegalStateException(exception);
     }
   }
@@ -316,9 +128,24 @@ public final class OldConfigurationLoader {
   }
 
   public File configurationCache() {
-    String fileName = new UUID(((long) configurationKey.length() << 8) | (configurationKey.hashCode() >>> 1), ~configurationKey.hashCode()).toString();
-    fileName = fileName/*.substring(0, fileName.length() - 1)*/ + CONF_CACHE_FILE_SUFFIX;
+    String fileName = new UUID(((long) configurationKey.length() << 8) | (configurationKey.hashCode() >>> 1), ~configurationKey.hashCode()) + CONF_CACHE_FILE_SUFFIX;
     return new File(intaveTempDirectory(), fileName);
+  }
+
+  private File stateFile() {
+    return new File(intaveTempDirectory(), "configuration-states.txt");
+  }
+
+  private Map<String, Integer> stateMappings() {
+    File stateFile = stateFile();
+    if (!stateFile.exists()) {
+      return new HashMap<>();
+    }
+    try {
+      return Files.lines(stateFile.toPath()).collect(STATE_COLLECTOR);
+    } catch (IOException exception) {
+      return new HashMap<>();
+    }
   }
 
   private File intaveTempDirectory() {
@@ -330,7 +157,7 @@ public final class OldConfigurationLoader {
       workDirectory = new File(System.getProperty("user.home") + "/.intave/");
     }
     if (!workDirectory.exists()) {
-      workDirectory.mkdir();
+      workDirectory.mkdirs();
     }
     return workDirectory;
   }

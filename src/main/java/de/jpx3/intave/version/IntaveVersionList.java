@@ -1,18 +1,12 @@
 package de.jpx3.intave.version;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
-import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.resource.Resource;
-import de.jpx3.intave.resource.Resources;
 
-import java.io.StringReader;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public final class IntaveVersionList {
   private final List<IntaveVersion> content = new ArrayList<>();
@@ -22,30 +16,7 @@ public final class IntaveVersionList {
   }
 
   public void setup() {
-    Resource cachedResource = Resources.localServiceCacheResource(
-      "versions",
-      "versions",
-      TimeUnit.DAYS.toMillis(2)
-    );
-    try {
-      JsonReader json = new JsonReader(new StringReader(cachedResource.readAsString()));
-      json.setLenient(true);
-      JsonArray jsonArray = new JsonParser().parse(json).getAsJsonArray();
-      for (JsonElement jsonElement : jsonArray) {
-        JsonObject jsonObject = jsonElement.getAsJsonObject();
-        String name = jsonObject.get("name").getAsString();
-        String release = jsonObject.get("release").getAsString();
-        String status = jsonObject.get("status").getAsString();
-        IntaveVersion version = new IntaveVersion(
-          name, Long.parseLong(release),
-          IntaveVersion.Status.fromName(status)
-        );
-        content.add(version);
-        contentLookup.put(version.version().toLowerCase(Locale.ROOT), version);
-      }
-    } catch (Exception e) {
-      IntaveLogger.logger().warn("Failed to load version list");
-    }
+    register(new IntaveVersion(IntavePlugin.version(), System.currentTimeMillis(), IntaveVersion.Status.LATEST));
   }
 
   public IntaveVersion current() {
@@ -66,5 +37,10 @@ public final class IntaveVersionList {
 
   public List<IntaveVersion> content() {
     return content;
+  }
+
+  private void register(IntaveVersion version) {
+    content.add(version);
+    contentLookup.put(version.version().toLowerCase(Locale.ROOT), version);
   }
 }

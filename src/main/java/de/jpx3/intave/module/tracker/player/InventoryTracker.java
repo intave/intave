@@ -1,9 +1,9 @@
 package de.jpx3.intave.module.tracker.player;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientClientStatus;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerOpenWindow;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerWindowItems;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.module.Module;
@@ -11,12 +11,14 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.WindowItemReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.InventoryMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,18 +44,20 @@ public final class InventoryTracker extends Module {
     },
     ignoreCancelled = false
   )
-  public void sentOpenInventory(PacketEvent event) {
+  public void sentOpenInventory(ProtocolPacketEvent event, WrapperPlayServerOpenWindow packet) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     InventoryMetadata inventoryData = user.meta().inventory();
-    PacketContainer packet = event.getPacket();
 
     // For some reason the client doesn't send a close window packet after closing
     // the beacon window. Therefore, we pretend the player does not have an open
     // inventory if he opens the beacon window to avoid further issues.
-    WrappedChatComponent chatComponent = packet.getChatComponents().read(0);
-    String json = chatComponent.getJson();
-    boolean clientDoesNotSendCloseWindow = json.contains("container.beacon");
+    String legacyType = packet.getLegacyType();
+    String title = String.valueOf(packet.getTitle());
+    boolean clientDoesNotSendCloseWindow =
+      (legacyType != null && legacyType.toLowerCase().contains("beacon")) ||
+        title.toLowerCase().contains("container.beacon") ||
+        title.toLowerCase().contains("beacon");
 
     if (!clientDoesNotSendCloseWindow) {
       Modules.feedback()
@@ -76,10 +80,9 @@ public final class InventoryTracker extends Module {
       CLIENT_COMMAND
     }
   )
-  public void receiveClientCommand(PacketEvent event) {
+  public void receiveClientCommand(ProtocolPacketEvent event, WrapperPlayClientClientStatus packet) {
     Player player = event.getPlayer();
-    EnumWrappers.ClientCommand clientCommand = event.getPacket().getClientCommands().read(0);
-    if (clientCommand == EnumWrappers.ClientCommand.OPEN_INVENTORY_ACHIEVEMENT) {
+    if (packet.getAction() == WrapperPlayClientClientStatus.Action.OPEN_INVENTORY_ACHIEVEMENT) {
       openInventory(player);
     }
   }
@@ -125,7 +128,7 @@ public final class InventoryTracker extends Module {
     },
     ignoreCancelled = false
   )
-  public void sentCloseInventory(PacketEvent event) {
+  public void sentCloseInventory(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     Modules.feedback()
       .synchronize(player, null, (p, x) -> closeInventory(p));
@@ -142,7 +145,7 @@ public final class InventoryTracker extends Module {
       PacketId.Client.CLOSE_WINDOW
     }
   )
-  public void receiveCloseWindow(PacketEvent event) {
+  public void receiveCloseWindow(ProtocolPacketEvent event) {
     closeInventory(event.getPlayer());
   }
 
@@ -168,7 +171,7 @@ public final class InventoryTracker extends Module {
     },
     ignoreCancelled = false
   )
-  public void sentRespawn(PacketEvent event) {
+  public void sentRespawn(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     InventoryMetadata inventoryData = user.meta().inventory();
@@ -178,13 +181,19 @@ public final class InventoryTracker extends Module {
   @PacketSubscription(
     packetsOut = {WINDOW_ITEMS}
   )
-  public void on(
-    User user, WindowItemReader reader
-  ) {
-    if (reader.windowId() == 0) {
-      List<String> collect = reader.itemMap().values().stream().map(itemStack -> itemStack.getType().name()).collect(Collectors.toList());
+  public void on(User user, WrapperPlayServerWindowItems packet) {
+    if (packet.getWindowId() == 0) {
+      List<String> collect = packet.getItems().stream()
+        .map(InventoryTracker::toBukkitItemStack)
+        .map(ItemStack::getType)
+        .map(Enum::name)
+        .collect(Collectors.toList());
       user.tickFeedback(() -> user.meta().inventory().setItems(collect));
 //      System.out.println(collect);
     }
+  }
+
+  private static ItemStack toBukkitItemStack(com.github.retrooper.packetevents.protocol.item.ItemStack stack) {
+    return stack == null ? new ItemStack(Material.AIR) : SpigotConversionUtil.toBukkitItemStack(stack);
   }
 }

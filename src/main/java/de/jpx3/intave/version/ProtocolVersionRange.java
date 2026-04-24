@@ -1,6 +1,6 @@
 package de.jpx3.intave.version;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.version.MinecraftVersion;
 
 class ProtocolVersionRange implements Comparable<ProtocolVersionRange> {
   private final int from;

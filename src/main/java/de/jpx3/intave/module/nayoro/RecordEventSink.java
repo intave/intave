@@ -3,7 +3,6 @@ package de.jpx3.intave.module.nayoro;
 import de.jpx3.intave.module.nayoro.event.*;
 import de.jpx3.intave.module.nayoro.event.sink.EventSink;
 import de.jpx3.intave.module.tracker.entity.Entity;
-import de.jpx3.intave.security.LicenseAccess;
 
 import java.io.Closeable;
 import java.io.DataOutput;
@@ -45,7 +44,6 @@ class RecordEventSink extends EventSink {
       try {
         writeLock.lock();
         dataOutput.writeUTF("INTAVE/SAMPLE");
-       // dataOutput.writeUTF(LicenseAccess.network());
         UUID id = UUID.randomUUID();
         dataOutput.writeLong(id.getMostSignificantBits());
         dataOutput.writeLong(id.getLeastSignificantBits());

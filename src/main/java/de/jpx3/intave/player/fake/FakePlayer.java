@@ -1,7 +1,7 @@
 package de.jpx3.intave.player.fake;
 
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.github.retrooper.packetevents.protocol.player.GameMode;
+import com.github.retrooper.packetevents.protocol.player.UserProfile;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.IntavePlugin;
@@ -39,8 +39,8 @@ public final class FakePlayer extends FakePlayerBody {
   private final Movement movement;
   private final Player observer;
   private final User user;
-  private final WrappedGameProfile wrappedGameProfile;
-  private final EnumWrappers.NativeGameMode gameMode;
+  private final UserProfile userProfile;
+  private final GameMode gameMode;
   private final int attributes;
   private final Consumer<FakePlayer> attackSubscriber;
   public double killAuraVL = 0;
@@ -52,7 +52,7 @@ public final class FakePlayer extends FakePlayerBody {
   FakePlayer(
     Movement movement,
     Player observer,
-    WrappedGameProfile profile,
+    UserProfile profile,
     String tabListPrefix,
     String prefix,
     int entityId,
@@ -62,12 +62,12 @@ public final class FakePlayer extends FakePlayerBody {
     super(observer, entityId, attributes, profile, tabListPrefix, prefix);
     this.user = UserRepository.userOf(observer);
     this.movement = movement;
-    this.wrappedGameProfile = profile;
+    this.userProfile = profile;
     this.observer = observer;
     this.attributes = attributes;
     this.actions = loadActions();
     this.attackSubscriber = attackSubscriber;
-    this.gameMode = EnumWrappers.NativeGameMode.SURVIVAL;
+    this.gameMode = GameMode.SURVIVAL;
     user.meta().attack().setFakePlayer(this);
   }
 
@@ -285,11 +285,11 @@ public final class FakePlayer extends FakePlayerBody {
     return attackSubscriber;
   }
 
-  public WrappedGameProfile profile() {
-    return wrappedGameProfile;
+  public UserProfile profile() {
+    return userProfile;
   }
 
-  public EnumWrappers.NativeGameMode gameMode() {
+  public GameMode gameMode() {
     return gameMode;
   }
 
@@ -304,7 +304,7 @@ public final class FakePlayer extends FakePlayerBody {
   public static class Builder {
     private final Player observer;
     private int identifier = -1;
-    private WrappedGameProfile gameProfile;
+    private UserProfile gameProfile;
     private String tabListPrefix = "";
     private String prefix = "";
     private Movement movement = null;

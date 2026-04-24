@@ -1,6 +1,6 @@
 package de.jpx3.intave.block.shape.resolve.patch;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.version.MinecraftVersion;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.variant.BlockVariant;

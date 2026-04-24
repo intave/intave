@@ -1,6 +1,6 @@
 package de.jpx3.intave.module;
 
-import com.comphenix.protocol.ProtocolLibrary;
+import de.jpx3.intave.adapter.PacketEventsAdapter;
 
 import java.util.Arrays;
 
@@ -9,12 +9,8 @@ final class Requirements {
     return new NoRequirement();
   }
 
-  public static Requirement protocolLib() {
-    return requiresPlugin("ProtocolLib").and(() -> ProtocolLibrary.getProtocolManager() != null);
-  }
-
-  public static Requirement protocolLib4() {
-    return protocolLib().and(() -> ProtocolLibrary.getPlugin().getDescription().getVersion().startsWith("4"));
+  public static Requirement packetEvents() {
+    return requiresPlugin("packetevents").and(PacketEventsAdapter::packetEventsAvailable);
   }
 
   public static Requirement intaveEnabled() {

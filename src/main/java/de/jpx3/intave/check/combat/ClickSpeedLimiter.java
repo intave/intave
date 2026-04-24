@@ -1,9 +1,9 @@
 package de.jpx3.intave.check.combat;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheck;
 import de.jpx3.intave.module.Modules;
@@ -38,17 +38,12 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
       USE_ENTITY
     }
   )
-  public void attackEntity(PacketEvent event) {
+  public void attackEntity(ProtocolPacketEvent event, WrapperPlayClientInteractEntity packet) {
     Player player = event.getPlayer();
     User user = userOf(player);
     ClickSpeedLimiterMeta meta = metaOf(user);
-    PacketContainer packet = event.getPacket();
-    EnumWrappers.EntityUseAction action = packet.getEntityUseActions().readSafely(0);
-    if (action == null) {
-      action = packet.getEnumEntityUseActions().read(0).getAction();
-    }
 
-    if (action == EnumWrappers.EntityUseAction.ATTACK) {
+    if (packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
       if (user.protocolVersion() <= ProtocolMetadata.VER_1_8) {
         meta.attackCountArray[meta.attackArrayIndex]++;
       } else {
@@ -68,12 +63,12 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void clientTickUpdate(PacketEvent event) {
+  public void clientTickUpdate(ProtocolPacketEvent event) {
     // TODO: Check rod right click spam
     Player player = event.getPlayer();
     User user = userOf(player);
     ClickSpeedLimiterMeta meta = metaOf(user);
-    PacketType pt = event.getPacketType();
+    PacketTypeCommon pt = event.getPacketType();
 
     if (user.protocolVersion() <= ProtocolMetadata.VER_1_8) {
       // 1.8
@@ -83,7 +78,8 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
       MovementMetadata movementData = user.meta().movement();
 
       if (movementData.receivedFlyingPacketIn(0)
-        || meta.lastMovePacketType.name().equals("FLYING") || meta.lastMovePacketType == PacketType.Play.Client.LOOK
+        || meta.lastMovePacketType == PacketType.Play.Client.PLAYER_FLYING
+        || meta.lastMovePacketType == PacketType.Play.Client.PLAYER_ROTATION
       ) {
         meta.countAccuratePositionPackets = 0;
 
@@ -162,7 +158,7 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
     prepareNextTick(meta, pt);
   }
 
-  private void prepareNextTick(ClickSpeedLimiterMeta meta, PacketType pt) {
+  private void prepareNextTick(ClickSpeedLimiterMeta meta, PacketTypeCommon pt) {
     meta.attacksDuringFlyingPackets.clear();
     meta.lastMovePacketType = pt;
 
@@ -176,7 +172,7 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
 
   public static final class ClickSpeedLimiterMeta extends CheckCustomMetadata {
     private long lastFlag;
-    PacketType lastMovePacketType;
+    PacketTypeCommon lastMovePacketType;
     List<Long> attacksDuringFlyingPackets = new ArrayList<>();
     int[] attackCountArray = new int[20];
     int attackArrayIndex = 0;

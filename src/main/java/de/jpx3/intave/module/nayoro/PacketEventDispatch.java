@@ -1,15 +1,16 @@
 package de.jpx3.intave.module.nayoro;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientClickWindow;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientHeldItemChange;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerOpenWindow;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
 import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.nayoro.event.*;
 import de.jpx3.intave.module.nayoro.event.sink.EventSink;
-import de.jpx3.intave.packet.reader.*;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -40,7 +41,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       ARM_ANIMATION
     }
   )
-  public void onClick(PacketEvent event) {
+  public void onClick(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     ClickEvent clickEvent = ClickEvent.create();
@@ -53,19 +54,15 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       USE_ENTITY
     }
   )
-  public void onUse(PacketEvent event) {
+  public void onUse(ProtocolPacketEvent event, WrapperPlayClientInteractEntity packet) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    PacketContainer packet = event.getPacket();
-    EntityUseReader packetReader = PacketReaders.readerOf(packet);
-    EnumWrappers.EntityUseAction useAction = packetReader.useAction();
-    if (useAction == EnumWrappers.EntityUseAction.ATTACK) {
+    if (packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
       int attackerId = player.getEntityId();
-      int targetId = packetReader.entityId();
+      int targetId = packet.getEntityId();
       AttackEvent attackEvent = AttackEvent.create(attackerId, targetId);
       reverseSink.accept(user, attackEvent::accept);
     }
-    packetReader.release();
   }
 
   @PacketSubscription(
@@ -74,7 +71,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
     }
   )
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     MovementMetadata movement = user.meta().movement();
@@ -129,10 +126,10 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       HELD_ITEM_SLOT_IN
     }
   )
-  public void receiveHeldItemSlot(PacketEvent event) {
+  public void receiveHeldItemSlot(ProtocolPacketEvent event, WrapperPlayClientHeldItemChange packet) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    int slot = event.getPacket().getIntegers().read(0);
+    int slot = packet.getSlot();
     ItemStack item = player.getInventory().getItem(slot);
     Material type;
     int amount;
@@ -156,7 +153,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
     }
   )
   public void receiveWindowClick(
-    User user, WindowClickReader reader
+    User user, WrapperPlayClientClickWindow packet
   ) {
     boolean assumeWindowOpen = user.meta().connection().assumeWindowOpen;
     if (!assumeWindowOpen) {
@@ -165,7 +162,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       reverseSink.accept(user, openEvent::accept);
     }
     WindowClickEvent clickEvent = WindowClickEvent.create(
-      reader.container(), reader.slot(), reader.clickType().ordinal(), reader.button(), reader.actionNumber()
+      packet.getWindowId(), packet.getSlot(), packet.getWindowClickType().ordinal(), packet.getButton(), packet.getActionNumber().orElse(-1)
     );
     reverseSink.accept(user, clickEvent::accept);
   }
@@ -176,7 +173,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       PacketId.Client.CLOSE_WINDOW
     }
   )
-  public void receiveWindowClose(PacketEvent event) {
+  public void receiveWindowClose(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     WindowActionEvent closeEvent = WindowActionEvent.create(CLOSE, user.player().getInventory().getArmorContents());
@@ -191,9 +188,9 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
     }
   )
   public void sentWindowOpen(
-    User user, WindowOpenReader reader
+    User user, WrapperPlayServerOpenWindow packet
   ) {
-    int slots = reader.slots();
+    int slots = packet.getLegacySlots();
     user.meta().connection().nextWindowOpenSlots = slots;
   }
 
@@ -204,22 +201,8 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
     }
   )
   public void sendWindowItems(
-    User user, WindowItemReader reader
+    ProtocolPacketEvent event
   ) {
-    int container = reader.windowId();
-    int slots = user.meta().connection().nextWindowOpenSlots;
-    if (slots == 0) {
-      slots = 9 * 3;
-    }
-    if (container != 0) {
-      user.meta().connection().nextWindowOpenSlots = 0;
-    }
-
-    // inventory
-    slots += 4 * 9;
-//    System.out.println("Sent window items: " + slots);
-//    Map<Integer, ItemStack> items = reader.itemMap();
-//    WindowItemsEvent event = WindowItemsEvent.create(container, slots, items);
-//    reverseSink.accept(user, event::accept);
+    // Nayoro currently does not emit item contents; keep the subscription as an ordering hook.
   }
 }

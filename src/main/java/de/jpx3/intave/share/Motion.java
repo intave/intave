@@ -3,7 +3,7 @@ package de.jpx3.intave.share;
 import de.jpx3.intave.check.movement.physics.SimulationEnvironment;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.math.Hypot;
-import de.jpx3.intave.packet.Relative;
+import de.jpx3.intave.share.Relative;
 import io.netty.buffer.ByteBuf;
 import org.bukkit.util.Vector;
 

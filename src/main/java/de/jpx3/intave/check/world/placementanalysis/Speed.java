@@ -1,8 +1,9 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerBlockPlacement;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
@@ -48,18 +49,14 @@ public final class Speed extends MetaCheckPart<PlacementAnalysis, Speed.Placemen
       BLOCK_PLACE, USE_ITEM
     }
   )
-  public void receivePlacementPacket(PacketEvent event) {
+  public void receivePlacementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     PlacementSpeedMeta meta = metaOf(user);
-    PacketContainer packet = event.getPacket();
 
-    if (event.getPacketType() == PacketType.Play.Client.BLOCK_PLACE) {
-      Integer facing = packet.getIntegers().readSafely(0);
-      if (facing == null) {
-        facing = 0;
-      }
-      if (facing == 255) {
+    if (event.getPacketType() == PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT) {
+      WrapperPlayClientPlayerBlockPlacement packet = new WrapperPlayClientPlayerBlockPlacement((PacketReceiveEvent) event);
+      if (packet.getFaceId() == 255) {
         meta.lastHardFaultClick = System.currentTimeMillis();
       }
     }
@@ -123,7 +120,7 @@ public final class Speed extends MetaCheckPart<PlacementAnalysis, Speed.Placemen
             .withMessage(COMMON_FLAG_MESSAGE)
             .withDetails(((int) average / 50) + " t/b, limit at " + ((int) minAverage / 50) + " t/b")
             .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-            .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
+            .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "analysis-thresholds.on-premise")
             .withVL(average > 400 ? 3 : average < 300 ? 5 : 4).build();
 
           ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);

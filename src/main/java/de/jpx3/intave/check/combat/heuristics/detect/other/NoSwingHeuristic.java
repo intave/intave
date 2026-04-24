@@ -1,8 +1,7 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
@@ -29,17 +28,12 @@ public final class NoSwingHeuristic extends MetaCheckPart<Heuristics, NoSwingHeu
       USE_ENTITY
     }
   )
-  public void entityHit(PacketEvent event) {
+  public void entityHit(ProtocolPacketEvent event, WrapperPlayClientInteractEntity packet) {
     Player player = event.getPlayer();
     User user = userOf(player);
     NoSwingMeta meta = metaOf(user);
 
-    PacketContainer packet = event.getPacket();
-    EnumWrappers.EntityUseAction action = packet.getEntityUseActions().readSafely(0);
-    if (action == null) {
-      action = packet.getEnumEntityUseActions().read(0).getAction();
-    }
-    if (action == EnumWrappers.EntityUseAction.ATTACK) {
+    if (packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
 //      if (meta.swingsThisTick == 0 && meta.attacksThisTick == 0
 //        && user.meta().clientData().protocolVersion() == 47
 //      ) {
@@ -55,7 +49,7 @@ public final class NoSwingHeuristic extends MetaCheckPart<Heuristics, NoSwingHeu
       ARM_ANIMATION
     }
   )
-  public void swing(PacketEvent event) {
+  public void swing(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     NoSwingMeta meta = metaOf(user);
@@ -69,7 +63,7 @@ public final class NoSwingHeuristic extends MetaCheckPart<Heuristics, NoSwingHeu
       FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
     }
   )
-  public void receiveMovementPacket(PacketEvent event) {
+  public void receiveMovementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();

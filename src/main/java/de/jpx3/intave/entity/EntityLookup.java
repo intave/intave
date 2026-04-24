@@ -2,26 +2,16 @@ package de.jpx3.intave.entity;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import de.jpx3.intave.klass.Lookup;
-import de.jpx3.intave.klass.locate.MethodSearchBySignature;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.invoke.MethodHandle;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-
-import static de.jpx3.intave.reflect.access.ReflectiveHandleAccess.handleOf;
 
 @SuppressWarnings("UnstableApiUsage")
 public final class EntityLookup {
-  private static final MethodHandle entityByIdAccessor = MethodSearchBySignature
-    .search(Lookup.serverClass("World"), new Class[]{Integer.TYPE}, Lookup.serverClass("Entity"))
-    .findFirstOrThrow();
-  private static final MethodHandle bukkitEntityFromEntityAccessor = MethodSearchBySignature
-    .search(Lookup.serverClass("Entity"), new Class[0], Lookup.craftBukkitClass("entity.CraftEntity"))
-    .findFirstOrThrow();
-  private static final Cache<Integer, Entity> entityAccessCache =
+  private static final Cache<EntityCacheKey, Entity> entityAccessCache =
     CacheBuilder.newBuilder()
       .expireAfterAccess(16, TimeUnit.SECONDS).weakValues()
       .concurrencyLevel(8).build();
@@ -31,27 +21,51 @@ public final class EntityLookup {
   }
 
   public static @Nullable Entity findEntity(World world, int identifier) {
-    Entity entity = entityAccessCache.getIfPresent(identifier);
+    EntityCacheKey cacheKey = new EntityCacheKey(world.getUID().hashCode(), identifier);
+    Entity entity = entityAccessCache.getIfPresent(cacheKey);
     if (entity != null) {
       return entity;
     }
     entity = entityById(world, identifier);
     if (entity != null) {
-      entityAccessCache.put(identifier, entity);
+      entityAccessCache.put(cacheKey, entity);
     }
     return entity;
   }
 
   private static @Nullable Entity entityById(World world, int identifier) {
-    try {
-      Object serverEntity = entityByIdAccessor.invoke(handleOf(world), identifier);
-      if (serverEntity == null) {
-        return null;
+    for (Entity entity : world.getEntities()) {
+      if (entity.getEntityId() == identifier) {
+        return entity;
       }
-      return (Entity) bukkitEntityFromEntityAccessor.invoke(serverEntity);
-    } catch (Throwable exception) {
-      exception.printStackTrace();
-      return null;
+    }
+    return null;
+  }
+
+  private static final class EntityCacheKey {
+    private final int worldId;
+    private final int entityId;
+
+    private EntityCacheKey(int worldId, int entityId) {
+      this.worldId = worldId;
+      this.entityId = entityId;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      if (this == other) {
+        return true;
+      }
+      if (!(other instanceof EntityCacheKey)) {
+        return false;
+      }
+      EntityCacheKey that = (EntityCacheKey) other;
+      return worldId == that.worldId && entityId == that.entityId;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(worldId, entityId);
     }
   }
 }

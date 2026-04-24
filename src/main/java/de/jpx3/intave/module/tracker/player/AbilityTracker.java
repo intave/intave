@@ -1,6 +1,10 @@
 package de.jpx3.intave.module.tracker.player;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerAbilities;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerCamera;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerChangeGameState;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerAbilities;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Module;
@@ -8,10 +12,6 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.AbilityInReader;
-import de.jpx3.intave.packet.reader.AbilityOutReader;
-import de.jpx3.intave.packet.reader.EntityReader;
-import de.jpx3.intave.packet.reader.GameStateChangeReader;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;
@@ -24,12 +24,11 @@ import org.bukkit.util.Vector;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
-import static de.jpx3.intave.packet.reader.GameStateChangeReader.GameState.CHANGE_GAME_MODE;
 
 public final class AbilityTracker extends Module {
   @PacketSubscription(packetsOut = CAMERA)
-  public void receiveCamera(User user, EntityReader reader) {
-    int entityId = reader.entityId();
+  public void receiveCamera(User user, WrapperPlayServerCamera packet) {
+    int entityId = packet.getCameraId();
     user.tickFeedback(() -> synchronizedCameraUpdate(user, entityId));
   }
 
@@ -44,10 +43,10 @@ public final class AbilityTracker extends Module {
       ABILITIES_IN
     }
   )
-  public void receiveAbilities(User user, AbilityInReader reader) {
+  public void receiveAbilities(User user, WrapperPlayClientPlayerAbilities packet) {
     AbilityMetadata abilityData = user.meta().abilities();
     MovementMetadata movementData = user.meta().movement();
-    boolean flying = reader.requestedFlying();
+    boolean flying = packet.isFlying();
     if (abilityData.allowFlying()) {
       if (flying) {
         abilityData.setFlying(true);
@@ -63,13 +62,13 @@ public final class AbilityTracker extends Module {
       ABILITIES_OUT
     }
   )
-  public void sentAbilities(User user, AbilityOutReader reader, PacketEvent event) {
+  public void sentAbilities(User user, WrapperPlayServerPlayerAbilities packet, ProtocolPacketEvent event) {
     MetadataBundle meta = user.meta();
     MovementMetadata movement = meta.movement();
     AbilityMetadata abilityData = meta.abilities();
-    float flyingSpeed = reader.flyingSpeed();
-    float walkingSpeed = reader.walkingSpeed();
-    boolean allowedFlight = reader.flyingAllowed();
+    float flyingSpeed = packet.getFlySpeed();
+    float walkingSpeed = packet.getFOVModifier();
+    boolean allowedFlight = packet.isFlightAllowed();
     boolean critical = abilityData.allowFlying() && !allowedFlight && movement.criticalTeleportRateLimiter.tryAcquire();
     if (critical /*&& movement.lastTeleport < 20*/) {
       // Teleport again to force transaction synchronization
@@ -153,12 +152,12 @@ public final class AbilityTracker extends Module {
     }
   )
   public void outgoingGameModeUpdate(
-    User user, GameStateChangeReader reader
+    User user, WrapperPlayServerChangeGameState packet
   ) {
-    if (reader.type() != CHANGE_GAME_MODE) {
+    if (packet.getReason() != WrapperPlayServerChangeGameState.Reason.CHANGE_GAME_MODE) {
       return;
     }
-    GameMode gameMode = gameModeOf(reader.valueAsInt());
+    GameMode gameMode = gameModeOf((int) packet.getValue());
     AbilityMetadata abilityData = user.meta().abilities();
     abilityData.setPendingGameMode(gameMode);
     user.tickFeedback(() -> abilityData.setGameMode(gameMode));

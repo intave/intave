@@ -22,12 +22,10 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.feedback.FeedbackTests;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.player.StorageTests;
-import de.jpx3.intave.packet.reader.ReaderTests;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
-import de.jpx3.intave.security.HWIDVerification;
-import de.jpx3.intave.security.HashAccess;
 import de.jpx3.intave.share.ShareTests;
+import de.jpx3.intave.util.PlainHashes;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.world.WorldLoadEvent;
@@ -36,6 +34,7 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
@@ -83,8 +82,8 @@ public final class TestService implements EventProcessor {
     String jarHash;
     try {
       File currentJavaJarFile = new File(IntavePlugin.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-      jarHash = HashAccess.hashOf(currentJavaJarFile);
-    } catch (URISyntaxException e) {
+      jarHash = PlainHashes.sha256(currentJavaJarFile);
+    } catch (IOException | URISyntaxException e) {
       jarHash = "no-hash";
     }
     bigString.append(jarHash);
@@ -95,7 +94,6 @@ public final class TestService implements EventProcessor {
     bigString.append(System.getProperty("os.version"));
     bigString.append(Bukkit.getVersion());
     bigString.append(Bukkit.getBukkitVersion());
-    bigString.append(HWIDVerification.publicHardwareIdentifier());
     // hash with SHA-256
     MessageDigest digest;
     try {
@@ -168,7 +166,6 @@ public final class TestService implements EventProcessor {
       performTest(EntitySizeTests.class);
       performTest(StorageTests.class);
       performTest(FeedbackTests.class);
-      performTest(ReaderTests.class);
       performTest(FluidTests.class);
       performTest(ShareTests.class);
       performTest(MovementConfigurationTests.class);

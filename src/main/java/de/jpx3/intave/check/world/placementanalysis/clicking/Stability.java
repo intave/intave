@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.world.placementanalysis.clicking;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.module.Modules;
@@ -33,7 +33,7 @@ public final class Stability extends MetaCheckPart<PlacementAnalysis, Stability.
     @PacketSubscription(
             packetsIn = BLOCK_PLACE
     )
-    public void receiveSwing(PacketEvent event) {
+    public void receiveSwing(ProtocolPacketEvent event) {
         Player player = event.getPlayer();
         User user = userOf(player);
         StabilityMeta meta = metaOf(user);
@@ -80,7 +80,7 @@ public final class Stability extends MetaCheckPart<PlacementAnalysis, Stability.
                             .withMessage(COMMON_FLAG_MESSAGE)
                             .withDetails("clicking stability")
                             .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-                            .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
+                            .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "analysis-thresholds.on-premise")
                             .withVL(2.5).build();
                     Modules.violationProcessor().processViolation(violation);
 

@@ -1,8 +1,9 @@
 package de.jpx3.intave.check.world.interaction;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.protocol.player.DiggingAction;
+import com.github.retrooper.packetevents.protocol.player.InteractionHand;
+import com.github.retrooper.packetevents.wrapper.PacketWrapper;
+import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.MovingObjectPosition;
 import org.bukkit.Material;
@@ -12,7 +13,7 @@ import org.bukkit.inventory.ItemStack;
 
 public final class Interaction {
   private final long interactionId;
-  private final PacketContainer thePacket;
+  private final PacketWrapper<?> packet;
   private final World world;
   private final Player player;
   private final BlockPosition targetBlock;
@@ -20,8 +21,8 @@ public final class Interaction {
   private InteractionType type;
   private final Material itemTypeInHand;
   private final ItemStack itemInHand;
-  private final EnumWrappers.Hand hand;
-  private final EnumWrappers.PlayerDigType digType;
+  private final InteractionHand hand;
+  private final DiggingAction digType;
   private final float facingX, facingY, facingZ;
   private boolean entered = false;
 
@@ -35,17 +36,17 @@ public final class Interaction {
   private MovingObjectPosition raytraceResult;
 
   public Interaction(
-    long interactionId, PacketContainer thePacket,
+    long interactionId, PacketWrapper<?> packet,
     World world, Player player,
     BlockPosition targetBlock, int targetDirection,
     InteractionType type,
     Material itemTypeInHand, ItemStack itemInHand,
-    EnumWrappers.Hand hand, EnumWrappers.PlayerDigType digType,
+    InteractionHand hand, DiggingAction digType,
     float facingX, float facingY, float facingZ,
     int sequenceNumber
   ) {
     this.interactionId = interactionId;
-    this.thePacket = thePacket;
+    this.packet = packet;
     this.world = world;
     this.player = player;
     this.targetBlock = targetBlock;
@@ -65,8 +66,8 @@ public final class Interaction {
     return interactionId;
   }
 
-  public PacketContainer thePacket() {
-    return thePacket;
+  public PacketWrapper<?> packet() {
+    return packet;
   }
 
   public InteractionType type() {
@@ -93,7 +94,7 @@ public final class Interaction {
     return itemInHand;
   }
 
-  public EnumWrappers.Hand hand() {
+  public InteractionHand hand() {
     return hand;
   }
 
@@ -102,7 +103,7 @@ public final class Interaction {
   }
 
   public de.jpx3.intave.share.BlockPosition targetBlockAsPosition() {
-    return new de.jpx3.intave.share.BlockPosition(targetBlock);
+    return targetBlock;
   }
 
   public boolean hasTargetBlock() {
@@ -117,7 +118,7 @@ public final class Interaction {
     return targetDirection;
   }
 
-  public EnumWrappers.PlayerDigType digType() {
+  public DiggingAction digType() {
     return digType;
   }
 

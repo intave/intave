@@ -1,6 +1,6 @@
 package de.jpx3.intave.diagnostic.timings;
 
-import com.comphenix.protocol.PacketType;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
 import com.google.common.collect.Maps;
 import org.bukkit.ChatColor;
 import org.bukkit.event.Event;
@@ -69,8 +69,8 @@ public class Timings {
     });
   }
 
-  public static Timing packetTimingOf(PacketType type) {
-    String packetTypeName = type.name();
+  public static Timing packetTimingOf(PacketTypeCommon type) {
+    String packetTypeName = type.getName();
     return packetTimings.computeIfAbsent(packetTypeName, x -> {
       String name = !x.contains("_") ? firstUpper(x) : Arrays.stream(x.split("_")).map(Timings::firstUpper).collect(Collectors.joining());
       Timing timing = Timing.of("Packet/" + name);

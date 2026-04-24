@@ -1,6 +1,6 @@
 package de.jpx3.intave.klass.rewrite;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.version.MinecraftVersion;
 import de.jpx3.intave.access.IntaveInternalException;
 
 import java.util.*;

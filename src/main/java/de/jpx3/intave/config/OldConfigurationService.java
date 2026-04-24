@@ -8,8 +8,6 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.*;
-import java.net.URL;
-import java.net.URLConnection;
 import java.nio.file.Files;
 
 @HighOrderService
@@ -98,18 +96,7 @@ public final class OldConfigurationService {
     if (filename == null) {
       throw new IllegalArgumentException("Filename cannot be null");
     } else {
-      try {
-        URL url = this.getClass().getClassLoader().getResource(filename);
-        if (url == null) {
-          return null;
-        } else {
-          URLConnection connection = url.openConnection();
-          connection.setUseCaches(false);
-          return connection.getInputStream();
-        }
-      } catch (IOException var4) {
-        return null;
-      }
+      return this.getClass().getClassLoader().getResourceAsStream(filename);
     }
   }
 

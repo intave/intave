@@ -1,6 +1,7 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientEntityAction;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
@@ -8,7 +9,7 @@ import de.jpx3.intave.check.combat.heuristics.Confidence;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
-import de.jpx3.intave.packet.converter.PlayerAction;
+import de.jpx3.intave.protocol.PlayerAction;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -16,7 +17,7 @@ import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
-import static de.jpx3.intave.packet.converter.PlayerActionResolver.resolveActionFromPacket;
+import static de.jpx3.intave.protocol.PlayerActionResolver.resolveActionFromPacket;
 
 public final class DoubleEntityActionHeuristic extends MetaCheckPart<Heuristics, DoubleEntityActionHeuristic.DoubleEntityActionHeuristicMeta> {
 
@@ -30,11 +31,11 @@ public final class DoubleEntityActionHeuristic extends MetaCheckPart<Heuristics,
       ENTITY_ACTION_IN
     }
   )
-  public void receiveEntityActionPacket(PacketEvent event) {
+  public void receiveEntityActionPacket(ProtocolPacketEvent event, WrapperPlayClientEntityAction packet) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();
-    PlayerAction action = resolveActionFromPacket(event.getPacket());
+    PlayerAction action = resolveActionFromPacket(packet);
     ProtocolMetadata protocolMetadata = user.meta().protocol();
     DoubleEntityActionHeuristicMeta meta = metaOf(user);
 
@@ -87,7 +88,7 @@ public final class DoubleEntityActionHeuristic extends MetaCheckPart<Heuristics,
       POSITION, POSITION_LOOK
     }
   )
-  public void receivePositonPacket(PacketEvent event) {
+  public void receivePositonPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     DoubleEntityActionHeuristicMeta meta = metaOf(user);

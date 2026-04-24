@@ -1,7 +1,8 @@
 package de.jpx3.intave.player.fake.event;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.util.Vector3d;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityVelocity;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.module.Modules;
@@ -17,7 +18,6 @@ import java.util.List;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.ENTITY_VELOCITY;
 
 public final class EntityVelocityCache implements PacketEventSubscriber {
-  private static final double VELOCITY_CONVERT_FACTOR = 8000.0D;
   private final List<Double> horizontalVelocities = Lists.newArrayList();
   private final List<Double> verticalVelocities = Lists.newArrayList();
 
@@ -30,15 +30,15 @@ public final class EntityVelocityCache implements PacketEventSubscriber {
       ENTITY_VELOCITY
     }
   )
-  public void receiveEntityVelocity(PacketEvent event) {
+  public void receiveEntityVelocity(ProtocolPacketEvent event, WrapperPlayServerEntityVelocity packet) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     FakePlayer fakePlayer = user.meta().attack().fakePlayer();
-    PacketContainer packet = event.getPacket();
-    Integer entityID = packet.getIntegers().read(0);
-    double motionX = packet.getIntegers().readSafely(1) / VELOCITY_CONVERT_FACTOR;
-    double motionY = packet.getIntegers().readSafely(2) / VELOCITY_CONVERT_FACTOR;
-    double motionZ = packet.getIntegers().readSafely(3) / VELOCITY_CONVERT_FACTOR;
+    int entityID = packet.getEntityId();
+    Vector3d velocity = packet.getVelocity();
+    double motionX = velocity.x;
+    double motionY = velocity.y;
+    double motionZ = velocity.z;
     if (horizontalVelocities.size() < 10) {
       registerHorizontalVelocity(motionX);
       registerHorizontalVelocity(motionZ);

@@ -1,6 +1,6 @@
 package de.jpx3.intave.module.nayoro.event;
 
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.protocol.player.InteractionHand;
 import de.jpx3.intave.module.nayoro.Environment;
 import de.jpx3.intave.module.nayoro.event.sink.EventSink;
 import de.jpx3.intave.share.Position;
@@ -15,7 +15,7 @@ public final class BlockInteractEvent extends Event {
   private Rotation rotation;
   private boolean failedBlockPlacement;
 
-  private EnumWrappers.Hand hand;
+  private InteractionHand hand;
   private String blockType;
   private String itemInHand;
   private int amountInHand;
@@ -27,7 +27,7 @@ public final class BlockInteractEvent extends Event {
     Position blockPosition,
     Rotation rotation,
     boolean failedBlockPlacement,
-    EnumWrappers.Hand hand,
+    InteractionHand hand,
     String blockType,
     String itemInHand,
     int amountInHand
@@ -64,7 +64,7 @@ public final class BlockInteractEvent extends Event {
     blockPosition = readBlockPosition(in);
     rotation = new Rotation(in.readFloat(), in.readFloat());
     failedBlockPlacement = in.readBoolean();
-    hand = EnumWrappers.Hand.values()[in.readByte()];
+    hand = InteractionHand.values()[in.readByte()];
     blockType = in.readUTF();
     itemInHand = in.readUTF();
     amountInHand = in.readInt();
@@ -81,7 +81,7 @@ public final class BlockInteractEvent extends Event {
 
   public static BlockInteractEvent create(
     Position blockPosition, Rotation rotation, boolean failedBlockPlacement,
-    EnumWrappers.Hand hand,
+    InteractionHand hand,
     String blockType, String itemInHand, int amountInHand
   ) {
     return new BlockInteractEvent(blockPosition, rotation, failedBlockPlacement, hand, blockType, itemInHand, amountInHand);

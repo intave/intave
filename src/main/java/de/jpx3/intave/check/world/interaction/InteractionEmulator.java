@@ -1,7 +1,6 @@
 package de.jpx3.intave.check.world.interaction;
 
-import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.protocol.player.InteractionHand;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.event.BucketAction;
@@ -24,6 +23,7 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.nayoro.Nayoro;
 import de.jpx3.intave.module.tracker.player.AbilityTracker;
+import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.MovingObjectPosition;
 import de.jpx3.intave.share.Position;
@@ -212,7 +212,7 @@ public final class InteractionEmulator implements EventProcessor {
     int originBlockY = blockAgainstLocation.getBlockY();
     int originBlockZ = blockAgainstLocation.getBlockZ();
     boolean replace = BlockInteractionAccess.replacedOnPlacement(
-      world, player, new BlockPosition(blockAgainstLocation.toVector())
+      world, player, new BlockPosition(blockAgainstLocation)
     );
 
     Location blockPlacementLocation = placementLocation(
@@ -250,10 +250,10 @@ public final class InteractionEmulator implements EventProcessor {
       // only failed, not critical failed, this should not be possible to abuse
       return EmulationResult.FAILED_NON_CRITICAL;
     }
-    EnumWrappers.Hand hand = interaction.hand();
+    InteractionHand hand = interaction.hand();
     boolean access = WorldPermission.blockPlacePermission(
       player, world,
-      hand == null || hand == EnumWrappers.Hand.MAIN_HAND,
+      hand == null || hand == InteractionHand.MAIN_HAND,
       blockX, blockY, blockZ,
       interaction.targetDirectionIndex(),
       placedBlockType, variant
@@ -369,7 +369,7 @@ public final class InteractionEmulator implements EventProcessor {
     int originBlockY = blockAgainstLocation.getBlockY();
     int originBlockZ = blockAgainstLocation.getBlockZ();
     boolean replace = BlockInteractionAccess.replacedOnPlacement(
-      world, player, new BlockPosition(blockAgainstLocation.toVector())
+      world, player, new BlockPosition(blockAgainstLocation)
     );
 
     // I don't want to hardcode this here, but where else should I put it?

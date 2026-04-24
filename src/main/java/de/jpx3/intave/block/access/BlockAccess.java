@@ -9,6 +9,10 @@ public final class BlockAccess {
   private static BlockAccessor blockAccessor;
 
   public static void setup() {
+    if (MinecraftVersions.VER1_13_0.atOrAbove()) {
+      blockAccessor = new BukkitBlockAccessor();
+      return;
+    }
     String resolverName = "de.jpx3.intave.block.access.v8BlockAccessor";
     if (MinecraftVersions.VER1_9_0.atOrAbove()) {
       resolverName = "de.jpx3.intave.block.access.v9BlockAccessor";

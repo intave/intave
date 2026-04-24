@@ -1,11 +1,10 @@
 package de.jpx3.intave.module.tracker.player;
 
-import com.comphenix.protocol.events.PacketContainer;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPluginMessage;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientUpdateCommandBlockMinecart;
 import de.jpx3.intave.connect.sibyl.LabyModChannelHelper;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.PacketReaders;
-import de.jpx3.intave.packet.reader.PayloadInReader;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -14,7 +13,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Cancellable;
+import com.github.retrooper.packetevents.event.CancellableEvent;
 import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 
@@ -74,17 +73,15 @@ public final class MovementDebugTracker extends Module implements PluginMessageL
     packetsIn = {CUSTOM_PAYLOAD_IN}
   )
   public void onCustomPayloadIn(
-    User user, PacketContainer packet,
-    Cancellable cancellable
+    User user, WrapperPlayClientPluginMessage packet,
+    CancellableEvent cancellableEvent
   ) {
     if (!ENABLE_MOVEMENT_DEBUGGER_COLLECTOR) {
       return;
     }
-    try(
-      PayloadInReader reader = PacketReaders.readerOf(packet);
-    ) {
-      if (reader.tag().equalsIgnoreCase("MC|AdvCdm")) {
-        ByteBuf bytes = reader.readBytes();
+    try {
+      if (packet.getChannelName().equalsIgnoreCase("MC|AdvCdm")) {
+        ByteBuf bytes = Unpooled.wrappedBuffer(packet.getData());
         int type = bytes.readByte();
         if (type != 1) {
           return;
@@ -98,14 +95,14 @@ public final class MovementDebugTracker extends Module implements PluginMessageL
         String[] split = subCommand.split(":");
         if (split.length != 2) {
           System.out.println("Invalid command format: " + command);
-          cancellable.setCancelled(true);
+          cancellableEvent.setCancelled(true);
           return;
         }
         String key = split[0];
         String value = split[1];
         ProtocolMetadata protocol = user.meta().protocol();
         protocol.debugStates.put(key, value);
-        cancellable.setCancelled(true);
+        cancellableEvent.setCancelled(true);
       }
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -117,17 +114,17 @@ public final class MovementDebugTracker extends Module implements PluginMessageL
     debug = true
   )
   public void onTabCompleteIn(
-    User user, PacketContainer packet,
-    Cancellable cancellable
+    User user, WrapperPlayClientUpdateCommandBlockMinecart packet,
+    CancellableEvent cancellableEvent
   ) {
     if (!ENABLE_MOVEMENT_DEBUGGER_COLLECTOR) {
       return;
     }
-    Integer id = packet.getIntegers().readSafely(0);
-    if (id == null || id != -1) {
+    int id = packet.getEntityId();
+    if (id != -1) {
       return;
     }
-    String command = packet.getStrings().readSafely(0);
+    String command = packet.getCommand();
     if (command == null) {
       return;
     }
@@ -137,14 +134,14 @@ public final class MovementDebugTracker extends Module implements PluginMessageL
     String subCommand = command.substring(PREFIX.length());
     String[] split = subCommand.split(":");
     if (split.length != 2) {
-      cancellable.setCancelled(true);
+      cancellableEvent.setCancelled(true);
       return;
     }
     String key = split[0];
     String value = split[1];
     ProtocolMetadata protocol = user.meta().protocol();
     protocol.debugStates.put(key, value);
-    cancellable.setCancelled(true);
+    cancellableEvent.setCancelled(true);
 
     if (key.equalsIgnoreCase("entity_pos_after_update")) {
       if (value != null) {

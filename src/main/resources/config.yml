@@ -3,7 +3,6 @@
 #   ADVANCED - use advanced.yml, disregard the rest of this file.
 #              The advanced.yml file will be generated when first selected,
 #              with the placeholders from this file
-#   ONLINE/[config-name] (planned) - use the cloud config
 config: THIS
 
 prefix: "&8[&c&lIntave&8]&7 "
@@ -24,12 +23,7 @@ physics-mm: BARELY
 # Rejoin delay after issued kick (in seconds)
 rejoin-delay: 3600
 
-# Cloud privacy control
-#   HIGHEST_PRIVACY - only the most critical data is sent (player UUID and usage data)
-#   BEST_DETECTION  - also share IP address for long-term cross-account analysis & detection
-#
-# BEST_DETECTION requires you to update your server's privacy policy or let players know
-#                the first time they join, as it is considered personal data under GDPR.
+# Privacy control for local logs and generated notifications.
 privacy: HIGHEST_PRIVACY
 
 verbose: "{prefix} &c{player}&7/{trust-color}&7 {message} {details} (+{vladded} -> {vl})"

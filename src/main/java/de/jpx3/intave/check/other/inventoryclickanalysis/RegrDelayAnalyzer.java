@@ -1,6 +1,7 @@
 package de.jpx3.intave.check.other.inventoryclickanalysis;
 
-import com.comphenix.protocol.events.PacketContainer;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientClickWindow;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientCloseWindow;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.other.InventoryClickAnalysis;
 import de.jpx3.intave.math.MathHelper;
@@ -13,10 +14,9 @@ import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.module.violation.ViolationProcessor;
-import de.jpx3.intave.packet.reader.WindowClickReader;
-import de.jpx3.intave.packet.reader.WindowCloseReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -41,7 +41,7 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
       PacketId.Server.OPEN_WINDOW
     }
   )
-  public void openWindowPacket(Player player, PacketContainer packet) {
+  public void openWindowPacket(Player player) {
     User user = userOf(player);
     ClickDelayMeta meta = metaOf(user);
     user.tickFeedback(() -> {
@@ -61,20 +61,23 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
       WINDOW_CLICK
     }
   )
-  public void windowClickPacket(Player player, WindowClickReader windowClick) {
+  public void windowClickPacket(Player player, WrapperPlayClientClickWindow windowClick) {
     if (player.getGameMode().equals(GameMode.CREATIVE)) {
       return;
     }
     User user = userOf(player);
     ClickDelayMeta meta = metaOf(user);
-    int slot = windowClick.slot();
-    ItemStack itemStack = windowClick.itemStack();
+    int slot = windowClick.getSlot();
+    ItemStack itemStack = windowClick.getCarriedItemStack() == null
+      ? null
+      : SpigotConversionUtil.toBukkitItemStack(windowClick.getCarriedItemStack());
     Material clickedItemType = itemStack == null ? Material.AIR : itemStack.getType();
-    boolean isDrop = windowClick.isDrop();
+    WrapperPlayClientClickWindow.WindowClickType clickType = windowClick.getWindowClickType();
+    boolean isDrop = clickType == WrapperPlayClientClickWindow.WindowClickType.THROW && slot != -999;
     if (slot != -999 && meta.lastSlot != -999) {
-      if ((clickedItemType != meta.lastClickedItemType || isDrop || windowClick.missingItemStack()) && clickedItemType != Material.AIR && meta.lastClickedTimestamp != 0) {
-        if (windowClick.clickType() != WindowClickReader.InventoryClickType.SWAP &&
-          windowClick.clickType() != WindowClickReader.InventoryClickType.QUICK_CRAFT) {
+      if ((clickedItemType != meta.lastClickedItemType || isDrop || missingItemStack(clickType)) && clickedItemType != Material.AIR && meta.lastClickedTimestamp != 0) {
+        if (clickType != WrapperPlayClientClickWindow.WindowClickType.SWAP &&
+          clickType != WrapperPlayClientClickWindow.WindowClickType.QUICK_CRAFT) {
           checkWindowClick(player, meta, slot);
         }
       }
@@ -93,7 +96,7 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
       CLOSE_WINDOW
     }
   )
-  public void closeWindowPacket(Player player, WindowCloseReader closeReader) throws Exception {
+  public void closeWindowPacket(Player player, WrapperPlayClientCloseWindow closePacket) throws Exception {
     User user = userOf(player);
     ClickDelayMeta meta = metaOf(user);
 
@@ -253,6 +256,11 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
       meta.slotTime = meta.slotTime.subList((int) (meta.slotTime.size() * (2d / 3d)), meta.slotTime.size());
     }
     meta.firstClickTimestamp = 0;
+  }
+
+  private boolean missingItemStack(WrapperPlayClientClickWindow.WindowClickType clickType) {
+    return clickType == WrapperPlayClientClickWindow.WindowClickType.QUICK_MOVE ||
+      clickType == WrapperPlayClientClickWindow.WindowClickType.SWAP;
   }
 
   private double[] slopeOfClicks(User user) {

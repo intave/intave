@@ -1,7 +1,8 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerBlockPlacement;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.module.Modules;
@@ -37,7 +38,7 @@ public final class JumpAndPlace extends MetaCheckPart<PlacementAnalysis, JumpAnd
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void clientTickUpdate(PacketEvent event) {
+  public void clientTickUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     JumpAndPlaceMeta meta = metaOf(player);
     if (meta.placedInThisTick || meta.sneakChangedInThisTick) {
@@ -86,16 +87,12 @@ public final class JumpAndPlace extends MetaCheckPart<PlacementAnalysis, JumpAnd
       BLOCK_PLACE
     }
   )
-  public void receivePlacementPacket(PacketEvent event) {
-    PacketContainer packet = event.getPacket();
+  public void receivePlacementPacket(ProtocolPacketEvent event) {
+    WrapperPlayClientPlayerBlockPlacement packet = new WrapperPlayClientPlayerBlockPlacement((PacketReceiveEvent) event);
     Player player = event.getPlayer();
     JumpAndPlaceMeta meta = metaOf(player);
 
-    Integer facing = packet.getIntegers().readSafely(0);
-    if (facing == null) {
-      facing = 0;
-    }
-    if (facing == 255) {
+    if (packet.getFaceId() == 255) {
       return;
     }
     User user = userOf(player);
@@ -106,39 +103,6 @@ public final class JumpAndPlace extends MetaCheckPart<PlacementAnalysis, JumpAnd
     }
     meta.placedInThisTick = true;
   }
-//
-//  @PacketSubscription(
-//    priority = ListenerPriority.HIGH,
-//    packetsIn = {
-//      ENTITY_ACTION_IN
-//    }
-//  )
-//  public void receiveEntityActionPacket(PacketEvent event) {
-//    Player player = event.getPlayer();
-//    JumpAndPlaceMeta meta = metaOf(player);
-//    PacketContainer packet = event.getPacket();
-//    PlayerActionReader reader = PacketReaders.readerOf(packet);
-//
-//    PlayerAction action = reader.playerAction();
-//    switch (action) {
-//      case START_SNEAKING:
-//        meta.startSneakInThisTick = true;
-//        meta.sneakChangedInThisTick = true;
-//        meta.isSneaking = true;
-//        meta.sneakDuration = 0;
-//        break;
-//      case STOP_SNEAKING:
-//        meta.stopSneakInThisTick = true;
-//        meta.sneakChangedInThisTick = true;
-//        meta.isSneaking = false;
-//        meta.lastSneakDuration = meta.sneakDuration;
-//        meta.sneakDuration = 0;
-//        break;
-//    }
-//
-//    reader.release();
-//  }
-
   @BukkitEventSubscription
   public void on(BlockPlaceEvent place) {
     Player player = place.getPlayer();

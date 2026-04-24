@@ -1,6 +1,6 @@
 package de.jpx3.intave.block.type;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.version.MinecraftVersion;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.block.access.BlockAccess;

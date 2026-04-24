@@ -1,15 +1,16 @@
 package de.jpx3.intave.module.actionbar;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.protocol.player.DiggingAction;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerDigging;
 import de.jpx3.intave.check.EventProcessor;
 import de.jpx3.intave.check.combat.clickpatterns.Kurtosis;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.EntityUseReader;
-import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
 import de.jpx3.intave.user.UserRepository;
@@ -19,7 +20,6 @@ import org.bukkit.entity.Player;
 
 import java.util.*;
 
-import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.DROP_ITEM;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static java.lang.Math.pow;
@@ -33,26 +33,24 @@ public final class ClickFeeder implements EventProcessor {
       USE_ENTITY, ARM_ANIMATION, BLOCK_DIG, USE_ITEM
     }
   )
-  public void clientClickUpdate(PacketEvent event) {
+  public void clientClickUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     ClickBufferData bufferData = this.bufferData.get(user);
-    PacketContainer packet = event.getPacket();
-    PacketType type = packet.getType();
-    if (type == PacketType.Play.Client.USE_ENTITY) {
-      EntityUseReader reader = PacketReaders.readerOf(packet);
-      EnumWrappers.EntityUseAction entityUseAction = reader.useAction();
-      if (entityUseAction == EnumWrappers.EntityUseAction.ATTACK) {
+    PacketTypeCommon type = event.getPacketType();
+    if (type == PacketType.Play.Client.INTERACT_ENTITY) {
+      WrapperPlayClientInteractEntity packet = new WrapperPlayClientInteractEntity((PacketReceiveEvent) event);
+      if (packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
         bufferData.attacks++;
       }
-      reader.release();
-    } else if (type == PacketType.Play.Client.ARM_ANIMATION) {
+    } else if (type == PacketType.Play.Client.ANIMATION) {
       bufferData.clicks++;
       if (System.currentTimeMillis() - bufferData.lastMove > 200) {
         bufferData.desynchronizedClick = true;
       }
-    } else if (type == PacketType.Play.Client.BLOCK_DIG) {
-      if (packet.getPlayerDigTypes().read(0) == DROP_ITEM && user.meta().inventory().heldItemType() == Material.AIR) {
+    } else if (type == PacketType.Play.Client.PLAYER_DIGGING) {
+      WrapperPlayClientPlayerDigging packet = new WrapperPlayClientPlayerDigging((PacketReceiveEvent) event);
+      if (packet.getAction() == DiggingAction.DROP_ITEM && user.meta().inventory().heldItemType() == Material.AIR) {
         UUID actionTarget = user.actionTarget();
         if (actionTarget != null) {
           User actionTargetUser = UserRepository.userOf(actionTarget);
@@ -81,11 +79,11 @@ public final class ClickFeeder implements EventProcessor {
       FLYING, LOOK, POSITION, POSITION_LOOK, CLIENT_TICK_END
     }
   )
-  public void clientTickUpdate(PacketEvent event) {
+  public void clientTickUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
 
-    PacketType packetType = event.getPacketType();
+    PacketTypeCommon packetType = event.getPacketType();
     boolean sendsClientTickEnd = user.meta().protocol().sendsClientTickEnd();
 
     if (sendsClientTickEnd && packetType != PacketType.Play.Client.CLIENT_TICK_END) {

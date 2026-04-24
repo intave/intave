@@ -2,9 +2,7 @@ package de.jpx3.intave.module.nayoro;
 
 import com.google.common.collect.Sets;
 import de.jpx3.intave.IntaveControl;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.cleanup.GarbageCollector;
-import de.jpx3.intave.connect.cloud.Cloud;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
@@ -21,7 +19,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,18 +60,10 @@ public final class Nayoro extends Module {
   }
 
   public synchronized void askForSampleTransmission(Player player) {
-    User user = UserRepository.userOf(player);
 //    if (IntaveControl.GOMME_MODE && MODE == GOMME_UPLOAD && player.hasPermission("intave.sample.allow")) {
 //      enableRecordingFor(user, null, GOMME_UPLOAD);
 //      return;
 //    }
-    Cloud cloud = IntavePlugin.singletonInstance().cloud();
-    if (!cloud.available()) {
-      return;
-    }
-    cloud.requestSampleTransmission(player, classifier -> {
-      enableRecordingFor(user, classifier, CLOUD_TRANSMISSION);
-    });
   }
 
   @BukkitEventSubscription
@@ -148,8 +137,6 @@ public final class Nayoro extends Module {
       if (sample != null && !mode.keepCopyOfSamples()) {
         sample.delete();
       }
-      Cloud cloud = IntavePlugin.singletonInstance().cloud();
-      cloud.noteEndOfSampleTransmission(user.player());
     } finally {
       localRecordingLock.unlock();
     }
@@ -171,33 +158,7 @@ public final class Nayoro extends Module {
         return sample.resource().writeStream();
       case CLOUD_STORAGE:
       case CLOUD_TRANSMISSION:
-        boolean storage = mode == CLOUD_STORAGE;
-        return new ManualBufferedOutputStream(new OutputStream() {
-          @Override
-          public void write(int b) {
-            throw new UnsupportedOperationException("Not implemented, expected buffered output stream");
-          }
-
-          @Override
-          public void write(byte @NotNull [] b) {
-            write(b, 0, b.length);
-          }
-
-          @Override
-          public void write(byte @NotNull [] b, int off, int len) {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            outputStream.write(b, off, len);
-            byte[] writeStream = outputStream.toByteArray();
-            ByteBuffer buffer = ByteBuffer.wrap(writeStream);
-            IntavePlugin plugin = IntavePlugin.singletonInstance();
-            plugin.cloud().uploadSample(player, buffer);
-          }
-
-          @Override
-          public void flush() throws IOException {
-            // no-op
-          }
-        }, 1024 * 24);
+        return sample.resource().writeStream();
       case LOCAL_STORAGE:
         return sample.resource().writeStream();
       default:

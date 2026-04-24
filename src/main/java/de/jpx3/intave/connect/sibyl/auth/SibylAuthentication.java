@@ -1,10 +1,9 @@
 package de.jpx3.intave.connect.sibyl.auth;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.CustomPacketPayloadWrapper;
-import com.comphenix.protocol.wrappers.MinecraftKey;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.resources.ResourceLocation;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPluginMessage;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerStoreCookie;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.gson.JsonElement;
@@ -13,29 +12,18 @@ import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.cleanup.GarbageCollector;
-import de.jpx3.intave.connect.IntaveDomains;
 import de.jpx3.intave.connect.sibyl.LabyModChannelHelper;
 import de.jpx3.intave.connect.sibyl.LabymodClientListener;
-import de.jpx3.intave.executor.BackgroundExecutors;
 import de.jpx3.intave.executor.Synchronizer;
-import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
-import de.jpx3.intave.packet.PacketSender;
-import de.jpx3.intave.security.LicenseAccess;
 import de.jpx3.intave.user.MessageChannelSubscriptions;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import net.minecraft.server.packs.repository.Pack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -44,10 +32,8 @@ import static de.jpx3.intave.IntaveControl.SIBYL_DEBUG;
 /**
  * The Sibyl authentication protocol (SAP)
  *
- * <p>Client sends greeting to server Server sends greeting back with SERVER_GREET_RESPONSE_KEY and
- * the license name Client makes an auth key request with the license name to intave.de Client sends
- * auth key to server Server gets a request with the secret authkey and the license name to
- * intave.de Server accepts the client and unlocks the protocol or reject the connection
+ * <p>Client sends greeting to server, server answers locally, and accepted clients unlock the
+ * protocol without any server-side entitlement request.
  */
 public final class SibylAuthentication implements BukkitEventSubscriber {
   private final IntavePlugin plugin;
@@ -81,12 +67,9 @@ public final class SibylAuthentication implements BukkitEventSubscriber {
     switch (action) {
       case "greet":
         if ((boolean) whitelisted(player) && authStateOf(player) == SibylAuthenticationState.N) {
-          String license = String.valueOf(LicenseAccess.rawLicense());
-          String splitLicense = license.substring(0, license.length() / 3);
           JsonObject object = new JsonObject();
           object.addProperty("action", "greet");
           object.addProperty("key", SERVER_KEY);
-          object.addProperty("license", splitLicense);
           setAuthState(player, SibylAuthenticationState.AW_AK);
           sendMessageToClient(player, messageChannelOf(player), "sibyl-auth", object);
         }
@@ -132,31 +115,7 @@ public final class SibylAuthentication implements BukkitEventSubscriber {
   }
 
   private void verifyAuthKey(String authKey, Consumer<? super Boolean> callback) {
-    String url_path = "https://" + IntaveDomains.primaryServiceDomain() + "/sibyl/verify";
-    BackgroundExecutors.execute(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          URL url = new URL(url_path);
-          URLConnection uc = url.openConnection();
-          uc.setUseCaches(false);
-          uc.setDefaultUseCaches(false);
-          uc.addRequestProperty("User-Agent", "Intave/" + IntavePlugin.version());
-          uc.addRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate");
-          uc.addRequestProperty("Pragma", "no-cache");
-          uc.addRequestProperty("authkey", authKey);
-          uc.addRequestProperty("license", LicenseAccess.rawLicense());
-          Scanner scanner = new Scanner(uc.getInputStream(), "UTF-8");
-          StringBuilder raw = new StringBuilder();
-          while (scanner.hasNext()) {
-            raw.append(scanner.next());
-          }
-          callback.accept("success".equalsIgnoreCase(raw.toString()));
-        } catch (IOException exception) {
-          callback.accept(false);
-        }
-      }
-    });
+    callback.accept(true);
   }
 
   private List<Object> internalWhitelist = new ArrayList<>();
@@ -227,63 +186,30 @@ public final class SibylAuthentication implements BukkitEventSubscriber {
     if (!((boolean) whitelisted(player))) {
       return;
     }
-    if (whitelisted(new Object[]{}) != null) {
-      Synchronizer.synchronize(() -> System.exit(0));
-    }
-    PacketContainer packetContainer = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.CUSTOM_PAYLOAD);
-    if (MinecraftVersions.VER1_20_2.atOrAbove()) {
-      if (channel.startsWith("MC|")) {
-        channel = channel.substring(3);
-      }
-      MinecraftKey key;
-      if (channel.contains(":")) {
-        String[] parts = channel.toLowerCase(Locale.ROOT).split(":");
-        key = new MinecraftKey(parts[0], parts[1]);
-      } else {
-        key = new MinecraftKey(channel.toLowerCase(Locale.ROOT));
-      }
-      byte[] bytesToSend = LabyModChannelHelper.getBytesToSend(messageKey, jsonElement == null ? null : jsonElement.toString());
-      if (MinecraftVersions.VER1_20_5.atOrAbove()) {
-        PacketContainer cookie = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.STORE_COOKIE);
-        cookie.getMinecraftKeys().write(0, key);
-        cookie.getByteArrays().write(0, bytesToSend);
-        Synchronizer.synchronize(() -> PacketSender.sendServerPacket(player, cookie));
-      } else {
-        packetContainer.getCustomPacketPayloads().write(0, new CustomPacketPayloadWrapper(
-          bytesToSend, key
-        ));
-        Synchronizer.synchronize(() -> PacketSender.sendServerPacket(player, packetContainer));
-      }
+    byte[] bytesToSend = LabyModChannelHelper.getBytesToSend(messageKey, jsonElement == null ? null : jsonElement.toString());
+    if (MinecraftVersions.VER1_20_5.atOrAbove()) {
+      WrapperPlayServerStoreCookie cookie = new WrapperPlayServerStoreCookie(resourceLocation(channel), bytesToSend);
+      Synchronizer.synchronize(() -> PacketEvents.getAPI().getPlayerManager().sendPacket(player, cookie));
       return;
-    } else if (MinecraftVersions.VER1_13_0.atOrAbove()) {
-      if (channel.startsWith("MC|")) {
-        channel = channel.substring(3);
-      }
-      MinecraftKey key;
-      if (channel.contains(":")) {
-        String[] parts = channel.toLowerCase(Locale.ROOT).split(":");
-        key = new MinecraftKey(parts[0], parts[1]);
-      } else {
-        key = new MinecraftKey(channel.toLowerCase(Locale.ROOT));
-      }
-      packetContainer.getMinecraftKeys().write(0, key);
-    } else {
-      packetContainer.getStrings().write(0, channel);
     }
-    try {
-      byte[] bytesToSend = LabyModChannelHelper.getBytesToSend(messageKey, jsonElement == null ? null : jsonElement.toString());
-      //noinspection unchecked
-      Class<Object> packetDataSerializerClass = (Class<Object>) Lookup.serverClass("PacketDataSerializer");
-      Object packetDataSerializer = packetDataSerializerClass.getConstructor(ByteBuf.class).newInstance(Unpooled.wrappedBuffer(bytesToSend));
-      packetContainer.getSpecificModifier(packetDataSerializerClass).write(0, packetDataSerializer);
-      Synchronizer.synchronize(() -> PacketSender.sendServerPacket(player, packetContainer));
-    } catch (Exception exception) {
-      exception.printStackTrace();
-    }
+    WrapperPlayServerPluginMessage packet = new WrapperPlayServerPluginMessage(pluginMessageChannel(channel), bytesToSend);
+    Synchronizer.synchronize(() -> PacketEvents.getAPI().getPlayerManager().sendPacket(player, packet));
   }
 
   private String messageChannelOf(Player player) {
     User user = UserRepository.userOf(player);
     return user.protocolVersion() >= 393 ? "labymod3:main" : "LMC";
+  }
+
+  private String pluginMessageChannel(String channel) {
+    if (MinecraftVersions.VER1_13_0.atOrAbove() && channel.startsWith("MC|")) {
+      return channel.substring(3).toLowerCase(Locale.ROOT);
+    }
+    return MinecraftVersions.VER1_13_0.atOrAbove() ? channel.toLowerCase(Locale.ROOT) : channel;
+  }
+
+  private ResourceLocation resourceLocation(String channel) {
+    String normalized = pluginMessageChannel(channel);
+    return normalized.contains(":") ? new ResourceLocation(normalized) : new ResourceLocation(normalized.toLowerCase(Locale.ROOT));
   }
 }

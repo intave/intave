@@ -1,9 +1,15 @@
 package de.jpx3.intave.module.feedback;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityAnimation;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityStatus;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityTeleport;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityVelocity;
 import de.jpx3.intave.check.movement.Timer;
 import de.jpx3.intave.diagnostic.LatencyStudy;
 import de.jpx3.intave.diagnostic.message.DebugBroadcast;
@@ -40,36 +46,6 @@ public final class PacketDelayer extends Module {
     this.lowTolerance = timerCheck.lowToleranceMode();
   }
 
-//  @PacketSubscription(
-//    priority = ListenerPriority.LOWEST,
-//    packetsIn = {
-//      USE_ENTITY
-//    }
-//  )
-//  public void microLagDelayAttack(PacketEvent event) {
-//    Player player = event.getPlayer();
-//    User user = UserRepository.userOf(player);
-//    ConnectionMetadata connection = user.meta().connection();
-//    MovementMetadata movement = user.meta().movement();
-//
-//    PacketContainer packetContainer = event.getPacket();
-//    PacketType packetType = event.getPacketType();
-//
-//    if (user.justJoined() || !(microLag) || user.trustFactor().atLeast(TrustFactor.YELLOW)) {
-//      return;
-//    }
-//
-//    if (connection.eligibleForTransactionTimeout) {
-//      // is lagging
-//      boolean delayAttack = false;
-//
-//      if (delayAttack) {
-//        connection.attacksQueued++;
-//        event.setCancelled(true);
-//      }
-//    }
-//  }
-
   @PacketSubscription(
     priority = ListenerPriority.LOWEST,
     packetsOut = {
@@ -103,7 +79,7 @@ public final class PacketDelayer extends Module {
       PLAYER_INFO_REMOVE
     }
   )
-  public void enqueueOutgoingPackets(PacketEvent event) {
+  public void enqueueOutgoingPackets(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     MetadataBundle meta = user.meta();
@@ -111,8 +87,7 @@ public final class PacketDelayer extends Module {
     ProtocolMetadata protocol = meta.protocol();
     MovementMetadata movement = meta.movement();
 
-    PacketContainer packetContainer = event.getPacket();
-    PacketType packetType = event.getPacketType();
+    PacketTypeCommon packetType = event.getPacketType();
 
 //    if (event.getPacketType() == PacketType.Play.Server.PLAYER_INFO) {
 ////      connection.lastRespawn = System.currentTimeMillis();
@@ -155,15 +130,9 @@ public final class PacketDelayer extends Module {
     long positionBlockTolerance = connection.transactionPingAverage() + LatencyStudy.pingAverage() / 2 + lagTolerance + positionTimeoutTolerance;
     boolean positionTimeout = !activeExclude && lastMovementPacket > positionBlockTolerance;
 
-    boolean idAddressed = packetType == PacketType.Play.Server.ANIMATION ||
-      packetType == PacketType.Play.Server.ENTITY_STATUS ||
-      packetType == PacketType.Play.Server.ENTITY_METADATA ||
-      packetType == PacketType.Play.Server.ENTITY_TELEPORT ||
-      packetType == PacketType.Play.Server.ENTITY_VELOCITY;
-
-    if (idAddressed) {
-      Integer entityId = packetContainer.getIntegers().read(0);
-      if (entityId != null && entityId == player.getEntityId()) {
+    Integer addressedEntityId = addressedEntityId((PacketSendEvent) event);
+    if (addressedEntityId != null) {
+      if (addressedEntityId == player.getEntityId()) {
         return;
       }
     }
@@ -196,7 +165,7 @@ public final class PacketDelayer extends Module {
       if (enqueuedPackets.isEmpty()) {
         connection.firstEnqueue = System.currentTimeMillis();
       }
-      enqueuedPackets.offerLast(packetContainer.getHandle());
+      enqueuedPackets.offerLast(event.getFullBufferClone());
       connection.lastBufferEnqueue = System.currentTimeMillis();
       event.setCancelled(true);
     } else if (!enqueuedPackets.isEmpty()) {
@@ -210,7 +179,7 @@ public final class PacketDelayer extends Module {
           sendPacket(player, packet);
           connection.ignorePacketEnqueue = false;
         }
-        enqueuedPackets.offerLast(packetContainer.getHandle());
+        enqueuedPackets.offerLast(event.getFullBufferClone());
         event.setCancelled(true);
       } else {
         int limit = enqueuedPacketAmount;
@@ -255,7 +224,7 @@ public final class PacketDelayer extends Module {
       long scheduledTime = System.nanoTime() + delay * 1_000_000;
       scheduledTime = Math.max(connection.lastDelaySlot + 1, scheduledTime);
       connection.lastDelaySlot = scheduledTime;
-      delayedPackets.add(new DelayedPacket(packetContainer.getHandle(), scheduledTime));
+      delayedPackets.add(new DelayedPacket(event.getFullBufferClone(), scheduledTime));
       event.setCancelled(true);
       if (connection.lastDelayNotification + 30000 < System.currentTimeMillis()) {
         connection.lastDelayNotification = System.currentTimeMillis();
@@ -274,7 +243,27 @@ public final class PacketDelayer extends Module {
     if (packet == null) {
       return;
     }
-    ProtocolLibrary.getProtocolManager().sendServerPacket(player, PacketContainer.fromPacket(packet), true);
+    PacketEvents.getAPI().getPlayerManager().sendPacket(player, packet);
+  }
+
+  private Integer addressedEntityId(PacketSendEvent event) {
+    PacketTypeCommon packetType = event.getPacketType();
+    if (packetType == PacketType.Play.Server.ENTITY_ANIMATION) {
+      return new WrapperPlayServerEntityAnimation(event).getEntityId();
+    }
+    if (packetType == PacketType.Play.Server.ENTITY_STATUS) {
+      return new WrapperPlayServerEntityStatus(event).getEntityId();
+    }
+    if (packetType == PacketType.Play.Server.ENTITY_METADATA) {
+      return new WrapperPlayServerEntityMetadata(event).getEntityId();
+    }
+    if (packetType == PacketType.Play.Server.ENTITY_TELEPORT) {
+      return new WrapperPlayServerEntityTeleport(event).getEntityId();
+    }
+    if (packetType == PacketType.Play.Server.ENTITY_VELOCITY) {
+      return new WrapperPlayServerEntityVelocity(event).getEntityId();
+    }
+    return null;
   }
 
   private long oldestPendingTransaction(User user) {

@@ -1,9 +1,8 @@
 package de.jpx3.intave.connect.customclient;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.MinecraftKey;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPluginMessage;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPluginMessage;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import de.jpx3.intave.IntaveLogger;
@@ -12,11 +11,8 @@ import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.check.EventProcessor;
 import de.jpx3.intave.connect.sibyl.LabyModChannelHelper;
 import de.jpx3.intave.executor.Synchronizer;
-import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.PacketSender;
-import de.jpx3.intave.packet.reader.PayloadInReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
@@ -50,12 +46,12 @@ public final class CustomClientSupportService implements EventProcessor {
       CUSTOM_PAYLOAD_IN
     }
   )
-  public void receivePayloadPacket(Player player, PayloadInReader reader) {
-    String tag = reader.tag();
+  public void receivePayloadPacket(Player player, WrapperPlayClientPluginMessage packet) {
+    String tag = packet.getChannelName();
     if (!tag.equalsIgnoreCase("intave")) {
       return;
     }
-    ByteBuf bytes = reader.readBytes();
+    ByteBuf bytes = Unpooled.wrappedBuffer(packet.getData());
     try {
       bytes.markReaderIndex();
       String messageKey = LabyModChannelHelper.readString(bytes, 100);
@@ -82,20 +78,9 @@ public final class CustomClientSupportService implements EventProcessor {
   }
 
   private void sendCustomDataPacket(Player player, String channel, String data, String prefix, String key) {
-    PacketContainer packetContainer = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.CUSTOM_PAYLOAD);
-    if (MinecraftVersions.VER1_13_0.atOrAbove()) {
-      packetContainer.getMinecraftKeys().write(0, new MinecraftKey(prefix, key));
-    } else {
-      packetContainer.getStrings().write(0, prefix + ":" + key);
-    }
-    try {
-      //noinspection unchecked
-      Class<Object> packetDataSerializerClass = (Class<Object>) Lookup.serverClass("PacketDataSerializer");
-      Object packetDataSerializer = packetDataSerializerClass.getConstructor(ByteBuf.class).newInstance(Unpooled.wrappedBuffer(LabyModChannelHelper.getBytesToSend(channel, data)));
-      packetContainer.getSpecificModifier(packetDataSerializerClass).write(0, packetDataSerializer);
-      Synchronizer.synchronize(() -> PacketSender.sendServerPacket(player, packetContainer));
-    } catch (Exception exception) {
-      exception.printStackTrace();
-    }
+    String packetChannel = MinecraftVersions.VER1_13_0.atOrAbove() ? prefix + ":" + key : prefix + ":" + key;
+    byte[] payload = LabyModChannelHelper.getBytesToSend(channel, data);
+    WrapperPlayServerPluginMessage packet = new WrapperPlayServerPluginMessage(packetChannel, payload);
+    Synchronizer.synchronize(() -> PacketEvents.getAPI().getPlayerManager().sendPacket(player, packet));
   }
 }

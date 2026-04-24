@@ -1,8 +1,7 @@
 package de.jpx3.intave.check.combat.heuristics.detect.experimental;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import com.google.common.util.concurrent.AtomicDouble;
 import de.jpx3.intave.check.Blueprint;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -47,15 +46,10 @@ public abstract class RotationPrevisionBlueprint<M extends RotationPrevisionBlue
       USE_ENTITY
     }
   )
-  public void clientUseEntity(PacketEvent event) {
+  public void clientUseEntity(ProtocolPacketEvent event, WrapperPlayClientInteractEntity packet) {
     User user = userOf(event.getPlayer());
     RotationPrevisionBlueprintMeta meta = metaOf(user);
-    PacketContainer packet = event.getPacket();
-    EnumWrappers.EntityUseAction action = packet.getEntityUseActions().readSafely(0);
-    if (action == null) {
-      action = packet.getEnumEntityUseActions().read(0).getAction();
-    }
-    if (action == EnumWrappers.EntityUseAction.ATTACK) {
+    if (packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
       meta.lastAttack = 0;
     }
   }
@@ -66,7 +60,7 @@ public abstract class RotationPrevisionBlueprint<M extends RotationPrevisionBlue
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void clientTickUpdate(PacketEvent event) {
+  public void clientTickUpdate(ProtocolPacketEvent event) {
     User user = userOf(event.getPlayer());
     RotationPrevisionBlueprintMeta meta = metaOf(user);
     if (!user.meta().protocol().flyingPacketsAreSent()) {

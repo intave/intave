@@ -1,11 +1,8 @@
 package de.jpx3.intave.user.meta;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.WrappedAttribute;
-import com.comphenix.protocol.wrappers.WrappedAttributeModifier;
+import com.github.retrooper.packetevents.resources.ResourceLocation;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerUpdateAttributes.Property;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerUpdateAttributes.PropertyModifier;
 import com.google.common.collect.ImmutableList;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
@@ -33,7 +30,7 @@ import de.jpx3.intave.module.dispatch.MovementDispatcher;
 import de.jpx3.intave.module.feedback.Superposition;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.tracker.player.PacketLogging;
-import de.jpx3.intave.packet.Relative;
+import de.jpx3.intave.share.Relative;
 import de.jpx3.intave.player.Effects;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.share.Rotation;
@@ -51,7 +48,6 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.comphenix.protocol.wrappers.WrappedAttributeModifier.Operation.ADD_PERCENTAGE;
 import static de.jpx3.intave.IntaveControl.REPLACE_JOAP_SETBACK_WITH_CM;
 import static de.jpx3.intave.check.movement.physics.MovementCharacteristics.resolveFriction;
 import static de.jpx3.intave.reflect.access.ReflectiveHandleAccess.handleOf;
@@ -59,7 +55,14 @@ import static de.jpx3.intave.share.ClientMath.*;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.*;
 
 public final class MovementMetadata implements SimulationEnvironment {
-  public static final WrappedAttributeModifier SPRINTING_MODIFIER = WrappedAttributeModifier.newBuilder(UUID.fromString("662A6B8D-DA3E-4C1C-8813-96EA6097278D")).amount(0.3F).operation(ADD_PERCENTAGE).name("Sprint Boost").build();
+  public static final UUID SPRINTING_MODIFIER_UUID = UUID.fromString("662A6B8D-DA3E-4C1C-8813-96EA6097278D");
+  public static final ResourceLocation SPRINTING_MODIFIER_NAME = new ResourceLocation("minecraft:sprinting");
+  public static final PropertyModifier SPRINTING_MODIFIER = new PropertyModifier(
+    SPRINTING_MODIFIER_NAME,
+    SPRINTING_MODIFIER_UUID,
+    0.3F,
+    PropertyModifier.Operation.MULTIPLY_TOTAL
+  );
   private static final boolean ELYTRA_ENABLED = MinecraftVersions.VER1_9_0.atOrAbove();
   private final Player player;
   private final User user;
@@ -339,11 +342,14 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   @DispatchTarget
   public void updateMovement(
-    PacketContainer packet,
-    boolean hasMovement, boolean hasRotation
+    boolean hasMovement,
+    boolean hasRotation,
+    double packetX,
+    double packetY,
+    double packetZ,
+    float packetYaw,
+    float packetPitch
   ) {
-    boolean vehicleMove = packet.getType() == PacketType.Play.Client.VEHICLE_MOVE;
-    boolean containsCollision = MinecraftVersions.VER1_21_4.atOrAbove();
     PacketLogging logging = Modules.tracker().packetLogging();
     if (!boundingBoxSetup) {
       setupDefaults();
@@ -357,13 +363,9 @@ public final class MovementMetadata implements SimulationEnvironment {
       sprintResetNextTick = false;
     }
     if (hasMovement) {
-      StructureModifier<Double> position = packet.getDoubles();
-      if (containsCollision && vehicleMove) {
-        position = packet.getStructures().read(0).getDoubles();
-      }
-      positionX = position.read(0);
-      positionY = position.read(1);
-      positionZ = position.read(2);
+      positionX = packetX;
+      positionY = packetY;
+      positionZ = packetZ;
       motionX = positionX - verifiedPositionX;
       motionY = positionY - verifiedPositionY;
       motionZ = positionZ - verifiedPositionZ;
@@ -393,16 +395,14 @@ public final class MovementMetadata implements SimulationEnvironment {
     lastRotationYaw = rotationYaw;
     lastRotationPitch = rotationPitch;
     if (hasRotation) {
-      StructureModifier<Float> rotation = packet.getFloat();
-      rotationYaw = rotation.read(0);
-      rotationPitch = rotation.read(1);
+      rotationYaw = packetYaw;
+      rotationPitch = packetPitch;
       lookVector = vectorForRotation(rotationYaw, rotationPitch);
       float rotationYawInRadians = rotationYaw * (float) Math.PI / 180.0F;
       yawSine = sin(rotationYawInRadians);
       yawCosine = cos(rotationYawInRadians);
     }
     recheckWebStateFromLastTick();
-    updateEntityMovement();
     if (hasMovement || hasRotation) {
       updatePose();
     }
@@ -631,18 +631,6 @@ public final class MovementMetadata implements SimulationEnvironment {
     return plate != null && plate.getType() == Material.ELYTRA;
   }
 
-  @Deprecated
-  private void updateEntityMovement() {
-//    ConnectionMetadata connectionMetadata = user.meta().connection();
-//    for (Entity value : connectionMetadata.entities()) {
-//      value.entityPlayerMoveUpdate();
-//    }
-//    for (Map.Entry<Integer, WrappedEntity> entry : entityMap.entrySet()) {
-//      WrappedEntity entity = entry.getValue();
-//      entity.entityPlayerMoveUpdate();
-//    }
-  }
-
   public void updateEyesInWater() {
     double yPos = positionY + eyeHeight() - (double) 0.11111f;
     this.eyesInWater = interactingFluid != null && interactingFluid.isOfWater();
@@ -830,7 +818,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   @DispatchTarget
-  public void applyGroundInformationToPacket(PacketContainer packet) {
+  public void applyGroundInformationToPacket(Object packet) {
     // be gone
     //    packet.getBooleans().write(0, onGround);
   }
@@ -1006,21 +994,37 @@ public final class MovementMetadata implements SimulationEnvironment {
     pastSprintChange = 0;
 //    this.sprinting = false;
     AbilityMetadata abilities = user.meta().abilities();
-    WrappedAttribute movementSpeed = abilities.findAttribute("generic.movementSpeed");
+    Property movementSpeed = abilities.findAttribute("generic.movementSpeed");
 
 //    player.sendMessage(ChatColor.GOLD + "Sprint-toggle to: " + sprinting);
 
-    List<WrappedAttributeModifier> movementSpeedModifiers = abilities.modifiersOf(movementSpeed);
+    if (movementSpeed == null) {
+      return;
+    }
+    List<PropertyModifier> movementSpeedModifiers = abilities.modifiersOf(movementSpeed);
     if (sprinting) {
       //
-      if (!movementSpeedModifiers.contains(SPRINTING_MODIFIER)) {
+      if (movementSpeedModifiers.stream().noneMatch(MovementMetadata::isSprintingModifier)) {
 //        player.sendMessage(ChatColor.RED + "Added Sprinting Modifier");
         movementSpeedModifiers.add(SPRINTING_MODIFIER);
       }
     } else {
 //      player.sendMessage(ChatColor.RED + "Removed Sprinting Modifier");
-      movementSpeedModifiers.remove(SPRINTING_MODIFIER);
+      movementSpeedModifiers.removeIf(MovementMetadata::isSprintingModifier);
     }
+  }
+
+  public static boolean isSprintingModifier(PropertyModifier modifier) {
+    if (modifier == null) {
+      return false;
+    }
+    if (SPRINTING_MODIFIER_UUID.equals(modifier.getUUID())) {
+      return true;
+    }
+    ResourceLocation name = modifier.getName();
+    return name != null
+      && ("minecraft:sprinting".equalsIgnoreCase(name.toString())
+      || SPRINTING_MODIFIER_UUID.toString().equalsIgnoreCase(name.toString()));
   }
 
   public Superposition<Motion> velocitySuperposition() {

@@ -10,12 +10,8 @@ public final class ConversionBridges {
   static {
     ClassLoader classLoader = IntavePlugin.class.getClassLoader();
     String className = "";
-    if (MinecraftVersions.VER1_16_0.atOrAbove()) {
-      className = "de.jpx3.intave.block.variant.convert.v16ConversionBridge";
-    } else if (MinecraftVersions.VER1_14_0.atOrAbove()) {
-      className = "de.jpx3.intave.block.variant.convert.v14ConversionBridge";
-    } else if (MinecraftVersions.VER1_13_0.atOrAbove()) {
-      className = "de.jpx3.intave.block.variant.convert.v13ConversionBridge";
+    if (MinecraftVersions.VER1_13_0.atOrAbove()) {
+      className = "de.jpx3.intave.block.variant.convert.PacketEventsConversionBridge";
     } else {
       className = "de.jpx3.intave.block.variant.convert.v8ConversionBridge";
     }

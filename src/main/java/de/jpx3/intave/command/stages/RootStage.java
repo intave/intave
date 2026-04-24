@@ -23,11 +23,11 @@ import de.jpx3.intave.library.python.PythonTask;
 import de.jpx3.intave.math.Occurrences;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.nayoro.Nayoro;
-import de.jpx3.intave.security.HashAccess;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
+import de.jpx3.intave.util.PlainHashes;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -155,7 +155,7 @@ public final class RootStage extends CommandStage {
     String hash;
     try {
       File currentJavaJarFile = new File(IntavePlugin.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-      hash = HashAccess.hashOf(currentJavaJarFile).substring(0, 9);
+      hash = PlainHashes.sha256(currentJavaJarFile).substring(0, 9);
     } catch (Exception exception) {
       hash = "Unavailable";
     }

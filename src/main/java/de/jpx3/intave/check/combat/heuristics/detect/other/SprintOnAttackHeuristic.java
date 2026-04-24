@@ -1,8 +1,8 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientEntityAction;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
@@ -12,8 +12,8 @@ import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
-import de.jpx3.intave.packet.converter.PlayerAction;
-import de.jpx3.intave.packet.converter.PlayerActionResolver;
+import de.jpx3.intave.protocol.PlayerAction;
+import de.jpx3.intave.protocol.PlayerActionResolver;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -37,11 +37,11 @@ public final class SprintOnAttackHeuristic extends MetaCheckPart<Heuristics, Spr
       ENTITY_ACTION_IN
     }
   )
-  public void receiveEntityActionPacket(PacketEvent event) {
+  public void receiveEntityActionPacket(ProtocolPacketEvent event, WrapperPlayClientEntityAction packet) {
     Player player = event.getPlayer();
     User user = userOf(player);
     SprintOnAttackHeuristicMeta meta = metaOf(user);
-    PlayerAction action = PlayerActionResolver.resolveActionFromPacket(event.getPacket());
+    PlayerAction action = PlayerActionResolver.resolveActionFromPacket(packet);
 
     if (action == PlayerAction.START_SPRINTING) {
       meta.startSprint = true;
@@ -101,16 +101,11 @@ public final class SprintOnAttackHeuristic extends MetaCheckPart<Heuristics, Spr
       USE_ENTITY
     }
   )
-  public void receiveAttackPacket(PacketEvent event) {
+  public void receiveAttackPacket(ProtocolPacketEvent event, WrapperPlayClientInteractEntity packet) {
     Player player = event.getPlayer();
     User user = userOf(player);
     SprintOnAttackHeuristicMeta meta = metaOf(user);
-    PacketContainer packet = event.getPacket();
-    EnumWrappers.EntityUseAction action = packet.getEntityUseActions().readSafely(0);
-    if (action == null) {
-      action = packet.getEnumEntityUseActions().read(0).getAction();
-    }
-    if (action == EnumWrappers.EntityUseAction.ATTACK) {
+    if (packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
       meta.lastAttack = 0;
     }
   }
@@ -121,7 +116,7 @@ public final class SprintOnAttackHeuristic extends MetaCheckPart<Heuristics, Spr
       POSITION, POSITION_LOOK, LOOK, FLYING
     }
   )
-  public void receiveMovePacket(PacketEvent event) {
+  public void receiveMovePacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     SprintOnAttackHeuristicMeta meta = metaOf(user);

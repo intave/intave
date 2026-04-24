@@ -3,7 +3,7 @@ package de.jpx3.intave.module.mitigate;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.klass.rewrite.PatchyAutoTranslation;
-import de.jpx3.intave.packet.converter.PosMoveRotConverter;
+import de.jpx3.intave.share.PositionMoveRotationConverter;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.PositionMoveRotation;
@@ -23,7 +23,7 @@ class v214TeleportApplier implements TeleportApplier {
   public v214TeleportApplier() {
     Class<?> playerConnectionClass = Lookup.serverClass("PlayerConnection");
     try {
-      internalTeleportMethod = playerConnectionClass.getDeclaredMethod("internalTeleport", PosMoveRotConverter.nativePositionMoveRotClass, Set.class);
+      internalTeleportMethod = playerConnectionClass.getDeclaredMethod("internalTeleport", PositionMoveRotationConverter.NATIVE_CLASS, Set.class);
       if (!internalTeleportMethod.isAccessible()) {
         internalTeleportMethod.setAccessible(true);
       }
@@ -46,7 +46,7 @@ class v214TeleportApplier implements TeleportApplier {
         new Motion(),
         new Rotation(yaw, pitch)
       );
-      Object posMoveRotNative = PosMoveRotConverter.INSTANCE.getGeneric(posMoveRot);
+      Object posMoveRotNative = PositionMoveRotationConverter.toNative(posMoveRot);
       internalTeleportMethod.invoke(playerConnection, posMoveRotNative, relatives);
     } catch (InvocationTargetException | IllegalAccessException e) {
       e.printStackTrace();

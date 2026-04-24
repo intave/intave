@@ -4,7 +4,6 @@ import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveBootFailureException;
-import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.shape.BlockShape;
@@ -12,7 +11,6 @@ import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.check.movement.Physics;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.executor.Synchronizer;
-import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.klass.trace.Caller;
 import de.jpx3.intave.klass.trace.PluginInvocation;
 import de.jpx3.intave.math.MathHelper;
@@ -34,7 +32,6 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.util.Vector;
 
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -485,35 +482,22 @@ public final class SetbackSimulator extends Module {
       return;
     }
     if (!event.isCancelled()) {
-      try {
-        User user = UserRepository.userOf(player);
-        if (!user.hasPlayer()) {
-          return;
-        }
-        Object playerHandle = user.playerHandle();
-        Location dest = event.getTo();
-        if (dest == null) {
-          throw new IntaveBootFailureException("Setback location cannot be null");
-        }
-        if (Math.abs(nativeYaw) > 360f) {
-          teleportMethodContainer.teleport(player, dest, motionY, nativeYaw % 360f, nativePitch, false);
-        } else {
-          Field yawField = Lookup.serverField("Entity", "yaw");
-          Field pitchField = Lookup.serverField("Entity", "pitch");
-          float yaw = (float) yawField.get(playerHandle);
-          float pitch = (float) pitchField.get(playerHandle);
-          yawField.set(playerHandle, 0f);
-          pitchField.set(playerHandle, 0f);
-          teleportMethodContainer.teleport(player, dest, motionY, 0, 0, true);
-          yawField.set(playerHandle, yaw);
-          pitchField.set(playerHandle, pitch);
-        }
+      User user = UserRepository.userOf(player);
+      if (!user.hasPlayer()) {
+        return;
+      }
+      Location dest = event.getTo();
+      if (dest == null) {
+        throw new IntaveBootFailureException("Setback location cannot be null");
+      }
+      if (Math.abs(nativeYaw) > 360f) {
+        teleportMethodContainer.teleport(player, dest, motionY, nativeYaw % 360f, nativePitch, false);
+      } else {
+        teleportMethodContainer.teleport(player, dest, motionY, player.getLocation().getYaw(), player.getLocation().getPitch(), true);
+      }
 
-        if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
-          player.sendMessage(IntavePlugin.prefix() + "Teleport to " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " per " + ChatColor.RED + " setback policy");
-        }
-      } catch (IllegalAccessException exception) {
-        throw new IntaveInternalException(exception);
+      if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
+        player.sendMessage(IntavePlugin.prefix() + "Teleport to " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " per " + ChatColor.RED + " setback policy");
       }
     }
   }

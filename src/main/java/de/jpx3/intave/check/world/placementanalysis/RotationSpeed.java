@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
@@ -40,7 +40,7 @@ public final class RotationSpeed extends MetaCheckPart<PlacementAnalysis, Rotati
       POSITION_LOOK, LOOK
     }
   )
-  public void on(PacketEvent event) {
+  public void on(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();
@@ -92,7 +92,7 @@ public final class RotationSpeed extends MetaCheckPart<PlacementAnalysis, Rotati
           .withMessage(COMMON_FLAG_MESSAGE)
           .withDetails("high rotation activity while placing blocks")
           .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-          .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
+          .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "analysis-thresholds.on-premise")
           .withVL(10).build();
         Modules.violationProcessor().processViolation(violation);
         meta.denyPlacementRequest = System.currentTimeMillis();

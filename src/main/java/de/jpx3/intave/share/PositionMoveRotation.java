@@ -1,9 +1,6 @@
 package de.jpx3.intave.share;
 
-import com.comphenix.protocol.events.PacketContainer;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.packet.Relative;
-import de.jpx3.intave.packet.converter.PosMoveRotConverter;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Set;
@@ -40,16 +37,6 @@ public final class PositionMoveRotation {
 
   public Rotation rotation() {
     return rotation;
-  }
-
-  public static PositionMoveRotation firstFrom(
-    PacketContainer packet
-  ) {
-    return packet.getModifier()
-      .withType(
-        PosMoveRotConverter.nativePositionMoveRotClass,
-        PosMoveRotConverter.INSTANCE
-      ).read(0);
   }
 
   // If a teleport flag is set, we use the old value and add the change to it

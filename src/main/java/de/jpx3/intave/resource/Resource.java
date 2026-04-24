@@ -163,10 +163,6 @@ public interface Resource extends LegacyResource {
     return Resources.withCompression(this);
   }
 
-  default Resource encrypted() {
-    return Resources.withEncryption(this);
-  }
-
   default Resource locked(File lockTarget) {
     return Resources.withLockingFile(lockTarget, this);
   }
@@ -175,7 +171,4 @@ public interface Resource extends LegacyResource {
     return Resources.retryRead(this, retries);
   }
 
-  default Resource hashProtected(File file) {
-    return Resources.hashProtected(file.getAbsolutePath(), this);
-  }
 }

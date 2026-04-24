@@ -1,6 +1,6 @@
 package de.jpx3.intave.block.access;
 
-import com.comphenix.protocol.wrappers.BlockPosition;
+import de.jpx3.intave.share.BlockPosition;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;

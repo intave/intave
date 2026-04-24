@@ -1,18 +1,17 @@
 package de.jpx3.intave.module.filter;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.Pair;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.protocol.player.Equipment;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityEquipment;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.*;
 
 import java.util.Collections;
-import java.util.List;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.ENTITY_EQUIPMENT;
 
@@ -29,28 +28,21 @@ public final class EquipmentFilter extends Filter {
       ENTITY_EQUIPMENT
     }
   )
-  public void filterEquipment(PacketEvent event) {
-    PacketContainer packet = event.getPacket();
-
-    if (packet.getItemModifier().readSafely(0) != null) {
-      // 1.8 - 1.15
-      ItemStack itemStack = packet.getItemModifier().readSafely(0);
-      ItemStack newItemStack = stripFromData(itemStack);
-      packet.getItemModifier().write(0, newItemStack);
-//      int a = packet.getIntegers().read(0);
-//      int b = packet.getIntegers().read(1);
-//      System.out.println("New equipment: " + itemStack + " " + a + " " + b);
-    } else {
-      List<Pair<EnumWrappers.ItemSlot, ItemStack>> read = packet.getSlotStackPairLists().read(0);
-      for (Pair<EnumWrappers.ItemSlot, ItemStack> itemSlotItemStackPair : read) {
-        ItemStack itemStack = itemSlotItemStackPair.getSecond().clone();
-        ItemStack newItemStack = stripFromData(itemStack);
-        itemSlotItemStackPair.setSecond(newItemStack);
+  public void filterEquipment(ProtocolPacketEvent event, WrapperPlayServerEntityEquipment packet) {
+    for (Equipment equipment : packet.getEquipment()) {
+      ItemStack itemStack = SpigotConversionUtil.toBukkitItemStack(equipment.getItem());
+      if (itemStack == null) {
+        continue;
       }
+      equipment.setItem(SpigotConversionUtil.fromBukkitItemStack(stripFromData(itemStack.clone())));
     }
+    event.markForReEncode(true);
   }
 
   private ItemStack stripFromData(ItemStack itemStack) {
+    if (itemStack == null) {
+      return null;
+    }
     itemStack.setAmount(1);
 
     if (itemStack.hasItemMeta()) {

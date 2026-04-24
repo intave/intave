@@ -1,9 +1,12 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.protocol.player.DiggingAction;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerBlockPlacement;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerDigging;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -14,7 +17,6 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
-import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -22,9 +24,6 @@ import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.user.meta.PunishmentMetadata;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
@@ -43,7 +42,7 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
       ARM_ANIMATION, FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void receiveMovementAndSwingPacket(PacketEvent event) {
+  public void receiveMovementAndSwingPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     BlockingMeta meta = metaOf(user);
@@ -53,7 +52,7 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
       return;
     }
 
-    if (event.getPacketType() != PacketType.Play.Client.ARM_ANIMATION) {
+    if (event.getPacketType() != PacketType.Play.Client.ANIMATION) {
       meta.releasedItemAfterClientTick = false;
       meta.ticksBetweenBlockAndUnblock++;
     }
@@ -63,30 +62,24 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
     meta.heldItemOperations = 0;
   }
 
-  private void receiveExcludedPacket(Player player, PacketContainer packet) {
-    userOf(player).ignoreNextInboundPacket();
-    PacketSender.receiveClientPacketFrom(player, packet);
-  }
-
   @PacketSubscription(
     packetsIn = {
       BLOCK_PLACE, BLOCK_DIG
     }
   )
-  public void receiveInteractionPacket(PacketEvent event) {
+  public void receiveInteractionPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     PunishmentMetadata punishmentData = user.meta().punishment();
     BlockingMeta meta = metaOf(user);
-    PacketContainer packet = event.getPacket();
 
     if (!user.meta().protocol().flyingPacketsAreSent() || user.meta().abilities().ignoringMovementPackets() || user.meta().movement().lastTeleport < 10) {
       return;
     }
 
-    if (packet.getType() == PacketType.Play.Client.BLOCK_DIG) {
-      EnumWrappers.PlayerDigType playerDigType = packet.getPlayerDigTypes().readSafely(0);
-      if (playerDigType == EnumWrappers.PlayerDigType.RELEASE_USE_ITEM) {
+    if (event.getPacketType() == PacketType.Play.Client.PLAYER_DIGGING) {
+      WrapperPlayClientPlayerDigging packet = new WrapperPlayClientPlayerDigging((PacketReceiveEvent) event);
+      if (packet.getAction() == DiggingAction.RELEASE_USE_ITEM) {
         meta.releasedItemAfterClientTick = true;
         meta.ventosFreundlicherBoolean = true;
 
@@ -104,7 +97,10 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
 
       }
     } else { // BLOCK_PLACE
-      ItemStack itemInHand = packet.getItemModifier().readSafely(0);
+      WrapperPlayClientPlayerBlockPlacement packet = new WrapperPlayClientPlayerBlockPlacement((PacketReceiveEvent) event);
+      ItemStack itemInHand = packet.getItemStack()
+        .map(SpigotConversionUtil::toBukkitItemStack)
+        .orElse(null);
       boolean sword = itemInHand != null && itemInHand.getType().name().endsWith("_SWORD");
 
       if (meta.releasedItemAfterClientTick) {
@@ -116,10 +112,7 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
       }
 
       int clientTicksBetweenBlockingToggle = meta.clientTicksBetweenBlockingToggle;
-      Integer integer = packet.getIntegers().readSafely(0);
-      if (integer == null) {
-        integer = 0;
-      }
+      int integer = packet.getFaceId();
       if (integer == 255 && meta.ventosFreundlicherBoolean && sword) {
         meta.clientTicksBetweenBlockingToggle = 0;
         meta.ventosFreundlicherBoolean = false;
@@ -150,7 +143,7 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
       FLYING, POSITION, POSITION_LOOK, LOOK, VEHICLE_MOVE
     }
   )
-  public void receiveMovementPacket(PacketEvent event) {
+  public void receiveMovementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     BlockingMeta meta = metaOf(user);
@@ -170,16 +163,9 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
 //          if(meta.unsendPackets.size() != meta.heldItemOperations) {
 //            Bukkit.broadcastMessage("flag " + meta.heldItemOperations + " " + meta.blocksPlacedThisTick);
 //          }
-          meta.unsendPackets.clear();
         }
       }
     }
-
-//    if(meta.unsendPackets.size() != 0) {
-//      PacketContainer packetContainer = meta.unsendPackets.get(0);
-//      receiveExcludedPacket(player, packetContainer);
-//      meta.unsendPackets.clear();
-//    }
 
     meta.blocksPlacedThisTick = 0;
   }
@@ -189,7 +175,7 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
       USE_ITEM
     }
   )
-  public void receiveUseItem(PacketEvent event) {
+  public void receiveUseItem(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     ProtocolMetadata clientData = user.meta().protocol();
@@ -205,7 +191,7 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
       BLOCK_PLACE
     }
   )
-  public void receiveBlockPlace(PacketEvent event) {
+  public void receiveBlockPlace(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     BlockingMeta meta = metaOf(player);
@@ -221,7 +207,7 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
       HELD_ITEM_SLOT_IN
     }
   )
-  public void receiveHeldItemSlot(PacketEvent event) {
+  public void receiveHeldItemSlot(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     BlockingMeta meta = metaOf(player);
@@ -231,19 +217,10 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
       return;
     }
 
-//    if(!movementData.recentlyEncounteredFlyingPacket(2) || clientData.protocolVersion() < VER_1_9) {
-//      if (meta.heldItemOperations > 0) {
-//        PacketContainer clonedPacket = event.getPacket().deepClone();
-//        meta.unsendPackets.add(clonedPacket);
-//        event.setCancelled(true);
-//      }
-//    }
-
     meta.heldItemOperations++;
   }
 
   public static final class BlockingMeta extends CheckCustomMetadata {
-    private final List<PacketContainer> unsendPackets = new ArrayList<>();
     private int blocksPlacedThisTick;
     public boolean releasedItemAfterClientTick;
     public int ticksBetweenBlockAndUnblock, clientTicksBetweenBlockingToggle;

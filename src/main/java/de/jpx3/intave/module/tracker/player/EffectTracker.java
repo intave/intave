@@ -1,14 +1,17 @@
 package de.jpx3.intave.module.tracker.player;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.protocol.potion.PotionType;
+import com.github.retrooper.packetevents.protocol.potion.PotionTypes;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityEffect;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerRemoveEntityEffect;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.EntityEffectReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.EffectMetadata;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffectType;
 
@@ -23,30 +26,22 @@ public final class EffectTracker extends Module {
 
   private final boolean EFFECT_ACCESS = MinecraftVersions.VER1_9_0.atOrAbove();
 
-  private PotionEffectType effectIdOf(PacketContainer packet) {
-    if (EFFECT_ACCESS) {
-      return packet.getEffectTypes().read(0);
-    } else {
-      return PotionEffectType.getById(packet.getIntegers().read(1));
-    }
-  }
-
   @PacketSubscription(
     priority = HIGH,
     packetsOut = ENTITY_EFFECT
   )
   public void sentEffect(
     User user, Player player,
-    EntityEffectReader reader
+    WrapperPlayServerEntityEffect packet
   ) {
-    int entityId = reader.entityId();
+    int entityId = packet.getEntityId();
     if (entityId != player.getEntityId()) {
       return;
     }
     PotionEffectOutput effectOutput = new PotionEffectOutput(
-      reader.effectType(),
-      reader.effectAmplifier(),
-      reader.effectDuration()
+      effectTypeId(packet.getPotionType()),
+      packet.getEffectAmplifier(),
+      packet.getEffectDurationTicks()
     );
     user.tickFeedback(() -> receiveEffect(player, effectOutput));
   }
@@ -57,15 +52,14 @@ public final class EffectTracker extends Module {
       REMOVE_ENTITY_EFFECT
     }
   )
-  public void sentRemoveEffect(PacketEvent event) {
+  public void sentRemoveEffect(ProtocolPacketEvent event, WrapperPlayServerRemoveEntityEffect packet) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    PacketContainer packet = event.getPacket();
-    int entityId = packet.getIntegers().read(0);
+    int entityId = packet.getEntityId();
     if (entityId != player.getEntityId()) {
       return;
     }
-    PotionEffectType potionEffectType = effectIdOf(packet);
+    PotionEffectType potionEffectType = SpigotConversionUtil.toBukkitPotionEffectType(packet.getPotionType());
     user.tickFeedback(() -> receiveEffectRemoval(player, potionEffectType));
   }
 
@@ -113,6 +107,19 @@ public final class EffectTracker extends Module {
         break;
       }
     }
+  }
+
+  private int effectTypeId(PotionType potionType) {
+    if (potionType == PotionTypes.SPEED) {
+      return POTION_EFFECT_SPEED;
+    }
+    if (potionType == PotionTypes.SLOWNESS) {
+      return POTION_EFFECT_SLOWNESS;
+    }
+    if (potionType == PotionTypes.JUMP_BOOST) {
+      return POTION_EFFECT_JUMP_BOOST;
+    }
+    return -1;
   }
 
   private static class PotionEffectOutput {

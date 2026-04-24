@@ -1,8 +1,7 @@
 package de.jpx3.intave.check.combat;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
@@ -24,7 +23,6 @@ import de.jpx3.intave.check.combat.heuristics.mine.MiningStrategyExecutor;
 import de.jpx3.intave.diagnostic.message.DebugBroadcast;
 import de.jpx3.intave.diagnostic.message.MessageCategory;
 import de.jpx3.intave.diagnostic.message.MessageSeverity;
-import de.jpx3.intave.diagnostic.natives.NativeCheck;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.executor.TaskTracker;
 import de.jpx3.intave.module.Modules;
@@ -46,8 +44,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.jetbrains.annotations.NotNull;
 
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -66,7 +62,6 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
 
     this.setupSubChecks();
     this.setupEvaluationScheduler(plugin);
-    this.registerNativeCheck();
   }
 
   private void setupEvaluationScheduler(IntavePlugin plugin) {
@@ -151,16 +146,9 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
     Synchronizer.synchronize(() -> debug(player, anomaly));
   }
 
-  public void registerNativeCheck() {
-    NativeCheck.registerNative(() -> debug(null, null));
-    NativeCheck.registerNative(() -> evaluate(null, false));
-    NativeCheck.registerNative(() -> catchAnomaliesOf(null, false));
-    NativeCheck.registerNative(() -> resolveIdentifier(null));
-  }
-
   //  @Native
   private void debug(Player player, Anomaly anomaly) {
-    if (NativeCheck.checkActive() || anomaly == null) {
+    if (anomaly == null) {
       return;
     }
     User user = userOf(player);
@@ -198,9 +186,6 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
 
   //  @Native
   public void evaluate(Player player, boolean enforceDecision) {
-    if (NativeCheck.checkActive()) {
-      return;
-    }
     User user = userOf(player);
     AttackMetadata attackData = user.meta().attack();
     HeuristicsStorage storage = user.storageOf(HeuristicsStorage.class);
@@ -275,7 +260,7 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
       if (legacyConfigurationLayout()) {
         threshold = "confidence-thresholds." + overallActiveConfidence.output();
       } else {
-        threshold = "cloud-thresholds.on-premise";
+        threshold = "analysis-thresholds.on-premise";
       }
 
       String message = "is fighting suspiciously";
@@ -297,7 +282,7 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
       return legacyConfigLayCache;
     }
     YamlConfiguration settings = IntavePlugin.singletonInstance().settings();
-    ConfigurationSection section = settings.getConfigurationSection("check.heuristics.cloud-thresholds.on-premise");
+    ConfigurationSection section = settings.getConfigurationSection("check.heuristics.analysis-thresholds.on-premise");
     if (section != null) {
 //      IntaveLogger.logger().info("Using new heuristics format");
       return legacyConfigLayCache = false;
@@ -311,9 +296,6 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
   @NotNull
   @SuppressWarnings("UnusedAssignment")
   public List<Anomaly> catchAnomaliesOf(User user, boolean delay) {
-    if (NativeCheck.checkActive()) {
-      return null;
-    }
     if (user.hasPlayer()) {
       return Collections.emptyList();
     }
@@ -420,15 +402,10 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
       USE_ENTITY
     }
   )
-  public void receiveUseEntity(PacketEvent event) {
+  public void receiveUseEntity(ProtocolPacketEvent event, WrapperPlayClientInteractEntity packet) {
     Player player = event.getPlayer();
     HeuristicMeta heuristicMeta = metaOf(player);
-    PacketContainer packet = event.getPacket();
-    EnumWrappers.EntityUseAction action = packet.getEntityUseActions().readSafely(0);
-    if (action == null) {
-      action = packet.getEnumEntityUseActions().read(0).getAction();
-    }
-    if (action == EnumWrappers.EntityUseAction.ATTACK) {
+    if (packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
       if (heuristicMeta.overallAttacks++ == 0) {
         heuristicMeta.firstAttack = System.currentTimeMillis();
       }
@@ -468,7 +445,7 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
     }
   )
   @Deprecated
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     if (event.isCancelled()) {
       return;
     }
@@ -491,14 +468,11 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
 //    evaluate(player, true);
   }
 
-  // encryption
-
   //  @Native
   private String resolveIdentifier(List<Anomaly> anomalies) {
-    if (NativeCheck.checkActive()) {
-      return null;
-    }
-    return encryptAnomalies(restructureForOutput(anomalies));
+    return restructureForOutput(anomalies).stream()
+      .map(anomaly -> "p[" + anomaly.key() + "]")
+      .collect(Collectors.joining(","));
   }
 
   private List<Anomaly> restructureForOutput(List<Anomaly> anomalies) {
@@ -529,70 +503,6 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
       anomalies = reducedAnomalies;
     }
     return anomalies;
-  }
-
-  private String encryptAnomalies(List<Anomaly> anomalies) {
-    if (NativeCheck.checkActive()) {
-      return null;
-    }
-    List<String> usableAnomalies = new ArrayList<>();
-    int limit = 10;
-    for (Anomaly anomaly : anomalies) {
-      String key = anomaly.key();
-      if (!usableAnomalies.contains(key)) {
-        if (limit-- > 0) {
-          usableAnomalies.add(key);
-        }
-      }
-    }
-    StringBuilder nonPaddedBuilder = new StringBuilder();
-    for (String pattern : usableAnomalies) {
-      int size = usableAnomalies.size();
-      int subCheck = Integer.parseInt(pattern.substring(pattern.length() - 1));
-      int mainCheck = Integer.parseInt(pattern.substring(0, pattern.length() - 1));
-      int checkCombined = mainCheck << 3 | subCheck;
-      checkCombined ^= 452938422 ^ 987509231 ^ size;
-      for (int i = 0; i < size * 2; i++) {
-        checkCombined ^= size * 28037423 * i;
-        checkCombined ^= 928344123 * size;
-        checkCombined ^= i * 4203874;
-      }
-      byte[] encode = Base64.getEncoder().encode(new byte[]{(byte) checkCombined});
-      String result = new String(encode).replace("=", "");
-      result = result.length() > 10 ? result.substring(0, 10) : result;
-      nonPaddedBuilder.append(result);
-    }
-    String pattern = nonPaddedBuilder.toString();
-    String string;
-    boolean exceededLength = pattern.length() >= 4;
-    int endingGarbageCharacters = exceededLength ? -1 : 6 - pattern.length();
-    endingGarbageCharacters ^= pattern.charAt(0);
-    String first = new String(Base64.getEncoder().encode(new byte[]{(byte) endingGarbageCharacters}));
-    first = first.replace("=", "");
-    if (pattern.length() >= 4) {
-      string = first + pattern;
-    } else {
-      StringBuilder patternStringBuilder = new StringBuilder();
-      patternStringBuilder.append(first);
-      patternStringBuilder.append(pattern);
-      while (patternStringBuilder.length() < 6) {
-        int garbageCharacter = Math.max(1, new SecureRandom().nextInt(64));
-        String garbage = new String(Base64.getEncoder().encode(new byte[]{(byte) garbageCharacter}));
-        garbage = garbage.replace("=", "");
-        patternStringBuilder.append(garbage);
-      }
-      string = patternStringBuilder.toString();
-    }
-    char characterA = (char) Base64.getEncoder().encode(new byte[]{(byte) new SecureRandom().nextInt(0b111111)})[0];
-    char characterB = (char) Base64.getEncoder().encode(new byte[]{(byte) new SecureRandom().nextInt(0b111111)})[0];
-    byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
-    for (int i = 0; i < bytes.length; i++) {
-      int key = characterA ^ characterB % (i + 1 ^ characterB * 5);
-      bytes[i] ^= key;
-    }
-    String encode = new String(Base64.getEncoder().encode(bytes));
-    encode = encode.replace("=", "");
-    return String.valueOf(characterA) + characterB + encode;
   }
 
   public static class HeuristicMeta extends CheckCustomMetadata {

@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.combat.clickpatterns;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.ClickPatterns;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -29,7 +29,7 @@ public final class Deviation extends MetaCheckPart<ClickPatterns, Deviation.Devi
     @PacketSubscription(
             packetsIn = ARM_ANIMATION
     )
-    public void receiveSwing(PacketEvent event) {
+    public void receiveSwing(ProtocolPacketEvent event) {
         Player player = event.getPlayer();
         User user = userOf(player);
         DeviationMeta meta = metaOf(user);

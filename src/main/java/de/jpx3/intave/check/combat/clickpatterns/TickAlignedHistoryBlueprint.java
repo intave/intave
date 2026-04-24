@@ -1,23 +1,23 @@
 package de.jpx3.intave.check.combat.clickpatterns;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.protocol.player.DiggingAction;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerDigging;
 import de.jpx3.intave.check.Blueprint;
 import de.jpx3.intave.check.combat.ClickPatterns;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
-import de.jpx3.intave.packet.reader.EntityUseReader;
-import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
-import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.DROP_ITEM;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
 
@@ -34,27 +34,24 @@ public abstract class TickAlignedHistoryBlueprint<E extends TickAlignedMeta> ext
       USE_ENTITY, ARM_ANIMATION, BLOCK_DIG
     }
   )
-  public final void clientClickUpdate(PacketEvent event) {
+  public final void clientClickUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
 
     TickAlignedMeta meta = metaOf(user);
 
-    PacketContainer packet = event.getPacket();
-    PacketType type = packet.getType();
-    if (type == PacketType.Play.Client.USE_ENTITY) {
-      EntityUseReader reader = PacketReaders.readerOf(packet);
-      EnumWrappers.EntityUseAction entityUseAction = reader.useAction();
-      if (entityUseAction == EnumWrappers.EntityUseAction.ATTACK) {
+    PacketTypeCommon type = event.getPacketType();
+    if (type == PacketType.Play.Client.INTERACT_ENTITY) {
+      WrapperPlayClientInteractEntity packet = new WrapperPlayClientInteractEntity((PacketReceiveEvent) event);
+      if (packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
         meta.attacks++;
       }
-      reader.release();
-    } else if (type == PacketType.Play.Client.ARM_ANIMATION) {
+    } else if (type == PacketType.Play.Client.ANIMATION) {
       meta.clicks++;
-    } else if (type == PacketType.Play.Client.BLOCK_DIG) {
-      EnumWrappers.PlayerDigType digType = packet.getPlayerDigTypes().read(0);
+    } else if (type == PacketType.Play.Client.PLAYER_DIGGING) {
+      DiggingAction digType = new WrapperPlayClientPlayerDigging((PacketReceiveEvent) event).getAction();
 //      if (digType == )
-      if (digType == DROP_ITEM && user.meta().inventory().heldItemType() == Material.AIR) {
+      if (digType == DiggingAction.DROP_ITEM && user.meta().inventory().heldItemType() == Material.AIR) {
 
       } else {
         meta.breakingBlock = user.meta().attack().inBreakProcess;
@@ -69,7 +66,7 @@ public abstract class TickAlignedHistoryBlueprint<E extends TickAlignedMeta> ext
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public final void clientTickUpdate(PacketEvent event) {
+  public final void clientTickUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
 

@@ -6,16 +6,16 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.Semaphore;
 
 final class LockingLayer implements Resource {
-  private final Lock javaLock = new ReentrantLock();
+  private final Semaphore javaLock = new Semaphore(1);
 
   private final File lockFile;
   private final Resource target;
   private FileLock lock;
   private FileChannel lockChannel;
+  private volatile boolean javaLockHeld;
 
   public LockingLayer(File targetFile, Resource target) {
     this.lockFile = new File(targetFile + ".lock");
@@ -79,7 +79,8 @@ final class LockingLayer implements Resource {
 
   private void lock() {
     try {
-      javaLock.lock();
+      javaLock.acquireUninterruptibly();
+      javaLockHeld = true;
       if (lockFile.exists() && System.currentTimeMillis() - lockFile.lastModified() > 5 * 60 * 1000) {
         try {
           lockFile.delete();
@@ -101,19 +102,34 @@ final class LockingLayer implements Resource {
       lock = lockChannel.lock();
       String hash = String.valueOf(ThreadLocalRandom.current().nextInt(Integer.MIN_VALUE, Integer.MAX_VALUE));
       lockChannel.write(ByteBuffer.wrap(hash.getBytes(StandardCharsets.UTF_8)));
-    } catch (IOException e) {
+    } catch (IOException | RuntimeException e) {
+      releaseJavaLock();
       throw new IllegalStateException(e);
     }
   }
 
   private void unlock() {
     try {
-      javaLock.unlock();
-      lock.close();
-      lockChannel.close();
+      if (lock != null && lock.isValid()) {
+        lock.close();
+      }
+      if (lockChannel != null && lockChannel.isOpen()) {
+        lockChannel.close();
+      }
       lockFile.delete();
     } catch (IOException exception) {
       exception.printStackTrace();
+    } finally {
+      lock = null;
+      lockChannel = null;
+      releaseJavaLock();
+    }
+  }
+
+  private void releaseJavaLock() {
+    if (javaLockHeld) {
+      javaLockHeld = false;
+      javaLock.release();
     }
   }
 }

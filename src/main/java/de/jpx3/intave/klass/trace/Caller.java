@@ -22,7 +22,7 @@ public final class Caller {
       if (!pluginName.equalsIgnoreCase(NO_PLUGIN_FOUND)
         && i++ > 1
       ) {
-        if (onlyExternal && ("Intave".equalsIgnoreCase(pluginName) || "ProtocolLib".equalsIgnoreCase(pluginName))) {
+        if (onlyExternal && ("Intave".equalsIgnoreCase(pluginName) || "packetevents".equalsIgnoreCase(pluginName))) {
           continue;
         }
         return new PluginInvocation(

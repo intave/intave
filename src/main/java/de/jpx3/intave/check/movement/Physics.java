@@ -1,10 +1,10 @@
 package de.jpx3.intave.check.movement;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.utility.MinecraftVersion;
-import com.comphenix.protocol.wrappers.WrappedBlockData;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.protocol.world.states.WrappedBlockState;
+import com.github.retrooper.packetevents.util.Vector3i;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerBlockChange;
+import de.jpx3.intave.version.MinecraftVersion;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.check.MitigationStrategy;
@@ -27,7 +27,6 @@ import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.movement.physics.*;
 import de.jpx3.intave.check.movement.physics.eval.EvaluationTag;
 import de.jpx3.intave.connect.sibyl.SibylBroadcast;
-import de.jpx3.intave.connect.upload.RealtimedataUplink;
 import de.jpx3.intave.diagnostic.message.DebugBroadcast;
 import de.jpx3.intave.diagnostic.message.MessageSeverity;
 import de.jpx3.intave.diagnostic.timings.Timings;
@@ -41,7 +40,6 @@ import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.tracker.player.PacketLogging;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
-import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.player.FaultKicks;
 import de.jpx3.intave.player.collider.Colliders;
 import de.jpx3.intave.player.collider.complex.ColliderResult;
@@ -61,6 +59,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.util.Vector;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -1141,17 +1140,13 @@ public final class Physics extends Check {
   }
 
   private void refreshBlock(Player player, Location location) {
-    PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.BLOCK_CHANGE);
     if (!VolatileBlockAccess.isInLoadedChunk(location.getWorld(), location.getBlockX(), location.getBlockZ())) {
       return;
     }
     Block block = VolatileBlockAccess.blockAccess(location);
-    Object handle = BlockVariantNativeAccess.nativeVariantAccess(block);
-    WrappedBlockData blockData = WrappedBlockData.fromHandle(handle);
-    com.comphenix.protocol.wrappers.BlockPosition position = new com.comphenix.protocol.wrappers.BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-    packet.getBlockData().write(0, blockData);
-    packet.getBlockPositionModifier().write(0, position);
-    PacketSender.sendServerPacket(player, packet);
+    WrappedBlockState blockState = SpigotConversionUtil.fromBukkitMaterialData(block.getState().getData());
+    Vector3i position = new Vector3i(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    PacketEvents.getAPI().getPlayerManager().sendPacket(player, new WrapperPlayServerBlockChange(position, blockState));
   }
 
   private static String resolveKeysFromInput(int forward, int strafe) {

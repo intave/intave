@@ -1,22 +1,22 @@
 package de.jpx3.intave.player.fake.equipment;
 
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.protocol.player.EquipmentSlot;
 
 public enum ArmorSlot {
-  HELMET(EnumWrappers.ItemSlot.HEAD, 4),
-  CHESTPLATE(EnumWrappers.ItemSlot.CHEST, 3),
-  LEGGINGS(EnumWrappers.ItemSlot.LEGS, 2),
-  BOOTS(EnumWrappers.ItemSlot.FEET, 1);
+  HELMET(EquipmentSlot.HELMET, 4),
+  CHESTPLATE(EquipmentSlot.CHEST_PLATE, 3),
+  LEGGINGS(EquipmentSlot.LEGGINGS, 2),
+  BOOTS(EquipmentSlot.BOOTS, 1);
 
-  private final EnumWrappers.ItemSlot itemSlot;
+  private final EquipmentSlot itemSlot;
   private final int slotId;
 
-  ArmorSlot(EnumWrappers.ItemSlot itemSlot, int slotId) {
+  ArmorSlot(EquipmentSlot itemSlot, int slotId) {
     this.itemSlot = itemSlot;
     this.slotId = slotId;
   }
 
-  public EnumWrappers.ItemSlot itemSlot() {
+  public EquipmentSlot itemSlot() {
     return this.itemSlot;
   }
 

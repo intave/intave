@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
@@ -26,7 +26,7 @@ public final class JumpVelocityHeuristic extends MetaCheckPart<Heuristics, JumpV
       POSITION, FLYING, LOOK, POSITION_LOOK
     }
   )
-  public void receiveEntityActionPacket(PacketEvent event) {
+  public void receiveEntityActionPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();

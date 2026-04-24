@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
@@ -33,7 +33,7 @@ public final class Snap extends MetaCheckPart<PlacementAnalysis, Snap.SnapMeta> 
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void receiveMovementPacket(PacketEvent event) {
+  public void receiveMovementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();
@@ -99,7 +99,7 @@ public final class Snap extends MetaCheckPart<PlacementAnalysis, Snap.SnapMeta> 
         if (absYawDiff(meta.yawAt(1), meta.yawAt(3)) < 3 && absPitchDiff(meta.pitchAt(1), meta.pitchAt(3)) < 3) {
           Violation violation = Violation.builderFor(PlacementAnalysis.class)
             .forPlayer(player)
-            .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
+            .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "analysis-thresholds.on-premise")
             .withMessage(COMMON_FLAG_MESSAGE).withDetails("back snap")
             .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
             .withVL(0).build();

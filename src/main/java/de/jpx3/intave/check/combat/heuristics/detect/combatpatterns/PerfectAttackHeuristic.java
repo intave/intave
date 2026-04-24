@@ -1,9 +1,9 @@
 package de.jpx3.intave.check.combat.heuristics.detect.combatpatterns;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -35,13 +35,12 @@ public final class PerfectAttackHeuristic extends MetaCheckPart<Heuristics, Perf
       USE_ENTITY, ARM_ANIMATION
     }
   )
-  public void evaluateFightAccuracy(PacketEvent event) {
+  public void evaluateFightAccuracy(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     AttackMetadata attackData = user.meta().attack();
     PerfectAttackMeta heuristicMeta = metaOf(user);
-    PacketType packetType = event.getPacketType();
-    PacketContainer packet = event.getPacket();
+    PacketTypeCommon packetType = event.getPacketType();
     Entity attackedEntity = attackData.lastAttackedEntity();
 
     if (attackedEntity != null && !attackedEntity.moving(0.05)) {
@@ -51,14 +50,11 @@ public final class PerfectAttackHeuristic extends MetaCheckPart<Heuristics, Perf
       return;
     }
 
-    if (packetType == PacketType.Play.Client.ARM_ANIMATION) {
+    if (packetType == PacketType.Play.Client.ANIMATION) {
       heuristicMeta.swings++;
     } else {
-      EnumWrappers.EntityUseAction action = packet.getEntityUseActions().readSafely(0);
-      if (action == null) {
-        action = packet.getEnumEntityUseActions().read(0).getAction();
-      }
-      if (action == EnumWrappers.EntityUseAction.ATTACK) {
+      WrapperPlayClientInteractEntity packet = new WrapperPlayClientInteractEntity((com.github.retrooper.packetevents.event.PacketReceiveEvent) event);
+      if (packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
         heuristicMeta.attacks++;
         heuristicMeta.swings--;
       }
@@ -71,7 +67,7 @@ public final class PerfectAttackHeuristic extends MetaCheckPart<Heuristics, Perf
       POSITION_LOOK, LOOK
     }
   )
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     AttackMetadata attackData = user.meta().attack();

@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.combat;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
@@ -45,7 +45,7 @@ public final class ClickPatterns extends Check {
   @PacketSubscription(
     packetsIn = ARM_ANIMATION
   )
-  public void receiveSwing(PacketEvent event) {
+  public void receiveSwing(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     decrementer.decrement(user, (MAX_VL_DEDUCTION_PER_MINUTE / 32) / 60d);

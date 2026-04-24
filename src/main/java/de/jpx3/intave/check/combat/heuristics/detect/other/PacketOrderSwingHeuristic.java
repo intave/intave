@@ -1,9 +1,8 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -31,10 +30,10 @@ public final class PacketOrderSwingHeuristic extends MetaCheckPart<Heuristics, P
       FLYING, POSITION, POSITION_LOOK, LOOK, ARM_ANIMATION
     }
   )
-  public void receiveMovementPacket(PacketEvent event) {
+  public void receiveMovementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     PacketOrderSwingHeuristicMeta heuristicMeta = metaOf(player);
-    heuristicMeta.swingTick = event.getPacketType() == PacketType.Play.Client.ARM_ANIMATION;
+    heuristicMeta.swingTick = event.getPacketType() == PacketType.Play.Client.ANIMATION;
   }
 
   @PacketSubscription(
@@ -42,20 +41,15 @@ public final class PacketOrderSwingHeuristic extends MetaCheckPart<Heuristics, P
       USE_ENTITY
     }
   )
-  public void receiveUseEntity(PacketEvent event) {
+  public void receiveUseEntity(ProtocolPacketEvent event, WrapperPlayClientInteractEntity packet) {
     Player player = event.getPlayer();
     User user = userOf(player);
     ProtocolMetadata clientData = user.meta().protocol();
     PacketOrderSwingHeuristicMeta heuristicMeta = metaOf(player);
-    PacketContainer packet = event.getPacket();
-    EnumWrappers.EntityUseAction action = packet.getEntityUseActions().readSafely(0);
-    if (action == null) {
-      action = packet.getEnumEntityUseActions().read(0).getAction();
-    }
     if (user.meta().abilities().ignoringMovementPackets()) {
       return;
     }
-    if (clientData.flyingPacketsAreSent() && action == EnumWrappers.EntityUseAction.ATTACK && !heuristicMeta.swingTick) {
+    if (clientData.flyingPacketsAreSent() && packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK && !heuristicMeta.swingTick) {
       String description = "swing not correlated with attack (" + user.meta().protocol().versionString() + ")";
       Anomaly anomaly = Anomaly.anomalyOf("31", Confidence.LIKELY, Anomaly.Type.KILLAURA, description);
       parentCheck().saveAnomaly(player, anomaly);

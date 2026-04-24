@@ -1,8 +1,8 @@
 package de.jpx3.intave.check.combat.heuristics.detect.neuralnetwork.check;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientEntityAction;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.executor.IntaveThreadFactory;
@@ -43,15 +43,10 @@ public class NeuralNetworkTesting extends MetaCheckPart<Heuristics, NeuralNetwor
       USE_ENTITY
     }
   )
-  public void playerAttack(PacketEvent event) {
+  public void playerAttack(ProtocolPacketEvent event, WrapperPlayClientInteractEntity packet) {
     User user = userOf(event.getPlayer());
     NeuralNetworkTestingMeta meta = metaOf(user);
-    PacketContainer packet = event.getPacket();
-    EnumWrappers.EntityUseAction action = packet.getEntityUseActions().readSafely(0);
-    if (action == null) {
-      action = packet.getEnumEntityUseActions().read(0).getAction();
-    }
-    if (action == EnumWrappers.EntityUseAction.ATTACK) {
+    if (packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
       meta.lastAttack = 0;
     }
   }
@@ -65,7 +60,7 @@ public class NeuralNetworkTesting extends MetaCheckPart<Heuristics, NeuralNetwor
       LOOK,
     }
   )
-  public void playerMove(PacketEvent event) {
+  public void playerMove(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     NeuralNetworkTestingMeta meta = metaOf(player);
@@ -107,7 +102,7 @@ public class NeuralNetworkTesting extends MetaCheckPart<Heuristics, NeuralNetwor
       LOOK,
     }
   )
-  public void playerMoveEnd(PacketEvent event) {
+  public void playerMoveEnd(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     NeuralNetworkTestingMeta neuralNetworkTestingMeta = metaOf(player);
     neuralNetworkTestingMeta.lastAttack++;
@@ -127,18 +122,15 @@ public class NeuralNetworkTesting extends MetaCheckPart<Heuristics, NeuralNetwor
       ENTITY_ACTION_IN
     }
   )
-  public void playerSneaking(PacketEvent event) {
-    EnumWrappers.PlayerAction playerActions = event.getPacket().getPlayerActions().readSafely(0);
+  public void playerSneaking(ProtocolPacketEvent event, WrapperPlayClientEntityAction packet) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MovementMetadata movement = user.meta().movement();
 
-    if (playerActions != null) {
-      if (playerActions == EnumWrappers.PlayerAction.START_SNEAKING && player.getName().contains(testUsername)) {
-        double motion = Math.hypot(movement.motionX(), movement.motionZ());
-        if (motion < 0.01) {
-          openWindow();
-        }
+    if (packet.getAction() == WrapperPlayClientEntityAction.Action.START_SNEAKING && player.getName().contains(testUsername)) {
+      double motion = Math.hypot(movement.motionX(), movement.motionZ());
+      if (motion < 0.01) {
+        openWindow();
       }
     }
   }

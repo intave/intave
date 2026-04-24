@@ -36,7 +36,7 @@ abstract class Playback extends SinkEnvironment {
         if (!"INTAVE/SAMPLE".equalsIgnoreCase(headerData)) {
           throw new RuntimeException("Invalid header data");
         }
-        String license = dataInputStream.readUTF();
+        dataInputStream.readUTF();
 //        String id = dataInputStream.readUTF();
         String id = new UUID(dataInputStream.readLong(), dataInputStream.readLong()).toString();
         long millis = dataInputStream.readLong();

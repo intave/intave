@@ -1,12 +1,14 @@
 package de.jpx3.intave.check.combat.heuristics.detect.clickpatterns;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.protocol.player.DiggingAction;
+import com.github.retrooper.packetevents.util.Vector3i;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerBlockPlacement;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerDigging;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
+import de.jpx3.intave.adapter.PacketEventsAdapter;
 import de.jpx3.intave.block.access.BlockInteractionAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.check.MetaCheckPart;
@@ -14,10 +16,9 @@ import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
 import de.jpx3.intave.check.combat.heuristics.Confidence;
 import de.jpx3.intave.executor.Synchronizer;
-import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.converter.BlockPositionConverter;
+import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.MovingObjectPosition;
 import de.jpx3.intave.share.NativeVector;
 import de.jpx3.intave.user.User;
@@ -44,8 +45,8 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
       USE_ENTITY
     }
   )
-  public void entityHit(PacketEvent event) {
-    if (ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0)) {
+  public void entityHit(ProtocolPacketEvent event, WrapperPlayClientInteractEntity packet) {
+    if (PacketEventsAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0)) {
       return;
     }
 
@@ -53,12 +54,7 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
     User user = userOf(player);
     AirClickLimitHeuristicMeta meta = metaOf(user);
 
-    PacketContainer packet = event.getPacket();
-    EnumWrappers.EntityUseAction action = packet.getEntityUseActions().readSafely(0);
-    if (action == null) {
-      action = packet.getEnumEntityUseActions().read(0).getAction();
-    }
-    if (action == EnumWrappers.EntityUseAction.ATTACK) {
+    if (packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
       meta.resetedLeftClickCounterThisTick = true;
     }
   }
@@ -69,8 +65,8 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
       BLOCK_PLACE
     }
   )
-  public void blockPlace(PacketEvent event) {
-    if (ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0)) {
+  public void blockPlace(ProtocolPacketEvent event, WrapperPlayClientPlayerBlockPlacement packet) {
+    if (PacketEventsAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0)) {
       return;
     }
 
@@ -79,11 +75,8 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
     AirClickLimitHeuristicMeta meta = metaOf(user);
 
     // TODO: 01/28/21 Warning by Richy: The block-place is empty for native server versions from 1.9! Use the USE_ITEM packet instead
-//    BlockPosition blockPosition = event.getPacket().getBlockPositionModifier().read(0);
-    BlockPosition blockPosition = event.getPacket().getModifier()
-      .withType(Lookup.serverClass("BlockPosition"), BlockPositionConverter.threadConverter())
-      .read(0);
-    int blockPlaceDirection = event.getPacket().getIntegers().read(0);
+    BlockPosition blockPosition = blockPositionOf(packet.getBlockPosition());
+    int blockPlaceDirection = packet.getFaceId();
 
     if (blockPosition != null) {
       if (blockPlaceDirection != 255) {
@@ -103,8 +96,8 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
       BLOCK_DIG
     }
   )
-  public void blockDig(PacketEvent event) {
-    if (ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0)) {
+  public void blockDig(ProtocolPacketEvent event, WrapperPlayClientPlayerDigging packet) {
+    if (PacketEventsAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0)) {
       return;
     }
 
@@ -112,18 +105,15 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
     User user = userOf(player);
     AirClickLimitHeuristicMeta meta = metaOf(user);
 
-    EnumWrappers.PlayerDigType digType = event.getPacket().getPlayerDigTypes().read(0);
+    DiggingAction digType = packet.getAction();
 
-    if (digType == EnumWrappers.PlayerDigType.START_DESTROY_BLOCK) {
+    if (digType == DiggingAction.START_DIGGING) {
       meta.isBreakingClientSide = true;
 
-//      meta.currentDiggedBlock = event.getPacket().getBlockPositionModifier().read(0);
-      meta.currentDiggedBlock = event.getPacket().getModifier()
-        .withType(Lookup.serverClass("BlockPosition"), BlockPositionConverter.threadConverter())
-        .read(0);
-    } else if (digType == EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK) {
+      meta.currentDiggedBlock = blockPositionOf(packet.getBlockPosition());
+    } else if (digType == DiggingAction.CANCELLED_DIGGING) {
       meta.isBreakingClientSide = false;
-    } else if (digType == EnumWrappers.PlayerDigType.STOP_DESTROY_BLOCK) {
+    } else if (digType == DiggingAction.FINISHED_DIGGING) {
       meta.currentDiggedBlock = null;
       meta.isBreakingClientSide = false;
     }
@@ -135,8 +125,8 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void clientTickUpdate(PacketEvent event) {
-    if (ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0)) {
+  public void clientTickUpdate(ProtocolPacketEvent event) {
+    if (PacketEventsAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0)) {
       return;
     }
 
@@ -155,7 +145,7 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
 
          There is also a Minecraft bug where you send swing packets for 5 ticks after you have dismantled a block.
       **/
-      World world = event.getPlayer().getWorld();
+      World world = player.getWorld();
       MovementMetadata movementData = user.meta().movement();
 
       Location playerLocation = new Location(world, movementData.lastPositionX, movementData.lastPositionY, movementData.lastPositionZ);
@@ -241,6 +231,10 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
     prepareNextTick(meta);
   }
 
+  private BlockPosition blockPositionOf(Vector3i vector) {
+    return new BlockPosition(vector.x, vector.y, vector.z);
+  }
+
   private void prepareNextTick(AirClickLimitHeuristicMeta meta) {
     meta.resetedLeftClickCounterThisTick = false;
     meta.swingsThisTick = 0;
@@ -259,7 +253,7 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
       ARM_ANIMATION
     }
   )
-  public void swing(PacketEvent event) {
+  public void swing(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     AirClickLimitHeuristicMeta meta = metaOf(user);
@@ -268,75 +262,6 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
   }
 
   private void sendStopDig(Player player, AirClickLimitHeuristicMeta meta) {
-    //    Synchronizer.synchronize(()->{
-    //        try {
-    //          PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.BLOCK_BREAK_ANIMATION);
-    //          packet.getIntegers().write(0, player.getEntityId());
-    //          packet.getBlockPositionModifier().write(0, meta.currentDiggedBlock);
-    //          packet.getIntegers().write(1, 0);
-    ////          userOf(player).ignoreNextPacket();
-    //          ProtocolLibrary.getProtocolManager().sendServerPacket(player, packet);
-    //        } catch(Exception e) {
-    //          e.printStackTrace();
-    //        }
-    //    });
-    //TODO: das BLOCK_DIG verhindert nicht komplett das der block abgebaut wird (das abbauen wird manchmal vom server verhindert wenn der spieler den block zu schnell abgebaut hat)
-//    try {
-//      PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Client.BLOCK_DIG);
-//
-//      packet.getBlockPositionModifier().write(0, meta.currentDiggedBlock);
-//      packet.getDirections().write(0, EnumWrappers.Direction.DOWN);
-//      packet.getPlayerDigTypes().write(0, EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK);
-//
-//      userOf(player).ignoreNextPacket();
-//      ProtocolLibrary.getProtocolManager().recieveClientPacket(player, packet);
-//    } catch (InvocationTargetException | IllegalAccessException exception) {
-//      exception.printStackTrace();
-//    }
-
-
-    /*
-    replacing the block to air doesn't work neither
-     */
-
-//
-//    World world = player.getWorld();
-//    Block block = meta.currentDiggedBlock.toLocation(world).getBlock();
-//    WrappedBlockData wrappedBlockData = WrappedBlockData.createData(block.getType());
-//
-//    FeedbackCallback<Integer> callback = (player1, value1) -> {
-//      try {
-//        Thread.sleep(1150);
-//      } catch (InterruptedException e) {
-//        e.printStackTrace();
-//      }
-//      Synchronizer.synchronize(() -> {
-//        // set block to old data
-//        try {
-//          PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.BLOCK_CHANGE);
-//          packet.getBlockPositionModifier().write(0, meta.currentDiggedBlock);
-//          packet.getBlockData().write(0, wrappedBlockData);
-//
-//          ProtocolLibrary.getProtocolManager().sendServerPacket(player, packet);
-//        } catch (InvocationTargetException exception) {
-//          exception.printStackTrace();
-//        }
-//      });
-//    };
-//
-//    Modules.feedback().synchronize(player, 1, callback);
-//
-//    Bukkit.broadcastMessage("replaced block " + meta.currentDiggedBlock);
-//    // set block to air
-//    try {
-//      PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.BLOCK_CHANGE);
-//      packet.getBlockPositionModifier().write(0, meta.currentDiggedBlock);
-//      packet.getBlockData().write(0, WrappedBlockData.createData(Material.AIR));
-//
-//      ProtocolLibrary.getProtocolManager().sendServerPacket(player, packet);
-//    } catch (InvocationTargetException exception) {
-//      exception.printStackTrace();
-//    }
   }
 
   public static class AirClickLimitHeuristicMeta extends CheckCustomMetadata {

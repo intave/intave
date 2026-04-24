@@ -1,6 +1,6 @@
 package de.jpx3.intave.block.type;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.version.MinecraftVersion;
 import com.google.common.collect.ImmutableSet;
 import de.jpx3.intave.access.IntaveResourceCompilationException;
 import de.jpx3.intave.adapter.MinecraftVersions;

@@ -1,19 +1,17 @@
 package de.jpx3.intave.check.world.breakspeedlimiter;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.WrappedBlockData;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.protocol.player.DiggingAction;
+import com.github.retrooper.packetevents.util.Vector3i;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerDigging;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerBlockChange;
+import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.block.access.BlockInteractionAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
-import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.BreakSpeedLimiter;
 import de.jpx3.intave.executor.Synchronizer;
-import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
@@ -21,8 +19,6 @@ import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.module.violation.ViolationProcessor;
-import de.jpx3.intave.packet.PacketSender;
-import de.jpx3.intave.packet.converter.BlockPositionConverter;
 import de.jpx3.intave.reflect.access.ReflectiveEntityAccess;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
@@ -31,6 +27,7 @@ import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
@@ -45,7 +42,7 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
       POSITION, POSITION_LOOK, LOOK, FLYING, VEHICLE_MOVE
     }
   )
-  public void tickUpdate(PacketEvent event) {
+  public void tickUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     BreakSpeedFinishMeta meta = metaOf(user);
@@ -55,40 +52,13 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
     }
   }
 
-//  @PacketSubscription(
-//    priority = ListenerPriority.LOW,
-//    packetsIn = {
-//      ARM_ANIMATION
-//    }
-//  )
-//  public void actualTickUpdate(PacketEvent event) {
-//    Player player = event.getPlayer();
-//    User user = userOf(player);
-//    BreakSpeedFinishMeta meta = metaOf(user);
-//
-//    ProtocolMetadata clientData = user.meta().protocol();
-//    InventoryMetadata inventoryData = user.meta().inventory();
-//
-//    if (meta.breakProcess) {
-//      ItemStack itemInHand = inventoryData.heldItem();
-//      BlockPosition blockPosition = meta.targetBlockPosition;
-//
-//      float blockDamage = clientData.flyingPacketStream()
-//        ? BlockInnerAccess.blockDamage(player, itemInHand, blockPosition)
-//        : resolveBlockDamageOnGround(player, itemInHand, blockPosition);
-//      player.sendMessage("block damage in tick: " + blockDamage);
-//      meta.curBlockDamageMP += blockDamage;
-//      meta.maximumBlockDamage = Math.max(meta.maximumBlockDamage, blockDamage);
-//    }
-//  }
-
   @PacketSubscription(
     priority = ListenerPriority.LOW,
     packetsIn = {
       BLOCK_DIG
     }
   )
-  public void receiveBlockAction(PacketEvent event) {
+  public void receiveBlockAction(ProtocolPacketEvent event, WrapperPlayClientPlayerDigging packet) {
     Player player = event.getPlayer();
     User user = userOf(player);
     BreakSpeedFinishMeta meta = metaOf(user);
@@ -96,15 +66,11 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
     InventoryMetadata inventoryData = user.meta().inventory();
 
     ItemStack heldItem = inventoryData.heldItem();
-    PacketContainer packet = event.getPacket();
-//    BlockPosition blockPosition = packet.getBlockPositionModifier().read(0);
-    BlockPosition blockPosition = event.getPacket().getModifier()
-      .withType(Lookup.serverClass("BlockPosition"), BlockPositionConverter.threadConverter())
-      .read(0);
-    EnumWrappers.PlayerDigType digType = packet.getPlayerDigTypes().read(0);
+    BlockPosition blockPosition = blockPositionOf(packet.getBlockPosition());
+    DiggingAction digType = packet.getAction();
 
     switch (digType) {
-      case START_DESTROY_BLOCK: {
+      case START_DIGGING: {
         float blockDamage = BlockInteractionAccess.blockDamage(player, heldItem, blockPosition);
         meta.breakProcess = true;
         meta.breakProcessStartTime = System.currentTimeMillis();
@@ -113,7 +79,7 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
         meta.maximumBlockDamage = blockDamage;
         break;
       }
-      case STOP_DESTROY_BLOCK: {
+      case FINISHED_DIGGING: {
 //        if (clientData.flyingPacketStream()) {
 //          float blockDamageDealt = BlockInnerAccess.blockDamage(player, heldItem, blockPosition);
 //          if (blockDamageDealt < 0.79 && meta.balance++ >= 2) { // ~79%
@@ -161,7 +127,7 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
 //        }
 //        break;
       }
-      case ABORT_DESTROY_BLOCK:
+      case CANCELLED_DIGGING:
         meta.breakProcessStartTime = System.currentTimeMillis();
         meta.curBlockDamageMP = 0f;
         meta.targetBlockPosition = null;
@@ -182,17 +148,17 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
   }
 
   private void refreshBlock(Player player, Location location) {
-    PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.BLOCK_CHANGE);
     if (!VolatileBlockAccess.isInLoadedChunk(location.getWorld(), location.getBlockX(), location.getBlockZ())) {
       return;
     }
     Block block = VolatileBlockAccess.blockAccess(location);
-    Object handle = BlockVariantNativeAccess.nativeVariantAccess(block);
-    WrappedBlockData blockData = WrappedBlockData.fromHandle(handle);
-    packet.getBlockData().write(0, blockData);
-    BlockPosition position = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-    packet.getBlockPositionModifier().write(0, position);
-    PacketSender.sendServerPacket(player, packet);
+    Vector3i position = new Vector3i(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    WrapperPlayServerBlockChange packet = new WrapperPlayServerBlockChange(position, SpigotConversionUtil.fromBukkitMaterialData(block.getState().getData()));
+    PacketEvents.getAPI().getPlayerManager().sendPacket(player, packet);
+  }
+
+  private BlockPosition blockPositionOf(Vector3i vector) {
+    return new BlockPosition(vector.x, vector.y, vector.z);
   }
 
   private long resolveMillisecondsOf(float blockDamage) {

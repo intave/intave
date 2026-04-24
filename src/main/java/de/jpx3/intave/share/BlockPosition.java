@@ -1,6 +1,7 @@
 package de.jpx3.intave.share;
 
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 
 public final class BlockPosition extends NativeVector {
@@ -32,10 +33,6 @@ public final class BlockPosition extends NativeVector {
 
   public BlockPosition(Location source) {
     this(source.getBlockX(), source.getBlockY(), source.getBlockZ());
-  }
-
-  public BlockPosition(com.comphenix.protocol.wrappers.BlockPosition blockPosition) {
-    this(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
   }
 
   public static BlockPosition of(int posX, int posY, int posZ) {
@@ -236,6 +233,10 @@ public final class BlockPosition extends NativeVector {
 
   public int getZ() {
     return (int) zCoord;
+  }
+
+  public Location toLocation(World world) {
+    return new Location(world, getBlockX(), getBlockY(), getBlockZ());
   }
 
 

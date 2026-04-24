@@ -1,15 +1,11 @@
 package de.jpx3.intave.module.tracker.entity;
 
-import com.comphenix.protocol.events.InternalStructure;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.reflect.StructureModifier;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerTeams;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-
-import java.util.Optional;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.SCOREBOARD_TEAM;
 
@@ -24,27 +20,13 @@ public final class EntityCollisionDisabler extends Module {
       SCOREBOARD_TEAM
     }
   )
-  public void receiveScoreboardUpdate(PacketEvent event) {
+  public void receiveScoreboardUpdate(ProtocolPacketEvent event, WrapperPlayServerTeams packet) {
     if (!DISABLE_ENTITY_COLLISIONS) {
       return;
     }
-    PacketContainer packet = event.getPacket();
-    if (INDIRECT_SCOREBOARD_ACCESS) {
-      //noinspection OptionalAssignedToNull
-      if (packet.getSpecificModifier(Optional.class).read(0) != null) {
-        Optional<InternalStructure> optionalStructure = packet.getOptionalStructures().read(0);
-        if (optionalStructure.isPresent()) {
-          InternalStructure structure = optionalStructure.get();
-          StructureModifier<String> strings = structure.getStrings();
-          applyNoCollisionRule(strings);
-        }
-      }
-    } else {
-      applyNoCollisionRule(packet.getStrings());
+    if (packet.getTeamInfo().isPresent()) {
+      packet.getTeamInfo().get().setCollisionRule(WrapperPlayServerTeams.CollisionRule.NEVER);
+      event.markForReEncode(true);
     }
-  }
-
-  private void applyNoCollisionRule(StructureModifier<String> strings) {
-    strings.write(COLLISION_RULE_FIELD, "never");
   }
 }

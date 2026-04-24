@@ -1,7 +1,9 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientEntityAction;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerBlockPlacement;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.module.Modules;
@@ -9,9 +11,8 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
-import de.jpx3.intave.packet.converter.PlayerAction;
-import de.jpx3.intave.packet.reader.PacketReaders;
-import de.jpx3.intave.packet.reader.PlayerActionReader;
+import de.jpx3.intave.protocol.PlayerAction;
+import de.jpx3.intave.protocol.PlayerActionResolver;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import org.bukkit.Material;
@@ -39,7 +40,7 @@ public final class SneakAndPlace extends MetaCheckPart<PlacementAnalysis, SneakA
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void clientTickUpdate(PacketEvent event) {
+  public void clientTickUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     SneakAndPlaceMeta meta = metaOf(player);
     if (meta.placedInThisTick || meta.sneakChangedInThisTick) {
@@ -88,16 +89,12 @@ public final class SneakAndPlace extends MetaCheckPart<PlacementAnalysis, SneakA
       BLOCK_PLACE
     }
   )
-  public void receivePlacementPacket(PacketEvent event) {
-    PacketContainer packet = event.getPacket();
+  public void receivePlacementPacket(ProtocolPacketEvent event) {
+    WrapperPlayClientPlayerBlockPlacement packet = new WrapperPlayClientPlayerBlockPlacement((PacketReceiveEvent) event);
     Player player = event.getPlayer();
     SneakAndPlaceMeta meta = metaOf(player);
 
-    Integer facing = packet.getIntegers().readSafely(0);
-    if (facing == null) {
-      facing = 0;
-    }
-    if (facing == 255) {
+    if (packet.getFaceId() == 255) {
       return;
     }
     User user = userOf(player);
@@ -115,13 +112,12 @@ public final class SneakAndPlace extends MetaCheckPart<PlacementAnalysis, SneakA
       ENTITY_ACTION_IN
     }
   )
-  public void receiveEntityActionPacket(PacketEvent event) {
+  public void receiveEntityActionPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     SneakAndPlaceMeta meta = metaOf(player);
-    PacketContainer packet = event.getPacket();
-    PlayerActionReader reader = PacketReaders.readerOf(packet);
+    WrapperPlayClientEntityAction packet = new WrapperPlayClientEntityAction((PacketReceiveEvent) event);
 
-    PlayerAction action = reader.playerAction();
+    PlayerAction action = PlayerActionResolver.resolveActionFromPacket(packet);
     if (action.isStartSneak()) {
       meta.startSneakInThisTick = true;
       meta.sneakChangedInThisTick = true;
@@ -135,7 +131,6 @@ public final class SneakAndPlace extends MetaCheckPart<PlacementAnalysis, SneakA
       meta.sneakDuration = 0;
     }
 
-    reader.release();
   }
 
   @BukkitEventSubscription
@@ -151,7 +146,7 @@ public final class SneakAndPlace extends MetaCheckPart<PlacementAnalysis, SneakA
           .withMessage(COMMON_FLAG_MESSAGE)
           .withDetails("sneaking seems to be automated (sneak)")
           .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-          .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
+          .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "analysis-thresholds.on-premise")
           .withVL(Math.min(meta.violationLevel / 1.5, 5)).build();
         Modules.violationProcessor().processViolation(violation);
       }

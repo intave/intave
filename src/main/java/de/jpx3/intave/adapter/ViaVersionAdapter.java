@@ -1,6 +1,6 @@
 package de.jpx3.intave.adapter;
 
-import com.comphenix.protocol.ProtocolLibrary;
+import com.github.retrooper.packetevents.PacketEvents;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.adapter.viaversion.*;
@@ -66,7 +66,7 @@ public class ViaVersionAdapter {
     if (foundLinkage()) {
       return access.protocolVersionOf(player);
     } else {
-      return ProtocolLibrary.getProtocolManager().getProtocolVersion(player);
+      return PacketEvents.getAPI().getPlayerManager().getClientVersion(player).getProtocolVersion();
     }
   }
 

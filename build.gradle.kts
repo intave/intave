@@ -23,6 +23,7 @@ repositories {
   maven { url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") }
   maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
   maven { url = uri("https://oss.sonatype.org/content/repositories/central") }
+  maven { url = uri("https://repo.codemc.io/repository/maven-releases/") }
 
 }
 
@@ -33,8 +34,9 @@ dependencies {
   // is  file system dependent and may lead to compilation errors. If issues occur in the future,
   // it may be needed to create the list explicitly instead of just sorting.
   compileOnly(
-    files(fileTree(mapOf("dir" to "libs/", "include" to listOf("*.jar"))).files.sorted())
+    files(fileTree(mapOf("dir" to "libs/", "include" to listOf("spigot-*.jar", "ViaVersion.jar"))).files.sorted())
   )
+  compileOnly("com.github.retrooper:packetevents-spigot:2.12.1")
 
   // Testing
   testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
@@ -70,7 +72,8 @@ bukkit {
 
   main = "de.jpx3.intave.IntavePlugin"
   apiVersion = "1.13"
-  softDepend = listOf("ProtocolLib", "ViaVersion")
+  depend = listOf("packetevents")
+  softDepend = listOf("ViaVersion")
 
   commands { register("intave") { aliases = listOf("iac") } }
 
@@ -88,7 +91,6 @@ bukkit {
     register("intave.command.verbose") { default = OP }
     register("intave.command.combatmodifiers") { default = OP }
     register("intave.command.cps") { default = OP }
-    register("intave.command.cloud") { default = OP }
     register("intave.command.proxy") { default = FALSE }
     register("intave.command.noupdate") { default = FALSE }
     register("intave.command.diagnostics") {

@@ -1,11 +1,11 @@
 package de.jpx3.intave.check.other.protocolscanner;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.protocol.player.HumanoidArm;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientSettings;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.check.CheckPart;
 import de.jpx3.intave.check.other.ProtocolScanner;
-import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.user.User;
@@ -18,7 +18,6 @@ import static de.jpx3.intave.module.linker.packet.PacketId.Client.SETTINGS;
 
 public final class SkinBlinker extends CheckPart<ProtocolScanner> {
   private static final boolean HAS_OFF_HAND = MinecraftVersions.VER1_9_0.atOrAbove();
-  private static Class<?> enumMainHandClass;
 
   public SkinBlinker(ProtocolScanner parentCheck) {
     super(parentCheck);
@@ -29,7 +28,7 @@ public final class SkinBlinker extends CheckPart<ProtocolScanner> {
       SETTINGS
     }
   )
-  public void receiveClientOptions(PacketEvent event) {
+  public void receiveClientOptions(ProtocolPacketEvent event, WrapperPlayClientSettings packet) {
     Player player = event.getPlayer();
     User user = userOf(player);
 
@@ -37,13 +36,9 @@ public final class SkinBlinker extends CheckPart<ProtocolScanner> {
       return;
     }
 
-    PacketContainer packet = event.getPacket();
     ProtocolMetadata clientData = user.meta().protocol();
     if (HAS_OFF_HAND && clientData.combatUpdate()) {
-      if (enumMainHandClass == null) {
-        enumMainHandClass = Lookup.serverClass("EnumMainHand");
-      }
-      HandSlot sentHand = packet.getEnumModifier(HandSlot.class, enumMainHandClass).read(0);
+      HandSlot sentHand = handSlotOf(packet.getMainHand());
       if (!equalHand(player.getMainHand(), sentHand)) {
         return;
       }
@@ -63,6 +58,10 @@ public final class SkinBlinker extends CheckPart<ProtocolScanner> {
   private boolean equalHand(Object bukkitHand, HandSlot hand) {
     return bukkitHand == MainHand.LEFT && hand == HandSlot.LEFT
       || bukkitHand == MainHand.RIGHT && hand == HandSlot.RIGHT;
+  }
+
+  private HandSlot handSlotOf(HumanoidArm arm) {
+    return arm == HumanoidArm.LEFT ? HandSlot.LEFT : HandSlot.RIGHT;
   }
 
   public enum HandSlot {

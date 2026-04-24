@@ -1,14 +1,12 @@
 package de.jpx3.intave.command.stages;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.injector.PacketFilterManager;
-import com.comphenix.protocol.utility.MinecraftVersion;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.event.PacketListenerAbstract;
+import com.github.retrooper.packetevents.event.PacketListenerPriority;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import de.jpx3.intave.version.MinecraftVersion;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.trust.TrustFactor;
@@ -20,7 +18,6 @@ import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.command.CommandStage;
 import de.jpx3.intave.command.Optional;
 import de.jpx3.intave.command.SubCommand;
-import de.jpx3.intave.connect.upload.RealtimedataUplink;
 import de.jpx3.intave.diagnostic.PacketSynchronizations;
 import de.jpx3.intave.diagnostic.timings.Timing;
 import de.jpx3.intave.diagnostic.timings.Timings;
@@ -37,7 +34,6 @@ import de.jpx3.intave.module.tracker.player.PacketLogging;
 import de.jpx3.intave.player.DamageModify;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.ResourceRegistry;
-import de.jpx3.intave.security.HashAccess;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
@@ -46,6 +42,7 @@ import de.jpx3.intave.user.meta.ConnectionMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.user.meta.PunishmentMetadata;
 import de.jpx3.intave.user.storage.PlaytimeStorage;
+import de.jpx3.intave.util.PlainHashes;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -59,16 +56,12 @@ import org.bukkit.entity.Turtle;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
-import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
-import java.lang.reflect.Field;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -85,7 +78,7 @@ public final class DiagnosticsStage extends CommandStage {
   private static DiagnosticsStage singletonInstance;
   private final IntavePlugin plugin;
 
-  private final Map<UUID, PacketAdapter> adapterMap = GarbageCollector.watch(new HashMap<>());
+  private final Map<UUID, PacketListenerAbstract> adapterMap = GarbageCollector.watch(new HashMap<>());
 
   //  private final Set<UUID> damageDebug = GarbageCollector.watch(new HashSet<>());
 
@@ -120,14 +113,14 @@ public final class DiagnosticsStage extends CommandStage {
     }
     String intaveVersion = IntavePlugin.version();
     String serverVersion = Bukkit.getName() + "@" + Bukkit.getVersion();
-    String protocolLibVersion = ProtocolLibrary.getPlugin().getDescription().getVersion();
+    String packetEventsVersion = packetEventsVersion();
     sender.sendMessage(ChatColor.GRAY + "Spigot is " + ChatColor.WHITE + serverVersion);
-    sender.sendMessage(ChatColor.GRAY + "ProtocolLib is " + ChatColor.WHITE + protocolLibVersion);
+    sender.sendMessage(ChatColor.GRAY + "PacketEvents is " + ChatColor.WHITE + packetEventsVersion);
     sender.sendMessage(ChatColor.GRAY + "Intave is " + ChatColor.WHITE + intaveVersion);
 
     TextComponent message = new TextComponent("[Copy report message to chat]");
     message.setColor(net.md_5.bungee.api.ChatColor.GRAY);
-    message.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "Environment: `" + playerVersion + "`,`" + serverVersion + "`,`" + protocolLibVersion + "`,`" + intaveVersion + "`"));
+    message.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "Environment: `" + playerVersion + "`,`" + serverVersion + "`,`" + packetEventsVersion + "`,`" + intaveVersion + "`"));
 
     if (player != null) {
       // Send the message to the player
@@ -354,40 +347,7 @@ public final class DiagnosticsStage extends CommandStage {
     permission = "intave.command.diagnostics.performance"
   )
   public void attackTraceCommand(User user) {
-    try {
-      Player player = user.player();
-      ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
-      PacketFilterManager packetFilterManager = (PacketFilterManager) protocolManager;
-      Field inboundListeners = null;
-      try {
-        inboundListeners = packetFilterManager.getClass().getDeclaredField("inboundListeners");
-        inboundListeners.setAccessible(true);
-      } catch (NoSuchFieldException e) {
-        throw new RuntimeException(e);
-      }
-//      SortedPacketListenerList sortedPacketListenerList;
-//      try {
-//        sortedPacketListenerList = (SortedPacketListenerList) inboundListeners.get(packetFilterManager);
-//      } catch (IllegalAccessException e) {
-//        throw new RuntimeException(e);
-//      }
-//
-//      PacketContainer packet = new PacketContainer(PacketType.Play.Client.USE_ENTITY);
-//      packet.getIntegers().write(0, 0);
-//      packet.getEntityUseActions().write(0, EnumWrappers.EntityUseAction.ATTACK);
-//
-//      PacketEvent event = PacketEvent.fromClient(packet.getHandle(), packet, player);
-//      Collection<PrioritizedListener<PacketListener>> listeners = sortedPacketListenerList.getListener(PacketType.Play.Client.USE_ENTITY);
-//      if (listeners != null) {
-//        for (PrioritizedListener<PacketListener> listener : listeners) {
-//          listener.getListener().onPacketReceiving(event);
-//          player.sendMessage("Listener " + listener.getListener().getClass() + " " + listener.getPriority() + ", cancelled: " + event.isCancelled());
-//        }
-//      }
-    } catch (Exception exception) {
-      exception.printStackTrace();
-      user.player().sendMessage("Invalid protocollib version? Error: " + exception.getMessage());
-    }
+    user.player().sendMessage(IntavePlugin.prefix() + "PacketEvents owns packet listener ordering; legacy listener trace is no longer available.");
   }
 
   @SubCommand(selectors = "damage", usage = "", description = "Put your attack damage in chat", permission = "intave.command.diagnostics.performance")
@@ -661,13 +621,21 @@ public final class DiagnosticsStage extends CommandStage {
     UUID userId = player.getUniqueId();
 
     player.sendMessage(ChatColor.RED + "You will need to wait one minute to get feedback again.");
-    PacketAdapter adapter = new PacketAdapter(IntavePlugin.singletonInstance(), PacketType.Play.Server.TRANSACTION, PacketType.Play.Server.PING) {
+    PacketListenerAbstract adapter = new PacketListenerAbstract(PacketListenerPriority.NORMAL) {
       final long timeout = System.currentTimeMillis() + 60000;
 
       @Override
-      public void onPacketSending(PacketEvent event) {
+      public void onPacketSend(PacketSendEvent event) {
+        if (event.getPacketType() != PacketType.Play.Server.WINDOW_CONFIRMATION
+          && event.getPacketType() != PacketType.Play.Server.PING) {
+          return;
+        }
+        Player receiver = event.getPlayer();
+        if (receiver == null || !receiver.getUniqueId().equals(userId)) {
+          return;
+        }
         if (System.currentTimeMillis() > timeout) {
-          ProtocolLibrary.getProtocolManager().removePacketListener(this);
+          PacketEvents.getAPI().getEventManager().unregisterListener(this);
           adapterMap.remove(userId);
 
           Player blayer = Bukkit.getPlayer(userId);
@@ -678,13 +646,9 @@ public final class DiagnosticsStage extends CommandStage {
         }
         event.setCancelled(true);
       }
-
-      @Override
-      public void onPacketReceiving(PacketEvent event) {
-      }
     };
     adapterMap.put(userId, adapter);
-    ProtocolLibrary.getProtocolManager().addPacketListener(adapter);
+    PacketEvents.getAPI().getEventManager().registerListener(adapter);
   }
 
   @SubCommand(
@@ -734,8 +698,16 @@ public final class DiagnosticsStage extends CommandStage {
   public void resourceStatus(CommandSender sender) {
     sender.sendMessage(IntavePlugin.prefix() + "Resources");
     ResourceRegistry.registeredResources().forEach((identifier, resource) ->
-      sender.sendMessage(IntavePlugin.prefix() + " " + identifier.substring(0, 2) + " of " + HashAccess.readHashFromStream(resource.read()))
+      sender.sendMessage(IntavePlugin.prefix() + " " + identifier.substring(0, 2) + " of " + resourceHash(resource))
     );
+  }
+
+  private String resourceHash(Resource resource) {
+    try {
+      return PlainHashes.sha256(resource.read());
+    } catch (IOException exception) {
+      return "unavailable";
+    }
   }
 
   @SubCommand(
@@ -776,7 +748,7 @@ public final class DiagnosticsStage extends CommandStage {
       printStream.println("Static environment");
       printStream.println(" Time: " + LocalDateTime.now().format(MESSAGE_DATE_FORMATTER));
       printStream.println(" Intave: " + IntavePlugin.version());
-      printStream.println(" ProtocolLib: " + Bukkit.getPluginManager().getPlugin("ProtocolLib").getDescription().getVersion());
+      printStream.println(" PacketEvents: " + packetEventsVersion());
       if (Bukkit.getPluginManager().getPlugin("ViaVersion") != null) {
         printStream.println(" ViaVersion: " + Bukkit.getPluginManager().getPlugin("ViaVersion").getDescription().getVersion());
       } else {
@@ -811,79 +783,6 @@ public final class DiagnosticsStage extends CommandStage {
     Synchronizer.synchronize(() -> {
       Modules.find(PacketLogging.class).togglePacketLogging(sender, target);
     });
-  }
-
-//  @SubCommand(selectors = "packetlogupload", usage = "", permission = "intave.command.diagnostics.statistics", description = "Upload packet logs")
-//  public void uploadPacketLog(CommandSender sender) {
-//    sender.sendMessage(IntavePlugin.prefix() + "Uploading packet logs...");
-//    File logsFolder = new File(plugin.dataFolder(), "packetlogs");
-//    File[] files = logsFolder.listFiles();
-//    if (files == null) {
-//      sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "No packet logs found");
-//      return;
-//    }
-//    // get newest file
-//    Arrays.sort(files, Comparator.comparingLong(File::lastModified));
-//    File packetLogFile = files[files.length - 1];
-//    BackgroundExecutors.executeWhenever(() -> {
-//      upload(packetLogFile, sender);
-//    });
-//  }
-
-  private void upload(File file, CommandSender sender) {
-    try {
-      // upload to anonfile
-      URL url = new URL("https://api.anonfiles.com/upload");
-
-      String boundary = Long.toHexString(System.currentTimeMillis());
-      URLConnection connection = url.openConnection();
-      connection.setDoOutput(true);
-      connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
-      try (
-        PrintWriter writer = new PrintWriter(new OutputStreamWriter(connection.getOutputStream(), StandardCharsets.UTF_8))
-      ) {
-        writer.println("--" + boundary);
-        writer.println("Content-Disposition: form-data; name=file; filename=\"" + file.getName() + "\"");
-        writer.println("Content-Type: text/plain; charset=UTF-8");
-        writer.println();
-        try (
-          BufferedReader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(file.toPath()), StandardCharsets.UTF_8))
-        ) {
-          for (String line; (line = reader.readLine()) != null; ) {
-            writer.println(line);
-          }
-        }
-        writer.println("--" + boundary + "--");
-      }
-
-      connection.connect();
-
-      HttpsURLConnection httpsURLConnection = (HttpsURLConnection) connection;
-      int responseCode = httpsURLConnection.getResponseCode();
-
-      if (responseCode != 200) {
-        sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Failed to upload");
-        return;
-      }
-
-      try (BufferedReader reader = new BufferedReader(new InputStreamReader(httpsURLConnection.getInputStream()))) {
-        String str = reader.lines().collect(Collectors.joining("\n"));
-        try {
-          JsonObject jsonObject = new JsonParser().parse(str).getAsJsonObject();
-          String url1 = jsonObject.getAsJsonObject("data").getAsJsonObject("file").getAsJsonObject("url").get("short").getAsString();
-          sender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "Uploaded to " + url1);
-        } catch (Exception exception) {
-          exception.printStackTrace();
-          sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Failed to upload");
-          System.out.println(str);
-        }
-        //        System.out.println(str);
-      }
-
-    } catch (IOException exception) {
-      exception.printStackTrace();
-      sender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Failed to upload");
-    }
   }
 
   @SubCommand(selectors = "statistics", usage = "", permission = "intave.command.diagnostics.statistics", description = "Output check statistics")
@@ -927,5 +826,10 @@ public final class DiagnosticsStage extends CommandStage {
       return;
     }
     provider.openLootChestCommand(user.player());
+  }
+
+  private static String packetEventsVersion() {
+    Plugin packetEvents = Bukkit.getPluginManager().getPlugin("packetevents");
+    return packetEvents == null ? "missing" : packetEvents.getDescription().getVersion();
   }
 }

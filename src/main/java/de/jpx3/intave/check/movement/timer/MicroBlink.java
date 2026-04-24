@@ -1,6 +1,7 @@
 package de.jpx3.intave.check.movement.timer;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.movement.Timer;
@@ -10,19 +11,17 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.violation.Violation;
-import de.jpx3.intave.packet.reader.EntityUseReader;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import org.bukkit.event.Cancellable;
+import com.github.retrooper.packetevents.event.CancellableEvent;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction.ATTACK;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.USE_ENTITY;
 import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.*;
@@ -37,9 +36,9 @@ public class MicroBlink extends MetaCheckPart<Timer, MicroBlink.MicroBlinkMeta> 
     packetsIn = USE_ENTITY
   )
   public void receiveUseEntity(
-    User user, EntityUseReader reader, Cancellable cancellable
+    User user, WrapperPlayClientInteractEntity packet, CancellableEvent cancellableEvent
   ) {
-    if (reader.useAction() == ATTACK) {
+    if (packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
       MicroBlinkMeta meta = metaOf(user);
       meta.lastAttack = System.currentTimeMillis();
     }
@@ -60,7 +59,7 @@ public class MicroBlink extends MetaCheckPart<Timer, MicroBlink.MicroBlinkMeta> 
   }
 
   @DispatchTarget
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     User user = userOf(event.getPlayer());
     MicroBlinkMeta meta = metaOf(user);
     MovementMetadata movement = user.meta().movement();

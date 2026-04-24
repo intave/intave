@@ -9,7 +9,6 @@ import java.util.function.Function;
 public enum ConfigSelection {
   SIMPLE(SimpleConfigurationLoader::new,"this", "simple"),
   ADVANCED(AdvancedConfigurationLoader::new, "advanced", "adv"),
-  ONLINE(OnlineConfigurationLoader::new, "online", "on", "cloud", "cloud-based"),
   LEGACY(LegacyConfigurationLoader::new, "legacy", "old");
 
 

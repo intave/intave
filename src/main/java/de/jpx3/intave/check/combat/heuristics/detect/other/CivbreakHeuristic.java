@@ -1,8 +1,8 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.protocol.player.DiggingAction;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerDigging;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -30,18 +30,17 @@ public final class CivbreakHeuristic extends MetaCheckPart<Heuristics, CivbreakH
       BLOCK_DIG
     }
   )
-  public void receiveInteractionPacket(PacketEvent event) {
+  public void receiveInteractionPacket(ProtocolPacketEvent event, WrapperPlayClientPlayerDigging packet) {
     Player player = event.getPlayer();
     User user = userOf(player);
     CivbreakMeta meta = metaOf(user);
-    PacketContainer packet = event.getPacket();
-    EnumWrappers.PlayerDigType playerDigType = packet.getPlayerDigTypes().readSafely(0);
+    DiggingAction playerDigType = packet.getAction();
     // Note: isMining should set to false on every PlayerDigType except START_DESTROY_BLOCK
 //    player.sendMessage("" + playerDigType);
-    if (playerDigType == EnumWrappers.PlayerDigType.START_DESTROY_BLOCK) {
+    if (playerDigType == DiggingAction.START_DIGGING) {
       meta.isMining = true;
     }
-    if (playerDigType == EnumWrappers.PlayerDigType.STOP_DESTROY_BLOCK) {
+    if (playerDigType == DiggingAction.FINISHED_DIGGING) {
       if (user.protocolVersion() < ProtocolMetadata.VER_1_14) {
         if (!meta.isMining) {
 //          player.sendMessage("cancel");

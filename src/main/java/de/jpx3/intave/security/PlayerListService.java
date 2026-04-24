@@ -15,14 +15,8 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerJoinEvent;
 
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import java.net.InetAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 @HighOrderService
@@ -58,45 +52,12 @@ public final class PlayerListService implements BukkitEventSubscriber {
     }
   }
 
-  public String encryptedGrayKnowledgeData() {
-    String input = graylistKnowledgeResource.readAsString();
-    try {
-      Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-      byte[] data = input.getBytes(StandardCharsets.UTF_8);
-      byte[] salt = new byte[16];
-      ThreadLocalRandom.current().nextBytes(salt);
-      SecretKey secretKey = new SecretKeySpec("ffKuAyXJ57BgXskQjW1WrR4YRJgpy43x".getBytes(StandardCharsets.UTF_8), "AES");
-      cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(salt));
-      String saltString = Base64.getUrlEncoder().encodeToString(salt);
-      String output = Base64.getUrlEncoder().encodeToString(cipher.doFinal(data));
-      graylistKnowledgeResource.delete();
-      String finalString = saltString + output;
-      if (finalString.contains("X5X5X5X5")) {
-        finalString = finalString.replace("X5X5X5X5", "A5A5A5A5A5A5A5A5A5A5A5");
-      }
-      return finalString.replace("==", "X5X5X5X5").replace("=", "Y5Y5Y5Y5");
-    } catch (Exception exception) {
-      return "";
-    }
+  public String grayKnowledgeData() {
+    return graylistKnowledgeResource.readAsString();
   }
 
-  public String encryptedBlueKnowledgeData() {
-    String input = bluelistKnowledgeResource.readAsString();
-    try {
-      Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-      byte[] data = input.getBytes(StandardCharsets.UTF_8);
-      byte[] salt = new byte[16];
-      ThreadLocalRandom.current().nextBytes(salt);
-      SecretKey secretKey = new SecretKeySpec("SecXrMq%DN5lvbSbj1j*UdzQTccPfddu".getBytes(StandardCharsets.UTF_8), "AES");
-      cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(salt));
-      String saltString = Base64.getUrlEncoder().encodeToString(salt);
-      String output = Base64.getUrlEncoder().encodeToString(cipher.doFinal(data));
-      bluelistKnowledgeResource.delete();
-      String finalString = saltString + output;
-      return finalString.replace("=", "EQUALS");
-    } catch (Exception exception) {
-      return "";
-    }
+  public String blueKnowledgeData() {
+    return bluelistKnowledgeResource.readAsString();
   }
 
   public void saveGraylistKnowledgeToResource() {

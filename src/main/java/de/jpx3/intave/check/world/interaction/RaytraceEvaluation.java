@@ -13,7 +13,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Objects;
 
-import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK;
+import static com.github.retrooper.packetevents.protocol.player.DiggingAction.CANCELLED_DIGGING;
 import static de.jpx3.intave.check.world.interaction.InteractionType.EMPTY_INTERACT;
 
 public class RaytraceEvaluation {
@@ -101,7 +101,7 @@ public class RaytraceEvaluation {
     }
 
     // they don't send a block face here, don't make unnecessary adjustments
-    if (interaction.digType() == ABORT_DESTROY_BLOCK && sentIndex == 0) {
+    if (interaction.digType() == CANCELLED_DIGGING && sentIndex == 0) {
       return false;
     }
 
@@ -113,7 +113,7 @@ public class RaytraceEvaluation {
   }
 
   private boolean interactionInHead(User user, Interaction interaction) {
-    com.comphenix.protocol.wrappers.BlockPosition blockPosition = interaction.targetBlock();
+    de.jpx3.intave.share.BlockPosition blockPosition = interaction.targetBlock();
     MovementMetadata movement = user.meta().movement();
     double xDiff = blockPosition.getX() - ClientMath.floor(movement.positionX);
     double yDiff = blockPosition.getY() - ClientMath.floor(movement.positionY + movement.eyeHeight());

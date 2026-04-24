@@ -1,8 +1,8 @@
 package de.jpx3.intave.check.combat.heuristics.detect.inventory;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientClientStatus;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -34,11 +34,10 @@ public final class PacketInventoryHeuristic extends MetaCheckPart<Heuristics, Pa
       CLIENT_COMMAND
     }
   )
-  public void receiveInventoryOpen(PacketEvent event) {
+  public void receiveInventoryOpen(ProtocolPacketEvent event, WrapperPlayClientClientStatus packet) {
     Player player = event.getPlayer();
     User user = userOf(player);
-    EnumWrappers.ClientCommand clientCommand = event.getPacket().getClientCommands().read(0);
-    if (clientCommand == EnumWrappers.ClientCommand.OPEN_INVENTORY_ACHIEVEMENT) {
+    if (packet.getAction() == WrapperPlayClientClientStatus.Action.OPEN_INVENTORY_ACHIEVEMENT) {
       PacketInventoryMeta meta = metaOf(user);
       meta.performedInventoryOpenOperation = true;
       meta.inventoryTicks = 0;
@@ -51,7 +50,7 @@ public final class PacketInventoryHeuristic extends MetaCheckPart<Heuristics, Pa
       CLOSE_WINDOW
     }
   )
-  public void receiveInventoryClose(PacketEvent event) {
+  public void receiveInventoryClose(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     PacketInventoryMeta meta = metaOf(user);
@@ -81,12 +80,11 @@ public final class PacketInventoryHeuristic extends MetaCheckPart<Heuristics, Pa
       POSITION, POSITION_LOOK, FLYING, LOOK
     }
   )
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event, WrapperPlayClientPlayerFlying packet) {
     Player player = event.getPlayer();
     User user = userOf(player);
     PacketInventoryMeta meta = metaOf(user);
-    PacketContainer packet = event.getPacket();
-    boolean hasRotation = packet.getBooleans().read(2);
+    boolean hasRotation = packet.hasRotationChanged();
 
     InventoryMetadata inventoryData = user.meta().inventory();
     MovementMetadata movementData = user.meta().movement();

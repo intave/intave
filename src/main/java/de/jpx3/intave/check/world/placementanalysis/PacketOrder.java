@@ -1,7 +1,8 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerBlockPlacement;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.module.Modules;
@@ -29,7 +30,7 @@ public final class PacketOrder extends MetaCheckPart<PlacementAnalysis, PacketOr
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     metaOf(player).lastMovePacket = System.currentTimeMillis();
   }
@@ -39,14 +40,14 @@ public final class PacketOrder extends MetaCheckPart<PlacementAnalysis, PacketOr
       BLOCK_PLACE
     }
   )
-  public void checkPlacementPacketOrder(PacketEvent event) {
+  public void checkPlacementPacketOrder(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
-    PacketContainer packet = event.getPacket();
+    WrapperPlayClientPlayerBlockPlacement packet = new WrapperPlayClientPlayerBlockPlacement((PacketReceiveEvent) event);
     PlacementOrderMeta meta = metaOf(player);
 
     long now = System.currentTimeMillis();
-    if (blockingPlacementPacket(packet) || user.meta().protocol().combatUpdate()) {
+    if (packet.getFaceId() == 255 || user.meta().protocol().combatUpdate()) {
       return;
     }
 
@@ -65,7 +66,7 @@ public final class PacketOrder extends MetaCheckPart<PlacementAnalysis, PacketOr
               .forPlayer(player)
               .withMessage(COMMON_FLAG_MESSAGE)
               .withDetails("invalid packet order")
-              .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
+              .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "analysis-thresholds.on-premise")
               .withVL(2)
               .build();
             ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
@@ -83,11 +84,6 @@ public final class PacketOrder extends MetaCheckPart<PlacementAnalysis, PacketOr
 
       meta.placementDifferences.clear();
     }
-  }
-
-  private boolean blockingPlacementPacket(PacketContainer packet) {
-    Integer integer = packet.getIntegers().readSafely(0);
-    return integer != null && integer == 255;
   }
 
   public static class PlacementOrderMeta extends CheckCustomMetadata {

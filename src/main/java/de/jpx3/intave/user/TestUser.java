@@ -1,6 +1,6 @@
 package de.jpx3.intave.user;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.block.fluid.FluidFlow;
@@ -399,7 +399,7 @@ final class TestUser implements User {
   }
 
   @Override
-  public void packetTickFeedback(PacketEvent event, EmptyFeedbackCallback callback) {
+  public void packetTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback) {
 
   }
 
@@ -409,17 +409,17 @@ final class TestUser implements User {
   }
 
   @Override
-  public void tracedPacketTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, FeedbackObserver tracker) {
+  public void tracedPacketTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback, FeedbackObserver tracker) {
 
   }
 
   @Override
-  public void doubleTickFeedback(PacketEvent event, EmptyFeedbackCallback before, EmptyFeedbackCallback after) {
+  public void doubleTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback before, EmptyFeedbackCallback after) {
 
   }
 
   @Override
-  public void doubleTracedTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker) {
+  public void doubleTracedTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker) {
 
   }
 }

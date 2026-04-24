@@ -1,8 +1,8 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.reflect.StructureModifier;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerBlockPlacement;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.CheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
@@ -33,35 +33,29 @@ public final class Facing extends CheckPart<PlacementAnalysis> {
       BLOCK_PLACE
     }
   )
-  public void checkPlacementVector(PacketEvent event) {
+  public void checkPlacementVector(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
-    PacketContainer packet = event.getPacket();
-    if (blockingPlacementPacket(packet)) {
+    WrapperPlayClientPlayerBlockPlacement packet = new WrapperPlayClientPlayerBlockPlacement((PacketReceiveEvent) event);
+    if (packet.getFaceId() == 255) {
       return;
     }
-    StructureModifier<Float> floatStructureModifier = packet.getFloat();
-    if (floatStructureModifier.size() < 3) {
+    if (packet.getCursorPosition() == null) {
       return;
     }
-    float f1 = floatStructureModifier.read(0);
-    float f2 = floatStructureModifier.read(1);
-    float f3 = floatStructureModifier.read(2);
+    float f1 = packet.getCursorPosition().x;
+    float f2 = packet.getCursorPosition().y;
+    float f3 = packet.getCursorPosition().z;
     if (f1 < 0 || f2 < 0 || f3 < 0 || f1 > 1 || f2 > 1 || f3 > 1) {
       Violation violation = Violation.builderFor(PlacementAnalysis.class)
         .forPlayer(player).withMessage(COMMON_FLAG_MESSAGE)
-        .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
+        .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "analysis-thresholds.on-premise")
         .withVL(5).build();
       Modules.violationProcessor().processViolation(violation);
       //dmc14
 //      user.nerf(AttackNerfStrategy.CANCEL_FIRST_HIT, "14");
 //      user.nerf(AttackNerfStrategy.DMG_LIGHT, "14");
     }
-  }
-
-  private boolean blockingPlacementPacket(PacketContainer packet) {
-    Integer integer = packet.getIntegers().readSafely(0);
-    return integer != null && integer == 255;
   }
 
   @BukkitEventSubscription(

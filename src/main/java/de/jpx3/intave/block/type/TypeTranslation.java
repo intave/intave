@@ -1,6 +1,6 @@
 package de.jpx3.intave.block.type;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.version.MinecraftVersion;
 import org.bukkit.Material;
 
 final class TypeTranslation {

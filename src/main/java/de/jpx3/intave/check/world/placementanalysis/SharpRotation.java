@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
@@ -41,7 +41,7 @@ public final class SharpRotation extends MetaCheckPart<PlacementAnalysis, SharpR
       POSITION_LOOK, LOOK
     }
   )
-  public void on(PacketEvent event) {
+  public void on(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();
@@ -73,7 +73,7 @@ public final class SharpRotation extends MetaCheckPart<PlacementAnalysis, SharpR
         Violation violation = Violation.builderFor(PlacementAnalysis.class)
           .forPlayer(player).withMessage(COMMON_FLAG_MESSAGE).withDetails(details)
           .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-          .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
+          .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "analysis-thresholds.on-premise")
           .withVL(meta.sharpRotations > 10 ? 10 : 0).build();
         Modules.violationProcessor().processViolation(violation);
         place.setCancelled(true);

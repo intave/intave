@@ -1,7 +1,8 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
@@ -33,19 +34,19 @@ public final class PacketOrderHeuristic extends MetaCheckPart<Heuristics, Packet
       USE_ENTITY, BLOCK_PLACE, BLOCK_DIG
     }
   )
-  public void receivePacket(PacketEvent event) {
+  public void receivePacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     ProtocolMetadata protocol = user.meta().protocol();
-    PacketType type = event.getPacketType();
+    PacketTypeCommon type = event.getPacketType();
     PacketOrderHeuristicMeta meta = metaOf(player);
 
-    boolean isMovement = type == PacketType.Play.Client.FLYING
-      || type == PacketType.Play.Client.POSITION
-      || type == PacketType.Play.Client.POSITION_LOOK
-      || type == PacketType.Play.Client.LOOK;
+    boolean isMovement = type == PacketType.Play.Client.PLAYER_FLYING
+      || type == PacketType.Play.Client.PLAYER_POSITION
+      || type == PacketType.Play.Client.PLAYER_POSITION_AND_ROTATION
+      || type == PacketType.Play.Client.PLAYER_ROTATION;
 
-    boolean isTransaction = type == PacketType.Play.Client.TRANSACTION;
+    boolean isTransaction = type == PacketType.Play.Client.WINDOW_CONFIRMATION;
 
     if (isMovement) {
       meta.movementSentThisTick = true;
@@ -53,7 +54,7 @@ public final class PacketOrderHeuristic extends MetaCheckPart<Heuristics, Packet
     } else if (isTransaction) {
       if (meta.movementSentThisTick && !meta.betweenTransactionAndFlying.isEmpty() && protocol.flyingPacketsAreSent()) {
         int options = DELAY_128s | LIMIT_2;
-        String description = "invalid packet order (" + meta.betweenTransactionAndFlying.stream().map(PacketType::name).map(s -> s.replace("_", " ")).collect(Collectors.joining(", ")) + ")";
+        String description = "invalid packet order (" + meta.betweenTransactionAndFlying.stream().map(PacketTypeCommon::getName).map(s -> s.replace("_", " ")).collect(Collectors.joining(", ")) + ")";
         Anomaly anomaly = Anomaly.anomalyOf("14", Confidence.NONE, Anomaly.Type.KILLAURA, description, options);
         parentCheck().saveAnomaly(player, anomaly);
         user.nerf(AttackNerfStrategy.BLOCKING, "31");
@@ -72,7 +73,7 @@ public final class PacketOrderHeuristic extends MetaCheckPart<Heuristics, Packet
 
   public static class PacketOrderHeuristicMeta extends CheckCustomMetadata {
     public boolean movementSentThisTick;
-    public Set<PacketType> betweenTransactionAndFlying = new HashSet<>();
+    public Set<PacketTypeCommon> betweenTransactionAndFlying = new HashSet<>();
     public int internalVl;
   }
 }

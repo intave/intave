@@ -1,14 +1,15 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.protocol.player.DiggingAction;
+import com.github.retrooper.packetevents.protocol.world.BlockFace;
+import com.github.retrooper.packetevents.util.Vector3i;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerDigging;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
+import de.jpx3.intave.adapter.PacketEventsAdapter;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
@@ -17,7 +18,6 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.tracker.entity.Entity;
-import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.*;
@@ -38,16 +38,11 @@ public final class AttackInInvalidStateHeuristic extends MetaCheckPart<Heuristic
       USE_ENTITY
     }
   )
-  public void receiveAttack(PacketEvent event) {
+  public void receiveAttack(ProtocolPacketEvent event, WrapperPlayClientInteractEntity packet) {
     Player player = event.getPlayer();
-    PacketContainer packet = event.getPacket();
     User user = userOf(player);
     ProtocolMetadata clientData = user.meta().protocol();
-    EnumWrappers.EntityUseAction action = packet.getEntityUseActions().readSafely(0);
-    if (action == null) {
-      action = packet.getEnumEntityUseActions().read(0).getAction();
-    }
-    if (action != EnumWrappers.EntityUseAction.ATTACK) {
+    if (packet.getAction() != WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
       return;
     }
     if (clientData.protocolVersion() <= VER_1_8) {
@@ -57,7 +52,7 @@ public final class AttackInInvalidStateHeuristic extends MetaCheckPart<Heuristic
     checkBlocking(event);
   }
 
-  private void checkBlocking(PacketEvent event) {
+  private void checkBlocking(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     // Disable check on 1.9+ due to inconsistencies in mc source
@@ -84,15 +79,16 @@ public final class AttackInInvalidStateHeuristic extends MetaCheckPart<Heuristic
 
   private void sendStopUseItemPacketToServer(User user) {
     Player player = user.player();
-    if (ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0)) {
+    if (PacketEventsAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0)) {
       return;
     } else {
-      PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Client.BLOCK_DIG);
-      packet.getBlockPositionModifier().write(0, new BlockPosition(0, 0, 0));
-      packet.getDirections().write(0, EnumWrappers.Direction.DOWN);
-      packet.getPlayerDigTypes().write(0, EnumWrappers.PlayerDigType.RELEASE_USE_ITEM);
-      userOf(player).ignoreNextInboundPacket();
-      PacketSender.receiveClientPacketFrom(player, packet);
+      WrapperPlayClientPlayerDigging packet = new WrapperPlayClientPlayerDigging(
+        DiggingAction.RELEASE_USE_ITEM,
+        new Vector3i(0, 0, 0),
+        BlockFace.DOWN,
+        0
+      );
+      PacketEvents.getAPI().getPlayerManager().receivePacketSilently(player, packet);
       updatePlayerHandItem(player);
       if (IntaveControl.DEBUG_ITEM_USAGE) {
         player.sendMessage(ChatColor.RED + "Manual stop use item packet sent");
@@ -128,7 +124,7 @@ public final class AttackInInvalidStateHeuristic extends MetaCheckPart<Heuristic
     }
   }
 
-  private void checkDeadEntity(Player player, PacketContainer packet) {
+  private void checkDeadEntity(Player player, WrapperPlayClientInteractEntity packet) {
     User user = userOf(player);
     AttackMetadata attackData = user.meta().attack();
     ProtocolMetadata clientData = user.meta().protocol();
@@ -139,11 +135,7 @@ public final class AttackInInvalidStateHeuristic extends MetaCheckPart<Heuristic
     if (clientData.protocolVersion() != VER_1_8) {
       return;
     }
-    EnumWrappers.EntityUseAction action = packet.getEntityUseActions().readSafely(0);
-    if (action == null) {
-      action = packet.getEnumEntityUseActions().read(0).getAction();
-    }
-    if (action == EnumWrappers.EntityUseAction.ATTACK && entity.dead) {
+    if (packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK && entity.dead) {
       String description = "attacked a dead entity " + entity.entityName();
       Anomaly anomaly = Anomaly.anomalyOf("161", Confidence.NONE, Anomaly.Type.KILLAURA, description);
       parentCheck().saveAnomaly(player, anomaly);

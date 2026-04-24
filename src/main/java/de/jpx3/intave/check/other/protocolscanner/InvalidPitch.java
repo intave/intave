@@ -1,6 +1,7 @@
 package de.jpx3.intave.check.other.protocolscanner;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying;
 import de.jpx3.intave.check.CheckPart;
 import de.jpx3.intave.check.other.ProtocolScanner;
 import de.jpx3.intave.math.MathHelper;
@@ -22,11 +23,12 @@ public final class InvalidPitch extends CheckPart<ProtocolScanner> {
       LOOK, POSITION_LOOK
     }
   )
-  public void receiveRotation(PacketEvent event) {
+  public void receiveRotation(ProtocolPacketEvent event, WrapperPlayClientPlayerFlying packet) {
     Player player = event.getPlayer();
-    float rotationPitch = event.getPacket().getFloat().read(1);
+    float rotationPitch = packet.getLocation().getPitch();
     if (Math.abs(rotationPitch) > 90.000001f) {
-      event.getPacket().getFloat().writeSafely(1, 0f);
+      packet.getLocation().setPitch(0f);
+      event.markForReEncode(true);
       String message = "sent invalid rotation";
       String details = "pitch at " + MathHelper.formatDouble(rotationPitch, 4);
       Violation violation = Violation.builderFor(ProtocolScanner.class)

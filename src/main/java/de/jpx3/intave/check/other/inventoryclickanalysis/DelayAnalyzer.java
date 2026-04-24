@@ -1,13 +1,13 @@
 package de.jpx3.intave.check.other.inventoryclickanalysis;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientClickWindow;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
+import de.jpx3.intave.adapter.PacketEventsAdapter;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.other.InventoryClickAnalysis;
-import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
@@ -21,6 +21,7 @@ import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,17 +30,15 @@ import static de.jpx3.intave.module.linker.packet.PacketId.Client.WINDOW_CLICK;
 import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.*;
 
 public final class DelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, DelayAnalyzer.ClickDelayMeta> {
-  private static final boolean MODERN_WINDOW_CLICK = ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0);
+  private static final boolean MODERN_WINDOW_CLICK = PacketEventsAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0);
 
   private final IntavePlugin plugin;
   private final boolean highToleranceMode;
-  private final Class<?> clickType;
 
   public DelayAnalyzer(InventoryClickAnalysis parentCheck, boolean highToleranceMode) {
     super(parentCheck, ClickDelayMeta.class);
     this.highToleranceMode = highToleranceMode;
     this.plugin = IntavePlugin.singletonInstance();
-    this.clickType = MODERN_WINDOW_CLICK ? Lookup.serverClass("InventoryClickType") : null;
   }
 
   @PacketSubscription(
@@ -48,12 +47,12 @@ public final class DelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, D
       WINDOW_CLICK
     }
   )
-  public void windowClickPacket(PacketEvent event) {
+  public void windowClickPacket(ProtocolPacketEvent event, WrapperPlayClientClickWindow packet) {
     Player player = event.getPlayer();
     if (player.getGameMode().equals(GameMode.CREATIVE)) {
       return;
     }
-    if (ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_13_0)) {
+    if (PacketEventsAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_13_0)) {
       return;
     }
     User user = userOf(player);
@@ -64,15 +63,16 @@ public final class DelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, D
       return;
     }
 
-    int slot = event.getPacket().getIntegers().read(1);
-    ItemStack itemStack = event.getPacket().getItemModifier().read(0);
+    int slot = packet.getSlot();
+    ItemStack itemStack = packet.getCarriedItemStack() == null
+      ? null
+      : SpigotConversionUtil.toBukkitItemStack(packet.getCarriedItemStack());
     Material clickedItemID = itemStack == null ? Material.AIR : itemStack.getType();
     boolean droppedAnItem;
     if (MODERN_WINDOW_CLICK) {
-      InventoryClickTypes clickTypes = event.getPacket().getEnumModifier(InventoryClickTypes.class, clickType).read(0);
-      droppedAnItem = clickTypes == InventoryClickTypes.THROW && slot != -999;
+      droppedAnItem = packet.getWindowClickType() == WrapperPlayClientClickWindow.WindowClickType.THROW && slot != -999;
     } else {
-      droppedAnItem = event.getPacket().getIntegers().read(3) == 4 && slot != -999;
+      droppedAnItem = packet.getButton() == 4 && slot != -999;
     }
 
     if (slot != -999 && meta.lastClickedSlot != -999) {

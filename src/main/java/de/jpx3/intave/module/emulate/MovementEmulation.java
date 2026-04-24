@@ -1,9 +1,13 @@
 package de.jpx3.intave.module.emulate;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.util.Vector3d;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityRelativeMove;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityRelativeMoveAndRotation;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityTeleport;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.check.CheckConfiguration.CheckSettings;
@@ -14,7 +18,6 @@ import de.jpx3.intave.executor.TaskTracker;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.player.Effects;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.ClientMath;
@@ -129,14 +132,14 @@ public final class MovementEmulation extends Module {
       if (Math.abs(motionY) == 0 && Math.abs(motionX) < 0.005 && Math.abs(motionZ) < 0.005) {
         movement.speculationEnded = true;
       }
-      PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.ENTITY_TELEPORT);
+      WrapperPlayServerEntityTeleport packet = new WrapperPlayServerEntityTeleport(
+        observer.getEntityId(),
+        new Vector3d(newPositionX, newPositionY, newPositionZ),
+        movement.rotationYaw(),
+        movement.rotationPitch(),
+        movement.onGround
+      );
       System.out.println("Speculative forward emulation for " + observer.getName() + ": " + motionX + ", " + motionY + ", " + motionZ);
-      packet.getIntegers().write(0, observer.getEntityId());
-      packet.getIntegers().write(1, floor(newPositionX * 32.0));
-      packet.getIntegers().write(2, floor(newPositionY * 32.0));
-      packet.getIntegers().write(3, floor(newPositionZ * 32.0));
-      packet.getBytes().write(0, (byte) (int) (movement.rotationYaw() * 256.0F / 360.0F));
-      packet.getBytes().write(1, (byte) (int) (movement.rotationPitch() * 256.0F / 360.0F));
 
       movement.inReceiveSpeculativePacketRoutine = true;
       for (Entity entity : observer.getNearbyEntities(8, 4, 8)) {
@@ -148,7 +151,7 @@ public final class MovementEmulation extends Module {
           MovementMetadata otherMovement = userOf(player).meta().movement();
           Map<UUID, Integer> pendingSpeculativeMovementTicks = otherMovement.pendingSpeculativeMovementTicks;
           pendingSpeculativeMovementTicks.put(observer.getUniqueId(), Math.min(4, pendingSpeculativeMovementTicks.getOrDefault(observer.getUniqueId(), 0) + 1));
-          PacketSender.sendServerPacket((Player) entity, packet);
+          PacketEvents.getAPI().getPlayerManager().sendPacket(player, packet);
         }
       }
       movement.inReceiveSpeculativePacketRoutine = false;
@@ -160,8 +163,9 @@ public final class MovementEmulation extends Module {
   @PacketSubscription(
     packetsIn = {FLYING, POSITION, POSITION_LOOK, LOOK}
   )
-  public void receiveFlyingPacket(PacketEvent event) {
-    User user = userOf(event.getPlayer());
+  public void receiveFlyingPacket(ProtocolPacketEvent event) {
+    Player player = event.getPlayer();
+    User user = userOf(player);
     MovementMetadata movement = user.meta().movement();
     movement.inSpeculation = false;
   }
@@ -170,13 +174,13 @@ public final class MovementEmulation extends Module {
     packetsOut = {/*ENTITY_TELEPORT, ENTITY_MOVE_LOOK,*/ REL_ENTITY_MOVE, REL_ENTITY_MOVE_LOOK},
     priority = ListenerPriority.LOWEST
   )
-  public void onMovementUpdate(PacketEvent event) {
+  public void onMovementUpdate(ProtocolPacketEvent event) {
     if (enabled) {
       Player player = event.getPlayer();
       User user = userOf(player);
 
-      PacketContainer packet = event.getPacket();
-      Entity entity = EntityLookup.findEntity(player.getWorld(), packet.getIntegers().read(0));
+      int entityId = entityIdOf((PacketSendEvent) event);
+      Entity entity = EntityLookup.findEntity(player.getWorld(), entityId);
       if (entity instanceof Player) {
         User entityUser = userOf((Player) entity);
         MovementMetadata movement = entityUser.meta().movement();
@@ -186,7 +190,7 @@ public final class MovementEmulation extends Module {
         Map<UUID, Integer> pendingSpeculativeMovementTicks = user.meta().movement().pendingSpeculativeMovementTicks;
         boolean tickOverflow = pendingSpeculativeMovementTicks.getOrDefault(entity.getUniqueId(), 0) > 0;
         if (movement.speculativeTicks > 0 || tickOverflow) {
-          System.out.println("Skipped packet " + packet.getType() + " for " + player.getName() + " because of pending speculative movement ticks.");
+          System.out.println("Skipped packet " + event.getPacketType().getName() + " for " + player.getName() + " because of pending speculative movement ticks.");
           if (tickOverflow) {
             pendingSpeculativeMovementTicks.put(entity.getUniqueId(), pendingSpeculativeMovementTicks.get(entity.getUniqueId()) - 1);
           }
@@ -196,9 +200,11 @@ public final class MovementEmulation extends Module {
     }
   }
 
-  private static int floor(double var0) {
-    int var2 = (int)var0;
-    return var0 < (double)var2 ? var2 - 1 : var2;
+  private int entityIdOf(PacketSendEvent event) {
+    if (event.getPacketType() == PacketType.Play.Server.ENTITY_RELATIVE_MOVE) {
+      return new WrapperPlayServerEntityRelativeMove(event).getEntityId();
+    }
+    return new WrapperPlayServerEntityRelativeMoveAndRotation(event).getEntityId();
   }
 
   private Vector motionProceed(Vector lastMotion, User user, BoundingBox boundingBox, boolean applyPhysics) {

@@ -1,7 +1,15 @@
 package de.jpx3.intave.module.filter;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientChatCommand;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientChatCommandUnsigned;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientChatMessage;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientTabComplete;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerTabComplete;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -9,7 +17,6 @@ import de.jpx3.intave.user.permission.BukkitPermissionCheck;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +46,12 @@ public final class CommandFilter extends Filter {
       CHAT_IN, TAB_COMPLETE_IN
     }
   )
-  public void receiveChatPacket(PacketEvent event) {
+  public void receiveChatPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
-    String message = event.getPacket().getStrings().getValues().get(0);
+    String message = messageOf(event);
+    if (message == null) {
+      return;
+    }
 
     String trimmedMessage = message.trim().toLowerCase();
 
@@ -53,39 +63,16 @@ public final class CommandFilter extends Filter {
           continue;
         }
         trimmedMessage = redirect + trimmedMessage.substring(stringStringEntry.getKey().length());
-        event.getPacket().getStrings().writeSafely(0, trimmedMessage);
+        writeMessage(event, trimmedMessage);
         trimmedMessage = trimmedMessage.trim().toLowerCase();
       }
     }
 
     boolean permitted = BukkitPermissionCheck.permissionCheck(player, "intave.command");
     if ((trimmedMessage.startsWith("/iac") || trimmedMessage.startsWith("/intave")) && !permitted) {
-      event.getPacket().getStrings().writeSafely(0, "/intavecommandforward");
+      writeMessage(event, "/intavecommandforward");
     }
   }
-
-//  @PacketSubscription(
-////    engine = Engine.ASYNC_INTERNAL,
-//    packetsOut = {
-//      COMMANDS
-//    }
-//  )
-//  public void receiveCommands(PacketEvent event) {
-//    Player player = event.getPlayer();
-//    PacketContainer packet = event.getPacket();
-//    StructureModifier<RootCommandNode> rootModifier = packet.getSpecificModifier(RootCommandNode.class);
-//    RootCommandNode<?> rootCommandNode = rootModifier.readSafely(0);
-////    player.sendMessage("Removing " + rootCommandNode.getChildren());
-////    for (CommandNode<?> child : rootCommandNode.getChildren()) {
-////      System.out.println(child.getName() + " -> " + child.getUsageText());
-////    }
-//    rootCommandNode.removeCommand("iac");
-//    rootCommandNode.removeCommand("intave:iac");
-//    rootCommandNode.removeCommand("intave");
-//    rootCommandNode.removeCommand("intave:intave");
-////    rootModifier.write(0, new RootCommandNode());
-//    rootModifier.write(0, rootCommandNode);
-//  }
 
   @PacketSubscription(
 //    engine = Engine.ASYNC_INTERNAL,
@@ -93,21 +80,62 @@ public final class CommandFilter extends Filter {
       TAB_COMPLETE_OUT
     }
   )
-  public void receiveTabComplete(PacketEvent event) {
+  public void receiveTabComplete(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
-    PacketContainer packet = event.getPacket();
+    WrapperPlayServerTabComplete packet = new WrapperPlayServerTabComplete((PacketSendEvent) event);
     boolean permitted = BukkitPermissionCheck.permissionCheck(player, "intave.command");
     if (permitted) {
       return;
     }
-    String[] stuff = packet.getStringArrays().readSafely(0);
-    if (stuff != null) {
-      List<String> newTabCompletions = Lists.newArrayList();
-      Arrays.stream(stuff).filter(string -> !string.contains("/intave") && !string.contains("/iac")).forEach(newTabCompletions::add);
-      if (newTabCompletions.size() != stuff.length) {
-        packet.getStringArrays().writeSafely(0, newTabCompletions.toArray(new String[0]));
+    List<WrapperPlayServerTabComplete.CommandMatch> matches = packet.getCommandMatches();
+    if (matches != null) {
+      List<WrapperPlayServerTabComplete.CommandMatch> newTabCompletions = Lists.newArrayList();
+      matches.stream().filter(match -> !match.getText().contains("/intave") && !match.getText().contains("/iac")).forEach(newTabCompletions::add);
+      if (newTabCompletions.size() != matches.size()) {
+        packet.setCommandMatches(newTabCompletions);
+        event.markForReEncode(true);
       }
     }
+  }
+
+  private String messageOf(ProtocolPacketEvent event) {
+    PacketTypeCommon type = event.getPacketType();
+    PacketReceiveEvent receiveEvent = (PacketReceiveEvent) event;
+    if (type == PacketType.Play.Client.CHAT_MESSAGE) {
+      return new WrapperPlayClientChatMessage(receiveEvent).getMessage();
+    }
+    if (type == PacketType.Play.Client.CHAT_COMMAND) {
+      return "/" + new WrapperPlayClientChatCommand(receiveEvent).getCommand();
+    }
+    if (type == PacketType.Play.Client.CHAT_COMMAND_UNSIGNED) {
+      return "/" + new WrapperPlayClientChatCommandUnsigned(receiveEvent).getCommand();
+    }
+    if (type == PacketType.Play.Client.TAB_COMPLETE) {
+      return new WrapperPlayClientTabComplete(receiveEvent).getText();
+    }
+    return null;
+  }
+
+  private void writeMessage(ProtocolPacketEvent event, String message) {
+    PacketTypeCommon type = event.getPacketType();
+    PacketReceiveEvent receiveEvent = (PacketReceiveEvent) event;
+    if (type == PacketType.Play.Client.CHAT_MESSAGE) {
+      new WrapperPlayClientChatMessage(receiveEvent).setMessage(message);
+      event.markForReEncode(true);
+    } else if (type == PacketType.Play.Client.CHAT_COMMAND) {
+      new WrapperPlayClientChatCommand(receiveEvent).setCommand(stripSlash(message));
+      event.markForReEncode(true);
+    } else if (type == PacketType.Play.Client.CHAT_COMMAND_UNSIGNED) {
+      new WrapperPlayClientChatCommandUnsigned(receiveEvent).setCommand(stripSlash(message));
+      event.markForReEncode(true);
+    } else if (type == PacketType.Play.Client.TAB_COMPLETE) {
+      new WrapperPlayClientTabComplete(receiveEvent).setText(message);
+      event.markForReEncode(true);
+    }
+  }
+
+  private String stripSlash(String command) {
+    return command.startsWith("/") ? command.substring(1) : command;
   }
 
   @Override

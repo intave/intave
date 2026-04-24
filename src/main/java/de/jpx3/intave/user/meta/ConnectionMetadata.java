@@ -1,8 +1,7 @@
 package de.jpx3.intave.user.meta;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketContainer;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetExperience;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.JsonObject;
@@ -16,7 +15,6 @@ import de.jpx3.intave.module.feedback.FeedbackQueue;
 import de.jpx3.intave.module.feedback.FeedbackRequest;
 import de.jpx3.intave.module.feedback.PendingCountingFeedbackObserver;
 import de.jpx3.intave.module.tracker.entity.Entity;
-import de.jpx3.intave.packet.PacketSender;
 import org.bukkit.entity.Player;
 
 import java.util.*;
@@ -201,11 +199,7 @@ public final class ConnectionMetadata {
   }
 
   private void sendPacketWithExperience(Player player, int level) {
-    PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.EXPERIENCE);
-    packet.getFloat().write(0, 0f);
-    packet.getIntegers().write(0, 0);
-    packet.getIntegers().write(1, level);
-    PacketSender.sendServerPacket(player, packet);
+    PacketEvents.getAPI().getPlayerManager().sendPacket(player, new WrapperPlayServerSetExperience(0f, level, 0));
   }
 
   public long transactionPingAverage() {

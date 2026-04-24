@@ -70,7 +70,7 @@ check:
 
   heuristics:
     enabled: true
-    cloud-thresholds:
+    analysis-thresholds:
       # Executed if a player fails a combination of legacy heuristics located in the Intave jar file
       on-premise:
         50:
@@ -78,20 +78,20 @@ check:
           - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking suspiciously (on-premise heuristics)"
           - $ban$
 
-      # Executed if a player fails exactly one cloud check
+      # Executed if a player fails exactly one local analysis check
       # Banning this will catch almost all cheaters
-      cloud-mixed:
+      local-mixed:
         50:
           - "intave internals storelog {player} {check} {vl}"
-          - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking suspiciously (cloud heuristics)"
+          - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking suspiciously (local heuristics)"
           - $ban$
 
-      # Executed if a player fails two or more independent cloud checks
+      # Executed if a player fails two or more independent local analysis checks
       # Expect Intave to make no errors here
-      cloud-certain:
+      local-certain:
         50:
           - "intave internals storelog {player} {check} {vl}"
-          - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking suspiciously (cloud heuristics)"
+          - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking suspiciously (local heuristics)"
           - $ban$
 
   attackraytrace:
@@ -166,7 +166,7 @@ check:
     # 360 degrees = 1 full rotation
     rotation-limit: 3000
 
-    cloud-thresholds:
+    analysis-thresholds:
       # Executed if a player fails on-premise analysis
       on-premise:
         200:
@@ -174,11 +174,11 @@ check:
           - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for placing blocks suspiciously (scaffold)"
           - $ban$
 
-      # Executed if a player fails cloud analysis
-      cloud:
+      # Executed if a player fails local analysis
+      local:
         200:
           - "intave internals storelog {player} {check} {vl}"
-          - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for placing blocks suspiciously (cloud heuristics)"
+          - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for placing blocks suspiciously (local heuristics)"
           - $ban$
 
   inventoryclickanalysis:
@@ -191,26 +191,11 @@ check:
         - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for clicking suspiciously on items"
         - $kick$
 
-cloud:
-  # Should Intave connect to the cloud?
-  enabled: true
-
-  features:
-    # Should Intave use the cloud to store metadata?
-    cloud-storage: true
-    # Should Intave use the cloud to acquire trustfactors?
-    cloud-trustfactor: true
-    # Should Intave use the cloud for additional cheat detection?
-    cloud-heuristics: true
-    # Should Intave use the cloud for log storage?
-    cloud-logs: true
-
 storage:
   # Set to ignore the "intave internals storelog"    and auto-store suggested violations instead
   auto-logs: false
 
   # Set to let Intave find a suitable trustfactor when you don't specify one
-  # This setting is ignored if cloud-trustfactor is enabled
   auto-trustfactor: true
 
   # Should Intave try to transfer VLs when switching between servers?
@@ -289,7 +274,7 @@ logging:
   # Show fault kicks in the console?
   fault-kicks: true
   # Dump player log ids in the console?
-  cloud-log-ids: true
+  log-ids: true
   # Verbose mode (ALL, MITIGATED, SELECTED)
   verbose-mode: MITIGATED
 

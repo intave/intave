@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -37,7 +37,7 @@ public final class ReshapedJumpHeuristic extends MetaCheckPart<Heuristics, Resha
       POSITION, POSITION_LOOK, LOOK
     }
   )
-  public void checkInvalidJump(PacketEvent event) {
+  public void checkInvalidJump(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     ReshapedJumpHeuristicMeta heuristicMeta = metaOf(user);

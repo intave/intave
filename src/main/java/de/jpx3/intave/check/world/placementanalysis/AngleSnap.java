@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.module.Modules;
@@ -32,7 +32,7 @@ public class AngleSnap extends PlayerCheckPart<PlacementAnalysis> {
       POSITION_LOOK, LOOK, POSITION, FLYING
     }
   )
-  public void on(PacketEvent event) {
+  public void on(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();
@@ -65,7 +65,7 @@ public class AngleSnap extends PlayerCheckPart<PlacementAnalysis> {
             .withMessage(COMMON_FLAG_MESSAGE)
             .withDetails((int)rotationSum + "deg snap to 45deg angle over " + maxHistory + " ticks")
             .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-            .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
+            .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "analysis-thresholds.on-premise")
             .withVL(outputVL).build();
           Modules.violationProcessor().processViolation(violation);
         }

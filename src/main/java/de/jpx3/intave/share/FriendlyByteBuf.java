@@ -1,14 +1,9 @@
 package de.jpx3.intave.share;
 
-import com.comphenix.protocol.utility.MinecraftMethods;
-import com.comphenix.protocol.utility.MinecraftReflection;
-import de.jpx3.intave.klass.locate.Locate;
-import de.jpx3.intave.klass.locate.MethodSearchBySignature;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
+import java.nio.charset.StandardCharsets;
 
 public final class FriendlyByteBuf {
   public static ByteBuf from256Unpooled() {
@@ -16,39 +11,41 @@ public final class FriendlyByteBuf {
   }
 
   public static ByteBuf wrapping(ByteBuf byteBuf) {
-    return (ByteBuf) MinecraftMethods.getFriendlyBufBufConstructor().apply(byteBuf);
+    return byteBuf;
   }
 
   public static String readUtf(ByteBuf friendly, int maxLength) {
-    try {
-      if (readUtfMethod == null) {
-        return "something went wrong";
-      }
-      return (String) readUtfMethod.invoke(friendly, maxLength);
-    } catch (Throwable e) {
-      e.printStackTrace();
-      return "something went wrong";
+    int byteLength = readVarInt(friendly);
+    if (byteLength < 0) {
+      throw new IllegalStateException("Negative string length");
     }
+    int maximumBytes = maxLength * 4;
+    if (byteLength > maximumBytes) {
+      throw new IllegalStateException("Encoded string is too long: " + byteLength + " > " + maximumBytes);
+    }
+    String value = friendly.toString(friendly.readerIndex(), byteLength, StandardCharsets.UTF_8);
+    friendly.skipBytes(byteLength);
+    if (value.length() > maxLength) {
+      throw new IllegalStateException("Decoded string is too long: " + value.length() + " > " + maxLength);
+    }
+    return value;
   }
 
   public static void setup() {
   }
 
-  private static final MethodHandle readUtfMethod;
-
-  static {
-    MethodHandle method;
-    Class<?> rfbbclassoptional = Locate.classByKey("PacketDataSerializer");
-    try {
-      method = MethodHandles.lookup().unreflect(rfbbclassoptional.getDeclaredMethod("readUtf", int.class));
-    } catch (NoSuchMethodException e) {
-      method = MethodSearchBySignature.ofClass(MinecraftReflection.getPacketDataSerializerClass())
-        .withReturnType(String.class)
-        .withParameters(new Class[]{int.class})
-        .search().findFirst().get();
-    } catch (IllegalAccessException e) {
-      throw new RuntimeException(e);
-    }
-    readUtfMethod = method;
+  private static int readVarInt(ByteBuf byteBuf) {
+    int value = 0;
+    int position = 0;
+    byte currentByte;
+    do {
+      currentByte = byteBuf.readByte();
+      value |= (currentByte & 0x7F) << position;
+      position += 7;
+      if (position >= 32) {
+        throw new IllegalStateException("VarInt is too big");
+      }
+    } while ((currentByte & 0x80) == 0x80);
+    return value;
   }
 }

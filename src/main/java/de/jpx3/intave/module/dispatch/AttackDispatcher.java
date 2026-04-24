@@ -1,12 +1,11 @@
 package de.jpx3.intave.module.dispatch;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.WrappedAttribute;
-import com.google.common.collect.Lists;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.protocol.attribute.Attributes;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetSlot;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerUpdateAttributes;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -16,12 +15,12 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.Entity;
-import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.player.DamageModify;
 import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.*;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.enchantments.Enchantment;
@@ -64,7 +63,7 @@ public final class AttackDispatcher extends Module {
       USE_ENTITY
     }
   )
-  public void receiveUseEntity(PacketEvent event) {
+  public void receiveUseEntity(ProtocolPacketEvent event, WrapperPlayClientInteractEntity packet) {
     Player player = event.getPlayer();
     if (player.isDead()) {
       event.setCancelled(true);
@@ -75,12 +74,8 @@ public final class AttackDispatcher extends Module {
     AttackMetadata attackData = meta.attack();
     ConnectionMetadata connectionData = meta.connection();
     MovementMetadata movementData = meta.movement();
-    PacketContainer packet = event.getPacket();
-    Integer entityId = packet.getIntegers().read(0);
-    EnumWrappers.EntityUseAction action = packet.getEntityUseActions().readSafely(0);
-    if (action == null) {
-      action = packet.getEnumEntityUseActions().read(0).getAction();
-    }
+    Integer entityId = packet.getEntityId();
+    WrapperPlayClientInteractEntity.InteractAction action = packet.getAction();
     InventoryMetadata inventoryData = user.meta().inventory();
     ItemStack itemStack = inventoryData.heldItem();
 
@@ -98,7 +93,7 @@ public final class AttackDispatcher extends Module {
     connectionData.attackDelays.occurred(ticks);
 
     movementData.pastEntityUse = 0;
-    if (action == EnumWrappers.EntityUseAction.ATTACK) {
+    if (action == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
       if (attackData.attackPastTicks > 10) {
         attackData.attackPastTicks = 0;
       }
@@ -136,7 +131,7 @@ public final class AttackDispatcher extends Module {
       RESPAWN
     }
   )
-  public void sentRespawn(PacketEvent event) {
+  public void sentRespawn(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     Synchronizer.synchronizeDelayed(() -> disableReducing(player), 4);
   }
@@ -147,9 +142,11 @@ public final class AttackDispatcher extends Module {
       SET_SLOT
     }
   )
-  public void filterSharpness(PacketEvent event) {
-    PacketContainer packet = event.getPacket();
-    ItemStack item = packet.getItemModifier().read(0).clone();
+  public void filterSharpness(ProtocolPacketEvent event, WrapperPlayServerSetSlot packet) {
+    if (packet.getItem() == null) {
+      return;
+    }
+    ItemStack item = SpigotConversionUtil.toBukkitItemStack(packet.getItem()).clone();
     if (REDUCING_DISABLED) {
       if (item.containsEnchantment(Enchantment.DAMAGE_ALL)) {
         int level = item.getEnchantmentLevel(Enchantment.DAMAGE_ALL);
@@ -184,7 +181,8 @@ public final class AttackDispatcher extends Module {
 //        item.setItemMeta(itemMeta);
 //      }
 //    }
-    packet.getItemModifier().write(0, item);
+    packet.setItem(SpigotConversionUtil.fromBukkitItemStack(item));
+    event.markForReEncode(true);
   }
 
   private static final int[] ROMAN_STEPS = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
@@ -228,10 +226,15 @@ public final class AttackDispatcher extends Module {
     if (!REDUCING_DISABLED) {
       return;
     }
-    PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.UPDATE_ATTRIBUTES);
-    packet.getIntegers().write(0, player.getEntityId());
-    WrappedAttribute attribute = WrappedAttribute.newBuilder().packet(packet).attributeKey("generic.attackDamage").baseValue(0).modifiers(Collections.emptyList()).build();
-    packet.getAttributeCollectionModifier().write(0, Lists.newArrayList(attribute));
-    PacketSender.sendServerPacket(player, packet);
+    WrapperPlayServerUpdateAttributes.Property property = new WrapperPlayServerUpdateAttributes.Property(
+      Attributes.ATTACK_DAMAGE,
+      0,
+      Collections.emptyList()
+    );
+    WrapperPlayServerUpdateAttributes packet = new WrapperPlayServerUpdateAttributes(
+      player.getEntityId(),
+      Collections.singletonList(property)
+    );
+    PacketEvents.getAPI().getPlayerManager().sendPacket(player, packet);
   }
 }

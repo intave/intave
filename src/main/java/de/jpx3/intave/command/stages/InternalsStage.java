@@ -76,32 +76,6 @@ public final class InternalsStage extends CommandStage {
 //    commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + target.getName() + " " + IntavePlugin.defaultColor() + "will now slowly begin to lag");
 //  }
 
-//  private void sendPacket(Player player) {
-//    PacketContainer newPacket = new PacketContainer(PacketType.Play.Server.SPAWN_ENTITY_LIVING);
-//
-//    newPacket.getIntegers().
-//      write(0, ThreadLocalRandom.current().nextInt(100000000, 200000000)).
-//      write(1, (int) EntityType.ARMOR_STAND.getTypeId()).
-//      write(2, (int) (player.getLocation().getX() * 32)).
-//      write(3, -2 * 32).
-//      write(4, (int) (player.getLocation().getZ() * 32));
-//
-//    newPacket.getDataWatcherModifier().
-//      write(0, fallbackDatawatcher);
-//
-//    User user = UserRepository.userOf(player);
-//    user.ignoreNextOutboundPacket();
-//    PacketSender.sendServerPacket(player, newPacket);
-//    user.receiveNextOutboundPacketAgain();
-//  }
-
-//  private WrappedDataWatcher defaultWatcherOf(World world, EntityType type) {
-//    Entity entity = world.spawnEntity(new Location(world, 0, WorldHeight.UPPER_WORLD_LIMIT, 0), type);
-//    WrappedDataWatcher watcher = WrappedDataWatcher.getEntityWatcher(entity).deepClone();
-//    entity.remove();
-//    return watcher;
-//  }
-
   @SubCommand(
     selectors = "storelog",
     usage = "<player> <check> <vl>",

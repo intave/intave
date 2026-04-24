@@ -4,8 +4,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
-import de.jpx3.intave.klass.create.IRXClassFactory;
-import de.jpx3.intave.library.asm.Type;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.OneForAll;
 import de.jpx3.intave.module.linker.SubscriptionInstanceProvider;
@@ -23,7 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.IntUnaryOperator;
 
 public final class BukkitEventSubscriptionLinker extends Module {
   private final IntavePlugin plugin;
@@ -99,27 +96,14 @@ public final class BukkitEventSubscriptionLinker extends Module {
         }
         Class<? extends Event> eventClass = checkClass.asSubclass(Event.class);
         Set<RegisteredListener> registeredListeners = ret.computeIfAbsent(eventClass, k -> new HashSet<>());
-        String listenerClassPath = listenerClass.getCanonicalName().replaceAll("\\.", "/");
-        String eventClassPath = eventClass.getCanonicalName().replaceAll("\\.", "/");
-        Class<EventExecutor> executorClass = IRXClassFactory.assembleCallerClass(
-          BukkitEventSubscriptionLinker.class.getClassLoader(),
-          EventExecutor.class,
-          "<irx>",
-          "execute",
-          "(Lorg/bukkit/event/Listener;Lorg/bukkit/event/Event;)V",
-          "(L" + listenerClassPath + ";L" + eventClassPath + ";)V",
-          listenerClassPath,
-          method.getName(),
-          Type.getMethodDescriptor(method),
-          false, false,
-          IntUnaryOperator.identity()
-        );
-        EventExecutor executor;
-        try {
-          executor = executorClass.newInstance();
-        } catch (InstantiationException | IllegalAccessException exception) {
-          throw new IntaveInternalException(exception);
-        }
+        method.setAccessible(true);
+        EventExecutor executor = (bukkitListener, event) -> {
+          try {
+            method.invoke(bukkitListener, event);
+          } catch (ReflectiveOperationException exception) {
+            throw new EventException(exception);
+          }
+        };
         IntaveRegisteredListener registeredListener = new IntaveRegisteredListener(
           plugin, listener, executor,
           eventClass, eventHandler

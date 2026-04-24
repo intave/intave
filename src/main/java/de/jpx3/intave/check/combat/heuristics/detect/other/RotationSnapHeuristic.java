@@ -1,9 +1,9 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.util.Vector3i;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerBlockPlacement;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.access.BlockInteractionAccess;
@@ -12,12 +12,11 @@ import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
 import de.jpx3.intave.check.combat.heuristics.Confidence;
-import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.Entity;
-import de.jpx3.intave.packet.converter.BlockPositionConverter;
+import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.ClientMath;
 import de.jpx3.intave.user.User;
@@ -46,7 +45,7 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
       ARM_ANIMATION
     }
   )
-  public void receiveSwingPacket(PacketEvent event) {
+  public void receiveSwingPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     RotationSnapHeuristicMeta meta = metaOf(user);
@@ -60,7 +59,7 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
       BLOCK_PLACE
     }
   )
-  public void blockPlace(PacketEvent event) {
+  public void blockPlace(ProtocolPacketEvent event, WrapperPlayClientPlayerBlockPlacement packet) {
     // moved to enabled() function at the bottom
 //    if (MinecraftVersions.VER1_9_0.atOrAbove()) {
 //      return;
@@ -69,11 +68,8 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
     User user = userOf(player);
 
     // TODO: 01/28/21 Warning by Richy: The block-place is empty for native server versions from 1.9! Use the USE_ITEM packet instead
-//    BlockPosition blockPosition = event.getPacket().getBlockPositionModifier().read(0);
-    BlockPosition blockPosition = event.getPacket().getModifier()
-      .withType(Lookup.serverClass("BlockPosition"), BlockPositionConverter.threadConverter())
-      .read(0);
-    int blockPlaceDirection = event.getPacket().getIntegers().read(0);
+    BlockPosition blockPosition = blockPositionOf(packet.getBlockPosition());
+    int blockPlaceDirection = packet.getFaceId();
 
     if (blockPosition != null) {
       if (blockPlaceDirection != 255) {
@@ -94,20 +90,18 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
       USE_ENTITY
     }
   )
-  public void receiveAttackPacket(PacketEvent event) {
+  public void receiveAttackPacket(ProtocolPacketEvent event, WrapperPlayClientInteractEntity packet) {
     Player player = event.getPlayer();
     User user = userOf(player);
     RotationSnapHeuristicMeta meta = metaOf(user);
 
-    PacketContainer packet = event.getPacket();
-    EnumWrappers.EntityUseAction action = packet.getEntityUseActions().readSafely(0);
-    if (action == null) {
-      action = packet.getEnumEntityUseActions().read(0).getAction();
-    }
-
-    if (action == EnumWrappers.EntityUseAction.ATTACK) {
+    if (packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
       meta.lastAttack = 0;
     }
+  }
+
+  private BlockPosition blockPositionOf(Vector3i vector) {
+    return new BlockPosition(vector.x, vector.y, vector.z);
   }
 
   @PacketSubscription(
@@ -116,7 +110,7 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
       POSITION_LOOK, LOOK
     }
   )
-  public void receiveRotationPacket(PacketEvent event) {
+  public void receiveRotationPacket(ProtocolPacketEvent event) {
     metaOf(userOf(event.getPlayer())).rotationPacketCounter++;
   }
 
@@ -134,7 +128,7 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void receiveMovementPacket(PacketEvent event) {
+  public void receiveMovementPacket(ProtocolPacketEvent event) {
     // moved to enabled() function at the bottom
 //    if (MinecraftVersions.VER1_9_0.atOrAbove()) {
 //      return;

@@ -1,7 +1,7 @@
 package de.jpx3.intave;
 
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
+import de.jpx3.intave.adapter.PacketEventsAdapter;
 import de.jpx3.intave.cleanup.StartupTasks;
 import de.jpx3.intave.diagnostic.ConsoleOutput;
 import de.jpx3.intave.executor.BackgroundExecutors;
@@ -54,7 +54,7 @@ public final class IntaveLogger extends PluginLogger {
   }
 
   public void checkColorAvailability() {
-    if (!ProtocolLibraryAdapter.protocolLibAvailable()) {
+    if (!PacketEventsAdapter.packetEventsAvailable()) {
       return;
     }
     if (JavaVersion.current() > 8 && MinecraftVersions.VER1_16_2.atOrAbove()) {

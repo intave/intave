@@ -1,6 +1,6 @@
 package de.jpx3.intave.module.nayoro.event;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.version.MinecraftVersion;
 import de.jpx3.intave.module.nayoro.Environment;
 import de.jpx3.intave.module.nayoro.PlayerContainer;
 import de.jpx3.intave.module.nayoro.event.sink.EventSink;

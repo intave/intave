@@ -1,6 +1,6 @@
 package de.jpx3.intave.module.nayoro.event;
 
-import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
+import com.github.retrooper.packetevents.protocol.player.InteractionHand;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.module.nayoro.Environment;
 import de.jpx3.intave.module.nayoro.event.sink.EventSink;
@@ -30,7 +30,7 @@ public final class BlockPlaceEvent extends Event {
   private float facingY;
   private float facingZ;
 
-  private Hand hand;
+  private InteractionHand hand;
   private String typeName;
   private int amountInHand;
 
@@ -44,7 +44,7 @@ public final class BlockPlaceEvent extends Event {
     Rotation rotation,
     Position eyePosition,
     Position endOfRaytrace,
-    Hand hand,
+    InteractionHand hand,
     String typeName,
     int amountInHand,
     float facingX,
@@ -111,7 +111,7 @@ public final class BlockPlaceEvent extends Event {
     rotation = new Rotation(in.readFloat(), in.readFloat());
     eyePosition = readPosition(in);
     endOfRaytrace = readPosition(in);
-    hand = Hand.values()[in.readByte()];
+    hand = InteractionHand.values()[in.readByte()];
     typeName = in.readUTF();
     amountInHand = in.readInt();
     facingX = in.readFloat();
@@ -152,7 +152,7 @@ public final class BlockPlaceEvent extends Event {
     return endOfRaytrace;
   }
 
-  public Hand hand() {
+  public InteractionHand hand() {
     return hand;
   }
 
@@ -188,7 +188,7 @@ public final class BlockPlaceEvent extends Event {
     Rotation rotation,
     Position eyePosition,
     Position endOfRaytrace,
-    Hand hand,
+    InteractionHand hand,
     String typeName,
     int amountInHand,
     float facingX,

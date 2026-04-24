@@ -1,6 +1,6 @@
 package de.jpx3.intave.version;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.version.MinecraftVersion;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
 

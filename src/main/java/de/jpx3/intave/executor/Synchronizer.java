@@ -4,11 +4,9 @@ import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.UnsupportedFallbackOperationException;
 import de.jpx3.intave.diagnostic.timings.Timings;
-import de.jpx3.intave.klass.Lookup;
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitScheduler;
 
-import java.util.Queue;
 import java.util.concurrent.Executor;
 
 public final class Synchronizer {
@@ -16,21 +14,13 @@ public final class Synchronizer {
   private static Executor synchronizationExecutor;
 
   public static void setup() {
-    try {
-      Class<?> minecraftServerClass = Lookup.serverClass("MinecraftServer");
-      Object minecraftServer = minecraftServerClass.getMethod("getServer").invoke(null);
-      //noinspection unchecked
-      Queue<Runnable> cachedProcessQueue = (Queue<Runnable>) minecraftServerClass.getField("processQueue").get(minecraftServer);
-      synchronizationExecutor = cachedProcessQueue::add;
-    } catch (NoSuchFieldException exception) {
-      IntavePlugin.singletonInstance().logger().error("Your version of spigot has removed support for task-queueing. We will switch to bukkit's scheduling service");
-      synchronizationExecutor = command -> scheduler.runTask(IntavePlugin.singletonInstance(), command);
-    } catch (Exception exception) {
-      throw new IllegalStateException(exception);
-    }
+    synchronizationExecutor = command -> scheduler.runTask(IntavePlugin.singletonInstance(), command);
   }
 
   public static void synchronize(Runnable runnable) {
+    if (synchronizationExecutor == null) {
+      setup();
+    }
     synchronizationExecutor.execute(wrapped(runnable));
   }
 

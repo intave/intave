@@ -1,8 +1,7 @@
 package de.jpx3.intave.module.player;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketContainer;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetExperience;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.storage.EmptyStorageGateway;
 import de.jpx3.intave.access.player.storage.StorageGateway;
@@ -11,7 +10,6 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.executor.TaskTracker;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
-import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.storage.PlayerStorage;
@@ -114,11 +112,7 @@ public final class StorageLoader extends Module {
   }
 
   private void sendPacketWithExperience(Player player, int level) {
-    PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.EXPERIENCE);
-    packet.getFloat().write(0, 0f);
-    packet.getIntegers().write(0, 0);
-    packet.getIntegers().write(1, level);
-    PacketSender.sendServerPacket(player, packet);
+    PacketEvents.getAPI().getPlayerManager().sendPacket(player, new WrapperPlayServerSetExperience(0f, level, 0));
   }
 
   public void saveStorageFor(Player player) {

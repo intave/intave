@@ -39,6 +39,9 @@ public final class EntityTypeData {
         this.armorstand = true;
         break;
     }
+    if (lowercaseName.endsWith("boat") || lowercaseName.endsWith("chestboat") || lowercaseName.endsWith("raft")) {
+      this.boat = true;
+    }
   }
 
   public boolean isLivingEntity() {

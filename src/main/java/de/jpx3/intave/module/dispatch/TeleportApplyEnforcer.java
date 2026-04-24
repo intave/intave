@@ -1,7 +1,13 @@
 package de.jpx3.intave.module.dispatch;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.protocol.player.DiggingAction;
+import com.github.retrooper.packetevents.protocol.teleport.RelativeFlag;
+import com.github.retrooper.packetevents.util.Vector3d;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerDigging;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientTeleportConfirm;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerPositionAndLook;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
@@ -16,9 +22,7 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.player.PacketLogging;
-import de.jpx3.intave.packet.Relative;
-import de.jpx3.intave.packet.reader.PacketReaders;
-import de.jpx3.intave.packet.reader.PlayerTeleportReader;
+import de.jpx3.intave.share.Relative;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.MessageChannel;
@@ -37,7 +41,6 @@ import org.bukkit.entity.Player;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.DROP_ITEM;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.BLOCK_DIG;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.TELEPORT_ACCEPT;
@@ -71,19 +74,17 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
           POSITION
       }
   )
-  public void receiveOutgoingTeleport(PacketEvent event) {
+  public void receiveOutgoingTeleport(ProtocolPacketEvent event, WrapperPlayServerPlayerPositionAndLook packet) {
     Player player = event.getPlayer();
-    PacketContainer packet = event.getPacket();
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
 
-    PlayerTeleportReader reader = PacketReaders.readerOf(packet);
-    double positionX = reader.positionX();
-    double positionY = reader.positionY();
-    double positionZ = reader.positionZ();
-    float yaw = reader.yaw();
-    float pitch = reader.pitch();
-    Set<Relative> flags = reader.flags();
+    double positionX = packet.getX();
+    double positionY = packet.getY();
+    double positionZ = packet.getZ();
+    float yaw = packet.getYaw();
+    float pitch = packet.getPitch();
+    Set<Relative> flags = flagsFrom(packet.getRelativeFlags());
 
     boolean relativeX = flags.contains(Relative.X);
     boolean relativeY = flags.contains(Relative.Y);
@@ -93,35 +94,35 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
     boolean relativeZMotion = flags.contains(Relative.DELTA_Z);
     boolean rotateDelta = flags.contains(Relative.ROTATE_DELTA);
 
-    Boolean funkyBoolean = packet.getBooleans().readSafely(0);
-    if (funkyBoolean == null) {
-      funkyBoolean = false;
-    }
+    Boolean funkyBoolean = packet.isDismountVehicle();
 
     boolean flagModification = false;
     if (relativeX) {
       positionX += user.meta().movement().verifiedPositionX();
-      reader.setPositionX(positionX);
+      packet.setX(positionX);
       flags.remove(Relative.X);
+      packet.setRelative(RelativeFlag.X, false);
       flagModification = true;
     }
 
     if (relativeY) {
       positionY += user.meta().movement().verifiedPositionY();
-      reader.setPositionY(positionY);
+      packet.setY(positionY);
       flags.remove(Relative.Y);
+      packet.setRelative(RelativeFlag.Y, false);
       flagModification = true;
     }
 
     if (relativeZ) {
       positionZ += user.meta().movement().verifiedPositionZ();
-      reader.setPositionZ(positionZ);
+      packet.setZ(positionZ);
       flags.remove(Relative.Z);
+      packet.setRelative(RelativeFlag.Z, false);
       flagModification = true;
     }
 
     if (flagModification) {
-      reader.setFlags(flags);
+      event.markForReEncode(true);
     }
 
     boolean expectRotation = false;//!flags.contains(TeleportFlag.X_ROT) && !flags.contains(TeleportFlag.Y_ROT);
@@ -135,19 +136,19 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
     Location teleportLocation = new Location(player.getWorld(), positionX, positionY, positionZ, yaw, pitch);
     movementData.teleportLocation = teleportLocation;
     if (relativeXMotion || relativeYMotion || relativeZMotion) {
-      movementData.teleportMotion.setTo(reader.motion());
+      Vector3d deltaMovement = packet.getDeltaMovement();
+      movementData.teleportMotion.setTo(new Motion(deltaMovement.getX(), deltaMovement.getY(), deltaMovement.getZ()));
     }
     movementData.teleportRelatives = new HashSet<>(flags);
 
     movementData.setVerifiedLocation(teleportLocation.clone(), "Teleportation to " + teleportLocation);
     if (NEW_TELEPORTATION) {
-      movementData.teleportId = packet.getIntegers().read(0);
+      movementData.teleportId = packet.getTeleportId();
     }
     movementData.lastTeleport = 0;
 
     if (IntaveControl.DEBUG_TELEPORT_LOCKS) {
       IntaveLogger.logger().info("[Intave] Sent teleportation request to " + player.getName() + ": " + MathHelper.formatPosition(movementData.teleportLocation));
-      IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/TELEPORT) Sent teleportation request to " + MathHelper.formatPosition(movementData.teleportLocation));
     }
 
     if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
@@ -177,8 +178,6 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
     movementData.teleportResendCountdown = 20;
 //    movementData.outgoingTeleportCountdown = 5;
     movementData.isTeleportConfirmationPacket = false;
-
-    reader.release();
   }
 
   @PacketSubscription(
@@ -187,13 +186,12 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
           TELEPORT_ACCEPT
       }
   )
-  public void receiveTeleportAccept(PacketEvent event) {
+  public void receiveTeleportAccept(ProtocolPacketEvent event, WrapperPlayClientTeleportConfirm packet) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
 
-    PacketContainer packet = event.getPacket();
-    Integer teleportId = packet.getIntegers().read(0);
+    Integer teleportId = packet.getTeleportId();
 
     if (movementData.teleportId == teleportId) {
 //      Location teleportLocation = movementData.teleportLocation;
@@ -212,14 +210,13 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
           BLOCK_DIG
       }
   )
-  public void clientClickUpdate(PacketEvent event) {
+  public void clientClickUpdate(ProtocolPacketEvent event, WrapperPlayClientPlayerDigging packet) {
     if (!IntaveControl.TELEPORT_FAR_AWAY_ON_Q_PRESS) {
       return;
     }
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    PacketContainer packet = event.getPacket();
-    if (packet.getPlayerDigTypes().read(0) == DROP_ITEM && user.meta().inventory().heldItemType() == Material.AIR) {
+    if (packet.getAction() == DiggingAction.DROP_ITEM && user.meta().inventory().heldItemType() == Material.AIR) {
       Synchronizer.synchronize(() -> {
         Location randomLocation = player.getLocation().clone().add(Math.random() * 1000 - 500, 0, Math.random() * 1000 - 500);
         Block highestBlockAt = randomLocation.getWorld().getHighestBlockAt(randomLocation);
@@ -234,7 +231,7 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
   }
 
   @DispatchTarget
-  void receiveMovement(PacketEvent event) {
+  void receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
@@ -244,21 +241,19 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
     }
   }
 
-  private void resendIfLimitsExceeded(PacketEvent event) {
+  private void resendIfLimitsExceeded(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
     if (movementData.awaitTeleport) {
       if (IntaveControl.DEBUG_TELEPORT_LOCKS) {
         IntaveLogger.logger().printLine("[Intave] Cancelled packet of " + player.getName() + " (Awaiting teleport accept)");
-        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/TELEPORT) Cancelled packet of " + player.getName() + " (Awaiting teleport accept)");
       }
 
       if (movementData.teleportResendCountdown-- < 0) {
         movementData.teleportResendCountdown = 20;
         if (IntaveControl.DEBUG_TELEPORT_LOCKS) {
           IntaveLogger.logger().printLine("[Intave] Resent teleport to " + player.getName());
-          IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/TELEPORT) Resent teleport to " + player.getName());
         }
         Synchronizer.synchronize(() -> {
           Location location = movementData.teleportLocation.clone();
@@ -330,7 +325,6 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
       isTeleport = true;
       if (IntaveControl.DEBUG_TELEPORT_LOCKS) {
         System.out.println("[Intave] " + player.getName() + " accepted teleport");
-        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/TELEPORT) " + player.getName() + " accepted teleport");
       }
       if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
         player.sendMessage(IntavePlugin.prefix() + "Movement matched teleport request to " + MathHelper.formatPosition(teleportLocation));
@@ -343,7 +337,6 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
       if (IntaveControl.DEBUG_TELEPORT_LOCKS) {
         String position = MathHelper.formatPosition(positionX, positionY, positionZ);
         System.out.println("[Intave] Checking potential teleport accept of " + player.getName() + " on " + position);
-        IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/TELEPORT) Checking potential teleport accept of " + player.getName() + " on " + position);
       }
       boolean validPosition = positionDeviation < 0.00001 && movementData.transactionTeleportAllow;
       if (validPosition && movementData.expectTeleportWithRotation) {
@@ -354,7 +347,6 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
         validPosition = yawDeviation < 0.001 && pitchDeviation < 0.001;
         if (IntaveControl.DEBUG_TELEPORT_LOCKS) {
           System.out.println("[Intave] Additional rotation check on " + player.getName() + ", difference is " + yawDeviation + "/" + pitchDeviation);
-          IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/TELEPORT) Additional rotation check on " + player.getName() + ", difference is " + yawDeviation + "/" + pitchDeviation);
         }
         if (validPosition) {
           movementData.expectTeleportWithRotation = false;
@@ -364,10 +356,8 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
       if (IntaveControl.DEBUG_TELEPORT_LOCKS) {
         if (validPosition) {
           System.out.println("[Intave] " + player.getName() + " accepted teleport request (release lock)");
-          IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/TELEPORT) " + player.getName() + " accepted teleport request (release lock)");
         } else {
           System.out.println("[Intave] " + player.getName() + " did not accept the teleport request");
-          IntavePlugin.singletonInstance().logTransmittor().addPlayerLog(player, "(DEBUG/TELEPORT) " + player.getName() + " did not accept the teleport request");
         }
       }
       isTeleport = validPosition;
@@ -441,5 +431,37 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
     logging.logSystemMessage(user, () -> "MOTION LOGIC: Reset base motion to 0.0");
     movementData.lastOnGround = false;
     movementData.setBoundingBox(BoundingBox.fromPosition(user, movementData, movementData.teleportLocation));
+  }
+
+  private Set<Relative> flagsFrom(RelativeFlag packetFlags) {
+    Set<Relative> flags = new HashSet<>();
+    if (packetFlags.has(RelativeFlag.X)) {
+      flags.add(Relative.X);
+    }
+    if (packetFlags.has(RelativeFlag.Y)) {
+      flags.add(Relative.Y);
+    }
+    if (packetFlags.has(RelativeFlag.Z)) {
+      flags.add(Relative.Z);
+    }
+    if (packetFlags.has(RelativeFlag.YAW)) {
+      flags.add(Relative.Y_ROT);
+    }
+    if (packetFlags.has(RelativeFlag.PITCH)) {
+      flags.add(Relative.X_ROT);
+    }
+    if (packetFlags.has(RelativeFlag.DELTA_X)) {
+      flags.add(Relative.DELTA_X);
+    }
+    if (packetFlags.has(RelativeFlag.DELTA_Y)) {
+      flags.add(Relative.DELTA_Y);
+    }
+    if (packetFlags.has(RelativeFlag.DELTA_Z)) {
+      flags.add(Relative.DELTA_Z);
+    }
+    if (packetFlags.has(RelativeFlag.ROTATE_DELTA)) {
+      flags.add(Relative.ROTATE_DELTA);
+    }
+    return flags;
   }
 }

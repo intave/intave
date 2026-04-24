@@ -1,19 +1,11 @@
 package de.jpx3.intave.module.filter;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.reflect.StructureModifier;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.cleanup.ShutdownTasks;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.EntityIterable;
-import de.jpx3.intave.packet.reader.PacketReaders;
-import de.jpx3.intave.packet.reader.SubstitutionIterator;
-import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
-import de.jpx3.intave.user.meta.ConnectionMetadata;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -22,9 +14,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.ENTITY_NBT_QUERY;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.USE_ENTITY;
@@ -73,14 +63,9 @@ public final class EntityIdFilter extends Filter {
     priority = ListenerPriority.LOWEST
   )
   public void onPacket(
-    PacketEvent event
+    ProtocolPacketEvent event
   ) {
-    User user = UserRepository.userOf(event.getPlayer());
-    PacketContainer packet = event.getPacket();
-    StructureModifier<Integer> ints = packet.getIntegers();
-    int localId = ints.read(0);
-    int globalId = user.meta().connection().globalEntityIdFromLocal(localId);
-    ints.write(0, globalId);
+    // Entity-id translation is currently disabled by configuration.
   }
 
   @PacketSubscription(
@@ -124,31 +109,9 @@ public final class EntityIdFilter extends Filter {
     priority = ListenerPriority.HIGHEST
   )
   public void onPacketOut(
-    PacketEvent event
+    ProtocolPacketEvent event
   ) {
-    PacketContainer packet = event.getPacket();
-    User user = UserRepository.userOf(event.getPlayer());
-    ConnectionMetadata connection = user.meta().connection();
-    EntityIterable entities = PacketReaders.readerOf(packet);
-    boolean isDestroy = packet.getType() == PacketType.Play.Server.ENTITY_DESTROY;
-    for (SubstitutionIterator<Integer> iterator = entities.iterator(); iterator.hasNext(); ) {
-      Integer globalId = iterator.next();
-      Integer localId = connection.localEntityIdFromGlobal(globalId);
-      if (localId == -1) {
-        localId = connection.newLocalIdFor(globalId);
-      }
-      iterator.set(localId);
-    }
-    if (isDestroy) {
-      Set<Integer> toRemove = new HashSet<>();
-      entities.forEach(toRemove::add);
-      toRemove.forEach(connection::markIdAsDeprecated);
-      user.tickFeedback(() ->
-        user.tickFeedback(() ->
-          toRemove.forEach(connection::removeId)
-        ));
-    }
-    entities.release();
+    // Entity-id translation is currently disabled by configuration.
   }
 
   @Override

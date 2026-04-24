@@ -1,18 +1,21 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerBlockPlacement;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.BlockInteractionReader;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
+import de.jpx3.intave.util.PacketEventsConversions;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
@@ -27,7 +30,7 @@ public final class Constraint extends MetaCheckPart<PlacementAnalysis, Constrain
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void receiveMovementPacket(PacketEvent event) {
+  public void receiveMovementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MovementMetadata movement = user.meta().movement();
@@ -72,15 +75,21 @@ public final class Constraint extends MetaCheckPart<PlacementAnalysis, Constrain
     priority = ListenerPriority.LOW
   )
   public void rightClick(
-    User user, PacketContainer packet, BlockInteractionReader reader
+    User user, ProtocolPacketEvent event
   ) {
     Player player = user.player();
-    String name = packet.getType().name();
+    String name = event.getPacketType().getName();
 
     ConstraintMeta meta = metaOf(user);
-    Direction direction = reader.direction();
-    String k = MathHelper.formatMotion(reader.facingVector());
-    if (reader.direction() == null) {
+    Direction direction = null;
+    Vector facingVector = null;
+    if (event.getPacketType() == PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT) {
+      WrapperPlayClientPlayerBlockPlacement packet = new WrapperPlayClientPlayerBlockPlacement((PacketReceiveEvent) event);
+      direction = PacketEventsConversions.toDirection(packet.getFace());
+      facingVector = PacketEventsConversions.toBukkitVector(packet.getCursorPosition());
+    }
+    String k = MathHelper.formatMotion(facingVector);
+    if (direction == null) {
       meta.blockClicks++;
       return;
     }

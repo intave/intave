@@ -11,6 +11,9 @@ final class DebugYamlTrustFactorLoader implements TrustFactorLoader {
   public TrustFactorConfiguration fetch() {
     String fileName = "/" + IntavePlugin.version().replace(".", "-") + ".yml";
     InputStream resourceAsStream = getClass().getResourceAsStream(fileName);
+    if (resourceAsStream == null) {
+      resourceAsStream = getClass().getResourceAsStream("/14-0-0.yml");
+    }
     return new YamlTrustFactorConfiguration(YamlConfiguration.loadConfiguration(new InputStreamReader(resourceAsStream)));
   }
 }

@@ -4,7 +4,7 @@ import de.jpx3.intave.access.IntaveAccess;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.accessbackend.IntaveAccessService;
 import de.jpx3.intave.adapter.ComponentLoader;
-import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
+import de.jpx3.intave.adapter.PacketEventsAdapter;
 import de.jpx3.intave.adapter.ViaVersionAdapter;
 import de.jpx3.intave.agent.AgentAccessor;
 import de.jpx3.intave.analytics.Analytics;
@@ -26,16 +26,11 @@ import de.jpx3.intave.cleanup.ShutdownTasks;
 import de.jpx3.intave.cleanup.StartupTasks;
 import de.jpx3.intave.command.CommandForwarder;
 import de.jpx3.intave.config.ConfigurationService;
-import de.jpx3.intave.connect.IntaveDomains;
-import de.jpx3.intave.connect.cloud.Cloud;
-import de.jpx3.intave.connect.cloud.LogTransmittor;
 import de.jpx3.intave.connect.customclient.CustomClientSupportService;
 import de.jpx3.intave.connect.proxy.ProxyMessenger;
 import de.jpx3.intave.connect.sibyl.SibylBroadcast;
 import de.jpx3.intave.connect.sibyl.SibylIntegrationService;
-import de.jpx3.intave.connect.upload.ScheduledUploadService;
 import de.jpx3.intave.diagnostic.ConsoleOutput;
-import de.jpx3.intave.diagnostic.natives.NativeCheck;
 import de.jpx3.intave.entity.EntityLookup;
 import de.jpx3.intave.entity.size.HitboxSizeAccess;
 import de.jpx3.intave.entity.type.EntityTypeDataAccessor;
@@ -46,21 +41,18 @@ import de.jpx3.intave.klass.locate.Locate;
 import de.jpx3.intave.library.Libraries;
 import de.jpx3.intave.library.pledge.TickEnd;
 import de.jpx3.intave.math.SinusCache;
-import de.jpx3.intave.metric.Metrics;
 import de.jpx3.intave.metric.ServerHealth;
 import de.jpx3.intave.module.BootSegment;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
 import de.jpx3.intave.module.nayoro.Inventory;
 import de.jpx3.intave.module.tracker.entity.Entity;
-import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.player.FaultKicks;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.player.fake.IdentifierReserve;
 import de.jpx3.intave.player.fake.event.FakePlayerEventService;
 import de.jpx3.intave.reflect.access.ReflectiveAccess;
 import de.jpx3.intave.resource.Resources;
-import de.jpx3.intave.resource.legacy.EncryptedLegacyResource;
 import de.jpx3.intave.security.PlayerListService;
 import de.jpx3.intave.security.letis.Letis;
 import de.jpx3.intave.share.FriendlyByteBuf;
@@ -83,7 +75,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -99,7 +90,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VERSION_DETAILS;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class IntavePlugin extends JavaPlugin {
   private static IntavePlugin singletonInstance;
@@ -114,8 +104,6 @@ public final class IntavePlugin extends JavaPlugin {
   }
 
   private IntaveLogger logger;
-  private LogTransmittor transmittor;
-  private Cloud cloud;
 
   private ProxyMessenger proxyMessenger; // module candidate
   private SibylIntegrationService sibylIntegrationService;
@@ -129,10 +117,8 @@ public final class IntavePlugin extends JavaPlugin {
   private IntaveAccess access;
   private YamlConfiguration configuration;
   private PlayerListService blackListService; // module candidate
-  private ScheduledUploadService uploadService; // module candidate
   private Letis letis; // module candidate
   private Analytics analytics; // module candidate
-  private Metrics metrics;
   private TestService testService;
 
   public IntavePlugin() {
@@ -183,8 +169,6 @@ public final class IntavePlugin extends JavaPlugin {
       logger.info("Using agent :{~-~}:");
     }
 
-    IntaveDomains.setup();
-
     prefix = ChatColor.translateAlternateColorCodes('&', prefix);
 
     try {
@@ -203,9 +187,9 @@ public final class IntavePlugin extends JavaPlugin {
       componentLoader.prepareComponents();
       componentLoader.loadComponents();
 
-      ProtocolLibraryAdapter.checkIfOutdated();
+      PacketEventsAdapter.checkIfOutdated();
 
-      // check again, after ProtocolLibs availability is guaranteed
+      // check again, after PacketEvents availability is guaranteed
       logger.checkColorAvailability();
 
       // version mambo jumbo
@@ -221,8 +205,6 @@ public final class IntavePlugin extends JavaPlugin {
       ServerHealth.setup();
 
       Synchronizer.setup();
-      PacketReaders.setup();
-
       SibylBroadcast.setup();
 
       IdentifierReserve.setup();
@@ -233,11 +215,6 @@ public final class IntavePlugin extends JavaPlugin {
 
       trustFactorService = new TrustFactorService(this);
       blackListService = new PlayerListService(this);
-      cloud = new Cloud();
-      cloud.init();
-
-      transmittor = new LogTransmittor();
-      transmittor.init();
 
       // stage 6
       Modules.proceedBoot(BootSegment.STAGE_6);
@@ -249,39 +226,16 @@ public final class IntavePlugin extends JavaPlugin {
 
       // stage 7
 
-      EncryptedLegacyResource contextStatusResource = new EncryptedLegacyResource("context-status", false);
-
       boolean offlineMode = false;
 
       VERSION_DETAILS |= 0x100;
       VERSION_DETAILS |= 0x200;
       if (IntaveControl.DEBUG_GRAYLIST) {
-        logger.info(blackListService.encryptedGrayKnowledgeData());
-      }
-
-      boolean writeSuccessLog = true;
-      try {
-        if (contextStatusResource.exists()) {
-          String textString = contextStatusResource.readAsString();
-          if (textString.startsWith("success")) {
-            try {
-              long lastSuccessfulStart = Long.parseLong(textString.split("/")[1]);
-              if (System.currentTimeMillis() - lastSuccessfulStart < TimeUnit.DAYS.toMillis(2)) {
-                writeSuccessLog = false;
-              }
-            } catch (Exception ignored) {
-            }
-          }
-        }
-      } catch (Exception ignored) {
-      }
-      if (writeSuccessLog) {
-        contextStatusResource.write(new ByteArrayInputStream(("success/" + System.currentTimeMillis()).getBytes(UTF_8)));
+        logger.info(blackListService.grayKnowledgeData());
       }
 
       BlockVariantRegister.index();
 
-//      PacketReaders.setup();
       BlockWrapper.setup();
       WorldBorders.setup();
 //      ShapeResolver.setup();
@@ -329,7 +283,6 @@ public final class IntavePlugin extends JavaPlugin {
       defaultColor = ChatColor.getLastColors(prefix);
       FaultKicks.applyFrom(configuration.getConfigurationSection("fault-kicks"));
       ConsoleOutput.applyFrom(configuration.getConfigurationSection("logging"));
-      cloud.configInit(configuration.getConfigurationSection("cloud"));
 
       // stage 8
       Modules.proceedBoot(BootSegment.STAGE_8);
@@ -344,8 +297,6 @@ public final class IntavePlugin extends JavaPlugin {
       sibylIntegrationService = new SibylIntegrationService(this);
       testService = new TestService();
       testService.scheduleTestsForFifthTick();
-      uploadService = new ScheduledUploadService();
-      uploadService.enable();
       letis = new Letis(this);
 
       getCommand("intave").setExecutor(new CommandForwarder());
@@ -360,19 +311,12 @@ public final class IntavePlugin extends JavaPlugin {
 
       // stage 9
       Modules.proceedBoot(BootSegment.STAGE_9);
-      metrics = new Metrics(this, 6019);
 
       trustFactorService.setup();
       checkService.setup();
       fakePlayerEventService.setup();
       blackListService.setup();
 //      analytics.setup();
-
-      try {
-        cloud.connectMasterShard();
-      } catch (Exception exception) {
-        logger.info("Unable to connect to cloud: " + exception.getMessage());
-      }
     } catch (Exception exception) {
       logger.error("Unable to boot: " + exception.getMessage());
       exception.printStackTrace();
@@ -431,7 +375,6 @@ public final class IntavePlugin extends JavaPlugin {
       }
     }
 
-    registerNativeCheck();
     Modules.linker().packetEvents().refreshLinkages();
     displayVersionInformation();
     successfullyBooted = true;
@@ -443,15 +386,7 @@ public final class IntavePlugin extends JavaPlugin {
       Modules.proceedBoot(BootSegment.STAGE_11);
 
       StartupTasks.runAll();
-
-      // perform a complete native self-check
-      BackgroundExecutors.execute(NativeCheck::run);
     });
-  }
-
-  private void registerNativeCheck() {
-    NativeCheck.registerNative(this::invalidateCaches);
-    NativeCheck.registerNative(() -> bootFailure(null));
   }
 
   public void createDataFolder() {
@@ -476,20 +411,12 @@ public final class IntavePlugin extends JavaPlugin {
   }
 
   public void checkClassLoaderAvailability() {
-    if (de.jpx3.classloader.ClassLoader.usesNativeAccess() && !de.jpx3.classloader.ClassLoader.loaded()) {
-      try {
-        de.jpx3.classloader.ClassLoader.setupEnvironment(Files.createTempDirectory("intave-debug").toFile());
-      } catch (IOException exception) {
-        logger.error("[Intave] Failed to create temporary directory for classloader");
-        exception.printStackTrace();
-      }
-    }
   }
 
   public void displayVersionInformation() {
     IntaveVersion version = versions.versionInformation(version());
     if (version == null) {
-      logger().info(ChatColor.YELLOW + "This version of Intave is not listed in the official version index");
+      logger().info(ChatColor.YELLOW + "Running an unindexed open-source Intave build");
     } else {
       long duration = System.currentTimeMillis() - version.release();
       String durationAsString = DurationTranslator.translateHours(duration);
@@ -497,7 +424,7 @@ public final class IntavePlugin extends JavaPlugin {
       String infoMessage = "";
       switch (version.typeClassifier()) {
         case LATEST:
-          infoMessage = "Running the latest version of Intave (" + durationAsString + " old)";
+          infoMessage = "Running open-source Intave " + version.version();
           break;
         case STABLE:
           infoMessage = "Running a stable version of Intave (" + durationAsString + " old)";
@@ -628,16 +555,10 @@ public final class IntavePlugin extends JavaPlugin {
   }
 
   public void invalidateCaches() {
-    if (NativeCheck.checkActive()) {
-      return;
-    }
     clearIntegrityGarbage();
   }
 
   public void bootFailure(String reason) {
-    if (NativeCheck.checkActive()) {
-      return;
-    }
     getCommand("intave").setExecutor((commandSender, command, s, strings) -> {
       commandSender.sendMessage(prefix() + ChatColor.RED + "Intave couldn't boot properly: " + reason);
       return false;
@@ -716,14 +637,6 @@ public final class IntavePlugin extends JavaPlugin {
     return logger;
   }
 
-  public Cloud cloud() {
-    return cloud;
-  }
-
-  public LogTransmittor logTransmittor() {
-    return transmittor;
-  }
-
   public ProxyMessenger proxy() {
     return proxyMessenger;
   }
@@ -751,10 +664,6 @@ public final class IntavePlugin extends JavaPlugin {
 
   public Analytics analytics() {
     return analytics;
-  }
-
-  public ScheduledUploadService uploader() {
-    return uploadService;
   }
 
   public IntaveVersionList versions() {

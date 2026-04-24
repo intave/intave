@@ -1,12 +1,14 @@
 package de.jpx3.intave.registry;
 
-import com.comphenix.protocol.wrappers.MinecraftKey;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.klass.locate.MethodSearchBySignature;
+import de.jpx3.intave.minecraft.MinecraftReflection;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Map;
 
 public class RegistryKeyLookup {
@@ -88,11 +90,34 @@ public class RegistryKeyLookup {
   }
 
   private static Object minecraftKeyFrom(String fullKey) {
-    return MinecraftKey.getConverter().getGeneric(new MinecraftKey(fullKey));
+    String value = fullKey == null ? "" : fullKey.toLowerCase(java.util.Locale.ROOT);
+    int split = value.indexOf(':');
+    String namespace = split >= 0 ? value.substring(0, split) : "minecraft";
+    String key = split >= 0 ? value.substring(split + 1) : value;
+    Class<?> keyClass = MinecraftReflection.getMinecraftKeyClass();
+    try {
+      Method method = keyClass.getDeclaredMethod("fromNamespaceAndPath", String.class, String.class);
+      method.setAccessible(true);
+      return method.invoke(null, namespace, key);
+    } catch (Throwable ignored) {
+      try {
+        Constructor<?> constructor = keyClass.getDeclaredConstructor(String.class, String.class);
+        constructor.setAccessible(true);
+        return constructor.newInstance(namespace, key);
+      } catch (Throwable ignoredToo) {
+        try {
+          Constructor<?> constructor = keyClass.getDeclaredConstructor(String.class);
+          constructor.setAccessible(true);
+          return constructor.newInstance(namespace + ":" + key);
+        } catch (Throwable exception) {
+          throw new IllegalStateException("Cannot construct Minecraft registry key " + namespace + ":" + key, exception);
+        }
+      }
+    }
   }
 
   private static String stringFromMinecraftKey(Object key) {
-    return MinecraftKey.fromHandle(key).getFullKey();
+    return String.valueOf(key);
   }
 
   private static Object registryRegistry;

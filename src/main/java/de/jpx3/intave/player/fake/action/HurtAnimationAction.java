@@ -1,7 +1,8 @@
 package de.jpx3.intave.player.fake.action;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
+import com.github.retrooper.packetevents.util.Vector3d;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityAnimation;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityVelocity;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.player.fake.MetadataAccess;
@@ -39,28 +40,19 @@ public final class HurtAnimationAction extends Action {
     }
   }
 
-  private static final byte DAMAGE_ANIMATION = 1;
-
   private void sendHurtAnimation() {
-    PacketContainer packet = create(PacketType.Play.Server.ANIMATION);
-    packet.getIntegers().writeSafely(0, this.fakePlayer.identifier());
-    packet.getModifier().writeSafely(1, DAMAGE_ANIMATION);
-    send(packet);
+    send(new WrapperPlayServerEntityAnimation(
+      this.fakePlayer.identifier(),
+      WrapperPlayServerEntityAnimation.EntityAnimationType.HURT
+    ));
     sendHealthUpdate(Math.max(1, currentHealthState - ThreadLocalRandom.current().nextInt(1, 4)));
   }
 
-  private static final double VELOCITY_CONVERT_FACTOR = 8000.0D;
-
   private void sendEntityVelocity() {
-    PacketContainer packet = create(PacketType.Play.Server.ENTITY_VELOCITY);
-    packet.getIntegers().writeSafely(0, this.fakePlayer.identifier());
     double motionX = randomHorizontalVelocity();
     double motionY = randomVerticalVelocity();
     double motionZ = randomHorizontalVelocity();
-    packet.getIntegers().writeSafely(1, (int) (motionX * VELOCITY_CONVERT_FACTOR));
-    packet.getIntegers().writeSafely(2, (int) (motionY * VELOCITY_CONVERT_FACTOR));
-    packet.getIntegers().writeSafely(3, (int) (motionZ * VELOCITY_CONVERT_FACTOR));
-    send(packet);
+    send(new WrapperPlayServerEntityVelocity(this.fakePlayer.identifier(), new Vector3d(motionX, motionY, motionZ)));
   }
 
   private void sendHealthUpdate(float health) {

@@ -1,23 +1,24 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientEntityAction;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerBlockPlacement;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.converter.PlayerAction;
-import de.jpx3.intave.packet.reader.BlockInteractionReader;
-import de.jpx3.intave.packet.reader.PacketReaders;
-import de.jpx3.intave.packet.reader.PlayerActionReader;
+import de.jpx3.intave.protocol.PlayerAction;
+import de.jpx3.intave.protocol.PlayerActionResolver;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.Rotation;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
+import de.jpx3.intave.util.PacketEventsConversions;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -38,16 +39,14 @@ public class SmartSpeed extends MetaCheckPart<PlacementAnalysis, SmartSpeed.Smar
       BLOCK_PLACE, USE_ITEM
     }
   )
-  public void receivePlacementPacket(PacketEvent event) {
+  public void receivePlacementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     SmartSpeedMeta meta = metaOf(user);
-    PacketContainer packet = event.getPacket();
 
-    BlockInteractionReader reader = PacketReaders.readerOf(packet);
-    try {
-      if (event.getPacketType() == PacketType.Play.Client.BLOCK_PLACE) {
-        int facing = reader.enumDirection();
+    if (event.getPacketType() == PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT) {
+      WrapperPlayClientPlayerBlockPlacement packet = new WrapperPlayClientPlayerBlockPlacement((PacketReceiveEvent) event);
+      int facing = packet.getFaceId();
         if (facing == 255) {
           meta.ticksSinceHardFaultClick = 0;
         } else {
@@ -68,8 +67,11 @@ public class SmartSpeed extends MetaCheckPart<PlacementAnalysis, SmartSpeed.Smar
           if (placementHistory.size() > 100) {
             placementHistory.remove(0);
           }
-          BlockPosition blockPosition = reader.nativeBlockPosition();
-          Direction direction = reader.direction();
+          BlockPosition blockPosition = PacketEventsConversions.toBlockPosition(packet.getBlockPosition());
+          Direction direction = PacketEventsConversions.toDirection(packet.getFace());
+          if (blockPosition == null) {
+            return;
+          }
 
           double diff = blockPosition.getBlockY() - user.meta().movement().positionY;
           boolean under = diff < 0 && diff > -2.5;
@@ -131,9 +133,6 @@ public class SmartSpeed extends MetaCheckPart<PlacementAnalysis, SmartSpeed.Smar
           meta.lastPlacementTick = meta.tickCount;
           meta.placedInThisTick = true;
         }
-      }
-    } finally {
-      reader.release();
     }
   }
 
@@ -143,7 +142,7 @@ public class SmartSpeed extends MetaCheckPart<PlacementAnalysis, SmartSpeed.Smar
       FLYING, POSITION_LOOK, LOOK, POSITION
     }
   )
-  public void on(PacketEvent event) {
+  public void on(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();
@@ -238,12 +237,11 @@ public class SmartSpeed extends MetaCheckPart<PlacementAnalysis, SmartSpeed.Smar
       ENTITY_ACTION_IN
     }
   )
-  public void receiveEntityActionPacket(PacketEvent event) {
+  public void receiveEntityActionPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     SmartSpeedMeta meta = metaOf(player);
-    PacketContainer packet = event.getPacket();
-    PlayerActionReader reader = PacketReaders.readerOf(packet);
-    PlayerAction action = reader.playerAction();
+    WrapperPlayClientEntityAction packet = new WrapperPlayClientEntityAction((PacketReceiveEvent) event);
+    PlayerAction action = PlayerActionResolver.resolveActionFromPacket(packet);
     if (action.isStartSneak()) {
       meta.startSneakInThisTick = true;
       meta.sneakChangedInThisTick = true;
@@ -254,7 +252,6 @@ public class SmartSpeed extends MetaCheckPart<PlacementAnalysis, SmartSpeed.Smar
       meta.lastSneakDuration = meta.sneakDuration;
       meta.sneakDuration = 0;
     }
-    reader.release();
   }
 
   public static class SmartSpeedMeta extends CheckCustomMetadata {

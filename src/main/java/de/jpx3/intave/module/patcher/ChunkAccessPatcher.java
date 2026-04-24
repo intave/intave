@@ -1,6 +1,6 @@
 package de.jpx3.intave.module.patcher;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.google.common.collect.Sets;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
@@ -15,7 +15,6 @@ import de.jpx3.intave.world.chunk.ChunkProviderServerAccess;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
-import org.bukkit.WorldType;
 import org.bukkit.event.world.WorldInitEvent;
 
 import java.lang.reflect.Field;
@@ -45,19 +44,9 @@ public final class ChunkAccessPatcher extends Module {
   @PacketSubscription(
     packetsOut = PacketId.Server.RESPAWN
   )
-  public void patchRespawnWorldType(PacketEvent event) {
-//    Bukkit.createWorld()
-    if (!MinecraftVersions.VER1_16_0.atOrAbove()) {
-      WorldType worldType = event.getPacket().getWorldTypeModifier().readSafely(0);
-      if (worldType == null) {
-        event.getPacket().getWorldTypeModifier().writeSafely(0, WorldType.NORMAL);
-//        System.out.println("Patched world type to normal");
-        System.err.println("Intave: Sent world type is null!!");
-        Thread.dumpStack();
-        return;
-      }
-//      System.out.println("Worldtype: "+worldType);
-    }
+  public void patchRespawnWorldType(ProtocolPacketEvent event) {
+    // PacketEvents' respawn wrapper already serializes the legacy level type
+    // with a default value when the server omits it.
   }
 
   private static boolean failedDSIFirstPatch = false;

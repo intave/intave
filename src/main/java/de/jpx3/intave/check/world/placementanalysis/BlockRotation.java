@@ -1,8 +1,9 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.BlockPosition;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerBlockPlacement;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.block.access.BlockInteractionAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
@@ -13,12 +14,12 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
-import de.jpx3.intave.packet.reader.BlockInteractionReader;
-import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
+import de.jpx3.intave.util.PacketEventsConversions;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -45,25 +46,25 @@ public final class BlockRotation extends MetaCheckPart<PlacementAnalysis, BlockR
       BLOCK_PLACE, USE_ITEM
     }
   )
-  public void receivePlacementPacket(PacketEvent event) {
+  public void receivePlacementPacket(ProtocolPacketEvent event) {
+    if (event.getPacketType() != PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT) {
+      return;
+    }
     Player player = event.getPlayer();
     User user = userOf(player);
-    PacketContainer packet = event.getPacket();
+    WrapperPlayClientPlayerBlockPlacement packet = new WrapperPlayClientPlayerBlockPlacement((PacketReceiveEvent) event);
     MovementMetadata movement = user.meta().movement();
     AbilityMetadata abilities = user.meta().abilities();
 
     BlockRotationMeta meta = metaOf(user);
-    BlockInteractionReader reader = PacketReaders.readerOf(packet);
-    BlockPosition blockPosition = reader.blockPosition();
+    BlockPosition blockPosition = PacketEventsConversions.toBlockPosition(packet.getBlockPosition());
 
     if (blockPosition == null || event.isCancelled() || movement.isInVehicle()) {
-      reader.release();
       return;
     }
 
-    int enumDirection = reader.enumDirection();
+    int enumDirection = packet.getFaceId();
     if (enumDirection == 255) {
-      reader.release();
       return;
     }
 
@@ -73,7 +74,6 @@ public final class BlockRotation extends MetaCheckPart<PlacementAnalysis, BlockR
     boolean interactionIsPlacement = heldItemType != Material.AIR && heldItemType.isBlock() && !clickableInteraction && !abilities.inGameMode(GameMode.ADVENTURE);
 
     if (!interactionIsPlacement || enumDirection < 2) {
-      reader.release();
       return;
     }
 
@@ -94,7 +94,7 @@ public final class BlockRotation extends MetaCheckPart<PlacementAnalysis, BlockR
         Violation violation = Violation.builderFor(PlacementAnalysis.class)
           .forPlayer(player).withMessage(COMMON_FLAG_MESSAGE).withDetails(details)
           .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
-          .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "cloud-thresholds.on-premise")
+          .withCustomThreshold(PlacementAnalysis.legacyConfigurationLayout() ? "thresholds" : "analysis-thresholds.on-premise")
           .withVL(10).build();
         Modules.violationProcessor().processViolation(violation);
       }
@@ -102,7 +102,6 @@ public final class BlockRotation extends MetaCheckPart<PlacementAnalysis, BlockR
       meta.vl *= 0.98;
       meta.vl -= 0.002;
     }
-    reader.release();
   }
 
   public static class BlockRotationMeta extends CheckCustomMetadata {

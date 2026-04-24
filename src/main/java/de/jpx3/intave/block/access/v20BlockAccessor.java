@@ -1,6 +1,6 @@
 package de.jpx3.intave.block.access;
 
-import com.comphenix.protocol.wrappers.BlockPosition;
+import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.klass.Lookup;

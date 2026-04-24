@@ -1,18 +1,21 @@
 package de.jpx3.intave.module.actionbar;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerActionBar;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSystemChatMessage;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.executor.TaskTracker;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -20,8 +23,6 @@ import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.comphenix.protocol.PacketType.Play.Server.CHAT;
-import static com.comphenix.protocol.PacketType.Play.Server.SET_ACTION_BAR_TEXT;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.CHAT_OUT;
 
 public final class ActionBarDisplayer extends Module {
@@ -42,13 +43,20 @@ public final class ActionBarDisplayer extends Module {
     }
 //    engine = Engine.ASYNC_INTERNAL
   )
-  public void clientClickUpdate(PacketEvent event) {
+  public void clientClickUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    PacketContainer packet = event.getPacket();
-    Byte read = packet.getBytes().readSafely(0);
-    EnumWrappers.ChatType type = packet.getChatTypes().read(0);
-    if (((read != null && read.intValue() == 2) || (type == EnumWrappers.ChatType.GAME_INFO)) && inSubscription(user)) {
+    if (!inSubscription(user)) {
+      return;
+    }
+
+    PacketTypeCommon packetType = event.getPacketType();
+    boolean actionBar = packetType == PacketType.Play.Server.ACTION_BAR;
+    if (packetType == PacketType.Play.Server.SYSTEM_CHAT_MESSAGE) {
+      WrapperPlayServerSystemChatMessage packet = new WrapperPlayServerSystemChatMessage((PacketSendEvent) event);
+      actionBar = packet.isOverlay();
+    }
+    if (actionBar) {
       event.setCancelled(true);
     }
   }
@@ -113,18 +121,12 @@ public final class ActionBarDisplayer extends Module {
   private static final boolean DEDICATED_ACTION_BAR_PACKET = MinecraftVersions.VER1_17_0.atOrAbove();
 
   private void sendActionBar(Player player, String message) {
-    PacketContainer packet = new PacketContainer(DEDICATED_ACTION_BAR_PACKET ? SET_ACTION_BAR_TEXT : CHAT);
-    packet.getChatComponents().write(0, WrappedChatComponent.fromText(message));
-
-    if (!DEDICATED_ACTION_BAR_PACKET) {
-      if (TYPE_AS_GAME_INFO) {
-        packet.getChatTypes().write(0, EnumWrappers.ChatType.GAME_INFO);
-      } else {
-        packet.getBytes().write(0, (byte) 2);
-      }
+    Component component = Component.text(message);
+    if (DEDICATED_ACTION_BAR_PACKET) {
+      PacketEvents.getAPI().getPlayerManager().sendPacketSilently(player, new WrapperPlayServerActionBar(component));
+    } else {
+      PacketEvents.getAPI().getPlayerManager().sendPacketSilently(player, new WrapperPlayServerSystemChatMessage(true, component));
     }
-
-    PacketSender.sendServerPacketWithoutEvent(player, packet);
 //    Synchronizer.synchronize(() -> {
 //      player.sendMessage(message);
 //    });

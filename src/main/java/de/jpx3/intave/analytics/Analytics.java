@@ -1,6 +1,5 @@
 package de.jpx3.intave.analytics;
 
-import com.comphenix.protocol.ProtocolLibrary;
 import com.google.common.collect.Maps;
 import com.google.gson.JsonObject;
 import de.jpx3.intave.IntavePlugin;
@@ -9,8 +8,12 @@ import de.jpx3.intave.cleanup.ShutdownTasks;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.plugin.Plugin;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Map;
 
 public final class Analytics {
@@ -60,13 +63,13 @@ public final class Analytics {
     json.add("server", serverJson);
 
     JsonObject addonsJson = new JsonObject();
-      JsonObject protocolLibJson = new JsonObject();
-      protocolLibJson.addProperty("present", "true");
-      protocolLibJson.addProperty("version", ProtocolLibrary.getPlugin().getDescription().getVersion());
-      protocolLibJson.addProperty("protocol-manager", ProtocolLibrary.getProtocolManager().getClass().getName());
-      protocolLibJson.addProperty("async-manager", ProtocolLibrary.getProtocolManager().getAsynchronousManager().getClass().toString());
-      protocolLibJson.addProperty("listeners", ProtocolLibrary.getProtocolManager().getPacketListeners().toString());
-    addonsJson.add("protocollib", protocolLibJson);
+      JsonObject packetEventsJson = new JsonObject();
+      Plugin packetEvents = Bukkit.getPluginManager().getPlugin("packetevents");
+      packetEventsJson.addProperty("present", packetEvents != null);
+      if (packetEvents != null) {
+        packetEventsJson.addProperty("version", packetEvents.getDescription().getVersion());
+      }
+    addonsJson.add("packetevents", packetEventsJson);
       JsonObject viaVersionJson = new JsonObject();
       viaVersionJson.addProperty("present", ViaVersionAdapter.foundLinkage() + "");
       if (ViaVersionAdapter.foundLinkage()) {
@@ -90,9 +93,11 @@ public final class Analytics {
 
     try {
       long hour = System.currentTimeMillis() / 1000 / 60 / 60 % 24;
-      plugin.uploader().scheduledUpload("analytics-" + hour, json.toString());
+      File analyticsFolder = new File(plugin.dataFolder(), "analytics");
+      analyticsFolder.mkdirs();
+      Files.write(new File(analyticsFolder, "analytics-" + hour + ".json").toPath(), json.toString().getBytes(StandardCharsets.UTF_8));
     } catch (IOException exception) {
-      System.out.println("[Intave] Unable to upload analytics data");
+      System.out.println("[Intave] Unable to write analytics data");
       exception.printStackTrace();
     }
   }

@@ -1,6 +1,6 @@
 package de.jpx3.intave.block.access;
 
-import com.comphenix.protocol.wrappers.BlockPosition;
+import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.adapter.MinecraftVersions;

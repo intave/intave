@@ -1,8 +1,8 @@
 package de.jpx3.intave.check.combat.heuristics.detect.combatpatterns;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientHeldItemChange;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -38,7 +38,7 @@ public final class PreAttackHeuristic extends MetaCheckPart<Heuristics, PreAttac
       ARM_ANIMATION
     }
   )
-  public void receiveSwing(PacketEvent event) {
+  public void receiveSwing(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     metaOf(user).didSwing = true;
@@ -50,14 +50,9 @@ public final class PreAttackHeuristic extends MetaCheckPart<Heuristics, PreAttac
       USE_ENTITY
     }
   )
-  public void receiveAttack(PacketEvent event) {
+  public void receiveAttack(ProtocolPacketEvent event, WrapperPlayClientInteractEntity packet) {
     Player player = event.getPlayer();
-    PacketContainer packet = event.getPacket();
-    EnumWrappers.EntityUseAction action = packet.getEntityUseActions().readSafely(0);
-    if (action == null) {
-      action = packet.getEnumEntityUseActions().read(0).getAction();
-    }
-    if (action == EnumWrappers.EntityUseAction.ATTACK) {
+    if (packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
       metaOf(player).didAttack = true;
     }
   }
@@ -68,11 +63,10 @@ public final class PreAttackHeuristic extends MetaCheckPart<Heuristics, PreAttac
       HELD_ITEM_SLOT_IN
     }
   )
-  public void receiveSlotSwitch(PacketEvent event) {
+  public void receiveSlotSwitch(ProtocolPacketEvent event, WrapperPlayClientHeldItemChange packet) {
     Player player = event.getPlayer();
     PreAttackMeta meta = metaOf(player);
-    PacketContainer packet = event.getPacket();
-    Integer slot = packet.getIntegers().read(0);
+    int slot = packet.getSlot();
 
     ItemStack item = player.getInventory().getItem(slot);
     if (item == null) {
@@ -87,7 +81,7 @@ public final class PreAttackHeuristic extends MetaCheckPart<Heuristics, PreAttac
       FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
     }
   )
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     ProtocolMetadata clientData = user.meta().protocol();

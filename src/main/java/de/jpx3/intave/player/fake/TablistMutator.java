@@ -1,64 +1,99 @@
 package de.jpx3.intave.player.fake;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.PlayerInfoData;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import com.comphenix.protocol.wrappers.WrappedGameProfile;
-import de.jpx3.intave.packet.PacketSender;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.protocol.player.GameMode;
+import com.github.retrooper.packetevents.protocol.player.UserProfile;
+import com.github.retrooper.packetevents.wrapper.PacketWrapper;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerInfo;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerInfoRemove;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerInfoUpdate;
+import de.jpx3.intave.adapter.MinecraftVersions;
+import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 
-import java.util.List;
+import java.util.EnumSet;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class TablistMutator {
-  private static final ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
-
   public static void addToTabList(
     Player player,
-    WrappedGameProfile wrappedGameProfile,
+    UserProfile profile,
     String tabListName
   ) {
-    WrappedChatComponent wrappedChatComponent = WrappedChatComponent.fromText(tabListName);
-    addToTabList(player, wrappedGameProfile, wrappedChatComponent);
-  }
-
-  private static void addToTabList(
-    Player player,
-    WrappedGameProfile profile,
-    WrappedChatComponent wrappedChatComponent
-  ) {
-    PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.PLAYER_INFO);
-    PlayerInfoData playerInfoData = new PlayerInfoData(
-      profile, ThreadLocalRandom.current().nextInt(20, 200),
-      EnumWrappers.NativeGameMode.SURVIVAL,
-      wrappedChatComponent
-    );
-    List<PlayerInfoData> playerInformationList = packet.getPlayerInfoDataLists().readSafely(0);
-    playerInformationList.add(playerInfoData);
-    packet.getPlayerInfoAction().writeSafely(0, EnumWrappers.PlayerInfoAction.ADD_PLAYER);
-    packet.getPlayerInfoDataLists().writeSafely(0, playerInformationList);
-    PacketSender.sendServerPacket(player, packet);
+    int latency = ThreadLocalRandom.current().nextInt(20, 200);
+    Component displayName = Component.text(tabListName);
+    if (modernPlayerInfo()) {
+      send(player, new WrapperPlayServerPlayerInfoUpdate(
+        EnumSet.of(
+          WrapperPlayServerPlayerInfoUpdate.Action.ADD_PLAYER,
+          WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_LISTED,
+          WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_LATENCY,
+          WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_GAME_MODE,
+          WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_DISPLAY_NAME
+        ),
+        new WrapperPlayServerPlayerInfoUpdate.PlayerInfo(
+          profile,
+          true,
+          latency,
+          GameMode.SURVIVAL,
+          displayName,
+          null
+        )
+      ));
+    } else {
+      send(player, new WrapperPlayServerPlayerInfo(
+        WrapperPlayServerPlayerInfo.Action.ADD_PLAYER,
+        new WrapperPlayServerPlayerInfo.PlayerData(displayName, profile, GameMode.SURVIVAL, latency)
+      ));
+    }
   }
 
   public static void removeFromTabList(
     Player player,
-    WrappedGameProfile profile
+    UserProfile profile
   ) {
-    PacketContainer packet = protocolManager.createPacket(PacketType.Play.Server.PLAYER_INFO);
-    WrappedChatComponent wrappedChatComponent = WrappedChatComponent.fromText(profile.getName());
-    PlayerInfoData playerInfoData = new PlayerInfoData(
-      profile, ThreadLocalRandom.current().nextInt(20, 200),
-      EnumWrappers.NativeGameMode.SURVIVAL,
-      wrappedChatComponent
-    );
-    List<PlayerInfoData> playerInformationList = packet.getPlayerInfoDataLists().readSafely(0);
-    playerInformationList.add(playerInfoData);
-    packet.getPlayerInfoAction().writeSafely(0, EnumWrappers.PlayerInfoAction.REMOVE_PLAYER);
-    packet.getPlayerInfoDataLists().writeSafely(0, playerInformationList);
-    PacketSender.sendServerPacket(player, packet);
+    if (modernPlayerInfo()) {
+      send(player, new WrapperPlayServerPlayerInfoRemove(profile.getUUID()));
+    } else {
+      send(player, new WrapperPlayServerPlayerInfo(
+        WrapperPlayServerPlayerInfo.Action.REMOVE_PLAYER,
+        new WrapperPlayServerPlayerInfo.PlayerData(null, profile, GameMode.SURVIVAL, 0)
+      ));
+    }
+  }
+
+  public static void updateLatency(
+    Player player,
+    UserProfile profile,
+    int latency,
+    String displayName
+  ) {
+    Component component = Component.text(displayName);
+    if (modernPlayerInfo()) {
+      send(player, new WrapperPlayServerPlayerInfoUpdate(
+        WrapperPlayServerPlayerInfoUpdate.Action.UPDATE_LATENCY,
+        new WrapperPlayServerPlayerInfoUpdate.PlayerInfo(
+          profile,
+          true,
+          latency,
+          GameMode.SURVIVAL,
+          component,
+          null
+        )
+      ));
+    } else {
+      send(player, new WrapperPlayServerPlayerInfo(
+        WrapperPlayServerPlayerInfo.Action.UPDATE_LATENCY,
+        new WrapperPlayServerPlayerInfo.PlayerData(component, profile, GameMode.SURVIVAL, latency)
+      ));
+    }
+  }
+
+  private static boolean modernPlayerInfo() {
+    return MinecraftVersions.VER1_19_3.atOrAbove();
+  }
+
+  private static void send(Player player, PacketWrapper<?> packet) {
+    PacketEvents.getAPI().getPlayerManager().sendPacket(player, packet);
   }
 }

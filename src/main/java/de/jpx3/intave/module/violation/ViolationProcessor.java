@@ -1,13 +1,11 @@
 package de.jpx3.intave.module.violation;
 
 import de.jpx3.intave.IntaveLogger;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.check.event.IntaveCommandExecutionEvent;
 import de.jpx3.intave.access.check.event.IntaveViolationEvent;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckStatistics;
-import de.jpx3.intave.connect.cloud.LogTransmittor;
 import de.jpx3.intave.connect.proxy.protocol.packets.IntavePacketOutKicked;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.MathHelper;
@@ -223,8 +221,6 @@ public final class ViolationProcessor extends Module {
       LOGGER_MESSAGE_LAYOUT, player.getName(), trustFactor,
       message, details, vlAdded, vlAfterViolation, checkName
     );
-    LogTransmittor logTransmittor = IntavePlugin.singletonInstance().logTransmittor();
-    logTransmittor.addPlayerLog(player, "(DET) " + consoleMessage);
     consoleMessage += " | TPS: " + ServerHealth.stringFormattedTick() + " Ping: " + user.latency() + "ms";
     plugin.logger().violation(consoleMessage);
   }
@@ -329,23 +325,15 @@ public final class ViolationProcessor extends Module {
         ));
       }
 
-      LogTransmittor logTransmittor = IntavePlugin.singletonInstance().logTransmittor();
-      logTransmittor.addPlayerLog(player, "(EXE) " + command);
-
-      if (command.contains("{log-id}")) {
-        logTransmittor.awaitLogIdOf(player, logId -> {
-          String commandWithLogId = command.replace("{log-id}", logId);
-          Synchronizer.synchronize(() -> {
-            plugin.logger().commandExecution(commandWithLogId);
-            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), commandWithLogId);
-          });
-        });
-      } else {
-
-        plugin.logger().commandExecution(command);
-        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
-      }
+      String dispatchedCommand = command.contains("{log-id}") ? command.replace("{log-id}", localLogId(player)) : command;
+      plugin.logger().commandExecution(dispatchedCommand);
+      Bukkit.dispatchCommand(Bukkit.getConsoleSender(), dispatchedCommand);
     });
+  }
+
+  private static String localLogId(Player player) {
+    UUID uuid = player == null ? new UUID(0L, 0L) : player.getUniqueId();
+    return "local-" + uuid;
   }
 
   private static final MessageChannel NOTIFY_MESSAGE_CHANNEL = MessageChannel.NOTIFY;

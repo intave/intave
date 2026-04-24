@@ -1,13 +1,14 @@
 package de.jpx3.intave.connect.sibyl;
 
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPluginMessage;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.PayloadInReader;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import org.bukkit.entity.Player;
 
 import java.util.function.BiConsumer;
@@ -33,12 +34,12 @@ public final class LabymodClientListener implements PacketEventSubscriber {
       CUSTOM_PAYLOAD_IN
     }
   )
-  public void receivePayloadPacket(Player player, PayloadInReader reader) {
-    String tag = reader.tag();
+  public void receivePayloadPacket(Player player, WrapperPlayClientPluginMessage packet) {
+    String tag = packet.getChannelName();
     if (!tag.equalsIgnoreCase("LMC") && !tag.equalsIgnoreCase("labymod3:main")) {
       return;
     }
-    ByteBuf bytes = reader.readBytes();
+    ByteBuf bytes = Unpooled.wrappedBuffer(packet.getData());
     try {
       bytes.markReaderIndex();
       String messageKey = LabyModChannelHelper.readString(bytes, Short.MAX_VALUE);

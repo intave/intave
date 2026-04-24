@@ -68,7 +68,7 @@ public final class PlacementAnalysis extends Check {
       return legacyConfigLayCache;
     }
     YamlConfiguration settings = IntavePlugin.singletonInstance().settings();
-    ConfigurationSection section = settings.getConfigurationSection("check.placementanalysis.cloud-thresholds.on-premise");
+    ConfigurationSection section = settings.getConfigurationSection("check.placementanalysis.analysis-thresholds.on-premise");
     if (section != null) {
 //      IntaveLogger.logger().info("Using new placementanalysis format");
       return legacyConfigLayCache = false;

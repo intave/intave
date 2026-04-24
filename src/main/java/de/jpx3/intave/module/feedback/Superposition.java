@@ -1,6 +1,6 @@
 package de.jpx3.intave.module.feedback;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.user.User;
 import org.jetbrains.annotations.Nullable;
 
@@ -188,13 +188,13 @@ public final class Superposition<T> {
   }
 
   public void stateSynchronize(
-    PacketEvent event, T newState
+    ProtocolPacketEvent event, T newState
   ) {
     stateSynchronize(event, newState, x -> {}, x -> {});
   }
 
   public void stateSynchronize(
-    PacketEvent event, T newState,
+    ProtocolPacketEvent event, T newState,
     Consumer<? super T> begin, Consumer<? super T> end
   ) {
     user.doubleTickFeedback(

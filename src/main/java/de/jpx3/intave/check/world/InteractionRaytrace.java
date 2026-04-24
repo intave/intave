@@ -1,13 +1,21 @@
 package de.jpx3.intave.check.world;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.MovingObjectPositionBlock;
-import com.comphenix.protocol.wrappers.WrappedBlockData;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.protocol.player.DiggingAction;
+import com.github.retrooper.packetevents.protocol.player.InteractionHand;
+import com.github.retrooper.packetevents.protocol.world.BlockFace;
+import com.github.retrooper.packetevents.wrapper.PacketWrapper;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerBlockPlacement;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerDigging;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientUseItem;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerAcknowledgeBlockChanges;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerBlockBreakAnimation;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerBlockChange;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.trust.TrustFactor;
@@ -21,7 +29,6 @@ import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.variant.BlockVariant;
-import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.MetaCheck;
@@ -29,7 +36,6 @@ import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.world.interaction.*;
 import de.jpx3.intave.executor.RateLimiter;
 import de.jpx3.intave.executor.Synchronizer;
-import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
@@ -37,17 +43,13 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
-import de.jpx3.intave.packet.PacketSender;
-import de.jpx3.intave.packet.converter.BlockPositionConverter;
-import de.jpx3.intave.packet.reader.BlockInteractionReader;
-import de.jpx3.intave.packet.reader.EntityReader;
-import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.*;
+import de.jpx3.intave.util.PacketEventsConversions;
 import de.jpx3.intave.world.raytrace.Raytracing;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -64,11 +66,11 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
-import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.*;
 import static de.jpx3.intave.check.world.interaction.InteractionType.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.BLOCK_BREAK_ANIMATION;
 import static de.jpx3.intave.module.tracker.player.AbilityTracker.GameMode.CREATIVE;
+import static com.github.retrooper.packetevents.protocol.player.DiggingAction.*;
 
 public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.InteractionMeta> {
   private final IntavePlugin plugin;
@@ -88,7 +90,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       BLOCK_PLACE, USE_ITEM, USE_ITEM_ON
     }
   )
-  public void receiveInteractionAndPlace(PacketEvent event) {
+  public void receiveInteractionAndPlace(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     InteractionMeta interactionMeta = metaOf(user);
@@ -96,17 +98,22 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     MovementMetadata movementData = meta.movement();
     AbilityMetadata abilityMetadata = meta.abilities();
     InventoryMetadata inventory = meta.inventory();
-    PacketContainer packet = event.getPacket();
-    BlockInteractionReader reader = PacketReaders.readerOf(packet);
+    if (event.getPacketType() == PacketType.Play.Client.USE_ITEM) {
+      inventory.lastBlockSequenceNumber = sequenceNumber(user, new WrapperPlayClientUseItem((PacketReceiveEvent) event));
+      return;
+    }
+    if (event.getPacketType() != PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT) {
+      return;
+    }
+    WrapperPlayClientPlayerBlockPlacement packet = new WrapperPlayClientPlayerBlockPlacement((PacketReceiveEvent) event);
+    int sequenceNumber = sequenceNumber(user, packet);
+    inventory.lastBlockSequenceNumber = sequenceNumber;
 
-    inventory.lastBlockSequenceNumber = reader.sequenceNumber(user);
-
-    try {
-      com.comphenix.protocol.wrappers.BlockPosition blockPosition = reader.blockPosition();
+    BlockPosition blockPosition = PacketEventsConversions.toBlockPosition(packet.getBlockPosition());
       if (blockPosition == null || event.isCancelled() || movementData.isInVehicle()) {
         return;
       }
-      int enumDirection = reader.enumDirection();
+      int enumDirection = packet.getFaceId();
       if (enumDirection == 255) {
         // INTERACT IS EMPTY
       }
@@ -114,15 +121,13 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       float facingX = -1;
       float facingY = -1;
       float facingZ = -1;
-      StructureModifier<Float> floatsInPacket = packet.getFloat();
-      if (floatsInPacket.size() >= 3 && meta.protocol().sendsFacings()) {
-        facingX = floatsInPacket.read(0);
-        facingY = floatsInPacket.read(1);
-        facingZ = floatsInPacket.read(2);
+      if (packet.getCursorPosition() != null && meta.protocol().sendsFacings()) {
+        facingX = packet.getCursorPosition().x;
+        facingY = packet.getCursorPosition().y;
+        facingZ = packet.getCursorPosition().z;
 
         if (Float.isNaN(facingX) || Float.isNaN(facingY) || Float.isNaN(facingZ)) {
           if (MinecraftVersions.VER1_19.atOrAbove()) {
-            int sequenceNumber = packet.getIntegers().read(0);
             acknowledgeBlockChange(player, sequenceNumber);
           }
           event.setCancelled(true);
@@ -139,13 +144,13 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         return;
       }
 
-      EnumWrappers.Hand handSlot = packet.getHands().readSafely(0);
-      handSlot = handSlot == null ? EnumWrappers.Hand.MAIN_HAND : handSlot;
+      InteractionHand handSlot = packet.getHand();
+      handSlot = handSlot == null ? InteractionHand.MAIN_HAND : handSlot;
 
       ItemStack heldItem = inventory.heldItem();
       Material heldItemType = heldItem == null ? Material.AIR : heldItem.getType();
       Material offHandItemType = inventory.offhandItemType();
-      Material typeUsedInHand = handSlot == EnumWrappers.Hand.MAIN_HAND ? heldItemType : offHandItemType;
+      Material typeUsedInHand = handSlot == InteractionHand.MAIN_HAND ? heldItemType : offHandItemType;
       if (typeUsedInHand == null) {
         typeUsedInHand = Material.AIR;
       }
@@ -194,15 +199,15 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       Interaction interaction =
         new Interaction(
           interactionMeta.nextInteractionId++,
-          packet.shallowClone(),
+          copyBlockPlacementPacket(packet),
           world, player,
           blockPosition, enumDirection, type,
           typeUsedInHand,
-          handSlot == EnumWrappers.Hand.MAIN_HAND
+          handSlot == InteractionHand.MAIN_HAND
             ? heldItem
             : inventory.offhandItem(),
           handSlot, null, facingX, facingY, facingZ,
-          reader.sequenceNumber(user)
+          sequenceNumber
         );
 
       boolean placementIs113Speculative = type == PLACE && meta.protocol().waterUpdate();
@@ -222,7 +227,6 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
           InteractionEmulator.EmulationResult emulate = interactionEmulator.emulate(interaction);
           if (emulate.denyForward()) {
             if (MinecraftVersions.VER1_19.atOrAbove()) {
-              int sequenceNumber = packet.getIntegers().read(0);
               acknowledgeBlockChange(player, sequenceNumber);
             }
             if (blockPosition != null) {
@@ -253,7 +257,6 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
             && !ItemProperties.isPotion(interaction.itemTypeInHand());
           if (!usable || type == EMPTY_INTERACT) {
             if (MinecraftVersions.VER1_19.atOrAbove() && enumDirection != 255) {
-              int sequenceNumber = packet.getIntegers().read(0);
               acknowledgeBlockChange(player, sequenceNumber);
             }
             event.setCancelled(true);
@@ -289,9 +292,6 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
           });
         }
       }
-    } finally {
-      reader.release();
-    }
   }
 
   @PacketSubscription(
@@ -300,7 +300,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       BLOCK_DIG
     }
   )
-  public void receiveBreak(PacketEvent event) {
+  public void receiveBreak(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
 
@@ -313,11 +313,8 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
 
     receivedAnyTickContextPacket(user, false, "BLOCK_DIG");
 
-    PacketContainer packet = event.getPacket();
-
-    com.comphenix.protocol.wrappers.BlockPosition blockPosition = event.getPacket().getModifier()
-      .withType(Lookup.serverClass("BlockPosition"), BlockPositionConverter.threadConverter())
-      .read(0);
+    WrapperPlayClientPlayerDigging packet = new WrapperPlayClientPlayerDigging((PacketReceiveEvent) event);
+    BlockPosition blockPosition = PacketEventsConversions.toBlockPosition(packet.getBlockPosition());
 
     if (blockPosition == null || event.isCancelled()) {
       if (attack.inBreakProcess) {
@@ -327,8 +324,8 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       return;
     }
 
-    EnumWrappers.PlayerDigType playerDigType = packet.getPlayerDigTypes().readSafely(0);
-    boolean blockInteraction = playerDigType == START_DESTROY_BLOCK || playerDigType == STOP_DESTROY_BLOCK || playerDigType == ABORT_DESTROY_BLOCK;
+    DiggingAction playerDigType = packet.getAction();
+    boolean blockInteraction = playerDigType == START_DIGGING || playerDigType == FINISHED_DIGGING || playerDigType == CANCELLED_DIGGING;
     ItemStack heldItemStack = inventoryData.heldItem();
     Material heldItemType = inventoryData.heldItemType();
     if (blockInteraction && ItemProperties.isSwordItem(heldItemStack) && user.meta().abilities().inGameMode(GameMode.CREATIVE)) {
@@ -345,10 +342,10 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
 
     float blockDamage = BlockInteractionAccess.blockDamage(player, inventoryData.heldItem(), blockPosition);
     boolean instantBreak = blockDamage >= 1.0f || abilityData.inGameMode(CREATIVE);
-    boolean breakBlock = instantBreak || playerDigType == STOP_DESTROY_BLOCK;
+    boolean breakBlock = instantBreak || playerDigType == FINISHED_DIGGING;
 
-    EnumWrappers.Direction direction = packet.getDirections().readSafely(0);
-    int enumDirection = direction == null ? 0 : direction.ordinal();
+    BlockFace direction = packet.getBlockFace();
+    int enumDirection = direction == null ? 0 : packet.getBlockFaceId();
     boolean nullBlock = blockPosition.getX() == 0 && blockPosition.getY() == 0 && blockPosition.getZ() == 0;
 
     if (nullBlock && enumDirection == 0) {
@@ -357,7 +354,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
 
     if (protocol.isPreMinecraft8() &&
       nullBlock &&
-      direction == EnumWrappers.Direction.SOUTH &&
+      direction == BlockFace.SOUTH &&
       playerDigType == RELEASE_USE_ITEM
     ) {
       return;
@@ -370,9 +367,9 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
 
     Interaction interaction = new Interaction(
       interactionMeta.nextInteractionId++,
-      packet.shallowClone(), player.getWorld(), player,
+      copyDiggingPacket(packet), player.getWorld(), player,
       blockPosition, enumDirection, type,
-      heldItemType, heldItemStack, EnumWrappers.Hand.MAIN_HAND, playerDigType,
+      heldItemType, heldItemStack, InteractionHand.MAIN_HAND, playerDigType,
       Float.NaN, Float.NaN, Float.NaN, -1
     );
 
@@ -401,8 +398,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         interactionMeta.interactionList.add(interaction);
         event.setCancelled(true);
         if (MinecraftVersions.VER1_19.atOrAbove()) {
-          int sequenceNumber = packet.getIntegers().read(0);
-          acknowledgeBlockChange(player, sequenceNumber);
+          acknowledgeBlockChange(player, packet.getSequence());
         }
         if (type == START_BREAK) {
           interactionMeta.remainingBlockStart++;
@@ -420,16 +416,16 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         });
       }
     }
-    if (breakBlock || playerDigType == ABORT_DESTROY_BLOCK) {
+    if (breakBlock || playerDigType == CANCELLED_DIGGING) {
       interactionMeta.isBreakingBlock = attack.inBreakProcess = false;
       attack.lastBreak = System.currentTimeMillis();
-    } else if (playerDigType == START_DESTROY_BLOCK) {
+    } else if (playerDigType == START_DIGGING) {
       interactionMeta.isBreakingBlock = attack.inBreakProcess = true;
     }
   }
 
   @DispatchTarget
-  public boolean receiveMovement(PacketEvent event) {
+  public boolean receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     World world = player.getWorld();
     User user = userOf(player);
@@ -468,10 +464,10 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       LOOK,
     }
   )
-  public void receiveAnyTickContextPacket(PacketEvent event) {
+  public void receiveAnyTickContextPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
-    receivedAnyTickContextPacket(user, event.getPacket().getType() == PacketType.Play.Client.ARM_ANIMATION, event.getPacketType().name());
+    receivedAnyTickContextPacket(user, event.getPacketType() == PacketType.Play.Client.ANIMATION, event.getPacketType().getName());
   }
 
   private void receivedAnyTickContextPacket(
@@ -506,7 +502,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     MovementMetadata movementData = user.meta().movement();
     InteractionMeta interactionMeta = metaOf(user);
 
-    if (interaction.type() == START_BREAK && interaction.digType() == ABORT_DESTROY_BLOCK) {
+    if (interaction.type() == START_BREAK && interaction.digType() == CANCELLED_DIGGING) {
       // the block will be invalid regardless
       return PreprocessResult.OK;
     }
@@ -589,7 +585,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       if (IntaveControl.DEBUG_INTERACTION) {
         if (raytraceFailed) {
           // check if target block appears in any raytrace
-          boolean targetBlockAppears = evaluations.stream().anyMatch(e -> e.raycastResult() != null && e.raycastResult().getBlockPos().distanceTo(interaction.targetBlock().toVector()) < 0.1);
+          boolean targetBlockAppears = evaluations.stream().anyMatch(e -> e.raycastResult() != null && e.raycastResult().getBlockPos().distanceTo(interaction.targetBlock().convertToBukkitVec()) < 0.1);
           boolean reverseRaytrace = reverseRaytrace(user, new Position(movementData.positionX, movementData.positionY + Raytracing.resolvePlayerEyeHeight(player), movementData.positionZ), interaction);
           boolean incorrectButNotBadBlockFace = placementWasBehindTargetedBlock(user, interaction.targetBlockAsPosition(), interaction.targetDirection().getIndex());
           boolean recentlyFlagged = System.currentTimeMillis() - metaOf(user).lastInteractionFlag < 10_000;
@@ -690,7 +686,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       && !ItemProperties.isPotion(interaction.itemTypeInHand());
     Location targetLocation = interaction.targetBlock().toLocation(world);
 
-    if (interaction.digType() == STOP_DESTROY_BLOCK || interaction.digType() == ABORT_DESTROY_BLOCK) {
+    if (interaction.digType() == FINISHED_DIGGING || interaction.digType() == CANCELLED_DIGGING) {
       interactionMeta.remainingBlockStart--;
     }
     if (!interaction.hasTargetBlock()) {
@@ -814,7 +810,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       MovingObjectPosition movingObjectPosition = bestRaytrace.raycastResult();
       Location location = estimateMouseDelayFix ? playerLocationmdf : playerLocation;
       boolean atLeastLookingAtBlock = movingObjectPosition != null && atLeastLookingAtBlock(user, location, targetLocation, movingObjectPosition);
-      boolean doNotFlagType = interaction.digType() == ABORT_DESTROY_BLOCK || interaction.type() == EMPTY_INTERACT;
+      boolean doNotFlagType = interaction.digType() == CANCELLED_DIGGING || interaction.type() == EMPTY_INTERACT;
       flag = enabled() && !doNotFlagType && performFlag(
         interaction, movingObjectPosition, targetLocation, bestRaytrace, atLeastLookingAtBlock, index
       );
@@ -895,7 +891,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       flag = true;
     }
     boolean refreshBlocks = interaction.type() != InteractionType.INTERACT;
-    boolean canBeReceivedAsIsWithoutProblems = interaction.digType() == ABORT_DESTROY_BLOCK;
+    boolean canBeReceivedAsIsWithoutProblems = interaction.digType() == CANCELLED_DIGGING;
 
     if (response == ResponseType.RAYTRACE_CAST) {
       if (hitMiss || raycastResult == null) {
@@ -904,17 +900,17 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
           blockStateAccess.invalidateOverride(targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
         }
         if (canBeReceivedAsIsWithoutProblems) {
-          receiveExcludedPacket(player, interaction.thePacket());
+          receiveExcludedPacket(player, interaction.packet());
         }
       } else {
-        PacketContainer packet = interaction.thePacket();
+        PacketWrapper<?> packet = interaction.packet();
         if (flag && !canBeReceivedAsIsWithoutProblems) {
           // check if player collides with placement location
           {
             World world = player.getWorld();
             Material material = user.meta().inventory().heldItemType();
             int dat = 0;
-            boolean replace = BlockInteractionAccess.replacedOnPlacement(world, player, new com.comphenix.protocol.wrappers.BlockPosition(raycastLocation.toVector()));
+            boolean replace = BlockInteractionAccess.replacedOnPlacement(world, player, new BlockPosition(raycastLocation));
             Location placementLocation = replace ? raycastLocation : raycastLocation.clone().add(raycastResult.sideHit.directionVector().convertToBukkitVec());
             boolean raytraceCollidesWithPosition = material.isBlock() && Collision.playerInImaginaryBlock(
               user, world, placementLocation.getBlockX(), placementLocation.getBlockY(), placementLocation.getBlockZ(),
@@ -927,8 +923,8 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
             }
           }
           writeEnumDirection(packet, raycastResult.sideHit);
-          com.comphenix.protocol.wrappers.BlockPosition bp =
-            new com.comphenix.protocol.wrappers.BlockPosition(
+          BlockPosition bp =
+            new BlockPosition(
               raycastLocation.getBlockX(),
               raycastLocation.getBlockY(),
               raycastLocation.getBlockZ()
@@ -946,7 +942,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
           refreshBlocksAround(player, targetLocation);
         }
       } else {
-        receiveExcludedPacket(player, interaction.thePacket());
+        receiveExcludedPacket(player, interaction.packet());
       }
     }
   }
@@ -975,9 +971,21 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     if (!MinecraftVersions.VER1_19.atOrAbove()) {
       return;
     }
-    PacketContainer ack = new PacketContainer(PacketType.Play.Server.BLOCK_CHANGED_ACK);
-    ack.getIntegers().write(0, sequenceNumber);
-    PacketSender.sendServerPacket(player, ack);
+    PacketEvents.getAPI().getPlayerManager().sendPacket(player, new WrapperPlayServerAcknowledgeBlockChanges(sequenceNumber));
+  }
+
+  private int sequenceNumber(User user, WrapperPlayClientPlayerBlockPlacement packet) {
+    if (MinecraftVersions.VER1_19_2.atOrAbove()) {
+      return packet.getSequence();
+    }
+    return user.meta().connection().simulatedBlockAckNum++;
+  }
+
+  private int sequenceNumber(User user, WrapperPlayClientUseItem packet) {
+    if (MinecraftVersions.VER1_19_2.atOrAbove()) {
+      return packet.getSequence();
+    }
+    return user.meta().connection().simulatedBlockAckNum++;
   }
 
   private boolean performFlag(
@@ -1123,16 +1131,16 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
   @PacketSubscription(
     packetsOut = BLOCK_BREAK_ANIMATION
   )
-  public void clearInvalidBreakingUpdates(PacketEvent event) {
-    PacketContainer packet = event.getPacket();
-    EntityReader entityReader = PacketReaders.readerOf(packet);
-    Entity entity = entityReader.entityBy(event);
-    entityReader.release();
+  public void clearInvalidBreakingUpdates(ProtocolPacketEvent event) {
+    WrapperPlayServerBlockBreakAnimation packet = new WrapperPlayServerBlockBreakAnimation((PacketSendEvent) event);
+    Player player = event.getPlayer();
+    Entity entity = SpigotConversionUtil.getEntityById(player == null ? null : player.getWorld(), packet.getEntityId());
 
     if (entity instanceof Player && UserRepository.hasUser((Player) entity)) {
       User breakingUser = UserRepository.userOf((Player) entity);
       if (!metaOf(breakingUser).isBreakingBlock) {
-        packet.getIntegers().write(1, 11);
+        packet.setDestroyStage((byte) 11);
+        event.markForReEncode(true);
       }
     }
   }
@@ -1188,28 +1196,50 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
   }
 
   private void refreshBlock(Player player, Location location) {
-    PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.BLOCK_CHANGE);
     if (!VolatileBlockAccess.isInLoadedChunk(location.getWorld(), location.getBlockX(), location.getBlockZ())) {
       return;
     }
     Block block = VolatileBlockAccess.blockAccess(location);
-    Object handle = BlockVariantNativeAccess.nativeVariantAccess(block);
-    WrappedBlockData blockData = WrappedBlockData.fromHandle(handle);
-    com.comphenix.protocol.wrappers.BlockPosition position = new com.comphenix.protocol.wrappers.BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-    packet.getBlockData().write(0, blockData);
-    packet.getBlockPositionModifier().write(0, position);
-    PacketSender.sendServerPacket(player, packet);
+    WrapperPlayServerBlockChange packet = new WrapperPlayServerBlockChange(
+      new com.github.retrooper.packetevents.util.Vector3i(location.getBlockX(), location.getBlockY(), location.getBlockZ()),
+      SpigotConversionUtil.fromBukkitMaterialData(block.getState().getData())
+    );
+    PacketEvents.getAPI().getPlayerManager().sendPacket(player, packet);
     if (IntaveControl.DEBUG_INTERACTION_PACKET_ROUTING) {
       System.out.println("[Intave/DIPR] REFRESHED BLOCK " + location);
     }
   }
 
-  private void receiveExcludedPacket(Player player, PacketContainer packet) {
+  private void receiveExcludedPacket(Player player, PacketWrapper<?> packet) {
     if (IntaveControl.DEBUG_INTERACTION_PACKET_ROUTING) {
-      System.out.println("[Intave/DIPR] ROUTED PACKET " + packet.getType() + " " + packet.getHandle().getClass().getSimpleName());
+      System.out.println("[Intave/DIPR] ROUTED PACKET " + packet.getClass().getSimpleName());
     }
-    userOf(player).ignoreNextInboundPacket();
-    PacketSender.receiveClientPacketFrom(player, packet);
+    PacketEvents.getAPI().getPlayerManager().receivePacketSilently(player, packet);
+  }
+
+  private WrapperPlayClientPlayerBlockPlacement copyBlockPlacementPacket(WrapperPlayClientPlayerBlockPlacement packet) {
+    BlockFace face = packet.getFace() == null ? BlockFace.OTHER : packet.getFace();
+    WrapperPlayClientPlayerBlockPlacement copy = new WrapperPlayClientPlayerBlockPlacement(
+      packet.getHand(),
+      packet.getBlockPosition(),
+      face,
+      packet.getCursorPosition(),
+      packet.getItemStack().orElse(null),
+      packet.getInsideBlock().orElse(null),
+      packet.getWorldBorderHit().orElse(null),
+      packet.getSequence()
+    );
+    copy.setFaceId(packet.getFaceId());
+    return copy;
+  }
+
+  private WrapperPlayClientPlayerDigging copyDiggingPacket(WrapperPlayClientPlayerDigging packet) {
+    return new WrapperPlayClientPlayerDigging(
+      packet.getAction(),
+      packet.getBlockPosition(),
+      packet.getBlockFaceId(),
+      packet.getSequence()
+    );
   }
 
   @Override
@@ -1217,29 +1247,20 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     return true;
   }
 
-  private static final boolean BLOCK_DATA_WRAPPED_IN_MOVING_OBJECT_POSITION = MinecraftVersions.VER1_14_0.atOrAbove();
-
-  private void writeBlockPosition(PacketContainer packet, com.comphenix.protocol.wrappers.BlockPosition blockPosition) {
-    if (BLOCK_DATA_WRAPPED_IN_MOVING_OBJECT_POSITION && !packet.getType().equals(PacketType.Play.Client.BLOCK_DIG)) {
-      MovingObjectPositionBlock raytraceSent = packet.getMovingBlockPositions().readSafely(0);
-      raytraceSent.setBlockPosition(blockPosition);
-      packet.getMovingBlockPositions().write(0, raytraceSent);
-    } else {
-      packet.getBlockPositionModifier().write(0, blockPosition);
+  private void writeBlockPosition(PacketWrapper<?> packet, BlockPosition blockPosition) {
+    if (packet instanceof WrapperPlayClientPlayerBlockPlacement) {
+      ((WrapperPlayClientPlayerBlockPlacement) packet).setBlockPosition(PacketEventsConversions.toVector3i(blockPosition));
+    } else if (packet instanceof WrapperPlayClientPlayerDigging) {
+      ((WrapperPlayClientPlayerDigging) packet).setBlockPosition(PacketEventsConversions.toVector3i(blockPosition));
     }
   }
 
-  private void writeEnumDirection(PacketContainer packet, Direction direction) {
-    if (BLOCK_DATA_WRAPPED_IN_MOVING_OBJECT_POSITION && !packet.getType().equals(PacketType.Play.Client.BLOCK_DIG)) {
-      MovingObjectPositionBlock raytraceSent = packet.getMovingBlockPositions().readSafely(0);
-      raytraceSent.setDirection(direction.toDirection());
-      packet.getMovingBlockPositions().write(0, raytraceSent);
-    } else {
-      if (packet.getDirections().size() > 0) {
-        packet.getDirections().write(0, direction.toDirection());
-      } else {
-        packet.getIntegers().write(0, direction.getIndex());
-      }
+  private void writeEnumDirection(PacketWrapper<?> packet, Direction direction) {
+    BlockFace face = BlockFace.values()[direction.getIndex()];
+    if (packet instanceof WrapperPlayClientPlayerBlockPlacement) {
+      ((WrapperPlayClientPlayerBlockPlacement) packet).setFace(face);
+    } else if (packet instanceof WrapperPlayClientPlayerDigging) {
+      ((WrapperPlayClientPlayerDigging) packet).setBlockFace(face);
     }
   }
 
