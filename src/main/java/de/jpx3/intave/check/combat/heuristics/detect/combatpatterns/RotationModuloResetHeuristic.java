@@ -54,7 +54,7 @@ public final class RotationModuloResetHeuristic extends MetaCheckPart<Heuristics
         if (penaltyYaw != 0) {
           String description = "possible rotation modulo clamp";
           int options = Anomaly.AnomalyOption.LIMIT_4 | Anomaly.AnomalyOption.DELAY_128s | Anomaly.AnomalyOption.SUGGEST_MINING;
-          Anomaly anomaly = Anomaly.anomalyOf("101", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
+          Anomaly anomaly = Anomaly.anomalyOf("yaw:mod", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
           parentCheck().saveAnomaly(player, anomaly);
           //dmc20
 //          user.applyAttackNerfer(AttackNerfStrategy.HT_MEDIUM, "20");

@@ -66,12 +66,12 @@ public final class AttackReduceIgnoreHeuristic extends MetaCheckPart<Heuristics,
         if (heuristicMeta.vl++ > 5) {
           String description = "did not reduce when attacking a player";
           int options = LIMIT_2 | SUGGEST_MINING | DELAY_16s;
-          Anomaly anomaly = Anomaly.anomalyOf("21", Confidence.LIKELY, Anomaly.Type.KILLAURA, description, options);
+          String checkName = "attack:reduce";
+          Anomaly anomaly = Anomaly.anomalyOf(checkName, Confidence.LIKELY, Anomaly.Type.KILLAURA, description, options);
           parentCheck().saveAnomaly(player, anomaly);
           heuristicMeta.vl = 0;
-          //dmc4
-          user.nerf(AttackNerfStrategy.CRITICALS, "4");
-          user.nerf(AttackNerfStrategy.BURN_LONGER, "4");
+          user.nerf(AttackNerfStrategy.CRITICALS, checkName);
+          user.nerf(AttackNerfStrategy.BURN_LONGER, checkName);
         }
       } else if (heuristicMeta.vl > 0) {
         heuristicMeta.vl--;

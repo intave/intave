@@ -154,7 +154,7 @@ public final class SprintResetHeuristic extends MetaCheckPart<Heuristics, Sprint
       if (!collided) {
         ProtocolMetadata clientData = user.meta().protocol();
         String details = "unsprinted and pressed W " + clientData.versionString() + " " + meta.lastAttack;
-        Anomaly anomaly = Anomaly.anomalyOf("220",
+        Anomaly anomaly = Anomaly.anomalyOf("sprint:untoggle",
           Confidence.NONE,
           Anomaly.Type.KILLAURA,
           details,

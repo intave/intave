@@ -85,7 +85,7 @@ public final class ReshapedJumpHeuristic extends MetaCheckPart<Heuristics, Resha
           description += " | pre-dist:" + preDistance + ", alt-dist:" + alternativeDistance;
           description += " | " + user.meta().protocol().versionString();
           int options = Anomaly.AnomalyOption.LIMIT_8 | Anomaly.AnomalyOption.SUGGEST_MINING;
-          Anomaly anomaly = Anomaly.anomalyOf("61", Confidence.NONE, Anomaly.Type.KILLAURA, description, options);
+          Anomaly anomaly = Anomaly.anomalyOf("jump:hoz", Confidence.NONE, Anomaly.Type.KILLAURA, description, options);
           parentCheck().saveAnomaly(player, anomaly);
           //dmc15
 //            user.applyAttackNerfer(AttackNerfStrategy.HT_MEDIUM, "15");

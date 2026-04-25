@@ -65,13 +65,11 @@ public final class PacketInventoryHeuristic extends MetaCheckPart<Heuristics, Pa
     if (clientData.flyingPacketsAreSent() && meta.inventoryTicks == 0 && meta.performedInventoryOpenOperation) {
       int options = SUGGEST_MINING | DELAY_128s | LIMIT_2;
       String details = "closed inventory too quickly (" + meta.inventoryTicks + ")";
-      Anomaly anomaly = Anomaly.anomalyOf("131", Confidence.NONE, Anomaly.Type.KILLAURA, details, options);
+      String checkName = "exploit:inv(0)";
+      Anomaly anomaly = Anomaly.anomalyOf(checkName, Confidence.NONE, Anomaly.Type.KILLAURA, details, options);
       parentCheck().saveAnomaly(player, anomaly);
-      //dmc9
-      user.nerf(BURN_LONGER, "9");
-      user.nerf(DMG_HIGH, "9");
-//      user.applyAttackNerfer(AttackNerfStrategy.HT_MEDIUM, "9");
-//      user.applyAttackNerfer(AttackNerfStrategy.CANCEL_FIRST_HIT, "9");
+      user.nerf(BURN_LONGER, checkName);
+      user.nerf(DMG_HIGH, checkName);
     }
   }
 
@@ -106,10 +104,11 @@ public final class PacketInventoryHeuristic extends MetaCheckPart<Heuristics, Pa
       if (meta.rotationsInInventory++ > 1) {
         int options = SUGGEST_MINING | DELAY_32s | SUGGEST_MINING;
         String details = "sent rotations in inventory (" + meta.rotationsInInventory + " rotations)";
-        Anomaly anomaly = Anomaly.anomalyOf("132", Confidence.NONE, Anomaly.Type.KILLAURA, details, options);
+        String checkName = "exploit:inv(1)";
+        Anomaly anomaly = Anomaly.anomalyOf(checkName, Confidence.NONE, Anomaly.Type.KILLAURA, details, options);
         parentCheck().saveAnomaly(player, anomaly);
         //dmc10
-        user.nerf(AttackNerfStrategy.HT_LIGHT, "10");
+        user.nerf(AttackNerfStrategy.HT_LIGHT, checkName);
       }
     }
 

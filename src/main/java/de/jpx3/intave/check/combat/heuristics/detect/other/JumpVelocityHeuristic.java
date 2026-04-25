@@ -39,7 +39,7 @@ public final class JumpVelocityHeuristic extends MetaCheckPart<Heuristics, JumpV
         if (movementData.pastVelocity == 0) {
           message += " and got velocity";
         }
-        Anomaly anomaly = Anomaly.anomalyOf("200",
+        Anomaly anomaly = Anomaly.anomalyOf("jump:vel",
           Confidence.LIKELY,
           Anomaly.Type.KILLAURA,
           message, Anomaly.AnomalyOption.DELAY_16s

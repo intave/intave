@@ -31,10 +31,10 @@ public final class RotationPrevisionDetermination extends RotationPrevisionBluep
     if (yawAverage > 0.5 && determination > 0.55) {
       String description = String.format("suspicious aiming pattern %.2f %.2f %.2f", determination, yawAverage, meta.vl);
       if (++meta.vl >= 5) {
-        Anomaly anomaly = Anomaly.anomalyOf("280", Confidence.LIKELY, Anomaly.Type.KILLAURA, description, DELAY_64s | LIMIT_4);
+        Anomaly anomaly = Anomaly.anomalyOf("yaw:det(1)", Confidence.LIKELY, Anomaly.Type.KILLAURA, description, DELAY_64s | LIMIT_4);
         parentCheck().saveAnomaly(user.player(), anomaly);
       } else {
-        Anomaly anomaly = Anomaly.anomalyOf("280", Confidence.NONE, Anomaly.Type.KILLAURA, description);
+        Anomaly anomaly = Anomaly.anomalyOf("yaw:det(0)", Confidence.NONE, Anomaly.Type.KILLAURA, description);
         parentCheck().saveAnomaly(user.player(), anomaly);
       }
     } else {

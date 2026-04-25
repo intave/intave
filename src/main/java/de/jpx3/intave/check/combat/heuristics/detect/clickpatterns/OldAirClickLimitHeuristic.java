@@ -214,7 +214,7 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
           confidence = Confidence.PROBABLE;
         }
 
-        Anomaly anomaly = Anomaly.anomalyOf("191",
+        Anomaly anomaly = Anomaly.anomalyOf("click:air",
           IntaveControl.DISABLE_AUTOCLICKER_CHECK ? Confidence.NONE : confidence,
           Anomaly.Type.AUTOCLICKER,
           "swings in air (cps " + meta.maxCPS + ") (sum " + meta.flaggCounter + ")", Anomaly.AnomalyOption.DELAY_128s

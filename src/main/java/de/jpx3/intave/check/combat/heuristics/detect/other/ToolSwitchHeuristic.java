@@ -83,7 +83,7 @@ public class ToolSwitchHeuristic extends MetaCheckPart<Heuristics, ToolSwitchHeu
         parentCheck().saveAnomaly(
             player,
             Anomaly.anomalyOf(
-                "205",
+                "attack:toolswitch",
                 Confidence.LIKELY,
                 Anomaly.Type.KILLAURA,
                 "sent suspicious slot packets while breaking blocks (" + meta.ticksSinceLastStop + " ticks)"

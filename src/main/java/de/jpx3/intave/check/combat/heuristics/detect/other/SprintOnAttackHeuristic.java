@@ -142,7 +142,7 @@ public final class SprintOnAttackHeuristic extends MetaCheckPart<Heuristics, Spr
       double ratioBefore = (double) meta.attacksWithSprintChangeBefore / (double) meta.totalAttacks;
       if (ratioBefore > 0.9) {
         Anomaly anomaly = Anomaly.anomalyOf(
-          "200",
+          "sprint:onattack",
           Confidence.NONE,
           Anomaly.Type.KILLAURA,
           "sprint-toggles aligned with attacks (" + MathHelper.formatDouble(ratioBefore, 2) + "%)",

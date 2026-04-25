@@ -58,7 +58,7 @@ public final class RotationAccuracyPitchHeuristic extends MetaCheckPart<Heuristi
           Confidence confidence = vl <= 2 ? Confidence.PROBABLE : Confidence.LIKELY;
           String description = "rotated pitch too precisely (0.0) vl:" + vl + ", conf:" + confidence.level();
           int options = DELAY_128s | SUGGEST_MINING;
-          Anomaly anomaly = Anomaly.anomalyOf("71", confidence, Anomaly.Type.KILLAURA, description, options);
+          Anomaly anomaly = Anomaly.anomalyOf("pitch:acc", confidence, Anomaly.Type.KILLAURA, description, options);
           parentCheck().saveAnomaly(player, anomaly);
         } else if (heuristicMeta.threshold > 0) {
           heuristicMeta.threshold--;

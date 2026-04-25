@@ -260,24 +260,13 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
       double vl = calculateViolation(valueOfSnap, changedLookToEntity, user, liteFlag);
       liteFlag = false;
 
-      // this mitigation has become too obvious, and is required for detection
-      //dmc23
-      if (vl >= 40) {
-//        user.applyAttackNerfer(AttackNerfStrategy.HT_MEDIUM, "23");
-      }
-      if (vl > 70) {
-//        user.applyAttackNerfer(AttackNerfStrategy.CANCEL_FIRST_HIT, "23");
-      }
-
-      handleConfidence(user, "102", (int) vl, description);
-
-//      meta.entityPositions.clear();
+      handleConfidence(user, "snap:sus", (int) vl, description);
     }
 
     if (liteFlag) {
       String description = "rotation snap scaffold [" + MathHelper.formatDouble(meta.yawMotions[0], 2) + "]";
       int addedViolationLevel = 30;
-      handleConfidence(user, "103", addedViolationLevel, description);
+      handleConfidence(user, "snap:lite", addedViolationLevel, description);
     }
 
     prepareNextTick(meta, yawMotion, user);

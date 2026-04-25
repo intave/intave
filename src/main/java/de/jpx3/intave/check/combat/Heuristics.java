@@ -120,7 +120,6 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
 
     appendCheckPart(new PacketOrderSwingHeuristic(this));
     appendCheckPart(new PacketPlayerActionToggleHeuristic(this));
-    appendCheckPart(new RotationUnlikelyAccuracyHeuristic(this));
     appendCheckPart(new PacketInventoryHeuristic(this));
     appendCheckPart(new BlockingHeuristic(this));
     appendCheckPart(new AttackInInvalidStateHeuristic(this));

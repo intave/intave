@@ -92,7 +92,7 @@ public final class TestHeuristic extends MetaCheckPart<Heuristics, TestHeuristic
   }
 
   public void violation(Player player) {
-    Anomaly anomaly = Anomaly.anomalyOf("999", Confidence.PROBABLE, Anomaly.Type.KILLAURA, "", LIMIT_2 | DELAY_16s);
+    Anomaly anomaly = Anomaly.anomalyOf("test", Confidence.PROBABLE, Anomaly.Type.KILLAURA, "", LIMIT_2 | DELAY_16s);
     parentCheck().saveAnomaly(player, anomaly);
   }
 

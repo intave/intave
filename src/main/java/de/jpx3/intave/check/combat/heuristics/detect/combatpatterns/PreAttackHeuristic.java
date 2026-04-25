@@ -131,9 +131,9 @@ public final class PreAttackHeuristic extends MetaCheckPart<Heuristics, PreAttac
           } else {
             confidence = Confidence.NONE;
           }
-          Anomaly anomaly = Anomaly.anomalyOf("231", confidence, Anomaly.Type.KILLAURA, description, LIMIT_4);
+          Anomaly anomaly = Anomaly.anomalyOf("attack:auto", confidence, Anomaly.Type.KILLAURA, description, LIMIT_4);
           parentCheck().saveAnomaly(player, anomaly);
-          user.nerf(DMG_MEDIUM, "231");
+          user.nerf(DMG_MEDIUM, "attack:auto");
         }
         meta.attacks = 0;
         meta.preAttacks = 0;

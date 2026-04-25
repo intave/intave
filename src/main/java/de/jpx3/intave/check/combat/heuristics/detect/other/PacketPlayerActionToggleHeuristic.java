@@ -23,6 +23,7 @@ import static de.jpx3.intave.entity.datawatcher.DataWatcherAccess.WATCHER_SNEAK_
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
 public final class PacketPlayerActionToggleHeuristic extends MetaCheckPart<Heuristics, PacketPlayerActionToggleHeuristic.PacketSprintToggleHeuristicMeta> {
+  private static final String VERBOSE_NAME = "toggle:packets";
   private final IntavePlugin plugin;
   private boolean enabled;
 
@@ -93,7 +94,7 @@ public final class PacketPlayerActionToggleHeuristic extends MetaCheckPart<Heuri
           // could be CERTAIN on 1.8
           Confidence confidence = flyingPacketStream ? Confidence.PROBABLE : Confidence.MAYBE;
           int options = DELAY_128s | REQUIRES_HEAVY_COMBAT | LIMIT_4;
-          Anomaly anomaly = Anomaly.anomalyOf("41", confidence, Anomaly.Type.KILLAURA, description, options);
+          Anomaly anomaly = Anomaly.anomalyOf(VERBOSE_NAME, confidence, Anomaly.Type.KILLAURA, description, options);
           parentCheck().saveAnomaly(player, anomaly);
         }
 
@@ -101,7 +102,7 @@ public final class PacketPlayerActionToggleHeuristic extends MetaCheckPart<Heuri
         if (cancel) {
           if (sprint) {
             //dmc12
-            user.nerf(AttackNerfStrategy.CANCEL, "12");
+            user.nerf(AttackNerfStrategy.CANCEL, VERBOSE_NAME);
           } else {
             punishmentData.timeLastSneakToggleCancel = System.currentTimeMillis();
             Synchronizer.synchronize(() -> DataWatcherAccess.setDataWatcherFlag(player, WATCHER_SNEAK_ID, false));

@@ -71,7 +71,7 @@ public final class DoubleEntityActionHeuristic extends MetaCheckPart<Heuristics,
       }
       message += " " + protocolMetadata.protocolVersion();
       // Be careful before setting a confidence because it false flags when reloading the server
-      Anomaly anomaly = Anomaly.anomalyOf("190",
+      Anomaly anomaly = Anomaly.anomalyOf("exploit:dea",
         Confidence.NONE,
         Anomaly.Type.KILLAURA,
         message, Anomaly.AnomalyOption.DELAY_16s

@@ -87,10 +87,11 @@ public final class NoSwingHeuristic extends MetaCheckPart<Heuristics, NoSwingHeu
     if (meta.attacksThisTick > 0) {
       if (meta.swingsThisTick == 0) {
         String details = "missing swing packet on attack";
-        Anomaly anomaly = Anomaly.anomalyOf("171", /*Confidence.LIKELY*/Confidence.NONE, Anomaly.Type.KILLAURA, details, Anomaly.AnomalyOption.LIMIT_4);
+        String checkName = "swing:miss";
+        Anomaly anomaly = Anomaly.anomalyOf(checkName, /*Confidence.LIKELY*/Confidence.NONE, Anomaly.Type.KILLAURA, details, Anomaly.AnomalyOption.LIMIT_4);
         parentCheck().saveAnomaly(player, anomaly);
         //dmc26
-        user.nerf(AttackNerfStrategy.CANCEL, "26");
+        user.nerf(AttackNerfStrategy.CANCEL, checkName);
       }
     }
 

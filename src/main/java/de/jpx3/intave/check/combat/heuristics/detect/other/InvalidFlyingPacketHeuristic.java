@@ -41,7 +41,7 @@ public class InvalidFlyingPacketHeuristic extends MetaCheckPart<Heuristics, Inva
           meta.threshold++;
           // Threshold to not spam violations
           if (meta.threshold > 20) {
-            Anomaly anomaly = Anomaly.anomalyOf("500",
+            Anomaly anomaly = Anomaly.anomalyOf("exploit:ifp",
                 Confidence.NONE,
                 Anomaly.Type.KILLAURA,
                 "sent invalid flying packets",

@@ -87,11 +87,10 @@ public final class RotationStandardDeviationHeuristic extends MetaCheckPart<Heur
       if (heuristicMeta.rotationBalanceYaw++ >= 2) {
         String description = "standard deviation (yaw) (" + MathHelper.formatDouble(standardDeviation, 4) + ")";
         int options = LIMIT_2 | SUGGEST_MINING;
-        Anomaly anomaly = Anomaly.anomalyOf("121", Confidence.MAYBE, Anomaly.Type.KILLAURA, description, options);
+        Anomaly anomaly = Anomaly.anomalyOf("yaw:std(0)", Confidence.MAYBE, Anomaly.Type.KILLAURA, description, options);
         parentCheck().saveAnomaly(player, anomaly);
         heuristicMeta.rotationBalanceYaw--;
-        //dmc24
-        user.nerf(AttackNerfStrategy.DMG_LIGHT, "24");
+        user.nerf(AttackNerfStrategy.DMG_LIGHT, "yaw:std(0)");
       }
     } else {
       heuristicMeta.rotationBalanceYaw -= heuristicMeta.rotationBalanceYaw > 0 ? 0.2 : 0;
@@ -107,11 +106,10 @@ public final class RotationStandardDeviationHeuristic extends MetaCheckPart<Heur
       if (heuristicMeta.rotationBalancePitch++ >= 4) {
         String description = "standard deviation (pitch) (" + standardDeviation + ")";
         int options = LIMIT_2 | SUGGEST_MINING;
-        Anomaly anomaly = Anomaly.anomalyOf("122", Confidence.MAYBE, Anomaly.Type.KILLAURA, description, options);
+        Anomaly anomaly = Anomaly.anomalyOf("yaw:std(1)", Confidence.MAYBE, Anomaly.Type.KILLAURA, description, options);
         parentCheck().saveAnomaly(player, anomaly);
         heuristicMeta.rotationBalancePitch -= 2;
-        //dmc25
-        user.nerf(AttackNerfStrategy.HT_LIGHT, "25");
+        user.nerf(AttackNerfStrategy.HT_LIGHT, "yaw:std(1)");
       }
     } else {
       heuristicMeta.rotationBalancePitch -= heuristicMeta.rotationBalancePitch > 0 ? 0.2 : 0;

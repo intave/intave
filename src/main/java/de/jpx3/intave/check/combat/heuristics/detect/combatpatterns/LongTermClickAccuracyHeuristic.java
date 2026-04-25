@@ -57,7 +57,7 @@ public final class LongTermClickAccuracyHeuristic extends MetaCheckPart<Heuristi
 //        Synchronizer.synchronize(() -> player.sendMessage(String.valueOf(failRate)));
         if (heuristicMeta.attacks > 80) {
           if (failRate >= 0 && failRate < 3) {
-            Anomaly anomaly = Anomaly.anomalyOf("210", Confidence.NONE, Anomaly.Type.KILLAURA, "player maintains high attack accuracy (failRate: " + MathHelper.formatDouble(failRate, 2) + "%)");
+            Anomaly anomaly = Anomaly.anomalyOf("attack:acc", Confidence.NONE, Anomaly.Type.KILLAURA, "player maintains high attack accuracy (failRate: " + MathHelper.formatDouble(failRate, 2) + "%)");
             parentCheck().saveAnomaly(player, anomaly);
           }
           heuristicMeta.attacks = 0;

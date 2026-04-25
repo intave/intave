@@ -21,15 +21,8 @@ public final class SwingLimitHeuristics extends SwingBlueprint<SwingLimitBluepri
     if (cps > 15 && meta.doubleClicks == 0) {
       if (++meta.vl >= 1.5) {
         String description = String.format("clicking too fast without double clicks %.2f vl: %.2f", cps, meta.vl);
-        Anomaly anomaly = Anomaly.anomalyOf("300", Confidence.NONE, Anomaly.Type.AUTOCLICKER, description);
+        Anomaly anomaly = Anomaly.anomalyOf("click:missdouble", Confidence.NONE, Anomaly.Type.AUTOCLICKER, description);
         parentCheck().saveAnomaly(user.player(), anomaly);
-        //dmc29
-//        if (meta.vl >= 5) {
-//          user.nerf(AttackNerfStrategy.DMG_LIGHT, "29");
-//        }
-////        user.applyAttackNerfer(AttackNerfStrategy.DMG_MEDIUM, "29");
-//        user.nerf(AttackNerfStrategy.GARBAGE_HITS, "29");
-//        user.nerf(AttackNerfStrategy.BLOCKING, "29");
       }
     } else {
       meta.vl = Math.max(0, meta.vl - 0.25);

@@ -1,11 +1,13 @@
 package de.jpx3.intave.check.combat.heuristics.detect.combatpatterns;
 
 import com.comphenix.protocol.events.PacketEvent;
+import com.google.common.collect.Lists;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
 import de.jpx3.intave.check.combat.heuristics.Confidence;
+import de.jpx3.intave.connect.sibyl.SibylCensor;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
@@ -19,7 +21,17 @@ import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.entity.Player;
 
-import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.*;
+import java.util.List;
+
+import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.DELAY_128s;
+import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.DELAY_16s;
+import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.DELAY_32s;
+import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.DELAY_64s;
+import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.LIMIT_1;
+import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.LIMIT_2;
+import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.LIMIT_4;
+import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.SUGGEST_MINING;
+import static de.jpx3.intave.math.MathHelper.averageOf;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.LOOK;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION_LOOK;
 import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.DMG_LIGHT;
@@ -44,7 +56,6 @@ public final class RotationAccuracyYawHeuristic extends MetaCheckPart<Heuristics
     MetadataBundle meta = user.meta();
     MovementMetadata movementData = meta.movement();
     AttackMetadata attackData = meta.attack();
-    RotationAccuracyHeuristicMeta heuristicMeta = metaOf(player);
     Entity entity = attackData.lastAttackedEntity();
     float rotationYaw = movementData.rotationYaw;
     float perfectYaw = attackData.perfectYaw();
@@ -52,9 +63,30 @@ public final class RotationAccuracyYawHeuristic extends MetaCheckPart<Heuristics
     float yawSpeed = MathHelper.distanceInDegrees(rotationYaw, movementData.lastRotationYaw);
     float distanceToPerfectYaw = MathHelper.distanceInDegrees(perfectYaw, rotationYaw);
     float distanceToClosestPerfectYaw = MathHelper.distanceInDegrees(closestPerfectYaw, rotationYaw);
-    if (entity == null || movementData.lastTeleport < 5) {
+    if (entity == null || movementData.lastTeleport < 5 || !attackData.recentlyAttacked(1000)) {
       return;
     }
+
+    checkSnap(user, yawSpeed);
+
+    if (entity.moving(0.05) && yawSpeed > 1.0) {
+      checkFollow(user, yawSpeed, distanceToPerfectYaw);
+      checkPerfectYaw(user, distanceToClosestPerfectYaw, distanceToPerfectYaw);
+      checkShortTermAccuracy(user, yawSpeed, distanceToPerfectYaw);
+      checkLongTermAccuracy(user, distanceToPerfectYaw);
+    }
+
+    checkHitboxCorners(user, distanceToPerfectYaw, perfectYaw, yawSpeed, entity);
+    checkYawAccuracyAvg(user, entity);
+  }
+
+  private void checkSnap(User user, float yawSpeed) {
+    Player player = user.player();
+    MetadataBundle meta = user.meta();
+    AttackMetadata attackData = meta.attack();
+
+    RotationAccuracyHeuristicMeta heuristicMeta = metaOf(player);
+
     if (attackData.recentlyAttacked(150)
       && yawSpeed > 1001
       && attackData.lastReach() > 1.0
@@ -63,79 +95,100 @@ public final class RotationAccuracyYawHeuristic extends MetaCheckPart<Heuristics
       if (heuristicMeta.snapVL++ > 0) {
         String description = "suspicious rotation snap (" + yawSpeed + ")";
         int options = LIMIT_4 | SUGGEST_MINING;
-        Anomaly anomaly = Anomaly.anomalyOf("86", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
+        String checkName = resolveCheckName(0);
+        Anomaly anomaly = Anomaly.anomalyOf(checkName, Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
         parentCheck().saveAnomaly(player, anomaly);
-        //dmc16
-//        user.applyAttackNerfer(AttackNerfStrategy.HT_MEDIUM, "16");
-        user.nerf(AttackNerfStrategy.CRITICALS, "16");
+        user.nerf(AttackNerfStrategy.CRITICALS, checkName);
       }
     } else if (heuristicMeta.snapVL > 0) {
       heuristicMeta.snapVL -= 0.1;
     }
-    if (entity.moving(0.05) && attackData.recentlyAttacked(1000)) {
-      if (yawSpeed > 1.0) {
-        if (yawSpeed > 3.0) {
-          double increase = MathHelper.minmax(-2.5, (2.2 - distanceToPerfectYaw) * Math.min(6, yawSpeed), 2);
-          heuristicMeta.followBalance += increase;
-          if (heuristicMeta.followBalance < 0) {
-            heuristicMeta.followBalance = 0;
-          }
-          if (heuristicMeta.followBalance > 25) {
-            String description = "follows entity movement too precisely";
-            int options = LIMIT_2 | LIMIT_1 | SUGGEST_MINING | DELAY_64s;
-            Anomaly anomaly = Anomaly.anomalyOf("81", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
-            parentCheck().saveAnomaly(player, anomaly);
-            heuristicMeta.followBalance -= 7;
-//            plugin.eventService().attackCancelService().requestDamageCancel(user, AttackCancelType.LIGHT);
-            user.nerf(AttackNerfStrategy.CRITICALS, "81");
-          }
-        }
-        // Check perfect yaw
-        if (distanceToPerfectYaw == 0 || distanceToClosestPerfectYaw == 0) {
-          String description = "rotated yaw too precise (0.0)";
-          int options = LIMIT_2 | DELAY_128s | SUGGEST_MINING;
-          Anomaly anomaly = Anomaly.anomalyOf("82", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
-          parentCheck().saveAnomaly(player, anomaly);
-          //dmc17
-          user.nerf(AttackNerfStrategy.CRITICALS, "17");
-        }
-        // Check yaw accuracy
-        if (yawSpeed > 3.0) {
-          double expectedDifference = 2.0;//Math.min(10, yawSpeed * 0.6);
-          heuristicMeta.balanceYawAccuracy += expectedDifference - (distanceToPerfectYaw / 0.8);
-          heuristicMeta.balanceYawAccuracy = Math.max(0, heuristicMeta.balanceYawAccuracy);
-          int suspiciousLevel = (int) heuristicMeta.balanceYawAccuracy;
-          if (suspiciousLevel > 8) {
-            if (heuristicMeta.rotationAccuracyVL++ > 3) {
-              String description = "high accuracy rotation yaw vl:" + suspiciousLevel;
-              int options = LIMIT_2 | DELAY_32s | SUGGEST_MINING;
-              Anomaly anomaly = Anomaly.anomalyOf("83", Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
-              parentCheck().saveAnomaly(player, anomaly);
-              //dmc18
-//              user.applyAttackNerfer(AttackNerfStrategy.HT_MEDIUM, "18");
-              user.nerf(AttackNerfStrategy.CRITICALS, "18");
-            }
-          } else if (heuristicMeta.rotationAccuracyVL > 0) {
-            heuristicMeta.rotationAccuracyVL -= 0.005;
-          }
-        }
-        // Check yaw accuracy (other)
-        if (distanceToPerfectYaw > 4.0) {
-          heuristicMeta.balanceYawAccuracyOther = 0;
-        } else if (heuristicMeta.balanceYawAccuracyOther++ > 50) {
-          String description = "keeps high yaw accuracy in " + (int) heuristicMeta.balanceYawAccuracyOther + " rotations";
-          int options = LIMIT_2 | DELAY_32s | SUGGEST_MINING;
-          Anomaly anomaly = Anomaly.anomalyOf("84", Confidence.MAYBE, Anomaly.Type.KILLAURA, description, options);
-          parentCheck().saveAnomaly(player, anomaly);
-          heuristicMeta.balanceYawAccuracyOther = 0;
-          //dmc19
-//          user.nerf(AttackNerfStrategy.HT_LIGHT, "19");
-        }
-      }
+  }
+
+  private void checkFollow(User user, float yawSpeed, float distanceToPerfectYaw) {
+    if (yawSpeed < 3.0) {
+      return;
     }
+
+    RotationAccuracyHeuristicMeta heuristicMeta = metaOf(user);
+    double increase = MathHelper.minmax(-2.5, (2.2 - distanceToPerfectYaw) * Math.min(6, yawSpeed), 2);
+    heuristicMeta.followBalance += increase;
+    if (heuristicMeta.followBalance < 0) {
+      heuristicMeta.followBalance = 0;
+    }
+    if (heuristicMeta.followBalance > 25) {
+      String description = "follows entity movement too precisely";
+      int options = LIMIT_2 | LIMIT_1 | SUGGEST_MINING | DELAY_64s;
+      String checkName = resolveCheckName(1);
+      Anomaly anomaly = Anomaly.anomalyOf(checkName, Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
+      parentCheck().saveAnomaly(user.player(), anomaly);
+      heuristicMeta.followBalance -= 7;
+      user.nerf(AttackNerfStrategy.CRITICALS, checkName);
+    }
+  }
+
+  private void checkPerfectYaw(User user, float distanceToClosestPerfectYaw, float distanceToPerfectYaw) {
+    if (distanceToPerfectYaw == 0 || distanceToClosestPerfectYaw == 0) {
+      String description = "rotated yaw too precise (0.0)";
+      int options = LIMIT_2 | DELAY_128s | SUGGEST_MINING;
+      String checkName = resolveCheckName(2);
+      Anomaly anomaly = Anomaly.anomalyOf(checkName, Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
+      parentCheck().saveAnomaly(user.player(), anomaly);
+      user.nerf(AttackNerfStrategy.CRITICALS, checkName);
+    }
+  }
+
+  private void checkShortTermAccuracy(User user, float yawSpeed, float distanceToPerfectYaw) {
+    RotationAccuracyHeuristicMeta heuristicMeta = metaOf(user);
+
+    if (yawSpeed < 3.0) {
+      return;
+    }
+
+    double expectedDifference = 2.0;//Math.min(10, yawSpeed * 0.6);
+    heuristicMeta.balanceYawAccuracy += expectedDifference - (distanceToPerfectYaw / 0.8);
+    heuristicMeta.balanceYawAccuracy = Math.max(0, heuristicMeta.balanceYawAccuracy);
+    int suspiciousLevel = (int) heuristicMeta.balanceYawAccuracy;
+    if (suspiciousLevel > 8) {
+      if (heuristicMeta.rotationAccuracyVL++ > 3) {
+        String description = "high accuracy rotation yaw vl:" + suspiciousLevel;
+        int options = LIMIT_2 | DELAY_32s | SUGGEST_MINING;
+        String checkName = resolveCheckName(3);
+        Anomaly anomaly = Anomaly.anomalyOf(checkName, Confidence.PROBABLE, Anomaly.Type.KILLAURA, description, options);
+        parentCheck().saveAnomaly(user.player(), anomaly);
+        user.nerf(AttackNerfStrategy.CRITICALS, checkName);
+      }
+    } else if (heuristicMeta.rotationAccuracyVL > 0) {
+      heuristicMeta.rotationAccuracyVL -= 0.005;
+    }
+  }
+
+  private void checkLongTermAccuracy(User user, float distanceToPerfectYaw) {
+    RotationAccuracyHeuristicMeta heuristicMeta = metaOf(user);
+
+    if (distanceToPerfectYaw > 4.0) {
+      heuristicMeta.balanceYawAccuracyOther = 0;
+    } else if (heuristicMeta.balanceYawAccuracyOther++ > 50) {
+      String description = "keeps high yaw accuracy in " + (int) heuristicMeta.balanceYawAccuracyOther + " rotations";
+      int options = LIMIT_2 | DELAY_32s | SUGGEST_MINING;
+      Anomaly anomaly = Anomaly.anomalyOf(resolveCheckName(4), Confidence.MAYBE, Anomaly.Type.KILLAURA, description, options);
+      parentCheck().saveAnomaly(user.player(), anomaly);
+      heuristicMeta.balanceYawAccuracyOther = 0;
+    }
+  }
+
+  private void checkHitboxCorners(User user, float distanceToPerfectYaw, float perfectYaw, float yawSpeed, Entity target) {
+    MetadataBundle meta = user.meta();
+
+    AttackMetadata attackData = meta.attack();
+    MovementMetadata movementData = meta.movement();
+
+    float rotationYaw = movementData.rotationYaw;
+    RotationAccuracyHeuristicMeta heuristicMeta = metaOf(user);
+
     if (Hypot.fast(movementData.motionX(), movementData.motionZ()) < 0.05
       || attackData.lastReach() < 1
-      || !entity.moving(0.05)) {
+      || !target.moving(0.05)) {
       return;
     }
     int direction = perfectYaw > rotationYaw ? 1 : 0;
@@ -147,18 +200,61 @@ public final class RotationAccuracyYawHeuristic extends MetaCheckPart<Heuristics
       double increase = MathHelper.minmax(-0.2, (1 - deviation) * 4, 4);
       heuristicMeta.bitBoxCornerBalance = (int) MathHelper.minmax(0, heuristicMeta.bitBoxCornerBalance + increase, 100);
       if (heuristicMeta.bitBoxCornerBalance > 30) {
-        long lastDetection = System.currentTimeMillis() - heuristicMeta.lastHARYAnomaly;
         int options = SUGGEST_MINING | DELAY_16s | LIMIT_2;
-        Confidence confidence = /*lastDetection < 2000 ? Confidence.LIKELY :*/ Confidence.LIKELY;
-        Anomaly anomaly = Anomaly.anomalyOf("85", confidence, Anomaly.Type.KILLAURA, "high accuracy rotation yaw on hit-box corners", options);
-        parentCheck().saveAnomaly(player, anomaly);
+        Confidence confidence = Confidence.LIKELY;
+        String checkName = resolveCheckName(5);
+        Anomaly anomaly = Anomaly.anomalyOf(checkName, confidence, Anomaly.Type.KILLAURA, "high accuracy rotation yaw on hit-box corners", options);
+        parentCheck().saveAnomaly(user.player(), anomaly);
         heuristicMeta.bitBoxCornerBalance -= 20;
-        heuristicMeta.lastHARYAnomaly = System.currentTimeMillis();
-        user.nerf(DMG_LIGHT, "85");
+        user.nerf(DMG_LIGHT, checkName);
       }
     }
     heuristicMeta.lastBodyDirection = direction;
     heuristicMeta.prevDistanceToPerfectYaw = distanceToPerfectYaw;
+  }
+
+  private void checkYawAccuracyAvg(User user, Entity target) {
+    MetadataBundle meta = user.meta();
+    AttackMetadata attackData = meta.attack();
+    MovementMetadata movementData = meta.movement();
+    RotationAccuracyHeuristicMeta heuristicMeta = metaOf(user);
+
+    double distanceToPerfectYaw = MathHelper.distanceInDegrees(attackData.perfectYaw(), movementData.rotationYaw);
+    float yawSpeed = MathHelper.distanceInDegrees(movementData.rotationYaw, movementData.lastRotationYaw);
+    if (heuristicMeta.yawSpeeds.size() > 40) {
+      double yawAverage = averageOf(heuristicMeta.yawSpeeds);
+      double maxDistanceToPerfectYaw = heuristicMeta.distancesToPerfectYaw
+        .stream()
+        .mapToDouble(Double::doubleValue)
+        .max()
+        .orElse(0);
+      List<Double> angleData = heuristicMeta.distancesToPerfectYaw;
+      double averageRatio = yawAverage / averageOf(angleData);
+      double maxRatio = maxDistanceToPerfectYaw / yawAverage;
+      if (maxRatio < 2 && maxDistanceToPerfectYaw < 30) {
+//        String descriptor = "rotated suspiciously (" + MathHelper.formatDouble(maxRatio, 4) + " / " + MathHelper.formatDouble(maxDistanceToPerfectYaw, 4) + ")";
+        String descriptor = SibylCensor.thisPlease("rotated suspiciously (%s / %s)", MathHelper.formatDouble(maxRatio, 4), MathHelper.formatDouble(maxDistanceToPerfectYaw, 4));
+        int options = Anomaly.AnomalyOption.LIMIT_8 | Anomaly.AnomalyOption.SUGGEST_MINING;
+        Anomaly anomaly = Anomaly.anomalyOf("yaw:acc(", Confidence.MAYBE, Anomaly.Type.KILLAURA, descriptor, options);
+        parentCheck().saveAnomaly(user.player(), anomaly);
+      }
+      if (yawAverage >= 3.5 && maxDistanceToPerfectYaw <= 12.5 && averageRatio > 1) {
+        String descriptor = "precise rotation yaw (" + MathHelper.formatDouble(yawAverage, 4) + ")";
+        int options = Anomaly.AnomalyOption.LIMIT_4 | Anomaly.AnomalyOption.SUGGEST_MINING;
+        Anomaly anomaly = Anomaly.anomalyOf(resolveCheckName(6), Confidence.MAYBE, Anomaly.Type.KILLAURA, descriptor, options);
+        parentCheck().saveAnomaly(user.player(), anomaly);
+      }
+      heuristicMeta.distancesToPerfectYaw.clear();
+      heuristicMeta.yawSpeeds.clear();
+    }
+    if (target.moving(0.05)) {
+      heuristicMeta.distancesToPerfectYaw.add(distanceToPerfectYaw);
+      heuristicMeta.yawSpeeds.add((double) yawSpeed);
+    }
+  }
+
+  private String resolveCheckName(int id) {
+    return "yaw:acc(" + id + ")";
   }
 
   public static final class RotationAccuracyHeuristicMeta extends CheckCustomMetadata {
@@ -168,10 +264,11 @@ public final class RotationAccuracyYawHeuristic extends MetaCheckPart<Heuristics
     private double followBalance;
     private double snapVL;
 
-    private long lastHARYAnomaly;
-
     private int lastBodyDirection;
     private int bitBoxCornerBalance;
     private float prevDistanceToPerfectYaw;
+
+    private final List<Double> yawSpeeds = Lists.newArrayList();
+    private final List<Double> distancesToPerfectYaw = Lists.newArrayList();
   }
 }

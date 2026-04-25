@@ -67,7 +67,7 @@ public final class AttackInInvalidStateHeuristic extends MetaCheckPart<Heuristic
     // not checked yet
     AttackInInvalidStateMeta meta = metaOf(user);
     if (user.meta().inventory().handActive() && user.meta().movement().lastTeleport > 10) {
-      Anomaly anomaly = Anomaly.anomalyOf("162", Confidence.NONE, Anomaly.Type.KILLAURA, "attacked whilst using an item");
+      Anomaly anomaly = Anomaly.anomalyOf("attack:item", Confidence.NONE, Anomaly.Type.KILLAURA, "attacked whilst using an item");
       parentCheck().saveAnomaly(player, anomaly);
       //dmc28
       user.nerf(BLOCKING, "28");
@@ -122,7 +122,7 @@ public final class AttackInInvalidStateHeuristic extends MetaCheckPart<Heuristic
       description += "lastHealthUpdate: " + ticksAgo + ", ";
       description += "lastFlag " + lastFlag + " ms ago, ";
       description += "confidence " + confidence.level();
-      Anomaly anomaly = Anomaly.anomalyOf("161", confidence, Anomaly.Type.KILLAURA, description);
+      Anomaly anomaly = Anomaly.anomalyOf("attack:inv", confidence, Anomaly.Type.KILLAURA, description);
       parentCheck().saveAnomaly(player, anomaly);
       meta.lastGUIAttackTimestamps = now;
     }
@@ -145,7 +145,7 @@ public final class AttackInInvalidStateHeuristic extends MetaCheckPart<Heuristic
     }
     if (action == EnumWrappers.EntityUseAction.ATTACK && entity.dead) {
       String description = "attacked a dead entity " + entity.entityName();
-      Anomaly anomaly = Anomaly.anomalyOf("161", Confidence.NONE, Anomaly.Type.KILLAURA, description);
+      Anomaly anomaly = Anomaly.anomalyOf("attack:dead", Confidence.NONE, Anomaly.Type.KILLAURA, description);
       parentCheck().saveAnomaly(player, anomaly);
     }
   }

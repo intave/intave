@@ -21,7 +21,7 @@ public final class SwingDeviationHeuristics extends SwingBlueprint<SwingDeviatio
     if (deviation < 0.45) {
       if (++meta.vl >= 3) {
         String description = String.format("clicking with a low deviation %.2f vl: %.2f", deviation, meta.vl);
-        Anomaly anomaly = Anomaly.anomalyOf("310", Confidence.NONE, Anomaly.Type.AUTOCLICKER, description);
+        Anomaly anomaly = Anomaly.anomalyOf("click:dev", Confidence.NONE, Anomaly.Type.AUTOCLICKER, description);
         parentCheck().saveAnomaly(user.player(), anomaly);
         //dmc30
 //        user.nerf(AttackNerfStrategy.GARBAGE_HITS, "30");

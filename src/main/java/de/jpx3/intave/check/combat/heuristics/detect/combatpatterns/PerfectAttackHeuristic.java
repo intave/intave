@@ -99,7 +99,7 @@ public final class PerfectAttackHeuristic extends MetaCheckPart<Heuristics, Perf
           + ", d:" + MathHelper.formatDouble(distanceAverage, 2)
           + ") vl:" + MathHelper.formatDouble(heuristicMeta.vl, 2);
         int options = LIMIT_4 | SUGGEST_MINING | DELAY_16s;
-        Anomaly anomaly = Anomaly.anomalyOf("51", Confidence.MAYBE, Anomaly.Type.KILLAURA, description, options);
+        Anomaly anomaly = Anomaly.anomalyOf("attack:acc", Confidence.MAYBE, Anomaly.Type.KILLAURA, description, options);
         parentCheck().saveAnomaly(player, anomaly);
         if (heuristicMeta.vl >= 2) {
           //dmc13
