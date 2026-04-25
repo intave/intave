@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.tracker.player;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -57,7 +57,7 @@ public final class EffectTracker extends Module {
       REMOVE_ENTITY_EFFECT
     }
   )
-  public void sentRemoveEffect(PacketEvent event) {
+  public void sentRemoveEffect(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();

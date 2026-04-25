@@ -1,6 +1,6 @@
 package de.jpx3.intave.module.linker.packet;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 
 /**
  * Class generated using IntelliJ IDEA
@@ -8,5 +8,5 @@ import com.comphenix.protocol.events.PacketEvent;
  */
 
 public interface PacketSubscriptionMethodExecutor {
-  void invoke(PacketEventSubscriber subscriber, PacketEvent event);
+  void invoke(PacketEventSubscriber subscriber, ProtocolPacketEvent event);
 }

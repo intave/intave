@@ -3,7 +3,7 @@ package de.jpx3.intave.user;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.google.common.collect.Maps;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
@@ -591,12 +591,12 @@ final class PlayerUser implements User {
   }
 
   @Override
-  public void packetTickFeedback(PacketEvent event, EmptyFeedbackCallback callback) {
+  public void packetTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback) {
     Modules.feedback().synchronize(player(), (player1, target) -> callback.success(player1, null), event);
   }
 
   @Override
-  public void packetTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, int options) {
+  public void packetTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback, int options) {
     Modules.feedback().synchronize(player(), (player1, target) -> callback.success(player1, null), options, event);
   }
 
@@ -611,32 +611,32 @@ final class PlayerUser implements User {
   }
 
   @Override
-  public void tracedPacketTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, FeedbackObserver tracker) {
+  public void tracedPacketTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback, FeedbackObserver tracker) {
     Modules.feedback().tracedSingleSynchronize(player(), null, callback, tracker, 0, event);
   }
 
   @Override
-  public void tracedPacketTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, FeedbackObserver tracker, int options) {
+  public void tracedPacketTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback, FeedbackObserver tracker, int options) {
     Modules.feedback().tracedSingleSynchronize(player(), null, callback, tracker, options, event);
   }
 
   @Override
-  public void doubleTickFeedback(PacketEvent event, EmptyFeedbackCallback before, EmptyFeedbackCallback after) {
+  public void doubleTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback before, EmptyFeedbackCallback after) {
     Modules.feedback().doubleSynchronize(player(), event, null, before, after);
   }
 
   @Override
-  public void doubleTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, int options) {
+  public void doubleTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, int options) {
     Modules.feedback().doubleSynchronize(player(), event, null, callback, callback2, options);
   }
 
   @Override
-  public void doubleTracedTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker) {
+  public void doubleTracedTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker) {
     Modules.feedback().tracedDoubleSynchronize(player(), event, null, callback, callback2, tracker, tracker);
   }
 
   @Override
-  public void doubleTracedTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker, int options) {
+  public void doubleTracedTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker, int options) {
     Modules.feedback().tracedDoubleSynchronize(player(), event, null, callback, callback2, tracker, tracker, options);
   }
 

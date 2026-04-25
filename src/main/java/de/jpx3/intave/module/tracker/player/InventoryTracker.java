@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.tracker.player;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import de.jpx3.intave.block.collision.Collision;
@@ -42,7 +42,7 @@ public final class InventoryTracker extends Module {
     },
     ignoreCancelled = false
   )
-  public void sentOpenInventory(PacketEvent event) {
+  public void sentOpenInventory(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     InventoryMetadata inventoryData = user.meta().inventory();
@@ -76,7 +76,7 @@ public final class InventoryTracker extends Module {
       CLIENT_COMMAND
     }
   )
-  public void receiveClientCommand(PacketEvent event) {
+  public void receiveClientCommand(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     EnumWrappers.ClientCommand clientCommand = event.getPacket().getClientCommands().read(0);
     if (clientCommand == EnumWrappers.ClientCommand.OPEN_INVENTORY_ACHIEVEMENT) {
@@ -125,7 +125,7 @@ public final class InventoryTracker extends Module {
     },
     ignoreCancelled = false
   )
-  public void sentCloseInventory(PacketEvent event) {
+  public void sentCloseInventory(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     Modules.feedback()
       .synchronize(player, null, (p, x) -> closeInventory(p));
@@ -142,7 +142,7 @@ public final class InventoryTracker extends Module {
       PacketId.Client.CLOSE_WINDOW
     }
   )
-  public void receiveCloseWindow(PacketEvent event) {
+  public void receiveCloseWindow(ProtocolPacketEvent event) {
     closeInventory(event.getPlayer());
   }
 
@@ -168,7 +168,7 @@ public final class InventoryTracker extends Module {
     },
     ignoreCancelled = false
   )
-  public void sentRespawn(PacketEvent event) {
+  public void sentRespawn(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     InventoryMetadata inventoryData = user.meta().inventory();

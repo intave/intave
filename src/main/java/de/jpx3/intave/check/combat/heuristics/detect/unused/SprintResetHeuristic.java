@@ -2,7 +2,7 @@ package de.jpx3.intave.check.combat.heuristics.detect.unused;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.check.MetaCheckPart;
@@ -38,7 +38,7 @@ public final class SprintResetHeuristic extends MetaCheckPart<Heuristics, Sprint
       ENTITY_ACTION_IN
     }
   )
-  public void receiveSprintPacket(PacketEvent event) {
+  public void receiveSprintPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     SprintResetHeuristicMeta meta = metaOf(user);
@@ -59,7 +59,7 @@ public final class SprintResetHeuristic extends MetaCheckPart<Heuristics, Sprint
       USE_ENTITY
     }
   )
-  public void receiveAttackPacket(PacketEvent event) {
+  public void receiveAttackPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     SprintResetHeuristicMeta meta = metaOf(user);
@@ -79,7 +79,7 @@ public final class SprintResetHeuristic extends MetaCheckPart<Heuristics, Sprint
       POSITION, POSITION_LOOK, LOOK, FLYING
     }
   )
-  public void receiveMovePacket(PacketEvent event) {
+  public void receiveMovePacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     SprintResetHeuristicMeta meta = metaOf(user);

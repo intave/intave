@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.module.Modules;
@@ -29,7 +29,7 @@ public final class PacketOrder extends MetaCheckPart<PlacementAnalysis, PacketOr
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     metaOf(player).lastMovePacket = System.currentTimeMillis();
   }
@@ -39,7 +39,7 @@ public final class PacketOrder extends MetaCheckPart<PlacementAnalysis, PacketOr
       BLOCK_PLACE
     }
   )
-  public void checkPlacementPacketOrder(PacketEvent event) {
+  public void checkPlacementPacketOrder(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     PacketContainer packet = event.getPacket();

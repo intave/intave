@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.filter;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
@@ -34,7 +34,7 @@ public final class HealthFilter extends Filter {
     },
     priority = ListenerPriority.NORMAL
   )
-  public void depriveHealth(PacketEvent event) {
+  public void depriveHealth(ProtocolPacketEvent event) {
     // Rule #3151235: When editing metadata, do a deepClone().
     // Why? I still don't know after 5 hours of debugging.
     event.setPacket(event.getPacket().deepClone());

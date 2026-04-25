@@ -4,7 +4,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.BukkitConverters;
@@ -221,7 +221,7 @@ public final class MovementDispatcher extends Module {
       RESPAWN
     }
   )
-  public void sentRespawn(PacketEvent event) {
+  public void sentRespawn(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     MetadataBundle meta = user.meta();
@@ -261,7 +261,7 @@ public final class MovementDispatcher extends Module {
       EXPLOSION
     }
   )
-  public void sentExplosion(PacketEvent event) {
+  public void sentExplosion(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     Motion knockback = readExplosionMotion(event);
@@ -284,7 +284,7 @@ public final class MovementDispatcher extends Module {
       FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
     }
   )
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     PacketLogging logging = Modules.tracker().packetLogging();
 
     Player player = event.getPlayer();
@@ -711,7 +711,7 @@ public final class MovementDispatcher extends Module {
       FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
     }
   )
-  public void receiveFinalMovement(PacketEvent event) {
+  public void receiveFinalMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
 
     PacketContainer packet = event.getPacket();
@@ -967,7 +967,7 @@ public final class MovementDispatcher extends Module {
       STEER_VEHICLE
     }
   )
-  public void receiveClientKeys(PacketEvent event) {
+  public void receiveClientKeys(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
@@ -1005,7 +1005,7 @@ public final class MovementDispatcher extends Module {
       UPDATE_HEALTH
     }
   )
-  public void catchFoodUpdate(PacketEvent event) {
+  public void catchFoodUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     Integer originalFoodLevel = event.getPacket().getIntegers().read(0);
@@ -1024,7 +1024,7 @@ public final class MovementDispatcher extends Module {
       ENTITY_METADATA
     }
   )
-  public void receiveElytraUpdate(PacketEvent event) {
+  public void receiveElytraUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     Integer entityId = packet.getIntegers().read(0);
@@ -1095,7 +1095,7 @@ public final class MovementDispatcher extends Module {
       ENTITY_VELOCITY
     }
   )
-  public void sentVelocityPacket(PacketEvent event) {
+  public void sentVelocityPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     StructureModifier<Integer> integers = packet.getIntegers();
@@ -1471,7 +1471,7 @@ public final class MovementDispatcher extends Module {
     movementData.willReceiveSetbackVelocity = movementData.willReceiveSetbackVelocityResetCache;
   }
 
-  private Motion readExplosionMotion(PacketEvent event) {
+  private Motion readExplosionMotion(ProtocolPacketEvent event) {
     PacketContainer packet = event.getPacket();
     if (NEW_EXPLOSION) {
       Optional<Vector> read = packet.getOptionals(BukkitConverters.getVectorConverter()).read(0);

@@ -3,7 +3,7 @@ package de.jpx3.intave.module.dispatch;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedAttribute;
 import com.google.common.collect.Lists;
@@ -64,7 +64,7 @@ public final class AttackDispatcher extends Module {
       USE_ENTITY
     }
   )
-  public void receiveUseEntity(PacketEvent event) {
+  public void receiveUseEntity(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     if (player.isDead()) {
       event.setCancelled(true);
@@ -136,7 +136,7 @@ public final class AttackDispatcher extends Module {
       RESPAWN
     }
   )
-  public void sentRespawn(PacketEvent event) {
+  public void sentRespawn(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     Synchronizer.synchronizeDelayed(() -> disableReducing(player), 4);
   }
@@ -147,7 +147,7 @@ public final class AttackDispatcher extends Module {
       SET_SLOT
     }
   )
-  public void filterSharpness(PacketEvent event) {
+  public void filterSharpness(ProtocolPacketEvent event) {
     PacketContainer packet = event.getPacket();
     ItemStack item = packet.getItemModifier().read(0).clone();
     if (REDUCING_DISABLED) {

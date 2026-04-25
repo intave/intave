@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.combat.heuristics.detect.unused;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.math.MathHelper;
@@ -53,7 +53,7 @@ public final class PacketDependenciesHeuristic extends MetaCheckPart<Heuristics,
       POSITION, POSITION_LOOK, FLYING, LOOK
     }
   )
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     PacketDependentHeuristicMeta meta = metaOf(user);
@@ -154,7 +154,7 @@ public final class PacketDependenciesHeuristic extends MetaCheckPart<Heuristics,
       HELD_ITEM_SLOT_IN
     }
   )
-  public void receivePackets(PacketEvent event) {
+  public void receivePackets(ProtocolPacketEvent event) {
     PacketDependentHeuristicMeta meta = metaOf(userOf(event.getPlayer()));
     addTickToPacketTypeList(meta, event.getPacketType());
   }

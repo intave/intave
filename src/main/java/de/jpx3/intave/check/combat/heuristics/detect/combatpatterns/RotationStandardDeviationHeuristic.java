@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.combat.heuristics.detect.combatpatterns;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
@@ -40,7 +40,7 @@ public final class RotationStandardDeviationHeuristic extends MetaCheckPart<Heur
       LOOK, POSITION_LOOK
     }
   )
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MetadataBundle meta = user.meta();

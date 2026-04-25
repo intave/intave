@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.movement.timer;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.movement.Timer;
 import de.jpx3.intave.executor.IntaveThreadFactory;
@@ -87,7 +87,7 @@ public final class BalanceButActuallyGood extends MetaCheckPart<Timer, BalanceBu
       POSITION_LOOK, POSITION, FLYING, LOOK
     }
   )
-  public void clientTickUpdate(PacketEvent event) {
+  public void clientTickUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MovementFrequencyData frequencyData = metaOf(user);
@@ -100,7 +100,7 @@ public final class BalanceButActuallyGood extends MetaCheckPart<Timer, BalanceBu
       PacketId.Server.POSITION
     }
   )
-  public void catchTeleport(PacketEvent event) {
+  public void catchTeleport(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     MovementFrequencyData frequencyData = metaOf(user);

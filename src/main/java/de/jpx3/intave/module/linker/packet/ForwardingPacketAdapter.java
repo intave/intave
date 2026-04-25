@@ -3,7 +3,7 @@ package de.jpx3.intave.module.linker.packet;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -16,7 +16,7 @@ public final class ForwardingPacketAdapter extends WeakReferencePacketAdapter {
   private static final boolean TEMP_PLAYER_CHECK;
 
   static {
-    TEMP_PLAYER_CHECK = Arrays.stream(PacketEvent.class.getMethods())
+    TEMP_PLAYER_CHECK = Arrays.stream(ProtocolPacketEvent.class.getMethods())
       .anyMatch(method -> method.getName().equalsIgnoreCase("isPlayerTemporary"));
   }
 
@@ -32,7 +32,7 @@ public final class ForwardingPacketAdapter extends WeakReferencePacketAdapter {
   }
 
   @Override
-  public void onPacketSending(PacketEvent event) {
+  public void onPacketSending(ProtocolPacketEvent event) {
     if (TEMP_PLAYER_CHECK) {
       // perform temporary check
       if (event.isPlayerTemporary()) {
@@ -57,7 +57,7 @@ public final class ForwardingPacketAdapter extends WeakReferencePacketAdapter {
   }
 
   @Override
-  public void onPacketReceiving(PacketEvent event) {
+  public void onPacketReceiving(ProtocolPacketEvent event) {
     if (TEMP_PLAYER_CHECK) {
       // perform temporary check
       if (event.isPlayerTemporary()) {

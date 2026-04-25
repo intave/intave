@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.filter;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -39,7 +39,7 @@ public final class CommandFilter extends Filter {
       CHAT_IN, TAB_COMPLETE_IN
     }
   )
-  public void receiveChatPacket(PacketEvent event) {
+  public void receiveChatPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     String message = event.getPacket().getStrings().getValues().get(0);
 
@@ -70,7 +70,7 @@ public final class CommandFilter extends Filter {
 //      COMMANDS
 //    }
 //  )
-//  public void receiveCommands(PacketEvent event) {
+//  public void receiveCommands(ProtocolPacketEvent event) {
 //    Player player = event.getPlayer();
 //    PacketContainer packet = event.getPacket();
 //    StructureModifier<RootCommandNode> rootModifier = packet.getSpecificModifier(RootCommandNode.class);
@@ -93,7 +93,7 @@ public final class CommandFilter extends Filter {
       TAB_COMPLETE_OUT
     }
   )
-  public void receiveTabComplete(PacketEvent event) {
+  public void receiveTabComplete(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     boolean permitted = BukkitPermissionCheck.permissionCheck(player, "intave.command");

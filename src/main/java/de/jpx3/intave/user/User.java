@@ -1,6 +1,6 @@
 package de.jpx3.intave.user;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.access.UnsupportedFallbackOperationException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.access.player.trust.TrustFactorResolver;
@@ -133,15 +133,15 @@ public interface User {
   /**
    * Same as {@link #tickFeedback(EmptyFeedbackCallback)}, but will bundle the transaction packet with the given event
    */
-  void packetTickFeedback(PacketEvent event, EmptyFeedbackCallback callback);
+  void packetTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback);
 
   /**
-   * Same as {@link #packetTickFeedback(PacketEvent, EmptyFeedbackCallback)}, but with options
+   * Same as {@link #packetTickFeedback(ProtocolPacketEvent, EmptyFeedbackCallback)}, but with options
    * @param event the packet event
    * @param callback the callback
    * @param options the options, as defined in {@link FeedbackOptions}
    */
-  default void packetTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, int options) {
+  default void packetTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback, int options) {
     packetTickFeedback(event, callback);
   }
 
@@ -163,9 +163,9 @@ public interface User {
     tracedTickFeedback(callback, tracker);
   }
 
-  void tracedPacketTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, FeedbackObserver tracker);
+  void tracedPacketTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback, FeedbackObserver tracker);
 
-  default void tracedPacketTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, FeedbackObserver tracker, int options) {
+  default void tracedPacketTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback, FeedbackObserver tracker, int options) {
     tracedPacketTickFeedback(event, callback, tracker);
   }
 
@@ -176,38 +176,38 @@ public interface User {
    * @param before first before
    * @param after second before
    */
-  void doubleTickFeedback(PacketEvent event, EmptyFeedbackCallback before, EmptyFeedbackCallback after);
+  void doubleTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback before, EmptyFeedbackCallback after);
 
   /**
-   * Same as {@link #doubleTickFeedback(PacketEvent, EmptyFeedbackCallback, EmptyFeedbackCallback)}, but with options
+   * Same as {@link #doubleTickFeedback(ProtocolPacketEvent, EmptyFeedbackCallback, EmptyFeedbackCallback)}, but with options
    * @param event the packet event
    * @param callback first callback
    * @param callback2 second callback
    * @param options the options, as defined in {@link FeedbackOptions}
    */
-  default void doubleTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, int options) {
+  default void doubleTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, int options) {
     doubleTickFeedback(event, callback, callback2);
   }
 
   /**
-   * Same as {@link #doubleTickFeedback(PacketEvent, EmptyFeedbackCallback, EmptyFeedbackCallback)}, but with a {@link FeedbackObserver}
+   * Same as {@link #doubleTickFeedback(ProtocolPacketEvent, EmptyFeedbackCallback, EmptyFeedbackCallback)}, but with a {@link FeedbackObserver}
    * Feedback observer is notified when the packet is sent and when the response is received.
    * @param event the packet event
    * @param callback first callback
    * @param callback2 second callback
    * @param tracker a tracker
    */
-  void doubleTracedTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker);
+  void doubleTracedTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker);
 
   /**
-   * Same as {@link #doubleTracedTickFeedback(PacketEvent, EmptyFeedbackCallback, EmptyFeedbackCallback, FeedbackObserver)}, but with options
+   * Same as {@link #doubleTracedTickFeedback(ProtocolPacketEvent, EmptyFeedbackCallback, EmptyFeedbackCallback, FeedbackObserver)}, but with options
    * @param event the packet event
    * @param callback first callback
    * @param callback2 second callback
    * @param tracker a tracker
    * @param options the options, as defined in {@link FeedbackOptions}
    */
-  default void doubleTracedTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker, int options) {
+  default void doubleTracedTickFeedback(ProtocolPacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker, int options) {
     doubleTracedTickFeedback(event, callback, callback2, tracker);
   }
 

@@ -1,6 +1,6 @@
 package de.jpx3.intave.module.player;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
@@ -33,7 +33,7 @@ public final class UserLifetimeService extends Module {
       LOGIN
     }
   )
-  public void receiveLogin(PacketEvent event) {
+  public void receiveLogin(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     setupUser(player);
   }

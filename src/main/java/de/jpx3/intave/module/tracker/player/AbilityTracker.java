@@ -1,6 +1,6 @@
 package de.jpx3.intave.module.tracker.player;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Module;
@@ -63,7 +63,7 @@ public final class AbilityTracker extends Module {
       ABILITIES_OUT
     }
   )
-  public void sentAbilities(User user, AbilityOutReader reader, PacketEvent event) {
+  public void sentAbilities(User user, AbilityOutReader reader, ProtocolPacketEvent event) {
     MetadataBundle meta = user.meta();
     MovementMetadata movement = meta.movement();
     AbilityMetadata abilityData = meta.abilities();

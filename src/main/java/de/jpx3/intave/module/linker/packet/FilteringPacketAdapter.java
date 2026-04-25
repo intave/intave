@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.linker.packet;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.UnsupportedFallbackOperationException;
@@ -20,7 +20,7 @@ public final class FilteringPacketAdapter extends WeakReferencePacketAdapter imp
   private static final boolean TEMP_PLAYER_CHECK;
 
   static {
-    TEMP_PLAYER_CHECK = Arrays.stream(PacketEvent.class.getMethods())
+    TEMP_PLAYER_CHECK = Arrays.stream(ProtocolPacketEvent.class.getMethods())
       .anyMatch(method -> method.getName().equalsIgnoreCase("isPlayerTemporary"));
   }
 
@@ -47,7 +47,7 @@ public final class FilteringPacketAdapter extends WeakReferencePacketAdapter imp
   }
 
   @Override
-  public void onPacketReceiving(PacketEvent event) {
+  public void onPacketReceiving(ProtocolPacketEvent event) {
     if (!validateEvent(event)) {
       return;
     }
@@ -77,7 +77,7 @@ public final class FilteringPacketAdapter extends WeakReferencePacketAdapter imp
   }
 
   @Override
-  public void onPacketSending(PacketEvent event) {
+  public void onPacketSending(ProtocolPacketEvent event) {
     if (!validateEvent(event)) {
       return;
     }
@@ -97,7 +97,7 @@ public final class FilteringPacketAdapter extends WeakReferencePacketAdapter imp
     }
   }
 
-  private boolean validateEvent(PacketEvent event) {
+  private boolean validateEvent(ProtocolPacketEvent event) {
     if (TEMP_PLAYER_CHECK) {
       // perform temporary check
       if (event.isPlayerTemporary()) {

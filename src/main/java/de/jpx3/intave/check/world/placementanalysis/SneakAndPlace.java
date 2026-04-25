@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.module.Modules;
@@ -39,7 +39,7 @@ public final class SneakAndPlace extends MetaCheckPart<PlacementAnalysis, SneakA
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void clientTickUpdate(PacketEvent event) {
+  public void clientTickUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     SneakAndPlaceMeta meta = metaOf(player);
     if (meta.placedInThisTick || meta.sneakChangedInThisTick) {
@@ -88,7 +88,7 @@ public final class SneakAndPlace extends MetaCheckPart<PlacementAnalysis, SneakA
       BLOCK_PLACE
     }
   )
-  public void receivePlacementPacket(PacketEvent event) {
+  public void receivePlacementPacket(ProtocolPacketEvent event) {
     PacketContainer packet = event.getPacket();
     Player player = event.getPlayer();
     SneakAndPlaceMeta meta = metaOf(player);
@@ -115,7 +115,7 @@ public final class SneakAndPlace extends MetaCheckPart<PlacementAnalysis, SneakA
       ENTITY_ACTION_IN
     }
   )
-  public void receiveEntityActionPacket(PacketEvent event) {
+  public void receiveEntityActionPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     SneakAndPlaceMeta meta = metaOf(player);
     PacketContainer packet = event.getPacket();

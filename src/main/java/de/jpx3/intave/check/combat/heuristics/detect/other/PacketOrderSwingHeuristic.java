@@ -2,7 +2,7 @@ package de.jpx3.intave.check.combat.heuristics.detect.other;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
@@ -31,7 +31,7 @@ public final class PacketOrderSwingHeuristic extends MetaCheckPart<Heuristics, P
       FLYING, POSITION, POSITION_LOOK, LOOK, ARM_ANIMATION
     }
   )
-  public void receiveMovementPacket(PacketEvent event) {
+  public void receiveMovementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     PacketOrderSwingHeuristicMeta heuristicMeta = metaOf(player);
     heuristicMeta.swingTick = event.getPacketType() == PacketType.Play.Client.ARM_ANIMATION;
@@ -42,7 +42,7 @@ public final class PacketOrderSwingHeuristic extends MetaCheckPart<Heuristics, P
       USE_ENTITY
     }
   )
-  public void receiveUseEntity(PacketEvent event) {
+  public void receiveUseEntity(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     ProtocolMetadata clientData = user.meta().protocol();

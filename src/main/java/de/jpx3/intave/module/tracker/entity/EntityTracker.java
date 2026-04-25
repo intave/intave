@@ -2,7 +2,7 @@ package de.jpx3.intave.module.tracker.entity;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import de.jpx3.intave.IntaveControl;
@@ -101,7 +101,7 @@ public final class EntityTracker extends Module {
     },
     ignoreCancelled = false
   )
-  public void sendAttachEntityPacket(PacketEvent event) {
+  public void sendAttachEntityPacket(ProtocolPacketEvent event) {
     PacketContainer packet = event.getPacket();
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
@@ -233,7 +233,7 @@ public final class EntityTracker extends Module {
     },
     ignoreCancelled = false
   )
-  public void sendEntitySpawn(PacketEvent event) {
+  public void sendEntitySpawn(ProtocolPacketEvent event) {
     /* IMPORTANT: If the entity spawn packet gets synchronized the player could be spammed with transaction packets
      *   which could cause a too many packets kick
      *
@@ -293,7 +293,7 @@ public final class EntityTracker extends Module {
 //      REMOVE_ENTITY_EFFECT, UPDATE_ATTRIBUTES, USE_BED
 //    }
 //  )
-//  public void on(PacketEvent event) {
+//  public void on(ProtocolPacketEvent event) {
 //    Player player = event.getPlayer();
 //    User user = UserRepository.userOf(player);
 //    PacketContainer packet = event.getPacket();
@@ -351,7 +351,7 @@ public final class EntityTracker extends Module {
     }
   }
 
-  private Entity processEntitySpawn(Player player, PacketEvent event) {
+  private Entity processEntitySpawn(Player player, ProtocolPacketEvent event) {
     User user = UserRepository.userOf(player);
     AttackMetadata attackData = user.meta().attack();
     PacketType packetType = event.getPacketType();
@@ -486,7 +486,7 @@ public final class EntityTracker extends Module {
       POSITION, POSITION_LOOK, LOOK, FLYING, STEER_VEHICLE
     }
   )
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     if (user.meta().protocol().sendsClientTickEnd()) {
@@ -529,7 +529,7 @@ public final class EntityTracker extends Module {
     },
     debug = true
   )
-  public void on(PacketEvent event) {
+  public void on(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     if (!user.meta().protocol().sendsClientTickEnd()) {
@@ -572,7 +572,7 @@ public final class EntityTracker extends Module {
       ENTITY_POSITION_SYNC
     }
   )
-  public void receivePositionSync(PacketEvent event) {
+  public void receivePositionSync(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
@@ -618,7 +618,7 @@ public final class EntityTracker extends Module {
     },
     ignoreCancelled = false
   )
-  public void receiveEntityTeleport(PacketEvent event) {
+  public void receiveEntityTeleport(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
@@ -662,7 +662,7 @@ public final class EntityTracker extends Module {
     }
   }
 
-  private Entity wrappedEntityByEntityTeleportPacket(PacketEvent event) {
+  private Entity wrappedEntityByEntityTeleportPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
@@ -691,7 +691,7 @@ public final class EntityTracker extends Module {
     },
     ignoreCancelled = false
   )
-  public void receiveEntityMovement(PacketEvent event) {
+  public void receiveEntityMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
@@ -927,7 +927,7 @@ public final class EntityTracker extends Module {
     },
     priority = ListenerPriority.LOWEST
   )
-  public void receiveUseEntity(PacketEvent event) {
+  public void receiveUseEntity(ProtocolPacketEvent event) {
     User user = UserRepository.userOf(event.getPlayer());
     PacketContainer packet = event.getPacket();
     ConnectionMetadata connection = user.meta().connection();
@@ -957,7 +957,7 @@ public final class EntityTracker extends Module {
     },
     ignoreCancelled = false
   )
-  public void receiveEntityStatus(PacketEvent event) {
+  public void receiveEntityStatus(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     if (!user.hasPlayer()) {
@@ -993,7 +993,7 @@ public final class EntityTracker extends Module {
     },
     ignoreCancelled = false
   )
-  public void receiveEntityMetadata(PacketEvent event) {
+  public void receiveEntityMetadata(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();

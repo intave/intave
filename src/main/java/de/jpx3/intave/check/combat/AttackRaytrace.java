@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.combat;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
 import de.jpx3.intave.IntaveControl;
@@ -81,7 +81,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     priority = LOW,
     packetsIn = USE_ENTITY
   )
-  public void receiveUseEntityPacket(PacketEvent event) {
+  public void receiveUseEntityPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     AttackRaytraceMeta meta = metaOf(user);
@@ -214,7 +214,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     priority = LOW,
     packetsIn = ARM_ANIMATION
   )
-  public void receiveArmAnimationPacket(PacketEvent event) {
+  public void receiveArmAnimationPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     AttackRaytraceMeta meta = metaOf(user);
@@ -237,7 +237,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     priority = NORMAL,
     packetsIn = {FLYING, LOOK, POSITION, POSITION_LOOK}
   )
-  public void receiveMovementPacket(PacketEvent event) {
+  public void receiveMovementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     AttackRaytraceMeta meta = metaOf(user);

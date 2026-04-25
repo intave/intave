@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.module.Modules;
@@ -32,7 +32,7 @@ public class AngleSnap extends PlayerCheckPart<PlacementAnalysis> {
       POSITION_LOOK, LOOK, POSITION, FLYING
     }
   )
-  public void on(PacketEvent event) {
+  public void on(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();

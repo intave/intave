@@ -1,7 +1,7 @@
 package de.jpx3.intave.adapter;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntaveLogger;
@@ -23,7 +23,7 @@ public final class ProtocolLibraryAdapter {
   }
 
   public static void checkIfOutdated() {
-    boolean temporaryPlayer = Arrays.stream(PacketEvent.class.getMethods()).anyMatch(method -> method.getName().equalsIgnoreCase("isPlayerTemporary"));
+    boolean temporaryPlayer = Arrays.stream(ProtocolPacketEvent.class.getMethods()).anyMatch(method -> method.getName().equalsIgnoreCase("isPlayerTemporary"));
     boolean specifiedEnumModifier = Arrays.stream(EnumWrappers.class.getMethods()).anyMatch(method -> method.getName().equalsIgnoreCase("getGenericConverter") && method.getParameterCount() == 2);
     boolean byteBuddyExists = classExists("com.comphenix.net.bytebuddy.ByteBuddy");
 

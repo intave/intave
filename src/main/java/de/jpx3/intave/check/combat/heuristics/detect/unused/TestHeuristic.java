@@ -3,7 +3,7 @@ package de.jpx3.intave.check.combat.heuristics.detect.unused;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
@@ -60,7 +60,7 @@ public final class TestHeuristic extends MetaCheckPart<Heuristics, TestHeuristic
     },
     priority = ListenerPriority.LOWEST
   )
-  public void receivePacket(PacketEvent event) {
+  public void receivePacket(ProtocolPacketEvent event) {
     PacketContainer packet = event.getPacket();
     Player player = event.getPlayer();
     User user = userOf(player);

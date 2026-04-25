@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.combat.heuristics.detect.testing;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.module.linker.nayoro.NayoroRelay;
@@ -46,7 +46,7 @@ public final class TestingHeuristic extends MetaCheckPart<Heuristics, TestingHeu
       BLOCK_PLACE, BLOCK_DIG
     }
   )
-  public void receiveInteractionPacket(PacketEvent event) {
+  public void receiveInteractionPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     ExampleMeta exampleMeta = metaOf(user);

@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.filter;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.Pair;
 import de.jpx3.intave.IntavePlugin;
@@ -29,7 +29,7 @@ public final class EquipmentFilter extends Filter {
       ENTITY_EQUIPMENT
     }
   )
-  public void filterEquipment(PacketEvent event) {
+  public void filterEquipment(ProtocolPacketEvent event) {
     PacketContainer packet = event.getPacket();
 
     if (packet.getItemModifier().readSafely(0) != null) {

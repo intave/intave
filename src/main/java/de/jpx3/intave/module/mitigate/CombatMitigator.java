@@ -1,6 +1,6 @@
 package de.jpx3.intave.module.mitigate;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.connect.sibyl.SibylMessageTransmitter;
@@ -103,7 +103,7 @@ public final class CombatMitigator extends Module {
     packetsIn = PacketId.Client.ARM_ANIMATION
   )
   public void onArmAnimationPacket(
-    User user, PacketEvent event
+    User user, ProtocolPacketEvent event
   ) {
     user.meta().punishment().lastSwing = System.currentTimeMillis();
   }
@@ -112,7 +112,7 @@ public final class CombatMitigator extends Module {
     packetsOut = PacketId.Server.ENTITY_VELOCITY
   )
   public void onVelocityPacket(
-    User user, PacketEvent event, EntityVelocityReader reader
+    User user, ProtocolPacketEvent event, EntityVelocityReader reader
   ) {
     int entityId = user.player().getEntityId();
     if (reader.entityId() != entityId) {

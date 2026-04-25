@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.filter;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
@@ -83,7 +83,7 @@ public final class VanishFilter extends Filter {
   @PacketSubscription(
     packetsOut = {PLAYER_INFO}
   )
-  public void on(PacketEvent event) {
+  public void on(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
 //    System.out.println("Player info packet: " + packet);
@@ -155,7 +155,7 @@ public final class VanishFilter extends Filter {
       TAB_COMPLETE_OUT
     }
   )
-  public void receiveTabComplete(PacketEvent event) {
+  public void receiveTabComplete(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     ProtocolMetadata protocol = user.meta().protocol();
@@ -195,7 +195,7 @@ public final class VanishFilter extends Filter {
 //      SCOREBOARD_TEAM
 //    }
 //  )
-//  public void onTeam(PacketEvent event) {
+//  public void onTeam(ProtocolPacketEvent event) {
 //    Player player = event.getPlayer();
 //    PacketContainer packet = event.getPacket();
 //    User user = UserRepository.userOf(player);
@@ -210,7 +210,7 @@ public final class VanishFilter extends Filter {
       PLAYER_INFO_REMOVE
     }
   )
-  public void onRemoval(PacketEvent event) {
+  public void onRemoval(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     User user = UserRepository.userOf(player);

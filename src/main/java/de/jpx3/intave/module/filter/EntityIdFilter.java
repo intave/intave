@@ -2,7 +2,7 @@ package de.jpx3.intave.module.filter;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.cleanup.ShutdownTasks;
@@ -73,7 +73,7 @@ public final class EntityIdFilter extends Filter {
     priority = ListenerPriority.LOWEST
   )
   public void onPacket(
-    PacketEvent event
+    ProtocolPacketEvent event
   ) {
     User user = UserRepository.userOf(event.getPlayer());
     PacketContainer packet = event.getPacket();
@@ -124,7 +124,7 @@ public final class EntityIdFilter extends Filter {
     priority = ListenerPriority.HIGHEST
   )
   public void onPacketOut(
-    PacketEvent event
+    ProtocolPacketEvent event
   ) {
     PacketContainer packet = event.getPacket();
     User user = UserRepository.userOf(event.getPlayer());

@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.other.protocolscanner;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.check.CheckPart;
 import de.jpx3.intave.check.other.ProtocolScanner;
@@ -29,7 +29,7 @@ public final class SkinBlinker extends CheckPart<ProtocolScanner> {
       SETTINGS
     }
   )
-  public void receiveClientOptions(PacketEvent event) {
+  public void receiveClientOptions(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
 

@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
@@ -33,7 +33,7 @@ public final class PacketOrderHeuristic extends MetaCheckPart<Heuristics, Packet
       USE_ENTITY, BLOCK_PLACE, BLOCK_DIG
     }
   )
-  public void receivePacket(PacketEvent event) {
+  public void receivePacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     ProtocolMetadata protocol = user.meta().protocol();

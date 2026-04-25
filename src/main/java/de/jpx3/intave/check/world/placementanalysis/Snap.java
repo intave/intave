@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
@@ -33,7 +33,7 @@ public final class Snap extends MetaCheckPart<PlacementAnalysis, Snap.SnapMeta> 
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void receiveMovementPacket(PacketEvent event) {
+  public void receiveMovementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();

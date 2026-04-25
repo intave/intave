@@ -3,9 +3,13 @@ package de.jpx3.intave;
 import de.jpx3.intave.access.IntaveAccess;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.accessbackend.IntaveAccessService;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.PacketEventsAPI;
+import com.github.retrooper.packetevents.util.TimeStampMode;
 import de.jpx3.intave.adapter.ComponentLoader;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.adapter.ViaVersionAdapter;
+import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import de.jpx3.intave.agent.AgentAccessor;
 import de.jpx3.intave.analytics.Analytics;
 import de.jpx3.intave.block.access.BlockAccess;
@@ -167,6 +171,10 @@ public final class IntavePlugin extends JavaPlugin {
   public void onLoad() {
     // stage 3
     Modules.proceedBoot(BootSegment.STAGE_3);
+    PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this));
+
+    PacketEventsAPI<?> api = PacketEvents.getAPI();
+    if (!api.isLoaded()) api.load();
   }
 
   @Override
@@ -195,6 +203,15 @@ public final class IntavePlugin extends JavaPlugin {
     }
 
     try {
+      PacketEventsAPI<?> api = PacketEvents.getAPI();
+      if (api.isInitialized()) return;
+      api.getSettings()
+                      .debug(false)
+                              .checkForUpdates(false)
+                                      .timeStampMode(TimeStampMode.MILLIS)
+                                              .reEncodeByDefault(true);
+      api.init();
+
       // We need to put this here before setting up the Synchronizer
       ComponentLoader componentLoader = new ComponentLoader(this);
       componentLoader.prepareComponents();
@@ -643,6 +660,7 @@ public final class IntavePlugin extends JavaPlugin {
     if (successfullyBooted) {
       logger.info(randomExitMessage());
     }
+    PacketEvents.getAPI().terminate();
     logger.info("Intave offline");
     logger.shutdown();
   }

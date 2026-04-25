@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.combat.heuristics.detect.combatpatterns;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -32,7 +32,7 @@ public final class AttackRequiredHeuristic extends MetaCheckPart<Heuristics, Att
       ARM_ANIMATION
     }
   )
-  public void receiveSwing(PacketEvent event) {
+  public void receiveSwing(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     metaOf(user).didSwing = true;
@@ -44,7 +44,7 @@ public final class AttackRequiredHeuristic extends MetaCheckPart<Heuristics, Att
       USE_ENTITY
     }
   )
-  public void receiveAttack(PacketEvent event) {
+  public void receiveAttack(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     EnumWrappers.EntityUseAction action = packet.getEntityUseActions().readSafely(0);
@@ -62,7 +62,7 @@ public final class AttackRequiredHeuristic extends MetaCheckPart<Heuristics, Att
       HELD_ITEM_SLOT_IN
     }
   )
-  public void receiveSlotSwitch(PacketEvent event) {
+  public void receiveSlotSwitch(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     AttackRequiredMeta meta = metaOf(player);
     PacketContainer packet = event.getPacket();
@@ -81,7 +81,7 @@ public final class AttackRequiredHeuristic extends MetaCheckPart<Heuristics, Att
       FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
     }
   )
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     ProtocolMetadata clientData = user.meta().protocol();

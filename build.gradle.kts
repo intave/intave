@@ -23,7 +23,8 @@ repositories {
   maven { url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") }
   maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
   maven { url = uri("https://oss.sonatype.org/content/repositories/central") }
-
+  maven { url = uri("https://repo.codemc.io/repository/maven-releases/") }
+  maven { url = uri("https://repo.codemc.io/repository/maven-snapshots/") }
 }
 
 dependencies {
@@ -54,6 +55,8 @@ dependencies {
   compileOnly("org.bytedeco:javacpp-presets:1.5.9")
 
   compileOnly("org.spigotmc:spigot-api:1.21.1-R0.1-SNAPSHOT")
+  compileOnly("com.github.retrooper:packetevents-api:2.12.1")
+  compileOnly("com.github.retrooper:packetevents-spigot:2.12.1")
 
   // pcap
 //  compileOnly("org.pcap4j:pcap4j-core:1.8.0")
@@ -70,7 +73,7 @@ bukkit {
 
   main = "de.jpx3.intave.IntavePlugin"
   apiVersion = "1.13"
-  softDepend = listOf("ProtocolLib", "ViaVersion")
+  softDepend = listOf("PacketEvents", "ViaVersion")
 
   commands { register("intave") { aliases = listOf("iac") } }
 

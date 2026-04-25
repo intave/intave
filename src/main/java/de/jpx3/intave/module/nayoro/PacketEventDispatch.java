@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.nayoro;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
@@ -40,7 +40,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       ARM_ANIMATION
     }
   )
-  public void onClick(PacketEvent event) {
+  public void onClick(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     ClickEvent clickEvent = ClickEvent.create();
@@ -53,7 +53,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       USE_ENTITY
     }
   )
-  public void onUse(PacketEvent event) {
+  public void onUse(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
@@ -74,7 +74,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
     }
   )
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     MovementMetadata movement = user.meta().movement();
@@ -129,7 +129,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       HELD_ITEM_SLOT_IN
     }
   )
-  public void receiveHeldItemSlot(PacketEvent event) {
+  public void receiveHeldItemSlot(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     int slot = event.getPacket().getIntegers().read(0);
@@ -176,7 +176,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       PacketId.Client.CLOSE_WINDOW
     }
   )
-  public void receiveWindowClose(PacketEvent event) {
+  public void receiveWindowClose(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     WindowActionEvent closeEvent = WindowActionEvent.create(CLOSE, user.player().getInventory().getArmorContents());

@@ -1,6 +1,6 @@
 package de.jpx3.intave.module.patcher;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.google.common.collect.Sets;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
@@ -45,7 +45,7 @@ public final class ChunkAccessPatcher extends Module {
   @PacketSubscription(
     packetsOut = PacketId.Server.RESPAWN
   )
-  public void patchRespawnWorldType(PacketEvent event) {
+  public void patchRespawnWorldType(ProtocolPacketEvent event) {
 //    Bukkit.createWorld()
     if (!MinecraftVersions.VER1_16_0.atOrAbove()) {
       WorldType worldType = event.getPacket().getWorldTypeModifier().readSafely(0);

@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -37,7 +37,7 @@ public final class SprintOnAttackHeuristic extends MetaCheckPart<Heuristics, Spr
       ENTITY_ACTION_IN
     }
   )
-  public void receiveEntityActionPacket(PacketEvent event) {
+  public void receiveEntityActionPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     SprintOnAttackHeuristicMeta meta = metaOf(user);
@@ -101,7 +101,7 @@ public final class SprintOnAttackHeuristic extends MetaCheckPart<Heuristics, Spr
       USE_ENTITY
     }
   )
-  public void receiveAttackPacket(PacketEvent event) {
+  public void receiveAttackPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     SprintOnAttackHeuristicMeta meta = metaOf(user);
@@ -121,7 +121,7 @@ public final class SprintOnAttackHeuristic extends MetaCheckPart<Heuristics, Spr
       POSITION, POSITION_LOOK, LOOK, FLYING
     }
   )
-  public void receiveMovePacket(PacketEvent event) {
+  public void receiveMovePacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     SprintOnAttackHeuristicMeta meta = metaOf(user);

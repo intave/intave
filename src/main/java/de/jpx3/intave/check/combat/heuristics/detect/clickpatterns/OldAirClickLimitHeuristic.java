@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.combat.heuristics.detect.clickpatterns;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntaveControl;
@@ -44,7 +44,7 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
       USE_ENTITY
     }
   )
-  public void entityHit(PacketEvent event) {
+  public void entityHit(ProtocolPacketEvent event) {
     if (ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0)) {
       return;
     }
@@ -69,7 +69,7 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
       BLOCK_PLACE
     }
   )
-  public void blockPlace(PacketEvent event) {
+  public void blockPlace(ProtocolPacketEvent event) {
     if (ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0)) {
       return;
     }
@@ -103,7 +103,7 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
       BLOCK_DIG
     }
   )
-  public void blockDig(PacketEvent event) {
+  public void blockDig(ProtocolPacketEvent event) {
     if (ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0)) {
       return;
     }
@@ -135,7 +135,7 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void clientTickUpdate(PacketEvent event) {
+  public void clientTickUpdate(ProtocolPacketEvent event) {
     if (ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0)) {
       return;
     }
@@ -259,7 +259,7 @@ public final class OldAirClickLimitHeuristic extends MetaCheckPart<Heuristics, O
       ARM_ANIMATION
     }
   )
-  public void swing(PacketEvent event) {
+  public void swing(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     AirClickLimitHeuristicMeta meta = metaOf(user);

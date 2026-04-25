@@ -2,7 +2,7 @@ package de.jpx3.intave.check.combat.heuristics.detect.other;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.Anomaly;
@@ -27,7 +27,7 @@ public class InvalidFlyingPacketHeuristic extends MetaCheckPart<Heuristics, Inva
       POSITION, LOOK, POSITION_LOOK, FLYING
     }
   )
-  public void receiveFlyingPacket(PacketEvent event) {
+  public void receiveFlyingPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     PacketContainer packet = event.getPacket();

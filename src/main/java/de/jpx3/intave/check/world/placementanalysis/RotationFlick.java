@@ -2,7 +2,7 @@ package de.jpx3.intave.check.world.placementanalysis;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import de.jpx3.intave.block.access.BlockInteractionAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
@@ -199,7 +199,7 @@ public class RotationFlick extends PlayerCheckPart<PlacementAnalysis> {
       POSITION_LOOK, LOOK, POSITION, FLYING
     }
   )
-  public void on(PacketEvent event) {
+  public void on(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();

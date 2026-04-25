@@ -1,7 +1,7 @@
 package de.jpx3.intave.player.fake.event;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
@@ -31,7 +31,7 @@ public final class PlayerPingPacketDispatcher implements PacketEventSubscriber {
       PLAYER_INFO
     }
   )
-  public void onPacketSending(PacketEvent event) {
+  public void onPacketSending(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     User user = UserRepository.userOf(player);

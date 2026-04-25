@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.tracker.player;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -27,7 +27,7 @@ public class ItemCrashTracker extends Module {
       WINDOW_ITEMS, SET_SLOT
     }
   )
-  public void checkOutgoingItems(PacketEvent event) {
+  public void checkOutgoingItems(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
@@ -80,7 +80,7 @@ public class ItemCrashTracker extends Module {
   @PacketSubscription(
     packetsIn = UPDATE_SIGN
   )
-  public void checkSign(PacketEvent event) {
+  public void checkSign(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
@@ -102,7 +102,7 @@ public class ItemCrashTracker extends Module {
       WINDOW_CLICK
     }
   )
-  public void windowClickCrashFix(PacketEvent event) {
+  public void windowClickCrashFix(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     InventoryMetadata inventoryData = user.meta().inventory();

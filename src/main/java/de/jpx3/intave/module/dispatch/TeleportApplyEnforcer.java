@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.dispatch;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
@@ -71,7 +71,7 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
           POSITION
       }
   )
-  public void receiveOutgoingTeleport(PacketEvent event) {
+  public void receiveOutgoingTeleport(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     User user = UserRepository.userOf(player);
@@ -187,7 +187,7 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
           TELEPORT_ACCEPT
       }
   )
-  public void receiveTeleportAccept(PacketEvent event) {
+  public void receiveTeleportAccept(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
@@ -212,7 +212,7 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
           BLOCK_DIG
       }
   )
-  public void clientClickUpdate(PacketEvent event) {
+  public void clientClickUpdate(ProtocolPacketEvent event) {
     if (!IntaveControl.TELEPORT_FAR_AWAY_ON_Q_PRESS) {
       return;
     }
@@ -234,7 +234,7 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
   }
 
   @DispatchTarget
-  void receiveMovement(PacketEvent event) {
+  void receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
@@ -244,7 +244,7 @@ public final class TeleportApplyEnforcer implements PacketEventSubscriber {
     }
   }
 
-  private void resendIfLimitsExceeded(PacketEvent event) {
+  private void resendIfLimitsExceeded(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();

@@ -2,7 +2,7 @@ package de.jpx3.intave.module.tracker.block;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
@@ -128,7 +128,7 @@ public final class BlockUpdateTracker extends Module {
       BLOCK_BREAK, BLOCK_CHANGE, MULTI_BLOCK_CHANGE
     }
   )
-  public void sentBlockUpdate(PacketEvent event) {
+  public void sentBlockUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     boolean speculativeBlocks = user.meta().protocol().clientSpeculativeBlocks();
@@ -180,7 +180,7 @@ public final class BlockUpdateTracker extends Module {
       BLOCK_CHANGED_ACK
     }
   )
-  public void blockChangedAck(PacketEvent event) {
+  public void blockChangedAck(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     int sequenceNumber = event.getPacket().getIntegers().read(0);

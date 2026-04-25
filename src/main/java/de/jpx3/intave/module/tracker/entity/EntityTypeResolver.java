@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.tracker.entity;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.reflect.FieldAccessException;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import de.jpx3.intave.IntaveLogger;
@@ -75,7 +75,7 @@ public final class EntityTypeResolver {
 
   private static final int ENTITY_DEAD_TYPE_FIELD = MinecraftVersions.VER1_9_0.atOrAbove() ? 6 : 9;
 
-  public EntityTypeData entityTypeDataOfDeadEntity(PacketEvent event) {
+  public EntityTypeData entityTypeDataOfDeadEntity(ProtocolPacketEvent event) {
     PacketContainer packet = event.getPacket();
     int entityId = packet.getIntegers().read(0);
 
@@ -107,7 +107,7 @@ public final class EntityTypeResolver {
     }
   }
 
-  public EntityTypeData entityTypeDataOfLivingEntity(PacketEvent event) {
+  public EntityTypeData entityTypeDataOfLivingEntity(ProtocolPacketEvent event) {
     PacketContainer packet = event.getPacket();
     int entityId = packet.getIntegers().read(0);
     Entity entity = EntityTracker.serverEntityByIdentifier(event.getPlayer(), entityId);
@@ -130,7 +130,7 @@ public final class EntityTypeResolver {
     }
   }
 
-  public EntityTypeData entityTypeDataOfEntityMetadata(PacketEvent event, int entityTypeId, EntityMetadataReader reader) {
+  public EntityTypeData entityTypeDataOfEntityMetadata(ProtocolPacketEvent event, int entityTypeId, EntityMetadataReader reader) {
     PacketContainer packet = event.getPacket();
     int entityId = packet.getIntegers().read(0);
     Entity entity = EntityTracker.serverEntityByIdentifier(event.getPlayer(), entityId);

@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -30,7 +30,7 @@ public final class CivbreakHeuristic extends MetaCheckPart<Heuristics, CivbreakH
       BLOCK_DIG
     }
   )
-  public void receiveInteractionPacket(PacketEvent event) {
+  public void receiveInteractionPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     CivbreakMeta meta = metaOf(user);

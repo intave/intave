@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.tracker.player;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
@@ -81,7 +81,7 @@ public class PlayerHandTracker extends Module {
       HELD_ITEM_SLOT_IN
     }
   )
-  public void receiveSlotSwitch(PacketEvent event) {
+  public void receiveSlotSwitch(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
 
@@ -126,7 +126,7 @@ public class PlayerHandTracker extends Module {
       HELD_ITEM_SLOT_OUT
     }
   )
-  public void sentSlotSwitch(PacketEvent event) {
+  public void sentSlotSwitch(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
@@ -151,7 +151,7 @@ public class PlayerHandTracker extends Module {
       BLOCK_PLACE, USE_ITEM
     }
   )
-  public void receiveBlockPlace(PacketEvent event) {
+  public void receiveBlockPlace(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     MetadataBundle meta = user.meta();
@@ -200,7 +200,7 @@ public class PlayerHandTracker extends Module {
       BLOCK_DIG
     }
   )
-  public void receiveBlockDigging(PacketEvent event) {
+  public void receiveBlockDigging(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     InventoryMetadata inventoryData = user.meta().inventory();

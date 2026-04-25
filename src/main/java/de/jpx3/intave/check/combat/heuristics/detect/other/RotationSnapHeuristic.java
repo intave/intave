@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntaveControl;
@@ -46,7 +46,7 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
       ARM_ANIMATION
     }
   )
-  public void receiveSwingPacket(PacketEvent event) {
+  public void receiveSwingPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     RotationSnapHeuristicMeta meta = metaOf(user);
@@ -60,7 +60,7 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
       BLOCK_PLACE
     }
   )
-  public void blockPlace(PacketEvent event) {
+  public void blockPlace(ProtocolPacketEvent event) {
     // moved to enabled() function at the bottom
 //    if (MinecraftVersions.VER1_9_0.atOrAbove()) {
 //      return;
@@ -94,7 +94,7 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
       USE_ENTITY
     }
   )
-  public void receiveAttackPacket(PacketEvent event) {
+  public void receiveAttackPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     RotationSnapHeuristicMeta meta = metaOf(user);
@@ -116,7 +116,7 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
       POSITION_LOOK, LOOK
     }
   )
-  public void receiveRotationPacket(PacketEvent event) {
+  public void receiveRotationPacket(ProtocolPacketEvent event) {
     metaOf(userOf(event.getPlayer())).rotationPacketCounter++;
   }
 
@@ -134,7 +134,7 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void receiveMovementPacket(PacketEvent event) {
+  public void receiveMovementPacket(ProtocolPacketEvent event) {
     // moved to enabled() function at the bottom
 //    if (MinecraftVersions.VER1_9_0.atOrAbove()) {
 //      return;

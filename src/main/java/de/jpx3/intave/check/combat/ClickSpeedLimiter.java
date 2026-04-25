@@ -2,7 +2,7 @@ package de.jpx3.intave.check.combat;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheck;
@@ -38,7 +38,7 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
       USE_ENTITY
     }
   )
-  public void attackEntity(PacketEvent event) {
+  public void attackEntity(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     ClickSpeedLimiterMeta meta = metaOf(user);
@@ -68,7 +68,7 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void clientTickUpdate(PacketEvent event) {
+  public void clientTickUpdate(ProtocolPacketEvent event) {
     // TODO: Check rod right click spam
     Player player = event.getPlayer();
     User user = userOf(player);

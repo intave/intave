@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.actionbar;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import de.jpx3.intave.adapter.MinecraftVersions;
@@ -42,7 +42,7 @@ public final class ActionBarDisplayer extends Module {
     }
 //    engine = Engine.ASYNC_INTERNAL
   )
-  public void clientClickUpdate(PacketEvent event) {
+  public void clientClickUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();

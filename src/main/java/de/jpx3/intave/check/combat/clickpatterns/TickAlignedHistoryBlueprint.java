@@ -2,7 +2,7 @@ package de.jpx3.intave.check.combat.clickpatterns;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.check.Blueprint;
 import de.jpx3.intave.check.combat.ClickPatterns;
@@ -34,7 +34,7 @@ public abstract class TickAlignedHistoryBlueprint<E extends TickAlignedMeta> ext
       USE_ENTITY, ARM_ANIMATION, BLOCK_DIG
     }
   )
-  public final void clientClickUpdate(PacketEvent event) {
+  public final void clientClickUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
 
@@ -69,7 +69,7 @@ public abstract class TickAlignedHistoryBlueprint<E extends TickAlignedMeta> ext
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public final void clientTickUpdate(PacketEvent event) {
+  public final void clientTickUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
 

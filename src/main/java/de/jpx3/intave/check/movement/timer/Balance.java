@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.movement.timer;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.check.CheckStatistics;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
@@ -49,14 +49,14 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
       RESPAWN
     }
   )
-  public void respawnTolerance(PacketEvent event) {
+  public void respawnTolerance(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     metaOf(player).lastRespawn = System.currentTimeMillis();
     metaOf(player).timerBalance -= TimeUnit.MILLISECONDS.toNanos(50);
   }
 
   @DispatchTarget
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     if (player == null) {
       return;

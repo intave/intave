@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.movement.timer;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.check.CheckStatistics;
@@ -72,7 +72,7 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
       LOGIN
     }
   )
-  public void receiveLogin(PacketEvent event) {
+  public void receiveLogin(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     if (player == null) {
       return;
@@ -102,7 +102,7 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
   }
 
   @DispatchTarget
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     if (player == null) {
       return;

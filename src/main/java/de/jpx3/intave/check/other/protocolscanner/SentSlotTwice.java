@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.other.protocolscanner;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.other.ProtocolScanner;
 import de.jpx3.intave.module.Modules;
@@ -26,7 +26,7 @@ public final class SentSlotTwice extends MetaCheckPart<ProtocolScanner, SentSlot
       HELD_ITEM_SLOT_IN
     }
   )
-  public void receiveSlotSwitch(PacketEvent event) {
+  public void receiveSlotSwitch(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     User user = userOf(player);

@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.other.inventoryclickanalysis;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.other.InventoryClickAnalysis;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -19,7 +19,7 @@ public final class PacketDelayAnalyzer extends MetaCheckPart<InventoryClickAnaly
   @PacketSubscription(
     packetsIn = {WINDOW_CLICK}
   )
-  public void receiveInventoryClick(PacketEvent event) {
+  public void receiveInventoryClick(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     TimingData meta = metaOf(player);
@@ -46,7 +46,7 @@ public final class PacketDelayAnalyzer extends MetaCheckPart<InventoryClickAnaly
   @PacketSubscription(
     packetsIn = {FLYING, POSITION, LOOK, POSITION_LOOK}
   )
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     metaOf(player).lastMovementTimestamps = System.currentTimeMillis();
   }

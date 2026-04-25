@@ -4,7 +4,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.ConnectionSide;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
@@ -127,7 +127,7 @@ public final class PacketSubscriptionLinker extends Module {
 
   private final Set<Class<?>> validParameterTypes = new HashSet<>();
   {
-    validParameterTypes.add(PacketEvent.class);
+    validParameterTypes.add(ProtocolPacketEvent.class);
     validParameterTypes.add(Cancellable.class);
     validParameterTypes.add(User.class);
     validParameterTypes.add(Player.class);
@@ -137,7 +137,7 @@ public final class PacketSubscriptionLinker extends Module {
   }
 
   private boolean validParameters(Method method) {
-    return (method.getParameterCount() == 1 && method.getParameterTypes()[0] == PacketEvent.class) ||
+    return (method.getParameterCount() == 1 && method.getParameterTypes()[0] == ProtocolPacketEvent.class) ||
       Arrays.stream(method.getParameterTypes()).allMatch(type -> {
         return validParameterTypes.stream().anyMatch(aClass -> aClass.isAssignableFrom(type) /*|| type.isAssignableFrom(aClass)*/);
       });
@@ -315,10 +315,10 @@ public final class PacketSubscriptionLinker extends Module {
     Method calledMethod,
     String identifier
   ) {
-    if (calledMethod.getParameterCount() == 1 && calledMethod.getParameterTypes()[0] == PacketEvent.class) {
+    if (calledMethod.getParameterCount() == 1 && calledMethod.getParameterTypes()[0] == ProtocolPacketEvent.class) {
       String packetSubscriberSuperClassPath = canonicalRepresentation(className(PacketEventSubscriber.class));
       String packetSubscriberClassPath = canonicalRepresentation(className(targetClass));
-      String packetEventClassPath = canonicalRepresentation(className(PacketEvent.class));
+      String packetEventClassPath = canonicalRepresentation(className(ProtocolPacketEvent.class));
       Class<PacketSubscriptionMethodExecutor> executorClass = IRXClassFactory.assembleCallerClass(
         PacketSubscriptionLinker.class.getClassLoader(),
         PacketSubscriptionMethodExecutor.class,
@@ -342,7 +342,7 @@ public final class PacketSubscriptionLinker extends Module {
       int cancelableParameterPosition = findParameterPosition(parameterTypes, Cancellable.class);
       int packetContainerParameterPosition = findParameterPosition(parameterTypes, PacketContainer.class);
       int packetReaderParameterPosition = findParameterPosition(parameterTypes, PacketReader.class);
-      int packetEventParameterPosition = findParameterPosition(parameterTypes, PacketEvent.class);
+      int packetEventParameterPosition = findParameterPosition(parameterTypes, ProtocolPacketEvent.class);
       int packetTypeParameterPosition = findParameterPosition(parameterTypes, PacketType.class);
 
       AtomicBoolean block = new AtomicBoolean(false);

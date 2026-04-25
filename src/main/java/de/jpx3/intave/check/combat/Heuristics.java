@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.combat;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.IntaveControl;
@@ -387,7 +387,7 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
       USE_ENTITY
     }
   )
-  public void receiveUseEntity(PacketEvent event) {
+  public void receiveUseEntity(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     HeuristicMeta heuristicMeta = metaOf(player);
     PacketContainer packet = event.getPacket();
@@ -435,7 +435,7 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
     }
   )
   @Deprecated
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     if (event.isCancelled()) {
       return;
     }

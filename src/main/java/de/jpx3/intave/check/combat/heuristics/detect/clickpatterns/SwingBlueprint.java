@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.combat.heuristics.detect.clickpatterns;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.google.common.util.concurrent.AtomicDouble;
 import de.jpx3.intave.check.Blueprint;
@@ -71,7 +71,7 @@ public abstract class SwingBlueprint<M extends SwingBlueprintMeta>
       ARM_ANIMATION
     }
   )
-  public void clientSwing(PacketEvent event) {
+  public void clientSwing(ProtocolPacketEvent event) {
     User user = userOf(event.getPlayer());
     SwingBlueprintMeta meta = metaOf(user);
     // SwingBlueprint detections only work on 1.8- !
@@ -99,7 +99,7 @@ public abstract class SwingBlueprint<M extends SwingBlueprintMeta>
     }
   )
   // BLOCK_PLACE is replaced by USE_ITEM in 1.9+ but it doesn't matter to us since those detections are for 1.8-
-  public void clientBlockPlace(PacketEvent event) {
+  public void clientBlockPlace(ProtocolPacketEvent event) {
     User user = userOf(event.getPlayer());
     SwingBlueprintMeta meta = metaOf(user);
     meta.placedBlock = true;
@@ -111,7 +111,7 @@ public abstract class SwingBlueprint<M extends SwingBlueprintMeta>
       USE_ENTITY
     }
   )
-  public void clientUseEntity(PacketEvent event) {
+  public void clientUseEntity(ProtocolPacketEvent event) {
     User user = userOf(event.getPlayer());
     SwingBlueprintMeta meta = metaOf(user);
     PacketContainer packet = event.getPacket();
@@ -130,7 +130,7 @@ public abstract class SwingBlueprint<M extends SwingBlueprintMeta>
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void clientTickUpdate(PacketEvent event) {
+  public void clientTickUpdate(ProtocolPacketEvent event) {
     User user = userOf(event.getPlayer());
     SwingBlueprintMeta meta = metaOf(user);
     for (SwingBlueprintMeta.ClickData pendingClick : meta.pendingClicks) {

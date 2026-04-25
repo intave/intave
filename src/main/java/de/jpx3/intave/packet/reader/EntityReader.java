@@ -1,6 +1,6 @@
 package de.jpx3.intave.packet.reader;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.entity.EntityLookup;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -16,7 +16,7 @@ public class EntityReader extends AbstractPacketReader implements EntityIterable
     return packet().getIntegers().read(0);
   }
 
-  public @Nullable Entity entityBy(PacketEvent event) {
+  public @Nullable Entity entityBy(ProtocolPacketEvent event) {
     return entityBy(event.getPlayer().getWorld());
   }
 

@@ -2,7 +2,7 @@ package de.jpx3.intave.check.world.placementanalysis;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
@@ -48,7 +48,7 @@ public final class Speed extends MetaCheckPart<PlacementAnalysis, Speed.Placemen
       BLOCK_PLACE, USE_ITEM
     }
   )
-  public void receivePlacementPacket(PacketEvent event) {
+  public void receivePlacementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     PlacementSpeedMeta meta = metaOf(user);

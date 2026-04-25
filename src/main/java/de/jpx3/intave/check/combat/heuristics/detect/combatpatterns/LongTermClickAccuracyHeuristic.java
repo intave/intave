@@ -2,7 +2,7 @@ package de.jpx3.intave.check.combat.heuristics.detect.combatpatterns;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -29,7 +29,7 @@ public final class LongTermClickAccuracyHeuristic extends MetaCheckPart<Heuristi
       USE_ENTITY, ARM_ANIMATION
     }
   )
-  public void evaluateFightAccuracy(PacketEvent event) {
+  public void evaluateFightAccuracy(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     AttackMetadata attackData = user.meta().attack();

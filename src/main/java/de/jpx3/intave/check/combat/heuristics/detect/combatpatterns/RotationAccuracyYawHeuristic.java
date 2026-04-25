@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.combat.heuristics.detect.combatpatterns;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -38,7 +38,7 @@ public final class RotationAccuracyYawHeuristic extends MetaCheckPart<Heuristics
       POSITION_LOOK, LOOK
     }
   )
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MetadataBundle meta = user.meta();

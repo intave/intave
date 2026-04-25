@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.combat.heuristics.detect.neuralnetwork.check;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -43,7 +43,7 @@ public class NeuralNetworkTesting extends MetaCheckPart<Heuristics, NeuralNetwor
       USE_ENTITY
     }
   )
-  public void playerAttack(PacketEvent event) {
+  public void playerAttack(ProtocolPacketEvent event) {
     User user = userOf(event.getPlayer());
     NeuralNetworkTestingMeta meta = metaOf(user);
     PacketContainer packet = event.getPacket();
@@ -65,7 +65,7 @@ public class NeuralNetworkTesting extends MetaCheckPart<Heuristics, NeuralNetwor
       LOOK,
     }
   )
-  public void playerMove(PacketEvent event) {
+  public void playerMove(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     NeuralNetworkTestingMeta meta = metaOf(player);
@@ -107,7 +107,7 @@ public class NeuralNetworkTesting extends MetaCheckPart<Heuristics, NeuralNetwor
       LOOK,
     }
   )
-  public void playerMoveEnd(PacketEvent event) {
+  public void playerMoveEnd(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     NeuralNetworkTestingMeta neuralNetworkTestingMeta = metaOf(player);
     neuralNetworkTestingMeta.lastAttack++;
@@ -127,7 +127,7 @@ public class NeuralNetworkTesting extends MetaCheckPart<Heuristics, NeuralNetwor
       ENTITY_ACTION_IN
     }
   )
-  public void playerSneaking(PacketEvent event) {
+  public void playerSneaking(ProtocolPacketEvent event) {
     EnumWrappers.PlayerAction playerActions = event.getPacket().getPlayerActions().readSafely(0);
     Player player = event.getPlayer();
     User user = userOf(player);

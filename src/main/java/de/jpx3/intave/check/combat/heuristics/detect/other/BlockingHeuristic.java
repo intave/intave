@@ -2,7 +2,7 @@ package de.jpx3.intave.check.combat.heuristics.detect.other;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
@@ -43,7 +43,7 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
       ARM_ANIMATION, FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void receiveMovementAndSwingPacket(PacketEvent event) {
+  public void receiveMovementAndSwingPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     BlockingMeta meta = metaOf(user);
@@ -73,7 +73,7 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
       BLOCK_PLACE, BLOCK_DIG
     }
   )
-  public void receiveInteractionPacket(PacketEvent event) {
+  public void receiveInteractionPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     PunishmentMetadata punishmentData = user.meta().punishment();
@@ -150,7 +150,7 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
       FLYING, POSITION, POSITION_LOOK, LOOK, VEHICLE_MOVE
     }
   )
-  public void receiveMovementPacket(PacketEvent event) {
+  public void receiveMovementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     BlockingMeta meta = metaOf(user);
@@ -189,7 +189,7 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
       USE_ITEM
     }
   )
-  public void receiveUseItem(PacketEvent event) {
+  public void receiveUseItem(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     ProtocolMetadata clientData = user.meta().protocol();
@@ -205,7 +205,7 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
       BLOCK_PLACE
     }
   )
-  public void receiveBlockPlace(PacketEvent event) {
+  public void receiveBlockPlace(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     BlockingMeta meta = metaOf(player);
@@ -221,7 +221,7 @@ public final class BlockingHeuristic extends MetaCheckPart<Heuristics, BlockingH
       HELD_ITEM_SLOT_IN
     }
   )
-  public void receiveHeldItemSlot(PacketEvent event) {
+  public void receiveHeldItemSlot(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     BlockingMeta meta = metaOf(player);

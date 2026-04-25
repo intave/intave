@@ -2,7 +2,7 @@ package de.jpx3.intave.module.actionbar;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.check.EventProcessor;
 import de.jpx3.intave.check.combat.clickpatterns.Kurtosis;
@@ -33,7 +33,7 @@ public final class ClickFeeder implements EventProcessor {
       USE_ENTITY, ARM_ANIMATION, BLOCK_DIG, USE_ITEM
     }
   )
-  public void clientClickUpdate(PacketEvent event) {
+  public void clientClickUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     ClickBufferData bufferData = this.bufferData.get(user);
@@ -81,7 +81,7 @@ public final class ClickFeeder implements EventProcessor {
       FLYING, LOOK, POSITION, POSITION_LOOK, CLIENT_TICK_END
     }
   )
-  public void clientTickUpdate(PacketEvent event) {
+  public void clientTickUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
 

@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.block.access.BlockInteractionAccess;
@@ -45,7 +45,7 @@ public final class BlockRotation extends MetaCheckPart<PlacementAnalysis, BlockR
       BLOCK_PLACE, USE_ITEM
     }
   )
-  public void receivePlacementPacket(PacketEvent event) {
+  public void receivePlacementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     PacketContainer packet = event.getPacket();

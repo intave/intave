@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.combat.heuristics.detect.experimental;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.google.common.util.concurrent.AtomicDouble;
 import de.jpx3.intave.check.Blueprint;
@@ -47,7 +47,7 @@ public abstract class RotationPrevisionBlueprint<M extends RotationPrevisionBlue
       USE_ENTITY
     }
   )
-  public void clientUseEntity(PacketEvent event) {
+  public void clientUseEntity(ProtocolPacketEvent event) {
     User user = userOf(event.getPlayer());
     RotationPrevisionBlueprintMeta meta = metaOf(user);
     PacketContainer packet = event.getPacket();
@@ -66,7 +66,7 @@ public abstract class RotationPrevisionBlueprint<M extends RotationPrevisionBlue
       FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void clientTickUpdate(PacketEvent event) {
+  public void clientTickUpdate(ProtocolPacketEvent event) {
     User user = userOf(event.getPlayer());
     RotationPrevisionBlueprintMeta meta = metaOf(user);
     if (!user.meta().protocol().flyingPacketsAreSent()) {

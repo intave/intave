@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.combat.heuristics.detect.unused;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -26,7 +26,7 @@ public final class RotationAngleHeuristic extends MetaCheckPart<Heuristics, Rota
       LOOK, POSITION_LOOK, POSITION
     }
   )
-  public void rotationCheck(PacketEvent event) {
+  public void rotationCheck(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MetadataBundle metadataBundle = user.meta();

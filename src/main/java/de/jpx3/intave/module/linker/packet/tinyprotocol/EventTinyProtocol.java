@@ -2,7 +2,7 @@ package de.jpx3.intave.module.linker.packet.tinyprotocol;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.module.linker.packet.FilteringPacketAdapter;
@@ -25,10 +25,10 @@ final class EventTinyProtocol extends TinyProtocol {
     if (packetType != null) {
       Collection<FilteringPacketAdapter> subscriptions = injectionService.subscriptionsOf(packetType);
       if (subscriptions != null && !subscriptions.isEmpty()) {
-        PacketEvent packetEvent = PacketEvent.fromServer(packet, PacketContainer.fromPacket(packet), receiver);
-        subscriptions.forEach(subscription -> subscription.onPacketSending(packetEvent));
-        packet = packetEvent.getPacket().getHandle();
-        if (packetEvent.isCancelled()) {
+        ProtocolPacketEvent ProtocolPacketEvent = ProtocolPacketEvent.fromServer(packet, PacketContainer.fromPacket(packet), receiver);
+        subscriptions.forEach(subscription -> subscription.onPacketSending(ProtocolPacketEvent));
+        packet = ProtocolPacketEvent.getPacket().getHandle();
+        if (ProtocolPacketEvent.isCancelled()) {
           return null;
         }
       }

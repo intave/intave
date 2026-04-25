@@ -2,7 +2,7 @@ package de.jpx3.intave.check.world.placementanalysis;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.math.MathHelper;
@@ -38,7 +38,7 @@ public class SmartSpeed extends MetaCheckPart<PlacementAnalysis, SmartSpeed.Smar
       BLOCK_PLACE, USE_ITEM
     }
   )
-  public void receivePlacementPacket(PacketEvent event) {
+  public void receivePlacementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     SmartSpeedMeta meta = metaOf(user);
@@ -143,7 +143,7 @@ public class SmartSpeed extends MetaCheckPart<PlacementAnalysis, SmartSpeed.Smar
       FLYING, POSITION_LOOK, LOOK, POSITION
     }
   )
-  public void on(PacketEvent event) {
+  public void on(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();
@@ -238,7 +238,7 @@ public class SmartSpeed extends MetaCheckPart<PlacementAnalysis, SmartSpeed.Smar
       ENTITY_ACTION_IN
     }
   )
-  public void receiveEntityActionPacket(PacketEvent event) {
+  public void receiveEntityActionPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     SmartSpeedMeta meta = metaOf(player);
     PacketContainer packet = event.getPacket();

@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.movement.timer;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.movement.Timer;
@@ -60,7 +60,7 @@ public class MicroBlink extends MetaCheckPart<Timer, MicroBlink.MicroBlinkMeta> 
   }
 
   @DispatchTarget
-  public void receiveMovement(PacketEvent event) {
+  public void receiveMovement(ProtocolPacketEvent event) {
     User user = userOf(event.getPlayer());
     MicroBlinkMeta meta = metaOf(user);
     MovementMetadata movement = user.meta().movement();

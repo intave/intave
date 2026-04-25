@@ -3,7 +3,7 @@ package de.jpx3.intave.module.feedback;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.check.movement.Timer;
 import de.jpx3.intave.diagnostic.LatencyStudy;
 import de.jpx3.intave.diagnostic.message.DebugBroadcast;
@@ -46,7 +46,7 @@ public final class PacketDelayer extends Module {
 //      USE_ENTITY
 //    }
 //  )
-//  public void microLagDelayAttack(PacketEvent event) {
+//  public void microLagDelayAttack(ProtocolPacketEvent event) {
 //    Player player = event.getPlayer();
 //    User user = UserRepository.userOf(player);
 //    ConnectionMetadata connection = user.meta().connection();
@@ -103,7 +103,7 @@ public final class PacketDelayer extends Module {
       PLAYER_INFO_REMOVE
     }
   )
-  public void enqueueOutgoingPackets(PacketEvent event) {
+  public void enqueueOutgoingPackets(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     MetadataBundle meta = user.meta();

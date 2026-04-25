@@ -1,6 +1,6 @@
 package de.jpx3.intave.check.combat.heuristics.detect.unused;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -29,7 +29,7 @@ public final class ChannelActivityHeuristic extends MetaCheckPart<Heuristics, Ch
       POSITION_LOOK, POSITION, FLYING, LOOK
     }
   )
-  public void clientTickUpdate(PacketEvent event) {
+  public void clientTickUpdate(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
 
@@ -104,7 +104,7 @@ public final class ChannelActivityHeuristic extends MetaCheckPart<Heuristics, Ch
       USE_ENTITY
     }
   )
-  public void receiveAttack(PacketEvent event) {
+  public void receiveAttack(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
 

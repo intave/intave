@@ -3,7 +3,7 @@ package de.jpx3.intave.check.combat.heuristics.detect.other;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntaveControl;
@@ -38,7 +38,7 @@ public final class AttackInInvalidStateHeuristic extends MetaCheckPart<Heuristic
       USE_ENTITY
     }
   )
-  public void receiveAttack(PacketEvent event) {
+  public void receiveAttack(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     User user = userOf(player);
@@ -57,7 +57,7 @@ public final class AttackInInvalidStateHeuristic extends MetaCheckPart<Heuristic
     checkBlocking(event);
   }
 
-  private void checkBlocking(PacketEvent event) {
+  private void checkBlocking(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     // Disable check on 1.9+ due to inconsistencies in mc source

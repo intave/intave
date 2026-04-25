@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -28,7 +28,7 @@ public class ToolSwitchHeuristic extends MetaCheckPart<Heuristics, ToolSwitchHeu
           POSITION, POSITION_LOOK, LOOK, FLYING, VEHICLE_MOVE
       }
   )
-  public void receiveMovementPacket(PacketEvent event) {
+  public void receiveMovementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     ToolSwitchHeuristicMeta meta = metaOf(player);
     meta.ticksSinceLastBreak++;
@@ -41,7 +41,7 @@ public class ToolSwitchHeuristic extends MetaCheckPart<Heuristics, ToolSwitchHeu
           PacketId.Client.BLOCK_DIG
       }
   )
-  public void receiveBlockBreakAction(PacketEvent event) {
+  public void receiveBlockBreakAction(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     EnumWrappers.PlayerDigType digType = packet.getPlayerDigTypes().read(0);
@@ -61,7 +61,7 @@ public class ToolSwitchHeuristic extends MetaCheckPart<Heuristics, ToolSwitchHeu
           PacketId.Client.HELD_ITEM_SLOT_IN
       }
   )
-  public void receiveHeldItemSlotChange(PacketEvent event) {
+  public void receiveHeldItemSlotChange(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     User user = userOf(player);

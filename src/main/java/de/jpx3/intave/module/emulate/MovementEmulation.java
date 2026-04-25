@@ -3,7 +3,7 @@ package de.jpx3.intave.module.emulate;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.check.CheckConfiguration.CheckSettings;
@@ -160,7 +160,7 @@ public final class MovementEmulation extends Module {
   @PacketSubscription(
     packetsIn = {FLYING, POSITION, POSITION_LOOK, LOOK}
   )
-  public void receiveFlyingPacket(PacketEvent event) {
+  public void receiveFlyingPacket(ProtocolPacketEvent event) {
     User user = userOf(event.getPlayer());
     MovementMetadata movement = user.meta().movement();
     movement.inSpeculation = false;
@@ -170,7 +170,7 @@ public final class MovementEmulation extends Module {
     packetsOut = {/*ENTITY_TELEPORT, ENTITY_MOVE_LOOK,*/ REL_ENTITY_MOVE, REL_ENTITY_MOVE_LOOK},
     priority = ListenerPriority.LOWEST
   )
-  public void onMovementUpdate(PacketEvent event) {
+  public void onMovementUpdate(ProtocolPacketEvent event) {
     if (enabled) {
       Player player = event.getPlayer();
       User user = userOf(player);

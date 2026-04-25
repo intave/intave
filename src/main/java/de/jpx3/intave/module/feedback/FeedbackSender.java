@@ -3,7 +3,7 @@ package de.jpx3.intave.module.feedback;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
@@ -66,14 +66,14 @@ public final class FeedbackSender extends Module {
   }
 
   public <T> void doubleSynchronize(
-    Player player, PacketEvent event, T target,
+    Player player, ProtocolPacketEvent event, T target,
     FeedbackCallback<T> firstCallback, FeedbackCallback<T> secondCallback
   ) {
     tracedDoubleSynchronize(player, event, target, firstCallback, secondCallback, null, null);
   }
 
   public <T> void doubleSynchronize(
-    Player player, PacketEvent event, T target,
+    Player player, ProtocolPacketEvent event, T target,
     FeedbackCallback<T> firstCallback, FeedbackCallback<T> secondCallback,
     int options
   ) {
@@ -88,7 +88,7 @@ public final class FeedbackSender extends Module {
   }
 
   public <T> void tracedDoubleSynchronize(
-    Player player, PacketEvent event, T target,
+    Player player, ProtocolPacketEvent event, T target,
     FeedbackCallback<T> firstCallback, FeedbackCallback<T> secondCallback,
     FeedbackObserver firstTracker, FeedbackObserver secondTracker
   ) {
@@ -96,7 +96,7 @@ public final class FeedbackSender extends Module {
   }
 
   public <T> void tracedDoubleSynchronize(
-    Player player, PacketEvent event, T target,
+    Player player, ProtocolPacketEvent event, T target,
     FeedbackCallback<T> firstCallback, FeedbackCallback<T> secondCallback,
     FeedbackObserver firstTracker, FeedbackObserver secondTracker,
     int options
@@ -158,7 +158,7 @@ public final class FeedbackSender extends Module {
     synchronize(player, callback, (player1, target) -> target.accept(null));
   }
 
-  public void synchronize(Player player, Consumer<Void> callback, PacketEvent toBundle) {
+  public void synchronize(Player player, Consumer<Void> callback, ProtocolPacketEvent toBundle) {
     synchronize(player, callback, (player1, target) -> target.accept(null), toBundle);
   }
 
@@ -166,7 +166,7 @@ public final class FeedbackSender extends Module {
     tracedSingleSynchronize(player, null, callback, null, 0);
   }
 
-  public void synchronize(Player player, FeedbackCallback<Object> callback, PacketEvent toBundle) {
+  public void synchronize(Player player, FeedbackCallback<Object> callback, ProtocolPacketEvent toBundle) {
     tracedSingleSynchronize(player, null, callback, null, 0, toBundle);
   }
 
@@ -174,7 +174,7 @@ public final class FeedbackSender extends Module {
     synchronize(player, target, callback, 0);
   }
 
-  public <T> void synchronize(Player player, T target, FeedbackCallback<T> callback, PacketEvent toBundle) {
+  public <T> void synchronize(Player player, T target, FeedbackCallback<T> callback, ProtocolPacketEvent toBundle) {
     synchronize(player, target, callback, 0, toBundle);
   }
 
@@ -182,7 +182,7 @@ public final class FeedbackSender extends Module {
     tracedSingleSynchronize(player, null, callback, null, options);
   }
 
-  public void synchronize(Player player, FeedbackCallback<Object> callback, int options, PacketEvent toBundle) {
+  public void synchronize(Player player, FeedbackCallback<Object> callback, int options, ProtocolPacketEvent toBundle) {
     tracedSingleSynchronize(player, null, callback, null, options, toBundle);
   }
 
@@ -190,7 +190,7 @@ public final class FeedbackSender extends Module {
     tracedSingleSynchronize(player, target, callback, null, options);
   }
 
-  public <T> void synchronize(Player player, T target, FeedbackCallback<T> callback, int options, PacketEvent toBundle) {
+  public <T> void synchronize(Player player, T target, FeedbackCallback<T> callback, int options, ProtocolPacketEvent toBundle) {
     tracedSingleSynchronize(player, target, callback, null, options, toBundle);
   }
 
@@ -206,7 +206,7 @@ public final class FeedbackSender extends Module {
 
   public <T> void tracedSingleSynchronize(
     Player player, T target, FeedbackCallback<T> callback, FeedbackObserver tracker, int options,
-    @Nullable PacketEvent toBundle
+    @Nullable ProtocolPacketEvent toBundle
   ) {
     if (!Bukkit.isPrimaryThread()) {
       if (matches(SELF_SYNCHRONIZATION, options)) {
@@ -338,7 +338,7 @@ public final class FeedbackSender extends Module {
   private boolean bundlingDisabled;
 
   private void performRequest(
-    Player receiver, FeedbackRequest<?> request, @Nullable PacketEvent toBundle
+    Player receiver, FeedbackRequest<?> request, @Nullable ProtocolPacketEvent toBundle
   ) {
     if (request == null) {
       return;

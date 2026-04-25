@@ -1,7 +1,7 @@
 package de.jpx3.intave.module.feedback;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
@@ -96,7 +96,7 @@ public final class FeedbackReceiver extends Module {
   @PacketSubscription(
     packetsIn = WINDOW_CLICK
   )
-  public void receiveInventoryClick(PacketEvent event) {
+  public void receiveInventoryClick(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     PacketContainer packet = event.getPacket();
@@ -116,7 +116,7 @@ public final class FeedbackReceiver extends Module {
       KEEP_ALIVE
     }
   )
-  public void onKeepAlive(PacketEvent event) {
+  public void onKeepAlive(ProtocolPacketEvent event) {
     if (!IntaveControl.CLIENT_KEEP_ALIVE_NETTY_CHECK) {
       return;
     }
@@ -142,7 +142,7 @@ public final class FeedbackReceiver extends Module {
       PacketId.Server.TRANSACTION, PacketId.Server.PING
     }
   )
-  public void outgoingTransaction(PacketEvent event) {
+  public void outgoingTransaction(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     User user = UserRepository.userOf(player);
@@ -165,7 +165,7 @@ public final class FeedbackReceiver extends Module {
       TRANSACTION, PONG
     }
   )
-  public void receiveAcknowledgementPacket(PacketEvent event) {
+  public void receiveAcknowledgementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
 
     // viaversion packet limit workaround
@@ -324,7 +324,7 @@ public final class FeedbackReceiver extends Module {
       USE_ENTITY
     }
   )
-  public void cancelAttacksIfTransactionMissing(PacketEvent event) {
+  public void cancelAttacksIfTransactionMissing(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     ConnectionMetadata connection = user.meta().connection();
@@ -346,7 +346,7 @@ public final class FeedbackReceiver extends Module {
       BLOCK_DIG, BLOCK_PLACE, USE_ITEM
     }
   )
-  public void cancelInteractionsOnTimeout(PacketEvent event) {
+  public void cancelInteractionsOnTimeout(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     user.meta().connection().eligibleForTransactionTimeout = true;

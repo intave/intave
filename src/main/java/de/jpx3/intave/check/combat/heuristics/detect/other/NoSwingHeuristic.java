@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.combat.heuristics.detect.other;
 
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -29,7 +29,7 @@ public final class NoSwingHeuristic extends MetaCheckPart<Heuristics, NoSwingHeu
       USE_ENTITY
     }
   )
-  public void entityHit(PacketEvent event) {
+  public void entityHit(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     NoSwingMeta meta = metaOf(user);
@@ -55,7 +55,7 @@ public final class NoSwingHeuristic extends MetaCheckPart<Heuristics, NoSwingHeu
       ARM_ANIMATION
     }
   )
-  public void swing(PacketEvent event) {
+  public void swing(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     NoSwingMeta meta = metaOf(user);
@@ -69,7 +69,7 @@ public final class NoSwingHeuristic extends MetaCheckPart<Heuristics, NoSwingHeu
       FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
     }
   )
-  public void receiveMovementPacket(PacketEvent event) {
+  public void receiveMovementPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();

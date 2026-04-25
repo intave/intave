@@ -3,7 +3,7 @@ package de.jpx3.intave.check.world;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.MovingObjectPositionBlock;
@@ -88,7 +88,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       BLOCK_PLACE, USE_ITEM, USE_ITEM_ON
     }
   )
-  public void receiveInteractionAndPlace(PacketEvent event) {
+  public void receiveInteractionAndPlace(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     InteractionMeta interactionMeta = metaOf(user);
@@ -300,7 +300,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       BLOCK_DIG
     }
   )
-  public void receiveBreak(PacketEvent event) {
+  public void receiveBreak(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
 
@@ -429,7 +429,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
   }
 
   @DispatchTarget
-  public boolean receiveMovement(PacketEvent event) {
+  public boolean receiveMovement(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     World world = player.getWorld();
     User user = userOf(player);
@@ -468,7 +468,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       LOOK,
     }
   )
-  public void receiveAnyTickContextPacket(PacketEvent event) {
+  public void receiveAnyTickContextPacket(ProtocolPacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     receivedAnyTickContextPacket(user, event.getPacket().getType() == PacketType.Play.Client.ARM_ANIMATION, event.getPacketType().name());
@@ -1123,7 +1123,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
   @PacketSubscription(
     packetsOut = BLOCK_BREAK_ANIMATION
   )
-  public void clearInvalidBreakingUpdates(PacketEvent event) {
+  public void clearInvalidBreakingUpdates(ProtocolPacketEvent event) {
     PacketContainer packet = event.getPacket();
     EntityReader entityReader = PacketReaders.readerOf(packet);
     Entity entity = entityReader.entityBy(event);

@@ -4,7 +4,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.injector.PacketFilterManager;
 import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.gson.JsonObject;
@@ -376,7 +376,7 @@ public final class DiagnosticsStage extends CommandStage {
 //      packet.getIntegers().write(0, 0);
 //      packet.getEntityUseActions().write(0, EnumWrappers.EntityUseAction.ATTACK);
 //
-//      PacketEvent event = PacketEvent.fromClient(packet.getHandle(), packet, player);
+//      ProtocolPacketEvent event = ProtocolPacketEvent.fromClient(packet.getHandle(), packet, player);
 //      Collection<PrioritizedListener<PacketListener>> listeners = sortedPacketListenerList.getListener(PacketType.Play.Client.USE_ENTITY);
 //      if (listeners != null) {
 //        for (PrioritizedListener<PacketListener> listener : listeners) {
@@ -665,7 +665,7 @@ public final class DiagnosticsStage extends CommandStage {
       final long timeout = System.currentTimeMillis() + 60000;
 
       @Override
-      public void onPacketSending(PacketEvent event) {
+      public void onPacketSending(ProtocolPacketEvent event) {
         if (System.currentTimeMillis() > timeout) {
           ProtocolLibrary.getProtocolManager().removePacketListener(this);
           adapterMap.remove(userId);
@@ -680,7 +680,7 @@ public final class DiagnosticsStage extends CommandStage {
       }
 
       @Override
-      public void onPacketReceiving(PacketEvent event) {
+      public void onPacketReceiving(ProtocolPacketEvent event) {
       }
     };
     adapterMap.put(userId, adapter);

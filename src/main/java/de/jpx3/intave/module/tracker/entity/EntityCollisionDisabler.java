@@ -2,7 +2,7 @@ package de.jpx3.intave.module.tracker.entity;
 
 import com.comphenix.protocol.events.InternalStructure;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.ProtocolPacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.module.Module;
@@ -24,7 +24,7 @@ public final class EntityCollisionDisabler extends Module {
       SCOREBOARD_TEAM
     }
   )
-  public void receiveScoreboardUpdate(PacketEvent event) {
+  public void receiveScoreboardUpdate(ProtocolPacketEvent event) {
     if (!DISABLE_ENTITY_COLLISIONS) {
       return;
     }
