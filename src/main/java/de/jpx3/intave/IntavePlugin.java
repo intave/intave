@@ -65,6 +65,7 @@ import de.jpx3.intave.share.FriendlyByteBuf;
 import de.jpx3.intave.share.link.WrapperConverter;
 import de.jpx3.intave.test.TestService;
 import de.jpx3.intave.trustfactor.TrustFactorService;
+import de.jpx3.intave.update.AutoUpdate;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.storage.LongTermViolationStorage;
 import de.jpx3.intave.version.DurationTranslator;
@@ -131,6 +132,7 @@ public final class IntavePlugin extends JavaPlugin {
   private Analytics analytics; // module candidate
   private Metrics metrics;
   private TestService testService;
+  private AutoUpdate autoUpdate;
 
   public IntavePlugin() {
     // stage 2
@@ -161,6 +163,7 @@ public final class IntavePlugin extends JavaPlugin {
     // preload
     prefix = configService.configuration().getString("layout.prefix", prefix);
     prefix = ChatColor.translateAlternateColorCodes('&', prefix);
+    autoUpdate = new AutoUpdate(this);
   }
 
   @Override
@@ -172,6 +175,9 @@ public final class IntavePlugin extends JavaPlugin {
   @Override
   public void onEnable() {
     logger.info("Please stand by..");
+    if (autoUpdate != null) {
+      autoUpdate.onEnable();
+    }
 
     // stage 4
     Modules.proceedBoot(BootSegment.STAGE_4);
@@ -635,6 +641,9 @@ public final class IntavePlugin extends JavaPlugin {
     try {
       configService.shutdown();
     } catch (Exception ignored) {
+    }
+    if (autoUpdate != null) {
+      autoUpdate.onDisable();
     }
     Bukkit.getScheduler().cancelTasks(this);
     ShutdownTasks.runAll();

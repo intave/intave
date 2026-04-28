@@ -6,6 +6,9 @@
 #   ONLINE/[config-name] (planned) - use the cloud config
 config: THIS
 
+auto-update:
+  enabled: true
+
 prefix: "&8[&c&lIntave&8]&7 "
 
 kick-commands:
