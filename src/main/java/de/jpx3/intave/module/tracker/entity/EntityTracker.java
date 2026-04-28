@@ -380,7 +380,7 @@ public final class EntityTracker extends Module {
       typeData = new EntityTypeData(entityName, hitBoxSize, 105, true, 1);
     }
     if (typeData == null) {
-      if (IntaveControl.DISABLE_LICENSE_CHECK) {
+      if (IntaveControl.DEBUG) {
         IntavePlugin.singletonInstance().logger().error("Cannot resolve entityType: " + entityId);
       }
       return null;

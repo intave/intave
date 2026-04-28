@@ -67,17 +67,17 @@ final class WebResource implements Resource {
           output.write(buff, 0, i);
         }
         byte[] data = output.toByteArray();
-        if (IntaveControl.DISABLE_LICENSE_CHECK || debug) {
+        if (IntaveControl.DEBUG || debug) {
           System.out.println("[debug] Read " + data.length + " bytes from " + url + " manually");
         }
         return new ByteArrayInputStream(data);
       }
-      if (IntaveControl.DISABLE_LICENSE_CHECK || debug) {
+      if (IntaveControl.DEBUG || debug) {
         System.out.println("[debug] Read " + inputStream.available() + " bytes from " + url);
       }
       return inputStream;
     } catch (SocketTimeoutException timeout) {
-      if (IntaveControl.DISABLE_LICENSE_CHECK || debug) {
+      if (IntaveControl.DEBUG || debug) {
         System.out.println("[debug] Timeout reading " + url);
       }
       if (fallback != null) {
@@ -85,7 +85,7 @@ final class WebResource implements Resource {
       }
       return new ByteArrayInputStream(new byte[0]);
     } catch (UnknownHostException host) {
-      if (IntaveControl.DISABLE_LICENSE_CHECK || debug) {
+      if (IntaveControl.DEBUG || debug) {
         System.out.println("[debug] Unable to connect to " + url);
       }
       if (fallback != null) {
@@ -93,7 +93,7 @@ final class WebResource implements Resource {
       }
       return new ByteArrayInputStream(new byte[0]);
     } catch (Exception exception) {
-      if (IntaveControl.DISABLE_LICENSE_CHECK || debug) {
+      if (IntaveControl.DEBUG || debug) {
         System.out.println("[debug] Unable to read " + url);
         exception.printStackTrace();
       }

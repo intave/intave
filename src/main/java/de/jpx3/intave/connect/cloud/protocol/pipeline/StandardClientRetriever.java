@@ -83,11 +83,6 @@ public final class StandardClientRetriever extends ChannelInboundHandlerAdapter 
     if (player == null) {
       return;
     }
-    boolean partner = (VERSION_DETAILS & 0x100) != 0;
-    boolean enterprise = (VERSION_DETAILS & 0x200) != 0;
-    if (!partner && !enterprise && !IntaveControl.DISABLE_LICENSE_CHECK) {
-      return;
-    }
     User user = UserRepository.userOf(player);
     AttackNerfStrategy strat = AttackNerfStrategy.byName(packet.modifier());
     if (strat == null) {

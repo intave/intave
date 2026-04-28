@@ -27,7 +27,7 @@ public final class PatchyLoadingInjector {
       }
       return classByName(className);
     } catch (Error | Exception exception) {
-      if (classBytes.length > 0 && IntaveControl.DISABLE_LICENSE_CHECK) {
+      if (classBytes.length > 0) {
         try {
           File dumpFile = File.createTempFile("intave-patchy-" + className, ".class");
           FileOutputStream fileOutputStream = new FileOutputStream(dumpFile);

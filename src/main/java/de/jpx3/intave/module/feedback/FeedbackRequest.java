@@ -45,7 +45,7 @@ public class FeedbackRequest<T> {
         observer.received(this);
       }
     } catch (Exception e) {
-      if (IntaveControl.DISABLE_LICENSE_CHECK) {
+      if (IntaveControl.DEBUG) {
         IntaveLogger.logger().error("Error while acknowledging " + callback + " for " + player);
         e.printStackTrace();
       }

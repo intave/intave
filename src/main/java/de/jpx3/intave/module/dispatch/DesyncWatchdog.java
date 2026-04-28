@@ -41,9 +41,6 @@ public final class DesyncWatchdog extends Module {
   }
 
   private void testAction() {
-    if (!IntaveControl.DISABLE_LICENSE_CHECK) {
-      return;
-    }
 //    VoxelShape shape = VoxelShape.fromBox(0, 0, 0, 1, 1, 1);
 //    VoxelShape topCutoff = VoxelShape.fromBox(0, 0.5, 0, 1, 1, 1);
 //    BlockShape finalShape = shape.subtract(topCutoff);

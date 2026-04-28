@@ -20,7 +20,6 @@ import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.command.CommandStage;
 import de.jpx3.intave.command.Optional;
 import de.jpx3.intave.command.SubCommand;
-import de.jpx3.intave.connect.upload.RealtimedataUplink;
 import de.jpx3.intave.diagnostic.PacketSynchronizations;
 import de.jpx3.intave.diagnostic.timings.Timing;
 import de.jpx3.intave.diagnostic.timings.Timings;
@@ -64,7 +63,15 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import javax.net.ssl.HttpsURLConnection;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLConnection;
@@ -72,7 +79,17 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -142,22 +159,16 @@ public final class DiagnosticsStage extends CommandStage {
     permission = "intave.command.diagnostics.performance"
   )
   public void nerfers(User user) {
-    if (IntaveControl.DISABLE_LICENSE_CHECK || IntaveControl.AUTHENTICATION_DEBUG_MODE) {
-      List<PunishmentMetadata.AttackNerfer> attackNerfers = user.meta().punishment().activeNerfers();
-      if (attackNerfers.isEmpty()) {
-        user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "No active nerfers");
-      } else {
-        user.player().sendMessage(IntavePlugin.prefix() + "Active nerfers: " + attackNerfers.stream().map(nerfer -> nerfer.strategy().typeName()).collect(Collectors.joining(", ")));
-      }
+    List<PunishmentMetadata.AttackNerfer> attackNerfers = user.meta().punishment().activeNerfers();
+    if (attackNerfers.isEmpty()) {
+      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "No active nerfers");
     } else {
-      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Currently unavailable");
+      user.player().sendMessage(IntavePlugin.prefix() + "Active nerfers: " + attackNerfers.stream().map(nerfer -> nerfer.strategy().typeName()).collect(Collectors.joining(", ")));
     }
   }
 
   private enum Mode {
-    PHYSICS_EVAL("pxeval")
-
-    ;
+    PHYSICS_EVAL("pxeval");
 
     private String name;
 
@@ -200,20 +211,16 @@ public final class DiagnosticsStage extends CommandStage {
     permission = "intave.command.diagnostics.performance"
   )
   public void nerf(User user, String type) {
-    if (IntaveControl.DISABLE_LICENSE_CHECK || IntaveControl.AUTHENTICATION_DEBUG_MODE) {
-      try {
-        AttackNerfStrategy strategy = AttackNerfStrategy.byName(type);
-        if (strategy == null) {
-          user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Invalid nerf type");
-          return;
-        }
-        user.nerfPermanently(strategy, "command");
-        user.player().sendMessage(IntavePlugin.prefix() + "Nerf " + strategy.typeName() + " applied");
-      } catch (Exception exception) {
+    try {
+      AttackNerfStrategy strategy = AttackNerfStrategy.byName(type);
+      if (strategy == null) {
         user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Invalid nerf type");
+        return;
       }
-    } else {
-      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Currently unavailable");
+      user.nerfPermanently(strategy, "command");
+      user.player().sendMessage(IntavePlugin.prefix() + "Nerf " + strategy.typeName() + " applied");
+    } catch (Exception exception) {
+      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Invalid nerf type");
     }
   }
 
@@ -409,11 +416,6 @@ public final class DiagnosticsStage extends CommandStage {
   @SubCommand(selectors = "timings", usage = "", description = "Output timing data", permission = "intave.command.diagnostics.performance")
   public void timingsCommand(User user, @Optional String[] specifier) {
     Player player = user.player();
-    if (!IntaveControl.DISABLE_LICENSE_CHECK) {
-      player.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Currently unavailable");
-      return;
-    }
-
     String fullSpecifier = specifier != null ? Arrays.stream(specifier).map(s -> s + " ").collect(Collectors.joining()).trim().toLowerCase(Locale.ROOT) : "";
 
     player.sendMessage(ChatColor.RED + "Loading timings...");
@@ -498,7 +500,7 @@ public final class DiagnosticsStage extends CommandStage {
 
     vector.setX(vector.getX() * multiply);
 //    if (game.getSetting(GameSetting.MULTIPLY_Y_VELOCITY, false)) {
-      vector.setY(vector.getY() * multiply);
+    vector.setY(vector.getY() * multiply);
 //    }
     vector.setZ(vector.getZ() * multiply);
 
@@ -528,10 +530,6 @@ public final class DiagnosticsStage extends CommandStage {
     permission = "intave.command.diagnostics.performance"
   )
   public void resistanceCommand(User user) {
-    if (!IntaveControl.DISABLE_LICENSE_CHECK) {
-      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Currently unavailable");
-      return;
-    }
     Bukkit.getOnlinePlayers().forEach(player -> {
         player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 999999, 100));
         player.addPotionEffect(new PotionEffect(PotionEffectType.SATURATION, 999999, 100));
@@ -943,10 +941,6 @@ public final class DiagnosticsStage extends CommandStage {
     ChestLootProvider provider = Modules.find(ChestLootProvider.class);
     if (!user.player().isOp()) {
       user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "You need to be op to use this command");
-      return;
-    }
-    if (!IntaveControl.DISABLE_LICENSE_CHECK) {
-      user.player().sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Not available in production");
       return;
     }
     provider.openLootChestCommand(user.player());

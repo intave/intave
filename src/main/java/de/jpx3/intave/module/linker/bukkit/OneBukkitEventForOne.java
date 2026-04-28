@@ -35,7 +35,7 @@ public class OneBukkitEventForOne<T extends LISTENER, LISTENER> implements Subsc
 
   @Override
   public void apply(Event event, Consumer<? super T> consumer) {
-    if (IntaveControl.DISABLE_LICENSE_CHECK) {
+    if (IntaveControl.DEBUG) {
       if (!warningIssued) {
         warningIssued = true;
         IntaveLogger.logger().warning("Bukkit per-player event listener is still experimental and may not work as expected.");

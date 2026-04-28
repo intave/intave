@@ -311,7 +311,7 @@ public final class FeedbackReceiver extends Module {
     try {
       feedbackRequest.acknowledge(player);
     } catch (Exception e) {
-      if (IntaveControl.DISABLE_LICENSE_CHECK) {
+      if (IntaveControl.DEBUG) {
         IntaveLogger.logger().error("Error while acknowledging " + feedbackRequest.callback() + " for " + feedbackRequest.target());
         e.printStackTrace();
       }

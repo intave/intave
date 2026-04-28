@@ -48,7 +48,7 @@ public final class IntaveDomains {
         return Long.MAX_VALUE;
       }
     } catch (Exception e) {
-      if (IntaveControl.DISABLE_LICENSE_CHECK) {
+      if (IntaveControl.DEBUG) {
         System.out.println("Could not connect to " + domain + " (" + url + "): " + e.getMessage());
       }
       return Long.MAX_VALUE;

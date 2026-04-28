@@ -17,7 +17,6 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
 
-import static de.jpx3.intave.IntaveControl.DISABLE_LICENSE_CHECK;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class Resources {
@@ -186,19 +185,6 @@ public final class Resources {
   private static int fileHashCode = 0;
 
   private static long versionResourceKey() {
-    if ((!DISABLE_LICENSE_CHECK) && fileHashCode == 0) {
-      try {
-        File currentJarFile = new File(IntavePlugin.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-        fileHashCode = Math.abs(HashAccess.hashOf(currentJarFile).hashCode());
-        if (fileHashCode == 0) {
-          fileHashCode = 1;
-        }
-      } catch (URISyntaxException exception) {
-        exception.printStackTrace();
-        fileHashCode = -1;
-      }
-    }
-
     long quarterYearsSinceEpoch = ByteVector.startTime / (1000L * 60 * 60 * 24 * 365 / 4);
     String asString = String.valueOf(quarterYearsSinceEpoch);
     Random random = new Random(quarterYearsSinceEpoch);
