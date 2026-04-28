@@ -24,12 +24,16 @@ import de.jpx3.intave.world.raytrace.Raytracing;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockPlaceEvent;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.LIMIT_1;
 import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.LIMIT_2;
 import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.LIMIT_4;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
 public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, RotationSnapHeuristic.RotationSnapHeuristicMeta> {
+  // Defines how long after a block place or attack the VL for mitigations should be increased. 
+  private static final long VL_BOOST_MODIFIER_TIME = 1000 / 50 * 3;
 
   public RotationSnapHeuristic(Heuristics parentCheck) {
     super(parentCheck, RotationSnapHeuristicMeta.class);
@@ -46,7 +50,7 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
     User user = userOf(player);
     RotationSnapHeuristicMeta meta = metaOf(user);
 
-    meta.lastSwing = 0;
+    meta.lastSwing = System.currentTimeMillis();
   }
 
   @BukkitEventSubscription
@@ -54,7 +58,7 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
     Player player = place.getPlayer();
     User user = userOf(player);
     RotationSnapHeuristicMeta meta = metaOf(user);
-    meta.lastBlockPlace = 0;
+    meta.lastBlockPlace.set(System.currentTimeMillis());
   }
 
   @PacketSubscription(
@@ -75,7 +79,7 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
     }
 
     if (action == EnumWrappers.EntityUseAction.ATTACK) {
-      meta.lastAttack = 0;
+      meta.lastAttack = System.currentTimeMillis();
     }
   }
 
@@ -172,7 +176,7 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
 
     isSuspicious = meta.yawMotions[1] < 9 && meta.yawMotions[0] > 40 && yawMotion < 9;
 
-    if (isSuspicious && (meta.lastSwing <= 3 || meta.lastAttack <= 3) && meta.rotationPacketCounter > 10 && movementData.lastTeleport > 7) {
+    if (isSuspicious && (wasRecent(meta.lastSwing) || wasRecent(meta.lastAttack)) && meta.rotationPacketCounter > 10 && movementData.lastTeleport > 7) {
       double valueOfSnap = meta.yawMotions[0];
       String description = "rotation snap ["
         + MathHelper.formatDouble(meta.yawMotions[1], 2)
@@ -276,7 +280,7 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
     } else if (valueOfSnap > 50) {
       vl = 10;
     }
-    if (meta.lastBlockPlace < 3) {
+    if (wasRecent(meta.lastBlockPlace.get())) {
       vl *= 1.5;
     }
     if (changedLookToEntity) {
@@ -298,6 +302,10 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
     return vl;
   }
 
+  private boolean wasRecent(long milliseconds) {
+    return System.currentTimeMillis() - milliseconds < VL_BOOST_MODIFIER_TIME;
+  }
+
   private void prepareNextTick(RotationSnapHeuristicMeta meta, double yawMotion, User user) {
     MovementMetadata movementData = user.meta().movement();
     meta.lastKeyForward = movementData.keyForward;
@@ -315,10 +323,6 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
 
     meta.movementAtTick[1] = meta.movementAtTick[0];
     meta.movementAtTick[0] = null;
-
-    meta.lastSwing++;
-    meta.lastAttack++;
-    meta.lastBlockPlace++;
   }
 
   public static final class RotationSnapHeuristicMeta extends CheckCustomMetadata {
@@ -332,9 +336,11 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
     private int lastKeyStrafe;
     // used to disable the check on startup
     private int rotationPacketCounter;
-    private int lastSwing;
-    private int lastAttack;
-    private int lastBlockPlace;
+    private long lastSwing;
+    private long lastAttack;
+    
+    // AtomicLong is being used because it gets set in a Bukkit thread. 
+    private AtomicLong lastBlockPlace = new AtomicLong();
   }
 
   enum KeyStates {
