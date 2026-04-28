@@ -705,7 +705,7 @@ PacketPlayOutPosition$EnumPlayerTeleportFlags -> {
 #   [1.21-26.1.2] Keep names
   }
   methods {
-    [1.17-1.21.11] -> {
+    [1.8-1.21.11] -> {
       "unpack(I)Ljava/util/Set;" -> "a(I)Ljava/util/Set;"
     }
 }
