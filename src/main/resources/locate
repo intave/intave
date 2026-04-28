@@ -135,6 +135,11 @@ LightChunk {
 ChunkProviderServer -> {
   [1.17-1.20.4] -> "net/minecraft/server/level/ChunkProviderServer"
   [1.21-26.1.2] -> "net/minecraft/server/level/ServerChunkCache"
+  methods {
+    [26.1.1-26.1.2] -> {
+      "c(II)RLightChunk;" -> "getChunkNow(II)RLightChunk;"
+    }
+  }
 }
 
 DataWatcher -> {
@@ -391,9 +396,27 @@ Fluid -> {
   }
 }
 
+Fluids -> {
+  [26.1.1-26.1.2] -> "net/minecraft/world/level/material/Fluids"
+
+  fields {
+    [26.1.1-26.1.2] -> {
+      "EMPTY" -> "EMPTY"
+      "FLOWING_WATER" -> "FLOWING_WATER"
+      "WATER" -> "WATER"
+      "FLOWING_LAVA" -> "FLOWING_LAVA"
+      "LAVA" -> "LAVA"
+    }
+  }
+}
+
 GeneratorAccess -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/GeneratorAccess"
   [1.21-26.1.2] -> "net/minecraft/world/level/LevelAccessor"
+}
+
+Holder -> {
+  [1.21-26.1.2] -> "net/minecraft/core/Holder"
 }
 
 IBlockAccess -> {
@@ -529,7 +552,8 @@ IChunkProvider -> {
 
 InventoryClickType -> {
   [1.17-1.20.4] -> "net/minecraft/world/inventory/InventoryClickType"
-  [1.21-26.1.2] -> "net/minecraft/world/inventory/ClickType"
+  [1.21-1.21.11] -> "net/minecraft/world/inventory/ClickType"
+  [26.1.1-26.1.2] -> "net/minecraft/world/inventory/ContainerInput"
 }
 
 IRegistry -> {

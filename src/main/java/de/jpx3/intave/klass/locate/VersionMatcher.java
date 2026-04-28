@@ -1,6 +1,7 @@
 package de.jpx3.intave.klass.locate;
 
 import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.IntaveLogger;
 
 public interface VersionMatcher {
   boolean matches(MinecraftVersion version);
@@ -40,6 +41,12 @@ public interface VersionMatcher {
       }
       MinecraftVersion from = new MinecraftVersion(split[0].substring(1));
       MinecraftVersion to = new MinecraftVersion(split[1].substring(0, split[1].length() - 1));
+      if (from.getMajor() < 26 && from.getMajor() > 1) {
+        IntaveLogger.logger().warn("Version range with major version " + from.getMajor() + " is likely a mistake: " + input);
+      }
+      if (to.getMajor() < 26 && to.getMajor() > 1) {
+        IntaveLogger.logger().warn("Version range with major version " + to.getMajor() + " is likely a mistake: " + input);
+      }
       return between(from, to);
     } else {
       throw new IllegalArgumentException("Invalid version matcher: " + input);

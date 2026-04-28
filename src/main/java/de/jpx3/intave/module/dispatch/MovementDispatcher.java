@@ -42,6 +42,7 @@ import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.tracker.player.PacketLogging;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.converter.InputConverter;
 import de.jpx3.intave.packet.reader.*;
 import de.jpx3.intave.player.FaultKicks;
 import de.jpx3.intave.player.ItemProperties;
@@ -1361,30 +1362,11 @@ public final class MovementDispatcher extends Module {
         break;
       case PRESS_SHIFT_KEY:
       case START_SNEAKING:
-        if (System.currentTimeMillis() - punishmentData.timeLastSneakToggleCancel < 2000) {
-          cancelable.setCancelled(true);
-        }
-        movementData.pastVehicleExitTicks = 0;
-        if (movementData.isInVehicle()) {
-          movementData.dismountRidingEntity("Sneak exit");
-          movementData.sneaking = false;
-        } else {
-          movementData.sneaking = true;
-        }
-        if (IntaveControl.DEBUG_PLAYER_ACTIONS) {
-          user.player().sendMessage(ChatColor.GREEN + "Start sneaking " + movementData.sneaking);
-        }
-//        player.sendMessage("Sneaking: " + movementData.isSneaking());
-//        movementData.setPose(movementData.isSneaking() ? Pose.CROUCHING : Pose.STANDING);
+        startSneak(user, cancelable);
         break;
       case RELEASE_SHIFT_KEY:
       case STOP_SNEAKING:
-        movementData.sneaking = false;
-        if (IntaveControl.DEBUG_PLAYER_ACTIONS) {
-          user.player().sendMessage(ChatColor.RED + "Stop sneaking after " + movementData.ticksSneaking);
-        }
-//        player.sendMessage("Sneaking: " + movementData.isSneaking());
-//        movementData.setPose(Pose.STANDING);
+        stopSneak(user);
         break;
       case START_FALL_FLYING:
         if (movementData.hasElytraEquipped() && protocol.canUseElytra()) {
@@ -1396,6 +1378,60 @@ public final class MovementDispatcher extends Module {
             movementData.setPose(Pose.FALL_FLYING);
           }
         }
+        break;
+    }
+  }
+
+  @PacketSubscription(
+    packetsIn = {
+      STEER_VEHICLE
+    }
+  )
+  public void onInputs(
+    PacketEvent event
+  ) {
+    PacketContainer packet = event.getPacket();
+    Player player = event.getPlayer();
+    User user = UserRepository.userOf(player);
+    if (!user.meta().protocol().sneakAsVehicleSteer()) {
+      return;
+    }
+    MovementMetadata movement = user.meta().movement();
+    StructureModifier<Input> inputs = packet.getModifier().withType(
+      InputConverter.inputClass, InputConverter.INSTANCE
+    );
+    Input input = inputs.read(0);
+    boolean sneaking = input.sneaking();
+    if (sneaking && !movement.sneaking) {
+      startSneak(user, event);
+    } else if (!sneaking && movement.sneaking) {
+      stopSneak(user);
+    }
+  }
+
+  private void startSneak(User user, Cancellable cancelable) {
+    PunishmentMetadata punishmentData = user.meta().punishment();
+    MovementMetadata movementData = user.meta().movement();
+    if (System.currentTimeMillis() - punishmentData.timeLastSneakToggleCancel < 2000) {
+      cancelable.setCancelled(true);
+    }
+    movementData.pastVehicleExitTicks = 0;
+    if (movementData.isInVehicle()) {
+      movementData.dismountRidingEntity("Sneak exit");
+      movementData.sneaking = false;
+    } else {
+      movementData.sneaking = true;
+    }
+    if (IntaveControl.DEBUG_PLAYER_ACTIONS) {
+      user.player().sendMessage(ChatColor.GREEN + "Start sneaking " + movementData.sneaking);
+    }
+  }
+
+  private void stopSneak(User user) {
+    MovementMetadata movementData = user.meta().movement();
+    movementData.sneaking = false;
+    if (IntaveControl.DEBUG_PLAYER_ACTIONS) {
+      user.player().sendMessage(ChatColor.RED + "Stop sneaking after " + movementData.ticksSneaking);
     }
   }
 

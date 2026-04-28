@@ -20,13 +20,12 @@ final class ClassLocations implements Iterable<ClassLocation> {
   }
 
   public ClassLocations filterByKey(String key) {
-    return filter(classLocation -> classLocation.key().equals(key));
+    return filter(classLocation -> classLocation.key().equalsIgnoreCase(key));
   }
 
   public ClassLocations reduceToCurrentVersion() {
     return filter(
-      classLocation -> classLocation
-        .matchesVersion(MinecraftVersion.getCurrentVersion())
+      classLocation -> classLocation.matchesVersion(MinecraftVersion.getCurrentVersion())
     );
   }
 
