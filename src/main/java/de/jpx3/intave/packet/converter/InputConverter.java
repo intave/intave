@@ -40,7 +40,7 @@ public final class InputConverter implements EquivalentConverter<Input> {
 		try {
 			return Class.forName("net.minecraft.world.entity.player.Input");
 		} catch (ClassNotFoundException e) {
-			throw new IllegalStateException("Cannot find PositionMoveRotation class", e);
+			throw new IllegalStateException("Cannot find net.minecraft.world.entity.player.Input class", e);
 		}
 	}
 }
