@@ -2,7 +2,6 @@ package de.jpx3.intave;
 
 import de.jpx3.intave.module.nayoro.OperationalMode;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 

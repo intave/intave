@@ -37,7 +37,7 @@ public final class MethodSearchBySignature {
   }
 
   public MethodHandle findFirstOrThrow() {
-    return findFirst().orElseThrow(() -> new IllegalStateException("No matching method found"));
+    return findFirst().orElseThrow(() -> new IllegalStateException("Method pattern does not apply to any methods in " + (methodsMatching.length > 0 ? methodsMatching[0].type().returnType() : "unknown class")));
   }
 
   public MethodHandle findFirstOrThrow(Supplier<? extends RuntimeException> exceptionSupplier)  {

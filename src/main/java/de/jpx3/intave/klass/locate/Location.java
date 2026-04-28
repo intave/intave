@@ -1,10 +1,12 @@
 package de.jpx3.intave.klass.locate;
 
+import com.comphenix.protocol.utility.MinecraftVersion;
+
 abstract class Location {
   private final String key;
-  private final IntegerMatcher versionMatcher;
+  private final VersionMatcher versionMatcher;
 
-  public Location(String key, IntegerMatcher versionMatcher) {
+  public Location(String key, VersionMatcher versionMatcher) {
     this.key = key;
     this.versionMatcher = versionMatcher;
   }
@@ -13,7 +15,13 @@ abstract class Location {
     return key;
   }
 
-  public IntegerMatcher versionMatcher() {
+  public boolean matchesVersion(
+    MinecraftVersion version
+  ) {
+    return versionMatcher.matches(version);
+  }
+
+  public VersionMatcher versionMatcher() {
     return versionMatcher;
   }
 }

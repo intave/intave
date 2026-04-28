@@ -7,11 +7,13 @@ import de.jpx3.intave.klass.locate.MethodSearchBySignature;
 import de.jpx3.intave.klass.rewrite.PatchyAutoTranslation;
 import de.jpx3.intave.klass.rewrite.PatchyLoadingInjector;
 import de.jpx3.intave.reflect.access.ReflectiveHandleAccess;
+import de.jpx3.intave.share.ResourceLocation;
 import net.minecraft.server.v1_13_R2.MinecraftKey;
 import net.minecraft.server.v1_14_R1.EntitySize;
 import net.minecraft.server.v1_8_R3.EntityTypes;
 import net.minecraft.server.v1_8_R3.World;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftEntity;
 import org.bukkit.entity.Entity;
 
@@ -74,7 +76,8 @@ public final class HitboxSizeAccess {
       Object worldObj = ReflectiveHandleAccess.handleOf(Bukkit.getWorlds().get(0));
       Object entityObj;
       if (MinecraftVersions.VER1_13_0.atOrAbove()) {
-        MinecraftKey key = new MinecraftKey("minecraft", className.toLowerCase());
+        ResourceLocation resourceLocation = new ResourceLocation("minecraft", className.toLowerCase());
+        MinecraftKey key = (MinecraftKey) resourceLocation.toNativeResourceLocation();
         entityObj = net.minecraft.server.v1_13_R2.EntityTypes.a((net.minecraft.server.v1_13_R2.World) worldObj, key);
       } else if (MinecraftVersions.VER1_11_0.atOrAbove()) {
         entityObj = net.minecraft.server.v1_11_R1.EntityTypes.a(

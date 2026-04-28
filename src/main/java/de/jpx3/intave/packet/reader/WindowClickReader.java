@@ -41,13 +41,21 @@ public final class WindowClickReader extends AbstractPacketReader {
   private static final int SLOT_ID = MinecraftVersions.VER1_17_1.atOrAbove() ? 2 : 1;
 
   public int slot() {
-    return packet().getIntegers().readSafely(SLOT_ID);
+    Integer integer = packet().getIntegers().readSafely(SLOT_ID);
+    if (integer == null) {
+      return packet().getShorts().readSafely(0);
+    }
+    return integer;
   }
 
   private static final int BUTTON_ID = MinecraftVersions.VER1_17_1.atOrAbove() ? 3 : 2;
 
   public int button() {
-    return packet().getIntegers().readSafely(BUTTON_ID);
+    Integer integer = packet().getIntegers().readSafely(BUTTON_ID);
+    if (integer == null) {
+      return packet().getBytes().readSafely(0);
+    }
+    return integer;
   }
 
   public int actionNumber() {
@@ -60,7 +68,7 @@ public final class WindowClickReader extends AbstractPacketReader {
   }
 
   public ItemStack itemStack() {
-    return packet().getItemModifier().read(0);
+    return packet().getItemModifier().readSafely(0);
   }
 
   public boolean isDrop() {

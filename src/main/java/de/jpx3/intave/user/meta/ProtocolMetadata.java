@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import java.util.*;
 
 public final class ProtocolMetadata {
+  public static int VER_26_1_1 = 775; // 26.1.1
   public static int VER_1_21_3 = 768; // 1.21.3
   public static int VER_1_21 = 767; // 1.21
   // final has been removed to disguise modified integer VERSION_DETAILS
@@ -223,6 +224,10 @@ public final class ProtocolMetadata {
 
   public boolean noPingMask() {
     return protocolVersion <= VER_1_17 && MinecraftVersions.VER1_17_0.atOrAbove();
+  }
+
+  public boolean sneakAsVehicleSteer() {
+    return protocolVersion >= VER_26_1_1 && MinecraftVersions.VER26_1_1.atOrAbove();
   }
 
   public boolean sendsClientTickEnd() {

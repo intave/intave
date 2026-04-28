@@ -31,7 +31,8 @@ final class v18b2FluidResolver implements FluidResolver {
     resolveTagKey = MethodSearchBySignature
       .ofClass(Lookup.serverClass("Fluid"))
       .withParameters(new Class[]{Lookup.serverClass("TagKey")})
-      .withReturnType(Boolean.TYPE).search().findFirstOrThrow();
+      .withReturnType(Boolean.TYPE).search()
+      .findFirstOrThrow();
   }
 
   private static Method fluidAccessMethod;

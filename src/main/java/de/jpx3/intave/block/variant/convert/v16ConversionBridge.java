@@ -18,7 +18,22 @@ final class v16ConversionBridge implements ConversionBridge {
   public Map<Setting<?>, Comparable<?>> settingsOf(Object blockData) {
     IBlockData data = (IBlockData) blockData;
     Set<IBlockState<?>> states;
-    if (MinecraftVersions.VER1_21.atOrAbove()) {
+    if (MinecraftVersions.VER26_1_1.atOrAbove()) {
+      try {
+        if (stateMapField == null) {
+          stateMapField = IBlockData.class.getMethod("getProperties");
+        }
+      } catch (NoSuchMethodException e) {
+        throw new RuntimeException(e);
+      }
+	    try {
+		    //noinspection unchecked
+		    Collection<IBlockState<?>> properties = (Collection<IBlockState<?>>) stateMapField.invoke(data);
+        states = new HashSet<>(properties);
+      } catch (IllegalAccessException | InvocationTargetException e) {
+		    throw new RuntimeException(e);
+	    }
+    } else if (MinecraftVersions.VER1_21.atOrAbove()) {
       try {
         if (stateMapField == null) {
           stateMapField = IBlockData.class.getMethod("getValues");

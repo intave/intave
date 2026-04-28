@@ -28,7 +28,9 @@ public class Fluids {
 
   public static void setup() {
     String className;
-    if (VER1_18_2.atOrAbove()) {
+    if (VER26_1_1.atOrAbove()) {
+      className = "de.jpx3.intave.block.fluid.v26FluidResolver";
+    } else if (VER1_18_2.atOrAbove()) {
       className = "de.jpx3.intave.block.fluid.v18b2FluidResolver";
     } else if (VER1_16_0.atOrAbove()) {
       className = "de.jpx3.intave.block.fluid.v16FluidResolver";

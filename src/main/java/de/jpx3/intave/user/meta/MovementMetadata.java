@@ -59,7 +59,9 @@ import static de.jpx3.intave.share.ClientMath.*;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.*;
 
 public final class MovementMetadata implements SimulationEnvironment {
-  public static final WrappedAttributeModifier SPRINTING_MODIFIER = WrappedAttributeModifier.newBuilder(UUID.fromString("662A6B8D-DA3E-4C1C-8813-96EA6097278D")).amount(0.3F).operation(ADD_PERCENTAGE).name("Sprint Boost").build();
+  public static final WrappedAttributeModifier SPRINTING_MODIFIER = WrappedAttributeModifier.newBuilder(
+    UUID.fromString("662A6B8D-DA3E-4C1C-8813-96EA6097278D")
+  ).amount(0.3F).operation(ADD_PERCENTAGE).name("Sprint Boost").build();
   private static final boolean ELYTRA_ENABLED = MinecraftVersions.VER1_9_0.atOrAbove();
   private final Player player;
   private final User user;

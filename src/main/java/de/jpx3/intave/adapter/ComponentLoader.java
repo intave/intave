@@ -32,7 +32,10 @@ public final class ComponentLoader {
   }
 
   public void prepareComponents() {
-    if (Bukkit.getVersion().contains("MC: 1.19") || Bukkit.getVersion().contains("MC: 1.20") || Bukkit.getVersion().contains("MC: 1.21")) {
+    String version = Bukkit.getVersion();
+    if (version.contains("MC: 1.21") || version.contains("MC: 26.1")) {
+      essentialComponents.put("ProtocolLib", "https://github.com/dmulloy2/ProtocolLib/releases/download/dev-build/ProtocolLib.jar");
+    } else if (version.contains("MC: 1.19") || version.contains("MC: 1.20")) {
       essentialComponents.put("ProtocolLib", "https://github.com/dmulloy2/ProtocolLib/releases/download/5.4.0/ProtocolLib.jar");
     } else {
       essentialComponents.put("ProtocolLib", "https://" + IntaveDomains.primaryServiceDomain() + "/resource/ProtocolLib-4-8-0.jar");

@@ -46,7 +46,7 @@ public final class TestHeuristic extends MetaCheckPart<Heuristics, TestHeuristic
     if (MinecraftVersions.VER1_9_0.atOrAbove()) {
       packet.getIntegers().write(0, 0xAAAA4444);
     }
-    Set<?> allTeleportFlags = Relative.setOfAllFlags();
+    Set<?> allTeleportFlags = Relative.nativeSetOfAllFlags();
     packet.getSpecificModifier(Set.class).write(0, allTeleportFlags);
     // add teleport flags
     userOf(player).ignoreNextOutboundPacket();

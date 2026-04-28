@@ -28,13 +28,7 @@ final class FieldLocations implements Iterable<FieldLocation> {
   }
 
   public FieldLocations reduceToCurrentVersion() {
-    int currentMinecraftVersion = currentMinecraftVersion();
-    return filter(fieldLocation -> fieldLocation.versionMatcher().matches(currentMinecraftVersion));
-  }
-
-  private int currentMinecraftVersion() {
-    MinecraftVersion version = MinecraftVersion.getCurrentVersion();
-    return version.getMinor() * 10 + version.getBuild();
+    return filter(fieldLocation -> fieldLocation.matchesVersion(MinecraftVersion.getCurrentVersion()));
   }
 
   public Stream<FieldLocation> stream() {

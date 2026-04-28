@@ -40,9 +40,7 @@ public final class AbilityTracker extends Module {
 
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
-    packetsIn = {
-      ABILITIES_IN
-    }
+    packetsIn = {ABILITIES_IN}
   )
   public void receiveAbilities(User user, AbilityInReader reader) {
     AbilityMetadata abilityData = user.meta().abilities();

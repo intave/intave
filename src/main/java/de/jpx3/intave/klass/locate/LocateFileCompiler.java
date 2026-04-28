@@ -1,5 +1,6 @@
 package de.jpx3.intave.klass.locate;
 
+import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.resource.BulkLineCollector;
 
@@ -81,13 +82,13 @@ final class LocateFileCompiler {
         throw new IllegalStateException("Unable to locate next end block in class " + className);
       }
       List<String> linesThisSelector = affectedLines.subList(0, exit + 1);
-      result.addAll(methodInnerCompile(className, matcherOf(matcherInput), linesThisSelector));
+      result.addAll(methodInnerCompile(className, VersionMatcher.fromText(matcherInput), linesThisSelector));
       affectedLines.subList(0, exit + 1).clear();
     }
     return result;
   }
 
-  private static List<MethodLocation> methodInnerCompile(String className, IntegerMatcher matcher, List<String> affectedLines) {
+  private static List<MethodLocation> methodInnerCompile(String className, VersionMatcher matcher, List<String> affectedLines) {
     List<MethodLocation> methodLocations = new ArrayList<>();
     for (String affectedLine : affectedLines) {
       if (affectedLine.endsWith("}")) {
@@ -115,13 +116,13 @@ final class LocateFileCompiler {
         throw new IllegalStateException("End block expected in " + className + " of " + affectedLines);
       }
       List<String> linesThisSelector = affectedLines.subList(0, exit + 1);
-      result.addAll(fieldInnerCompile(className, matcherOf(matcherInput), linesThisSelector));
+      result.addAll(fieldInnerCompile(className, VersionMatcher.fromText(matcherInput), linesThisSelector));
       affectedLines.subList(0, exit + 1).clear();
     }
     return result;
   }
 
-  private static List<FieldLocation> fieldInnerCompile(String className, IntegerMatcher matcher, List<String> affectedLines) {
+  private static List<FieldLocation> fieldInnerCompile(String className, VersionMatcher matcher, List<String> affectedLines) {
     List<FieldLocation> fieldLocations = new ArrayList<>();
     for (String affectedLine : affectedLines) {
       if (affectedLine.endsWith("}")) {
@@ -150,24 +151,27 @@ final class LocateFileCompiler {
     } else {
       versionDefinition = versionDefinition.replace("\"", "");
     }
-    IntegerMatcher versionMatcher = matcherOf(matcherInput);
-    return new ClassLocation(className, versionMatcher, versionDefinition);
+    return new ClassLocation(
+      className,
+      VersionMatcher.fromText(matcherInput),
+      versionDefinition
+    );
   }
 
-  private static IntegerMatcher matcherOf(String input) {
-    try {
-      if (input.startsWith("[")) {
-        if (!input.endsWith("]")) {
-          throw new IllegalStateException();
-        }
-        String[] numbers = input.substring(1, input.length() - 1).split("-");
-        return IntegerMatcher.between(Integer.parseInt(numbers[0]), Integer.parseInt(numbers[1]));
-      }
-      return IntegerMatcher.exact(Integer.parseInt(input));
-    } catch (Exception exception) {
-      throw new IllegalStateException("Unable to resolve matcher from input " + input);
-    }
-  }
+//  private static IntegerMatcher matcherOf(String input) {
+//    try {
+//      if (input.startsWith("[")) {
+//        if (!input.endsWith("]")) {
+//          throw new IllegalStateException();
+//        }
+//        String[] numbers = input.substring(1, input.length() - 1).split("-");
+//        return IntegerMatcher.between(Integer.parseInt(numbers[0]), Integer.parseInt(numbers[1]));
+//      }
+//      return IntegerMatcher.exact(Integer.parseInt(input));
+//    } catch (Exception exception) {
+//      throw new IllegalStateException("Unable to resolve matcher from input " + input);
+//    }
+//  }
 
   private static final Collector<String, ?, Locations> RESOURCE_COLLECTOR = BulkLineCollector.withFinisher(LocateFileCompiler::apply);
 

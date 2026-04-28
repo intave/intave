@@ -585,6 +585,29 @@ public final class DiagnosticsStage extends CommandStage {
   }
 
   @SubCommand(
+    selectors = "velocityspam",
+    usage = "",
+    description = ""
+  )
+  public void velocitySpam(User user) {
+    Player player = user.player();
+    player.sendMessage(ChatColor.RED + "Logout to stop");
+
+    int[] id = {0};
+    id[0] = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+      if (!player.isOnline()) {
+        Bukkit.getScheduler().cancelTask(id[0]);
+        return;
+      }
+      player.setVelocity(new Vector(
+        ThreadLocalRandom.current().nextGaussian() * 0.2,
+        0.3,
+        ThreadLocalRandom.current().nextGaussian() * 0.2
+      ));
+    }, 20, 20 * 2);
+  }
+
+  @SubCommand(
     selectors = "flyingswitch",
     usage = "",
     description = "Spam teleport yourself",

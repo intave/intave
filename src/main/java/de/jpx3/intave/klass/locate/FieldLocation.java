@@ -12,7 +12,7 @@ final class FieldLocation extends Location {
   private final String target;
   private Reference<Field> fieldCache = EMPTY_FIELD_REFERENCE;
 
-  public FieldLocation(String classKey, String key, IntegerMatcher versionMatcher, String target) {
+  public FieldLocation(String classKey, String key, VersionMatcher versionMatcher, String target) {
     super(key, versionMatcher);
     this.classKey = classKey;
     this.target = target;
@@ -55,6 +55,6 @@ final class FieldLocation extends Location {
   }
 
   public static FieldLocation defaultFor(String classKey, String fieldKey) {
-    return new FieldLocation(classKey, fieldKey, IntegerMatcher.any(), fieldKey);
+    return new FieldLocation(classKey, fieldKey, VersionMatcher.any(), fieldKey);
   }
 }

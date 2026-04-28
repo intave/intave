@@ -42,6 +42,7 @@ import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.tracker.player.PacketLogging;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.converter.InputConverter;
 import de.jpx3.intave.packet.reader.*;
 import de.jpx3.intave.player.FaultKicks;
 import de.jpx3.intave.player.ItemProperties;
@@ -1095,30 +1096,26 @@ public final class MovementDispatcher extends Module {
       ENTITY_VELOCITY
     }
   )
-  public void sentVelocityPacket(PacketEvent event) {
-    Player player = event.getPlayer();
-    PacketContainer packet = event.getPacket();
-    StructureModifier<Integer> integers = packet.getIntegers();
-
-    if (packet.getIntegers().readSafely(0) == player.getEntityId()) {
-      Vector velocity = new Vector(
-        integers.readSafely(1) / 8000d,
-        integers.readSafely(2) / 8000d,
-        integers.readSafely(3) / 8000d
-      );
+  public void sentVelocityPacket(
+    User user, Player player,
+    EntityVelocityReader reader,
+    Cancellable cancellable,
+    PacketEvent event
+  ) {
+    if (reader.entityId() == player.getEntityId()) {
+      Motion motion = reader.motion();
       if (IntaveControl.DEBUG_VELOCITY_RECEIVE) {
-        player.sendMessage("§a" + MathHelper.formatMotion(velocity));
+        player.sendMessage("§a" + MathHelper.formatMotion(motion));
       }
-      User user = UserRepository.userOf(player);
       MetadataBundle meta = user.meta();
       MovementMetadata movementData = meta.movement();
-      ViolationMetadata violationMetadata = meta.violationLevel();
-      if (movementData.willReceiveSetbackVelocity && velocity.length() < 0.001) {
+      if (movementData.willReceiveSetbackVelocity && motion.length() < 0.001) {
         movementData.willReceiveSetbackVelocity = false;
-        velocity = movementData.setbackOverrideVelocity;
-        integers.writeSafely(1, (int) (velocity.getX() * 8000d));
-        integers.writeSafely(2, (int) (velocity.getY() * 8000d));
-        integers.writeSafely(3, (int) (velocity.getZ() * 8000d));
+        motion = Motion.fromVector(movementData.setbackOverrideVelocity);
+//        integers.writeSafely(1, (int) (velocity.getX() * 8000d));
+//        integers.writeSafely(2, (int) (velocity.getY() * 8000d));
+//        integers.writeSafely(3, (int) (velocity.getZ() * 8000d));
+        reader.setMotion(motion);
         return;
       }
       /*
@@ -1136,25 +1133,20 @@ public final class MovementDispatcher extends Module {
 
         Modules.violationProcessor().processViolation(violation);
         if (pendingVelocityPackets < 6) {
-          velocity.setX(velocity.getX() / pendingVelocityPackets);
-          velocity.setY(Math.min(0, velocity.getY()));
-          velocity.setZ(velocity.getZ() / pendingVelocityPackets);
-          integers.writeSafely(1, (int) (velocity.getX() * 8000d));
-          integers.writeSafely(2, (int) (velocity.getY() * 8000d));
-          integers.writeSafely(3, (int) (velocity.getZ() * 8000d));
+          motion.setMotionX(motion.motionX() / pendingVelocityPackets);
+          motion.setMotionY(Math.min(0, motion.motionY()));
+          motion.setMotionZ(motion.motionZ() / pendingVelocityPackets);
+          reader.setMotion(motion);
         } else {
-          if (event.isReadOnly()) {
-            event.setReadOnly(false);
-          }
-          event.setCancelled(true);
+          cancellable.setCancelled(true);
           return;
         }
       }
 
       movementData.pendingVelocityPackets.incrementAndGet();
-      movementData.emulationVelocity = velocity.clone();
+      movementData.emulationVelocity = motion.copy().toBukkitVector();
       if (movementData.sneaking) {
-        movementData.sneakPatchVelocity = velocity.clone();
+        movementData.sneakPatchVelocity = motion.copy().toBukkitVector();
       }
 //      Motion motion = Motion.fromVector(velocity);
       // this caused more problems than it solved
@@ -1167,7 +1159,7 @@ public final class MovementDispatcher extends Module {
 //          end -> movementData.pendingVelocityPackets.decrementAndGet()
 //        );
 //      } else {
-      Vector finalVelocity = velocity;
+      Vector finalVelocity = motion.copy().toBukkitVector();
       user.packetTickFeedback(event, () -> {
         receiveVelocity(player, finalVelocity);
         movementData.pendingVelocityPackets.decrementAndGet();
@@ -1370,30 +1362,11 @@ public final class MovementDispatcher extends Module {
         break;
       case PRESS_SHIFT_KEY:
       case START_SNEAKING:
-        if (System.currentTimeMillis() - punishmentData.timeLastSneakToggleCancel < 2000) {
-          cancelable.setCancelled(true);
-        }
-        movementData.pastVehicleExitTicks = 0;
-        if (movementData.isInVehicle()) {
-          movementData.dismountRidingEntity("Sneak exit");
-          movementData.sneaking = false;
-        } else {
-          movementData.sneaking = true;
-        }
-        if (IntaveControl.DEBUG_PLAYER_ACTIONS) {
-          user.player().sendMessage(ChatColor.GREEN + "Start sneaking " + movementData.sneaking);
-        }
-//        player.sendMessage("Sneaking: " + movementData.isSneaking());
-//        movementData.setPose(movementData.isSneaking() ? Pose.CROUCHING : Pose.STANDING);
+        startSneak(user, cancelable);
         break;
       case RELEASE_SHIFT_KEY:
       case STOP_SNEAKING:
-        movementData.sneaking = false;
-        if (IntaveControl.DEBUG_PLAYER_ACTIONS) {
-          user.player().sendMessage(ChatColor.RED + "Stop sneaking after " + movementData.ticksSneaking);
-        }
-//        player.sendMessage("Sneaking: " + movementData.isSneaking());
-//        movementData.setPose(Pose.STANDING);
+        stopSneak(user);
         break;
       case START_FALL_FLYING:
         if (movementData.hasElytraEquipped() && protocol.canUseElytra()) {
@@ -1405,6 +1378,60 @@ public final class MovementDispatcher extends Module {
             movementData.setPose(Pose.FALL_FLYING);
           }
         }
+        break;
+    }
+  }
+
+  @PacketSubscription(
+    packetsIn = {
+      STEER_VEHICLE
+    }
+  )
+  public void onInputs(
+    PacketEvent event
+  ) {
+    PacketContainer packet = event.getPacket();
+    Player player = event.getPlayer();
+    User user = UserRepository.userOf(player);
+    if (!user.meta().protocol().sneakAsVehicleSteer()) {
+      return;
+    }
+    MovementMetadata movement = user.meta().movement();
+    StructureModifier<Input> inputs = packet.getModifier().withType(
+      InputConverter.inputClass, InputConverter.INSTANCE
+    );
+    Input input = inputs.read(0);
+    boolean sneaking = input.sneaking();
+    if (sneaking && !movement.sneaking) {
+      startSneak(user, event);
+    } else if (!sneaking && movement.sneaking) {
+      stopSneak(user);
+    }
+  }
+
+  private void startSneak(User user, Cancellable cancelable) {
+    PunishmentMetadata punishmentData = user.meta().punishment();
+    MovementMetadata movementData = user.meta().movement();
+    if (System.currentTimeMillis() - punishmentData.timeLastSneakToggleCancel < 2000) {
+      cancelable.setCancelled(true);
+    }
+    movementData.pastVehicleExitTicks = 0;
+    if (movementData.isInVehicle()) {
+      movementData.dismountRidingEntity("Sneak exit");
+      movementData.sneaking = false;
+    } else {
+      movementData.sneaking = true;
+    }
+    if (IntaveControl.DEBUG_PLAYER_ACTIONS) {
+      user.player().sendMessage(ChatColor.GREEN + "Start sneaking " + movementData.sneaking);
+    }
+  }
+
+  private void stopSneak(User user) {
+    MovementMetadata movementData = user.meta().movement();
+    movementData.sneaking = false;
+    if (IntaveControl.DEBUG_PLAYER_ACTIONS) {
+      user.player().sendMessage(ChatColor.RED + "Stop sneaking after " + movementData.ticksSneaking);
     }
   }
 

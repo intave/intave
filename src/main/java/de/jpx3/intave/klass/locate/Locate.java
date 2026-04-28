@@ -15,10 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 public final class Locate {
-  private static final Resource LOCATE_RESOURCE =
-    IntaveControl.USE_DEBUG_LOCATE_RESOURCE ?
-      Resources.resourceFromFile(new File(IntavePlugin.singletonInstance().dataFolder(), "locate")) :
-      Resources.localServiceCacheResource("locate/" + IntavePlugin.version(), "locate", TimeUnit.DAYS.toMillis(14));
+  private static final Resource LOCATE_RESOURCE = Resources.resourceFromJarOrBuild("locate");
   private static final Locations LOCATIONS = LOCATE_RESOURCE.collectLines(LocateFileCompiler.resourceCollector()).reduced();
   private static final ClassLocations classLocations = LOCATIONS.classLocations();
   private static final FieldLocations fieldLocations = LOCATIONS.fieldLocations();

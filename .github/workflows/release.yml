@@ -64,5 +64,6 @@ jobs:
             Automated nightly build.
             Last updated: ${{ github.event.repository.updated_at }}
           prerelease: true
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

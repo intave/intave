@@ -1,5 +1,6 @@
 package de.jpx3.intave.klass.locate;
 
+import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.library.asm.Type;
 
@@ -10,13 +11,16 @@ import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static de.jpx3.intave.adapter.MinecraftVersions.VER1_17_0;
+import static de.jpx3.intave.adapter.MinecraftVersions.VER1_8_0;
+
 final class MethodLocation extends Location {
   private static final Reference<Method> EMPTY_CLASS_REFERENCE = new WeakReference<>(null);
   private final String classKey;
   private final String target;
   private Reference<Method> methodCache = EMPTY_CLASS_REFERENCE;
 
-  public MethodLocation(String classKey, String name, IntegerMatcher versionMatcher, String target) {
+  public MethodLocation(String classKey, String name, VersionMatcher versionMatcher, String target) {
     super(name, versionMatcher);
     this.classKey = classKey;
     this.target = target;
@@ -116,6 +120,9 @@ final class MethodLocation extends Location {
   private static final Pattern REPLACE_REGEX = Pattern.compile("R([a-z]|[A-Z]|[0-9]|\\$)+;");
 
   private String methodSignature(String input) {
+    if (!input.contains("(")) {
+      throw new IllegalArgumentException("Invalid method signature: " + input);
+    }
     String signature = input.substring(input.indexOf("("));
     Matcher matcher = REPLACE_REGEX.matcher(signature);
     int lastEnd = 0;
@@ -156,7 +163,11 @@ final class MethodLocation extends Location {
   }
 
   public static MethodLocation defaultFor(String classKey, String initialSignature) {
-    return new MethodLocation(classKey, initialSignature, IntegerMatcher.between(80, 170), initialSignature);
+    return new MethodLocation(
+      classKey, initialSignature,
+      VersionMatcher.between(VER1_8_0, VER1_17_0),
+      initialSignature
+    );
   }
 
   public String target() {

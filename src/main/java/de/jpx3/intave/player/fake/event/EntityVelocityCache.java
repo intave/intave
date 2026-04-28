@@ -1,16 +1,13 @@
 package de.jpx3.intave.player.fake.event;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.packet.reader.EntityVelocityReader;
 import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
-import org.bukkit.entity.Player;
 
 import java.util.List;
 
@@ -30,15 +27,14 @@ public final class EntityVelocityCache implements PacketEventSubscriber {
       ENTITY_VELOCITY
     }
   )
-  public void receiveEntityVelocity(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
+  public void receiveEntityVelocity(
+    User user, EntityVelocityReader reader
+  ) {
     FakePlayer fakePlayer = user.meta().attack().fakePlayer();
-    PacketContainer packet = event.getPacket();
-    Integer entityID = packet.getIntegers().read(0);
-    double motionX = packet.getIntegers().readSafely(1) / VELOCITY_CONVERT_FACTOR;
-    double motionY = packet.getIntegers().readSafely(2) / VELOCITY_CONVERT_FACTOR;
-    double motionZ = packet.getIntegers().readSafely(3) / VELOCITY_CONVERT_FACTOR;
+    int entityId = reader.entityId();
+    double motionX = reader.motionX();
+    double motionY = reader.motionY();
+    double motionZ = reader.motionZ();
     if (horizontalVelocities.size() < 10) {
       registerHorizontalVelocity(motionX);
       registerHorizontalVelocity(motionZ);
@@ -46,7 +42,7 @@ public final class EntityVelocityCache implements PacketEventSubscriber {
     if (verticalVelocities.size() < 10) {
       registerVerticalVelocity(motionY);
     }
-    if (fakePlayer != null && entityID == player.getEntityId()) {
+    if (fakePlayer != null && user.hasPlayer() && entityId == user.player().getEntityId()) {
       notifyFakePlayer(fakePlayer, motionX, motionY, motionZ);
     }
   }
