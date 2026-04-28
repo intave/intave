@@ -22,23 +22,22 @@ public final class ResourceLocation {
     return path;
   }
 
-  private static Constructor<?> NATIVE_RESOURCE_LOCATION_CONSTRUCTOR = null;
-
-  public Object toNativeResourceLocation() {
-    Constructor<?> constructor;
-    if (NATIVE_RESOURCE_LOCATION_CONSTRUCTOR == null) {
+  private static final class ConstructorHolder {
+    static final Constructor<?> NATIVE_RESOURCE_LOCATION_CONSTRUCTOR;
+    static {
       Class<?> minecraftKeyClass = Locate.classByKey("MinecraftKey");
       try {
-        constructor = NATIVE_RESOURCE_LOCATION_CONSTRUCTOR = minecraftKeyClass.getDeclaredConstructor(String.class, String.class);
+        NATIVE_RESOURCE_LOCATION_CONSTRUCTOR = minecraftKeyClass.getDeclaredConstructor(String.class, String.class);
         NATIVE_RESOURCE_LOCATION_CONSTRUCTOR.setAccessible(true);
       } catch (Exception exception) {
         throw new IllegalStateException(exception);
       }
-    } else {
-      constructor = NATIVE_RESOURCE_LOCATION_CONSTRUCTOR;
     }
+  }
+
+  public Object toNativeResourceLocation() {
     try {
-      return constructor.newInstance(namespace, path);
+      return ConstructorHolder.NATIVE_RESOURCE_LOCATION_CONSTRUCTOR.newInstance(namespace, path);
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
       throw new RuntimeException(e);
     }
