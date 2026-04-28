@@ -33,7 +33,7 @@ import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
 public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, RotationSnapHeuristic.RotationSnapHeuristicMeta> {
   // Defines how long after a block place or attack the VL for mitigations should be increased. 
-  private static final long VL_BOOST_MODIFIER_TIME = 1000 / 50 * 3;
+  private static final long VL_BOOST_MODIFIER_TIME = (1000 / 50) * 3; // Set to 3 ticks. (150ms)
 
   public RotationSnapHeuristic(Heuristics parentCheck) {
     super(parentCheck, RotationSnapHeuristicMeta.class);
