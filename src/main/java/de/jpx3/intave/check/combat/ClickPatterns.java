@@ -38,7 +38,11 @@ public final class ClickPatterns extends Check {
     );
     appendCheckParts(
       new EqualDelay(this),
-      new Bursts(this)
+      new Bursts(this),
+      new ConsistencyAnalysis(this),
+      new StatisticalAnomalies(this),
+      new NumericAnomalies(this),
+      new PatternAnalysis(this)
     );
   }
 
