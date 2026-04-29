@@ -138,12 +138,12 @@ public final class AutoUpdate {
       }
       CachedUpdate cachedUpdate = readCachedUpdate(config);
       if (cachedUpdate != null
-        && cachedUpdate.matches(candidate, currentHash)
+        && cachedUpdate.matches(candidate)
         && Files.isRegularFile(cachedUpdate.jarFile)
         && cachedUpdate.jarHash.equals(sha256(cachedUpdate.jarFile))) {
         return;
       }
-      cacheCandidate(candidate, config, reason, currentHash);
+      cacheCandidate(candidate, config, reason);
     } finally {
       if (locked) {
         cacheLock.unlock();
@@ -194,7 +194,7 @@ public final class AutoUpdate {
     return null;
   }
 
-  private void cacheCandidate(UpdateCandidate candidate, AutoUpdateConfig config, String reason, String currentHash) throws IOException {
+  private void cacheCandidate(UpdateCandidate candidate, AutoUpdateConfig config, String reason) throws IOException {
     Files.createDirectories(config.cacheDirectory);
     String id = reason + "-" + UUID.randomUUID().toString();
     Path downloadFile = config.cacheDirectory.resolve(id + ".download");
@@ -208,7 +208,7 @@ public final class AutoUpdate {
         throw new IOException("Downloaded update hash mismatch for " + candidate.assetName);
       }
       atomicReplace(downloadFile, targetJar);
-      writeMetadata(candidate, downloadHash, currentHash, metadataTemp);
+      writeMetadata(candidate, downloadHash, metadataTemp);
       atomicReplace(metadataTemp, metadataFile);
       info("Cached Intave update " + candidate.tagName + " from " + reason);
     } finally {
@@ -233,10 +233,6 @@ public final class AutoUpdate {
       }
       String currentHash = sha256(currentJar);
       if (cachedUpdate.jarHash.equals(currentHash)) {
-        return false;
-      }
-      if (!cachedUpdate.checkedAgainstHash.equals(currentHash)) {
-        info("Cached Intave update " + cachedUpdate.tagName + " was checked against a different jar; leaving current jar untouched");
         return false;
       }
       Path tempTarget = currentJar.resolveSibling(currentJar.getFileName() + ".intave-update.tmp");
@@ -292,8 +288,7 @@ public final class AutoUpdate {
       closeQuietly(inputStream);
     }
     String jarHash = normalizedSha256(properties.getProperty("jar-sha256"));
-    String checkedAgainstHash = normalizedSha256(properties.getProperty("checked-against-jar-sha256"));
-    if (jarHash == null || checkedAgainstHash == null) {
+    if (jarHash == null) {
       return null;
     }
     return new CachedUpdate(
@@ -301,19 +296,17 @@ public final class AutoUpdate {
       properties.getProperty("asset", jarFile.getFileName().toString()),
       properties.getProperty("url", ""),
       jarHash,
-      checkedAgainstHash,
       jarFile
     );
   }
 
-  private void writeMetadata(UpdateCandidate candidate, String jarHash, String checkedAgainstHash, Path metadataFile) throws IOException {
+  private void writeMetadata(UpdateCandidate candidate, String jarHash, Path metadataFile) throws IOException {
     Properties properties = new Properties();
     properties.setProperty("tag", candidate.tagName);
     properties.setProperty("name", candidate.releaseName);
     properties.setProperty("asset", candidate.assetName);
     properties.setProperty("url", candidate.downloadUrl);
     properties.setProperty("jar-sha256", jarHash);
-    properties.setProperty("checked-against-jar-sha256", checkedAgainstHash);
     properties.setProperty("downloaded-at", Long.toString(System.currentTimeMillis()));
     OutputStream outputStream = null;
     try {
@@ -628,21 +621,18 @@ public final class AutoUpdate {
     private final String assetName;
     private final String downloadUrl;
     private final String jarHash;
-    private final String checkedAgainstHash;
     private final Path jarFile;
 
-    private CachedUpdate(String tagName, String assetName, String downloadUrl, String jarHash, String checkedAgainstHash, Path jarFile) {
+    private CachedUpdate(String tagName, String assetName, String downloadUrl, String jarHash, Path jarFile) {
       this.tagName = tagName;
       this.assetName = assetName;
       this.downloadUrl = downloadUrl;
       this.jarHash = jarHash;
-      this.checkedAgainstHash = checkedAgainstHash;
       this.jarFile = jarFile;
     }
 
-    private boolean matches(UpdateCandidate candidate, String currentHash) {
+    private boolean matches(UpdateCandidate candidate) {
       return jarHash.equals(candidate.expectedHash)
-        && checkedAgainstHash.equals(currentHash)
         && stringEquals(downloadUrl, candidate.downloadUrl);
     }
 
