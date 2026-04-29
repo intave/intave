@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.UUID;
@@ -136,6 +137,12 @@ public final class AutoUpdate {
       if (candidate == null || candidate.expectedHash.equals(currentHash)) {
         return;
       }
+
+      long localTime = Files.getLastModifiedTime(currentJar).toMillis();
+      if (candidate.updatedAtMillis <= localTime) {
+        return;
+      }
+
       CachedUpdate cachedUpdate = readCachedUpdate(config);
       if (cachedUpdate != null
         && cachedUpdate.matches(candidate)
@@ -182,12 +189,23 @@ public final class AutoUpdate {
         warn("GitHub release asset " + assetName + " has no SHA-256 digest; skipping update");
         continue;
       }
+
+      long updatedAt = 0L;
+      try {
+        String updatedAtStr = stringValue(release, "updated_at", null);
+        if (updatedAtStr != null) {
+          updatedAt = Instant.parse(updatedAtStr).toEpochMilli();
+        }
+      } catch (Exception ignored) {
+      }
+
       return new UpdateCandidate(
         stringValue(release, "tag_name", "release"),
         stringValue(release, "name", assetName),
         assetName,
         downloadUrl,
-        expectedHash
+        expectedHash,
+        updatedAt
       );
     }
     info("No public Intave release asset found for " + REPOSITORY);
@@ -606,13 +624,15 @@ public final class AutoUpdate {
     private final String assetName;
     private final String downloadUrl;
     private final String expectedHash;
+    private final long updatedAtMillis;
 
-    private UpdateCandidate(String tagName, String releaseName, String assetName, String downloadUrl, String expectedHash) {
+    private UpdateCandidate(String tagName, String releaseName, String assetName, String downloadUrl, String expectedHash, long updatedAtMillis) {
       this.tagName = tagName;
       this.releaseName = releaseName;
       this.assetName = assetName;
       this.downloadUrl = downloadUrl;
       this.expectedHash = expectedHash.toLowerCase(Locale.ROOT);
+      this.updatedAtMillis = updatedAtMillis;
     }
   }
 
