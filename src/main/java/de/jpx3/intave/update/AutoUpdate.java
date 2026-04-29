@@ -298,7 +298,7 @@ public final class AutoUpdate {
     }
   }
 
-  private CachedUpdate readCachedUpdate(AutoUpdateConfig config) throws IOException {
+  private static CachedUpdate readCachedUpdate(AutoUpdateConfig config) throws IOException {
     Path metadataFile = config.cacheDirectory.resolve(CACHE_META_NAME);
     Path jarFile = config.cacheDirectory.resolve(CACHE_JAR_NAME);
     if (!Files.isRegularFile(metadataFile) || !Files.isRegularFile(jarFile)) {
@@ -325,7 +325,7 @@ public final class AutoUpdate {
     );
   }
 
-  private void writeMetadata(UpdateCandidate candidate, String jarHash, Path metadataFile) throws IOException {
+  private static void writeMetadata(UpdateCandidate candidate, String jarHash, Path metadataFile) throws IOException {
     Properties properties = new Properties();
     properties.setProperty("tag", candidate.tagName);
     properties.setProperty("name", candidate.releaseName);
@@ -342,7 +342,7 @@ public final class AutoUpdate {
     }
   }
 
-  private JsonObject selectReleaseJarAsset(JsonArray assets) {
+  private static JsonObject selectReleaseJarAsset(JsonArray assets) {
     JsonObject fallback = null;
     for (JsonElement element : assets) {
       if (!element.isJsonObject()) {
@@ -439,7 +439,7 @@ public final class AutoUpdate {
     return connection;
   }
 
-  private String sha256(Path file) throws IOException {
+  private static String sha256(Path file) throws IOException {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       InputStream inputStream = null;
@@ -459,7 +459,7 @@ public final class AutoUpdate {
     }
   }
 
-  private void copy(InputStream inputStream, OutputStream outputStream) throws IOException {
+  private static void copy(InputStream inputStream, OutputStream outputStream) throws IOException {
     byte[] buffer = new byte[8192];
     int read;
     while ((read = inputStream.read(buffer)) != -1) {
@@ -467,7 +467,7 @@ public final class AutoUpdate {
     }
   }
 
-  private String hex(byte[] bytes) {
+  private static String hex(byte[] bytes) {
     StringBuilder builder = new StringBuilder(bytes.length * 2);
     for (byte value : bytes) {
       builder.append(String.format("%02x", value & 0xFF));
@@ -475,7 +475,7 @@ public final class AutoUpdate {
     return builder.toString();
   }
 
-  private String sha256FromDigest(JsonObject object) {
+  private static String sha256FromDigest(JsonObject object) {
     String digest = stringValue(object, "digest", null);
     if (digest == null) {
       return null;
@@ -513,7 +513,7 @@ public final class AutoUpdate {
     return fallback == null ? null : extractSha256(readText(stringValue(fallback, "browser_download_url", null)));
   }
 
-  private String extractSha256(String text) {
+  private static String extractSha256(String text) {
     if (text == null) {
       return null;
     }
@@ -521,7 +521,7 @@ public final class AutoUpdate {
     return matcher.find() ? matcher.group(1).toLowerCase(Locale.ROOT) : null;
   }
 
-  private void atomicReplace(Path source, Path target) throws IOException {
+  private static void atomicReplace(Path source, Path target) throws IOException {
     try {
       Files.move(source, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
     } catch (AtomicMoveNotSupportedException exception) {
@@ -529,15 +529,15 @@ public final class AutoUpdate {
     }
   }
 
-  private boolean validSha256(String value) {
+  private static boolean validSha256(String value) {
     return value != null && SHA_256_PATTERN.matcher(value).matches();
   }
 
-  private String normalizedSha256(String value) {
+  private static String normalizedSha256(String value) {
     return validSha256(value) ? value.toLowerCase(Locale.ROOT) : null;
   }
 
-  private String stringValue(JsonObject object, String key, String fallback) {
+  private static String stringValue(JsonObject object, String key, String fallback) {
     JsonElement element = object.get(key);
     if (element == null || element.isJsonNull()) {
       return fallback;
@@ -549,7 +549,7 @@ public final class AutoUpdate {
     }
   }
 
-  private boolean booleanValue(JsonObject object, String key, boolean fallback) {
+  private static boolean booleanValue(JsonObject object, String key, boolean fallback) {
     JsonElement element = object.get(key);
     if (element == null || element.isJsonNull()) {
       return fallback;
@@ -576,7 +576,7 @@ public final class AutoUpdate {
     startupExecutor.shutdownNow();
   }
 
-  private ThreadFactory daemonThreadFactory(final String name) {
+  private static ThreadFactory daemonThreadFactory(final String name) {
     return new ThreadFactory() {
       @Override
       public Thread newThread(Runnable runnable) {
@@ -587,7 +587,7 @@ public final class AutoUpdate {
     };
   }
 
-  private void closeQuietly(InputStream inputStream) {
+  private static void closeQuietly(InputStream inputStream) {
     if (inputStream == null) {
       return;
     }
@@ -597,7 +597,7 @@ public final class AutoUpdate {
     }
   }
 
-  private void closeQuietly(OutputStream outputStream) {
+  private static void closeQuietly(OutputStream outputStream) {
     if (outputStream == null) {
       return;
     }
@@ -663,7 +663,7 @@ public final class AutoUpdate {
         && stringEquals(downloadUrl, candidate.downloadUrl);
     }
 
-    private boolean stringEquals(String first, String second) {
+    private static boolean stringEquals(String first, String second) {
       return first == null ? second == null : first.equals(second);
     }
   }
