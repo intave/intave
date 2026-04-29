@@ -23,6 +23,7 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
@@ -138,7 +139,12 @@ public final class AutoUpdate {
         return;
       }
 
-      long localTime = Files.getLastModifiedTime(currentJar).toMillis();
+      BasicFileAttributes attrs = Files.readAttributes(currentJar, BasicFileAttributes.class);
+      long modifiedTime = attrs.lastModifiedTime().toMillis();
+      long creationTime = attrs.creationTime().toMillis();
+
+      // Take the older of the two timestamps to handle file copy scenarios
+      long localTime = Math.min(modifiedTime, creationTime);
       if (candidate.updatedAtMillis <= localTime) {
         return;
       }
@@ -168,10 +174,11 @@ public final class AutoUpdate {
       if (booleanValue(release, "draft", false)) {
         continue;
       }
-      JsonArray assets = release.getAsJsonArray("assets");
-      if (assets == null || assets.size() == 0) {
+      JsonElement assetsElement = release.get("assets");
+      if (assetsElement == null || !assetsElement.isJsonArray()) {
         continue;
       }
+      JsonArray assets = assetsElement.getAsJsonArray();
       JsonObject jarAsset = selectReleaseJarAsset(assets);
       if (jarAsset == null) {
         continue;
