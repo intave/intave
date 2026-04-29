@@ -71,35 +71,34 @@ check:
   heuristics:
     enabled: true
 
-    # Defines the violation level increases for our classic heuristics.
-    # Intave uses a separate violation level system that combines all classic heuristics with thresholds defined
-    # under "classic-thresholds".
     classic:
-      # Combines multiple checks that enforce hit misses over time
-      attack-accuracy: 2
-      # Combines multiple rotation checks
-      rotation-accuracy: 4
-      # Checks if the rotation matches a formula commonly found in cheat clients
-      rotation-exact: 10
-      # Detects obvious rotation snaps
-      rotation-snap: 5
-      # Ensures rotation is multiplied by a constant factor
-      rotation-sensitivity: 0
-      # Detects if the rotation suddenly resets when turning over 360°
-      rotation-reset: 3
-      # Ensures the player sends an attack packet when clicking/swinging on a target within reach
+      # Attack Heuristics
+      attack-accuracy: 4
       attack-required: 3
-      # Checks if players click on a target before it is finally in reach
       pre-attack: 4
-      # Checks if a player rotates while in an inventory
+
+      # Rotation Heuristics
+      rotation-accuracy: 4
+      rotation-exact: 10
+      rotation-snap: 5
+      rotation-sensitivity: 2
+      rotation-reset: 3
+
+      # Other
       inventory-rotations: 2
 
-    classic-thresholds:
-      # Executed
-      50:
-        - "intave internals storelog {player} {check} {vl}"
-        - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been kicked for attacking suspiciously (on-premise heuristics)"
-        - $kick$
+      classic-thresholds:
+        20:
+          - "intave internals storelog {player} {check} {vl}"
+          - "intave internals sendnotify &e{player}&7 is attacking suspiciously #1"
+
+        40:
+          - "intave internals sendnotify &e{player}&7 is attacking suspiciously #2"
+
+        50:
+          - "intave internals storelog {player} {check} {vl}"
+          - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been kicked for attacking suspiciously (on-premise classic heuristics)"
+          - $kick$
 
     cloud-thresholds:
       # Executed if a player fails a combination of legacy heuristics located in the Intave jar file
