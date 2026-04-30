@@ -3,6 +3,7 @@ package de.jpx3.intave.check.combat.clickpatterns;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.ClickPatterns;
+import de.jpx3.intave.metric.ServerHealth;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AttackMetadata;
@@ -47,7 +48,9 @@ public final class NumericAnomalies extends MetaCheckPart<ClickPatterns, Numeric
             return;
         }
 
-        double ticks = swingDifferenceMs / 50.0;
+        double currentTPS = ServerHealth.recentTickAverage()[0];
+        double msPerTick = 1000.0 / Math.max(1.0, currentTPS);
+        double ticks = swingDifferenceMs / msPerTick;
         meta.intervals.add(ticks);
 
         if (meta.intervals.size() >= BUFFER_LENGTH) {
@@ -56,18 +59,20 @@ public final class NumericAnomalies extends MetaCheckPart<ClickPatterns, Numeric
             double cps = ClickMathUtils.getCPS(meta.intervals);
             double perfectRatio = ClickMathUtils.getRatioOfValue(meta.intervals, 1.0, 0.1);
 
-            if (mean < 3.0 && range <= 1 && perfectRatio > 0.8 && cps > 8.0) {
-                meta.perfectBuffer += 1.0;
-                if (meta.perfectBuffer > 15.0) {
-                    parentCheck().makeDetection(
-                            player,
-                            "numeric perfection",
-                            "range:" + range + " perfectRatio:" + formatDouble(perfectRatio, 2) + " cps:" + formatDouble(cps, 1),
-                            meta.perfectBuffer > 20 ? 5 : 0
-                    );
+            if (currentTPS > 18.5) {
+                if (mean < 3.0 && range <= 1 && perfectRatio > 0.8 && cps > 8.0) {
+                    meta.perfectBuffer += 1.0;
+                    if (meta.perfectBuffer > 15.0) {
+                        parentCheck().makeDetection(
+                        player,
+                        "numeric perfection",
+                        "range:" + range + " perfectRatio:" + formatDouble(perfectRatio, 2) + " cps:" + formatDouble(cps, 1),
+                        meta.perfectBuffer > 20 ? 5 : 0
+                        );
+                    }
+                } else {
+                    meta.perfectBuffer = Math.max(0, meta.perfectBuffer - 0.5);
                 }
-            } else {
-                meta.perfectBuffer = Math.max(0, meta.perfectBuffer - 0.5);
             }
 
             if (range == 1 && cps > 5.0 && cps < 22.0) {

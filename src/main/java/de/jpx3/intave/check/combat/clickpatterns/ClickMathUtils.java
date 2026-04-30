@@ -1,6 +1,7 @@
 package de.jpx3.intave.check.combat.clickpatterns;
 
 import java.util.Collection;
+import de.jpx3.intave.metric.ServerHealth;
 
 public final class ClickMathUtils {
 
@@ -17,8 +18,16 @@ public final class ClickMathUtils {
 
     public static double getCPS(Collection<? extends Number> data) {
         double mean = getMean(data);
-        if (mean == 0.0) return 0.0;
-        return 20.0 / mean;
+        if (mean <= 0.0) return 0.0;
+
+        // improved how the method get the cps
+        double[] tpsArray = ServerHealth.recentTickAverage();
+        double rawTPS = (tpsArray != null && tpsArray.length > 0) ? tpsArray[0] : 20.0;
+
+        double safeTPS = Math.max(1.0, Math.min(20.0, rawTPS));
+
+        double cps = safeTPS / mean;
+        return Math.min(cps, 500.0);
     }
 
     public static double getVariance(Collection<? extends Number> data) {
@@ -87,7 +96,7 @@ public final class ClickMathUtils {
 
     public static int getRange(Collection<? extends Number> data) {
         if (data.isEmpty()) return 0;
-        double max = Double.MIN_VALUE;
+        double max = Double.NEGATIVE_INFINITY;
         double min = Double.MAX_VALUE;
         for (Number n : data) {
             double val = n.doubleValue();
@@ -136,7 +145,7 @@ public final class ClickMathUtils {
         if (data == null || data.isEmpty()) return 0.0;
         java.util.Map<Double, Integer> frequencyMap = new java.util.HashMap<>();
         for (Number number : data) {
-            double value = number.doubleValue();
+            double value = Math.round(number.doubleValue() * 10.0) / 10.0;
             frequencyMap.put(value, frequencyMap.getOrDefault(value, 0) + 1);
         }
         double entropy = 0.0;
@@ -183,26 +192,27 @@ public final class ClickMathUtils {
 
     public static double calculateSimilarity(Collection<? extends Number> currentList, Collection<? extends Number> lastList) {
         if (currentList.size() != lastList.size() || lastList.isEmpty()) {
-            return Double.MAX_VALUE;
+            return 0.0;
         }
-        int totalComparisons = currentList.size() * lastList.size();
+
+        Number[] current = currentList.toArray(new Number[0]);
+        Number[] last = lastList.toArray(new Number[0]);
+
         double totalDifference = 0.0;
+        double max = Double.NEGATIVE_INFINITY;
 
-        for (Number current : currentList) {
-            for (Number last : lastList) {
-                totalDifference += Math.abs(current.doubleValue() - last.doubleValue());
-            }
+        for (int i = 0; i < current.length; i++) {
+            double v1 = current[i].doubleValue();
+            double v2 = last[i].doubleValue();
+            
+            totalDifference += Math.abs(v1 - v2);
+            
+            if (v1 > max) max = v1;
+            if (v2 > max) max = v2;
         }
-
-        double max = Double.MIN_VALUE;
-        for (Number value : lastList) {
-            if (value.doubleValue() > max) {
-                max = value.doubleValue();
-            }
-        }
-
-        double maxPossibleDifference = totalComparisons * max;
-        if (maxPossibleDifference == 0) return 0.0;
+        double maxPossibleDifference = current.length * max;
+        if (maxPossibleDifference == 0) return 1.0;
+        
         return 1.0 - (totalDifference / maxPossibleDifference);
     }
 

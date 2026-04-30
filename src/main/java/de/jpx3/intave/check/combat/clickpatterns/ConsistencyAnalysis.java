@@ -3,6 +3,7 @@ package de.jpx3.intave.check.combat.clickpatterns;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.ClickPatterns;
+import de.jpx3.intave.metric.ServerHealth;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AttackMetadata;
@@ -47,7 +48,9 @@ public final class ConsistencyAnalysis extends MetaCheckPart<ClickPatterns, Cons
             return;
         }
 
-        double ticks = swingDifferenceMs / 50.0;
+        double currentTPS = ServerHealth.recentTickAverage()[0];
+        double msPerTick = 1000.0 / Math.max(1.0, currentTPS);
+        double ticks = swingDifferenceMs / msPerTick;
         meta.intervals.add(ticks);
 
         if (meta.intervals.size() >= BUFFER_LENGTH) {
