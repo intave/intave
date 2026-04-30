@@ -32,18 +32,15 @@ public final class ClickMathUtils {
 
     public static double getVariance(Collection<? extends Number> data) {
         if (data.isEmpty()) return 0.0;
-        int count = 0;
         double sum = 0.0;
-        double variance = 0.0;
-        for (Number number : data) {
-            sum += number.doubleValue();
-            count++;
+        double sumSq = 0.0;
+        for (Number n : data) {
+            double v = n.doubleValue();
+            sum += v;
+            sumSq += v * v;
         }
-        double mean = sum / count;
-        for (Number number : data) {
-            variance += Math.pow(number.doubleValue() - mean, 2.0);
-        }
-        return variance / count;
+        double mean = sum / data.size();
+        return (sumSq / data.size()) - (mean * mean);
     }
 
     public static double getStandardDeviation(Collection<? extends Number> data) {
@@ -51,47 +48,53 @@ public final class ClickMathUtils {
     }
 
     public static double getKurtosis(Collection<? extends Number> data) {
-        if (data.isEmpty()) return 0.0;
+        int n = data.size();
+        if (n < 4) return 0.0;
+
         double sum = 0.0;
-        int count = 0;
+        double sumSq = 0.0;
+        double sumCu = 0.0;
+        double sumQu = 0.0;
+
         for (Number number : data) {
-            sum += number.doubleValue();
-            count++;
+            double v = number.doubleValue();
+            double v2 = v * v;
+            sum += v;
+            sumSq += v2;
+            sumCu += v2 * v;
+            sumQu += v2 * v2;
         }
-        if (count < 4) {
-            return 0.0;
-        }
-        double efficiencyFirst = count * (count + 1.0) / ((count - 1.0) * (count - 2.0) * (count - 3.0));
-        double efficiencySecond = 3.0 * Math.pow(count - 1.0, 2.0) / ((count - 2.0) * (count - 3.0));
-        double average = sum / count;
-        double variance = 0.0;
-        double varianceSquared = 0.0;
-        for (Number number : data) {
-            variance += Math.pow(average - number.doubleValue(), 2.0);
-            varianceSquared += Math.pow(average - number.doubleValue(), 4.0);
-        }
-        double varianceDivCount = variance / count;
-        if (varianceDivCount == 0) return 0.0;
-        return efficiencyFirst * (varianceSquared / Math.pow(varianceDivCount, 2.0)) - efficiencySecond;
+
+        double mean = sum / n;
+        double var = (sumSq / n) - (mean * mean);
+        if (var <= 0.0) return 0.0;
+
+        double m4 = (sumQu / n) - 4 * mean * (sumCu / n) + 6 * (mean * mean) * (sumSq / n) - 3 * Math.pow(mean, 4);
+        return m4 / (var * var) - 3.0;
     }
 
     public static double getSkewness(Collection<? extends Number> data) {
-        if (data.isEmpty()) return 0.0;
+        int n = data.size();
+        if (n < 3) return 0.0;
+
         double sum = 0.0;
-        int count = 0;
+        double sumSq = 0.0;
+        double sumCu = 0.0;
+
         for (Number number : data) {
-            sum += number.doubleValue();
-            count++;
+            double v = number.doubleValue();
+            sum += v;
+            sumSq += v * v;
+            sumCu += v * v * v;
         }
-        double average = sum / count;
-        double variance = 0.0;
-        double varianceSquared = 0.0;
-        for (Number number : data) {
-            variance += Math.pow(average - number.doubleValue(), 2.0);
-            varianceSquared += Math.pow(average - number.doubleValue(), 3.0);
-        }
-        if (variance == 0) return 0.0;
-        return Math.sqrt(count) * varianceSquared / Math.pow(variance, 1.5);
+
+        double mean = sum / n;
+        double variance = (sumSq / n) - (mean * mean);
+        if (variance <= 0.0) return 0.0;
+
+        double std = Math.sqrt(variance);
+
+        return ((sumCu / n) - 3 * mean * variance - (mean * mean * mean)) / (std * std * std);
     }
 
     public static int getRange(Collection<? extends Number> data) {
