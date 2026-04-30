@@ -115,6 +115,13 @@ check:
         50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously (backtrack?)"
         100: "intave internals sendnotify &c{player}&7/{trust-color}&7 is attacking suspiciously #2 (backtrack?)"
 
+  automationanalysis:
+    enabled: true
+    # DO NOT BAN
+    thresholds:
+      20: "intave internals sendnotify &c{player}&7/{trust-color}&7 is using automation"
+      50: "intave internals sendnotify &c{player}&7/{trust-color}&7 is using automation #2"
+
   interactionraytrace:
     enabled: true
     # BAN NOT NECESSARY

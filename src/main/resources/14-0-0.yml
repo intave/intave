@@ -16,6 +16,10 @@ attackraytrace:
 
   prevention-activation: [100, 50, 15, 10, 5, 5]
 
+automationanalysis:
+
+  prevention-activation: [100, 15, 15, 10, 5, 5]
+
 heuristics:
 
   prevention-activation: [0, 0, 0, 0, 0, 0]

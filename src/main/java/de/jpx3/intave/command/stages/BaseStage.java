@@ -200,6 +200,7 @@ public final class BaseStage extends CommandStage {
     BLOCK_CACHE(MessageChannel.DEBUG_BLOCK_CACHE),
     POSITION(MessageChannel.DEBUG_POSITION),
     PACKET_HOLD(MessageChannel.DEBUG_PACKET_HOLD),
+    AUTOMATION(MessageChannel.DEBUG_AUTOMATION),
 
     ;
 

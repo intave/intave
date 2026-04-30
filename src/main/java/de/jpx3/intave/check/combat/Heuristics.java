@@ -17,7 +17,6 @@ import de.jpx3.intave.check.combat.heuristics.detect.clickpatterns.OldAirClickLi
 import de.jpx3.intave.check.combat.heuristics.detect.clickpatterns.SwingDeviationHeuristics;
 import de.jpx3.intave.check.combat.heuristics.detect.clickpatterns.SwingLimitHeuristics;
 import de.jpx3.intave.check.combat.heuristics.detect.combatpatterns.AttackRequiredHeuristic;
-import de.jpx3.intave.check.combat.heuristics.detect.combatpatterns.BaritoneRotationCheck;
 import de.jpx3.intave.check.combat.heuristics.detect.combatpatterns.LongTermClickAccuracyHeuristic;
 import de.jpx3.intave.check.combat.heuristics.detect.combatpatterns.LongTermClickAccuracyRelayHeuristic;
 import de.jpx3.intave.check.combat.heuristics.detect.combatpatterns.PerfectAttackHeuristic;
@@ -140,7 +139,6 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
     appendCheckPart(new SameRotationHeuristic(this));
     appendCheckPart(new AttackRequiredHeuristic(this));
     appendCheckPart(new PacketOrderHeuristic(this));
-    appendCheckPart(new BaritoneRotationCheck(this));
     appendCheckPart(new ToolSwitchHeuristic(this));
 
     // for testing

@@ -9,6 +9,7 @@ import java.util.Map;
  */
 public enum Check {
   ATTACK_RAYTRACE("AttackRaytrace"),
+  AUTOMATION_ANALYSIS("AutomationAnalysis"),
   BREAK_SPEED_LIMITER("BreakSpeedLimiter"),
   CLICK_PATTERNS("ClickPatterns"),
   CLICK_SPEED_LIMITER("ClickSpeedLimiter"),
