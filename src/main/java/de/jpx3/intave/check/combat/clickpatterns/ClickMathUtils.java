@@ -193,30 +193,26 @@ public final class ClickMathUtils {
         return numerator / denominator;
     }
 
-    public static double calculateSimilarity(Collection<? extends Number> currentList, Collection<? extends Number> lastList) {
-        if (currentList.size() != lastList.size() || lastList.isEmpty()) {
-            return 0.0;
-        }
+    public static double calculateSimilarity(
+            Collection<? extends Number> currentList,
+            Collection<? extends Number> lastList) {
+
+        if (currentList.size() != lastList.size() || lastList.isEmpty()) return 0.0;
 
         Number[] current = currentList.toArray(new Number[0]);
-        Number[] last = lastList.toArray(new Number[0]);
+        Number[] last    = lastList.toArray(new Number[0]);
 
-        double totalDifference = 0.0;
-        double max = Double.NEGATIVE_INFINITY;
-
+        double dot = 0, normA = 0, normB = 0;
         for (int i = 0; i < current.length; i++) {
-            double v1 = current[i].doubleValue();
-            double v2 = last[i].doubleValue();
-            
-            totalDifference += Math.abs(v1 - v2);
-            
-            if (v1 > max) max = v1;
-            if (v2 > max) max = v2;
+            double va = current[i].doubleValue();
+            double vb = last[i].doubleValue();
+            dot   += va * vb;
+            normA += va * va;
+            normB += vb * vb;
         }
-        double maxPossibleDifference = current.length * max;
-        if (maxPossibleDifference == 0) return 1.0;
-        
-        return 1.0 - (totalDifference / maxPossibleDifference);
+
+        if (normA == 0 || normB == 0) return 0.0;
+        return dot / (Math.sqrt(normA) * Math.sqrt(normB));
     }
 
     public static double getMode(Collection<? extends Number> data) {

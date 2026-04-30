@@ -58,6 +58,8 @@ public final class StatisticalAnomalies extends MetaCheckPart<ClickPatterns, Sta
             double skewness = ClickMathUtils.getSkewness(meta.intervals);
             double cps = ClickMathUtils.getCPS(meta.intervals);
 
+            // this "magic numbers" are based on a test that I've done against common
+            // (hcf/skywars/general 1.8) autoclickers like NvidiaControlPanel or Slinky
             if (Math.abs(skewness) < 0.1 && cps > 10.0) {
                 meta.skewnessBuffer += 1.0;
                 if (meta.skewnessBuffer > 4.0) {

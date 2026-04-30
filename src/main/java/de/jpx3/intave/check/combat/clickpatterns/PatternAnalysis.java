@@ -13,7 +13,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.ARM_ANIMATION;
@@ -86,7 +88,8 @@ public final class PatternAnalysis extends MetaCheckPart<ClickPatterns, PatternA
                 }
 
                 if (!meta.cachedIntervals.isEmpty() && meta.cachedIntervals.size() == meta.intervals.size()) {
-                    double similarity = ClickMathUtils.calculateSimilarity(meta.intervals, meta.cachedIntervals);
+                    List<Double> snapshot = new ArrayList<>(meta.cachedIntervals);
+                    double similarity = ClickMathUtils.calculateSimilarity(meta.intervals, snapshot);
                     double delta = Math.abs(similarity - meta.lastSimilarity);
                     if (delta < 0.015 && similarity < 0.8) {
                         meta.similarityBuffer += 1.0;
@@ -126,7 +129,7 @@ public final class PatternAnalysis extends MetaCheckPart<ClickPatterns, PatternA
 
     public static class PatternMeta extends CheckCustomMetadata {
         private final Deque<Double> intervals = new ArrayDeque<>();
-        private final Deque<Double> cachedIntervals = new ArrayDeque<>();
+        private volatile Deque<Double> cachedIntervals = new ArrayDeque<>();
         private long lastSwing = 0;
         private double patternBuffer = 0;
         private double similarityBuffer = 0;
