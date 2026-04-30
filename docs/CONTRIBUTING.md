@@ -21,6 +21,10 @@ If you want to work with 4-space indentation, convert the file to tabs and set y
 This way, you can work with 4-space indentation in your editor, 
 but the codebase remains consistent with 2-space indentation.
 
+## Important notes for check contributions
+1. Do not create a completely new check (a class that extends the Check class) unless you consult with us beforehand.
+2. If you submit a heuristic sub-check (under ClickPatterns, Heuristics, PlacementAnalysis, etc.), describe in your PR why bypassing your check is difficult or tedious for cheat developers.
+
 ## How to contribute
 
 1. Fork the repository and create a new branch labelled `feature/your-feature-name` or `bugfix/your-bugfix-name`.
