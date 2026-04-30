@@ -20,7 +20,7 @@ import static de.jpx3.intave.module.linker.packet.PacketId.Client.ARM_ANIMATION;
 
 public final class ConsistencyAnalysis extends MetaCheckPart<ClickPatterns, ConsistencyAnalysis.ConsistencyMeta> {
     private static final int BUFFER_TIMEOUT = 2500;
-    private static final int BUFFER_LENGTH = 100;
+    private static final int BUFFER_LENGTH = 50;
 
     public ConsistencyAnalysis(ClickPatterns parentCheck) {
         super(parentCheck, ConsistencyMeta.class);
