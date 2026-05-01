@@ -6,8 +6,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         version:
           - "1.8.8"
@@ -32,6 +33,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '16'
+          distribution: 'temurin'
 
       - uses: actions/setup-java@v4
         with:
