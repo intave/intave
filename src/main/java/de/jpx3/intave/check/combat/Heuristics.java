@@ -22,8 +22,8 @@ public final class Heuristics extends Check {
 
   public Heuristics(IntavePlugin plugin) {
     super("Heuristics", "heuristics");
-    this.setupClassicHeuristics();
     this.loadClassicConfiguration();
+    this.setupClassicHeuristics();
   }
 
   private void setupClassicHeuristics() {
@@ -55,7 +55,7 @@ public final class Heuristics extends Check {
     CheckConfiguration.CheckSettings settings = configuration().settings();
     for (HeuristicsClassicType classType : HeuristicsClassicType.values()) {
       String fullConfigurationName = "classic." + classType.configurationName();
-      int violationLevelIncrease = settings.intInBoundsBy(fullConfigurationName, 0, Integer.MAX_VALUE);
+      int violationLevelIncrease = settings.intBy(fullConfigurationName);
       classicViolationLevelMap.put(classType, violationLevelIncrease);
     }
   }
