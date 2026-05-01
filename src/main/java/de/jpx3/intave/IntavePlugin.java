@@ -512,20 +512,32 @@ public final class IntavePlugin extends JavaPlugin {
     configService.reload();
     YamlConfiguration configuration = configService.configuration();
 
+    // reload prefix + color
     prefix = configuration.getString("layout.prefix", prefix);
     prefix = ChatColor.translateAlternateColorCodes('&', prefix);
     defaultColor = ChatColor.getLastColors(prefix);
 
-    FaultKicks.applyFrom(configuration.getConfigurationSection("fault-kicks"));
-    ConsoleOutput.applyFrom(configuration.getConfigurationSection("logging"));
-    cloud.configInit(configuration.getConfigurationSection("cloud"));
+    // safe reload config sections
+    if (configuration.getConfigurationSection("fault-kicks") != null) {
+        FaultKicks.applyFrom(configuration.getConfigurationSection("fault-kicks"));
+    }
 
+    if (configuration.getConfigurationSection("logging") != null) {
+        ConsoleOutput.applyFrom(configuration.getConfigurationSection("logging"));
+    }
+
+    if (configuration.getConfigurationSection("cloud") != null) {
+        cloud.configInit(configuration.getConfigurationSection("cloud"));
+    }
+
+    // reset + reload
     Heuristics.resetConfigurationCache();
     PlacementAnalysis.resetConfigurationCache();
     checkService.reloadConfigurations();
-    Modules.linker().packetEvents().refreshLinkages();
-  }
 
+    // refresh packet events
+    Modules.linker().packetEvents().refreshLinkages();
+}
   public static final long INTEGRITY_ERASE_BUFFER = TimeUnit.MINUTES.toMillis(1);
 
   public void clearIntegrityGarbage() {
