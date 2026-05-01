@@ -145,8 +145,6 @@ tasks.register<RunServer>("authtest") {
 //  jvmArgs("-Dintave.test.success=shutdown")
   javaLauncher.set(
     project.javaToolchains.launcherFor {
-      // Sets the JDK version for the Minecraft server, Intave is still built using Java
-      // 1.8
       languageVersion.set(JavaLanguageVersion.of(17))
     }
   )
@@ -165,8 +163,6 @@ tasks.register<RunServer>("gommetest") {
 //  jvmArgs("-Dintave.test.success=shutdown")
   javaLauncher.set(
     project.javaToolchains.launcherFor {
-      // Sets the JDK version for the Minecraft server, Intave is still built using Java
-      // 1.8
       languageVersion.set(JavaLanguageVersion.of(8))
     }
   )
@@ -187,8 +183,6 @@ tasks.register<RunServer>("authtest_1.20.1") {
 //  jvmArgs("-Dintave.test.success=shutdown")
   javaLauncher.set(
     project.javaToolchains.launcherFor {
-      // Sets the JDK version for the Minecraft server, Intave is still built using Java
-      // 1.8
       languageVersion.set(JavaLanguageVersion.of(17))
     }
   )
@@ -312,10 +306,10 @@ fun registerServerTask(serverVersion: String, javaVersion: Int) {
     }
     runDirectory(File("runs/paper_${serverVersion}-j$javaVersion"))
     jvmArgs("-Dcom.mojang.eula.agree=true")
+    // set offline mode to false
+    args("-o", "false")
     javaLauncher.set(
       project.javaToolchains.launcherFor {
-        // Sets the JDK version for the Minecraft server, Intave is still built using Java
-        // 1.8
         languageVersion.set(JavaLanguageVersion.of(javaVersion))
       }
     )

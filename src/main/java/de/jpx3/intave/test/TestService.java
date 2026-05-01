@@ -14,6 +14,7 @@ import de.jpx3.intave.block.variant.BlockVariantTests;
 import de.jpx3.intave.check.EventProcessor;
 import de.jpx3.intave.check.movement.physics.MovementConfigurationTests;
 import de.jpx3.intave.check.movement.physics.SimulatorBasicTests;
+import de.jpx3.intave.cleanup.ShutdownTasks;
 import de.jpx3.intave.entity.size.EntitySizeTests;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.locate.ReferenceExistenceTests;
@@ -63,6 +64,7 @@ public final class TestService implements EventProcessor {
       8192
     );
   private static final String environmentHash = environmentHash();
+  private boolean testsWereRun = false;
 
   private static String environmentHash() {
     StringBuilder bigString = new StringBuilder(Bukkit.getServer().getName());
@@ -127,8 +129,21 @@ public final class TestService implements EventProcessor {
     }
   }
 
+  public void setup() {
+    if (IS_TEST_RUN) {
+      ShutdownTasks.add(() -> {
+        if (!testsWereRun) {
+          System.err.println("Tests were not run, but this is a test run.");
+          System.exit(1);
+        }
+      });
+    }
+
+    scheduleTestsForFifthTick();
+  }
+
   public void scheduleTestsForFifthTick() {
-    if (!environmentKnown()) {
+    if (!environmentKnown() || IS_TEST_RUN) {
       Modules.linker().bukkitEvents().registerEventsIn(this);
       Synchronizer.synchronizeDelayed(this::performTests, 5);
     }
@@ -173,7 +188,6 @@ public final class TestService implements EventProcessor {
       performTest(ShareTests.class);
       performTest(MovementConfigurationTests.class);
 
-
       // checks
       performTest(SimulatorBasicTests.class);
 
@@ -195,6 +209,8 @@ public final class TestService implements EventProcessor {
         System.exit(1);
       }
       return;
+    } finally {
+      testsWereRun = true;
     }
     dontCheckThisEnvironmentAgain();
     if (IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
