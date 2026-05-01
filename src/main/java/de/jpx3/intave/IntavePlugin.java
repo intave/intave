@@ -340,7 +340,7 @@ public final class IntavePlugin extends JavaPlugin {
       proxyMessenger = new ProxyMessenger(this);
       sibylIntegrationService = new SibylIntegrationService(this);
       testService = new TestService();
-      testService.scheduleTestsForFifthTick();
+      testService.setup();
       uploadService = new ScheduledUploadService();
       uploadService.enable();
 
