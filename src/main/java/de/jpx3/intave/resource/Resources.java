@@ -33,7 +33,7 @@ public final class Resources {
   }
 
   public static Resource resourceFromJarOrBuild(String path) {
-    return resourceFromJarWithFallback(path, resourceFromFile(new File("src/main/java/resources/" + path)));
+    return resourceFromJarWithFallback(path, resourceFromFile(new File("src/main/resources/" + path)));
   }
 
   public static Resource hashProtected(String path, Resource target) {

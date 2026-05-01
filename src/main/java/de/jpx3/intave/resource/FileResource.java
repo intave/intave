@@ -3,8 +3,8 @@ package de.jpx3.intave.resource;
 import java.io.*;
 import java.nio.file.Files;
 
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static java.nio.file.StandardOpenOption.WRITE;
 
 final class FileResource implements Resource {
   private final File file;
@@ -25,52 +25,73 @@ final class FileResource implements Resource {
 
   @Override
   public void write(InputStream inputStream) {
+    File tempFile = new File(this.file.getAbsolutePath() + ".tmp");
+
     try {
-      File file = new File(this.file.getAbsolutePath() + ".tmp");
-      if (!file.exists()) {
-        if (!file.createNewFile()) {
-          throw new IllegalStateException("Unable to create file " + file + ", exists: " + file.exists());
-        }
+      ensureParentDirectory();
+
+      if (!tempFile.exists() && !tempFile.createNewFile()) {
+        throw new IllegalStateException("Unable to create temp file " + tempFile);
       }
-      file.setReadable(true);
-      file.setWritable(true);
-      file.setExecutable(false);
-      try (OutputStream output = Files.newOutputStream(file.toPath())) {
-        byte[] buf = new byte[1024 * 2];
+
+      tempFile.setReadable(true);
+      tempFile.setWritable(true);
+      tempFile.setExecutable(false);
+
+      try (FileOutputStream output = new FileOutputStream(tempFile)) {
+        byte[] buf = new byte[4096];
         int i;
         while ((i = inputStream.read(buf)) != -1) {
           output.write(buf, 0, i);
         }
-        inputStream.close();
+        output.getFD().sync();
       }
-      Files.move(file.toPath(), this.file.toPath(), REPLACE_EXISTING);
+
+      moveIntoPlaceSafe(tempFile);
+
     } catch (IOException exception) {
-      exception.printStackTrace();
+      tempFile.delete();
+      throw new IllegalStateException("Unable to write " + file.getAbsolutePath(), exception);
     }
   }
 
   @Override
   public OutputStream writeStream() {
     try {
+      ensureParentDirectory();
+
       File tempFile = new File(this.file.getAbsolutePath() + ".tmp");
-      if (!tempFile.exists()) {
-        if (!tempFile.createNewFile()) {
-          throw new IllegalStateException("Unable to create tempFile " + tempFile + ", exists: " + tempFile.exists());
-        }
+
+      if (!tempFile.exists() && !tempFile.createNewFile()) {
+        throw new IllegalStateException("Unable to create temp file " + tempFile);
       }
+
       tempFile.setReadable(true);
       tempFile.setWritable(true);
       tempFile.setExecutable(false);
-      OutputStream outputStream = Files.newOutputStream(tempFile.toPath(), WRITE);
-      outputStream = new BufferedOutputStream(outputStream, 1024 * 5);
-      outputStream = Resources.subscribeToClose(outputStream, () -> {
-        try {
-          Files.move(tempFile.toPath(), this.file.toPath(), REPLACE_EXISTING);
-        } catch (IOException exception) {
-          throw new IllegalStateException(exception);
+
+      FileOutputStream fos = new FileOutputStream(tempFile);
+      BufferedOutputStream bos = new BufferedOutputStream(fos, 8192);
+
+      return new FilterOutputStream(bos) {
+        private boolean closed = false;
+
+        @Override
+        public void close() throws IOException {
+          if (closed) return;
+          closed = true;
+
+          try {
+            out.flush();
+            fos.getFD().sync();
+          } finally {
+            super.close();
+          }
+
+          moveIntoPlaceSafe(tempFile);
         }
-      });
-      return outputStream;
+      };
+
     } catch (IOException exception) {
       throw new IllegalStateException(exception);
     }
@@ -87,14 +108,6 @@ final class FileResource implements Resource {
       if (!available()) {
         return new ByteArrayInputStream(new byte[0]);
       }
-//      ByteArrayOutputStream inputBytes = new ByteArrayOutputStream();
-//      byte[] buf = new byte[4096];
-//      int i;
-//      while ((i = inputStream.read(buf)) != -1) {
-//        inputBytes.write(buf, 0, i);
-//      }
-//      inputStream.close();
-//      return new ByteArrayInputStream(inputBytes.toByteArray());
       return Files.newInputStream(file.toPath());
     } catch (IOException exception) {
       return new ByteArrayInputStream(new byte[0]);
@@ -103,6 +116,40 @@ final class FileResource implements Resource {
 
   @Override
   public void delete() {
-    file.delete();
+    if (!file.delete() && file.exists()) {
+      throw new IllegalStateException("Failed to delete file: " + file.getAbsolutePath());
+    }
+  }
+
+  static void cleanupTempFiles(File folder) {
+    if (folder == null || !folder.exists()) return;
+
+    File[] files = folder.listFiles((dir, name) -> name.endsWith(".tmp"));
+    if (files == null) return;
+
+    for (File f : files) {
+      try {
+        f.delete();
+      } catch (Exception ignored) {}
+    }
+  }
+
+  private void ensureParentDirectory() throws IOException {
+    File parentFile = file.getParentFile();
+    if (parentFile != null && !parentFile.exists()) {
+      Files.createDirectories(parentFile.toPath());
+    }
+  }
+
+  private void moveIntoPlaceSafe(File tempFile) {
+    try {
+      Files.move(tempFile.toPath(), this.file.toPath(), ATOMIC_MOVE, REPLACE_EXISTING);
+    } catch (IOException e1) {
+      try {
+        Files.move(tempFile.toPath(), this.file.toPath(), REPLACE_EXISTING);
+      } catch (IOException e2) {
+        tempFile.delete();
+      }
+    }
   }
 }

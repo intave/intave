@@ -498,6 +498,23 @@ public final class BaseStage extends CommandStage {
     sendVersionMessage(commandSender);
   }
 
+  @SubCommand(
+    selectors = "reload",
+    usage = "",
+    description = "Reload Intave configuration",
+    permission = "intave.command.reload"
+  )
+  public void reloadCommand(CommandSender commandSender) {
+    commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.YELLOW + "Reloading configuration..");
+    try {
+      IntavePlugin.singletonInstance().reloadConfiguration();
+      commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.GREEN + "Configuration reloaded");
+    } catch (Exception exception) {
+      commandSender.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Failed to reload configuration: " + exception.getMessage());
+      exception.printStackTrace();
+    }
+  }
+
 //  @SubCommand(
 //    selectors = "ui",
 //    usage = "",

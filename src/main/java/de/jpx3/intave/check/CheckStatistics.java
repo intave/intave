@@ -31,6 +31,13 @@ public final class CheckStatistics {
     totalProcessed++;
   }
 
+  public void reset() {
+    totalProcessed = 0;
+    totalViolations = 0;
+    totalPassed = 0;
+    totalFails = 0;
+  }
+
   /**
    * Retrieve the amount of total violations
    *

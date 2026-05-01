@@ -1,39 +1,59 @@
 package de.jpx3.intave.config;
 
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.resource.Resource;
-import de.jpx3.intave.resource.Resources;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 
 public class ConfigSelectionResolver {
+
   public ConfigSelection resolve() {
     File dataFolder = IntavePlugin.singletonInstance().dataFolder();
-    File settingsFile = new File(dataFolder, "settings.yml");
-    if (settingsFile.exists()) {
+
+    File legacyFile = new File(dataFolder, "settings.yml");
+    if (legacyFile.exists() && legacyFile.isFile()) {
       return ConfigSelection.LEGACY;
     }
-    Resource configResource = Resources.resourceFromFile(new File(dataFolder, "config.yml"));
-    Resource configResourceInClasspath = Resources.resourceFromJarOrBuild("config.yml");
-    if (!configResource.available()) {
-      try (InputStream read = configResourceInClasspath.read()) {
-        configResource.write(read);
-      } catch (IOException exception) {
-        throw new RuntimeException(exception);
-      }
-      configResource = configResourceInClasspath;
+
+    File configFile = new File(dataFolder, "config.yml");
+
+    YamlConfiguration config =
+        ConfigurationRecovery.loadConfiguration(configFile, "config.yml");
+
+    ConfigSelection selection = parseSelection(config.getString("config"));
+
+    if (selection != null) {
+      return selection;
     }
-    YamlConfiguration config = YamlConfiguration.loadConfiguration(new InputStreamReader(configResource.read()));
-    String configType = config.getString("config", "LEGACY");
-    ConfigSelection from = ConfigSelection.from(configType);
-    if (from == null) {
-      throw new RuntimeException("Invalid config type: " + configType);
+
+    IntavePlugin.singletonInstance()
+        .logger()
+        .warn("Invalid config selection value in config.yml → triggering recovery");
+
+    config = ConfigurationRecovery.recoverConfiguration(
+        configFile,
+        "config.yml",
+        new IllegalArgumentException("Invalid config selection")
+    );
+
+    selection = parseSelection(config.getString("config"));
+
+    if (selection != null) {
+      return selection;
     }
-    return from;
+
+    return ConfigSelection.LEGACY;
   }
 
+  private ConfigSelection parseSelection(String raw) {
+    if (raw == null) {
+      return null;
+    }
+
+    try {
+      return ConfigSelection.from(raw.trim());
+    } catch (Exception ignored) {
+      return null;
+    }
+  }
 }

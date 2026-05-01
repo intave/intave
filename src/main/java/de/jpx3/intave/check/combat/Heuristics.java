@@ -115,6 +115,10 @@ public final class Heuristics extends MetaCheck<Heuristics.HeuristicMeta> {
     }
   }
 
+  public static void resetConfigurationCache() {
+    legacyConfigLayCache = null;
+  }
+
   private void setupEvaluationScheduler(IntavePlugin plugin) {
     //noinspection deprecation
     int taskId = Bukkit.getScheduler().scheduleAsyncRepeatingTask(plugin, this::evaluateAll, 0, 20 * 20);
