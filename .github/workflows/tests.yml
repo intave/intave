@@ -40,4 +40,4 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v3
 
-      - run: ./gradlew :intave:test_${{ matrix.version }}
+      - run: ./gradlew test_${{ matrix.version }}
