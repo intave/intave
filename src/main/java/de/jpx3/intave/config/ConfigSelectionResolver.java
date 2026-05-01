@@ -10,7 +10,6 @@ public class ConfigSelectionResolver {
   public ConfigSelection resolve() {
     File dataFolder = IntavePlugin.singletonInstance().dataFolder();
 
-    // legacy override check (safe version)
     File legacyFile = new File(dataFolder, "settings.yml");
     if (legacyFile.exists() && legacyFile.isFile()) {
       return ConfigSelection.LEGACY;
@@ -18,7 +17,8 @@ public class ConfigSelectionResolver {
 
     File configFile = new File(dataFolder, "config.yml");
 
-    YamlConfiguration config = ConfigurationRecovery.loadConfiguration(configFile, "config.yml");
+    YamlConfiguration config =
+        ConfigurationRecovery.loadConfiguration(configFile, "config.yml");
 
     ConfigSelection selection = parseSelection(config.getString("config"));
 
@@ -26,7 +26,22 @@ public class ConfigSelectionResolver {
       return selection;
     }
 
-    // fallback safe default (no recursion recovery here)
+    IntavePlugin.singletonInstance()
+        .logger()
+        .warn("Invalid config selection value in config.yml → triggering recovery");
+
+    config = ConfigurationRecovery.recoverConfiguration(
+        configFile,
+        "config.yml",
+        new IllegalArgumentException("Invalid config selection")
+    );
+
+    selection = parseSelection(config.getString("config"));
+
+    if (selection != null) {
+      return selection;
+    }
+
     return ConfigSelection.LEGACY;
   }
 
@@ -36,7 +51,7 @@ public class ConfigSelectionResolver {
     }
 
     try {
-      return ConfigSelection.from(raw.trim().toUpperCase());
+      return ConfigSelection.from(raw.trim());
     } catch (Exception ignored) {
       return null;
     }
