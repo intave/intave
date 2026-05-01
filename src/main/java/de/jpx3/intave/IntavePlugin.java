@@ -232,12 +232,13 @@ public final class IntavePlugin extends JavaPlugin {
 
       trustFactorService = new TrustFactorService(this);
       blackListService = new PlayerListService(this);
-      cloud = new Cloud();
-      cloud.init();
+if (!offlineMode) {
+    cloud = new Cloud();
+    cloud.init();
 
-      transmittor = new LogTransmittor();
-      transmittor.init();
-
+    transmittor = new LogTransmittor();
+    transmittor.init();
+}
       // stage 6
       Modules.proceedBoot(BootSegment.STAGE_6);
 
@@ -249,8 +250,6 @@ public final class IntavePlugin extends JavaPlugin {
       // stage 7
 
       EncryptedLegacyResource contextStatusResource = new EncryptedLegacyResource("context-status", false);
-
-      boolean offlineMode = false;
 
       VERSION_DETAILS |= 0x100;
       VERSION_DETAILS |= 0x200;
@@ -317,7 +316,81 @@ public final class IntavePlugin extends JavaPlugin {
         exception.printStackTrace();
       }
 
-      IntavePlugin.offlineMode = offlineMode;
+      // load config
+
+      YamlConfiguration configuration = configService.configuration();
+
+      prefix = configuration.getString("layout.prefix", prefix);
+      prefix = ChatColor.translateAlternateColorCodes('&', prefix);
+      defaultColor = ChatColor.getLastColors(prefix);
+            // stage 7
+
+      EncryptedLegacyResource contextStatusResource = new EncryptedLegacyResource("context-status", false);
+
+      VERSION_DETAILS |= 0x100;
+      VERSION_DETAILS |= 0x200;
+      if (IntaveControl.DEBUG_GRAYLIST) {
+        logger.info(blackListService.encryptedGrayKnowledgeData());
+      }
+
+      boolean writeSuccessLog = true;
+      try {
+        if (contextStatusResource.exists()) {
+          String textString = contextStatusResource.readAsString();
+          if (textString.startsWith("success")) {
+            try {
+              long lastSuccessfulStart = Long.parseLong(textString.split("/")[1]);
+              if (System.currentTimeMillis() - lastSuccessfulStart < TimeUnit.DAYS.toMillis(2)) {
+                writeSuccessLog = false;
+              }
+            } catch (Exception ignored) {
+            }
+          }
+        }
+      } catch (Exception ignored) {
+      }
+      if (writeSuccessLog) {
+        contextStatusResource.write(new ByteArrayInputStream(("success/" + System.currentTimeMillis()).getBytes(UTF_8)));
+      }
+
+      BlockVariantRegister.index();
+
+//      PacketReaders.setup();
+      BlockWrapper.setup();
+      WorldBorders.setup();
+//      ShapeResolver.setup();
+
+      // stage 7
+      Modules.proceedBoot(BootSegment.STAGE_7);
+
+      Entity.setup();
+      HitboxSizeAccess.setup();
+      UserRepository.setup();
+      WrapperConverter.setup();
+      Raytracing.setup();
+      Fluids.setup();
+
+      VolatileBlockAccess.setup();
+      BlockAccess.setup();
+      BlockInteractionAccess.setup();
+      BlockVariantNativeAccess.setup();
+      BlockTypeAccess.setup();
+      CollisionModifiers.setup();
+      ViaVersionAdapter.setup();
+      WorldPermission.setup();
+      BlockPhysics.setup();
+      BlockProperties.setup();
+      ItemProperties.setup();
+      BlockShapePatcher.setup();
+      EntityLookup.setup();
+
+      versions = new IntaveVersionList();
+      try {
+        versions.setup();
+      } catch (Exception | Error exception) {
+        logger.error("Something went wrong checking version");
+        exception.printStackTrace();
+      }
 
       // load config
 
@@ -326,17 +399,108 @@ public final class IntavePlugin extends JavaPlugin {
       prefix = configuration.getString("layout.prefix", prefix);
       prefix = ChatColor.translateAlternateColorCodes('&', prefix);
       defaultColor = ChatColor.getLastColors(prefix);
-      FaultKicks.applyFrom(configuration.getConfigurationSection("fault-kicks"));
-      ConsoleOutput.applyFrom(configuration.getConfigurationSection("logging"));
-      cloud.configInit(configuration.getConfigurationSection("cloud"));
+            // stage 7
 
-      // stage 8
-      Modules.proceedBoot(BootSegment.STAGE_8);
-      accessService = new IntaveAccessService(this);
-      accessService.setup();
-      analytics = new Analytics(this);
-      customClientSupportService = new CustomClientSupportService(this);
-      customClientSupportService.setup();
+      EncryptedLegacyResource contextStatusResource = new EncryptedLegacyResource("context-status", false);
+
+      VERSION_DETAILS |= 0x100;
+      VERSION_DETAILS |= 0x200;
+      if (IntaveControl.DEBUG_GRAYLIST) {
+        logger.info(blackListService.encryptedGrayKnowledgeData());
+      }
+
+      boolean writeSuccessLog = true;
+      try {
+        if (contextStatusResource.exists()) {
+          String textString = contextStatusResource.readAsString();
+          if (textString.startsWith("success")) {
+            try {
+              long lastSuccessfulStart = Long.parseLong(textString.split("/")[1]);
+              if (System.currentTimeMillis() - lastSuccessfulStart < TimeUnit.DAYS.toMillis(2)) {
+                writeSuccessLog = false;
+              }
+            } catch (Exception ignored) {
+            }
+          }
+        }
+      } catch (Exception ignored) {
+      }
+      if (writeSuccessLog) {
+        contextStatusResource.write(new ByteArrayInputStream(("success/" + System.currentTimeMillis()).getBytes(UTF_8)));
+      }
+
+      BlockVariantRegister.index();
+
+//      PacketReaders.setup();
+      BlockWrapper.setup();
+      WorldBorders.setup();
+//      ShapeResolver.setup();
+
+      // stage 7
+      Modules.proceedBoot(BootSegment.STAGE_7);
+
+      Entity.setup();
+      HitboxSizeAccess.setup();
+      UserRepository.setup();
+      WrapperConverter.setup();
+      Raytracing.setup();
+      Fluids.setup();
+
+      VolatileBlockAccess.setup();
+      BlockAccess.setup();
+      BlockInteractionAccess.setup();
+      BlockVariantNativeAccess.setup();
+      BlockTypeAccess.setup();
+      CollisionModifiers.setup();
+      ViaVersionAdapter.setup();
+      WorldPermission.setup();
+      BlockPhysics.setup();
+      BlockProperties.setup();
+      ItemProperties.setup();
+      BlockShapePatcher.setup();
+      EntityLookup.setup();
+
+versions = new IntaveVersionList();
+try {
+    versions.setup();
+} catch (Exception | Error exception) {
+    logger.error("Something went wrong checking version");
+    exception.printStackTrace();
+}
+
+// load config
+YamlConfiguration configuration = configService.configuration();
+
+prefix = configuration.getString("layout.prefix", prefix);
+prefix = ChatColor.translateAlternateColorCodes('&', prefix);
+defaultColor = ChatColor.getLastColors(prefix);
+
+FaultKicks.applyFrom(configuration.getConfigurationSection("fault-kicks"));
+ConsoleOutput.applyFrom(configuration.getConfigurationSection("logging"));
+
+ConfigurationSection cloudSection = configuration.getConfigurationSection("cloud");
+
+if (!IntavePlugin.offlineMode && cloud != null && cloudSection != null) {
+    try {
+        cloud.configInit(cloudSection);
+    } catch (Exception e) {
+        logger.warn("Cloud config init failed → switching offline mode");
+        IntavePlugin.offlineMode = true;
+        cloud = null;
+    }
+}
+
+// stage 8
+Modules.proceedBoot(BootSegment.STAGE_8);
+
+// core services
+accessService = new IntaveAccessService(this);
+accessService.setup();
+
+analytics = new Analytics(this);
+
+customClientSupportService = new CustomClientSupportService(this);
+customClientSupportService.setup();
       checkService = new CheckService(this);
       fakePlayerEventService = new FakePlayerEventService(this);
       proxyMessenger = new ProxyMessenger(this);
@@ -366,11 +530,15 @@ public final class IntavePlugin extends JavaPlugin {
       blackListService.setup();
 //      analytics.setup();
 
-      try {
+if (!offlineMode && cloud != null) {
+    try {
         cloud.connectMasterShard();
-      } catch (Exception exception) {
-        logger.info("Unable to connect to cloud: " + exception.getMessage());
-      }
+    } catch (Exception exception) {
+        logger.warn("Cloud died → switching to offline mode");
+        offlineMode = true;
+        cloud = null;
+    }
+}
     } catch (Exception exception) {
       logger.error("Unable to boot: " + exception.getMessage());
       exception.printStackTrace();
