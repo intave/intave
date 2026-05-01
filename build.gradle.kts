@@ -266,6 +266,9 @@ fun registerTestTask(serverVersion: String, javaVersion: Int) {
     if (serverVersion == "1.8.8") {
       serverJar(File("libs/servers/panda-1.8.8.jar"))
     }
+    if (serverVersion == "1.9.4") {
+      serverJar(File("libs/servers/spigot-1.9.4.jar"))
+    }
     if (serverVersion == "1.21.7") {
       serverJar(File("libs/servers/paper-1.21.7-15.jar"))
     }
@@ -301,12 +304,15 @@ fun registerServerTask(serverVersion: String, javaVersion: Int) {
     if (serverVersion == "1.8.8") {
       serverJar(File("libs/servers/panda-1.8.8.jar"))
     }
+    if (serverVersion == "1.9.4") {
+      serverJar(File("libs/servers/spigot-1.9.4.jar"))
+    }
     if (serverVersion == "1.21.7") {
       serverJar(File("libs/servers/paper-1.21.7-15.jar"))
     }
     runDirectory(File("runs/paper_${serverVersion}-j$javaVersion"))
     jvmArgs("-Dcom.mojang.eula.agree=true")
-    // set offline mode to false
+    // set online mode to false
     args("-o", "false")
     javaLauncher.set(
       project.javaToolchains.launcherFor {
