@@ -36,10 +36,6 @@ final class ConfigurationRecovery {
 
   private ConfigurationRecovery() {}
 
-  // ---------------------------
-  // LOAD ENTRY
-  // ---------------------------
-
   static YamlConfiguration loadConfiguration(File file, String defaultResource) {
     ensureConfigurationExists(file, defaultResource);
 
@@ -62,12 +58,8 @@ final class ConfigurationRecovery {
     Resource resource = Resources.resourceFromFile(file);
     if (resource.available()) return;
 
-    writeDefault(file, defaultResource);
+    writeDefaultSafe(file, defaultResource);
   }
-
-  // ---------------------------
-  // RECOVERY
-  // ---------------------------
 
   static YamlConfiguration recoverConfiguration(File file, String defaultResource, Exception exception) {
     byte[] defaultBytes = recover(file, defaultResource, exception);
@@ -83,29 +75,33 @@ final class ConfigurationRecovery {
       return configuration;
 
     } catch (Exception recoveredException) {
-      throw new RuntimeException(
-          "Unable to recover configuration " + file.getName(),
-          recoveredException
-      );
+      IntavePlugin.singletonInstance()
+          .logger()
+          .error("CRITICAL: Failed to recover " + file.getName() + ", using empty fallback", recoveredException);
+
+      return new YamlConfiguration();
     }
   }
 
   private static byte[] recover(File file, String defaultResource, Exception exception) {
     IntavePlugin.singletonInstance()
         .logger()
-        .error("Invalid " + file.getName() + ", moving to backup: " + exception.getMessage());
+        .error("Invalid " + file.getName() + ", moving to backup", exception);
 
     moveBuggedConfiguration(file);
-    return writeDefault(file, defaultResource);
+    return writeDefaultSafe(file, defaultResource);
   }
 
   private static void handleVersionState(VersionState state, File file, String resource) {
-    // reserved for future migration pipeline
-  }
+    if (state == VersionState.MISMATCH) {
+      IntavePlugin.singletonInstance()
+          .logger()
+          .warn("Config outdated or incompatible → regenerating: " + file.getName());
 
-  // ---------------------------
-  // VALIDATION
-  // ---------------------------
+      moveBuggedConfiguration(file);
+      writeDefaultSafe(file, resource);
+    }
+  }
 
   private static YamlConfiguration loadFromFile(File file)
       throws IOException, InvalidConfigurationException {
@@ -178,28 +174,23 @@ final class ConfigurationRecovery {
     }
   }
 
-  // ---------------------------
-  // FIXED BACKUP (IMPORTANT)
-  // ---------------------------
-
   private static void moveBuggedConfiguration(File file) {
     if (!file.exists()) return;
 
     File folder = new File(file.getParentFile(), BUGGED_CONFIG_FOLDER);
 
     if (!folder.exists()) {
-      boolean created = false;
       try {
-        created = folder.mkdirs();
-      } catch (Exception ignored) {
-        // ignore hard fail
-      }
-
-      if (!created && !folder.exists()) {
+        if (!folder.mkdirs() && !folder.exists()) {
+          IntavePlugin.singletonInstance()
+              .logger()
+              .warn("Cannot create backup folder: " + folder.getAbsolutePath());
+          return;
+        }
+      } catch (Exception e) {
         IntavePlugin.singletonInstance()
             .logger()
-            .warn("Cannot create backup folder: " + folder.getAbsolutePath()
-                + " -> skipping backup");
+            .warn("Failed to create backup folder: " + e.getMessage());
         return;
       }
     }
@@ -225,21 +216,24 @@ final class ConfigurationRecovery {
     }
   }
 
-  // ---------------------------
-  // WRITE DEFAULT
-  // ---------------------------
+  private static byte[] writeDefaultSafe(File file, String defaultResource) {
+    try {
+      return writeDefault(file, defaultResource);
+    } catch (Exception e) {
+      IntavePlugin.singletonInstance()
+          .logger()
+          .error("Failed to write default config: " + defaultResource, e);
+      return new byte[0];
+    }
+  }
 
-  private static byte[] writeDefault(File file, String defaultResource) {
+  private static byte[] writeDefault(File file, String defaultResource) throws IOException {
     Resource jar = Resources.resourceFromJarOrBuild(defaultResource);
     Resource out = Resources.resourceFromFile(file);
 
-    try {
-      byte[] data = readFully(jar, defaultResource);
-      out.write(data);
-      return data;
-    } catch (IOException e) {
-      throw new RuntimeException("Unable to write default " + defaultResource, e);
-    }
+    byte[] data = readFully(jar, defaultResource);
+    out.write(data);
+    return data;
   }
 
   private static byte[] readFully(Resource resource, String name) throws IOException {
@@ -268,10 +262,6 @@ final class ConfigurationRecovery {
     cfg.loadFromString(new String(bytes, StandardCharsets.UTF_8));
     return cfg;
   }
-
-  // ---------------------------
-  // VERSION COMPARE
-  // ---------------------------
 
   private static int compareSchemaVersions(String a, String b) {
     int[] av = parse(a);
@@ -316,10 +306,6 @@ final class ConfigurationRecovery {
       return 0;
     }
   }
-
-  // ---------------------------
-  // TYPES
-  // ---------------------------
 
   private static final class ConfigurationType {
     final String resourceName;
