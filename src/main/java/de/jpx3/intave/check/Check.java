@@ -67,6 +67,8 @@ public abstract class Check implements EventProcessor {
     this.enterConfiguration();
     this.enabled = checkConfiguration.settings().checkEnabled();
     this.mitigationStrategy = checkConfiguration.settings().mitigationStrategy();
+    this.statistics.reset();
+    this.perTrustFactorStatistics.clear();
   }
 
   private void enterConfiguration() {
