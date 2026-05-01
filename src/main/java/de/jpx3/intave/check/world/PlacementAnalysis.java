@@ -78,6 +78,10 @@ public final class PlacementAnalysis extends Check {
     }
   }
 
+  public static void resetConfigurationCache() {
+    legacyConfigLayCache = null;
+  }
+
   public void applyPlacementAnalysisDamageCancel(User user, String checkId) {
 //    user.nerf(AttackNerfStrategy.CANCEL_FIRST_HIT, checkId);
 //    user.nerf(AttackNerfStrategy.DMG_LIGHT, checkId);

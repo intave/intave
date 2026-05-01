@@ -21,6 +21,8 @@ import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.check.CheckService;
+import de.jpx3.intave.check.combat.Heuristics;
+import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.cleanup.ShutdownTasks;
 import de.jpx3.intave.cleanup.StartupTasks;
@@ -504,6 +506,24 @@ public final class IntavePlugin extends JavaPlugin {
       }
       logger().info(infoMessage);
     }
+  }
+
+  public synchronized void reloadConfiguration() {
+    configService.reload();
+    YamlConfiguration configuration = configService.configuration();
+
+    prefix = configuration.getString("layout.prefix", prefix);
+    prefix = ChatColor.translateAlternateColorCodes('&', prefix);
+    defaultColor = ChatColor.getLastColors(prefix);
+
+    FaultKicks.applyFrom(configuration.getConfigurationSection("fault-kicks"));
+    ConsoleOutput.applyFrom(configuration.getConfigurationSection("logging"));
+    cloud.configInit(configuration.getConfigurationSection("cloud"));
+
+    Heuristics.resetConfigurationCache();
+    PlacementAnalysis.resetConfigurationCache();
+    checkService.reloadConfigurations();
+    Modules.linker().packetEvents().refreshLinkages();
   }
 
   public static final long INTEGRITY_ERASE_BUFFER = TimeUnit.MINUTES.toMillis(1);

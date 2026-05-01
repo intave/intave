@@ -90,6 +90,18 @@ public final class CheckService {
     nameRequestCache = new HashMap<>();
   }
 
+  public void reloadConfigurations() {
+    checkLinker.removeBukkitEventSubscriptions(checks);
+    checkLinker.removePacketEventSubscriptions(checks);
+    checkLinker.removeNayoroEventSubscriptions(checks);
+    for (Check check : checks) {
+      check.reloadConfiguration();
+    }
+    checkLinker.linkBukkitEventSubscriptions(checks);
+    checkLinker.linkPacketEventSubscriptions(checks);
+    checkLinker.linkNayoroEventSubscriptions(checks);
+  }
+
   private void addCheck(Class<? extends Check> checkClass) {
     try {
       Check check;

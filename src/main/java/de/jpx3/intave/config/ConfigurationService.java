@@ -17,11 +17,15 @@ public class ConfigurationService {
     return configuration;
   }
 
+  public void reload() {
+    loader = resolver.resolve().loader();
+    configuration = loader.fetchConfiguration();
+  }
+
   public void shutdown() {
     // load config again on shutdown
     // this will generate an advanced.yml file when
     // selection changed while Intave was still running
-    loader = resolver.resolve().loader();
-    configuration = loader.fetchConfiguration();
+    reload();
   }
 }

@@ -8,7 +8,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 
 public final class AdvancedConfigurationLoader implements ConfigurationLoader {
   private final IntavePlugin plugin;
@@ -19,17 +18,11 @@ public final class AdvancedConfigurationLoader implements ConfigurationLoader {
 
   @Override
   public YamlConfiguration fetchConfiguration() {
-    Resource simpleConfig = Resources.resourceFromFile(new File(plugin.dataFolder(), "config.yml"));
-    Resource simpleConfigInClasspath = Resources.resourceFromJarOrBuild("config.yml");
-    if (!simpleConfig.available()) {
-      try (InputStream read = simpleConfigInClasspath.read()) {
-        simpleConfig.write(read);
-      } catch (IOException exception) {
-        throw new RuntimeException(exception);
-      }
-      simpleConfig = simpleConfigInClasspath;
-    }
-    Resource advancedConfig = Resources.resourceFromFile(new File(plugin.dataFolder(), "advanced.yml"));
+    File simpleConfigFile = new File(plugin.dataFolder(), "config.yml");
+    ConfigurationRecovery.loadConfiguration(simpleConfigFile, "config.yml");
+    Resource simpleConfig = Resources.resourceFromFile(simpleConfigFile);
+    File advancedConfigFile = new File(plugin.dataFolder(), "advanced.yml");
+    Resource advancedConfig = Resources.resourceFromFile(advancedConfigFile);
     Resource advancedConfigInClasspath = Resources.resourceFromJarOrBuild("advanced.yml");
     if (!advancedConfig.available()) {
       try (InputStream read = advancedConfigInClasspath.read()) {
@@ -42,8 +35,7 @@ public final class AdvancedConfigurationLoader implements ConfigurationLoader {
         simpleConfig, advancedConfig, conversionData
       );
       converter.convert();
-      advancedConfig = advancedConfigInClasspath;
     }
-    return YamlConfiguration.loadConfiguration(new InputStreamReader(advancedConfig.read()));
+    return ConfigurationRecovery.loadConfiguration(advancedConfigFile, "advanced.yml");
   }
 }

@@ -50,7 +50,7 @@ public abstract class Check implements EventProcessor {
   private final Map<TrustFactor, CheckStatistics> perTrustFactorStatistics = new EnumMap<>(TrustFactor.class);
   private final List<CheckPart<?>> checkParts = new ArrayList<>();
   private final CheckConfiguration checkConfiguration = new CheckConfiguration(this);
-  private final boolean enabled;
+  private boolean enabled;
   private MitigationStrategy mitigationStrategy;
   private MitigationStrategy defaultMitigationStrategy = MitigationStrategy.NOT_SUPPORTED;
 
@@ -58,6 +58,12 @@ public abstract class Check implements EventProcessor {
     this.plugin = IntavePlugin.singletonInstance();
     this.checkName = checkName;
     this.configurationKey = configurationKey;
+    this.enterConfiguration();
+    this.enabled = checkConfiguration.settings().checkEnabled();
+    this.mitigationStrategy = checkConfiguration.settings().mitigationStrategy();
+  }
+
+  final void reloadConfiguration() {
     this.enterConfiguration();
     this.enabled = checkConfiguration.settings().checkEnabled();
     this.mitigationStrategy = checkConfiguration.settings().mitigationStrategy();
