@@ -10,10 +10,10 @@ import static de.jpx3.intave.module.nayoro.OperationalMode.CLOUD_STORAGE;
 import static de.jpx3.intave.module.nayoro.OperationalMode.LOCAL_STORAGE;
 
 public final class IntaveControl {
-  public static final boolean APPLY_GLOBAL_LOW_TRUSTFACTOR = false;
+  public static final boolean APPLY_GLOBAL_LOW_TRUSTFACTOR = true;
   public static final boolean DEBUG_MOVEMENT = false;
   public static final boolean DEBUG_EMULATION = false;
-  public static final boolean DEBUG_HEURISTICS = false;
+  public static final boolean DEBUG_HEURISTICS = true;
   public static final boolean DEBUG_INTERACTION = false;
   public static final boolean DEBUG_INTERACTION_TRUST_CHAIN = false;
   public static final boolean DEBUG_INTERACTION_REFRESHES = false;

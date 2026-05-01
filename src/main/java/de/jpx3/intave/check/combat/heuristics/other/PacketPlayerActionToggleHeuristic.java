@@ -2,11 +2,9 @@ package de.jpx3.intave.check.combat.heuristics.other;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
-import de.jpx3.intave.check.combat.heuristics.Anomaly;
-import de.jpx3.intave.check.combat.heuristics.Confidence;
+import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
+import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.entity.datawatcher.DataWatcherAccess;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.Hypot;
@@ -18,18 +16,12 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
 import org.bukkit.entity.Player;
 
-import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.*;
 import static de.jpx3.intave.entity.datawatcher.DataWatcherAccess.WATCHER_SNEAK_ID;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
-public final class PacketPlayerActionToggleHeuristic extends MetaCheckPart<Heuristics, PacketPlayerActionToggleHeuristic.PacketSprintToggleHeuristicMeta> {
-  private static final String VERBOSE_NAME = "toggle:packets";
-  private final IntavePlugin plugin;
-  private boolean enabled;
-
+public final class PacketPlayerActionToggleHeuristic extends ClassicHeuristic<PacketPlayerActionToggleHeuristic.PacketSprintToggleHeuristicMeta> {
   public PacketPlayerActionToggleHeuristic(Heuristics parentCheck) {
-    super(parentCheck, PacketSprintToggleHeuristicMeta.class);
-    this.plugin = IntavePlugin.singletonInstance();
+    super(parentCheck, HeuristicsClassicType.SPRINT_TOGGLES, PacketSprintToggleHeuristicMeta.class);
   }
 
   @PacketSubscription(
@@ -90,19 +82,13 @@ public final class PacketPlayerActionToggleHeuristic extends MetaCheckPart<Heuri
         if (!flyingPacketStream) {
           description += " (last flying: " + movementData.pastFlyingPacketAccurate() + ")";
         }
-        if (this.enabled) {
-          // could be CERTAIN on 1.8
-          Confidence confidence = flyingPacketStream ? Confidence.PROBABLE : Confidence.MAYBE;
-          int options = DELAY_128s | REQUIRES_HEAVY_COMBAT | LIMIT_4;
-          Anomaly anomaly = Anomaly.anomalyOf(VERBOSE_NAME, confidence, Anomaly.Type.KILLAURA, description, options);
-          parentCheck().saveAnomaly(player, anomaly);
-        }
+        this.flag(player, description);
 
         boolean cancel = (flyingPacketStream || Hypot.fast(movementData.motionX(), movementData.motionZ()) > 0.2) && heuristicMeta.threshold++ > 3;
         if (cancel) {
           if (sprint) {
             //dmc12
-            user.nerf(AttackNerfStrategy.CANCEL, VERBOSE_NAME);
+            user.nerf(AttackNerfStrategy.CANCEL, "sprint:toggles");
           } else {
             punishmentData.timeLastSneakToggleCancel = System.currentTimeMillis();
             Synchronizer.synchronize(() -> DataWatcherAccess.setDataWatcherFlag(player, WATCHER_SNEAK_ID, false));
@@ -112,12 +98,6 @@ public final class PacketPlayerActionToggleHeuristic extends MetaCheckPart<Heuri
     } else if (heuristicMeta.threshold > 0) {
       heuristicMeta.threshold -= 0.01;
     }
-  }
-
-  @Override
-  public boolean enabled() {
-    this.enabled = super.enabled();
-    return true;
   }
 
   public static final class PacketSprintToggleHeuristicMeta extends CheckCustomMetadata {

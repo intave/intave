@@ -71,6 +71,9 @@ check:
   heuristics:
     enabled: true
 
+    # Sets the violation level increases for each classic check type.
+    # - The number must be an integer and -1 disables the checks
+    # - 0 keeps the check activated and combat nerfers will be applied but no violations are added
     classic:
       # Attack Heuristics
       attack-accuracy: 4
@@ -86,6 +89,11 @@ check:
 
       # Other
       inventory-rotations: 2
+      blocking: 0
+      no-swing: 0
+      swing-order: 3
+      sprint-toggles: 2 # prevents spamming sprint packets to apply more knockback on targets
+      tool-switch: 3 # prevents slot switches while breaking blocks
 
       classic-thresholds:
         20:

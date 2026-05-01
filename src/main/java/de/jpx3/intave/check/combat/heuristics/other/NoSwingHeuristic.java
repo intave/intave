@@ -3,10 +3,9 @@ package de.jpx3.intave.check.combat.heuristics.other;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
-import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
-import de.jpx3.intave.check.combat.heuristics.Anomaly;
-import de.jpx3.intave.check.combat.heuristics.Confidence;
+import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
+import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
@@ -17,10 +16,10 @@ import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
-public final class NoSwingHeuristic extends MetaCheckPart<Heuristics, NoSwingHeuristic.NoSwingMeta> {
+public final class NoSwingHeuristic extends ClassicHeuristic<NoSwingHeuristic.NoSwingMeta> {
 
   public NoSwingHeuristic(Heuristics parentCheck) {
-    super(parentCheck, NoSwingMeta.class);
+    super(parentCheck, HeuristicsClassicType.NO_SWING, NoSwingMeta.class);
   }
 
   @PacketSubscription(
@@ -79,7 +78,7 @@ public final class NoSwingHeuristic extends MetaCheckPart<Heuristics, NoSwingHeu
       return;
     }
 
-    // fix?
+    // todo: fix?
     if (user.meta().protocol().outdatedClient()) {
       return;
     }
@@ -88,9 +87,7 @@ public final class NoSwingHeuristic extends MetaCheckPart<Heuristics, NoSwingHeu
       if (meta.swingsThisTick == 0) {
         String details = "missing swing packet on attack";
         String checkName = "swing:miss";
-        Anomaly anomaly = Anomaly.anomalyOf(checkName, /*Confidence.LIKELY*/Confidence.NONE, Anomaly.Type.KILLAURA, details, Anomaly.AnomalyOption.LIMIT_4);
-        parentCheck().saveAnomaly(player, anomaly);
-        //dmc26
+        flag(player, details);
         user.nerf(AttackNerfStrategy.CANCEL, checkName);
       }
     }

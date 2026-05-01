@@ -5,10 +5,9 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
-import de.jpx3.intave.check.combat.heuristics.Anomaly;
-import de.jpx3.intave.check.combat.heuristics.Confidence;
+import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
+import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.user.User;
@@ -18,11 +17,11 @@ import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
-public final class PacketOrderSwingHeuristic extends MetaCheckPart<Heuristics, PacketOrderSwingHeuristic.PacketOrderSwingHeuristicMeta> {
+public final class PacketOrderSwingHeuristic extends ClassicHeuristic<PacketOrderSwingHeuristic.PacketOrderSwingHeuristicMeta> {
   private final IntavePlugin plugin;
 
   public PacketOrderSwingHeuristic(Heuristics parentCheck) {
-    super(parentCheck, PacketOrderSwingHeuristicMeta.class);
+    super(parentCheck, HeuristicsClassicType.SWING_ORDER, PacketOrderSwingHeuristicMeta.class);
     this.plugin = IntavePlugin.singletonInstance();
   }
 
@@ -57,8 +56,7 @@ public final class PacketOrderSwingHeuristic extends MetaCheckPart<Heuristics, P
     }
     if (clientData.flyingPacketsAreSent() && action == EnumWrappers.EntityUseAction.ATTACK && !heuristicMeta.swingTick) {
       String description = "swing not correlated with attack (" + user.meta().protocol().versionString() + ")";
-      Anomaly anomaly = Anomaly.anomalyOf("31", Confidence.LIKELY, Anomaly.Type.KILLAURA, description);
-      parentCheck().saveAnomaly(player, anomaly);
+      flag(player, description);
       //dmc11
       user.nerf(AttackNerfStrategy.DMG_LIGHT, "11");
     }

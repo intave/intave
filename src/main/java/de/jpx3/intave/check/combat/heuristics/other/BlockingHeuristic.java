@@ -5,11 +5,9 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
-import de.jpx3.intave.check.combat.heuristics.Anomaly;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
-import de.jpx3.intave.check.combat.heuristics.Confidence;
+import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.entity.datawatcher.DataWatcherAccess;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
@@ -27,9 +25,6 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 
-import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.DELAY_128s;
-import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.LIMIT_2;
-import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.SUGGEST_MINING;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.ARM_ANIMATION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.BLOCK_DIG;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.BLOCK_PLACE;
@@ -46,7 +41,7 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
   private final IntavePlugin plugin;
 
   public BlockingHeuristic(Heuristics parentCheck) {
-    super(parentCheck, BlockingMeta.class);
+    super(parentCheck, HeuristicsClassicType.BLOCKING, BlockingMeta.class);
     this.plugin = IntavePlugin.singletonInstance();
   }
 
@@ -105,12 +100,9 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
         int ticksBetweenBlockAndUnblock = meta.ticksBetweenBlockAndUnblock;
         if (ticksBetweenBlockAndUnblock == 0) {
           String description = "unblocked too quickly (" + ticksBetweenBlockAndUnblock + ")";
-          int options = DELAY_128s | LIMIT_2 | SUGGEST_MINING;
-          String checkName = "block:speed";
-          Anomaly anomaly = Anomaly.anomalyOf(checkName, Confidence.MAYBE, Anomaly.Type.KILLAURA, description, options);
-          parentCheck().saveAnomaly(player, anomaly);
+          flag(player, description);
           //dmc6
-          user.nerf(AttackNerfStrategy.BLOCKING, checkName);
+          user.nerf(AttackNerfStrategy.BLOCKING, "block:speed");
           punishmentData.timeLastBlockCancel = System.currentTimeMillis();
           Synchronizer.synchronize(() -> DataWatcherAccess.setDataWatcherFlag(player, DataWatcherAccess.WATCHER_BLOCKING_ID, false));
         }
@@ -122,11 +114,8 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
 
       if (meta.releasedItemAfterClientTick) {
         String description = "sent multiple blocking interactions per tick (" + (itemInHand == null ? "null" : itemInHand.getType()) + ")";
-        String checkName = "block:multiple";
-        Anomaly anomaly = Anomaly.anomalyOf(checkName, Confidence.NONE, Anomaly.Type.KILLAURA, description);
-        parentCheck().saveAnomaly(player, anomaly);
-        //dmc7
-        user.nerf(AttackNerfStrategy.BLOCKING, checkName);
+        flag(player, description);
+        user.nerf(AttackNerfStrategy.BLOCKING, "block:multiple");
       }
 
       int clientTicksBetweenBlockingToggle = meta.clientTicksBetweenBlockingToggle;
@@ -142,10 +131,8 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
           meta.acaBlockingVL++;
           if (meta.acaBlockingVL > 2) {
             String description = "sent too few packets between block-toggle packets (vl: " + meta.acaBlockingVL + ")";
-            String checkName = "block:packets";
-            Anomaly anomaly = Anomaly.anomalyOf(checkName, Confidence.NONE, Anomaly.Type.KILLAURA, description);
-            parentCheck().saveAnomaly(player, anomaly);
-            user.nerf(AttackNerfStrategy.BLOCKING, checkName);
+            flag(player, description);
+            user.nerf(AttackNerfStrategy.BLOCKING, "block:packets");
           }
         } else if (meta.acaBlockingVL > 1) {
           meta.acaBlockingVL -= 2;
@@ -179,8 +166,7 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
         if (meta.blocksPlacedThisTick == 0 || meta.heldItemOperations > 2) {
           String description = "sent too many item operations (operations: " + meta.heldItemOperations + ")";
           description += " (version " + user.meta().protocol().versionString() + ")";
-          Anomaly anomaly = Anomaly.anomalyOf("block:ops", Confidence.NONE, Anomaly.Type.KILLAURA, description, 0);
-          parentCheck().saveAnomaly(player, anomaly);
+          flag(player, description);
           meta.unsendPackets.clear();
         }
       }

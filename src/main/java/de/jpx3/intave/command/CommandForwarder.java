@@ -22,7 +22,6 @@ public final class CommandForwarder implements CommandExecutor, TabCompleter {
   static {
     BaseStage.singletonInstance();
     InternalsStage.singletonInstance();
-    BotStage.singletonInstance();
     RootStage.singletonInstance();
     CloudStage.singletonInstance();
     DiagnosticsStage.singletonInstance();

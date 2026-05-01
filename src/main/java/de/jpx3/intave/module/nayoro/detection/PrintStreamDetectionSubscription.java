@@ -1,6 +1,5 @@
 package de.jpx3.intave.module.nayoro.detection;
 
-import de.jpx3.intave.check.combat.heuristics.Confidence;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 
 import java.io.PrintStream;
@@ -20,10 +19,5 @@ public final class PrintStreamDetectionSubscription implements DetectionSubscrip
   @Override
   public void onNerf(AttackNerfStrategy strategy, String originCode) {
     printStream.println("[intave/nayoro/nerf] " + strategy.name() + ": " + originCode);
-  }
-
-  @Override
-  public void onAnomaly(String key, Confidence confidence, String description) {
-    printStream.println("[intave/nayoro/anomaly] " + key + " " + confidence.name() + ": " + description);
   }
 }

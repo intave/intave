@@ -1,12 +1,11 @@
-package de.jpx3.intave.check.combat.heuristics.other;
+package de.jpx3.intave.check.combat.heuristics.combatpatterns.rotation;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
-import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
-import de.jpx3.intave.check.combat.heuristics.Anomaly;
-import de.jpx3.intave.check.combat.heuristics.Confidence;
+import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
+import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
@@ -26,17 +25,14 @@ import org.bukkit.event.block.BlockPlaceEvent;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.LIMIT_1;
-import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.LIMIT_2;
-import static de.jpx3.intave.check.combat.heuristics.Anomaly.AnomalyOption.LIMIT_4;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
-public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, RotationSnapHeuristic.RotationSnapHeuristicMeta> {
+public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHeuristic.RotationSnapHeuristicMeta> {
   // Defines how long after a block place, arm swing or attack the VL for mitigations should be increased. 
   private static final long VL_BOOST_MODIFIER_TIME = (1000 / 20) * 3; // Set to 3 ticks. (150ms)
 
   public RotationSnapHeuristic(Heuristics parentCheck) {
-    super(parentCheck, RotationSnapHeuristicMeta.class);
+    super(parentCheck, HeuristicsClassicType.ROTATION_SNAP, RotationSnapHeuristicMeta.class);
   }
 
   @PacketSubscription(
@@ -210,43 +206,35 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
       double vl = calculateViolation(valueOfSnap, changedLookToEntity, user, liteFlag);
       liteFlag = false;
 
-      handleConfidence(user, "snap:sus", (int) vl, description);
+      handleConfidence(user, (int) vl, description);
     }
 
     if (liteFlag) {
       String description = "rotation snap scaffold [" + MathHelper.formatDouble(meta.yawMotions[0], 2) + "]";
       int addedViolationLevel = 30;
-      handleConfidence(user, "snap:lite", addedViolationLevel, description);
+      handleConfidence(user, addedViolationLevel, description);
     }
 
     prepareNextTick(meta, yawMotion, user);
   }
 
-  private void handleConfidence(User user, String key, int violationToAdd, String description) {
+  private void handleConfidence(User user, int violationToAdd, String description) {
     RotationSnapHeuristicMeta meta = metaOf(user);
     Player player = user.player();
 
     meta.internalViolation += violationToAdd;
-    Confidence confidence = Confidence.confidenceFrom((int) meta.internalViolation);
 
-    if (confidence.level() >= 30) {
-      meta.internalViolation -= confidence.level();
+    if (meta.internalViolation >= 30) {
+      meta.internalViolation -= 30;
+
       if (user.protocolVersion() > 47) {
         description += " " + user.protocolVersion();
       }
 
-      description += " conf:" + confidence.level() + "/" + meta.internalViolation;
-      Anomaly anomaly = Anomaly.anomalyOf(key, confidence, Anomaly.Type.KILLAURA, description, anomalyOptions());
-      parentCheck().saveAnomaly(player, anomaly);
-    } else if (confidence.level() > 0) {
-      description += " nonflag(" + violationToAdd + "/" + confidence.level() + "/" + meta.internalViolation + ")";
-      Anomaly anomaly = Anomaly.anomalyOf(key, Confidence.NONE, Anomaly.Type.KILLAURA, description, anomalyOptions());
-      parentCheck().saveAnomaly(player, anomaly);
+      flag(player, description);
+    } else if (meta.internalViolation > 5) {
+      // flag(player, description + " (debug)");
     }
-  }
-
-  private int anomalyOptions() {
-    return LIMIT_4 | LIMIT_2 | LIMIT_1;
   }
 
   private double calculateViolation(double valueOfSnap, boolean changedLookToEntity, User user, boolean liteFlag) {
@@ -306,12 +294,16 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
     meta.movementAtTick[0] = null;
   }
 
+  enum KeyStates {
+    NONE, CHANGED, SILENTMOVE
+  }
+
   public static final class RotationSnapHeuristicMeta extends CheckCustomMetadata {
-    double lastLastPosX, lastLastPosY, lastLastPosZ;
     //    Map<Integer, Po> entityPositions = new HashMap<>();
     private final Tick[] movementAtTick = new Tick[2];
     private final double[] yawMotions = new double[2];
     private final KeyStates[] silentMovements = new KeyStates[2];
+    double lastLastPosX, lastLastPosY, lastLastPosZ;
     private float internalViolation;
     private int lastKeyForward;
     private int lastKeyStrafe;
@@ -320,12 +312,8 @@ public final class RotationSnapHeuristic extends MetaCheckPart<Heuristics, Rotat
     private long lastSwing;
     private long lastAttack;
 
-    // AtomicLong is being used because it gets set in a Bukkit thread. 
+    // AtomicLong is being used because it gets set in a Bukkit thread.
     private AtomicLong lastBlockPlace = new AtomicLong();
-  }
-
-  enum KeyStates {
-    NONE, CHANGED, SILENTMOVE
   }
 
   static class Tick {

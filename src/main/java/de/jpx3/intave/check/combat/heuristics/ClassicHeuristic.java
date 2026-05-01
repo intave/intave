@@ -33,6 +33,6 @@ public class ClassicHeuristic<M extends CheckCustomMetadata> extends MetaCheckPa
 
   @Override
   public boolean enabled() {
-    return violationLevelIncrease > 0;
+    return violationLevelIncrease >= 0;
   }
 }

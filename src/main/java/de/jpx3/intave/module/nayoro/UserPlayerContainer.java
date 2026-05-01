@@ -1,7 +1,6 @@
 package de.jpx3.intave.module.nayoro;
 
 import de.jpx3.intave.IntaveControl;
-import de.jpx3.intave.check.combat.heuristics.Confidence;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.tracker.player.AbilityTracker;
@@ -41,14 +40,6 @@ public final class UserPlayerContainer implements PlayerContainer {
   @Override
   public void nerf(AttackNerfStrategy strategy, String originCode) {
     user.nerf(strategy, originCode);
-  }
-
-  @Override
-  public void noteAnomaly(String key, Confidence confidence, String description) {
-    // ignore
-    if (IntaveControl.DEBUG_HEURISTICS) {
-      user.player().sendMessage("Nayoro Relay Anomaly: " + key + " (" + confidence + ") " + description);
-    }
   }
 
   @Override

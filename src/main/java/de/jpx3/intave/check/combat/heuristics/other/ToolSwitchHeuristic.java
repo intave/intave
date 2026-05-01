@@ -3,10 +3,9 @@ package de.jpx3.intave.check.combat.heuristics.other;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
-import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
-import de.jpx3.intave.check.combat.heuristics.Anomaly;
-import de.jpx3.intave.check.combat.heuristics.Confidence;
+import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
+import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -17,16 +16,16 @@ import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
-public class ToolSwitchHeuristic extends MetaCheckPart<Heuristics, ToolSwitchHeuristic.ToolSwitchHeuristicMeta> {
+public class ToolSwitchHeuristic extends ClassicHeuristic<ToolSwitchHeuristic.ToolSwitchHeuristicMeta> {
   public ToolSwitchHeuristic(Heuristics parentCheck) {
-    super(parentCheck, ToolSwitchHeuristicMeta.class);
+    super(parentCheck, HeuristicsClassicType.TOOL_SWITCH, ToolSwitchHeuristicMeta.class);
   }
 
   @PacketSubscription(
-      priority = ListenerPriority.HIGH,
-      packetsIn = {
-          POSITION, POSITION_LOOK, LOOK, FLYING, VEHICLE_MOVE
-      }
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      POSITION, POSITION_LOOK, LOOK, FLYING, VEHICLE_MOVE
+    }
   )
   public void receiveMovementPacket(PacketEvent event) {
     Player player = event.getPlayer();
@@ -36,10 +35,10 @@ public class ToolSwitchHeuristic extends MetaCheckPart<Heuristics, ToolSwitchHeu
   }
 
   @PacketSubscription(
-      priority = ListenerPriority.HIGH,
-      packetsIn = {
-          PacketId.Client.BLOCK_DIG
-      }
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      PacketId.Client.BLOCK_DIG
+    }
   )
   public void receiveBlockBreakAction(PacketEvent event) {
     Player player = event.getPlayer();
@@ -56,10 +55,10 @@ public class ToolSwitchHeuristic extends MetaCheckPart<Heuristics, ToolSwitchHeu
   }
 
   @PacketSubscription(
-      priority = ListenerPriority.HIGH,
-      packetsIn = {
-          PacketId.Client.HELD_ITEM_SLOT_IN
-      }
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      PacketId.Client.HELD_ITEM_SLOT_IN
+    }
   )
   public void receiveHeldItemSlotChange(PacketEvent event) {
     Player player = event.getPlayer();
@@ -80,15 +79,7 @@ public class ToolSwitchHeuristic extends MetaCheckPart<Heuristics, ToolSwitchHeu
 
       // Violate if buffer is too high
       if (++meta.vl > 3) {
-        parentCheck().saveAnomaly(
-            player,
-            Anomaly.anomalyOf(
-                "attack:toolswitch",
-                Confidence.LIKELY,
-                Anomaly.Type.KILLAURA,
-                "sent suspicious slot packets while breaking blocks (" + meta.ticksSinceLastStop + " ticks)"
-            )
-        );
+        flag(player, "sent suspicious slot packets while breaking blocks (" + meta.ticksSinceLastStop + " ticks)");
 
         // Apply damage cancel if this happens too often
         if (++meta.cancelVl > 1) {

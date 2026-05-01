@@ -9,7 +9,12 @@ public enum HeuristicsClassicType {
   ROTATION_SENSITIVITY("rotation-sensitivity"),
   ATTACK_REQUIRED("attack-required"),
   PRE_ATTACK("pre-attack"),
-  INVENTORY_ROTATIONS("inventory-rotations"),;
+  INVENTORY_ROTATIONS("inventory-rotations"),
+  BLOCKING("blocking"),
+  NO_SWING("no-swing"),
+  SWING_ORDER("swing-order"),
+  SPRINT_TOGGLES("sprint-toggles"),
+  TOOL_SWITCH("tool-switch");
 
   private final String configurationName;
 
