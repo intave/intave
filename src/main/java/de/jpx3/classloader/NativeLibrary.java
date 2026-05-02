@@ -15,26 +15,20 @@ public final class NativeLibrary {
   private final String name;
   private final int version;
   private final File tempDirectory;
-	private final String windowsDownloadURL;
-	private final String linuxDownloadURL;
-	private final String macDownloadURL;
-	private final List<String> allowedHashes;
+  private final String baseDownloadURL;
+  private final List<String> allowedHashes;
 
   public NativeLibrary(
     String name, int version,
     File tempDirectory,
-    String windowsDownloadURL,
-    String linuxDownloadURL,
-    String macDownloadURL,
+    String baseDownloadURL,
     List<String> allowedHashes
   ) {
     this.name = name;
     this.version = version;
     this.tempDirectory = tempDirectory;
-	  this.windowsDownloadURL = windowsDownloadURL;
-	  this.linuxDownloadURL = linuxDownloadURL;
-	  this.macDownloadURL = macDownloadURL;
-	  this.allowedHashes = allowedHashes;
+    this.baseDownloadURL = baseDownloadURL;
+    this.allowedHashes = allowedHashes;
   }
 
   public void load() {
@@ -143,22 +137,21 @@ public final class NativeLibrary {
   public String downloadUrl() {
     String operatingSystem = System.getProperty("os.name").toLowerCase(Locale.ROOT);
     if (operatingSystem.contains("win")) {
-      return windowsDownloadURL;
-    } else if (operatingSystem.contains("mac")) {
-      return macDownloadURL;
-    } else {
-      return linuxDownloadURL;
+      return baseDownloadURL + "classloader-" + suffix();
     }
+    return baseDownloadURL + "libclassloader-" + suffix();
   }
 
   public String suffix() {
     String operatingSystem = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+    String arch = System.getProperty("os.arch").toLowerCase(Locale.ROOT).replace("amd64", "x86_64");
+
     if (operatingSystem.contains("win")) {
-      return ".dll";
+      return "windows-" + arch + ".dll";
     } else if (operatingSystem.contains("mac")) {
-      return ".dylib";
+      return "macos-" + arch + ".dylib";
     } else {
-      return ".so";
+      return "linux-" + arch + ".so";
     }
   }
 
