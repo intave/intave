@@ -1,7 +1,6 @@
 package de.jpx3.intave.connect.cloud.protocol.pipeline;
 
 import de.jpx3.intave.IntaveLogger;
-import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.connect.cloud.Session;
 import de.jpx3.intave.connect.cloud.protocol.*;
 import de.jpx3.intave.connect.cloud.protocol.listener.Clientbound;
@@ -32,13 +31,19 @@ public final class HandshakeReceiver extends ChannelInboundHandlerAdapter implem
     this.session = session;
   }
 
+  private static Key generateKey(String cipher, int keySize) throws NoSuchAlgorithmException {
+    if (cipher.contains("/")) {
+      cipher = cipher.substring(0, cipher.indexOf("/"));
+    }
+    KeyGenerator keyGenerator = KeyGenerator.getInstance(cipher);
+    keyGenerator.init(keySize);
+    return keyGenerator.generateKey();
+  }
+
   @Override
   public void channelActive(ChannelHandlerContext ctx) {
     Shard shard = session.shard();
     ArrayList<String> hmacs = new ArrayList<>(Security.getAlgorithms("Mac2"));
-    if (!Heuristics.legacyConfigurationLayout()) {
-      hmacs.add("HeuristicsV2");
-    }
     ServerboundHello serverHelloPacket = ServerboundHello.builder()
       .token(shard == null ? new Token(new byte[0], 0) : shard.token())
       .supportedEncryptionAlgorithms(Security.getAlgorithms("Cipher").stream().filter(s -> s.startsWith("AES")).collect(Collectors.toList()))
@@ -122,15 +127,6 @@ public final class HandshakeReceiver extends ChannelInboundHandlerAdapter implem
       session.close();
       throw new RuntimeException(e);
     }
-  }
-
-  private static Key generateKey(String cipher, int keySize) throws NoSuchAlgorithmException {
-    if (cipher.contains("/")) {
-      cipher = cipher.substring(0, cipher.indexOf("/"));
-    }
-    KeyGenerator keyGenerator = KeyGenerator.getInstance(cipher);
-    keyGenerator.init(keySize);
-    return keyGenerator.generateKey();
   }
 
   @Override

@@ -1,16 +1,11 @@
 package de.jpx3.intave.command.stages;
 
-import com.google.gson.JsonObject;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckStatistics;
-import de.jpx3.intave.check.combat.Heuristics;
-import de.jpx3.intave.check.combat.heuristics.Anomaly;
-import de.jpx3.intave.check.combat.heuristics.Confidence;
-import de.jpx3.intave.check.combat.heuristics.MiningStrategy;
 import de.jpx3.intave.command.CommandStage;
 import de.jpx3.intave.command.Forward;
 import de.jpx3.intave.command.Optional;
@@ -40,7 +35,6 @@ import java.text.CharacterIterator;
 import java.text.DecimalFormat;
 import java.text.StringCharacterIterator;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -48,12 +42,58 @@ import static de.jpx3.intave.diagnostic.ShapeAccessFlowStudy.*;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 
 public final class RootStage extends CommandStage {
+  private static final String JAR_HASH;
+  private static final Map<Class<?>, String> CLASS_NAME = new HashMap<>();
   private static RootStage singletonInstance;
+
+  static {
+    String hash;
+    try {
+      File currentJavaJarFile = new File(IntavePlugin.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+      hash = HashAccess.hashOf(currentJavaJarFile).substring(0, 9);
+    } catch (Exception exception) {
+      hash = "Unavailable";
+    }
+    JAR_HASH = hash;
+  }
+
+  static {
+    CLASS_NAME.put(BoundingBox.class, "BoundingBoxes");
+//    CLASS_NAME.put(BlockState.class, "BlockStates");?
+//    CLASS_NAME.put(CubeShape.class, "CubeShape");
+//    CLASS_NAME.put(ArrayBlockShape.class, "ArrayBlockShape");
+  }
+
   private final IntavePlugin plugin;
 
   private RootStage() {
     super(BaseStage.singletonInstance(), "root");
     plugin = IntavePlugin.singletonInstance();
+  }
+
+  public static String largeNumberFormat(double value) {
+    DecimalFormat df = new DecimalFormat("###,###,###");
+    return df.format(value);
+  }
+
+  // stolen from https://stackoverflow.com/questions/3758606/how-can-i-convert-byte-size-into-a-human-readable-format-in-java
+  private static String humanReadableByteCount(long bytes) {
+    if (-1000 < bytes && bytes < 1000) {
+      return bytes + "B";
+    }
+    CharacterIterator ci = new StringCharacterIterator("kMGTPE");
+    while (bytes <= -999_950 || bytes >= 999_950) {
+      bytes /= 1000;
+      ci.next();
+    }
+    return String.format("%.1f%cB", bytes / 1000.0, ci.current());
+  }
+
+  public static RootStage singletonInstance() {
+    if (singletonInstance == null) {
+      singletonInstance = new RootStage();
+    }
+    return singletonInstance;
   }
 
   @SubCommand(
@@ -94,11 +134,6 @@ public final class RootStage extends CommandStage {
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
       });
     }
-  }
-
-  public static String largeNumberFormat(double value) {
-    DecimalFormat df = new DecimalFormat("###,###,###");
-    return df.format(value);
   }
 
   @SubCommand(
@@ -147,19 +182,6 @@ public final class RootStage extends CommandStage {
   @Forward(target = InternalDebugStage.class)
   public void debugStage() {
 
-  }
-
-  private static final String JAR_HASH;
-
-  static {
-    String hash;
-    try {
-      File currentJavaJarFile = new File(IntavePlugin.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-      hash = HashAccess.hashOf(currentJavaJarFile).substring(0, 9);
-    } catch (Exception exception) {
-      hash = "Unavailable";
-    }
-    JAR_HASH = hash;
   }
 
   @SubCommand(
@@ -373,55 +395,6 @@ public final class RootStage extends CommandStage {
   }
 
   @SubCommand(
-    selectors = "mine",
-    usage = "",
-    description = "",
-    permission = "sibyl"
-  )
-  public void makeMiningProcedure(User user, MiningStrategy strategy, @Optional Player possibleOtherTarget) {
-    Player player = user.player();
-    Player target = possibleOtherTarget == null ? player : possibleOtherTarget;
-    User targetUser = UserRepository.userOf(target);
-    player.sendMessage(ChatColor.GREEN + "MiningStrategy applied to " + target.getName());
-    strategy.apply(targetUser);
-  }
-
-  @SubCommand(
-    selectors = "badboys",
-    usage = "",
-    description = "",
-    permission = "sibyl"
-  )
-  public void showConfidences(User user) {
-    Player player = user.player();
-    Map<UUID, Confidence> confidenceMap = new HashMap<>();
-    Heuristics heuristicsCheck = plugin.checks().searchCheck(Heuristics.class);
-
-    for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-      List<Anomaly> anomalies = heuristicsCheck.catchAnomaliesOf(UserRepository.userOf(onlinePlayer));
-      Confidence confidence = heuristicsCheck.computeOverallConfidence(heuristicsCheck.resolveConfidencesOf(anomalies));
-      confidenceMap.put(onlinePlayer.getUniqueId(), confidence);
-    }
-
-    sortHashMapByValues(confidenceMap);
-    AtomicBoolean active = new AtomicBoolean();
-    confidenceMap.forEach((uuid, confidence) -> {
-      if (!confidence.atLeast(Confidence.PROBABLE)) {
-        return;
-      }
-      active.set(true);
-      Player otherPlayer = Bukkit.getPlayer(uuid);
-      List<Anomaly> anomalies = heuristicsCheck.catchAnomaliesOf(UserRepository.userOf(otherPlayer));
-      String patterns = anomalies.stream().map(anomaly -> " " + anomaly.key()).distinct().collect(Collectors.joining(","));
-      player.sendMessage(ChatColor.RED + confidence.name() + " " + ChatColor.GRAY + otherPlayer.getName() + " | " + patterns);
-    });
-
-    if (!active.get()) {
-      player.sendMessage(ChatColor.GREEN + "No badboys detected");
-    }
-  }
-
-  @SubCommand(
     selectors = "settrust",
     usage = "<trustfactor> [<target>]",
     description = "",
@@ -462,7 +435,6 @@ public final class RootStage extends CommandStage {
     user.player().sendMessage(ChatColor.RED + target.getName() + ChatColor.GRAY + " has a transaction-ping of " + ChatColor.RED + UserRepository.userOf(target).meta().connection().transactionPingAverage() + ChatColor.GRAY + "ms");
   }
 
-
   @SubCommand(
     selectors = "atradist",
     usage = "[<target>]",
@@ -477,7 +449,7 @@ public final class RootStage extends CommandStage {
     ConnectionMetadata connection = targetUser.meta().connection();
     Occurrences<Integer> attackDelays = connection.attackDelays;
     Occurrences<Integer> feedbackDelays = connection.feedbackDelays;
-    String preset = ChatColor.RED + "ATT/FBK for "+target.getName()+" mean(%s/%s) var(%s/%s)";
+    String preset = ChatColor.RED + "ATT/FBK for " + target.getName() + " mean(%s/%s) var(%s/%s)";
     String message = String.format(preset,
       formatDouble(attackDelays.mean(), 2), formatDouble(feedbackDelays.mean(), 2),
       formatDouble(attackDelays.variance(), 2), formatDouble(feedbackDelays.variance(), 2)
@@ -574,15 +546,6 @@ public final class RootStage extends CommandStage {
     player.sendMessage(ChatColor.GREEN + "Block summoned");
   }
 
-  private static final Map<Class<?>, String> CLASS_NAME = new HashMap<>();
-
-  static {
-    CLASS_NAME.put(BoundingBox.class, "BoundingBoxes");
-//    CLASS_NAME.put(BlockState.class, "BlockStates");?
-//    CLASS_NAME.put(CubeShape.class, "CubeShape");
-//    CLASS_NAME.put(ArrayBlockShape.class, "ArrayBlockShape");
-  }
-
   @SubCommand(
     selectors = "memtrace",
     usage = "",
@@ -636,19 +599,6 @@ public final class RootStage extends CommandStage {
     });
   }
 
-  // stolen from https://stackoverflow.com/questions/3758606/how-can-i-convert-byte-size-into-a-human-readable-format-in-java
-  private static String humanReadableByteCount(long bytes) {
-    if (-1000 < bytes && bytes < 1000) {
-      return bytes + "B";
-    }
-    CharacterIterator ci = new StringCharacterIterator("kMGTPE");
-    while (bytes <= -999_950 || bytes >= 999_950) {
-      bytes /= 1000;
-      ci.next();
-    }
-    return String.format("%.1f%cB", bytes / 1000.0, ci.current());
-  }
-
   public <K extends Comparable<? super K>, V extends Comparable<? super V>> Map<K, V> sortHashMapByValues(
     Map<K, V> passedMap
   ) {
@@ -670,12 +620,5 @@ public final class RootStage extends CommandStage {
       }
     }
     return sortedMap;
-  }
-
-  public static RootStage singletonInstance() {
-    if (singletonInstance == null) {
-      singletonInstance = new RootStage();
-    }
-    return singletonInstance;
   }
 }

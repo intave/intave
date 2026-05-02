@@ -37,18 +37,6 @@ public final class InternalsStage extends CommandStage {
     Modules.violationProcessor().broadcastNotify(fullMessage);
   }
 
-  @SubCommand(
-    selectors = "bot",
-    usage = "<player> <type>",
-    description = "Bot related commands",
-    permission = "intave.command.internals.bot"
-  )
-  @Forward(
-    target = BotStage.class
-  )
-  public void botCommand(CommandSender commandSender) {
-  }
-
 //  @SubCommand(
 //    selectors = "entitylag",
 //    usage = "<player>",

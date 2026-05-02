@@ -1,8 +1,6 @@
 package de.jpx3.intave.user.meta;
 
 import de.jpx3.intave.annotate.Nullable;
-import de.jpx3.intave.check.combat.heuristics.MiningStrategy;
-import de.jpx3.intave.check.combat.heuristics.mine.MiningStrategyContainer;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.tracker.entity.Entity.EntityPositionContext;
 import de.jpx3.intave.module.tracker.entity.EntityTracker;
@@ -29,11 +27,6 @@ public final class AttackMetadata {
   private float perfectClosestYaw;
   private float previousPerfectYaw, previousPerfectPitch;
   private float previousPerfectClosestYaw;
-
-  @Nullable
-  public MiningStrategyContainer activeMiningStrategy;
-  @Nullable
-  public MiningStrategy lastMiningStrategy;
 
   @Nullable
   private FakePlayer fakePlayer;

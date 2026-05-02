@@ -1,0 +1,32 @@
+package de.jpx3.intave.check.combat.heuristics;
+
+public enum HeuristicsClassicType {
+  ATTACK_ACCURACY("attack-accuracy"),
+  ATTACK_REQUIRED("attack-required"),
+  PRE_ATTACK("pre-attack"),
+  ROTATION_ACCURACY("rotation-accuracy"),
+  ROTATION_EXACT("rotation-exact"),
+  ROTATION_SNAP("rotation-snap"),
+  ROTATION_SENSITIVITY("rotation-sensitivity"),
+  ROTATION_MODULO_RESET("rotation-reset"),
+  INVENTORY_ROTATIONS("inventory-rotations"),
+  BLOCKING("blocking"),
+  NO_SWING("no-swing"),
+  SWING_ORDER("swing-order"),
+  SPRINT_TOGGLES("sprint-toggles"),
+  TOOL_SWITCH("tool-switch");
+
+  private final String configurationName;
+
+  HeuristicsClassicType(String configurationName) {
+    this.configurationName = configurationName;
+  }
+
+  public String configurationName() {
+    return configurationName;
+  }
+
+  public String verboseName() {
+    return configurationName;
+  }
+}

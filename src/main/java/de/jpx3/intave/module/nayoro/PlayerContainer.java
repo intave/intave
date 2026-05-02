@@ -1,6 +1,5 @@
 package de.jpx3.intave.module.nayoro;
 
-import de.jpx3.intave.check.combat.heuristics.Confidence;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
@@ -47,7 +46,6 @@ public interface PlayerContainer {
 
   void debug(String message);
   void nerf(AttackNerfStrategy strategy, String originCode);
-  void noteAnomaly(String key, Confidence confidence, String description);
   @Deprecated
   void applyIfUserPresent(Consumer<? super User> action);
 }

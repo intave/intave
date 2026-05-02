@@ -70,25 +70,46 @@ check:
 
   heuristics:
     enabled: true
-    cloud-thresholds:
-      # Executed if a player fails a combination of legacy heuristics located in the Intave jar file
-      on-premise:
+
+    # Sets the violation level increases for each classic check type.
+    # - The number must be an integer and -1 disables the checks
+    # - 0 keeps the check activated and combat nerfers will be applied but no violations are added
+    classic:
+      # Attack Heuristics
+      attack-accuracy: 4
+      attack-required: 3
+      pre-attack: 4
+
+      # Rotation Heuristics
+      rotation-accuracy: 4
+      rotation-exact: 10
+      rotation-snap: 5
+      rotation-sensitivity: -1
+      rotation-reset: 3
+
+      # Other
+      inventory-rotations: 2
+      blocking: 0
+      no-swing: 0
+      swing-order: 3
+      sprint-toggles: 2 # prevents spamming sprint packets to apply more knockback on targets
+      tool-switch: 3 # prevents slot switches while breaking blocks
+
+      thresholds:
+        20:
+          - "intave internals storelog {player} {check} {vl}"
+          - "intave internals sendnotify &e{player}&7 is attacking suspiciously #1"
+
+        40:
+          - "intave internals sendnotify &e{player}&7 is attacking suspiciously #2"
+
         50:
           - "intave internals storelog {player} {check} {vl}"
-          - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking suspiciously (on-premise heuristics)"
-          - $ban$
+          - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been kicked for attacking suspiciously (on-premise classic heuristics)"
+          - $kick$
 
-      # Executed if a player fails exactly one cloud check
-      # Banning this will catch almost all cheaters
-      cloud-mixed:
-        50:
-          - "intave internals storelog {player} {check} {vl}"
-          - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking suspiciously (cloud heuristics)"
-          - $ban$
-
-      # Executed if a player fails two or more independent cloud checks
-      # Expect Intave to make no errors here
-      cloud-certain:
+    cloud:
+      thresholds:
         50:
           - "intave internals storelog {player} {check} {vl}"
           - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for attacking suspiciously (cloud heuristics)"

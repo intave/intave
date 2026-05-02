@@ -1,12 +1,10 @@
 package de.jpx3.intave.module.nayoro.detection;
 
-import de.jpx3.intave.check.combat.heuristics.Confidence;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 
 public interface DetectionSubscription {
   void onDebug(String message);
   void onNerf(AttackNerfStrategy strategy, String originCode);
-  void onAnomaly(String key, Confidence confidence, String description);
 
   DetectionSubscription EMPTY = new EmptyDetectionSubscription();
 

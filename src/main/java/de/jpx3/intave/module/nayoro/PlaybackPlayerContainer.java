@@ -1,6 +1,5 @@
 package de.jpx3.intave.module.nayoro;
 
-import de.jpx3.intave.check.combat.heuristics.Confidence;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.nayoro.detection.DetectionSubscription;
 import de.jpx3.intave.module.nayoro.event.AttackEvent;
@@ -203,11 +202,6 @@ final class PlaybackPlayerContainer extends SinkPlayerContainer {
   @Override
   public void nerf(AttackNerfStrategy strategy, String originCode) {
     detectionSubscription.onNerf(strategy, originCode);
-  }
-
-  @Override
-  public void noteAnomaly(String key, Confidence confidence, String description) {
-    detectionSubscription.onAnomaly(key, confidence, description);
   }
 
   @Override

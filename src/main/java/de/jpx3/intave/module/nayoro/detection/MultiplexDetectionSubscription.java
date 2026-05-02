@@ -1,6 +1,5 @@
 package de.jpx3.intave.module.nayoro.detection;
 
-import de.jpx3.intave.check.combat.heuristics.Confidence;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 
 final class MultiplexDetectionSubscription implements DetectionSubscription {
@@ -21,13 +20,6 @@ final class MultiplexDetectionSubscription implements DetectionSubscription {
   public void onNerf(AttackNerfStrategy strategy, String originCode) {
     for (DetectionSubscription subscription : subscriptions) {
       subscription.onNerf(strategy, originCode);
-    }
-  }
-
-  @Override
-  public void onAnomaly(String key, Confidence confidence, String description) {
-    for (DetectionSubscription subscription : subscriptions) {
-      subscription.onAnomaly(key, confidence, description);
     }
   }
 }
