@@ -16,6 +16,7 @@ public final class ReaderTests extends Tests {
     static {
         EXCLUDED_TYPES.add(PacketType.Play.Server.MULTI_BLOCK_CHANGE);
         EXCLUDED_TYPES.add(PacketType.Play.Client.ENTITY_ACTION);
+        EXCLUDED_TYPES.add(PacketType.Play.Server.ANIMATION);
     }
 
     public ReaderTests() {
