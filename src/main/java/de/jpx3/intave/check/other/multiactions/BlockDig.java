@@ -2,7 +2,9 @@ package de.jpx3.intave.check.other.multiactions;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.utility.MinecraftVersion;
 import com.comphenix.protocol.wrappers.EnumWrappers;
+import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.check.CheckPart;
 import de.jpx3.intave.check.other.MultiActions;
 import de.jpx3.intave.module.Modules;
@@ -32,9 +34,9 @@ public final class BlockDig extends CheckPart<MultiActions> {
         PacketContainer packet = event.getPacket();
         EnumWrappers.PlayerDigType digType = packet.getPlayerDigTypes().readSafely(0);
 
-        if (digType == EnumWrappers.PlayerDigType.START_DESTROY_BLOCK
+        if (MinecraftVersions.VER1_8_0.atOrAbove() && (digType == EnumWrappers.PlayerDigType.START_DESTROY_BLOCK
                 || digType == EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK
-                || digType == EnumWrappers.PlayerDigType.STOP_DESTROY_BLOCK
+                || digType == EnumWrappers.PlayerDigType.STOP_DESTROY_BLOCK)
         ) {
             if (meta.inventory().handActive()) {
                 String message = "dig while item using";

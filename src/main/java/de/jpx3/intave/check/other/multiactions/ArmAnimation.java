@@ -1,6 +1,7 @@
 package de.jpx3.intave.check.other.multiactions;
 
 import com.comphenix.protocol.events.PacketEvent;
+import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.check.CheckPart;
 import de.jpx3.intave.check.other.MultiActions;
 import de.jpx3.intave.module.Modules;
@@ -38,7 +39,7 @@ public final class ArmAnimation extends CheckPart<MultiActions> {
         User user = UserRepository.userOf(player);
         MetadataBundle meta = user.meta();
 
-        if (meta.inventory().handActive() && System.currentTimeMillis() - lastDropItem > 100) {
+        if (meta.inventory().handActive() && System.currentTimeMillis() - lastDropItem > 100 && MinecraftVersions.VER1_8_0.atOrAbove()) {
             String message = "swing hand while item using";
             String details = "ticks " + meta.inventory().handActiveTicks;
             Violation violation = Violation.builderFor(MultiActions.class)
