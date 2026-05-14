@@ -176,6 +176,14 @@ check:
       100:
         - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for sending invalid packets"
         - $ban$
+        
+  multiactions:
+    enabled: true
+    thresholds:
+      5: "intave internals sendnotify &c{player}&7/{trust-color}&7 is failed multi actions"
+      10:
+        - "intave internals sendnotify &c{player}&7/{trust-color}&7 has been removed for failed multi actions"
+        - $ban$    
 
   placementanalysis:
     enabled: true
