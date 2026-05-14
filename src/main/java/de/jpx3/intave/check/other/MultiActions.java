@@ -1,9 +1,7 @@
 package de.jpx3.intave.check.other;
 
 import de.jpx3.intave.check.Check;
-import de.jpx3.intave.check.other.multiactions.ArmAnimation;
-import de.jpx3.intave.check.other.multiactions.AttackEntity;
-import de.jpx3.intave.check.other.multiactions.BlockDig;
+import de.jpx3.intave.check.other.multiactions.*;
 
 public final class MultiActions extends Check {
 
@@ -13,7 +11,8 @@ public final class MultiActions extends Check {
         appendCheckParts(
                 new AttackEntity(this),
                 new BlockDig(this),
-                new ArmAnimation(this)
+                new ArmAnimation(this),
+                new CloseWindow(this)
         );
     }
 }

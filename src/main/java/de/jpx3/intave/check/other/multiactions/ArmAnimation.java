@@ -29,12 +29,12 @@ public final class ArmAnimation extends CheckPart<MultiActions> {
         User user = UserRepository.userOf(player);
         MetadataBundle meta = user.meta();
 
-        if (meta.inventory().handActive()) {
-            // this is possible to false on 1.7
-            if (user.protocolVersion() < 47) {
-                return;
-            }
+        // this is possible to false on 1.7
+        if (user.protocolVersion() < 47) {
+            return;
+        }
 
+        if (meta.inventory().handActive()) {
             String message = "swing hand while item using";
             String details = "ticks " + meta.inventory().handActiveTicks;
             Violation violation = Violation.builderFor(MultiActions.class)

@@ -24,6 +24,7 @@ public final class AttackEntity extends CheckPart<MultiActions> {
     }
 
     @PacketSubscription(
+            // ATTACK_ENTITY has been added as a separate package since version 26.1
             packetsIn = {
                     USE_ENTITY, ATTACK_ENTITY
             }
