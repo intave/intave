@@ -34,11 +34,16 @@ public final class BlockDig extends CheckPart<MultiActions> {
         PacketContainer packet = event.getPacket();
         EnumWrappers.PlayerDigType digType = packet.getPlayerDigTypes().readSafely(0);
 
-        if (MinecraftVersions.VER1_8_0.atOrAbove() && (digType == EnumWrappers.PlayerDigType.START_DESTROY_BLOCK
+        if (digType == EnumWrappers.PlayerDigType.START_DESTROY_BLOCK
                 || digType == EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK
-                || digType == EnumWrappers.PlayerDigType.STOP_DESTROY_BLOCK)
-        ) {
+                || digType == EnumWrappers.PlayerDigType.STOP_DESTROY_BLOCK) {
+
             if (meta.inventory().handActive()) {
+                // this is possible to false on 1.7
+                if (user.protocolVersion() < 47) {
+                    return;
+                }
+
                 String message = "dig while item using";
                 String details = "type " + digType.name().toLowerCase();
                 Violation violation = Violation.builderFor(MultiActions.class)
