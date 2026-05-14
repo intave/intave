@@ -28,6 +28,8 @@ public final class InvalidDig extends CheckPart<ProtocolScanner> {
         Player player = event.getPlayer();
         EnumWrappers.PlayerDigType digType = packet.getPlayerDigTypes().readSafely(0);
         BlockPosition blockPosition = packet.getBlockPositionModifier().readSafely(0);
+        EnumWrappers.Direction direction = packet.getDirections().readSafely(0);
+        int enumDirection = direction == null ? 0 : direction.ordinal();
 
         if (digType != EnumWrappers.PlayerDigType.START_DESTROY_BLOCK
                 && digType != EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK
@@ -36,7 +38,7 @@ public final class InvalidDig extends CheckPart<ProtocolScanner> {
 
             final int expectedFace = !MinecraftVersions.VER1_8_0.atOrAbove() && digType == EnumWrappers.PlayerDigType.RELEASE_USE_ITEM ? 255 : 0;
 
-            if (packet.getDirections().size() != expectedFace
+            if (enumDirection != expectedFace
                     || blockPosition.getX() != 0
                     || blockPosition.getY() != 0
                     || blockPosition.getZ() != 0
