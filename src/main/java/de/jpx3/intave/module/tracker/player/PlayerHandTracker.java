@@ -179,7 +179,10 @@ public class PlayerHandTracker extends Module {
 
     boolean sword = heldItem != null && heldItem.getType().name().endsWith("_SWORD");
 
-    if (sword && System.currentTimeMillis() - punishmentData.timeLastBlockCancel < 5000) {
+    long now = System.currentTimeMillis();
+    boolean blockRequest = sword && now - punishmentData.timeLastBlockCancel < 5000
+            || now - inventoryData.lastForcedItemReleaseTime < 5000L;
+    if (blockRequest) {
       event.setCancelled(true);
       return;
     }
