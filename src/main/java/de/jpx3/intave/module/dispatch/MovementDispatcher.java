@@ -663,13 +663,13 @@ public final class MovementDispatcher extends Module {
         user.player().sendMessage(IntavePlugin.prefix() + "Requesting arrow block as player is also holding a bow on item usage reset");
       }
     }
-    inventory.lastFoodConsumptionBlockRequest = System.currentTimeMillis();
     PacketContainer packet = protocolManager.createPacket(PacketType.Play.Client.BLOCK_DIG);
     packet.getBlockPositionModifier().write(0, new BlockPosition(0, 0, 0));
     packet.getDirections().write(0, EnumWrappers.Direction.DOWN);
     packet.getPlayerDigTypes().write(0, EnumWrappers.PlayerDigType.RELEASE_USE_ITEM);
     user.ignoreNextInboundPacket();
     PacketSender.receiveClientPacketFrom(player, packet);
+    inventory.lastForcedItemReleaseTime = System.currentTimeMillis();
     updatePlayerHandItem(player);
     Synchronizer.synchronize(player::updateInventory);
     if (IntaveControl.DEBUG_ITEM_USAGE) {

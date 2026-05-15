@@ -148,7 +148,7 @@ public final class MiscBukkitEvents extends Module {
   public void on(PlayerItemConsumeEvent consumption) {
     User user = UserRepository.userOf(consumption.getPlayer());
     InventoryMetadata inventory = user.meta().inventory();
-    if (System.currentTimeMillis() - inventory.lastFoodConsumptionBlockRequest < 800L) {
+    if (System.currentTimeMillis() - inventory.lastForcedItemReleaseTime < 800L) {
       consumption.setCancelled(true);
     }
   }

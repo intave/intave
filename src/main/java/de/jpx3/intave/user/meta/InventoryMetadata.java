@@ -32,7 +32,7 @@ public final class InventoryMetadata {
   public boolean forceInventoryOnClickOpen = true;
   public boolean blockNextArrow = false;
   public long lastBlockArrowRequest;
-  public long lastFoodConsumptionBlockRequest;
+  public long lastForcedItemReleaseTime;
   public boolean releaseItemNextTick = false;
   public boolean activatedItemThisTick = false;
   public boolean deactivatedItemThisTick = false;
