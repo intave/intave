@@ -48,7 +48,7 @@ public final class Synchronizer {
   public static void synchronize(User user, Runnable runnable) {
     if (isFolia) {
 //      Thread.dumpStack();
-      Tasks.delayedNamed("Synchronizer.synchronize", wrapped(runnable), 0).startUserSync(user);
+      Tasks.delayedNamed(runnable.toString(), wrapped(runnable), 0).startUserSync(user);
     } else {
       globalSynchronizationExecutor.execute(wrapped(runnable));
     }
