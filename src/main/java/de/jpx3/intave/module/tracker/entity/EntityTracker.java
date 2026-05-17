@@ -28,6 +28,7 @@ import de.jpx3.intave.module.nayoro.event.EntityRemoveEvent;
 import de.jpx3.intave.module.nayoro.event.EntitySpawnEvent;
 import de.jpx3.intave.module.nayoro.event.sink.EventSink;
 import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.PacketTypes;
 import de.jpx3.intave.packet.reader.EntityIterable;
 import de.jpx3.intave.packet.reader.EntityMetadataReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
@@ -494,7 +495,7 @@ public final class EntityTracker extends Module {
     User user = UserRepository.userOf(player);
     PacketType packetType = event.getPacketType();
 
-    boolean isClientTickEnd = packetType == PacketType.Play.Client.CLIENT_TICK_END;
+    boolean isClientTickEnd = PacketTypes.isClientEndTick(packetType);
     if (user.meta().protocol().sendsClientTickEnd() && !isClientTickEnd) {
       return;
     }

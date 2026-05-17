@@ -8,6 +8,7 @@ import de.jpx3.intave.check.EventProcessor;
 import de.jpx3.intave.check.combat.clickpatterns.Kurtosis;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.packet.PacketTypes;
 import de.jpx3.intave.packet.reader.EntityUseReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.user.User;
@@ -88,7 +89,8 @@ public final class ClickFeeder implements EventProcessor {
     PacketType packetType = event.getPacketType();
     boolean sendsClientTickEnd = user.meta().protocol().sendsClientTickEnd();
 
-    if (sendsClientTickEnd && packetType != PacketType.Play.Client.CLIENT_TICK_END) {
+    boolean notClientTickEnd = !PacketTypes.isClientEndTick(packetType);
+    if (sendsClientTickEnd && notClientTickEnd) {
       return;
     }
 

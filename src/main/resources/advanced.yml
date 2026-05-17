@@ -214,7 +214,7 @@ check:
 
 cloud:
   # Should Intave connect to the cloud?
-  enabled: true
+  enabled: false
 
   features:
     # Should Intave use the cloud to store metadata?

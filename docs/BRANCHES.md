@@ -3,8 +3,6 @@
 We have three main branches: **master**, **staging** and **dev**. <br>
 
 **master** is the main branch, all changes are pushed in here. <br>
-**beta** is code that is ready for testing in production. <br>
-**stable** is code that is production ready and stable. <br>
 
 ## Feature branches
 

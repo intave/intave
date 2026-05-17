@@ -27,6 +27,7 @@ import de.jpx3.intave.module.tracker.entity.EntityTracker;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.PacketTypes;
 import de.jpx3.intave.packet.reader.EntityUseReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.share.FriendlyByteBuf;
@@ -242,7 +243,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     User user = userOf(player);
     PacketType packetType = event.getPacketType();
 
-    boolean isClientTickEnd = packetType == PacketType.Play.Client.CLIENT_TICK_END;
+    boolean isClientTickEnd = PacketTypes.isClientEndTick(packetType);
     if (user.meta().protocol().sendsClientTickEnd() && !isClientTickEnd) {
       return;
     }
