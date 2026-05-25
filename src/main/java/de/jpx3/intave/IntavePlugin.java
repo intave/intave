@@ -151,9 +151,10 @@ public final class IntavePlugin extends JavaPlugin {
     }
     singletonInstance = this;
     version = getDescription().getVersion();
-    createDataFolder();
 
     this.logger = new IntaveLogger(this);
+    createDataFolder();
+
     logger.debug("Starting Stage 2 initialization (version " + version + ")...");
     this.logger.checkColorAvailability();
     Modules.prepareModules();
