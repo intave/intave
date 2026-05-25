@@ -11,9 +11,13 @@ plugins {
 }
 
 val gitCommitHash by lazy {
-  providers.exec {
-    commandLine("git", "rev-parse", "--short", "HEAD")
-  }.standardOutput.asText.get().trim()
+  try {
+    providers.exec {
+      commandLine("git", "rev-parse", "--short", "HEAD")
+    }.standardOutput.asText.get().trim()
+  } catch (e: Exception) {
+    "unknown"
+  }
 }
 
 val simpleName = "Intave"
