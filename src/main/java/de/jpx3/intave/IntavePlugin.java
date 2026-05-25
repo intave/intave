@@ -96,6 +96,9 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Stream;
+
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VERSION_DETAILS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -105,7 +108,8 @@ public final class IntavePlugin extends JavaPlugin {
   private static String prefix = ChatColor.translateAlternateColorCodes('&', "&8[&c&lIntave&8]&7 ");
   private static String defaultColor = ChatColor.getLastColors(prefix);
   private static final UUID gameId = UUID.randomUUID();
-  private static boolean offlineMode = false, successfullyBooted = false;
+  private static volatile boolean offlineMode = false;
+  private static volatile boolean successfullyBooted = false;
 
   static {
     // stage 1 (unused)
@@ -133,8 +137,7 @@ public final class IntavePlugin extends JavaPlugin {
   private TestService testService;
 
   public IntavePlugin() {
-    // stage 2
-    stage2();
+    // Stage 2 is now called in onLoad()
   }
 
   public void stage2() {
@@ -165,6 +168,8 @@ public final class IntavePlugin extends JavaPlugin {
 
   @Override
   public void onLoad() {
+    // stage 2
+    stage2();
     // stage 3
     Modules.proceedBoot(BootSegment.STAGE_3);
   }
@@ -192,6 +197,7 @@ public final class IntavePlugin extends JavaPlugin {
         return;
       }
     } catch (Exception e) {
+      logger.debug("Failed to check security manager: " + e.getMessage());
     }
 
     try {
@@ -248,7 +254,7 @@ public final class IntavePlugin extends JavaPlugin {
 
       EncryptedLegacyResource contextStatusResource = new EncryptedLegacyResource("context-status", false);
 
-      boolean offlineMode = false;
+      offlineMode = false;
 
       VERSION_DETAILS |= 0x100;
       VERSION_DETAILS |= 0x200;
@@ -315,7 +321,7 @@ public final class IntavePlugin extends JavaPlugin {
         exception.printStackTrace();
       }
 
-      IntavePlugin.offlineMode = offlineMode;
+      // IntavePlugin.offlineMode = offlineMode; // Already set above
 
       // load config
 
@@ -430,7 +436,7 @@ public final class IntavePlugin extends JavaPlugin {
     Modules.linker().packetEvents().refreshLinkages();
     displayVersionInformation();
     successfullyBooted = true;
-    randomExitMessages = Resources.localServiceCacheResource("exitmessages", "exitmessages", TimeUnit.DAYS.toMillis(7)).readLines();
+    randomExitMessages = new CopyOnWriteArrayList<>(Resources.localServiceCacheResource("exitmessages", "exitmessages", TimeUnit.DAYS.toMillis(7)).readLines());
     logger.info("Intave booted successfully");
 
     Synchronizer.synchronize(() -> {
@@ -458,7 +464,7 @@ public final class IntavePlugin extends JavaPlugin {
       loggerField.setAccessible(true);
       loggerField.set(this, logger());
     } catch (Exception exception) {
-      logger.error("[Intave] Failed to inject logger to bukkit");
+      logger.error("[Intave] Failed to inject logger to bukkit: " + exception.getMessage());
     }
   }
 
@@ -510,9 +516,8 @@ public final class IntavePlugin extends JavaPlugin {
 
   public void clearIntegrityGarbage() {
     File tempDir = new File(System.getProperty("java.io.tmpdir"));
-    try {
-      Files.walk(tempDir.toPath())
-        .map(Path::toFile)
+    try (Stream<Path> pathStream = Files.walk(tempDir.toPath())) {
+      pathStream.map(Path::toFile)
         .filter(File::canRead)
         .filter(File::canWrite)
         .filter(file -> "deleteme".equalsIgnoreCase(file.getName()) && file.getParentFile().getName().toLowerCase(Locale.ROOT).contains("intave"))
@@ -526,7 +531,8 @@ public final class IntavePlugin extends JavaPlugin {
           } catch (IOException ignored) {
           }
         });
-    } catch (Exception ignored) {
+    } catch (Exception e) {
+      logger.debug("Failed to clear integrity garbage: " + e.getMessage());
     }
   }
 
@@ -577,10 +583,9 @@ public final class IntavePlugin extends JavaPlugin {
     if (!workDirectory.exists()) {
       return;
     }
-    try {
+    try (Stream<Path> pathStream = Files.walk(workDirectory.toPath())) {
       // clear unused files
-      Files.walk(workDirectory.toPath())
-        .filter(Files::isRegularFile)
+      pathStream.filter(Files::isRegularFile)
         .map(Path::toFile)
         .filter(File::canWrite)
         .filter(File::canRead)
@@ -588,13 +593,18 @@ public final class IntavePlugin extends JavaPlugin {
         .forEach(file -> {
           try {
             file.delete();
-          } catch (Exception exception) {
-//            exception.printStackTrace();
+          } catch (Exception ignored) {
           }
         });
+    } catch (NoSuchFileException ignored) {
+      // ignore
+    } catch (Exception | Error throwable) {
+      logger.debug("Failed to clear save folder garbage: " + throwable.getMessage());
+    }
+
+    try (Stream<Path> pathStream = Files.walk(workDirectory.toPath())) {
       // clear empty directories
-      Files.walk(workDirectory.toPath())
-        .filter(Files::isDirectory)
+      pathStream.filter(Files::isDirectory)
         .map(Path::toFile)
         .filter(File::canWrite)
         .filter(File::canRead)
@@ -603,14 +613,13 @@ public final class IntavePlugin extends JavaPlugin {
         .forEach(file -> {
           try {
             file.delete();
-          } catch (Exception exception) {
-//            exception.printStackTrace();
+          } catch (Exception ignored) {
           }
         });
     } catch (NoSuchFileException ignored) {
       // ignore
     } catch (Exception | Error throwable) {
-//      throwable.printStackTrace();
+      logger.debug("Failed to clear save folder empty directories: " + throwable.getMessage());
     }
   }
 
@@ -634,7 +643,8 @@ public final class IntavePlugin extends JavaPlugin {
     logger.info("Stopping Intave");
     try {
       configService.shutdown();
-    } catch (Exception ignored) {
+    } catch (Exception e) {
+      logger.debug("Failed to shutdown config service: " + e.getMessage());
     }
     Bukkit.getScheduler().cancelTasks(this);
     ShutdownTasks.runAll();
@@ -647,7 +657,7 @@ public final class IntavePlugin extends JavaPlugin {
     logger.shutdown();
   }
 
-  private List<String> randomExitMessages = new ArrayList<>();
+  private List<String> randomExitMessages = new CopyOnWriteArrayList<>();
 
   private String randomExitMessage() {
     return randomExitMessages.isEmpty() ? "No jokes? :(" : randomExitMessages.get(ThreadLocalRandom.current().nextInt(randomExitMessages.size()));
@@ -658,23 +668,30 @@ public final class IntavePlugin extends JavaPlugin {
       // mark caches as deletable
       Class<?> relocator = Class.forName("de.jpx3.relocator.Relocator");
       relocator.getMethod("i").invoke(null);
-    } catch (Exception ignored) {
+    } catch (Exception e) {
+      logger.debug("Failed to delete integrity cache: " + e.getMessage());
     }
   }
 
   private File integrityFolder() {
+    File folder = null;
     try {
       // mark caches as deletable
       Class<?> relocator = Class.forName("de.jpx3.relocator.Relocator");
       File child = (File) relocator.getMethod("h").invoke(null, "a", "b");
-      return child.getParentFile();
-    } catch (Exception ignored) {
+      folder = child.getParentFile();
+    } catch (Exception e) {
+      logger.debug("Relocator not available for integrity folder: " + e.getMessage());
     }
-    try {
-      return Files.createTempDirectory("intave").toFile();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+
+    if (folder == null || !folder.exists() || !folder.canWrite()) {
+      try {
+        folder = Files.createTempDirectory("intave").toFile();
+      } catch (IOException e) {
+        throw new RuntimeException("Failed to create mandatory integrity folder", e);
+      }
     }
+    return folder;
   }
 
   public IntaveAccess access() {
