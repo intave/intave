@@ -87,8 +87,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -97,6 +97,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VERSION_DETAILS;
@@ -110,6 +111,7 @@ public final class IntavePlugin extends JavaPlugin {
   private static final UUID gameId = UUID.randomUUID();
   private static volatile boolean offlineMode = false;
   private static volatile boolean successfullyBooted = false;
+  private final AtomicBoolean stage2Booted = new AtomicBoolean(false);
 
   static {
     // stage 1 (unused)
@@ -141,11 +143,18 @@ public final class IntavePlugin extends JavaPlugin {
   }
 
   public void stage2() {
+    if (!stage2Booted.compareAndSet(false, true)) {
+      if (this.logger != null) {
+        logger.debug("Stage 2 initialization was rejected as it is already active or completed.");
+      }
+      return;
+    }
     singletonInstance = this;
     version = getDescription().getVersion();
     createDataFolder();
 
     this.logger = new IntaveLogger(this);
+    logger.debug("Starting Stage 2 initialization (version " + version + ")...");
     this.logger.checkColorAvailability();
     Modules.prepareModules();
     Modules.proceedBoot(BootSegment.STAGE_2);
@@ -164,6 +173,7 @@ public final class IntavePlugin extends JavaPlugin {
     // preload
     prefix = configService.configuration().getString("layout.prefix", prefix);
     prefix = ChatColor.translateAlternateColorCodes('&', prefix);
+    logger.debug("Stage 2 initialization completed.");
   }
 
   @Override
@@ -176,6 +186,9 @@ public final class IntavePlugin extends JavaPlugin {
 
   @Override
   public void onEnable() {
+    if (this.logger == null) {
+      stage2();
+    }
     logger.info("Please stand by..");
 
     // stage 4
@@ -254,7 +267,18 @@ public final class IntavePlugin extends JavaPlugin {
 
       EncryptedLegacyResource contextStatusResource = new EncryptedLegacyResource("context-status", false);
 
-      offlineMode = false;
+      boolean serverOnlineMode = Bukkit.getServer().getOnlineMode();
+      offlineMode = !serverOnlineMode;
+      
+      if (configService.configuration().contains("server.offline-mode-override")) {
+        boolean override = configService.configuration().getBoolean("server.offline-mode-override");
+        if (override != offlineMode) {
+          logger.info("Offline-mode override detected: Setting to " + override + " (Server online-mode: " + serverOnlineMode + ")");
+          offlineMode = override;
+        }
+      } else {
+        logger.debug("Resolved offline-mode to " + offlineMode + " based on server online-mode status.");
+      }
 
       VERSION_DETAILS |= 0x100;
       VERSION_DETAILS |= 0x200;
@@ -528,11 +552,12 @@ public final class IntavePlugin extends JavaPlugin {
         .forEach(file -> {
           try {
             clearDirectory(file);
-          } catch (IOException ignored) {
+          } catch (IOException e) {
+            logger.debug("Failed to clear integrity directory " + file.getAbsolutePath() + ": " + e.getMessage());
           }
         });
     } catch (Exception e) {
-      logger.debug("Failed to clear integrity garbage: " + e.getMessage());
+      logger.debug("Failed to walk integrity garbage path: " + e.getMessage());
     }
   }
 
@@ -547,11 +572,14 @@ public final class IntavePlugin extends JavaPlugin {
       for (File file : files) {
         try {
           forceDelete(file);
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+          logger.debug("Failed to force delete file " + file.getAbsolutePath() + " during directory clearing: " + e.getMessage());
         }
       }
     }
-    directory.delete();
+    if (!directory.delete()) {
+      logger.debug("Failed to delete directory: " + directory.getAbsolutePath());
+    }
   }
 
   private void forceDelete(File file) throws IOException {
@@ -583,43 +611,40 @@ public final class IntavePlugin extends JavaPlugin {
     if (!workDirectory.exists()) {
       return;
     }
-    try (Stream<Path> pathStream = Files.walk(workDirectory.toPath())) {
-      // clear unused files
-      pathStream.filter(Files::isRegularFile)
-        .map(Path::toFile)
-        .filter(File::canWrite)
-        .filter(File::canRead)
-        .filter(file -> (System.currentTimeMillis() - file.lastModified()) > FILE_EXPIRE)
-        .forEach(file -> {
-          try {
-            file.delete();
-          } catch (Exception ignored) {
-          }
-        });
-    } catch (NoSuchFileException ignored) {
-      // ignore
-    } catch (Exception | Error throwable) {
-      logger.debug("Failed to clear save folder garbage: " + throwable.getMessage());
-    }
 
-    try (Stream<Path> pathStream = Files.walk(workDirectory.toPath())) {
-      // clear empty directories
-      pathStream.filter(Files::isDirectory)
-        .map(Path::toFile)
-        .filter(File::canWrite)
-        .filter(File::canRead)
-        .filter(file -> file.listFiles() == null)
-        .filter(file -> (System.currentTimeMillis() - file.lastModified()) > FILE_EXPIRE)
-        .forEach(file -> {
-          try {
-            file.delete();
-          } catch (Exception ignored) {
+    try {
+      final Path workPath = workDirectory.toPath();
+      Files.walkFileTree(workPath, new SimpleFileVisitor<Path>() {
+        @Override
+        public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+          File file = path.toFile();
+          if (file.canWrite() && (System.currentTimeMillis() - file.lastModified()) > FILE_EXPIRE) {
+            if (!file.delete()) {
+              logger.debug("Failed to delete expired file: " + file.getAbsolutePath());
+            }
           }
-        });
+          return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+          if (exc != null) return FileVisitResult.CONTINUE;
+          File file = dir.toFile();
+          // Only attempt to delete if it's not the root work directory and is old/empty
+          if (!dir.equals(workPath) && file.canWrite() && (System.currentTimeMillis() - file.lastModified()) > FILE_EXPIRE) {
+            File[] children = file.listFiles();
+            if (children == null || children.length == 0) {
+              if (!file.delete()) {
+                logger.debug("Failed to delete empty directory: " + file.getAbsolutePath());
+              }
+            }
+          }
+          return FileVisitResult.CONTINUE;
+        }
+      });
     } catch (NoSuchFileException ignored) {
-      // ignore
     } catch (Exception | Error throwable) {
-      logger.debug("Failed to clear save folder empty directories: " + throwable.getMessage());
+      logger.debug("Failed to perform deep cleanup of save folder: " + throwable.getMessage());
     }
   }
 
