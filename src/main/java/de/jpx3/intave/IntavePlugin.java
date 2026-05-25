@@ -197,7 +197,7 @@ public final class IntavePlugin extends JavaPlugin {
         return;
       }
     } catch (Exception e) {
-      logger.debug("Failed to check security manager: " + e.getMessage());
+      logger.debug("Non-critical: Failed to check security manager status: " + e.getMessage());
     }
 
     try {
@@ -687,6 +687,7 @@ public final class IntavePlugin extends JavaPlugin {
     if (folder == null || !folder.exists() || !folder.canWrite()) {
       try {
         folder = Files.createTempDirectory("intave").toFile();
+        logger.info("Using temporary directory for integrity checks: " + folder.getAbsolutePath());
       } catch (IOException e) {
         throw new RuntimeException("Failed to create mandatory integrity folder", e);
       }
