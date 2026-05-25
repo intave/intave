@@ -92,6 +92,14 @@ public final class IntaveLogger extends PluginLogger {
     logToFile("(INF) " + infoMessage);
   }
 
+  public void debug(String debugMessage) {
+    if (IntaveControl.DEBUG) {
+      info(ChatColor.GRAY + "[DEBUG] " + debugMessage);
+    } else {
+      logToFile("(DBG) " + debugMessage);
+    }
+  }
+
   public void error(String message) {
     String fullMessage = IntavePlugin.prefix() + ChatColor.DARK_RED + ChatColor.BOLD + "ERROR" + IntavePlugin.defaultColor() + ": " + ChatColor.RED + message;
     for (PrintStream outputStream : outputStreams) {
