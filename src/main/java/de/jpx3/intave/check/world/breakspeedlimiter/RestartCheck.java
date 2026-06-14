@@ -77,10 +77,16 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
             clientData.flyingPacketsAreSent(),
             ticksBetween,
             milliseconds);
-        RestartAssessment assessment = assessRestartDelay(restartDelay, meta.blockBreakStartVL, user.latency());
-        meta.blockBreakStartVL = assessment.balance();
+        double balance = clampBalance(meta.blockBreakStartVL, user.latency());
+        if (restartDelay >= CLOSE_ENOUGH_RESTART_DELAY_MILLIS) {
+          balance *= 0.9D;
+        } else {
+          balance += EXPECTED_RESTART_DELAY_MILLIS - restartDelay;
+        }
+        meta.blockBreakStartVL = balance;
 
-        if (shouldReportRestart(assessment, meta.blockBreakTimestamp, meta.restartFlagBreakTimestamp)) {
+        if (balance > MAX_STORED_RESTART_ADVANTAGE_MILLIS
+            && meta.restartFlagBreakTimestamp != meta.blockBreakTimestamp) {
           String message = "started breaking too quickly";
           String details = restartDelay + "ms between";
           ViolationProcessor violationProcessor = Modules.violationProcessor();
@@ -129,19 +135,6 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
     return breakProcess && targetBlockPosition != null && targetBlockPosition.equals(blockPosition);
   }
 
-  static RestartAssessment assessRestartDelay(
-      long restartDelay,
-      double currentBalance,
-      double balanceLimit) {
-    double balance = clampBalance(currentBalance, balanceLimit);
-    if (restartDelay >= CLOSE_ENOUGH_RESTART_DELAY_MILLIS) {
-      balance *= 0.9D;
-    } else {
-      balance += EXPECTED_RESTART_DELAY_MILLIS - restartDelay;
-    }
-    return new RestartAssessment(balance > MAX_STORED_RESTART_ADVANTAGE_MILLIS, balance, restartDelay);
-  }
-
   static long resolveRestartDelayMillis(
       boolean clientTicksAvailable,
       int ticksBetween,
@@ -149,40 +142,9 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
     return clientTicksAvailable ? ticksBetween * 50L : milliseconds;
   }
 
-  static boolean shouldReportRestart(
-      RestartAssessment assessment,
-      long blockBreakTimestamp,
-      long restartFlagBreakTimestamp) {
-    return assessment.shouldFlag() && restartFlagBreakTimestamp != blockBreakTimestamp;
-  }
-
   private static double clampBalance(double balance, double balanceLimit) {
     double limit = Math.max(MAX_STORED_RESTART_ADVANTAGE_MILLIS, balanceLimit);
     return MathHelper.minmax(-limit, balance, limit);
-  }
-
-  static final class RestartAssessment {
-    private final boolean shouldFlag;
-    private final double balance;
-    private final long delayMillis;
-
-    private RestartAssessment(boolean shouldFlag, double balance, long delayMillis) {
-      this.shouldFlag = shouldFlag;
-      this.balance = balance;
-      this.delayMillis = delayMillis;
-    }
-
-    boolean shouldFlag() {
-      return shouldFlag;
-    }
-
-    double balance() {
-      return balance;
-    }
-
-    long delayMillis() {
-      return delayMillis;
-    }
   }
 
   private void refreshBlocksAround(Player player, Location targetLocation) {
