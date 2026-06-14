@@ -117,6 +117,7 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
       case ABORT_DESTROY_BLOCK:
         meta.breakProcess = false;
         meta.targetBlockPosition = null;
+        meta.cancelNextStop = false;
         break;
     }
   }
@@ -188,11 +189,6 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
     Synchronizer.synchronize(() -> {
       player.updateInventory();
       refreshBlock(player, targetLocation);
-      // for (EnumDirection direction : EnumDirection.values()) {
-      // Location placedBlock =
-      // targetLocation.clone().add(direction.getDirectionVec().convertToBukkitVec());
-      // refreshBlock(player, placedBlock);
-      // }
     });
   }
 
