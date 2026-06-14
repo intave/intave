@@ -24,6 +24,7 @@ import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.packet.converter.BlockPositionConverter;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
+import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -40,12 +41,23 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
   }
 
   @PacketSubscription(priority = ListenerPriority.LOWEST, packetsIn = {
+      POSITION, POSITION_LOOK, LOOK, FLYING, VEHICLE_MOVE
+  })
+  public void tickUpdate(PacketEvent event) {
+    Player player = event.getPlayer();
+    User user = userOf(player);
+    BreakSpeedStartMeta meta = metaOf(user);
+    meta.ticks++;
+  }
+
+  @PacketSubscription(priority = ListenerPriority.LOWEST, packetsIn = {
       BLOCK_DIG
   })
   public void receiveBlockAction(PacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
     RestartCheck.BreakSpeedStartMeta meta = metaOf(user);
+    ProtocolMetadata clientData = user.meta().protocol();
 
     PacketContainer packet = event.getPacket();
     EnumWrappers.PlayerDigType digType = packet.getPlayerDigTypes().read(0);
@@ -60,12 +72,17 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
         }
 
         long milliseconds = System.currentTimeMillis() - meta.blockBreakTimestamp;
-        RestartAssessment assessment = assessRestartDelay(milliseconds, meta.blockBreakStartVL, user.latency());
+        int ticksBetween = meta.ticks - meta.blockBreakTick;
+        long restartDelay = resolveRestartDelayMillis(
+            clientData.flyingPacketsAreSent(),
+            ticksBetween,
+            milliseconds);
+        RestartAssessment assessment = assessRestartDelay(restartDelay, meta.blockBreakStartVL, user.latency());
         meta.blockBreakStartVL = assessment.balance();
 
         if (shouldReportRestart(assessment, meta.blockBreakTimestamp, meta.restartFlagBreakTimestamp)) {
           String message = "started breaking too quickly";
-          String details = milliseconds + "ms between";
+          String details = restartDelay + "ms between";
           ViolationProcessor violationProcessor = Modules.violationProcessor();
           Violation violation = Violation.builderFor(BreakSpeedLimiter.class)
               .forPlayer(player).withMessage(message).withDetails(details).withVL(5)
@@ -82,6 +99,7 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
         break;
       }
       case STOP_DESTROY_BLOCK: {
+        meta.blockBreakTick = meta.ticks;
         meta.blockBreakTimestamp = System.currentTimeMillis();
         meta.breakProcess = false;
         meta.targetBlockPosition = null;
@@ -121,6 +139,13 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
       balance += EXPECTED_RESTART_DELAY_MILLIS - restartDelay;
     }
     return new RestartAssessment(balance > MAX_STORED_RESTART_ADVANTAGE_MILLIS, balance, restartDelay);
+  }
+
+  static long resolveRestartDelayMillis(
+      boolean clientTicksAvailable,
+      int ticksBetween,
+      long milliseconds) {
+    return clientTicksAvailable ? ticksBetween * 50L : milliseconds;
   }
 
   static boolean shouldReportRestart(
@@ -188,6 +213,8 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
 
   public static final class BreakSpeedStartMeta extends CheckCustomMetadata {
     private BlockPosition targetBlockPosition;
+    private int ticks;
+    private int blockBreakTick;
     private long blockBreakTimestamp;
     private boolean breakProcess;
     private double blockBreakStartVL;
