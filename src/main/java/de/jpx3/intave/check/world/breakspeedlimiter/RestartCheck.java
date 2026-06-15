@@ -21,6 +21,7 @@ import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.module.violation.ViolationProcessor;
 import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.PacketTypes;
 import de.jpx3.intave.packet.converter.BlockPositionConverter;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
@@ -32,20 +33,29 @@ import org.bukkit.entity.Player;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
 public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, RestartCheck.BreakSpeedStartMeta> {
-  private static final long CLOSE_ENOUGH_RESTART_DELAY_MILLIS = 275L;
-  private static final long EXPECTED_RESTART_DELAY_MILLIS = 300L;
-  private static final double MAX_STORED_RESTART_ADVANTAGE_MILLIS = 1000.0D;
+  private static final double CLOSE_ENOUGH_RESTART_DELAY_TICKS = 5.5D;
+  private static final double EXPECTED_RESTART_DELAY_TICKS = 6.0D;
+  private static final double MAX_STORED_RESTART_ADVANTAGE_TICKS = 20.0D;
 
   public RestartCheck(BreakSpeedLimiter parentCheck) {
     super(parentCheck, RestartCheck.BreakSpeedStartMeta.class);
   }
 
   @PacketSubscription(priority = ListenerPriority.LOWEST, packetsIn = {
-      POSITION, POSITION_LOOK, LOOK, FLYING, VEHICLE_MOVE
+      POSITION, POSITION_LOOK, LOOK, FLYING, VEHICLE_MOVE, CLIENT_TICK_END
   })
   public void tickUpdate(PacketEvent event) {
     Player player = event.getPlayer();
     User user = userOf(player);
+    ProtocolMetadata clientData = user.meta().protocol();
+    boolean clientTickEnd = PacketTypes.isClientEndTick(event.getPacketType());
+    if (clientData.sendsClientTickEnd()) {
+      if (!clientTickEnd) {
+        return;
+      }
+    } else if (!clientData.flyingPacketsAreSent()) {
+      return;
+    }
     BreakSpeedStartMeta meta = metaOf(user);
     meta.ticks++;
   }
@@ -71,24 +81,26 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
           return;
         }
 
-        long milliseconds = System.currentTimeMillis() - meta.blockBreakTimestamp;
+        if (!clientData.flyingPacketsAreSent() && !clientData.sendsClientTickEnd()) {
+          meta.breakProcess = true;
+          meta.targetBlockPosition = blockPosition;
+          break;
+        }
+
         int ticksBetween = meta.ticks - meta.blockBreakTick;
-        long restartDelay = resolveRestartDelayMillis(
-            clientData.flyingPacketsAreSent(),
-            ticksBetween,
-            milliseconds);
-        double balance = clampBalance(meta.blockBreakStartVL, user.latency());
-        if (restartDelay >= CLOSE_ENOUGH_RESTART_DELAY_MILLIS) {
+        double restartDelay = resolveRestartDelayTicks(ticksBetween);
+        double balance = clampBalance(meta.blockBreakStartVL, user.latency() / 50D);
+        if (restartDelay >= CLOSE_ENOUGH_RESTART_DELAY_TICKS) {
           balance *= 0.9D;
         } else {
-          balance += EXPECTED_RESTART_DELAY_MILLIS - restartDelay;
+          balance += EXPECTED_RESTART_DELAY_TICKS - restartDelay;
         }
         meta.blockBreakStartVL = balance;
 
-        if (balance > MAX_STORED_RESTART_ADVANTAGE_MILLIS
-            && meta.restartFlagBreakTimestamp != meta.blockBreakTimestamp) {
+        if (balance > MAX_STORED_RESTART_ADVANTAGE_TICKS
+            && meta.restartFlagBreakSequence != meta.blockBreakSequence) {
           String message = "started breaking too quickly";
-          String details = restartDelay + "ms between";
+          String details = MathHelper.formatDouble(restartDelay, 2) + " ticks between";
           ViolationProcessor violationProcessor = Modules.violationProcessor();
           Violation violation = Violation.builderFor(BreakSpeedLimiter.class)
               .forPlayer(player).withMessage(message).withDetails(details).withVL(5)
@@ -98,7 +110,7 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
             event.setCancelled(true);
             meta.cancelNextStop = true;
           }
-          meta.restartFlagBreakTimestamp = meta.blockBreakTimestamp;
+          meta.restartFlagBreakSequence = meta.blockBreakSequence;
         }
         meta.breakProcess = true;
         meta.targetBlockPosition = blockPosition;
@@ -106,7 +118,7 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
       }
       case STOP_DESTROY_BLOCK: {
         meta.blockBreakTick = meta.ticks;
-        meta.blockBreakTimestamp = System.currentTimeMillis();
+        meta.blockBreakSequence++;
         meta.breakProcess = false;
         meta.targetBlockPosition = null;
         if (meta.cancelNextStop) {
@@ -135,15 +147,12 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
     return breakProcess && targetBlockPosition != null && targetBlockPosition.equals(blockPosition);
   }
 
-  static long resolveRestartDelayMillis(
-      boolean clientTicksAvailable,
-      int ticksBetween,
-      long milliseconds) {
-    return clientTicksAvailable ? ticksBetween * 50L : milliseconds;
+  static double resolveRestartDelayTicks(int ticksBetween) {
+    return Math.max(0, ticksBetween);
   }
 
   private static double clampBalance(double balance, double balanceLimit) {
-    double limit = Math.max(MAX_STORED_RESTART_ADVANTAGE_MILLIS, balanceLimit);
+    double limit = Math.max(MAX_STORED_RESTART_ADVANTAGE_TICKS, balanceLimit);
     return MathHelper.minmax(-limit, balance, limit);
   }
 
@@ -173,10 +182,10 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
     private BlockPosition targetBlockPosition;
     private int ticks;
     private int blockBreakTick;
-    private long blockBreakTimestamp;
+    private long blockBreakSequence;
     private boolean breakProcess;
     private double blockBreakStartVL;
-    private long restartFlagBreakTimestamp = Long.MIN_VALUE;
+    private long restartFlagBreakSequence = Long.MIN_VALUE;
     private boolean cancelNextStop;
   }
 }
