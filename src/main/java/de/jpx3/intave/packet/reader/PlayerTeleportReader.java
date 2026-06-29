@@ -171,7 +171,7 @@ public final class PlayerTeleportReader extends AbstractPacketReader {
         ).read(0);
       } else {
         positionMoveRotation = new PositionMoveRotation(
-          new Position(
+          Position.mutableOf(
             packet().getDoubles().read(0),
             packet().getDoubles().read(1),
             packet().getDoubles().read(2)

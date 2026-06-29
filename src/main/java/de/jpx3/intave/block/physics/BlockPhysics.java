@@ -1,6 +1,6 @@
 package de.jpx3.intave.block.physics;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.User;
@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public final class BlockPhysics {
-  private static final MinecraftVersion MINECRAFT_VERSION = MinecraftVersion.getCurrentVersion();
+  private static final MinecraftVersion MINECRAFT_VERSION = MinecraftVersion.current();
   private static final Map<Material, BlockPhysic> materialLookup = new HashMap<>();
 
   public static void setup() {
@@ -41,7 +41,7 @@ public final class BlockPhysics {
   }
 
   @Nullable
-  public static Motion entityCollision(
+  public static Motion entityInside(
     User user,
     Material material,
     Location location, Location from,
@@ -49,19 +49,19 @@ public final class BlockPhysics {
   ) {
     BlockPhysic collision = physicLookup(material);
     if (collision != null) {
-      return collision.entityCollidedWithBlock(user, location, from, motionX, motionY, motionZ);
+      return collision.entityInside(user, location, from, motionX, motionY, motionZ);
     }
     return null;
   }
 
   @Nullable
-  public static Motion entityCollision(
+  public static Motion stepOn(
     User user,
     Material material,
     double motionX, double motionY, double motionZ
   ) {
     BlockPhysic collision = physicLookup(material);
-    return collision != null ? collision.entityCollidedWithBlock(user, motionX, motionY, motionZ) : null;
+    return collision != null ? collision.stepOn(user, motionX, motionY, motionZ) : null;
   }
 
   @Nullable

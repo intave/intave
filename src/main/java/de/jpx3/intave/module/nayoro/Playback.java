@@ -74,7 +74,7 @@ abstract class Playback extends SinkEnvironment {
     entityIds.add(entityId);
     Position position = entityPositions.get(entityId);
     if (position == null) {
-      position = new Position();
+      position = Position.mutableEmpty();
     }
     double distance = 0.0;
     if (event.applyX()) {

@@ -1,7 +1,10 @@
 package de.jpx3.intave.share;
 
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.codec.StreamCodec;
 import io.netty.buffer.ByteBuf;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 public final class Input {
   public static final StreamCodec<ByteBuf, ByteBuf, Input> STREAM_CODEC = StreamCodec.of(
@@ -13,7 +16,7 @@ public final class Input {
       flags = (byte)(flags | (value.right() ? 8 : 0));
       flags = (byte)(flags | (value.jump() ? 16 : 0));
       flags = (byte)(flags | (value.sneaking() ? 32 : 0));
-      flags = (byte)(flags | (value.sprint() ? 64 : 0));
+      flags = (byte)(flags | (value.sprinting() ? 64 : 0));
       buf.writeByte(flags);
     },
     buf -> {
@@ -29,13 +32,13 @@ public final class Input {
     }
   );
 
-  private boolean forward;
-  private boolean backward;
-  private boolean left;
-  private boolean right;
-  private boolean jump;
-  private boolean shift;
-  private boolean sprint;
+  private final boolean forward;
+  private final boolean backward;
+  private final boolean left;
+  private final boolean right;
+  private final boolean jump;
+  private final boolean shift;
+  private final boolean sprint;
 
   public Input(
     boolean forward, boolean backward,
@@ -49,10 +52,6 @@ public final class Input {
     this.jump = jump;
     this.shift = shift;
     this.sprint = sprint;
-  }
-
-  public Input() {
-
   }
 
   public int forwardKey() {
@@ -87,36 +86,34 @@ public final class Input {
     return shift;
   }
 
-  public boolean sprint() {
+  public boolean sprinting() {
     return sprint;
   }
 
-  public void setForward(boolean forward) {
-    this.forward = forward;
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+    Input input = (Input) obj;
+    return forward == input.forward &&
+      backward == input.backward &&
+      left == input.left &&
+      right == input.right &&
+      jump == input.jump &&
+      shift == input.shift &&
+      sprint == input.sprint;
   }
 
-  public void setBackward(boolean backward) {
-    this.backward = backward;
-  }
-
-  public void setLeft(boolean left) {
-    this.left = left;
-  }
-
-  public void setRight(boolean right) {
-    this.right = right;
-  }
-
-  public void setJump(boolean jump) {
-    this.jump = jump;
-  }
-
-  public void setShift(boolean shift) {
-    this.shift = shift;
-  }
-
-  public void setSprint(boolean sprint) {
-    this.sprint = sprint;
+  @Override
+  public int hashCode() {
+    int result = Boolean.hashCode(forward);
+    result = 31 * result + Boolean.hashCode(backward);
+    result = 31 * result + Boolean.hashCode(left);
+    result = 31 * result + Boolean.hashCode(right);
+    result = 31 * result + Boolean.hashCode(jump);
+    result = 31 * result + Boolean.hashCode(shift);
+    result = 31 * result + Boolean.hashCode(sprint);
+    return result;
   }
 
   @Override
@@ -130,5 +127,27 @@ public final class Input {
       ", shift=" + shift +
       ", sprint=" + sprint +
       '}';
+  }
+
+  public static Input partialFrom(
+    SimulationEnvironment environment
+  ) {
+    return new Input(
+      false, false, false, false, false,
+     environment.isSneaking(), environment.isSprinting()
+    );
+  }
+
+  public static Input random() {
+    ThreadLocalRandom current = ThreadLocalRandom.current();
+    return new Input(
+      current.nextBoolean(), current.nextBoolean(),
+      current.nextBoolean(), current.nextBoolean(), current.nextBoolean(),
+      current.nextBoolean(), current.nextBoolean()
+    );
+  }
+
+  public static Input none() {
+    return new Input(false, false, false, false, false, false, false);
   }
 }

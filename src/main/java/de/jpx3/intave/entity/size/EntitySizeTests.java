@@ -1,15 +1,15 @@
 package de.jpx3.intave.entity.size;
 
 import de.jpx3.intave.reflect.access.ReflectiveHandleAccess;
+import de.jpx3.intave.test.IntegrationTests;
 import de.jpx3.intave.test.Severity;
 import de.jpx3.intave.test.Test;
-import de.jpx3.intave.test.Tests;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Sheep;
 
-public final class EntitySizeTests extends Tests {
+public final class EntitySizeTests extends IntegrationTests {
   public EntitySizeTests() {
     super("ES");
   }

@@ -2,7 +2,6 @@ package de.jpx3.intave.check.combat.heuristics.combatpatterns.rotation;
 
 import com.comphenix.protocol.events.PacketEvent;
 import com.google.common.collect.Lists;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
@@ -22,18 +21,17 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
 import static de.jpx3.intave.math.MathHelper.averageOf;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.LOOK;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION_LOOK;
 import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.DMG_LIGHT;
 
 public final class RotationAccuracyYawHeuristic extends ClassicHeuristic<RotationAccuracyYawHeuristic.RotationAccuracyHeuristicMeta> {
-  private final IntavePlugin plugin;
 
-  public RotationAccuracyYawHeuristic(Heuristics parentCheck) {
+	public RotationAccuracyYawHeuristic(Heuristics parentCheck) {
     super(parentCheck, HeuristicsClassicType.ROTATION_ACCURACY, RotationAccuracyHeuristicMeta.class);
-    this.plugin = IntavePlugin.singletonInstance();
-  }
+	}
 
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
@@ -52,7 +50,7 @@ public final class RotationAccuracyYawHeuristic extends ClassicHeuristic<Rotatio
     float perfectYaw = attackData.perfectYaw();
     float yawSpeed = MathHelper.distanceInDegrees(rotationYaw, movementData.lastRotationYaw);
     float distanceToPerfectYaw = MathHelper.distanceInDegrees(perfectYaw, rotationYaw);
-    if (entity == null || movementData.lastTeleport < 5 || !attackData.recentlyAttacked(1000)) {
+    if (entity == null || movementData.ticksPast(TELEPORT) < 5 || !attackData.recentlyAttacked(1000)) {
       return;
     }
 

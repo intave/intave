@@ -1,6 +1,6 @@
 package de.jpx3.intave.module.nayoro.event;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.module.nayoro.Environment;
 import de.jpx3.intave.module.nayoro.PlayerContainer;
 import de.jpx3.intave.module.nayoro.event.sink.EventSink;
@@ -13,7 +13,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public final class PlayerInitEvent extends Event {
-  private static final int CURRENT_SERVER_VERSION = ProtocolVersionConverter.protocolVersionBy(MinecraftVersion.getCurrentVersion());
+  private static final int CURRENT_SERVER_VERSION = ProtocolVersionConverter.protocolVersionBy(MinecraftVersion.current());
 
   private int id;
   private int clientVersion;

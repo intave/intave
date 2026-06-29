@@ -1,11 +1,11 @@
 package de.jpx3.intave.klass.locate;
 
 import de.jpx3.intave.IntaveLogger;
+import de.jpx3.intave.test.IntegrationTests;
 import de.jpx3.intave.test.Severity;
 import de.jpx3.intave.test.Test;
-import de.jpx3.intave.test.Tests;
 
-public final class ReferenceExistenceTests extends Tests {
+public final class ReferenceExistenceTests extends IntegrationTests {
   public ReferenceExistenceTests() {
     super("RE");
   }

@@ -11,15 +11,15 @@ import org.bukkit.entity.Player;
 
 public class UniversalRaytracer implements Raytracer {
   @Override
-  public MovingObjectPosition raytrace(World world, Player player, NativeVector eyeVector, NativeVector targetVector) {
+  public MovingObjectPosition raytrace(World world, Player player, RawVector3d eyeVector, RawVector3d targetVector) {
     if (eyeVector == null || targetVector == null) {
       return null;
     }
     if (includesInvalidCoordinate(eyeVector) || includesInvalidCoordinate(targetVector)) {
       return null;
     }
-    Position eyePosition = new Position(eyeVector.xCoord, eyeVector.yCoord, eyeVector.zCoord);
-    Position targetPosition = new Position(targetVector.xCoord, targetVector.yCoord, targetVector.zCoord);
+    Position eyePosition = new Position(eyeVector.x, eyeVector.y, eyeVector.z);
+    Position targetPosition = new Position(targetVector.x, targetVector.y, targetVector.z);
     return performRaytrace(player, eyePosition, targetPosition);
   }
 
@@ -130,8 +130,7 @@ public class UniversalRaytracer implements Raytracer {
   }
 
   public static int floor(double var0) {
-    int var2 = (int)var0;
-    return var0 < (double)var2 ? var2 - 1 : var2;
+	  return ClientMath.floor(var0);
   }
 
   private BlockRaytrace innerRaytrace(BlockShape shape, Position eyePosition, Position targetPosition) {
@@ -150,8 +149,8 @@ public class UniversalRaytracer implements Raytracer {
     return shapeAt(player, position.getBlockX(), position.getBlockY(), position.getBlockZ());
   }
 
-  private boolean includesInvalidCoordinate(NativeVector nativeVector) {
-    return Double.isNaN(nativeVector.xCoord) || Double.isNaN(nativeVector.yCoord) || Double.isNaN(nativeVector.zCoord);
+  private boolean includesInvalidCoordinate(RawVector3d rawVector3D) {
+    return Double.isNaN(rawVector3D.x) || Double.isNaN(rawVector3D.y) || Double.isNaN(rawVector3D.z);
   }
 
   private boolean includesInvalidCoordinate(Position position) {

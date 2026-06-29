@@ -2,7 +2,7 @@ package de.jpx3.intave.user;
 
 import org.bukkit.entity.Player;
 
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 public final class UserFactory {
   public static User createFallback() {
@@ -14,11 +14,11 @@ public final class UserFactory {
   }
 
   public static User createTestUserFor(Player player) {
-    return new TestUser(player, s -> null);
+    return new TestUser(player, (usr, s) -> null);
   }
 
   public static User createTestUserFor(Player player, int protocolVersion) {
-    return new TestUser(player, s -> {
+    return new TestUser(player, (usr, s) -> {
       if (s.equals("protocolVersion")) {
         return protocolVersion;
       }
@@ -26,7 +26,7 @@ public final class UserFactory {
     });
   }
 
-  public static User createTestUserFor(Player player, Function<String, Object> function) {
+  public static User createTestUserFor(Player player, BiFunction<User, String, Object> function) {
     return new TestUser(player, function);
   }
 }

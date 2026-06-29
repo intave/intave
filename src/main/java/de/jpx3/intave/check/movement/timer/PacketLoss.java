@@ -11,7 +11,6 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
@@ -63,8 +62,7 @@ public final class PacketLoss extends MetaCheckPart<Timer, PacketLoss.PacketLoss
           if (violationContext.shouldCounterThreat()) {
             MovementMetadata movementData = user.meta().movement();
             movementData.invalidMovement = true;
-            Vector setback = new Vector(movementData.baseMotionX, movementData.baseMotionY, movementData.baseMotionZ);
-            Modules.mitigate().movement().emulationSetBack(player, setback, 12, false);
+            Modules.mitigate().movement().emulationSetBack(player, movementData.mutableBaseMotionCopy(), 12, false);
 
             balanceButActuallyGood.reset(user);
           }

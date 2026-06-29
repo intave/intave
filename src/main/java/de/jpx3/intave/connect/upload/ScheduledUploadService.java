@@ -217,7 +217,7 @@ public final class ScheduledUploadService {
       connection.setRequestProperty("Content-Type", "application/zip");
       connection.setRequestProperty("Identifier", LicenseAccess.rawLicense());
       connection.setRequestProperty("Hardware", HWIDVerification.publicHardwareIdentifier());
-      connection.setRequestProperty("User-Agent", "Intave/" + IntavePlugin.version());
+      connection.setRequestProperty("User-Agent", "Intave/" + IntavePlugin.fullVersion());
       OutputStream outputStream = connection.getOutputStream();
       try (ZipOutputStream zipOut = new ZipOutputStream(outputStream)) {
         File[] files = workingFolder.listFiles();

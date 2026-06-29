@@ -92,11 +92,6 @@ final class PassthroughBlockCache implements BlockCache {
   }
 
   @Override
-  public BlockState overrideOf(int posX, int posY, int posZ) {
-    return BlockState.empty();
-  }
-
-  @Override
   public void lockOverride(int posX, int posY, int posZ) {
 
   }

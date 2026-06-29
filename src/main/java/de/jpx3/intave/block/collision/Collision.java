@@ -13,6 +13,7 @@ import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.block.shape.resolve.ShapeResolver;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Position;
@@ -50,21 +51,48 @@ public final class Collision {
     return Collectors.collectingAndThen(Collectors.counting(), predicate::test);
   }
 
-  public static BlockShape shape(Player player, BoundingBox playerBoundingBox) {
-    int collisionLimit = scaleAdjustedCollisionLimitOf(UserRepository.userOf(player));
-    return collectCollisionShapes(player, playerBoundingBox, collisionLimit, SHAPE_COMPILATION, BlockShapes::emptyShape);
+  public static BlockShape shape(
+    User user, SimulationEnvironment environment, BoundingBox box
+  ) {
+    int collisionLimit = scaleAdjustedCollisionLimitOf(user);
+    return collectCollisionShapes(
+      user, environment.unmodifiable(), box, collisionLimit,
+      SHAPE_COMPILATION, BlockShapes::emptyShape
+    );
   }
 
-  public static boolean present(Player player, BoundingBox playerBox) {
-    return collectCollisionShapes(player, playerBox, 1, EXISTS_ANY_SHAPE, () -> false);
+  @Deprecated
+  public static boolean present(Player player, BoundingBox box) {
+    return present(player, UserRepository.userOf(player).meta().movement(), box);
   }
 
+  @Deprecated
+  public static boolean present(Player player, SimulationEnvironment environment, BoundingBox box) {
+    return present(UserRepository.userOf(player), environment, box);
+  }
+
+  public static boolean present(User user, SimulationEnvironment environment, BoundingBox box) {
+    return collectCollisionShapes(user, environment.unmodifiable(), box, 1, EXISTS_ANY_SHAPE, () -> false);
+  }
+
+  @Deprecated
   public static boolean nonePresent(Player player, BoundingBox playerBox) {
-    return collectCollisionShapes(player, playerBox, 1, EXISTS_NO_SHAPE, () -> true);
+    User user = UserRepository.userOf(player);
+    return nonePresent(user, user.meta().movement(), playerBox);
+  }
+
+  @Deprecated
+  public static boolean nonePresent(Player player, SimulationEnvironment environment, BoundingBox playerBox) {
+    return nonePresent(UserRepository.userOf(player), environment, playerBox);
+  }
+
+  public static boolean nonePresent(User user, SimulationEnvironment environment, BoundingBox playerBox) {
+    return collectCollisionShapes(user, environment.unmodifiable(), playerBox, 1, EXISTS_NO_SHAPE, () -> true);
   }
 
   public static <C, R> R collectCollisionShapes(
-    Player player,
+    User user,
+    SimulationEnvironment environment,
     BoundingBox playerBox,
     int collisionLimit,
     Collector<BlockShape, C, R> primaryCollector,
@@ -81,18 +109,8 @@ public final class Collision {
     int minZ = floor(playerBox.minZ);
     int maxZ = floor(playerBox.maxZ);
     int ystart = Math.max(minY - 1, WorldHeight.LOWER_WORLD_LIMIT);
-    User user = UserRepository.userOf(player);
-    World world = player.getWorld();
-    MovementMetadata movementData = user.meta().movement();
+    World world = user.player().getWorld();
     BlockCache stateAccess = user.blockCache();
-    boolean outsideBorderLast = movementData.outsideBorder;
-    boolean outsideBorderCurrent = playerOutsideBorder(user);
-    // this works, but why?
-    if (outsideBorderLast && outsideBorderCurrent) {
-      movementData.outsideBorder = false;
-    } else if (!outsideBorderLast && !outsideBorderCurrent) {
-      movementData.outsideBorder = true;
-    }
     int collisionLimitAdjusted = scaleAdjustedCollisionLimitOf(user);
     int collisionChecksRemaining = collisionLimitAdjusted;
     int collisionsRemaining = Math.min(collisionLimit, collisionLimitAdjusted);
@@ -124,9 +142,9 @@ public final class Collision {
             }
           }
 
-          boolean blockOutsideBorder = !blockInsideBorder(world, x, z);
-          if (blockOutsideBorder && !movementData.outsideBorder) {
-            BoundingBox borderShape = BoundingBox.fromBounds(x, y, z, x + 1, y, z + 1);
+          boolean blockOutsideBorder = !blockInsideBorder(user, world, x, z);
+          if (blockOutsideBorder && !playerOutsideBorder(user, environment)) {
+            BlockShape borderShape = BlockShapes.cubeAt(x, y, z);
             if (borderShape.intersectsWith(playerBox)) {
               if (container == null) {
                 container = containerSupplier.get();
@@ -253,7 +271,8 @@ public final class Collision {
   @Deprecated
   // I suck, please remove
   public static List<BoundingBox> __INVALID__resolveBoxes__OnlyForBoxIntersectionChecks__(
-    Player player, BoundingBox playerBoundingBox) {
+    Player player, BoundingBox playerBoundingBox
+  ) {
     int minX = floor(playerBoundingBox.minX);
     int maxX = floor(playerBoundingBox.maxX + 1.0D);
     int minY = floor(playerBoundingBox.minY);
@@ -265,7 +284,7 @@ public final class Collision {
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
     boolean outsideBorderLast = movementData.outsideBorder;
-    boolean outsideBorderCurrent = playerOutsideBorder(user);
+    boolean outsideBorderCurrent = playerOutsideBorder(user, movementData);
     if (outsideBorderLast && outsideBorderCurrent) {
       movementData.outsideBorder = false;
     } else if (!outsideBorderLast && !outsideBorderCurrent) {
@@ -299,7 +318,7 @@ public final class Collision {
                     blockShape, CollisionOrigin.INTERSECTION_CHECK
                   );
                 }
-                boolean blockOutsideBorder = !blockInsideBorder(world, x, z);
+                boolean blockOutsideBorder = !blockInsideBorder(user, world, x, z);
                 if (blockOutsideBorder && !movementData.outsideBorder) {
                   if (resolvedBoundingBoxes == null) {
                     resolvedBoundingBoxes = new ArrayList<>();
@@ -309,9 +328,9 @@ public final class Collision {
                 if (blockShape != null && !blockShape.isEmpty()) {
                   if (blockShape.intersectsWith(playerBoundingBox)) {
                     if (resolvedBoundingBoxes == null) {
-                      resolvedBoundingBoxes = new ArrayList<>(blockShape.boundingBoxes());
+                      resolvedBoundingBoxes = new ArrayList<>(blockShape.elementaryBoxes());
                     } else {
-                      resolvedBoundingBoxes.addAll(blockShape.boundingBoxes());
+                      resolvedBoundingBoxes.addAll(blockShape.elementaryBoxes());
                     }
                   }
                 }
@@ -332,9 +351,9 @@ public final class Collision {
     return resolvedBoundingBoxes;
   }
 
-  public static boolean blockInsideBorder(World world, double positionX, double positionZ) {
-    Location center = WorldBorders.centerOfWorldBorderIn(world);
-    double radius = WorldBorders.sizeOfWorldBorderIn(world) / 2.0;
+  public static boolean blockInsideBorder(User user, World world, double positionX, double positionZ) {
+    Location center = WorldBorders.centerOfWorldBorderIn(user, world);
+    double radius = WorldBorders.sizeOfWorldBorderIn(user, world) / 2.0;
     double minX = center.getX() - radius - 1;
     double minZ = center.getZ() - radius - 1;
     double maxX = center.getX() + radius;
@@ -342,29 +361,19 @@ public final class Collision {
     return positionX > minX && positionX < maxX && positionZ > minZ && positionZ < maxZ;
   }
 
-  private static boolean playerOutsideBorder(User user) {
+  private static boolean playerOutsideBorder(
+    User user, SimulationEnvironment environment
+  ) {
     World world = user.player().getWorld();
-    MovementMetadata movementData = user.meta().movement();
-    double positionX = movementData.verifiedPositionX;
-    double positionZ = movementData.verifiedPositionZ;
-    Location center = WorldBorders.centerOfWorldBorderIn(world);
-    double radius = WorldBorders.sizeOfWorldBorderIn(world) / 2.0;
+    double positionX = environment.verifiedLastPositionX();
+    double positionZ = environment.verifiedLastPositionZ();
+    Location center = WorldBorders.centerOfWorldBorderIn(user, world);
+    double radius = WorldBorders.sizeOfWorldBorderIn(user, world) / 2.0;
     double minX = center.getX() - radius;
     double minZ = center.getZ() - radius;
     double maxX = center.getX() + radius;
     double maxZ = center.getZ() + radius;
-    if (movementData.outsideBorder) {
-      minX++;
-      minZ++;
-      maxX--;
-      maxZ--;
-    } else {
-      minX--;
-      minZ--;
-      maxX++;
-      maxZ++;
-    }
-    return positionX > minX && positionX < maxX && positionZ > minZ && positionZ < maxZ;
+    return positionX < minX || positionX > maxX || positionZ < minZ || positionZ > maxZ;
   }
 
   public static boolean playerInImaginaryBlock(
@@ -462,7 +471,7 @@ public final class Collision {
     );
   }
 
-  public static <I, C, R> R collectRasterizedCollisions(
+	public static <I, C, R> R collectRasterizedCollisions(
     BoundingBox boundingBox,
     Function<? super BlockPosition, ? extends I> input,
     Predicate<? super I> isFinal,

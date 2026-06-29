@@ -25,7 +25,6 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
-import org.bukkit.util.Vector;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -110,8 +109,7 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
       ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
       if (violationContext.shouldCounterThreat()) {
         movementData.invalidMovement = true;
-        Vector setback = new Vector(movementData.baseMotionX, movementData.baseMotionY, movementData.baseMotionZ);
-        Modules.mitigate().movement().emulationSetBack(player, setback, 3, 2, false);
+        Modules.mitigate().movement().emulationSetBack(player, movementData.mutableBaseMotionCopy(), 3, 2, false);
       }
       timerData.lastTimerFlag = System.currentTimeMillis();
       timerData.timerBalance -= TimeUnit.MILLISECONDS.toNanos(violationContext.shouldCounterThreat() ? 5 : 10);

@@ -5,6 +5,7 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.movement.Timer;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.diagnostic.LatencyStudy;
 import de.jpx3.intave.diagnostic.message.DebugBroadcast;
 import de.jpx3.intave.diagnostic.message.MessageCategory;
@@ -17,7 +18,6 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
-import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.entity.Player;
 
@@ -109,7 +109,7 @@ public final class PacketDelayer extends Module {
     MetadataBundle meta = user.meta();
     ConnectionMetadata connection = meta.connection();
     ProtocolMetadata protocol = meta.protocol();
-    MovementMetadata movement = meta.movement();
+    SimulationEnvironment movement = meta.movement();
 
     PacketContainer packetContainer = event.getPacket();
     PacketType packetType = event.getPacketType();

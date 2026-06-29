@@ -1,11 +1,11 @@
 package de.jpx3.intave.block.shape;
 
 import de.jpx3.intave.share.BoundingBox;
+import de.jpx3.intave.test.IntegrationTests;
 import de.jpx3.intave.test.Severity;
 import de.jpx3.intave.test.Test;
-import de.jpx3.intave.test.Tests;
 
-public final class BlockShapeTests extends Tests {
+public final class BlockShapeTests extends IntegrationTests {
   public BlockShapeTests() {
     super("BS");
   }

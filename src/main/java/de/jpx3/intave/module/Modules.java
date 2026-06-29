@@ -14,6 +14,7 @@ import de.jpx3.intave.module.mitigate.ReconDelayLimiter;
 import de.jpx3.intave.module.mitigate.SetbackSimulator;
 import de.jpx3.intave.module.nayoro.Nayoro;
 import de.jpx3.intave.module.player.StorageLoader;
+import de.jpx3.intave.module.test.PhysicsTestRecorder;
 import de.jpx3.intave.module.tracker.player.PacketLogging;
 import de.jpx3.intave.module.violation.ViolationProcessor;
 
@@ -67,6 +68,10 @@ public final class Modules {
 
   public static ActionBarDisplayer actionBar() {
     return find(ActionBarDisplayer.class);
+  }
+
+  public static PhysicsTestRecorder physicsTestRecorder() {
+    return find(PhysicsTestRecorder.class);
   }
 
   @Deprecated

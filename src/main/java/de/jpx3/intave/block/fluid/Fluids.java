@@ -20,11 +20,11 @@ import java.util.stream.Collectors;
 
 import static de.jpx3.intave.adapter.MinecraftVersions.*;
 
-public class Fluids {
+public final class Fluids {
   private static final Map<Material, Map<Integer, Fluid>> liquidData = new HashMap<>();
   private static FluidResolver resolver;
-  private static FluidFlow v8Waterflow;
-  private static FluidFlow v13Waterflow;
+  private static FluidFlow v8Waterflow = new v8Waterflow();
+  private static FluidFlow v13Waterflow = new v13Waterflow();
 
   public static void setup() {
     String className;
@@ -52,9 +52,6 @@ public class Fluids {
       throw new IntaveInternalException(exception);
     }
 
-    v8Waterflow = new v8Waterflow();
-    v13Waterflow = new v13Waterflow();
-
     for (Material value : Material.values()) {
       if (value.isBlock()) {
         boolean anyLiquid = false;
@@ -66,7 +63,7 @@ public class Fluids {
             anyLiquid |= !currentFluid.isDry();
           } catch (Exception exception) {
             BlockVariant properties = BlockVariantRegister.uncachedVariantOf(value, variantIndex);
-            String propertyString = "{"+properties.propertyNames().stream().map(s -> s + ": " + properties.propertyOf(s)).collect(Collectors.joining(", ")) +"}";
+            String propertyString = "{" + properties.propertyNames().stream().map(s -> s + ": " + properties.propertyOf(s)).collect(Collectors.joining(", ")) + "}";
             IntaveLogger.logger().error("Failed to index fluid " + value + ":" + variantIndex + " " + propertyString);
             exception.printStackTrace();
           }
@@ -76,6 +73,13 @@ public class Fluids {
         }
       }
     }
+  }
+
+  public static void overrideFluids(
+    Map<Material, Map<Integer, Fluid>> newFluids
+  ) {
+    liquidData.clear();
+    liquidData.putAll(newFluids);
   }
 
   public static FluidFlow suitableWaterflowFor(User user) {

@@ -1,9 +1,12 @@
 package de.jpx3.intave.block.shape;
 
+import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.diagnostic.MemoryTraced;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.Position;
+import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.doubles.DoubleSet;
 
 import java.lang.ref.Reference;
@@ -15,6 +18,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 final class ArrayBlockShape extends MemoryTraced implements BlockShape {
+  public static final StreamCodec<ByteBuf, ByteBuf, ArrayBlockShape> STREAM_CODEC =
+    BlockShape.STREAM_CODEC.toListCodec(ByteBufStreamCodecs.INTEGER)
+      .beforeAndAfter(ArrayBlockShape::new, arrayBlockShape -> Arrays.asList(arrayBlockShape.contents));
+
   private final BlockShape[] contents;
 
   ArrayBlockShape(BlockShape... contents) {
@@ -24,6 +31,7 @@ final class ArrayBlockShape extends MemoryTraced implements BlockShape {
   ArrayBlockShape(List<? extends BlockShape> contents) {
     this.contents = contents.toArray(new BlockShape[0]);
   }
+
 
   @Override
   public double allowedOffset(Direction.Axis axis, BoundingBox entity, double offset) {
@@ -117,14 +125,14 @@ final class ArrayBlockShape extends MemoryTraced implements BlockShape {
   private Reference<List<BoundingBox>> boundingBoxCache = NULL_REFERENCE;
 
   @Override
-  public List<BoundingBox> boundingBoxes() {
+  public List<BoundingBox> elementaryBoxes() {
     List<BoundingBox> boundingBoxes = boundingBoxCache.get();
     if (boundingBoxes == null) {
       for (BlockShape content : contents) {
         if (content.isEmpty()) {
           continue;
         }
-        List<BoundingBox> newBoxes = content.boundingBoxes();
+        List<BoundingBox> newBoxes = content.elementaryBoxes();
         if (newBoxes.isEmpty()) {
           continue;
         }
@@ -166,6 +174,23 @@ final class ArrayBlockShape extends MemoryTraced implements BlockShape {
       }
     }
     return false;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null || getClass() != obj.getClass()) {
+      return false;
+    }
+    ArrayBlockShape that = (ArrayBlockShape) obj;
+    return Arrays.equals(contents, that.contents);
+  }
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
   }
 
   @Override

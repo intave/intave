@@ -53,6 +53,10 @@ public final class PositionDeltaCodec {
   }
 
   public void setBase(Position position) {
-    this.base = position.clone();
+	  try {
+		  this.base = position.clone();
+	  } catch (CloneNotSupportedException e) {
+		  throw new RuntimeException(e);
+	  }
   }
 }

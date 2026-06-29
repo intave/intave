@@ -5,6 +5,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.Entity;
@@ -17,6 +18,7 @@ import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_8;
 
@@ -81,9 +83,9 @@ public final class AttackRequiredHeuristic extends ClassicHeuristic<AttackRequir
     User user = userOf(player);
     ProtocolMetadata clientData = user.meta().protocol();
     AttackMetadata attackData = user.meta().attack();
-    MovementMetadata movementData = user.meta().movement();
+    SimulationEnvironment movementData = user.meta().movement();
     Entity entity = attackData.lastAttackedEntity();
-    if (entity == null || !entity.clientSynchronized || movementData.lastTeleport < 5) {
+    if (entity == null || !entity.clientSynchronized || movementData.ticksPast(TELEPORT) < 5) {
       return;
     }
     // todo: test if it works on versions > 1.8

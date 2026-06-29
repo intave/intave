@@ -1,9 +1,20 @@
 package de.jpx3.intave.block.fluid;
 
-class Water implements Fluid {
+import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.codec.StreamCodec;
+import io.netty.buffer.ByteBuf;
+
+final class Water implements Fluid {
   private final float height;
   private final int level;
   private final boolean falling;
+
+  public static final StreamCodec<ByteBuf, ByteBuf, Water> STREAM_CODEC = StreamCodec.compound(
+    ByteBufStreamCodecs.FLOAT, Water::height,
+    ByteBufStreamCodecs.INTEGER, Water::level,
+    ByteBufStreamCodecs.BOOLEAN, Water::falling,
+    Water::of
+  );
 
   private Water(float height, int level, boolean falling) {
     this.height = height;
@@ -54,7 +65,7 @@ class Water implements Fluid {
       '}';
   }
 
-  public static Water ofHeight(float height, int level, boolean falling) {
+  public static Water of(float height, int level, boolean falling) {
     return new Water(height, level, falling);
   }
 }

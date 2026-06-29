@@ -17,7 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public final class BlockShapePipelineTests extends Tests {
+public final class BlockShapePipelineTests extends IntegrationTests {
   private Player player;
   private SimpleDrill drill;
   private ShapeResolverPipeline head;

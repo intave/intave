@@ -23,7 +23,7 @@ final class CorruptedFilteringPipe implements ShapeResolverPipeline {
   @Override
   public BlockShape collisionShapeOf(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
     List<BoundingBox> corrupted = resolveCorrupted(type, blockState);
-    return corrupted != null ? BlockShapes.mergeBoxes(corrupted).contextualized(posX, posY, posZ) : forward.collisionShapeOf(world, player, type, blockState, posX, posY, posZ);
+    return corrupted != null ? BlockShapes.optimizedMerge(corrupted).contextualized(posX, posY, posZ) : forward.collisionShapeOf(world, player, type, blockState, posX, posY, posZ);
   }
 
   @Override

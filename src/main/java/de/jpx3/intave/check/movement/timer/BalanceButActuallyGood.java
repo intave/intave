@@ -16,7 +16,6 @@ import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -74,8 +73,7 @@ public final class BalanceButActuallyGood extends MetaCheckPart<Timer, BalanceBu
       if (violationContext.shouldCounterThreat()) {
         MovementMetadata movementData = user.meta().movement();
         movementData.invalidMovement = true;
-        Vector setback = new Vector(movementData.baseMotionX, movementData.baseMotionY, movementData.baseMotionZ);
-        Modules.mitigate().movement().emulationSetBack(player, setback, 12, false);
+        Modules.mitigate().movement().emulationSetBack(player, movementData.mutableBaseMotionCopy(), 12, false);
       }
 
       reset(user);

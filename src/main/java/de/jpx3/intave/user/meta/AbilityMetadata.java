@@ -1,14 +1,11 @@
 package de.jpx3.intave.user.meta;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.WrappedAttribute;
-import com.comphenix.protocol.wrappers.WrappedAttributeModifier;
 import com.google.common.collect.ImmutableMap;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.module.tracker.player.AbilityTracker;
+import de.jpx3.intave.player.attribute.Attribute;
+import de.jpx3.intave.player.attribute.AttributeModifier;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 
@@ -21,23 +18,23 @@ import static de.jpx3.intave.module.tracker.player.AbilityTracker.GameMode.NOT_S
 
 public final class AbilityMetadata {
   private static final UUID SPEED_MODIFIER_SPRINTING_UUID = UUID.fromString("662A6B8D-DA3E-4C1C-8813-96EA6097278D");
-  public static final Predicate<WrappedAttributeModifier> EXCLUDE_SPRINT_MODIFIER = modifier -> modifier.getUUID() == null ?
-    !"662A6B8D-DA3E-4C1C-8813-96EA6097278D".equalsIgnoreCase(modifier.getKey().getKey()) && !"minecraft:sprinting".equalsIgnoreCase(modifier.getKey().getFullKey())
-    : !modifier.getUUID().equals(SPEED_MODIFIER_SPRINTING_UUID);
+  public static final Predicate<AttributeModifier> EXCLUDE_SPRINT_MODIFIER = modifier -> modifier.id() == null ?
+    !"662A6B8D-DA3E-4C1C-8813-96EA6097278D".equalsIgnoreCase(modifier.key().path()) && !"minecraft:sprinting".equalsIgnoreCase(modifier.key().fullKey())
+    : !modifier.id().equals(SPEED_MODIFIER_SPRINTING_UUID);
 
 
   private final Player player;
   private boolean flying;
   private boolean allowFlying;
+  public boolean disabledFlying;
 
   private AbilityTracker.GameMode gameMode = NOT_SET;
   private AbilityTracker.GameMode pendingGameMode = NOT_SET;
 
   private float flySpeed = 0.05f;
-  private float walkSpeed = 0.1f;
 
-  private final Map<String, WrappedAttribute> attributes = new ConcurrentHashMap<>();
-  private final Map<String, List<WrappedAttributeModifier>> attributeModifiers = new ConcurrentHashMap<>();
+	private final Map<String, Attribute> attributes = new ConcurrentHashMap<>();
+  private final Map<String, List<AttributeModifier>> attributeModifiers = new ConcurrentHashMap<>();
 
   public float unsynchronizedHealth;
   public float health;
@@ -56,8 +53,7 @@ public final class AbilityMetadata {
       this.foodLevel = player.getFoodLevel();
       setupDefaultGameMode(player.getGameMode());
 
-      this.walkSpeed = player.getWalkSpeed() / 2.0f;
-      this.flySpeed = player.getFlySpeed() / 2.0f;
+	    this.flySpeed = player.getFlySpeed() / 2.0f;
 
       setupAttributes();
     } else {
@@ -70,7 +66,6 @@ public final class AbilityMetadata {
   private void setupDefaultGameMode(GameMode gameMode) {
     if (gameMode == null) {
       IntaveLogger.logger().warn("Player " + player.getName() + " has no game mode set, this is quite dangerous and may lead to unexpected behaviour.");
-//      Thread.dumpStack();
     }
     int gameModeValue = gameMode == null ? -1 : gameMode.getValue();
     this.gameMode = Arrays.stream(AbilityTracker.GameMode.values())
@@ -88,6 +83,9 @@ public final class AbilityMetadata {
     if (MinecraftVersions.VER1_19.atOrAbove()) {
       setupAttribute("player.sneaking_speed", 0.3D);
     }
+    if (MinecraftVersions.VER1_20_5.atOrAbove()) {
+      setupAttribute("generic.jump_strength", 0.42f);
+    }
     if (MinecraftVersions.VER1_21.atOrAbove()) {
       setupAttribute("generic.scale", 1.0D);
     }
@@ -95,10 +93,10 @@ public final class AbilityMetadata {
 
   private void setupAttribute(String name, double baseValue) {
     name = keyTranslation(name);
-    PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.UPDATE_ATTRIBUTES);
+//    PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.UPDATE_ATTRIBUTES);
     try {
-      WrappedAttribute attribute = WrappedAttribute.newBuilder()
-        .attributeKey(name).baseValue(baseValue).packet(packet).build();
+      Attribute attribute = Attribute.newBuilder()
+        .withAttributeKey(name).withBaseValue(baseValue).build();
       attributes.put(name, reduceNumberPrecision(attribute));
       attributeModifiers.put(name, new CopyOnWriteArrayList<>());
     } catch (Exception e) {
@@ -111,31 +109,31 @@ public final class AbilityMetadata {
     return attributeValue(key, x -> true);
   }
 
-  public double attributeValue(String key, Predicate<? super WrappedAttributeModifier> filter) {
+  public double attributeValue(String key, Predicate<? super AttributeModifier> filter) {
     key = keyTranslation(key);
-    WrappedAttribute attribute = attributes.get(key);
-    List<WrappedAttributeModifier> attributeModifiers = this.attributeModifiers.get(key);
+    Attribute attribute = attributes.get(key);
+    List<AttributeModifier> attributeModifiers = this.attributeModifiers.get(key);
     if (attribute == null || attributeModifiers == null) {
       return Double.NaN;
     }
-    double x = attribute.getBaseValue();
+    double x = attribute.baseValue();
     double y = 0.0;
     // ProtocolLib code pasted,
     for(int phase = 0; phase < 3; ++phase) {
-      for (WrappedAttributeModifier modifier : attributeModifiers) {
+      for (AttributeModifier modifier : attributeModifiers) {
         if (!filter.test(modifier)) {
           continue;
         }
-        if (modifier.getOperation().getId() == phase) {
+        if (modifier.operation().getId() == phase) {
           switch (phase) {
             case 0:
-              x += modifier.getAmount();
+              x += modifier.amount();
               break;
             case 1:
-              y += x * modifier.getAmount();
+              y += x * modifier.amount();
               break;
             case 2:
-              y *= 1.0 + modifier.getAmount();
+              y *= 1.0 + modifier.amount();
               break;
           }
         }
@@ -147,13 +145,13 @@ public final class AbilityMetadata {
     return y;
   }
 
-  public List<WrappedAttributeModifier> modifiersOf(WrappedAttribute attribute) {
-    return attributeModifiers.get(keyTranslation(attribute.getAttributeKey()));
+  public List<AttributeModifier> modifiersOf(Attribute attribute) {
+    return attributeModifiers.get(keyTranslation(attribute.attributeKey()));
   }
 
-  private WrappedAttribute reduceNumberPrecision(WrappedAttribute input) {
-    double baseValue = reducePrecision(input.getBaseValue());
-    return WrappedAttribute.newBuilder(input).baseValue(baseValue).build();
+  private Attribute reduceNumberPrecision(Attribute input) {
+    double baseValue = reducePrecision(input.baseValue());
+    return Attribute.newBuilder(input).withBaseValue(baseValue).build();
   }
 
   private static final double REDUCE_APPLIER = 1000d;
@@ -162,13 +160,12 @@ public final class AbilityMetadata {
     return Math.round(input * REDUCE_APPLIER) / REDUCE_APPLIER;
   }
 
-  public WrappedAttribute findAttribute(String key) {
-    key = keyTranslation(key);
-    return attributes.get(key);
-  }
-
-  public List<? extends String> attributeKeys() {
-    return new ArrayList<>(attributes.keySet());
+  public Attribute findAttribute(String key) {
+    Attribute attribute = attributes.get(keyTranslation(key));
+    if (attribute == null) {
+      attribute = attributes.get(keyTranslation("generic." + key));
+    }
+    return attribute;
   }
 
   private static final boolean KEY_WRAPPED;
@@ -186,7 +183,9 @@ public final class AbilityMetadata {
       remap.put("generic.attackSpeed", "attack_speed");
       remap.put("generic.armorToughness", "armor_toughness");
       remap.put("generic.attackKnockback", "attack_knockback");
+      remap.put("generic.jump_strength", "jump_strength");
       remap.put("horse.jumpStrength", "jump_strength");
+      remap.put("horse.jump_strength", "jump_strength");
       remap.put("zombie.spawnReinforcements", "spawn_reinforcements");
       remap.put("generic.scale", "scale");
       remap.put("player.sneaking_speed", "sneaking_speed");
@@ -211,10 +210,10 @@ public final class AbilityMetadata {
 
   public void modifyBaseValue(String key, double baseValue) {
     key = keyTranslation(key);
-    WrappedAttribute attribute = findAttribute(key);
+    Attribute attribute = findAttribute(key);
     if (attribute != null) {
-      attributes.put(key, WrappedAttribute.newBuilder(attribute).baseValue(baseValue).build());
-      List<WrappedAttributeModifier> modifiers = modifiersOf(attribute);
+      attributes.put(key, Attribute.newBuilder(attribute).withBaseValue(baseValue).build());
+      List<AttributeModifier> modifiers = modifiersOf(attribute);
       attributeModifiers.remove(key);
       attributeModifiers.put(key, new ArrayList<>(modifiers));
     }
@@ -271,6 +270,15 @@ public final class AbilityMetadata {
       setFlying(true);
     }
     this.gameMode = gameMode;
+  }
+
+  public void tickComplete() {
+    ticksToLastHealthUpdate++;
+
+    if (disabledFlying || !allowFlying()) {
+      setFlying(false);
+      disabledFlying = false;
+    }
   }
 
   public void setPendingGameMode(AbilityTracker.GameMode pendingGameMode) {

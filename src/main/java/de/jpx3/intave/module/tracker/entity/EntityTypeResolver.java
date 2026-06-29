@@ -7,6 +7,7 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
+import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.entity.size.HitboxSize;
@@ -45,7 +46,7 @@ public final class EntityTypeResolver {
   }
 
   private void registerDataWatcherEntityFieldName() {
-    com.comphenix.protocol.utility.MinecraftVersion serverVersion = ProtocolLibraryAdapter.serverVersion();
+    MinecraftVersion serverVersion = ProtocolLibraryAdapter.serverVersion();
     if (serverVersion.isAtLeast(MinecraftVersions.VER1_14_0)) {
       dataWatcherEntityFieldName = "entity";
     } else if (serverVersion.isAtLeast(MinecraftVersions.VER1_10_0)) {

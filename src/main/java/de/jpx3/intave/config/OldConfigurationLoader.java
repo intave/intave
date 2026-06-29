@@ -166,7 +166,7 @@ public final class OldConfigurationLoader {
       } else {
         URL url = new URL("https://" + IntaveDomains.primaryServiceDomain() + "/settings/download");
         URLConnection urlConnection = url.openConnection();
-        urlConnection.addRequestProperty("User-Agent", "Intave/" + IntavePlugin.version());
+        urlConnection.addRequestProperty("User-Agent", "Intave/" + IntavePlugin.fullVersion());
         urlConnection.addRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate");
         urlConnection.setUseCaches(false);
         urlConnection.addRequestProperty("Pragma", "no-cache");

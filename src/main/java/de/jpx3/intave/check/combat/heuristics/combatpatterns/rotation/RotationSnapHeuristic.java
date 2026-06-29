@@ -24,6 +24,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
 public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHeuristic.RotationSnapHeuristicMeta> {
@@ -99,7 +100,7 @@ public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHe
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();
 
-    if (movementData.lastTeleport == 0) {
+    if (movementData.ticksPast(TELEPORT) == 0) {
       return;
     }
     RotationSnapHeuristicMeta meta = metaOf(user);
@@ -141,11 +142,11 @@ public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHe
     }
 
     boolean isSuspicious = (meta.yawMotions[1] == 0 && meta.yawMotions[0] > 25 && yawMotion < 9);
-    boolean liteFlag = isSuspicious && meta.silentMovements[1] == KeyStates.SILENTMOVE && meta.rotationPacketCounter > 10 && movementData.lastTeleport > 7;
+    boolean liteFlag = isSuspicious && meta.silentMovements[1] == KeyStates.SILENTMOVE && meta.rotationPacketCounter > 10 && movementData.ticksPast(TELEPORT) > 7;
 
     isSuspicious = meta.yawMotions[1] < 9 && meta.yawMotions[0] > 40 && yawMotion < 9;
 
-    if (isSuspicious && (wasRecent(meta.lastSwing) || wasRecent(meta.lastAttack)) && meta.rotationPacketCounter > 10 && movementData.lastTeleport > 7) {
+    if (isSuspicious && (wasRecent(meta.lastSwing) || wasRecent(meta.lastAttack)) && meta.rotationPacketCounter > 10 && movementData.ticksPast(TELEPORT) > 7) {
       double valueOfSnap = meta.yawMotions[0];
       String description = "rotation snap ["
         + MathHelper.formatDouble(meta.yawMotions[1], 2)

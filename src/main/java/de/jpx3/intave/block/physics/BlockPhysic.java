@@ -1,6 +1,6 @@
 package de.jpx3.intave.block.physics;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.User;
@@ -13,8 +13,7 @@ public interface BlockPhysic {
   void setupFor(MinecraftVersion serverVersion);
 
   // Called from #doBlockCollisions
-  @Nullable
-  default Motion entityCollidedWithBlock(
+  default @Nullable Motion entityInside(
     User user,
     Location location, Location from,
     double motionX, double motionY, double motionZ
@@ -22,13 +21,11 @@ public interface BlockPhysic {
     return null;
   }
 
-  @Nullable
-  default Motion entityCollidedWithBlock(User user, double motionX, double motionY, double motionZ) {
+  default @Nullable Motion stepOn(User user, double motionX, double motionY, double motionZ) {
     return null;
   }
 
-  @Nullable
-  default Motion landed(User user, double motionX, double motionY, double motionZ) {
+  default @Nullable Motion landed(User user, double motionX, double motionY, double motionZ) {
     return null;
   }
 

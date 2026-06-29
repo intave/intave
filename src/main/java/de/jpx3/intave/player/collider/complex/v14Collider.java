@@ -2,11 +2,10 @@ package de.jpx3.intave.player.collider.complex;
 
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.shape.BlockShape;
-import de.jpx3.intave.check.movement.physics.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.User;
-import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.share.Direction.Axis.*;
 
@@ -50,6 +49,7 @@ public final class v14Collider implements Collider {
 
     return new ColliderResult(
       Motion.copyFrom(motion),
+      null,
       onGround,
       collidedHorizontally,
       collidedVertically,
@@ -61,13 +61,12 @@ public final class v14Collider implements Collider {
   }
 
   private boolean calculateBackOffFromEdge(User user, SimulationEnvironment environment, double length, Motion context) {
-    Player player = user.player();
     BoundingBox boundingBox = environment.boundingBox();
     double motionX = context.motionX;
     double motionZ = context.motionZ;
     boolean edgeSneak = false;
     while (motionX != 0.0D
-      && Collision.nonePresent(player, boundingBox.offset(motionX, -length, 0.0D))) {
+      && Collision.nonePresent(user, environment, boundingBox.offset(motionX, -length, 0.0D))) {
       if (motionX < 0.05D && motionX >= -0.05D) {
         motionX = 0.0D;
       } else if (motionX > 0.0D) {
@@ -78,7 +77,7 @@ public final class v14Collider implements Collider {
       edgeSneak = true;
     }
     while (motionZ != 0.0D
-      && Collision.nonePresent(player, boundingBox.offset(0.0D, -length, motionZ))) {
+      && Collision.nonePresent(user, environment, boundingBox.offset(0.0D, -length, motionZ))) {
       if (motionZ < 0.05D && motionZ >= -0.05D) {
         motionZ = 0.0D;
       } else if (motionZ > 0.0D) {
@@ -90,7 +89,7 @@ public final class v14Collider implements Collider {
     }
     while (motionX != 0.0D
       && motionZ != 0.0D
-      && Collision.nonePresent(player, boundingBox.offset(motionX, -length, motionZ))) {
+      && Collision.nonePresent(user, environment, boundingBox.offset(motionX, -length, motionZ))) {
       if (motionX < 0.05D && motionX >= -0.05D) {
         motionX = 0.0D;
       } else if (motionX > 0.0D) {
@@ -114,7 +113,7 @@ public final class v14Collider implements Collider {
 
   private Motion motionAfterCollision(User user, SimulationEnvironment environment, Motion motion, boolean[] stepped) {
     BoundingBox aabb = environment.boundingBox();
-    BlockShape collisionShape = Collision.shape(user.player(), aabb.expand(motion));
+    BlockShape collisionShape = Collision.shape(user, environment, aabb.expand(motion));
     Motion firstCollision = motion.length() == 0.0D ? motion : collideSingleBox(motion, aabb, collisionShape);
     boolean xChange = motion.motionX != firstCollision.motionX;
     boolean yChange = motion.motionY != firstCollision.motionY;

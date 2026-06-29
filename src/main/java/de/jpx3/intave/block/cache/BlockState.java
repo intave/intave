@@ -20,7 +20,7 @@ import java.util.Objects;
  * @see Material
  * @see BlockVariantRegister
  */
-final class BlockState extends MemoryTraced {
+public final class BlockState extends MemoryTraced {
   private static final BlockState EMPTY = new BlockState(BlockShapes.emptyShape(), BlockShapes.emptyShape(), Material.AIR, 0);
   private final BlockShape outlineShape;
   private final BlockShape collisionShape;
@@ -101,7 +101,7 @@ final class BlockState extends MemoryTraced {
       int result = collisionShape != null ? collisionShape.hashCode() : 0;
       result = 31 * result + (type != null ? type.hashCode() : 0);
       result = 31 * result + variantIndex;
-      result = 31 * result + (int) (creation ^ (creation >>> 32));
+      result = 31 * result + Long.hashCode(creation);
       hashCode = result;
     }
     return hashCode;

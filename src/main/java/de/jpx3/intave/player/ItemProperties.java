@@ -1,15 +1,15 @@
 package de.jpx3.intave.player;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.annotate.Nullable;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.module.tracker.player.AbilityTracker;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.AbilityMetadata;
-import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -172,9 +172,9 @@ public final class ItemProperties {
   private static boolean tridentUsable(User user, ItemStack itemStack) {
     Player player = user.player();
     World world = player.getWorld();
-    MovementMetadata movementData = user.meta().movement();
+    SimulationEnvironment movementData = user.meta().movement();
     if (tridentRiptideEnchanted(itemStack)) {
-      return movementData.inWater || (world.isThundering() || world.hasStorm());
+      return movementData.inWater() || (world.isThundering() || world.hasStorm());
     }
     return true;
   }

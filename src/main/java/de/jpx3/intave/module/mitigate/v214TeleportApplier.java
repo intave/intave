@@ -42,9 +42,9 @@ class v214TeleportApplier implements TeleportApplier {
       }
       Object playerConnection = user.playerConnection();
       PositionMoveRotation posMoveRot = new PositionMoveRotation(
-        new Position(posX, posY, posZ),
-        new Motion(),
-        new Rotation(yaw, pitch)
+        Position.mutableOf(posX, posY, posZ),
+        Motion.newEmpty(),
+        Rotation.of(yaw, pitch)
       );
       Object posMoveRotNative = PosMoveRotConverter.INSTANCE.getGeneric(posMoveRot);
       internalTeleportMethod.invoke(playerConnection, posMoveRotNative, relatives);

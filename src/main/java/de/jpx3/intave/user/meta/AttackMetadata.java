@@ -179,4 +179,8 @@ public final class AttackMetadata {
   public void setFakePlayer(FakePlayer fakePlayer) {
     this.fakePlayer = fakePlayer;
   }
+
+  public void tickComplete() {
+    attackPastTicks++;
+  }
 }

@@ -1,11 +1,15 @@
 package de.jpx3.intave.check.movement.physics;
 
+import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.codec.StreamCodec;
+import io.netty.buffer.ByteBuf;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class MovementConfiguration {
+public final class MovementConfiguration {
   private static final List<State> states;
 
   private static final QuadState forward = new QuadState();
@@ -37,6 +41,10 @@ public class MovementConfiguration {
     Arrays.setAll(UNIVERSE, MovementConfiguration::new);
   }
 
+  public static StreamCodec<ByteBuf, ByteBuf, MovementConfiguration> STREAM_CODEC = ByteBufStreamCodecs.INTEGER.beforeAndAfter(
+	  MovementConfiguration::fromIndex, MovementConfiguration::index
+  );
+
   private final int index;
 
   private MovementConfiguration(int index) {
@@ -46,7 +54,7 @@ public class MovementConfiguration {
   public static MovementConfiguration select(
     int forward, int strafe, int reduceTicks, boolean sprint, boolean jumped, boolean handActive, boolean reduceBefore
   ) {
-    MovementConfiguration configuration = noAction();
+    MovementConfiguration configuration = blank();
     configuration = configuration.withForward(forward);
     configuration = configuration.withStrafe(strafe);
     configuration = configuration.withReduceTicks(reduceTicks);
@@ -102,6 +110,14 @@ public class MovementConfiguration {
     }
   }
 
+  public MovementConfiguration pressingW() {
+    return withForward(1);
+  }
+
+  public MovementConfiguration pressingS() {
+    return withForward(-1);
+  }
+
   public MovementConfiguration withStrafe(int strafe) {
     if (strafe < -1 || strafe > 1) {
       throw new IllegalArgumentException("strafe can only be -1, 0, 1");
@@ -116,6 +132,14 @@ public class MovementConfiguration {
       default:
         throw new IllegalStateException("Unexpected value: " + strafe);
     }
+  }
+
+  public MovementConfiguration pressingA() {
+    return withStrafe(-1);
+  }
+
+  public MovementConfiguration pressingD() {
+    return withStrafe(1);
   }
 
   public MovementConfiguration withoutKeypress() {
@@ -201,11 +225,7 @@ public class MovementConfiguration {
     return UNIVERSE[reduceBefore.set(index, hasReduceBefore)];
   }
 
-  private static MovementConfiguration keyLookup(int index) {
-    return UNIVERSE[index];
-  }
-
-  public static MovementConfiguration noAction() {
+  public static MovementConfiguration blank() {
     return UNIVERSE[0];
   }
 
@@ -221,6 +241,17 @@ public class MovementConfiguration {
 
   public MovementConfiguration withoutJump() {
     return withJumped(false);
+  }
+
+  private int index() {
+    return index;
+  }
+
+  private static MovementConfiguration fromIndex(int index) {
+    if (index < 0 || index >= UNIVERSE.length) {
+      throw new IllegalArgumentException("Invalid movement configuration index: " + index);
+    }
+    return UNIVERSE[index];
   }
 
   private static class BiState extends State {
@@ -282,12 +313,30 @@ public class MovementConfiguration {
     abstract int bitMask();
   }
 
+  private String keysToString() {
+    StringBuilder builder = new StringBuilder();
+    int forward = forward();
+    int strafe = strafe();
+    if (forward == 1) {
+      builder.append("W");
+    } else if (forward == -1) {
+      builder.append("S");
+    }
+    if (strafe == 1) {
+      builder.append("D");
+    } else if (strafe == -1) {
+      builder.append("A");
+    }
+    return builder.toString();
+  }
+
   @Override
   public String toString() {
-    return "(" + forward() + ", " + strafe() + ") " +
-      (isReducing() ? "R" + reduceTicks() : "") +
-      (isSprinting() ? "S" : "") +
-      (isJumping() ? "J" : "") +
-      (isHandActive() ? "H" : "");
+    return ("(" + keysToString() + ") " +
+      (isReducing() ? "_RED" + reduceTicks() : "") +
+      (isSprinting() ? "_SPR" : "") +
+      (isJumping() ? "_JMP" : "") +
+      (isHandActive() ? "_HA" : "")
+    ).trim();
   }
 }

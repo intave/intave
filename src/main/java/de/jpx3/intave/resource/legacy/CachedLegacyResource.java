@@ -189,7 +189,7 @@ public final class CachedLegacyResource implements LegacyResource {
     try {
       URL remoteFileAddress = new URL(uri);
       URLConnection connection = remoteFileAddress.openConnection();
-      connection.addRequestProperty("User-Agent", "Intave/" + IntavePlugin.version());
+      connection.addRequestProperty("User-Agent", "Intave/" + IntavePlugin.fullVersion());
       connection.addRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate");
       connection.addRequestProperty("Pragma", "no-cache");
       connection.setConnectTimeout(2000);
@@ -259,6 +259,6 @@ public final class CachedLegacyResource implements LegacyResource {
   }
 
   private String intaveVersion() {
-    return IntavePlugin.version();
+    return IntavePlugin.fullVersion();
   }
 }

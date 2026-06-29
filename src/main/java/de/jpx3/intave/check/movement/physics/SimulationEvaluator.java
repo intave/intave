@@ -1,7 +1,7 @@
 package de.jpx3.intave.check.movement.physics;
 
 import de.jpx3.intave.block.collision.Collision;
-import de.jpx3.intave.check.movement.physics.eval.EvaluationTag;
+import de.jpx3.intave.check.movement.physics.evaluation.EvaluationTag;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.tracker.entity.Entity;
@@ -15,6 +15,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Set;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.*;
 import static java.lang.Math.abs;
 
 public final class SimulationEvaluator {
@@ -33,7 +34,7 @@ public final class SimulationEvaluator {
     MovementMetadata movement = meta.movement();
     double distanceMoved = MathHelper.resolveHorizontalDistance(
       movement.positionX, movement.positionZ,
-      movement.verifiedPositionX, movement.verifiedPositionZ
+      movement.verifiedLastPositionX, movement.verifiedLastPositionZ
     );
     Pose pose = movement.pose();
     double receivedMotionX = movement.motionX();
@@ -45,7 +46,7 @@ public final class SimulationEvaluator {
 
     if (accountedSkippedMovement) {
       if (abs(movement.motionX()) < 0.05 && abs(movement.motionZ()) < 0.05 && movement.motionY() < 0 && movement.motionY() > -0.4) {
-        boolean pastCollision = movement.pastNearbyCollisionInaccuracy == 0 && !movement.inWeb;
+        boolean pastCollision = movement.ticksPast(NEARBY_COLLISION_INACCURACY) == 0 && !movement.inWeb;
         verticalLegitimateDeviation = pastCollision ? 0.15 : (0.08);
         tags.add(EvaluationTag.FLYING);
         if (pastCollision) {
@@ -65,22 +66,22 @@ public final class SimulationEvaluator {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.001);
     }
 
-    if ((movement.pastPushedByWaterFlow < 10 || movement.inLava()) && distanceMoved < 0.2) {
+    if ((movement.ticksPast(WATERFLOW_PUSH) < 10 || movement.inLava()) && distanceMoved < 0.2) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.02);
       tags.add(EvaluationTag.WATERFLOW);
     }
 
     // Riptide
-    if (movement.pastRiptideSpin < 4) {
+    if (movement.ticksPast(RIPTIDE_SPIN) < 4) {
       verticalLegitimateDeviation = resolveRiptideDeviation(movement);
       tags.add(EvaluationTag.RIPTIDE);
     }
 
     // Firework
-    if (movement.fireworkRocketsTicks < 10 * movement.fireworkRocketsPower) {
+    if (movement.ticksPast(FIREWORK_ROCKETS) < 10 * movement.fireworkRocketsPower) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 1);
       tags.add(EvaluationTag.FIREWORK);
-    } else if (movement.fireworkRocketsTicks < 30 * movement.fireworkRocketsPower) {
+    } else if (movement.ticksPast(FIREWORK_ROCKETS) < 30 * movement.fireworkRocketsPower) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.75);
       tags.add(EvaluationTag.FIREWORK);
     }
@@ -129,8 +130,8 @@ public final class SimulationEvaluator {
       }
     }
 
-    if (movement.receivedFlyingPacketIn(3) && differenceY > 0.001 && protocol.combatUpdate() && movement.pastBlockPlacement > 10) {
-      boolean inLiquid = movement.pastWaterMovement <= 10 || movement.inLava();
+    if (movement.receivedFlyingPacketIn(3) && differenceY > 0.001 && protocol.combatUpdate() && movement.ticksPast(BLOCK_PLACEMENT) > 10) {
+      boolean inLiquid = movement.ticksPast(IN_WATER) <= 10 || movement.inLava();
       int allowedPackets = Hypot.fast(movement.motionX(), movement.motionZ()) < 0.03 ? 3 : 1;
       if (inLiquid || movement.physicsPacketRelinkFlyVL++ <= allowedPackets) {
         verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, inLiquid ? 0.1 : 0.03);
@@ -138,9 +139,9 @@ public final class SimulationEvaluator {
       }
     }
 
-    if (movement.pastBlockPlacement < 10 && movement.receivedFlyingPacketIn(3)) {
+    if (movement.ticksPast(BLOCK_PLACEMENT) < 10 && movement.receivedFlyingPacketIn(3)) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.03);
-//      player.sendMessage(movement.receivedFlyingPacketIn(3) + " " + differenceY + " " + movement.pastBlockPlacement);
+//      player.sendMessage(movement.receivedFlyingPacketIn(3) + " " + differenceY + " " + movement.past(BLOCK_PLACEMENT));
       tags.add(EvaluationTag.FLYING);
     }
 
@@ -166,25 +167,25 @@ public final class SimulationEvaluator {
     }
 
     boolean criticalWeb = receivedMotionY > -0.01
-        && movement.pastInWeb < 10
+        && movement.ticksPast(IN_WEB) < 10
         && !movement.inWater
         && !movement.inLava()
         && movement.positionY % 1 > 0.1
-        && movement.pastExternalVelocity != 0;
+        && movement.ticksPast(EXTERNAL_VELOCITY) != 0;
 
-    boolean movingUpwardsInWeb = movement.webTicks > 2 && movement.motionY() >= 0 && !movement.onGround && movement.pastExternalVelocity > 3;
+    boolean movingUpwardsInWeb = movement.ticks(IN_WEB) > 2 && movement.motionY() >= 0 && !movement.onGround && movement.ticksPast(EXTERNAL_VELOCITY) > 3;
 
     if (movement.inWeb) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, movingUpwardsInWeb ? 0.00001 :/*criticalWeb ? 0.000001 : */0.13);
       tags.add(EvaluationTag.WEB);
     }
 
-    if (movement.pastInWeb < 10 && !movement.inWeb && differenceY < 0.1) {
+    if (movement.ticksPast(IN_WEB) < 10 && !movement.inWeb && differenceY < 0.1) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.1);
       tags.add(EvaluationTag.WEB);
     }
 
-    if (movement.receivedFlyingPacketIn(1) && movement.pastExternalVelocity <= 4) {
+    if (movement.receivedFlyingPacketIn(1) && movement.ticksPast(EXTERNAL_VELOCITY) <= 4) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.03);
       tags.add(EvaluationTag.FLYING);
       tags.add(EvaluationTag.VELOCITY_FLYING_INACCURACY);
@@ -195,19 +196,19 @@ public final class SimulationEvaluator {
         Math.abs(movement.motionX()) < 0.1 &&
         Math.abs(movement.motionZ()) < 0.1 &&
         Math.abs(predictedY) < 0.1 &&
-        movement.pastExternalVelocity > 8
+        movement.ticksPast(EXTERNAL_VELOCITY) > 8
       ) {
         verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.1);
         tags.add(EvaluationTag.FLYING);
       }
     }
 
-    if (movement.inWater && movement.waterTicks == 1) {
+    if (movement.inWater && movement.ticks(IN_WATER) < 2) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.05);
       tags.add(EvaluationTag.WATERFLOW);
     }
 
-    if (movement.attachVehicleTicks <= 1 && movement.isInVehicle()) {
+    if (movement.ticksPast(VEHICLE_ATTACHMENT) <= 1 && movement.isInVehicle()) {
       Entity vehicle = movement.vehicle();
       BoundingBox grownBoatBox = vehicle.boundingBox().grow(0.5);
       BoundingBox nextPlayerBox = BoundingBox.fromPosition(
@@ -224,22 +225,22 @@ public final class SimulationEvaluator {
       }
     }
 
-    if (movement.detachVehicleTicks <= 2 && Math.abs(movement.motionY()) < 0.1) {
+    if (movement.ticksPast(VEHICLE_DETACHMENT) <= 2 && Math.abs(movement.motionY()) < 0.1) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.3);
     }
 
     // Jump out of water
-    if (movement.pastWaterMovement <= 3 || movement.pastLavaMovement <= 3) {
+    if (movement.ticksPast(IN_WATER) <= 3 || movement.ticksPast(IN_LAVA) <= 3) {
       double liquidMotionY;
       if (protocol.waterUpdate()) {
-        liquidMotionY = receivedMotionY + 0.6f - movement.positionY + movement.verifiedPositionY;
+        liquidMotionY = receivedMotionY + 0.6f - movement.positionY + movement.verifiedLastPositionY;
       } else {
         liquidMotionY = receivedMotionY + 0.3f;
       }
       boolean offsetPositionInLiquid = MovementCharacteristics.isOffsetPositionInLiquid(
-        player, movement.boundingBox(), receivedMotionX, liquidMotionY, receivedMotionZ
+        user, movement.boundingBox(), receivedMotionX, liquidMotionY, receivedMotionZ
       );
-      boolean maybeCollidedHorizontally = Collision.nearSolidBlock(user, movement.boundingBox().grow(0.2));
+      boolean maybeCollidedHorizontally = Collision.nearSolidBlock(user, movement.boundingBox().grow(0.2, 0.5, 0.2));
       boolean targetMotion = Math.abs(receivedMotionY - 0.3) < 0.001 || Math.abs(receivedMotionY - 0.34) < 0.001 || Math.abs(receivedMotionY - 0.2470) < 0.001;
       if (maybeCollidedHorizontally && offsetPositionInLiquid && targetMotion) {
         verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.7f);
@@ -248,7 +249,7 @@ public final class SimulationEvaluator {
     }
 
     // Sometimes shit happens
-    if (movement.ticksSneaking <= 1 && !movement.inWater && !movement.inWeb && (movement.onGround() || movement.lastOnGround()) && movement.motionY() <= 0 && movement.motionY() >= -0.5 && movement.lastSneaking) {
+    if (movement.ticks(SNEAKING) <= 1 && !movement.inWater && !movement.inWeb && (movement.onGround() || movement.lastOnGround()) && movement.motionY() <= 0 && movement.motionY() >= -0.5 && movement.lastSneaking) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.08f);
       tags.add(EvaluationTag.SNEAKING);
     }
@@ -268,7 +269,7 @@ public final class SimulationEvaluator {
 
     // rethink me
     if (pose == Pose.FALL_FLYING) {
-      if (!movement.inWater && movement.pastWaterMovement <= 2 && abs(receivedMotionY) < 0.1) {
+      if (!movement.inWater && movement.ticksPast(IN_WATER) <= 2 && abs(receivedMotionY) < 0.1) {
         multiplier *= 0.01;
       } else if (movement.motionY() >= 0 && movement.onGround) {
         multiplier *= 0.1;
@@ -276,7 +277,7 @@ public final class SimulationEvaluator {
         multiplier *= 0.25;
       }
       tags.add(EvaluationTag.ELYTRA);
-    } else if (movement.pastElytraFlying < 4 && movement.motionY() < movement.jumpMotion()) {
+    } else if (movement.ticksPast(ELYTRA_FLYING) < 4 && movement.motionY() < movement.jumpMotion()) {
       multiplier *= 0.1;
       tags.add(EvaluationTag.ELYTRA);
     }
@@ -285,7 +286,7 @@ public final class SimulationEvaluator {
 //      multiplier *= 40;
     }
 
-    boolean justInPowderSnow = movement.pastInPowderSnow < 5;
+    boolean justInPowderSnow = movement.ticksPast(IN_POWDER_SNOW) < 5;
     double maxLadderVel = justInPowderSnow ? LADDER_UPWARDS_MOTION * 1.5 : LADDER_UPWARDS_MOTION;
     if ((onLadder || justInPowderSnow) && movement.motionY() <= maxLadderVel && movement.motionY() >= -0.05) {
       abuseVertically = 0;
@@ -293,7 +294,7 @@ public final class SimulationEvaluator {
     }
 
     // Long teleport
-    if (movement.pastLongTeleport <= 10 && movement.motionY() < -0.097 && movement.motionY() > -0.099) {
+    if (movement.ticksPast(LONG_TELEPORT) <= 10 && movement.motionY() < -0.097 && movement.motionY() > -0.099) {
       double horizontalDistance = Hypot.fast(receivedMotionX, receivedMotionZ);
       if (horizontalDistance < 0.2) {
         abuseVertically = 0;
@@ -320,7 +321,7 @@ public final class SimulationEvaluator {
     double motionZ = movement.motionZ();
     double distanceMoved = MathHelper.resolveHorizontalDistance(
       movement.positionX, movement.positionZ,
-      movement.verifiedPositionX, movement.verifiedPositionZ
+      movement.verifiedLastPositionX, movement.verifiedLastPositionZ
     );
     double predictedDistanceMoved = Hypot.fast(predictedX, predictedZ);
 
@@ -331,9 +332,9 @@ public final class SimulationEvaluator {
     }
 
     double distance = MathHelper.resolveHorizontalDistance(predictedX, predictedZ, motionX, motionZ);
-    boolean pushedByWaterFlow = movement.pastPushedByWaterFlow <= 20;
+    boolean pushedByWaterFlow = movement.ticksPast(WATERFLOW_PUSH) <= 20;
     double horizontalLegitimateDeviation;
-    if (movement.pastPlayerReduceAttackPhysics <= 1) {
+    if (movement.ticksPast(ATTACK_REDUCE) <= 1) {
 //      horizontalLegitimateDeviation = 0.005;
       if (movement.receivedFlyingPacketIn(4)) {
         horizontalLegitimateDeviation = 0.03;
@@ -389,7 +390,7 @@ public final class SimulationEvaluator {
     }
 
     // Firework
-    if (movement.fireworkRocketsTicks < 30 * movement.fireworkRocketsPower) {
+    if (movement.ticksPast(FIREWORK_ROCKETS) < 30 * movement.fireworkRocketsPower) {
       // srsly who cares
       horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, 3);
       tags.add(EvaluationTag.FIREWORK);
@@ -407,7 +408,7 @@ public final class SimulationEvaluator {
         horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, flyingLimit);
         tags.add(EvaluationTag.FLYING);
       }
-      if (movement.pastNearbyCollisionInaccuracy == 0) {
+      if (movement.ticksPast(NEARBY_COLLISION_INACCURACY) == 0) {
         horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, flyingLimit);
         tags.add(EvaluationTag.FLYING);
         tags.add(EvaluationTag.COLLISION_INACCURACY);
@@ -415,13 +416,13 @@ public final class SimulationEvaluator {
     }
 
     // Riptide
-    if (movement.pastRiptideSpin < 4) {
+    if (movement.ticksPast(RIPTIDE_SPIN) < 4) {
       horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, resolveRiptideDeviation(movement));
-//      player.sendMessage(Collision.present(player, BoundingBox.fromPosition(user, movement, movement.positionX, movement.positionY, movement.positionZ).grow(0.1)) + " " + movement.pastRiptideSpin);
+//      player.sendMessage(Collision.present(player, BoundingBox.fromPosition(user, movement, movement.positionX, movement.positionY, movement.positionZ).grow(0.1)) + " " + movement.past(RIPTIDE_SPIN));
       tags.add(EvaluationTag.RIPTIDE);
     }
 
-    if (movement.attachVehicleTicks <= 1 && movement.isInVehicle()) {
+    if (movement.ticksPast(VEHICLE_ATTACHMENT) <= 1 && movement.isInVehicle()) {
       Entity vehicle = movement.vehicle();
       BoundingBox grownBoatBox = vehicle.boundingBox().grow(0.5);
       BoundingBox nextPlayerBox = BoundingBox.fromPosition(
@@ -443,12 +444,12 @@ public final class SimulationEvaluator {
 
     boolean recentlySentFlying = movement.receivedFlyingPacketIn(2);
     double baseMoveSpeed = movement.baseMoveSpeed();
-    boolean inLiquid = (movement.pastWaterMovement < 20 && movement.pastPushedByWaterFlow > 5) || movement.inLava();
+    boolean inLiquid = (movement.ticksPast(IN_WATER) < 20 && movement.ticksPast(WATERFLOW_PUSH) > 5) || movement.inLava();
 
     if (recentlySentFlying) {
       boolean lessThanExpected = distanceMoved <= predictedDistanceMoved;
       double baseSpeedMultiplier = inLiquid ? 0.1 : (!movement.sprinting ? 0.3 : 0.5);
-      boolean valid = movement.pastBlockPlacement > 9 || !movement.onGround() || motionY >= 0.2;
+      boolean valid = movement.ticksPast(BLOCK_PLACEMENT) > 9 || !movement.onGround() || motionY >= 0.2;
       if (valid && !movement.inWeb && (lessThanExpected || distanceMoved < baseMoveSpeed * baseSpeedMultiplier)) {
         horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, baseMoveSpeed * baseSpeedMultiplier);
         tags.add(EvaluationTag.FLYING);
@@ -471,22 +472,22 @@ public final class SimulationEvaluator {
       tags.add(EvaluationTag.VELOCITY_FLYING_INACCURACY);
     }
 
-    if (movement.ticksSneaking <= 1 && movement.sneaking || movement.lastSneaking) {
+    if (movement.ticks(SNEAKING) <= 1 && movement.sneaking || movement.lastSneaking) {
       double limit = 0;
       if ((abs(movement.motionX()) < 0.08 || abs(movement.motionZ()) < 0.08) || (movement.sprinting && protocol.cavesAndCliffsUpdate())) {
         boolean smallMovement = abs(movement.motionX()) < 0.08 && abs(movement.motionZ()) < 0.08 && movement.onGround();
-        limit = movement.pastEdgeSneak <= 1 ? 0.12 : (smallMovement ? 0.099 : (movement.pastEdgeSneak < 10 ? flyingLimit : 0.035));
-        if (movement.motionY() >= 0.1 && protocol.cavesAndCliffsUpdate() && movement.pastEdgeSneak <= 1 && movement.sprinting && distanceMoved <= 0.5) {
+        limit = movement.ticksPast(EDGE_SNEAKING) <= 1 ? 0.12 : (smallMovement ? 0.099 : (movement.ticksPast(EDGE_SNEAKING) < 10 ? flyingLimit : 0.035));
+        if (movement.motionY() >= 0.1 && protocol.cavesAndCliffsUpdate() && movement.ticksPast(EDGE_SNEAKING) <= 1 && movement.sprinting && distanceMoved <= 0.5) {
           limit = 0.4;
         }
         if (abs(movement.motionY()) < 0.001) {
           limit = 0.06;
         }
-        if (movement.pastEdgeSneak <= 3 && !protocol.flyingPacketsAreSent()) {
+        if (movement.ticksPast(EDGE_SNEAKING) <= 3 && !protocol.flyingPacketsAreSent()) {
           limit = Math.max(limit, 0.065);
         }
       } else {
-        if (movement.pastEdgeSneak <= 3 || (movement.pastEdgeSneak <= 10 && movement.onGround() && abs(motionY) < 0.01)) {
+        if (movement.ticksPast(EDGE_SNEAKING) <= 3 || (movement.ticksPast(EDGE_SNEAKING) <= 10 && movement.onGround() && abs(motionY) < 0.01)) {
           boolean smallMovement = (abs(movement.motionX()) < 0.099 && abs(movement.motionZ()) < 0.21) || (abs(movement.motionZ()) < 0.099 && abs(movement.motionX()) < 0.21) && movement.onGround();
           limit = smallMovement ? 0.2 : 0.02;
         }
@@ -512,17 +513,17 @@ public final class SimulationEvaluator {
     }
 
     // A+D spam
-//    if (movement.pastFlyingPacketAccurate < 1 && predictedDistanceMoved < 0.15 && distanceMoved < 0.15 && abuseHorizontally < 0.15 && Math.abs(motionY) < 0.01) {
+//    if (movement.past(FLYING_PACKET_ACCURATE) < 1 && predictedDistanceMoved < 0.15 && distanceMoved < 0.15 && abuseHorizontally < 0.15 && Math.abs(motionY) < 0.01) {
 //      movedTooQuickly = false;
 //      abuseHorizontally = 0;
 //      Bukkit.broadcastMessage(predictedDistanceMoved + " " + distanceMoved + " " + abuseHorizontally);
 //    }
 
     Pose pose = movement.pose();
-    boolean flewWithElytra = movement.pastElytraFlying <= 3;
+    boolean flewWithElytra = movement.ticksPast(ELYTRA_FLYING) <= 3;
 
     if (pose == Pose.FALL_FLYING) {
-      if (!movement.inWater && movement.pastWaterMovement <= 2 && distance < 0.3) {
+      if (!movement.inWater && movement.ticksPast(IN_WATER) <= 2 && distance < 0.3) {
         abuseHorizontally *= 0.2;
       } else if (movement.motionY() >= 0 && movement.onGround) {
         abuseHorizontally *= 0.3;
@@ -550,7 +551,7 @@ public final class SimulationEvaluator {
       }
       return Math.max(15, abuseHorizontally * 250);
     }
-    boolean noCollisions = Collision.nonePresent(player, BoundingBox.fromPosition(user, movement, movement.positionX, movement.positionY, movement.positionZ).grow(0.1));
+    boolean noCollisions = Collision.nonePresent(user, movement, BoundingBox.fromPosition(user, movement, movement.positionX, movement.positionY, movement.positionZ).grow(0.1));
     double multiplier = (abuseHorizontally > 0.1 ? 20.0 : 10.0) *
       (noCollisions ? 3 : 2) *
       (1 / stackMultiplier);
@@ -569,9 +570,9 @@ public final class SimulationEvaluator {
     double riptideTolerance;
     double imminentSpinTolerance = movementData.highestLocalRiptideLevel + 1.005;
     if (movementData.onGroundWithRiptide) {
-      riptideTolerance = movementData.pastRiptideSpin == 0 ? imminentSpinTolerance * 1.5 : RIPTIDE_GROUND_TOLERANCE_2;
+      riptideTolerance = movementData.ticksPast(RIPTIDE_SPIN) == 0 ? imminentSpinTolerance * 1.5 : RIPTIDE_GROUND_TOLERANCE_2;
     } else {
-      riptideTolerance = movementData.pastRiptideSpin == 0 ? imminentSpinTolerance : RIPTIDE_TOLERANCE_2;
+      riptideTolerance = movementData.ticksPast(RIPTIDE_SPIN) == 0 ? imminentSpinTolerance : RIPTIDE_TOLERANCE_2;
     }
     return riptideTolerance;
   }

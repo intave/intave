@@ -15,7 +15,7 @@ public class v12WallConnectResolver implements WallConnectResolver {
     org.bukkit.World world, de.jpx3.intave.share.BlockPosition position, Direction direction
   ) {
     World worldIn = ((org.bukkit.craftbukkit.v1_12_R1.CraftWorld) world).getHandle();
-    BlockPosition pos = new BlockPosition(position.xCoord, position.yCoord, position.zCoord);
+    BlockPosition pos = new BlockPosition(position.x, position.y, position.z);
     org.bukkit.block.Block bukkitBlock = VolatileBlockAccess.blockAccess(world, position);
     IBlockData data = (IBlockData) BlockVariantNativeAccess.nativeVariantAccess(bukkitBlock);
     Block block = data.getBlock();

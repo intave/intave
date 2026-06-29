@@ -16,9 +16,9 @@ final class v8FluidResolver implements FluidResolver {
     float height = 1 - heightFromLegacyLevel(variantIndex);
     boolean falling = variantIndex >= 8;
     if (isWater) {
-      return Water.ofHeight(height, falling ? 0 : variantIndex, falling);
+      return Water.of(height, falling ? 0 : variantIndex, falling);
     } else {
-      return Lava.ofHeight(height, falling ? 0 : variantIndex, falling);
+      return Lava.of(height, falling ? 0 : variantIndex, falling);
     }
   }
 }

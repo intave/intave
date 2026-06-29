@@ -47,7 +47,6 @@ public final class ConnectionMetadata {
   private final Map<Integer, Integer> globalEntityIdsToLocalIds = Maps.newConcurrentMap();
   private final Set<Integer> globalEntityIdsForRemoval = new HashSet<>();
 
-  public boolean movementPassedForNFS = false;
   public final Queue<Runnable> nextFeedbackSubscribers = new LinkedList<>();
 
   public final Map<Integer, Integer> duplicationOwners = new HashMap<>();

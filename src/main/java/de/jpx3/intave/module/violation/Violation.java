@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.Check;
 import de.jpx3.intave.module.violation.placeholder.PlaceholderContext;
+import de.jpx3.intave.user.User;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -131,6 +132,11 @@ public final class Violation {
 
     public Builder(Class<? extends Check> checkClass) {
       this.checkClass = checkClass;
+    }
+
+    public Builder forUser(User user) {
+      this.playerid = user.id();
+      return this;
     }
 
     public Builder forPlayer(Player player) {

@@ -49,7 +49,7 @@ public final class IntaveVersionList {
   }
 
   public IntaveVersion current() {
-    return versionInformation(IntavePlugin.version());
+    return versionInformation(IntavePlugin.versionTag());
   }
 
   public IntaveVersion past(int versions) {

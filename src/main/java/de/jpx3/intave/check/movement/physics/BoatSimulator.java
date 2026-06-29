@@ -5,6 +5,7 @@ import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.physics.BlockProperties;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.SinusCache;
@@ -13,10 +14,10 @@ import de.jpx3.intave.player.collider.complex.ColliderResult;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.ClientMath;
 import de.jpx3.intave.share.Motion;
+import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import de.jpx3.intave.user.meta.ViolationMetadata;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
@@ -25,9 +26,9 @@ import javax.annotation.Nullable;
 import static de.jpx3.intave.share.ClientMath.ceil;
 import static de.jpx3.intave.share.ClientMath.floor;
 
-public final class BoatSimulator extends Simulator {
+public final class BoatSimulator extends BaseSimulator {
   @Override
-  public Simulation simulate(
+  public Simulation simulateTick(
     User user, Motion motion,
     SimulationEnvironment environment,
     MovementConfiguration configuration
@@ -41,7 +42,7 @@ public final class BoatSimulator extends Simulator {
     updateMotion(user, motion);
     controlBoat(user, motion);
     ColliderResult collision = Colliders.collision(
-      user, environment, motion, movement.inWeb, movement.verifiedPositionX, movement.verifiedPositionY, movement.verifiedPositionZ
+      user, environment, motion, movement.inWeb, movement.verifiedLastPositionX, movement.verifiedLastPositionY, movement.verifiedLastPositionZ
     );
 
     Timings.CHECK_PHYSICS_SIMULATOR_BOAT.stop();
@@ -141,7 +142,7 @@ public final class BoatSimulator extends Simulator {
     } else {
       switch (movement.boatStatus) {
         case IN_WATER:
-          d2 = (movement.waterLevel - movement.verifiedPositionY) / (double) movement.height;
+          d2 = (movement.waterLevel - movement.verifiedLastPositionY) / (double) movement.height;
           movement.momentum = 0.9f;
           break;
         case UNDER_FLOWING_WATER:
@@ -197,7 +198,6 @@ public final class BoatSimulator extends Simulator {
   }
 
   private float boatGlide(User user) {
-    Player player = user.player();
     MovementMetadata movementMeta = user.meta().movement();
     BoundingBox axisalignedbb = BoundingBox.fromPosition(user, movementMeta, movementMeta.position());
     BoundingBox axisalignedbb1 = new BoundingBox(axisalignedbb.minX, axisalignedbb.minY - 0.001D, axisalignedbb.minZ, axisalignedbb.maxX, axisalignedbb.minY, axisalignedbb.maxZ);
@@ -218,7 +218,7 @@ public final class BoatSimulator extends Simulator {
           for (int y = minY; y < maxY; ++y) {
             if (j2 <= 0 || y != minY && y != maxY - 1) {
               BoundingBox boundingBox = new BoundingBox(x, y, z, x + 1, y + 1, z + 1);
-              if (Collision.present(player, boundingBox)) {
+              if (Collision.present(user, movementMeta, boundingBox)) {
                 Material material = VolatileBlockAccess.typeAccess(user, x, y, z);
                 slipperiness += BlockProperties.of(material).slipperiness();
                 ++collisions;
@@ -241,20 +241,12 @@ public final class BoatSimulator extends Simulator {
   }
 
   @Override
-  public void prepareNextTick(User user, SimulationEnvironment environment, double positionX, double positionY, double positionZ, double motionX, double motionY, double motionZ) {
-    Motion motion = environment.motion();
-    motion.setTo(motionX, motionY, motionZ);
-    ViolationMetadata violationMetadata = user.meta().violationLevel();
-
-    BoundingBox boundingBox = BoundingBox.fromPosition(user, environment, positionX, positionY, positionZ);
+  public void simulateAfterTick(
+    User user, SimulationEnvironment environment,
+    Position position, Motion motion
+  ) {
+    BoundingBox boundingBox = BoundingBox.fromPosition(user, environment, position);
     environment.setBoundingBox(boundingBox);
-
-    if (!violationMetadata.isInActiveTeleportBundle) {
-//      environment.setBaseMotionX(motion.motionX);
-//      environment.setBaseMotionY(motion.motionY);
-//      environment.setBaseMotionZ(motion.motionZ);
-      environment.setBaseMotion(motion);
-    }
   }
 
   @Override
@@ -262,11 +254,6 @@ public final class BoatSimulator extends Simulator {
     Player player = user.player();
     Synchronizer.synchronize(user, player::leaveVehicle);
     environment.dismountRidingEntity("Boat setback");
-  }
-
-  @Override
-  public String debugName() {
-    return "BOAT";
   }
 
   @Override

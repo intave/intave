@@ -2,20 +2,24 @@ package de.jpx3.intave.block.fluid;
 
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.physics.MaterialMagic;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.WATERFLOW_PUSH;
+
 final class v8Waterflow implements FluidFlow {
   @Override
-  public boolean applyFlowTo(User user, BoundingBox boundingBox) {
+  public boolean applyFlowTo(
+    User user, SimulationEnvironment environment,
+    Motion baseMotion, BoundingBox boundingBox
+  ) {
     Player player = user.player();
     World world = player.getWorld();
-    MovementMetadata movementData = user.meta().movement();
-    int minX = ClientMath.floor(boundingBox.minX);
+	  int minX = ClientMath.floor(boundingBox.minX);
     int minY = ClientMath.floor(boundingBox.minY);
     int minZ = ClientMath.floor(boundingBox.minZ);
     int maxX = ClientMath.floor(boundingBox.maxX + 1.0D);
@@ -46,10 +50,10 @@ final class v8Waterflow implements FluidFlow {
     if (inWater && flowVector != null && flowVector.length() > 0.0D) {
       flowVector.normalize();
       double factor = 0.014D;
-      movementData.baseMotionX += flowVector.motionX * factor;
-      movementData.baseMotionY += flowVector.motionY * factor;
-      movementData.baseMotionZ += flowVector.motionZ * factor;
-      movementData.pastPushedByWaterFlow = 0;
+      baseMotion.motionX += flowVector.motionX * factor;
+      baseMotion.motionY += flowVector.motionY * factor;
+      baseMotion.motionZ += flowVector.motionZ * factor;
+      environment.activeTick(WATERFLOW_PUSH);
     }
     return inWater;
   }
@@ -76,12 +80,12 @@ final class v8Waterflow implements FluidFlow {
           j = resolveEffectiveFlowDecay(user, position.down());
           if (j >= 0) {
             int k = j - (i - 8);
-            flowVector.add((position.xCoord - pos.xCoord) * k, (position.yCoord - pos.yCoord) * k, (position.zCoord - pos.zCoord) * k);
+            flowVector.add((position.x - pos.x) * k, (position.y - pos.y) * k, (position.z - pos.z) * k);
           }
         }
       } else {
         int l = j - i;
-        flowVector.add((position.xCoord - pos.xCoord) * l, (position.yCoord - pos.yCoord) * l, (position.zCoord - pos.zCoord) * l);
+        flowVector.add((position.x - pos.x) * l, (position.y - pos.y) * l, (position.z - pos.z) * l);
       }
     }
     if (VolatileBlockAccess.fluidAccess(user, pos).falling()) {
@@ -103,21 +107,21 @@ final class v8Waterflow implements FluidFlow {
 
   private static int resolveLevel(User user, BlockPosition pos) {
     World world = user.player().getWorld();
-    Material clientSideBlock = VolatileBlockAccess.typeAccess(user, world, pos.xCoord, pos.yCoord, pos.zCoord);
-    int variantIndex = VolatileBlockAccess.variantIndexAccess(user, world, pos.xCoord, pos.yCoord, pos.zCoord);
+    Material clientSideBlock = VolatileBlockAccess.typeAccess(user, world, pos.x, pos.y, pos.z);
+    int variantIndex = VolatileBlockAccess.variantIndexAccess(user, world, pos.x, pos.y, pos.z);
     Fluid fluid = Fluids.fluidStateOf(clientSideBlock, variantIndex);
     return fluid.isOfWater() ? fluid.level() : -1;
   }
 
   private static boolean blocksMovement(User user, BlockPosition position) {
-    Material type = VolatileBlockAccess.typeAccess(user, user.player().getWorld(), position.xCoord, position.yCoord, position.zCoord);
+    Material type = VolatileBlockAccess.typeAccess(user, user.player().getWorld(), position.x, position.y, position.z);
     return MaterialMagic.blocksMovement(type);
   }
 
   private static boolean isBlockSolid(User user, BlockPosition pos, Direction side) {
     World world = user.player().getWorld();
-    Material type = VolatileBlockAccess.typeAccess(user, world, pos.xCoord, pos.yCoord, pos.zCoord);
-    int variantIndex = VolatileBlockAccess.variantIndexAccess(user, world, pos.xCoord, pos.yCoord, pos.zCoord);
+    Material type = VolatileBlockAccess.typeAccess(user, world, pos.x, pos.y, pos.z);
+    int variantIndex = VolatileBlockAccess.variantIndexAccess(user, world, pos.x, pos.y, pos.z);
     return !MaterialMagic.couldContainLiquid(type, variantIndex) && (side == Direction.UP || (type != Material.ICE && MaterialMagic.blockSolid(type)));
   }
 

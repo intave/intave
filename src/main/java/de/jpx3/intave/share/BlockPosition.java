@@ -1,9 +1,12 @@
 package de.jpx3.intave.share;
 
+import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.codec.StreamCodec;
+import io.netty.buffer.ByteBuf;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 
-public final class BlockPosition extends NativeVector {
+public final class BlockPosition extends RawVector3d {
   public static final BlockPosition ORIGIN = new BlockPosition(0, 0, 0);
   private static final int NUM_X_BITS = 1 + ClientMath.calculateLogBaseTwo(ClientMath.roundUpToPowerOfTwo(30000000));
   private static final int NUM_Z_BITS = NUM_X_BITS;
@@ -13,6 +16,10 @@ public final class BlockPosition extends NativeVector {
   private static final long X_MASK = (1L << NUM_X_BITS) - 1L;
   private static final long Y_MASK = (1L << NUM_Y_BITS) - 1L;
   private static final long Z_MASK = (1L << NUM_Z_BITS) - 1L;
+
+  public static final StreamCodec<ByteBuf, ByteBuf, BlockPosition> STREAM_CODEC = ByteBufStreamCodecs.LONG.beforeAndAfter(
+    BlockPosition::fromLong, BlockPosition::toLong
+  );
 
   public BlockPosition(int x, int y, int z) {
     super(x, y, z);
@@ -26,8 +33,8 @@ public final class BlockPosition extends NativeVector {
     this(source.getLocation().getX(), source.getLocation().getY(), source.getLocation().getZ());
   }
 
-  public BlockPosition(NativeVector source) {
-    this(source.xCoord, source.yCoord, source.zCoord);
+  public BlockPosition(RawVector3d source) {
+    this(source.x, source.y, source.z);
   }
 
   public BlockPosition(Location source) {
@@ -38,18 +45,14 @@ public final class BlockPosition extends NativeVector {
     this(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ());
   }
 
-  public static BlockPosition of(int posX, int posY, int posZ) {
-    return new BlockPosition(posX, posY, posZ);
-  }
-
   /**
    * Add the given coordinates to the coordinates of this BlockPos
    */
   public BlockPosition add(double x, double y, double z) {
     return x == 0.0D && y == 0.0D && z == 0.0D ? this : new BlockPosition(
-      this.xCoord + x,
-      this.yCoord + y,
-      this.zCoord + z
+      this.x + x,
+      this.y + y,
+      this.z + z
     );
   }
 
@@ -58,39 +61,39 @@ public final class BlockPosition extends NativeVector {
    */
   public BlockPosition add(int x, int y, int z) {
     return x == 0 && y == 0 && z == 0 ? this : new BlockPosition(
-      this.xCoord + x,
-      this.yCoord + y,
-      this.zCoord + z
+      this.x + x,
+      this.y + y,
+      this.z + z
     );
   }
 
   /**
    * Add the given Vector to this BlockPos
    */
-  public BlockPosition add(NativeVector vec) {
+  public BlockPosition add(RawVector3d vec) {
     return zero(vec) ? this : new BlockPosition(
-      this.xCoord + vec.xCoord,
-      this.yCoord + vec.yCoord,
-      this.zCoord + vec.zCoord
+      this.x + vec.x,
+      this.y + vec.y,
+      this.z + vec.z
     );
   }
 
   /**
    * Subtract the given Vector from this BlockPos
    */
-  public BlockPosition subtract(NativeVector vec) {
+  public BlockPosition subtract(RawVector3d vec) {
     return zero(vec) ? this : new BlockPosition(
-      this.xCoord - vec.xCoord,
-      this.yCoord - vec.yCoord,
-      this.zCoord - vec.zCoord
+      this.x - vec.x,
+      this.y - vec.y,
+      this.z - vec.z
     );
   }
 
   /**
    * Returns whether all coordinates of the vector are zero
    */
-  private boolean zero(NativeVector vec) {
-    return vec.xCoord == 0 && vec.yCoord == 0 && vec.zCoord == 0;
+  private boolean zero(RawVector3d vec) {
+    return vec.x == 0 && vec.y == 0 && vec.z == 0;
   }
 
   /**
@@ -189,7 +192,7 @@ public final class BlockPosition extends NativeVector {
   }
 
   public BlockPosition move(Direction facing, int n) {
-    return new BlockPosition(this.xCoord + facing.offsetX() * n, this.yCoord + facing.offsetY() * n, this.zCoord + facing.offsetZ() * n);
+    return new BlockPosition(this.x + facing.offsetX() * n, this.y + facing.offsetY() * n, this.z + facing.offsetZ() * n);
   }
 
   /**
@@ -197,51 +200,50 @@ public final class BlockPosition extends NativeVector {
    */
   public BlockPosition offset(Direction facing, int n) {
     return n == 0 ? this : new BlockPosition(
-      this.xCoord + facing.getFrontOffsetX() * n,
-      this.yCoord + facing.getFrontOffsetY() * n,
-      this.zCoord + facing.getFrontOffsetZ() * n
+      this.x + facing.getFrontOffsetX() * n,
+      this.y + facing.getFrontOffsetY() * n,
+      this.z + facing.getFrontOffsetZ() * n
     );
   }
 
   /**
    * Calculate the cross product of this and the given Vector
    */
-  public BlockPosition crossProduct(NativeVector vec) {
+  public BlockPosition crossProduct(RawVector3d vec) {
     return new BlockPosition(
-      this.yCoord * vec.zCoord - this.zCoord * vec.yCoord,
-      this.zCoord * vec.xCoord - this.xCoord * vec.zCoord,
-      this.xCoord * vec.yCoord - this.yCoord * vec.xCoord
+      this.y * vec.z - this.z * vec.y,
+      this.z * vec.x - this.x * vec.z,
+      this.x * vec.y - this.y * vec.x
     );
   }
 
   public int getBlockX() {
-    return (int) xCoord;
+    return (int) x;
   }
 
   public int getX() {
-    return (int) xCoord;
+    return (int) x;
   }
 
   public int getBlockY() {
-    return (int) yCoord;
+    return (int) y;
   }
 
   public int getY() {
-    return (int) yCoord;
+    return (int) y;
   }
 
   public int getBlockZ() {
-    return (int) zCoord;
+    return (int) z;
   }
 
   public int getZ() {
-    return (int) zCoord;
+    return (int) z;
   }
-
 
   @Override
   public int hashCode() {
-    long i = (long) (this.xCoord * 3129871) ^ (long) this.zCoord * 116129781L ^ (long) this.yCoord;
+    long i = (long) (this.x * 3129871) ^ (long) this.z * 116129781L ^ (long) this.y;
     return (int) (i ^ i >> 32);
   }
 
@@ -253,17 +255,22 @@ public final class BlockPosition extends NativeVector {
       return false;
     } else {
       BlockPosition blockPos = (BlockPosition) obj;
-      return this.xCoord == blockPos.xCoord && this.yCoord == blockPos.yCoord && this.zCoord == blockPos.zCoord;
+      return this.x == blockPos.x && this.y == blockPos.y && this.z == blockPos.z;
     }
+  }
+
+  @Override
+  public String toString() {
+    return "(" + ((int) x) + ", " + ((int) y) + ", " + ((int) z) + ")";
   }
 
   /**
    * Serialize this BlockPos into a long value
    */
   public long toLong() {
-    return ((long) this.xCoord & X_MASK) << X_SHIFT
-      | ((long) this.yCoord & Y_MASK) << Y_SHIFT
-      | ((long) this.zCoord & Z_MASK);
+    return ((long) this.x & X_MASK) << X_SHIFT
+      | ((long) this.y & Y_MASK) << Y_SHIFT
+      | ((long) this.z & Z_MASK);
   }
 
   /**
@@ -274,5 +281,9 @@ public final class BlockPosition extends NativeVector {
     int j = (int) (serialized << 64 - Y_SHIFT - NUM_Y_BITS >> 64 - NUM_Y_BITS);
     int k = (int) (serialized << 64 - NUM_Z_BITS >> 64 - NUM_Z_BITS);
     return new BlockPosition(i, j, k);
+  }
+
+  public static BlockPosition of(int posX, int posY, int posZ) {
+    return new BlockPosition(posX, posY, posZ);
   }
 }

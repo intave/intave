@@ -3,7 +3,7 @@ package de.jpx3.intave.check.world.interaction;
 import de.jpx3.intave.check.world.InteractionRaytrace;
 import de.jpx3.intave.share.ClientMath;
 import de.jpx3.intave.share.MovingObjectPosition;
-import de.jpx3.intave.share.NativeVector;
+import de.jpx3.intave.share.RawVector3d;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -62,9 +62,9 @@ public class RaytraceEvaluation {
 
   public boolean facingCheckFailed() {
     if (raycastResult != null && origin.hasFacing()) {
-      float f = (float) (raycastResult.hitVec.xCoord - targetLocation.getX());
-      float f1 = (float) (raycastResult.hitVec.yCoord - targetLocation.getY());
-      float f2 = (float) (raycastResult.hitVec.zCoord - targetLocation.getZ());
+      float f = (float) (raycastResult.hitVec.x - targetLocation.getX());
+      float f1 = (float) (raycastResult.hitVec.y - targetLocation.getY());
+      float f2 = (float) (raycastResult.hitVec.z - targetLocation.getZ());
       return Math.abs(compressAndDecompress(f) - origin.facingX()) > 0.01 ||
         Math.abs(compressAndDecompress(f1) - origin.facingY()) > 0.01 ||
         Math.abs(compressAndDecompress(f2) - origin.facingZ()) > 0.01;
@@ -79,7 +79,7 @@ public class RaytraceEvaluation {
 
 
   public boolean hitMiss() {
-    return raycastResult == null || raycastResult.hitVec == NativeVector.ZERO;
+    return raycastResult == null || raycastResult.hitVec == RawVector3d.ZERO;
   }
 
   public boolean wrongBlockFace() {

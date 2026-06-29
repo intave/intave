@@ -1,0 +1,9 @@
+#
+# Intave Backward Block Mappings
+# Copyright Intave 2022 - all rights reserved
+#
+
+from 1.9 down to 1.8 interpret
+  CHORUS_PLANT as WOOL
+  CHORUS_FLOWER as WOOL
+  GRASS_PATH as DIRT

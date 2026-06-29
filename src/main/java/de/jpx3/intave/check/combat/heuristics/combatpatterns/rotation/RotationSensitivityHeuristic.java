@@ -1,10 +1,10 @@
 package de.jpx3.intave.check.combat.heuristics.combatpatterns.rotation;
 
 import com.comphenix.protocol.events.PacketEvent;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AttackMetadata;
@@ -12,16 +12,15 @@ import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.entity.Player;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.LOOK;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION_LOOK;
 
 public final class RotationSensitivityHeuristic extends ClassicHeuristic<RotationSensitivityHeuristic.RotationGCDMeta> {
-  private final IntavePlugin plugin;
 
-  public RotationSensitivityHeuristic(Heuristics parentCheck) {
+	public RotationSensitivityHeuristic(Heuristics parentCheck) {
     super(parentCheck, HeuristicsClassicType.ROTATION_SENSITIVITY, RotationGCDMeta.class);
-    this.plugin = IntavePlugin.singletonInstance();
-  }
+	}
 
   @PacketSubscription(
     packetsIn = {
@@ -33,9 +32,9 @@ public final class RotationSensitivityHeuristic extends ClassicHeuristic<Rotatio
     User user = userOf(player);
 
     AttackMetadata attackData = user.meta().attack();
-    MovementMetadata movementData = user.meta().movement();
+    SimulationEnvironment movementData = user.meta().movement();
 
-    if (movementData.lastTeleport < 20) {
+    if (movementData.ticksPast(TELEPORT) < 20) {
       return;
     }
 

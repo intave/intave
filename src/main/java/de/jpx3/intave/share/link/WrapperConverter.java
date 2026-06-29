@@ -2,12 +2,12 @@ package de.jpx3.intave.share.link;
 
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.BoundingBox;
-import de.jpx3.intave.share.NativeVector;
+import de.jpx3.intave.share.RawVector3d;
 
 public final class WrapperConverter {
   private static ClassConverter<BoundingBox> boundingBoxLinker;
   private static ClassConverter<BlockPosition> blockPositionLinker;
-  private static ClassConverter<NativeVector> vec3DLinker;
+  private static ClassConverter<RawVector3d> vec3DLinker;
 
   public static void setup() {
     boundingBoxLinker = BoundingBoxLinkage.resolveBoundingBoxConverter();
@@ -23,7 +23,7 @@ public final class WrapperConverter {
     return blockPositionLinker.convert(obj);
   }
 
-  public static NativeVector vectorFromVec3D(Object obj) {
+  public static RawVector3d vectorFromVec3D(Object obj) {
     return vec3DLinker.convert(obj);
   }
 }

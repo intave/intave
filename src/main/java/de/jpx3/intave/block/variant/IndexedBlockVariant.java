@@ -22,8 +22,13 @@ final class IndexedBlockVariant implements BlockVariant {
     this.type = type;
     this.variantIndex = variantIndex;
     this.nativeConfig = nativeConfig;
-    nativeConfig.keySet().forEach(setting -> namedSettings.put(setting.name().toLowerCase(Locale.ROOT), setting));
-    nativeConfig.forEach((setting, comparable) -> namedConfig.put(setting.name().toLowerCase(Locale.ROOT), comparable));
+    for (Map.Entry<? extends Setting<?>, Comparable<?>> entry : nativeConfig.entrySet()) {
+      Setting<?> setting = entry.getKey();
+      Comparable<?> value = entry.getValue();
+      String name = setting.name().toLowerCase(Locale.ROOT);
+      namedSettings.put(name, setting);
+      namedConfig.put(name, value);
+    }
   }
 
   @Override
@@ -57,6 +62,10 @@ final class IndexedBlockVariant implements BlockVariant {
 
   @Override
   public void dumpStates() {
-    nativeConfig.forEach((setting, comparable) -> System.out.println("  " + setting.name() + ": " + comparable));
+	  for (Map.Entry<? extends Setting<?>, Comparable<?>> entry : nativeConfig.entrySet()) {
+		  Setting<?> setting = entry.getKey();
+		  Comparable<?> comparable = entry.getValue();
+		  System.out.println("  " + setting.name() + ": " + comparable);
+	  }
   }
 }

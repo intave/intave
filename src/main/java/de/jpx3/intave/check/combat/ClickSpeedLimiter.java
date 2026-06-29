@@ -4,15 +4,17 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheck;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.tracker.player.AbilityTracker;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.packet.reader.EntityUseReader;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
-import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -68,12 +70,18 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
     ClickSpeedLimiterMeta meta = metaOf(user);
     PacketType pt = event.getPacketType();
 
+    AbilityMetadata abilities = user.meta().abilities();
+
+    if (abilities.inGameModeIncludePending(AbilityTracker.GameMode.SPECTATOR)) {
+      return;
+    }
+
     if (user.protocolVersion() <= ProtocolMetadata.VER_1_8) {
       // 1.8
       meta.countAccuratePositionPackets = 20;
     } else {
       // 1.9+
-      MovementMetadata movementData = user.meta().movement();
+      SimulationEnvironment movementData = user.meta().movement();
 
       if (movementData.receivedFlyingPacketIn(0)
         || meta.lastMovePacketType.name().equals("FLYING") || meta.lastMovePacketType == PacketType.Play.Client.LOOK

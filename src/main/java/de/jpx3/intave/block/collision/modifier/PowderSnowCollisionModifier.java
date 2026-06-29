@@ -5,10 +5,8 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 public final class PowderSnowCollisionModifier extends CollisionModifier {
@@ -21,15 +19,14 @@ public final class PowderSnowCollisionModifier extends CollisionModifier {
     if (movement.artificialFallDistance > 2.5) {
       return FALLING_SHAPE.contextualized(posX, posY, posZ);
     }
-    if (canWalkOnPowderSnow(user.player()) && movement.verifiedPositionY > (double)posY + 1 - 9.999999747378752E-6 && !movement.isSneaking()) {
+    if (canWalkOnPowderSnow(user) && movement.verifiedLastPositionY > (double)posY + 1 - 9.999999747378752E-6 && !movement.isSneaking()) {
       return POWDER_SNOW_FROM_ABOVE.contextualized(posX, posY, posZ);
     } else {
       return BlockShapes.emptyShape();
     }
   }
 
-  public static boolean canWalkOnPowderSnow(Player player) {
-    User user = UserRepository.userOf(player);
+  public static boolean canWalkOnPowderSnow(User user) {
     ItemStack boots = user.player().getInventory().getBoots();
     return boots != null && boots.getType() == Material.LEATHER_BOOTS;
   }

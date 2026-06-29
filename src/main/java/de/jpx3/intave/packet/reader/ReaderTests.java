@@ -2,15 +2,15 @@ package de.jpx3.intave.packet.reader;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
+import de.jpx3.intave.test.IntegrationTests;
 import de.jpx3.intave.test.Severity;
 import de.jpx3.intave.test.Test;
-import de.jpx3.intave.test.Tests;
 
 import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 
-public final class ReaderTests extends Tests {
+public final class ReaderTests extends IntegrationTests {
   private static final Set<PacketType> EXCLUDED_TYPES = new HashSet<>();
   static {
     EXCLUDED_TYPES.add(PacketType.Play.Server.MULTI_BLOCK_CHANGE);

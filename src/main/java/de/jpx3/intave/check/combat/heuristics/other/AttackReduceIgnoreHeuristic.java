@@ -14,6 +14,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.ATTACK_REDUCE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION_LOOK;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_9;
@@ -57,7 +58,7 @@ public final class AttackReduceIgnoreHeuristic extends MetaCheckPart<Heuristics,
       return;
     }
 
-    if (movementData.lastSprinting && movementData.sprinting && movementData.pastPlayerReduceAttackPhysics == 0) {
+    if (movementData.lastSprinting && movementData.sprinting && movementData.ticksPast(ATTACK_REDUCE) == 0) {
       if (movementData.ignoredAttackReduce) {
         if (heuristicMeta.vl++ > 5) {
           String description = "did not reduce when attacking a player";

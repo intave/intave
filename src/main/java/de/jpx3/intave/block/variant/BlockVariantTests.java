@@ -8,7 +8,7 @@ import org.bukkit.block.Block;
 
 import java.util.*;
 
-public final class BlockVariantTests extends Tests {
+public final class BlockVariantTests extends IntegrationTests {
   private Block block, blockBelow;
   private BlockStorage priorMaterial, priorMaterialBelow;
 

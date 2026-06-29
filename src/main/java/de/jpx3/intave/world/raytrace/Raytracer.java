@@ -1,17 +1,10 @@
 package de.jpx3.intave.world.raytrace;
 
-import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.MovingObjectPosition;
-import de.jpx3.intave.share.NativeVector;
+import de.jpx3.intave.share.RawVector3d;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
-import java.util.function.Function;
-
 public interface Raytracer {
-  default MovingObjectPosition modifiedRaytrace(World world, Player player, NativeVector eyeVector, NativeVector targetVector, Function<BoundingBox, BoundingBox> blockModifier) {
-    return raytrace(world, player, eyeVector, targetVector);
-  }
-
-  MovingObjectPosition raytrace(World world, Player player, NativeVector eyeVector, NativeVector targetVector);
+  MovingObjectPosition raytrace(World world, Player player, RawVector3d eyeVector, RawVector3d targetVector);
 }

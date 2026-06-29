@@ -5,8 +5,8 @@ import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.block.cache.BlockCaches;
 import de.jpx3.intave.test.BlockStorage;
 import de.jpx3.intave.test.FakePlayerFactory;
+import de.jpx3.intave.test.IntegrationTests;
 import de.jpx3.intave.test.Test;
-import de.jpx3.intave.test.Tests;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserFactory;
 import org.bukkit.Bukkit;
@@ -18,10 +18,11 @@ import org.bukkit.block.data.Levelled;
 import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.test.Severity.ERROR;
+import static org.bukkit.GameMode.SURVIVAL;
 import static org.bukkit.Material.LAVA;
 import static org.bukkit.Material.WATER;
 
-public final class FluidTests extends Tests {
+public final class FluidTests extends IntegrationTests {
   private BlockStorage blockStorage;
 
   public FluidTests() {
@@ -77,10 +78,24 @@ public final class FluidTests extends Tests {
       if (s.equals("getWorld")) {
         return world;
       }
+      switch (s) {
+        case "isFlying":
+        case "getAllowFlight":
+        case "isSprinting":
+        case "isSneaking":
+          return false;
+        case "getFallDistance":
+          return 0.0f;
+        case "getGameMode":
+          return SURVIVAL;
+        case "getFlySpeed":
+        case "getWalkSpeed":
+          return 0.2f;
+      }
       return null;
     });
     BlockCache blockStateCache = BlockCaches.passthroughCacheWithNativeDrill(player);
-    User user = UserFactory.createTestUserFor(player, s -> {
+    User user = UserFactory.createTestUserFor(player, (usr, s) -> {
       if (s.equals("protocolVersion")) {
         return 477;
       }

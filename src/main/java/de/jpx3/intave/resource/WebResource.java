@@ -51,7 +51,7 @@ final class WebResource implements Resource {
     boolean debug = System.getProperty("intave.kdebug", "NA").equalsIgnoreCase("UPSFF0Y8Y7H4UJQL8QCRSI857S4DVBKS");
     try {
       URLConnection connection = url.openConnection();
-      connection.addRequestProperty("User-Agent", "Intave/" + IntavePlugin.version());
+      connection.addRequestProperty("User-Agent", "Intave/" + IntavePlugin.fullVersion());
       connection.addRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate");
       connection.addRequestProperty("Pragma", "no-cache");
       connection.addRequestProperty("Identifier", LicenseAccess.rawLicense());

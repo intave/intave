@@ -2,33 +2,37 @@ package de.jpx3.intave.block.cache;
 
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
+import it.unimi.dsi.fastutil.longs.Long2BooleanOpenHashMap;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.BitSet;
-
 public final class MockFullBlockStaticPlane implements BlockCache {
   // 16 * 256 * 16
-  private final BitSet bitSet = new BitSet(16 * 256 * 16);
+  private final Long2BooleanOpenHashMap blockMap = new Long2BooleanOpenHashMap();
 
-  private boolean isStone(int posX, int posY, int posZ) {
-    if (posY < 0 || posY >= 256 || posX < 0 || posX >= 16 || posZ < 0 || posZ >= 16) {
+  boolean isStone(int posX, int posY, int posZ) {
+    if (posY < -256 || posY >= 256 || posX < -256 || posX >= 256 || posZ < -256 || posZ >= 256) {
       return false;
     }
-    return bitSet.get(posX + (posZ << 4) + (posY << 8));
+    return blockMap.get(getKey(posX, posY, posZ));
   }
 
   private void setStone(int posX, int posY, int posZ) {
-    if (posY < 0 || posY >= 256 || posX < 0 || posX >= 16 || posZ < 0 || posZ >= 16) {
+    if (posY < -256 || posY >= 256 || posX < -256 || posX >= 256 || posZ < -256 || posZ >= 256) {
       throw new IllegalArgumentException("Invalid position: " + posX + ", " + posY + ", " + posZ);
     }
-    bitSet.set(posX + (posZ << 4) + (posY << 8));
+    blockMap.put(getKey(posX, posY, posZ), true);
+  }
+
+  private long getKey(int posX, int posY, int posZ) {
+    return ((long) posX & 0xFFFF) | (((long) posY & 0xFFFF) << 16) | (((long) posZ & 0xFFFF) << 32);
   }
 
   public void horizontalFill(int posY) {
-    for (int x = 0; x < 16; x++) {
-      for (int z = 0; z < 16; z++) {
+    int limit = 256;
+    for (int x = -limit; x < limit; x++) {
+      for (int z = -limit; z < limit; z++) {
         setStone(x, posY, z);
       }
     }
@@ -95,11 +99,6 @@ public final class MockFullBlockStaticPlane implements BlockCache {
   }
 
   @Override
-  public BlockState overrideOf(int posX, int posY, int posZ) {
-    return null;
-  }
-
-  @Override
   public void lockOverride(int posX, int posY, int posZ) {
 
   }
@@ -137,5 +136,11 @@ public final class MockFullBlockStaticPlane implements BlockCache {
   @Override
   public boolean hasOverridesInBounds(int chunkXMinPos, int chunkXMaxPos, int chunkZMinPos, int chunkZMaxPos) {
     return false;
+  }
+
+  public static MockFullBlockStaticPlane createWithHorizontalPlaneAt(int posY) {
+    MockFullBlockStaticPlane plane = new MockFullBlockStaticPlane();
+    plane.horizontalFill(posY);
+    return plane;
   }
 }

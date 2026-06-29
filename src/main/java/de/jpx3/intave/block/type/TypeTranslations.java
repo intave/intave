@@ -1,7 +1,7 @@
 package de.jpx3.intave.block.type;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
 import com.google.common.collect.ImmutableList;
+import de.jpx3.intave.adapter.MinecraftVersion;
 import org.bukkit.Material;
 
 import java.util.Collection;
@@ -55,6 +55,13 @@ final class TypeTranslations {
 
   public <R> R collect(Collector<? super TypeTranslation, ?, R> collector) {
     return translations.stream().collect(collector);
+  }
+
+  @Override
+  public String toString() {
+    return "TypeTranslations{" +
+      "translations=" + translations +
+      '}';
   }
 
   public static TypeTranslations empty() {

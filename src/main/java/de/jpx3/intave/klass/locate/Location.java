@@ -1,6 +1,6 @@
 package de.jpx3.intave.klass.locate;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.adapter.MinecraftVersion;
 
 abstract class Location {
   private final String key;

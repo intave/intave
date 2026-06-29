@@ -2,11 +2,14 @@ package de.jpx3.intave.share;
 
 import de.jpx3.intave.block.shape.BlockRaytrace;
 import de.jpx3.intave.block.shape.BlockShape;
-import de.jpx3.intave.check.movement.physics.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.diagnostic.MemoryTraced;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.share.link.WrapperConverter;
 import de.jpx3.intave.user.User;
+import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.doubles.DoubleSet;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
@@ -28,6 +31,30 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
   public final double maxX, maxY, maxZ;
   private boolean originBox;
 
+  public static final StreamCodec<ByteBuf, ByteBuf, BoundingBox> STREAM_CODEC = StreamCodec.of(
+    (buf, box) -> {
+      buf.writeDouble(box.minX);
+      buf.writeDouble(box.minY);
+      buf.writeDouble(box.minZ);
+      buf.writeDouble(box.maxX);
+      buf.writeDouble(box.maxY);
+      buf.writeDouble(box.maxZ);
+      buf.writeBoolean(box.originBox);
+    },
+    (buf) -> {
+      BoundingBox boundingBox = new BoundingBox(
+        buf.readDouble(), buf.readDouble(), buf.readDouble(),
+        buf.readDouble(), buf.readDouble(), buf.readDouble()
+      );
+      if (buf.readBoolean()) {
+        boundingBox.makeOriginBox();
+      }
+      return boundingBox;
+    }
+  );
+
+  public static final StreamCodec<ByteBuf, ByteBuf, List<BoundingBox>> LIST_STREAM_CODEC = ByteBufStreamCodecs.listCodecOf(STREAM_CODEC);
+
   public BoundingBox(
     double x1, double y1, double z1,
     double x2, double y2, double z2
@@ -44,13 +71,7 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
     double x1, double y1, double z1,
     double x2, double y2, double z2
   ) {
-    double d0 = Math.min(x1, x2);
-    double d1 = Math.min(y1, y2);
-    double d2 = Math.min(z1, z2);
-    double d3 = Math.max(x1, x2);
-    double d4 = Math.max(y1, y2);
-    double d5 = Math.max(z1, z2);
-    return new BoundingBox(d0, d1, d2, d3, d4, d5);
+    return new BoundingBox(x1, y1, z1, x2, y2, z2);
   }
 
   public static BoundingBox originFrom(
@@ -95,7 +116,7 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
   }
 
   public static BoundingBox fromPosition(User user, SimulationEnvironment environment, BlockPosition position) {
-    return fromPosition(user, environment, position.xCoord, position.yCoord, position.zCoord);
+    return fromPosition(user, environment, position.x, position.y, position.z);
   }
 
   public static BoundingBox fromPosition(
@@ -138,6 +159,16 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
 
   public static BoundingBox empty() {
     return EMPTY;
+  }
+
+  public static BoundingBox random() {
+    double x1 = Math.random() * 10;
+    double y1 = Math.random() * 10;
+    double z1 = Math.random() * 10;
+    double x2 = x1 + Math.random() * 5;
+    double y2 = y1 + Math.random() * 5;
+    double z2 = z1 + Math.random() * 5;
+    return new BoundingBox(x1, y1, z1, x2, y2, z2);
   }
 
   public double min(Direction.Axis axis) {
@@ -340,8 +371,7 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
   private List<BoundingBox> selfInListCache;
 
   @Override
-  @Deprecated
-  public List<BoundingBox> boundingBoxes() {
+  public List<BoundingBox> elementaryBoxes() {
     if (selfInListCache == null) {
       selfInListCache = Collections.singletonList(this);
     }
@@ -383,8 +413,8 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
   /**
    * Returns if the supplied Vec3D is completely inside the bounding box
    */
-  public boolean isVecInside(NativeVector vec) {
-    return vec.xCoord > this.minX && vec.xCoord < this.maxX && (vec.yCoord > this.minY && vec.yCoord < this.maxY && vec.zCoord > this.minZ && vec.zCoord < this.maxZ);
+  public boolean isVecInside(RawVector3d vec) {
+    return vec.x > this.minX && vec.x < this.maxX && (vec.y > this.minY && vec.y < this.maxY && vec.z > this.minZ && vec.z < this.maxZ);
   }
 
   public double centerX() {
@@ -433,13 +463,13 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
   }
 
 
-  public MovingObjectPosition calculateIntercept(NativeVector vecA, NativeVector vecB) {
-    NativeVector vec3 = vecA.getIntermediateWithXValue(vecB, this.minX);
-    NativeVector vec31 = vecA.getIntermediateWithXValue(vecB, this.maxX);
-    NativeVector vec32 = vecA.getIntermediateWithYValue(vecB, this.minY);
-    NativeVector vec33 = vecA.getIntermediateWithYValue(vecB, this.maxY);
-    NativeVector vec34 = vecA.getIntermediateWithZValue(vecB, this.minZ);
-    NativeVector vec35 = vecA.getIntermediateWithZValue(vecB, this.maxZ);
+  public MovingObjectPosition calculateIntercept(RawVector3d vecA, RawVector3d vecB) {
+    RawVector3d vec3 = vecA.getIntermediateWithXValue(vecB, this.minX);
+    RawVector3d vec31 = vecA.getIntermediateWithXValue(vecB, this.maxX);
+    RawVector3d vec32 = vecA.getIntermediateWithYValue(vecB, this.minY);
+    RawVector3d vec33 = vecA.getIntermediateWithYValue(vecB, this.maxY);
+    RawVector3d vec34 = vecA.getIntermediateWithZValue(vecB, this.minZ);
+    RawVector3d vec35 = vecA.getIntermediateWithZValue(vecB, this.maxZ);
     if (!this.isVecInYZ(vec3)) {
       vec3 = null;
     }
@@ -458,7 +488,7 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
     if (!this.isVecInXY(vec35)) {
       vec35 = null;
     }
-    NativeVector vec36 = null;
+    RawVector3d vec36 = null;
     if (vec3 != null) {
       vec36 = vec3;
     }
@@ -660,19 +690,19 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
     }
   }
 
-  public double nearestDistanceTo(NativeVector fieldPoint) {
-    NativeVector nativeVector = nearestPointTo(fieldPoint);
-    return nativeVector.distanceTo(fieldPoint);
+  public double nearestDistanceTo(RawVector3d fieldPoint) {
+    RawVector3d rawVector3D = nearestPointTo(fieldPoint);
+    return rawVector3D.distanceTo(fieldPoint);
   }
 
-  private NativeVector nearestPointTo(NativeVector fieldPoint) {
-    double refX = fieldPoint.xCoord;
-    double refY = fieldPoint.yCoord;
-    double refZ = fieldPoint.zCoord;
+  private RawVector3d nearestPointTo(RawVector3d fieldPoint) {
+    double refX = fieldPoint.x;
+    double refY = fieldPoint.y;
+    double refZ = fieldPoint.z;
     double pointX = refX > maxX ? maxX : Math.max(refX, minX);
     double pointY = refY > minY ? minY : Math.max(refY, minY);
     double pointZ = refZ > maxZ ? maxZ : Math.max(refZ, minZ);
-    return new NativeVector(pointX, pointY, pointZ);
+    return new RawVector3d(pointX, pointY, pointZ);
   }
 
   public BoundingBox addJustMaxY(double expansionY) {
@@ -690,22 +720,22 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
   /**
    * Checks if the specified vector is within the YZ dimensions of the bounding box. Args: Vec3D
    */
-  private boolean isVecInYZ(NativeVector vec) {
-    return vec != null && vec.yCoord >= this.minY && vec.yCoord <= this.maxY && vec.zCoord >= this.minZ && vec.zCoord <= this.maxZ;
+  private boolean isVecInYZ(RawVector3d vec) {
+    return vec != null && vec.y >= this.minY && vec.y <= this.maxY && vec.z >= this.minZ && vec.z <= this.maxZ;
   }
 
   /**
    * Checks if the specified vector is within the XZ dimensions of the bounding box. Args: Vec3D
    */
-  private boolean isVecInXZ(NativeVector vec) {
-    return vec != null && vec.xCoord >= this.minX && vec.xCoord <= this.maxX && vec.zCoord >= this.minZ && vec.zCoord <= this.maxZ;
+  private boolean isVecInXZ(RawVector3d vec) {
+    return vec != null && vec.x >= this.minX && vec.x <= this.maxX && vec.z >= this.minZ && vec.z <= this.maxZ;
   }
 
   /**
    * Checks if the specified vector is within the XY dimensions of the bounding box. Args: Vec3D
    */
-  private boolean isVecInXY(NativeVector vec) {
-    return vec != null && vec.xCoord >= this.minX && vec.xCoord <= this.maxX && vec.yCoord >= this.minY && vec.yCoord <= this.maxY;
+  private boolean isVecInXY(RawVector3d vec) {
+    return vec != null && vec.x >= this.minX && vec.x <= this.maxX && vec.y >= this.minY && vec.y <= this.maxY;
   }
 
   public String toCompactString() {
@@ -740,9 +770,7 @@ public final class BoundingBox extends MemoryTraced implements BlockShape {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-
     BoundingBox that = (BoundingBox) o;
-
     if (Double.compare(that.minX, minX) != 0) return false;
     if (Double.compare(that.minY, minY) != 0) return false;
     if (Double.compare(that.minZ, minZ) != 0) return false;

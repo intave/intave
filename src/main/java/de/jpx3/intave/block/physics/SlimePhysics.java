@@ -1,6 +1,6 @@
 package de.jpx3.intave.block.physics;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -38,7 +38,7 @@ final class SlimePhysics implements BlockPhysic {
 
   @Override
   // SlimeBlock.stepOn
-  public Motion entityCollidedWithBlock(User user, double motionX, double motionY, double motionZ) {
+  public Motion stepOn(User user, double motionX, double motionY, double motionZ) {
     MovementMetadata movementData = user.meta().movement();
     if (Math.abs(motionY) < 0.1D && !movementData.sneaking) {
       double d0 = 0.4D + Math.abs(motionY) * 0.2D;

@@ -13,9 +13,7 @@ class PlayerCheckPartDelegate<P extends Check, D extends PlayerCheckPart<P>>
   extends CheckPart<P>
   implements PlayerBukkitEventSubscriber, PlayerPacketEventSubscriber
 {
-  private final Function<? super User, ? extends D> generator;
-
-  protected PlayerCheckPartDelegate(P parentCheck, Class<? extends D> delegateClass) {
+	protected PlayerCheckPartDelegate(P parentCheck, Class<? extends D> delegateClass) {
     this(parentCheck, user -> {
       try {
         return delegateClass.getDeclaredConstructor(User.class, parentCheck.getClass()).newInstance(user, parentCheck);
@@ -29,8 +27,7 @@ class PlayerCheckPartDelegate<P extends Check, D extends PlayerCheckPart<P>>
 
   protected PlayerCheckPartDelegate(P parentCheck, Function<? super User, ? extends D> generator) {
     super(parentCheck);
-    this.generator = generator;
-    this.checks = UserLocal.withInitial(generator);
+	  this.checks = UserLocal.withInitial(generator);
   }
 
   @Override

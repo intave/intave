@@ -1,0 +1,24 @@
+package de.jpx3.intave.check.movement.physics.evaluation;
+
+public enum EvaluationTag {
+  ATTACH,
+  BOAT,
+  COLLISION_INACCURACY,
+  FIREWORK,
+  FLYING,
+  FLYING_ON_GROUND,
+  LADDER,
+  PISTON,
+  REDUCE_INACCURACY,
+  RIPTIDE,
+  SHULKER,
+  SNEAKING,
+  CHUNK_LOADING,
+  WEB,
+  CROUCHING_BOX_INACCURACY,
+  ENTITY_PUSH,
+  ELYTRA,
+  VELOCITY_FLYING_INACCURACY,
+  WATERFLOW,
+  ;
+}

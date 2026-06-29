@@ -109,9 +109,9 @@ class CobbleStoneWallPatch extends BlockShapePatch {
   private List<Direction> surroundedFacings(World world, int posX, int posY, int posZ) {
     List<Direction> connected = new ArrayList<>();
     Direction direction = UP;
-    int blockX = (int) (posX + direction.directionVector().xCoord);
-    int blockY = (int) (posY + direction.directionVector().yCoord);
-    int blockZ = (int) (posZ + direction.directionVector().zCoord);
+    int blockX = (int) (posX + direction.directionVector().x);
+    int blockY = (int) (posY + direction.directionVector().y);
+    int blockZ = (int) (posZ + direction.directionVector().z);
     Block block = VolatileBlockAccess.blockAccess(world, blockX, blockY, blockZ);
     Material blockType = block.getType();
     if (blockType != Material.AIR) {

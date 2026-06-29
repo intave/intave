@@ -6,6 +6,7 @@ import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.adapter.viaversion.*;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
@@ -15,7 +16,7 @@ import java.util.List;
  * Created by Jpx3 on 27.07.2018.
  */
 
-public class ViaVersionAdapter {
+public final class ViaVersionAdapter {
   private static final List<ViaVersionAccess> available = Lists.newArrayList();
 
   static {
@@ -66,7 +67,11 @@ public class ViaVersionAdapter {
     if (foundLinkage()) {
       return access.protocolVersionOf(player);
     } else {
-      return ProtocolLibrary.getProtocolManager().getProtocolVersion(player);
+      if (player.hasMetadata("intave.testplayer.protocolversion")) {
+        return player.getMetadata("intave.testplayer.protocolversion").get(0).asInt();
+      } else {
+        return ProtocolLibrary.getProtocolManager().getProtocolVersion(player);
+      }
     }
   }
 

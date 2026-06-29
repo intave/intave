@@ -4,6 +4,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.block.fluid.FluidFlow;
+import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.connect.customclient.CustomClientSupportConfig;
 import de.jpx3.intave.entity.size.HitboxSize;
@@ -13,8 +14,10 @@ import de.jpx3.intave.module.feedback.FeedbackObserver;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.violation.placeholder.PlayerContext;
 import de.jpx3.intave.module.violation.placeholder.UserContext;
+import de.jpx3.intave.player.collider.Colliders;
 import de.jpx3.intave.player.collider.complex.Collider;
 import de.jpx3.intave.player.collider.simple.SimpleCollider;
+import de.jpx3.intave.player.meta.IntaveMetadataValue;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.permission.PermissionCache;
@@ -27,6 +30,7 @@ import org.bukkit.entity.Player;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -37,22 +41,40 @@ final class TestUser implements User {
   private PlayerStorage storage;
   private final MetadataBundle meta;
   private final Map<Pose, HitboxSize> poseSizes;
-  private final Function<String, Object> callback;
+  private final BiFunction<User, String, Object> callback;
+  private final CustomClientSupportConfig customClientSupportConfig = CustomClientSupportConfig.createDefault();
 
-  TestUser(Player player, Function<String, Object> callback) {
+  private final Collider collider;
+  private final FluidFlow fluidFlow;
+  private final SimpleCollider simpleCollider;
+
+  TestUser(Player player, BiFunction<User, String, Object> callback) {
     this.player = player;
+
+    Integer protocolVersion = (Integer) callback.apply(this, "protocolVersion");
+    if (protocolVersion == null) {
+      protocolVersion = 0;
+    }
+
+    player.setMetadata("intave.testplayer.gliding", IntaveMetadataValue.of(false));
+    player.setMetadata("intave.testplayer.protocolversion", IntaveMetadataValue.of(protocolVersion));
+
     UUID id = player.getUniqueId();
     if (id != null) {
       this.storage = Storages.emptyPlayerStorageFor(id);
     }
     this.callback = callback;
-    this.meta = new MetadataBundle(null, this);
-    Integer protocolVersion = (Integer) callback.apply("protocolVersion");
-    if (protocolVersion == null) {
-      protocolVersion = 0;
-    }
+    this.meta = new MetadataBundle(player, this);
+
+    meta.protocol().setProtocolVersion(protocolVersion);
+
     this.poseSizes = Pose.poseSizesByVersion(protocolVersion);
     meta.setup();
+    meta.movement().setupDefaults();
+
+    this.collider = Colliders.suitableComplexColliderProcessorFor(this);
+    this.fluidFlow = Fluids.suitableWaterflowFor(this);
+    this.simpleCollider = Colliders.suitableSimpleColliderProcessorFor(this);
   }
 
   @Override
@@ -92,12 +114,12 @@ final class TestUser implements User {
 
   @Override
   public boolean justJoined() {
-    return callback.apply("justJoined").equals(true);
+    return callback.apply(this, "justJoined").equals(true);
   }
 
   @Override
   public long joined() {
-    return (long) callback.apply("joined");
+    return (long) callback.apply(this, "joined");
   }
 
   @Override
@@ -125,7 +147,7 @@ final class TestUser implements User {
 
   @Override
   public CustomClientSupportConfig customClientSupport() {
-    return null;
+    return customClientSupportConfig;
   }
 
   @Override
@@ -140,12 +162,12 @@ final class TestUser implements User {
 
   @Override
   public boolean shouldIgnoreNextInboundPacket() {
-    return (boolean) callback.apply("shouldIgnoreNextInboundPacket");
+    return (boolean) callback.apply(this, "shouldIgnoreNextInboundPacket");
   }
 
   @Override
   public boolean shouldIgnoreNextOutboundPacket() {
-    return (boolean) callback.apply("shouldIgnoreNextOutboundPacket");
+    return (boolean) callback.apply(this, "shouldIgnoreNextOutboundPacket");
   }
 
   @Override
@@ -190,22 +212,25 @@ final class TestUser implements User {
 
   @Override
   public BlockCache blockCache() {
-    return (BlockCache) callback.apply("blockCache");
+    return (BlockCache) callback.apply(this, "blockCache");
   }
 
   @Override
   public Collider collider() {
-    return (Collider) callback.apply("collider");
+    Collider collider = (Collider) callback.apply(this, "collider");
+	  return collider == null ? this.collider : collider;
   }
 
   @Override
   public SimpleCollider simplifiedCollider() {
-    return (SimpleCollider) callback.apply("simplifiedCollider");
+    SimpleCollider simplifiedCollider = (SimpleCollider) callback.apply(this, "simplifiedCollider");
+    return simplifiedCollider == null ? this.simpleCollider : simplifiedCollider;
   }
 
   @Override
   public FluidFlow waterflow() {
-    return (FluidFlow) callback.apply("waterflow");
+    FluidFlow fluidFlow = (FluidFlow) callback.apply(this, "waterflow");
+    return fluidFlow == null ? this.fluidFlow : fluidFlow;
   }
 
   @Override
@@ -220,7 +245,7 @@ final class TestUser implements User {
 
   @Override
   public TrustFactor trustFactor() {
-    return (TrustFactor) callback.apply("trustFactor");
+    return (TrustFactor) callback.apply(this, "trustFactor");
   }
 
   @Override
@@ -285,17 +310,17 @@ final class TestUser implements User {
 
   @Override
   public int latency() {
-    return (int) callback.apply("latency");
+    return (int) callback.apply(this, "latency");
   }
 
   @Override
   public int latencyJitter() {
-    return (int) callback.apply("latencyJitter");
+    return (int) callback.apply(this, "latencyJitter");
   }
 
   @Override
   public int protocolVersion() {
-    return (int) callback.apply("protocolVersion");
+    return (int) callback.apply(this, "protocolVersion");
   }
 
   @Override

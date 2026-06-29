@@ -39,6 +39,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.ATTACK_REDUCE;
+import static de.jpx3.intave.check.movement.physics.MoveMetric.ENTITY_USE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.ATTACK_ENTITY;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.USE_ENTITY;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.RESPAWN;
@@ -98,7 +100,7 @@ public final class AttackDispatcher extends Module {
     int ticks = (int) entity.pendingFeedbackPackets();
     connectionData.attackDelays.occurred(ticks);
 
-    movementData.pastEntityUse = 0;
+    movementData.activeTick(ENTITY_USE);
     if (isAttacking) {
       if (attackData.attackPastTicks > 10) {
         attackData.attackPastTicks = 0;
@@ -107,7 +109,7 @@ public final class AttackDispatcher extends Module {
       // Sprinting will be set to zero after the first reduce in the tick, does not apply to knockback
       boolean limitedToOneAttack = itemKnockback == 0;
       if (entity.isPlayer && (f > 0 || f1 > 0) && (isSprinting || itemKnockback > 0)) {
-        movementData.pastPlayerReduceAttackPhysics = 0;
+        movementData.activeTick(ATTACK_REDUCE);
         if (movementData.reduceTicks == 0 || !limitedToOneAttack) {
           movementData.reduceTicks++;
         }

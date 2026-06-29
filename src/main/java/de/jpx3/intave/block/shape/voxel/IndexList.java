@@ -53,6 +53,11 @@ public interface IndexList {
       public double get(int index) {
         return value;
       }
+
+      @Override
+      public double[] toDoubleArray() {
+        return new double[]{value};
+      }
     };
   }
 
@@ -79,6 +84,11 @@ public interface IndexList {
     @Override
     public double get(int index) {
       throw new IndexOutOfBoundsException();
+    }
+
+    @Override
+    public double[] toDoubleArray() {
+      return new double[0];
     }
   };
 

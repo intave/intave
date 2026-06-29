@@ -1,5 +1,6 @@
 package de.jpx3.intave.check.movement.physics;
 
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.player.collider.Colliders;
 import de.jpx3.intave.player.collider.complex.ColliderResult;
@@ -10,12 +11,13 @@ import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.FLYING_PACKET_ACCURATE;
 import static de.jpx3.intave.share.ClientMath.cos;
 import static de.jpx3.intave.share.ClientMath.sin;
 
 final class ElytraSimulator extends BaseSimulator {
   @Override
-  public Simulation simulate(
+  public Simulation simulateTick(
     User user, Motion motion,
     SimulationEnvironment environment,
     MovementConfiguration configuration
@@ -24,9 +26,9 @@ final class ElytraSimulator extends BaseSimulator {
     float rotationPitch = environment.rotationPitch();
     Vector lookVector = environment.lookVector();
 
-    double positionX = environment.verifiedPositionX();
-    double positionY = environment.verifiedPositionY();
-    double positionZ = environment.verifiedPositionZ();
+    double positionX = environment.verifiedLastPositionX();
+    double positionY = environment.verifiedLastPositionY();
+    double positionZ = environment.verifiedLastPositionZ();
 
     float pitchRad = rotationPitch * 0.017453292F;
     double lookVectorX = lookVector.getX();
@@ -78,9 +80,9 @@ final class ElytraSimulator extends BaseSimulator {
     float rotationPitch = environment.rotationPitch();
     Vector lookVector = environment.lookVector();
 
-    double positionX = environment.verifiedPositionX();
-    double positionY = environment.verifiedPositionY();
-    double positionZ = environment.verifiedPositionZ();
+    double positionX = environment.verifiedLastPositionX();
+    double positionY = environment.verifiedLastPositionY();
+    double positionZ = environment.verifiedLastPositionZ();
 
     boolean onGround;
     double resetMotion = environment.resetMotion();
@@ -102,15 +104,15 @@ final class ElytraSimulator extends BaseSimulator {
       positionY += colliderResult.motionY();
       positionZ += colliderResult.motionZ();
 
-      double diffX = positionX - environment.verifiedPositionX();
-      double diffY = positionY - environment.verifiedPositionY();
-      double diffZ = positionZ - environment.verifiedPositionZ();
+      double diffX = positionX - environment.verifiedLastPositionX();
+      double diffY = positionY - environment.verifiedLastPositionY();
+      double diffZ = positionZ - environment.verifiedLastPositionZ();
       onGround = colliderResult.onGround();
 
       boolean jumpLessThanExpected = colliderResult.motionY() < jumpUpwardsMotion;
       boolean jump = onGround && Math.abs(((colliderResult.motionY()) + jumpUpwardsMotion) - environment.motionY()) < 1e-5 && jumpLessThanExpected;
 
-      if (!flyingPacket(diffX, diffY, diffZ) && !jump) {
+      if (!flyingPacket(user, diffX, diffY, diffZ) && !jump) {
         break;
       }
 
@@ -156,13 +158,8 @@ final class ElytraSimulator extends BaseSimulator {
       }
     }
     if (interpolations != 0) {
-      movementData.resetFlyingPacketAccurate();
+      movementData.activeTick(FLYING_PACKET_ACCURATE);
     }
-  }
-
-  @Override
-  public String debugName() {
-    return "ELYTRA";
   }
 
   @Override

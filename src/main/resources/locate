@@ -6,7 +6,7 @@
 
 AxisAlignedBB -> {
   [1.17-1.20.4] -> "net/minecraft/world/phys/AxisAlignedBB"
-  [1.21-26.1.2] -> "net/minecraft/world/phys/AABB"
+  [1.21-26.2.0] -> "net/minecraft/world/phys/AABB"
   fields {
     [1.17-1.20.4] -> {
       "minX" -> "a"
@@ -16,17 +16,17 @@ AxisAlignedBB -> {
       "maxY" -> "e"
       "maxZ" -> "f"
     }
-#   [1.21-26.1.2] Keep names
+#   [1.21-26.2.0] Keep names
   }
 }
 
 Block -> {
-  [1.17-26.1.2] -> "net/minecraft/world/level/block/Block"
+  [1.17-26.2.0] -> "net/minecraft/world/level/block/Block"
   methods {
     [1.18-1.20.4] -> {
       "getDamage(RIBlockData;REntityHuman;RIBlockAccess;RBlockPosition;)F" -> "a(RIBlockData;REntityHuman;RIBlockAccess;RBlockPosition;)F"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "getDamage(RIBlockData;REntityHuman;RIBlockAccess;RBlockPosition;)F" -> "getDestroyProgress(RIBlockData;REntityHuman;RIBlockAccess;RBlockPosition;)F"
     }
     [1.18-1.18.9] -> {
@@ -47,7 +47,7 @@ Block -> {
     [1.20.3-1.20.4] -> {
       "getBlockData()RIBlockData;" -> "o()RIBlockData;"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "getBlockData()RIBlockData;" -> "defaultBlockState()RIBlockData;"
     }
     [1.18-1.18.1] -> {
@@ -59,7 +59,7 @@ Block -> {
     [1.19.4-1.20.4] -> {
       "getItem()RItem;" -> "k()RItem;"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "getItem()RItem;" -> "asItem()RItem;"
     }
     [1.18-1.18.2] -> {
@@ -77,7 +77,7 @@ Block -> {
     1.20.4 -> {
       "getStates()RBlockStateList;" -> "n()RBlockStateList;"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "getStates()RBlockStateList;" -> "getStateDefinition()RBlockStateList;"
       "c_(RIBlockData;)RFluid;" -> "getFluidState(RIBlockData;)RFluid;"
     }
@@ -86,20 +86,20 @@ Block -> {
 
 Blocks -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/block/Blocks"
-  [1.21-26.1.2] -> "net/minecraft/world/level/block/Blocks"
+  [1.21-26.2.0] -> "net/minecraft/world/level/block/Blocks"
   fields {
     [1.17-1.20.4] -> {
       "AIR" -> "a"
     }
-#   [1.21-26.1.2] Keep name
+#   [1.21-26.2.0] Keep name
   }
 }
 
 BlockBase -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/block/state/BlockBase"
-  [1.21-26.1.2] -> "net/minecraft/world/level/block/state/BlockBehaviour"
+  [1.21-26.2.0] -> "net/minecraft/world/level/block/state/BlockBehaviour"
   methods {
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "c_(RIBlockData;)RFluid;" -> "getFluidState(RIBlockData;)RFluid;"
     }
   }
@@ -107,36 +107,36 @@ BlockBase -> {
 
 BlockPosition -> {
   [1.17-1.20.4] -> "net/minecraft/core/BlockPosition"
-  [1.21-26.1.2] -> "net/minecraft/core/BlockPos"
+  [1.21-26.2.0] -> "net/minecraft/core/BlockPos"
   methods {
     [1.18-1.20.4] -> {
       "getX()I" -> "u()I"
       "getY()I" -> "v()I"
       "getZ()I" -> "w()I"
     }
-#   [1.21-26.1.2] Keep names
+#   [1.21-26.2.0] Keep names
   }
 }
 
 BlockPosition$MutableBlockPosition -> {
   [1.17-1.20.4] -> "net/minecraft/core/BlockPosition$MutableBlockPosition"
-  [1.21-26.1.2] -> "net/minecraft/core/BlockPos$MutableBlockPos"
+  [1.21-26.2.0] -> "net/minecraft/core/BlockPos$MutableBlockPos"
 }
 
 Chunk -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/chunk/Chunk"
-  [1.21-26.1.2] -> "net/minecraft/world/level/chunk/LevelChunk"
+  [1.21-26.2.0] -> "net/minecraft/world/level/chunk/LevelChunk"
 }
 
 LightChunk {
-  [1.20-26.1.2] -> "net/minecraft/world/level/chunk/LightChunk"
+  [1.20-26.2.0] -> "net/minecraft/world/level/chunk/LightChunk"
 }
 
 ChunkProviderServer -> {
   [1.17-1.20.4] -> "net/minecraft/server/level/ChunkProviderServer"
-  [1.21-26.1.2] -> "net/minecraft/server/level/ServerChunkCache"
+  [1.21-26.2.0] -> "net/minecraft/server/level/ServerChunkCache"
   methods {
-    [26.1.1-26.1.2] -> {
+    [26.1.1-26.2.0] -> {
       "c(II)RLightChunk;" -> "getChunkNow(II)RLightChunk;"
     }
   }
@@ -144,7 +144,7 @@ ChunkProviderServer -> {
 
 DataWatcher -> {
   [1.17-1.20.4] -> "net/minecraft/network/syncher/DataWatcher"
-  [1.21-26.1.2] -> "net/minecraft/network/syncher/SynchedEntityData"
+  [1.21-26.2.0] -> "net/minecraft/network/syncher/SynchedEntityData"
   methods {
     [1.18-1.19.9] -> {
       "set(RDataWatcherObject;Ljava/lang/Object;)V" -> "b(RDataWatcherObject;Ljava/lang/Object;)V"
@@ -154,25 +154,25 @@ DataWatcher -> {
       "set(RDataWatcherObject;Ljava/lang/Object;)V" -> "b(RDataWatcherObject;Ljava/lang/Object;)V"
       "get(RDataWatcherObject;)Ljava/lang/Object;" -> "b(RDataWatcherObject;)Ljava/lang/Object;"
     }
-#   [1.21-26.1.2] Keep names
+#   [1.21-26.2.0] Keep names
   }
 }
 
 DataWatcherObject -> {
   [1.17-1.20.4] -> "net/minecraft/network/syncher/DataWatcherObject"
-  [1.21-26.1.2] -> "net/minecraft/network/syncher/EntityDataAccessor"
+  [1.21-26.2.0] -> "net/minecraft/network/syncher/EntityDataAccessor"
 }
 
 DamageSource -> {
-  [1.17-26.1.2] -> "net/minecraft/world/damagesource/DamageSource"
+  [1.17-26.2.0] -> "net/minecraft/world/damagesource/DamageSource"
 }
 
 DamageSources -> {
-  [1.19.4-26.1.2] -> "net/minecraft/world/damagesource/DamageSources"
+  [1.19.4-26.2.0] -> "net/minecraft/world/damagesource/DamageSources"
 }
 
 Entity -> {
-  [1.17-26.1.2] -> "net/minecraft/world/entity/Entity"
+  [1.17-26.2.0] -> "net/minecraft/world/entity/Entity"
   fields {
     [1.17-1.17.9] -> {
       "yaw" -> "ay"
@@ -199,7 +199,7 @@ Entity -> {
       "pitch" -> "aH"
       "onGround" -> "aJ"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "yaw" -> "yRot"
       "pitch" -> "xRot"
       "onGround" -> "onGround"
@@ -213,7 +213,7 @@ Entity -> {
     [1.19.4-1.20.4] -> {
       "entityCount" -> "d"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "entityCount" -> "ENTITY_COUNTER"
     }
   }
@@ -230,7 +230,7 @@ Entity -> {
     [1.20.3-1.20.4] -> {
       "getDataWatcher()RDataWatcher;" -> "an()RDataWatcher;"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "getDataWatcher()RDataWatcher;" -> "getEntityData()RDataWatcher;"
     }
     [1.18-1.18.9] -> {
@@ -265,7 +265,7 @@ Entity -> {
       "getWidth()F" -> "dg()F"
       "getHeight()F" -> "dh()F"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "getWidth()F" -> "getBbWidth()F"
       "getHeight()F" -> "getBbHeight()F"
     }
@@ -274,14 +274,14 @@ Entity -> {
 
 EntityHuman -> {
   [1.17-1.20.4] -> "net/minecraft/world/entity/player/EntityHuman"
-  [1.21-26.1.2] -> "net/minecraft/world/entity/player/Player"
+  [1.21-26.2.0] -> "net/minecraft/world/entity/player/Player"
 }
 
 EntityTypes -> {
   [1.17-1.20.4] -> "net/minecraft/world/entity/EntityTypes"
-  [1.21-26.1.2] -> "net/minecraft/world/entity/EntityType"
+  [1.21-26.2.0] -> "net/minecraft/world/entity/EntityType"
   methods {
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "a(Ljava/lang/String;)Ljava/util/Optional;" -> "byString(Ljava/lang/String;)Ljava/util/Optional;"
     }
   }
@@ -289,19 +289,19 @@ EntityTypes -> {
 
 EntitySize -> {
   [1.17-1.20.4] -> "net/minecraft/world/entity/EntitySize"
-  [1.21-26.1.2] -> "net/minecraft/world/entity/EntityDimensions"
+  [1.21-26.2.0] -> "net/minecraft/world/entity/EntityDimensions"
   fields {
     [1.17-1.20.4] -> {
       "width" -> "a"
       "height" -> "b"
     }
-#   [1.21-26.1.2] Keep names
+#   [1.21-26.2.0] Keep names
   }
 }
 
 EntityLiving -> {
   [1.17-1.20.4] -> "net/minecraft/world/entity/EntityLiving"
-  [1.21-26.1.2] -> "net/minecraft/world/entity/LivingEntity"
+  [1.21-26.2.0] -> "net/minecraft/world/entity/LivingEntity"
   fields {
     [1.17-1.17.9] -> {
       "maxNoDamageTicks" -> "aU"
@@ -318,7 +318,7 @@ EntityLiving -> {
     [1.20.2-1.20.4] -> {
       "maxNoDamageTicks" -> "aR"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "maxNoDamageTicks" -> "invulnerableDuration"
     }
   }
@@ -326,7 +326,7 @@ EntityLiving -> {
 
 EntityPlayer -> {
   [1.17-1.20.4] -> "net/minecraft/server/level/EntityPlayer"
-  [1.21-26.1.2] -> "net/minecraft/server/level/ServerPlayer"
+  [1.21-26.2.0] -> "net/minecraft/server/level/ServerPlayer"
   fields {
     [1.17-1.19.9] -> {
       "playerConnection" -> "b"
@@ -336,7 +336,7 @@ EntityPlayer -> {
       "playerConnection" -> "c"
       "inventory" -> "co"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "playerConnection" -> "connection"
       "inventory" -> "inventory"
     }
@@ -369,7 +369,7 @@ EntityPlayer -> {
     [1.20.3-1.20.4] -> {
       "getInventory()RPlayerInventory;" -> "fS()RPlayerInventory;"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "getInventory()RPlayerInventory;" -> "getInventory()RPlayerInventory;"
     }
   }
@@ -377,18 +377,18 @@ EntityPlayer -> {
 
 EnumMainHand -> {
   [1.17-1.20.4] -> "net/minecraft/world/entity/EnumMainHand"
-  [1.21-26.1.2] -> "net/minecraft/world/entity/HumanoidArm"
+  [1.21-26.2.0] -> "net/minecraft/world/entity/HumanoidArm"
 }
 
 Fluid -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/material/Fluid"
-  [1.21-26.1.2] -> "net/minecraft/world/level/material/FluidState"
+  [1.21-26.2.0] -> "net/minecraft/world/level/material/FluidState"
   methods {
     [1.18-1.20.4] -> {
       "isSource()Z" -> "b()Z"
       "isEmpty()Z" -> "c()Z"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "isSource()Z" -> "isSource()Z"
       "isEmpty()Z" -> "isEmpty()Z"
       "d()F" -> "getOwnHeight()F"
@@ -397,10 +397,10 @@ Fluid -> {
 }
 
 Fluids -> {
-  [26.1.1-26.1.2] -> "net/minecraft/world/level/material/Fluids"
+  [26.1.1-26.2.0] -> "net/minecraft/world/level/material/Fluids"
 
   fields {
-    [26.1.1-26.1.2] -> {
+    [26.1.1-26.2.0] -> {
       "EMPTY" -> "EMPTY"
       "FLOWING_WATER" -> "FLOWING_WATER"
       "WATER" -> "WATER"
@@ -412,23 +412,23 @@ Fluids -> {
 
 GeneratorAccess -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/GeneratorAccess"
-  [1.21-26.1.2] -> "net/minecraft/world/level/LevelAccessor"
+  [1.21-26.2.0] -> "net/minecraft/world/level/LevelAccessor"
 }
 
 Holder -> {
-  [1.21-26.1.2] -> "net/minecraft/core/Holder"
+  [1.21-26.2.0] -> "net/minecraft/core/Holder"
 }
 
 IBlockAccess -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/IBlockAccess"
-  [1.21-26.1.2] -> "net/minecraft/world/level/BlockGetter"
+  [1.21-26.2.0] -> "net/minecraft/world/level/BlockGetter"
   methods {
     [1.18-1.20.4] -> {
       "getType(RBlockPosition;)RIBlockData;" -> "a_(RBlockPosition;)RIBlockData;"
       "getFluid(RBlockPosition;)RFluid;" -> "b_(RBlockPosition;)RFluid;"
       "rayTrace(RRayTrace;)RMovingObjectPositionBlock;" -> "a(RRayTrace;)RMovingObjectPositionBlock;"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "getType(RBlockPosition;)RIBlockData;" -> "getBlockState(RBlockPosition;)RIBlockData;"
       "getFluid(RBlockPosition;)RFluid;" -> "getFluidState(RBlockPosition;)RFluid;"
       "rayTrace(RRayTrace;)RMovingObjectPositionBlock;" -> "clip(RRayTrace;)RMovingObjectPositionBlock;"
@@ -438,7 +438,7 @@ IBlockAccess -> {
 
 IBlockData -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/block/state/IBlockData"
-  [1.21-26.1.2] -> "net/minecraft/world/level/block/state/BlockState"
+  [1.21-26.2.0] -> "net/minecraft/world/level/block/state/BlockState"
   methods {
     [1.18-1.20.4] -> {
       "getBlock()RBlock;" -> "b()RBlock;"
@@ -468,7 +468,7 @@ IBlockData -> {
       "getBlock()RBlock;" -> "b()RBlock;"
       "getStateMap()Lcom/google/common/collect/ImmutableMap;" -> "C()Lcom/google/common/collect/ImmutableMap;"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "getBlock()RBlock;" -> "getBlock()RBlock;"
       "getStateMap()Ljava/util/Map;" -> "getValues()Ljava/util/Map;"
       "get(RIBlockState;)Ljava/lang/Comparable;" -> "getValue(RIBlockState;)Ljava/lang/Comparable;"
@@ -478,7 +478,7 @@ IBlockData -> {
 
 IBlockState -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/block/state/properties/IBlockState"
-  [1.21-26.1.2] -> "net/minecraft/world/level/block/state/properties/Property"
+  [1.21-26.2.0] -> "net/minecraft/world/level/block/state/properties/Property"
   methods {
     [1.18-1.20.4] -> {
       "getType()Ljava/lang/Class;" -> "g()Ljava/lang/Class;"
@@ -490,7 +490,7 @@ IBlockState -> {
       "getName()Ljava/lang/String;" -> "getName()Ljava/lang/String;"
       "getValues()Ljava/util/Collection;" -> "getPossibleValues()Ljava/util/Collection;"
     }
-    [1.21.3-26.1.2] -> {
+    [1.21.3-26.2.0] -> {
       "getType()Ljava/lang/Class;" -> "getValueClass()Ljava/lang/Class;"
       "getName()Ljava/lang/String;" -> "getName()Ljava/lang/String;"
       "getValues()Ljava/util/Collection;" -> "getPossibleValues()Ljava/util/List;"
@@ -500,9 +500,9 @@ IBlockState -> {
 
 BlockStateList -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/block/state/BlockStateList"
-  [1.21-26.1.2] -> "net/minecraft/world/level/block/state/StateDefinition"
+  [1.21-26.2.0] -> "net/minecraft/world/level/block/state/StateDefinition"
   methods {
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
 #      "a()Ljava/util/List;" -> "getPossibleStates()Ljava/util/List;"
       "a()Lcom/google/common/collect/ImmutableList;" -> "getPossibleStates()Lcom/google/common/collect/ImmutableList;"
     }
@@ -511,7 +511,7 @@ BlockStateList -> {
 
 BlockStateInteger -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/block/state/properties/BlockStateInteger"
-  [1.21-26.1.2] -> "net/minecraft/world/level/block/state/properties/IntegerProperty"
+  [1.21-26.2.0] -> "net/minecraft/world/level/block/state/properties/IntegerProperty"
   methods {
     [1.18-1.20.4] -> {
       "getValues()Ljava/util/Collection;" -> "a()Ljava/util/Collection;"
@@ -519,7 +519,7 @@ BlockStateInteger -> {
     [1.21-1.21.2] -> {
       "getValues()Ljava/util/Collection;" -> "getPossibleValues()Ljava/util/Collection;"
     }
-    [1.21.3-26.1.2] -> {
+    [1.21.3-26.2.0] -> {
       "getValues()Ljava/util/Collection;" -> "getPossibleValues()Ljava/util/List;"
     }
   }
@@ -527,14 +527,14 @@ BlockStateInteger -> {
 
 BlockStateBoolean -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/block/state/properties/BlockStateBoolean"
-  [1.21-26.1.2] -> "net/minecraft/world/level/block/state/properties/BooleanProperty"
+  [1.21-26.2.0] -> "net/minecraft/world/level/block/state/properties/BooleanProperty"
 }
 
 BlockStateEnum -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/block/state/properties/BlockStateEnum"
-  [1.21-26.1.2] -> "net/minecraft/world/level/block/state/properties/EnumProperty"
+  [1.21-26.2.0] -> "net/minecraft/world/level/block/state/properties/EnumProperty"
   methods {
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "getValues()Ljava/util/Collection;" -> "getPossibleValues()Ljava/util/Collection;"
     }
   }
@@ -542,23 +542,23 @@ BlockStateEnum -> {
 
 IChatBaseComponent -> {
   [1.17-1.20.4] -> "net/minecraft/network/chat/IChatBaseComponent"
-  [1.21-26.1.2] -> "net/minecraft/network/chat/Component"
+  [1.21-26.2.0] -> "net/minecraft/network/chat/Component"
 }
 
 IChunkProvider -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/chunk/IChunkProvider"
-  [1.21-26.1.2] -> "net/minecraft/world/level/chunk/ChunkSource"
+  [1.21-26.2.0] -> "net/minecraft/world/level/chunk/ChunkSource"
 }
 
 InventoryClickType -> {
   [1.17-1.20.4] -> "net/minecraft/world/inventory/InventoryClickType"
   [1.21-1.21.11] -> "net/minecraft/world/inventory/ClickType"
-  [26.1.1-26.1.2] -> "net/minecraft/world/inventory/ContainerInput"
+  [26.1.1-26.2.0] -> "net/minecraft/world/inventory/ContainerInput"
 }
 
 IRegistry -> {
   [1.17-1.19.2] -> "net/minecraft/core/IRegistry"
-  [1.19.3-26.1.2] -> "net/minecraft/core/registries/BuiltInRegistries"
+  [1.19.3-26.2.0] -> "net/minecraft/core/registries/BuiltInRegistries"
   fields {
     [1.17-1.17.9] -> {
       "ENTITY_TYPE" -> "Y"
@@ -575,16 +575,16 @@ IRegistry -> {
     [1.19.3-1.20.4] -> {
       "ENTITY_TYPE" -> "l"
     }
-#   [1.21-26.1.2] Keep names
+#   [1.21-26.2.0] Keep names
   }
 }
 
 Item -> {
-  [1.17-26.1.2] -> "net/minecraft/world/item/Item"
+  [1.17-26.2.0] -> "net/minecraft/world/item/Item"
 }
 
 ItemStack -> {
-  [1.17-26.1.2] -> "net/minecraft/world/item/ItemStack"
+  [1.17-26.2.0] -> "net/minecraft/world/item/ItemStack"
   methods {
     [1.18-1.19.9] -> {
       "getItem()RItem;" -> "c()RItem;"
@@ -592,13 +592,13 @@ ItemStack -> {
     [1.20-1.20.4] -> {
       "getItem()RItem;" -> "d()RItem;"
     }
-#   [1.21-26.1.2] Keep names
+#   [1.21-26.2.0] Keep names
   }
 }
 
 IWorldReader -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/IWorldReader"
-  [1.21-26.1.2] -> "net/minecraft/world/level/LevelReader"
+  [1.21-26.2.0] -> "net/minecraft/world/level/LevelReader"
 }
 
 Material -> {
@@ -612,12 +612,12 @@ Material -> {
 
 BlockData -> {
   [1.20-1.20.4] -> "net/minecraft/world/level/block/state/BlockBase$BlockData"
-  [1.21-26.1.2] -> "net/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase"
+  [1.21-26.2.0] -> "net/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase"
   methods {
     [1.20-1.20.4] -> {
       "isReplaceable()Z" -> "r()Z"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "isReplaceable()Z" -> "canBeReplaced()Z"
     }
   }
@@ -625,23 +625,23 @@ BlockData -> {
 
 MinecraftServer -> {
   [1.17-1.20.4] -> "net/minecraft/server/MinecraftServer"
-  [1.21-26.1.2] -> "net/minecraft/server/dedicated/DedicatedServer"
+  [1.21-26.2.0] -> "net/minecraft/server/dedicated/DedicatedServer"
 }
 
 MinecraftKey -> {
   [1.17-1.20.4] -> "net/minecraft/resources/MinecraftKey"
   [1.21-1.21.7] -> "net/minecraft/resources/ResourceLocation"
-  [1.21.8-26.1.2] -> "net/minecraft/resources/Identifier"
+  [1.21.8-26.2.0] -> "net/minecraft/resources/Identifier"
 }
 
 MovingObjectPosition -> {
   [1.17-1.20.4] -> "net/minecraft/world/phys/MovingObjectPosition"
-  [1.21-26.1.2] -> "net/minecraft/world/phys/HitResult"
+  [1.21-26.2.0] -> "net/minecraft/world/phys/HitResult"
   fields {
     [1.17-1.20.4] -> {
       "pos" -> "a"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "pos" -> "location"
     }
   }
@@ -649,60 +649,60 @@ MovingObjectPosition -> {
     [1.18-1.20.4] -> {
       "getType()RMovingObjectPosition$EnumMovingObjectType;" -> "c()RMovingObjectPosition$EnumMovingObjectType;"
     }
-#   [1.21-26.1.2] Keep names
+#   [1.21-26.2.0] Keep names
   }
 }
 
 MovingObjectPosition$EnumMovingObjectType -> {
   [1.17-1.20.4] -> "net/minecraft/world/phys/MovingObjectPosition$EnumMovingObjectType"
-  [1.21-26.1.2] -> "net/minecraft/world/phys/HitResult$Type"
+  [1.21-26.2.0] -> "net/minecraft/world/phys/HitResult$Type"
 }
 
 MovingObjectPositionEntity -> {
   [1.17-1.20.4] -> "net/minecraft/world/phys/MovingObjectPositionEntity"
-  [1.21-26.1.2] -> "net/minecraft/world/phys/EntityHitResult"
+  [1.21-26.2.0] -> "net/minecraft/world/phys/EntityHitResult"
 }
 
 MovingObjectPositionBlock -> {
   [1.17-1.20.4] -> "net/minecraft/world/phys/MovingObjectPositionBlock"
-  [1.21-26.1.2] -> "net/minecraft/world/phys/BlockHitResult"
+  [1.21-26.2.0] -> "net/minecraft/world/phys/BlockHitResult"
 }
 
 NetworkManager -> {
   [1.17-1.20.4] -> "net/minecraft/network/NetworkManager"
-  [1.21-26.1.2] -> "net/minecraft/network/Connection"
+  [1.21-26.2.0] -> "net/minecraft/network/Connection"
 }
 
 Packet -> {
   [1.17-1.20.4] -> "net/minecraft/network/protocol/Packet"
-  [1.21-26.1.2] -> "net/minecraft/network/protocol/Packet"
+  [1.21-26.2.0] -> "net/minecraft/network/protocol/Packet"
 }
 
 PacketDataSerializer -> {
   [1.17-1.20.4] -> "net/minecraft/network/PacketDataSerializer"
-  [1.21-26.1.2] -> "net/minecraft/network/FriendlyByteBuf"
+  [1.21-26.2.0] -> "net/minecraft/network/FriendlyByteBuf"
 }
 
 PacketLoginInStart -> {
   [1.17-1.20.4] -> "net/minecraft/network/protocol/login/PacketLoginInStart"
-  [1.21-26.1.2] -> "net/minecraft/network/protocol/login/ClientboundHelloPacket"
+  [1.21-26.2.0] -> "net/minecraft/network/protocol/login/ClientboundHelloPacket"
 }
 
 PacketPlayOutScoreboardTeam -> {
   [1.17-1.20.4] -> "net/minecraft/network/protocol/game/PacketPlayOutScoreboardTeam"
-  [1.21-26.1.2] -> "net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket"
+  [1.21-26.2.0] -> "net/minecraft/network/protocol/game/ClientboundSetPlayerTeamPacket"
 }
 
 PacketPlayOutPosition$EnumPlayerTeleportFlags -> {
   [1.17-1.19.3] -> "net/minecraft/network/protocol/game/PacketPlayOutPosition$EnumPlayerTeleportFlags"
   [1.19.4-1.21.2] -> "net/minecraft/world/entity/RelativeMovement"
-  [1.21.3-26.1.2] -> "net/minecraft/world/entity/Relative"
+  [1.21.3-26.2.0] -> "net/minecraft/world/entity/Relative"
   fields {
     [1.17-1.20.4] -> {
       "X_ROT" -> "d"
       "Y_ROT" -> "e"
     }
-#   [1.21-26.1.2] Keep names
+#   [1.21-26.2.0] Keep names
   }
   methods {
     [1.8-1.21.11] -> {
@@ -712,86 +712,86 @@ PacketPlayOutPosition$EnumPlayerTeleportFlags -> {
 
 PacketPlayInEntityAction$EnumPlayerAction -> {
   [1.17-1.20.4] -> "net/minecraft/network/protocol/game/PacketPlayInEntityAction$EnumPlayerAction"
-  [1.21-26.1.2] -> "net/minecraft/network/protocol/game/ServerboundPlayerCommandPacket$Action"
+  [1.21-26.2.0] -> "net/minecraft/network/protocol/game/ServerboundPlayerCommandPacket$Action"
 }
 
 PacketPlayOutGameStateChange$a -> {
   [1.17-1.20.4] -> "net/minecraft/network/protocol/game/PacketPlayOutGameStateChange$a"
-  [1.21-26.1.2] -> "net/minecraft/network/protocol/game/ClientboundGameEventPacket$Type"
+  [1.21-26.2.0] -> "net/minecraft/network/protocol/game/ClientboundGameEventPacket$Type"
 }
 
 PlayerConnection -> {
   [1.17-1.20.4] -> "net/minecraft/server/network/PlayerConnection"
-  [1.21-26.1.2] -> "net/minecraft/server/network/ServerGamePacketListenerImpl"
+  [1.21-26.2.0] -> "net/minecraft/server/network/ServerGamePacketListenerImpl"
 }
 
 PlayerInventory -> {
   [1.17-1.20.4] -> "net/minecraft/world/entity/player/PlayerInventory"
-  [1.21-26.1.2] -> "net/minecraft/world/entity/player/Inventory"
+  [1.21-26.2.0] -> "net/minecraft/world/entity/player/Inventory"
   methods {
     [1.18-1.20.4] -> {
       "getItem(I)RItemStack;" -> "a(I)RItemStack;"
     }
-#   [1.21-26.1.2] Keep names
+#   [1.21-26.2.0] Keep names
   }
 }
 
 RayTrace -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/RayTrace"
-  [1.21-26.1.2] -> "net/minecraft/world/level/ClipContext"
+  [1.21-26.2.0] -> "net/minecraft/world/level/ClipContext"
 }
 
 RayTrace$BlockCollisionOption -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/RayTrace$BlockCollisionOption"
-  [1.21-26.1.2] -> "net/minecraft/world/level/ClipContext$Block"
+  [1.21-26.2.0] -> "net/minecraft/world/level/ClipContext$Block"
   fields {
     [1.17-1.20.4] -> {
       "COLLIDER" -> "a"
       "OUTLINE" -> "b"
       "VISUAL" -> "c"
     }
-#   [1.21-26.1.2] Keep names
+#   [1.21-26.2.0] Keep names
   }
 }
 
 RayTrace$FluidCollisionOption -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/RayTrace$FluidCollisionOption"
-  [1.21-26.1.2] -> "net/minecraft/world/level/ClipContext$Fluid"
+  [1.21-26.2.0] -> "net/minecraft/world/level/ClipContext$Fluid"
   fields {
     [1.17-1.20.4] -> {
       "NONE" -> "a"
       "SOURCE_ONLY" -> "b"
       "ANY" -> "c"
     }
-#   [1.21-26.1.2] Keep names
+#   [1.21-26.2.0] Keep names
   }
 }
 
 RegistryBlocks -> {
   [1.17-1.20.4] -> "net/minecraft/core/RegistryBlocks"
-  [1.21-26.1.2] -> "net/minecraft/core/DefaultedRegistry"
+  [1.21-26.2.0] -> "net/minecraft/core/DefaultedRegistry"
   methods {
     [1.18-1.20.4] -> {
       "fromId(I)Ljava/lang/Object;" -> "a(I)Ljava/lang/Object;"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "fromId(I)Ljava/lang/Object;" -> "byId(I)Ljava/lang/Object;"
     }
   }
 }
 
 Scoreboard -> {
-  [1.17-26.1.2] -> "net/minecraft/world/scores/Scoreboard"
+  [1.17-26.2.0] -> "net/minecraft/world/scores/Scoreboard"
 }
 
 ScoreboardTeam -> {
   [1.17-1.20.4] -> "net/minecraft/world/scores/ScoreboardTeam"
-  [1.21-26.1.2] -> "net/minecraft/world/scores/PlayerTeam"
+  [1.21-26.2.0] -> "net/minecraft/world/scores/PlayerTeam"
 }
 
 ScoreboardTeamBase$EnumNameTagVisibility -> {
   [1.17-1.20.4] -> "net/minecraft/world/scores/ScoreboardTeamBase$EnumNameTagVisibility"
-  [1.21-26.1.2] -> "net/minecraft/world/scores/Team$Visibility"
+  [1.21-26.2.0] -> "net/minecraft/world/scores/Team$Visibility"
   fields {
     [1.17-1.20.4] -> {
       "ALWAYS" -> "a"
@@ -799,22 +799,22 @@ ScoreboardTeamBase$EnumNameTagVisibility -> {
       "HIDE_FOR_OTHER_TEAMS" -> "c"
       "HIDE_FOR_OWN_TEAM" -> "d"
     }
-#   [1.21-26.1.2] Keep names
+#   [1.21-26.2.0] Keep names
   }
 }
 
 ServerConnection -> {
   [1.17-1.20.4] -> "net/minecraft/server/network/ServerConnection"
-  [1.21-26.1.2] -> "net/minecraft/server/network/ServerConnectionListener"
+  [1.21-26.2.0] -> "net/minecraft/server/network/ServerConnectionListener"
 }
 
 TagKey -> {
-  [1.18.2-26.1.2] -> "net/minecraft/tags/TagKey"
+  [1.18.2-26.2.0] -> "net/minecraft/tags/TagKey"
 }
 
 Tag$e -> {
   [1.17-1.18.1] -> "net/minecraft/tags/Tag$e"
-  [1.18.2-26.1.2] -> "net/minecraft/tags/TagKey"
+  [1.18.2-26.2.0] -> "net/minecraft/tags/TagKey"
 }
 
 Tag -> {
@@ -823,7 +823,7 @@ Tag -> {
 
 TagsFluid -> {
   [1.17-1.20.4] -> "net/minecraft/tags/TagsFluid"
-  [1.21-26.1.2] -> "net/minecraft/tags/FluidTags"
+  [1.21-26.2.0] -> "net/minecraft/tags/FluidTags"
   fields {
     [1.17-1.18.1] -> {
       "WATER" -> "b"
@@ -833,13 +833,13 @@ TagsFluid -> {
       "WATER" -> "a"
       "LAVA" -> "b"
     }
-#   [1.21-26.1.2] Keep names
+#   [1.21-26.2.0] Keep names
   }
 }
 
 Vec3D -> {
   [1.17-1.20.4] -> "net/minecraft/world/phys/Vec3D"
-  [1.21-26.1.2] -> "net/minecraft/world/phys/Vec3"
+  [1.21-26.2.0] -> "net/minecraft/world/phys/Vec3"
   fields {
     [1.17-1.18.9] -> {
       "x" -> "b"
@@ -851,14 +851,14 @@ Vec3D -> {
       "y" -> "d"
       "z" -> "e"
     }
-    [1.21.4-26.1.2] -> {
+    [1.21.4-26.2.0] -> {
       "c" -> "ZERO"
     }
   }
 }
 
 VoxelShape -> {
-  [1.17-26.1.2] -> "net/minecraft/world/phys/shapes/VoxelShape"
+  [1.17-26.2.0] -> "net/minecraft/world/phys/shapes/VoxelShape"
   methods {
     [1.18-1.20.1] -> {
       "toList()Ljava/util/List;" -> "d()Ljava/util/List;"
@@ -866,7 +866,7 @@ VoxelShape -> {
     [1.20.2-1.20.4] -> {
       "toList()Ljava/util/List;" -> "e()Ljava/util/List;"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "toList()Ljava/util/List;" -> "toAabbs()Ljava/util/List;"
     }
   }
@@ -874,9 +874,9 @@ VoxelShape -> {
 
 VoxelShapes -> {
   [1.17-1.20.4] -> "net/minecraft/world/phys/shapes/VoxelShapes"
-  [1.21-26.1.2] -> "net/minecraft/world/phys/shapes/Shapes"
+  [1.21-26.2.0] -> "net/minecraft/world/phys/shapes/Shapes"
   methods {
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "a()RVoxelShape;" -> "empty()RVoxelShape;"
       "b()RVoxelShape;" -> "block()RVoxelShape;"
     }
@@ -885,7 +885,7 @@ VoxelShapes -> {
 
 World -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/World"
-  [1.21-26.1.2] -> "net/minecraft/world/level/Level"
+  [1.21-26.2.0] -> "net/minecraft/world/level/Level"
   methods {
     [1.18-1.18.1] -> {
       "getChunkProvider()RIChunkProvider;" -> "L()RIChunkProvider;"
@@ -908,7 +908,7 @@ World -> {
     [1.20.3-1.20.4] -> {
       "getChunkProvider()RIChunkProvider;" -> "L()RIChunkProvider;"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "getChunkProvider()RIChunkProvider;" -> "getChunkSource()RIChunkProvider;"
     }
   }
@@ -916,7 +916,7 @@ World -> {
 
 WorldServer -> {
   [1.17-1.20.4] -> "net/minecraft/server/level/WorldServer"
-  [1.21-26.1.2] -> "net/minecraft/server/level/ServerLevel"
+  [1.21-26.2.0] -> "net/minecraft/server/level/ServerLevel"
   methods {
     [1.18-1.20.4] -> {
       "rayTrace(RRayTrace;)RMovingObjectPositionBlock;" -> "a(RRayTrace;)RMovingObjectPositionBlock;"
@@ -927,7 +927,7 @@ WorldServer -> {
     [1.20.3-1.20.4] -> {
       "getChunkProvider()RChunkProviderServer;" -> "l()RChunkProviderServer;"
     }
-    [1.21-26.1.2] -> {
+    [1.21-26.2.0] -> {
       "getChunkProvider()RChunkProviderServer;" -> "getChunkSource()RChunkProviderServer;"
       "rayTrace(RRayTrace;)RMovingObjectPositionBlock;" -> "clip(RRayTrace;)RMovingObjectPositionBlock;"
     }
@@ -935,6 +935,6 @@ WorldServer -> {
 }
 
 PositionMoveRotation -> {
-  [1.21.4-26.1.2] -> "net/minecraft/world/entity/PositionMoveRotation"
+  [1.21.4-26.2.0] -> "net/minecraft/world/entity/PositionMoveRotation"
 }
 

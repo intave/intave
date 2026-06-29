@@ -20,6 +20,9 @@ public final class IntaveDomains {
   private static final Resource SERVICE_DOMAIN_RESOURCE = Resources.cacheResourceChain("https://raw.githubusercontent.com/intave/domains/main/service2", "sdomains", TimeUnit.DAYS.toMillis(1));
 
   public static void setup() {
+  }
+
+  static {
     if (!DOMAIN_CACHE.valid()) {
       // first collect all lines, then ping them, not concurrently or in between
       Map<String, Long> baseDomainPings = BASE_DOMAIN_RESOURCE.readLines().stream().collect(Collectors.toMap(domain -> domain, IntaveDomains::ping, Long::min));
@@ -36,7 +39,7 @@ public final class IntaveDomains {
       URLConnection connection = new URL(url).openConnection();
       connection.setConnectTimeout(1600);
       connection.setReadTimeout(1600);
-      connection.setRequestProperty("User-Agent", "Intave/" + IntavePlugin.version());
+      connection.setRequestProperty("User-Agent", "Intave/" + IntavePlugin.fullVersion());
       connection.connect();
       Scanner scanner = new Scanner(connection.getInputStream());
       String response = scanner.nextLine();

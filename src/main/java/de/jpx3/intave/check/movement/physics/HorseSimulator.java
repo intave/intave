@@ -24,18 +24,4 @@ final class HorseSimulator extends BaseSimulator {
 ////      horseForward = 0.0F;
 ////    }
 //
-////    System.out.println("horseForward:" + horseForward);
-//
-//    float aiMoveSpeed = 0;
-//    movementData.setJumpMovementFactor(0.02f, sprinting);
-//    movementData.setAiMoveSpeed(0.2f);
-//
-//    // highly risky
-//    return super.performSimulation(user, motion, horseForward, horseStrafe, attackReduce, sprinting, jumped, handActive);
-//  }
-
-  @Override
-  public String debugName() {
-    return "HORSE";
-  }
 }

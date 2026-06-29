@@ -1,19 +1,40 @@
 package de.jpx3.intave.block.shape;
 
+import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.Position;
+import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.doubles.DoubleSet;
 
 import java.util.List;
 
 public final class ComparisonAlertShape implements BlockShape {
+  public static final StreamCodec<ByteBuf, ByteBuf, ComparisonAlertShape> STREAM_CODEC = StreamCodec.of(
+    (output, shape) -> {
+      BlockShape.STREAM_CODEC.encode(output, shape.firstShape());
+      BlockShape.STREAM_CODEC.encode(output, shape.secondShape());
+    },
+    input -> new ComparisonAlertShape(
+      BlockShape.STREAM_CODEC.decode(input),
+      BlockShape.STREAM_CODEC.decode(input)
+    )
+  );
+
   private final BlockShape firstShape;
   private final BlockShape secondShape;
 
-  public ComparisonAlertShape(BlockShape firstShape, BlockShape secondShape) {
+  private ComparisonAlertShape(BlockShape firstShape, BlockShape secondShape) {
     this.firstShape = firstShape;
     this.secondShape = secondShape;
+  }
+
+  BlockShape firstShape() {
+    return firstShape;
+  }
+
+  BlockShape secondShape() {
+    return secondShape;
   }
 
   @Override
@@ -112,8 +133,8 @@ public final class ComparisonAlertShape implements BlockShape {
   }
 
   @Override
-  public List<BoundingBox> boundingBoxes() {
-    List<BoundingBox> first = firstShape.boundingBoxes();
+  public List<BoundingBox> elementaryBoxes() {
+    List<BoundingBox> first = firstShape.elementaryBoxes();
 //    List<BoundingBox> second = secondShape.boundingBoxes();
 //    if (!first.equals(second)) {
 //      System.err.println("Difference in boundingBoxes: " + first + " vs " + second);

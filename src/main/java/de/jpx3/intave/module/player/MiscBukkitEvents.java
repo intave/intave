@@ -37,7 +37,7 @@ public final class MiscBukkitEvents extends Module {
     if (!hasNotificationPermission) {
       return;
     }
-    String currentVersion = IntavePlugin.version();
+    String currentVersion = IntavePlugin.fullVersion();
     IntaveVersion version = plugin.versions().versionInformation(currentVersion);
     if (version == null) {
       sendPrefixedMessage(ChatColor.YELLOW + "This server is running an unlisted version of Intave (" + currentVersion + ")", player);

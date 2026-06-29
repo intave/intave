@@ -1,0 +1,94 @@
+name: Create Monthly Release Draft
+on:
+  workflow_dispatch:
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
+
+      - name: Get previous release tag
+        id: prev_tag
+        run: |
+          PREV=$(git tag --sort=-creatordate | head -n 1)
+          echo "tag=${PREV}" >> $GITHUB_OUTPUT
+          echo "Previous tag: ${PREV}"
+
+      - name: Generate commit log (direct pushes only)
+        id: commits
+        run: |
+          PREV="${{ steps.prev_tag.outputs.tag }}"
+
+          # Use first-parent to skip individual PR commits from merge commits.
+          # Use grep to remove squash-merge commits (format: "Message (#123)").
+          # The "|| true" ensures the step doesn't fail if grep finds 0 results.
+          if [ -z "$PREV" ]; then
+            LOG=$(git log --first-parent --pretty=format:"- %s (%h)" --no-merges | grep -v -E '\(#[0-9]+\)$' || true)
+          else
+            LOG=$(git log "${PREV}..HEAD" --first-parent --pretty=format:"- %s (%h)" --no-merges | grep -v -E '\(#[0-9]+\)$' || true)
+          fi
+
+          # Secure multi-line output using a random delimiter
+          DELIMITER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "log<<$DELIMITER" >> "$GITHUB_OUTPUT"
+          echo "$LOG" >> "$GITHUB_OUTPUT"
+          echo "$DELIMITER" >> "$GITHUB_OUTPUT"
+
+      - name: Generate GitHub PR release notes
+        id: gh_notes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prevTag = "${{ steps.prev_tag.outputs.tag }}";
+            const newTag = "v${{ steps.date.outputs.date }}";
+            const params = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: newTag,
+            };
+            if (prevTag) params.previous_tag_name = prevTag;
+            const resp = await github.rest.repos.generateReleaseNotes(params);
+            core.setOutput("notes", resp.data.body);
+
+      - name: Build release body
+        id: body
+        env:
+          COMMITS: ${{ steps.commits.outputs.log }}
+          PR_NOTES: ${{ steps.gh_notes.outputs.notes }}
+        run: |
+          if [ -n "$COMMITS" ]; then
+            # Use printf or echo with double quotes to preserve newlines
+            BODY="${PR_NOTES}
+
+          ## Direct Commits
+
+          ${COMMITS}"
+          else
+            BODY="${PR_NOTES}"
+          fi
+
+          DELIMITER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "body<<$DELIMITER" >> "$GITHUB_OUTPUT"
+          echo "$BODY" >> "$GITHUB_OUTPUT"
+          echo "$DELIMITER" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release Draft
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.date.outputs.date }}
+          name: Release v${{ steps.date.outputs.date }}
+          draft: true
+          prerelease: false
+          body: ${{ steps.body.outputs.body }}

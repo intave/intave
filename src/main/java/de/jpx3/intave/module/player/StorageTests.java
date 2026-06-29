@@ -19,7 +19,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
-public final class StorageTests extends Tests {
+public final class StorageTests extends IntegrationTests {
   private static final UUID ZERO_UUID = new UUID(0, 0);
   private static final UUID ONE_UUID = new UUID(1, 1);
   private static final String EXAMPLE_TEXT = generateExampleText();

@@ -33,7 +33,10 @@ jobs:
           - "26.1.2"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - uses: actions/setup-java@v4
         with:

@@ -216,6 +216,6 @@ public final class EncryptedLegacyResource implements LegacyResource {
   }
 
   private String intaveVersion() {
-    return IntavePlugin.version();
+    return IntavePlugin.fullVersion();
   }
 }

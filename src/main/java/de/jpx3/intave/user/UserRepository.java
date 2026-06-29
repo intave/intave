@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 public final class UserRepository {
   private static final Map<UUID, User> repository = MemoryWatchdog.watch("users", new ConcurrentHashMap<>());
   private static final User fallbackUser = UserFactory.createFallback();
-  private static boolean closed;
 
   // used to load the class on startup
   public static void setup() {
@@ -85,7 +84,6 @@ public final class UserRepository {
   }
 
   public static void die() {
-    closed = true;
     unregisterAll();
     repository.clear();
   }

@@ -54,8 +54,6 @@ public enum Relative {
     return var1;
   }
 
-  private static final Class<?> nativeClass = Lookup.serverClass("PacketPlayOutPosition$EnumPlayerTeleportFlags");
-
   public static Set<?> nativeSetOfAllFlags() {
     return nativeFromIndex(0b11111);
   }
@@ -72,9 +70,13 @@ public enum Relative {
     return nativeFromIndex(indexOf(flags));
   }
 
+  private static Class<?> nativeClass = null;
   private static EquivalentConverter<Relative> genericConverter;
 
   public static Set<Relative> flagsFrom(PacketContainer packet) {
+    if (nativeClass == null) {
+      nativeClass = Lookup.serverClass("PacketPlayOutPosition$EnumPlayerTeleportFlags");
+    }
     if (genericConverter == null) {
       genericConverter = EnumWrappers.getGenericConverter(nativeClass, Relative.class);
     }
@@ -82,6 +84,9 @@ public enum Relative {
   }
 
   public static void writeFlags(PacketContainer packet, Set<Relative> flags) {
+    if (nativeClass == null) {
+      nativeClass = Lookup.serverClass("PacketPlayOutPosition$EnumPlayerTeleportFlags");
+    }
     if (genericConverter == null) {
       genericConverter = EnumWrappers.getGenericConverter(nativeClass, Relative.class);
     }
@@ -89,18 +94,14 @@ public enum Relative {
   }
 
   private static final Map<Integer, Set<?>> flagCache = Maps.newConcurrentMap();
-  private static final Method resolverMethod;
-
-  static {
-    resolverMethod = Locate.methodByKey(
-      "PacketPlayOutPosition$EnumPlayerTeleportFlags",
-      "unpack(I)Ljava/util/Set;"
-    );
-  }
 
   public static Set<?> nativeFromIndex(int index) {
     return flagCache.computeIfAbsent(index, integer -> {
       try {
+        Method resolverMethod = Locate.methodByKey(
+          "PacketPlayOutPosition$EnumPlayerTeleportFlags",
+          "unpack(I)Ljava/util/Set;"
+        );
         return (Set<?>) resolverMethod.invoke(null, index);
       } catch (InvocationTargetException | IllegalAccessException exception) {
         throw new IllegalStateException("Something is wrong");

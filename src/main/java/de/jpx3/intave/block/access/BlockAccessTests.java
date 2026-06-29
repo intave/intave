@@ -11,7 +11,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.Set;
 
-public final class BlockAccessTests extends Tests {
+public final class BlockAccessTests extends IntegrationTests {
   private Block block, blockBelow;
   private BlockStorage priorMaterial, priorMaterialBelow;
   private final Set<Material> blacklistedMaterials = MaterialSearch.materialsThatContain("REDSTONE", "BED", "SOIL", "GRASS_PATH", "EGG", "SCULK");

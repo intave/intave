@@ -6,7 +6,6 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import de.jpx3.intave.IntaveControl;
-import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersions;
@@ -28,12 +27,14 @@ import de.jpx3.intave.module.nayoro.event.EntityRemoveEvent;
 import de.jpx3.intave.module.nayoro.event.EntitySpawnEvent;
 import de.jpx3.intave.module.nayoro.event.sink.EventSink;
 import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.PacketTypes;
 import de.jpx3.intave.packet.reader.EntityIterable;
 import de.jpx3.intave.packet.reader.EntityMetadataReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.player.fake.IdentifierReserve;
 import de.jpx3.intave.share.ClientMath;
+import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
@@ -56,6 +57,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.FIREWORK_ROCKETS;
+import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
 import static de.jpx3.intave.module.feedback.FeedbackOptions.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION;
@@ -113,7 +116,7 @@ public final class EntityTracker extends Module {
       int vehicleId = packet.getIntegers().read(0);
       Entity vehicle = UserRepository.userOf(player).meta().connection().entityBy(vehicleId);
       if (vehicle == null) {
-        IntaveLogger.logger().error("Vehicle entity not found in mount request: " + vehicleId);
+//        IntaveLogger.logger().error("Vehicle entity not found in mount request: " + vehicleId);
         detachEntity(user, vehicleId, -1);
         return;
       }
@@ -487,13 +490,13 @@ public final class EntityTracker extends Module {
     User user = UserRepository.userOf(player);
     PacketType packetType = event.getPacketType();
 
-    boolean isClientTickEnd = packetType == PacketType.Play.Client.CLIENT_TICK_END;
+    boolean isClientTickEnd = PacketTypes.isClientEndTick(packetType);
     if (user.meta().protocol().sendsClientTickEnd() && !isClientTickEnd) {
       return;
     }
     ConnectionMetadata synchronizeData = user.meta().connection();
     MovementMetadata movement = user.meta().movement();
-    if (movement.lastTeleport == 0) {
+    if (movement.ticksPast(TELEPORT) == 0) {
       return;
     }
     for (Entity entity : synchronizeData.entities()) {
@@ -518,13 +521,11 @@ public final class EntityTracker extends Module {
           originalY = entity.position.posY;
           originalZ = entity.position.posZ;
         }
-        movement.positionX = movement.verifiedPositionX = movement.lastPositionX = originalX;
-        movement.positionY = movement.verifiedPositionY = movement.lastPositionY = originalY;
-        movement.positionZ = movement.verifiedPositionZ = movement.lastPositionZ = originalZ;
+        movement.positionX = movement.verifiedLastPositionX = movement.lastPositionX = originalX;
+        movement.positionY = movement.verifiedLastPositionY = movement.lastPositionY = originalY;
+        movement.positionZ = movement.verifiedLastPositionZ = movement.lastPositionZ = originalZ;
         movement.verifiedPositionOrigin = "Riding pos sync (1.8)";
-        movement.setBaseMotionX(0);
-        movement.setBaseMotionY(0);
-        movement.setBaseMotionZ(0);
+        movement.setBaseMotion(Motion.newEmpty());
       }
     }
   }
@@ -1076,7 +1077,7 @@ public final class EntityTracker extends Module {
           power = Math.max(fireworkMeta.getPower(), 1);
         }
       }
-      movement.fireworkRocketsTicks = 0;
+      movement.activeTick(FIREWORK_ROCKETS);
       movement.fireworkRocketsPower = power;
     }
   }
@@ -1113,7 +1114,7 @@ public final class EntityTracker extends Module {
           power = Math.max(fireworkMeta.getPower(), 1);
         }
       }
-      movement.fireworkRocketsTicks = 0;
+      movement.activeTick(FIREWORK_ROCKETS);
       movement.fireworkRocketsPower = power;
     }
   }

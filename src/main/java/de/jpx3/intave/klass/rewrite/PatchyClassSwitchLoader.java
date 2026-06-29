@@ -1,7 +1,7 @@
 package de.jpx3.intave.klass.rewrite;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
 import de.jpx3.intave.access.IntaveInternalException;
+import de.jpx3.intave.adapter.MinecraftVersion;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -21,7 +21,7 @@ public final class PatchyClassSwitchLoader<T> {
 
   public boolean available() {
     return (requiredVersion == null || requiredVersion.atOrAbove()) &&
-      (maximumVersion == null || maximumVersion.compareTo(MinecraftVersion.getCurrentVersion()) <= 0);
+      (maximumVersion == null || maximumVersion.compareTo(MinecraftVersion.current()) <= 0);
   }
 
   public void loadIfAvailable() {

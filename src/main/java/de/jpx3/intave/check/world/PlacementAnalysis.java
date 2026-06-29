@@ -26,30 +26,30 @@ public final class PlacementAnalysis extends Check {
 
   public void setupSubChecks() {
     boolean useTimings = configuration().settings().boolBy("check-timings", configuration().settings().boolBy("check_timings", true));
-    appendCheckPart(new Constraint(this));
-    appendCheckPart(new SmartSpeed(this));
+    appendPlayerCheckPart(Constraint.class);
+    appendPlayerCheckPart(SmartSpeed.class);
 
     boolean enterprise = (ProtocolMetadata.VERSION_DETAILS & 0x200) != 0;
 
     try {
-      appendCheckPart(new Stability(this));
+      appendPlayerCheckPart(Stability.class);
 
       if (useTimings) {
-        appendCheckPart(new Speed(this));
-        appendCheckPart(new Sneak(this));
+        appendPlayerCheckPart(Speed.class);
+        appendPlayerCheckPart(Sneak.class);
       }
-      appendCheckPart(new Snap(this));
-      appendCheckPart(new SharpRotation(this));
-      appendCheckPart(new BlockRotation(this));
-      // appendCheckPart(new SneakAndPlace(this));
+      appendPlayerCheckPart(Snap.class);
+      appendPlayerCheckPart(SharpRotation.class);
+      appendPlayerCheckPart(BlockRotation.class);
+      // appendPlayerCheckPart(SneakAndPlace.class);
 //      }
     } catch (Exception | Error e) {
       // classes might be missing
     }
-    appendCheckPart(new RotationSpeed(this));
-//    appendCheckPart(new PacketOrder(this));
+    appendPlayerCheckPart(RotationSpeed.class);
+//    appendPlayerCheckPart(PacketOrder.class);
     appendCheckPart(new Facing(this));
-    appendCheckPart(new RoundedRotation(this));
+    appendPlayerCheckPart(RoundedRotation.class);
 
     appendPlayerCheckPart(AngleSnap.class);
     appendPlayerCheckPart(RotationFlick.class);

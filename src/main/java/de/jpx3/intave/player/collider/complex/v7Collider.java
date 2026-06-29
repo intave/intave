@@ -2,7 +2,7 @@ package de.jpx3.intave.player.collider.complex;
 
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.shape.BlockShape;
-import de.jpx3.intave.check.movement.physics.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.Motion;
@@ -34,7 +34,7 @@ final class v7Collider implements Collider {
       motion.motionZ *= 0.25D;
     }
 
-    BlockShape var37 = Collision.shape(user.player(), entityBoundingBox.expand(startMotionX, startMotionY, startMotionZ));
+    BlockShape var37 = Collision.shape(user, environment, entityBoundingBox.expand(startMotionX, startMotionY, startMotionZ));
     startMotionY = var37.allowedOffset(Direction.Axis.Y_AXIS, entityBoundingBox, startMotionY);
     entityBoundingBox = entityBoundingBox.offset(0, startMotionY, 0);
 
@@ -62,7 +62,7 @@ final class v7Collider implements Collider {
       BoundingBox var29 = entityBoundingBox.copy();
       entityBoundingBox = var19;
 
-      var37 = Collision.shape(user.player(), entityBoundingBox.expand(var13, startMotionY, var17));
+      var37 = Collision.shape(user, environment, entityBoundingBox.expand(var13, startMotionY, var17));
       startMotionY = var37.allowedOffset(Direction.Axis.Y_AXIS, entityBoundingBox, startMotionY);
       entityBoundingBox.offset(0, startMotionY, 0);
 
@@ -97,7 +97,7 @@ final class v7Collider implements Collider {
     motion.motionY = newPositionY - positionY;
     motion.motionZ = newPositionZ - positionZ;
     return new ColliderResult(
-      Motion.copyFrom(motion), onGround,
+      Motion.copyFrom(motion), null, onGround,
       collidedHorizontally, collidedVertically, moveResetX, moveResetZ,
       step, false, stepHeight
     );

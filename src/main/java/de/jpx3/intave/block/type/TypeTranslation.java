@@ -1,6 +1,6 @@
 package de.jpx3.intave.block.type;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.adapter.MinecraftVersion;
 import org.bukkit.Material;
 
 final class TypeTranslation {
@@ -28,5 +28,15 @@ final class TypeTranslation {
 
   public Material typeTo() {
     return typeTo;
+  }
+
+  @Override
+  public String toString() {
+    return "TypeTranslation{" +
+      "versionFrom=" + versionFrom +
+      ", versionTo=" + versionTo +
+      ", typeFrom=" + typeFrom +
+      ", typeTo=" + typeTo +
+      '}';
   }
 }

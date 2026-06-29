@@ -3,7 +3,6 @@ package de.jpx3.intave.block.cache;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import de.jpx3.intave.share.Position;
-import org.bukkit.entity.Player;
 
 import java.util.Map;
 import java.util.Set;
@@ -15,12 +14,10 @@ final class BlockStateReplacementCache<K> {
   private final Map<K, BlockState> indexed = Maps.newConcurrentMap();
   private final Set<Position> locations = Sets.newConcurrentHashSet();
 
-  private final Player player;
-  private final Function<? super Position, ? extends K> keyer;
+	private final Function<? super Position, ? extends K> keyer;
 
-  BlockStateReplacementCache(Player player, Function<? super Position, ? extends K> keyer) {
-    this.player = player;
-    this.keyer = keyer;
+  BlockStateReplacementCache(Function<? super Position, ? extends K> keyer) {
+	  this.keyer = keyer;
   }
 
   public BlockState byKey(K index) {

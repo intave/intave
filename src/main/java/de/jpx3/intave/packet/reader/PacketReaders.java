@@ -11,6 +11,7 @@ import java.util.function.Supplier;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.CLOSE_WINDOW;
+import static de.jpx3.intave.module.linker.packet.PacketId.Client.VEHICLE_MOVE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.POSITION;
@@ -41,6 +42,7 @@ public final class PacketReaders {
     setup(ENTITY_SOUND, EntityReader::new);
     setup(ENTITY_TELEPORT, EntityReader::new);
     setup(ENTITY_VELOCITY, EntityVelocityReader::new);
+    setup(EXPLOSION, ExplosionReader::new);
     setup(GAME_STATE_CHANGE, GameStateChangeReader::new);
     setup(LOGIN, EntityReader::new);
     setup(LOOK_AT, EntityReader::new);
@@ -76,6 +78,11 @@ public final class PacketReaders {
     setup(USE_ITEM, BlockInteractionReader::new);
     setup(USE_ITEM_ON, BlockInteractionReader::new);
     setup(USE_ENTITY, EntityUseReader::new);
+    setup(FLYING, PlayerMoveReader::new);
+    setup(Client.POSITION, PlayerMoveReader::new);
+    setup(POSITION_LOOK, PlayerMoveReader::new);
+    setup(LOOK, PlayerMoveReader::new);
+    setup(VEHICLE_MOVE, PlayerMoveReader::new);
     setup(WINDOW_ITEMS, WindowBulkItemReader::new);
     setup(WINDOW_CLICK, WindowClickReader::new);
     setup(SET_SLOT, WindowSingleItemReader::new);

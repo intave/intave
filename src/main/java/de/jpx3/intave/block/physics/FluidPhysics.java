@@ -1,6 +1,6 @@
 package de.jpx3.intave.block.physics;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.adapter.MinecraftVersion;
 import com.google.common.collect.ImmutableList;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.fluid.Fluid;
@@ -29,7 +29,7 @@ final class FluidPhysics implements BlockPhysic {
   }
 
   @Override
-  public Motion entityCollidedWithBlock(User user, Location location, Location from, double motionX, double motionY, double motionZ) {
+  public Motion entityInside(User user, Location location, Location from, double motionX, double motionY, double motionZ) {
     ProtocolMetadata clientData = user.meta().protocol();
     if (clientData.waterUpdate()) {
       MovementMetadata movementData = user.meta().movement();

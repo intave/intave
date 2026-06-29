@@ -3,6 +3,7 @@ package de.jpx3.intave.player;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -10,9 +11,21 @@ import org.bukkit.potion.PotionEffectType;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_13;
 
 public final class Effects {
-  public static final PotionEffectType EFFECT_LEVITATION = PotionEffectType.getByName("LEVITATION");
-  private static final PotionEffectType EFFECT_SLOW_FALLING = PotionEffectType.getByName("SLOW_FALLING");
-  private static final PotionEffectType EFFECT_DOLPHIN = PotionEffectType.getByName("DOLPHINS_GRACE");
+  public static final PotionEffectType EFFECT_LEVITATION;
+  private static final PotionEffectType EFFECT_SLOW_FALLING;
+  private static final PotionEffectType EFFECT_DOLPHIN;
+
+  static {
+    if (Bukkit.getServer() == null) {
+      EFFECT_LEVITATION = null;
+      EFFECT_SLOW_FALLING = null;
+      EFFECT_DOLPHIN = null;
+    } else {
+      EFFECT_LEVITATION = PotionEffectType.getByName("LEVITATION");
+      EFFECT_SLOW_FALLING = PotionEffectType.getByName("SLOW_FALLING");
+      EFFECT_DOLPHIN = PotionEffectType.getByName("DOLPHINS_GRACE");
+    }
+  }
 
   public static int effectAmplifier(Player player, PotionEffectType type) {
     for (PotionEffect activeEffect : player.getActivePotionEffects()) {

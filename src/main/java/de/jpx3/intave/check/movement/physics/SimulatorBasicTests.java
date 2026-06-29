@@ -3,6 +3,7 @@ package de.jpx3.intave.check.movement.physics;
 import de.jpx3.intave.block.cache.MockFullBlockStaticPlane;
 import de.jpx3.intave.block.fluid.FluidFlow;
 import de.jpx3.intave.block.fluid.Fluids;
+import de.jpx3.intave.check.movement.physics.environment.TestSimulationEnvironment;
 import de.jpx3.intave.player.collider.Colliders;
 import de.jpx3.intave.player.collider.complex.Collider;
 import de.jpx3.intave.player.collider.simple.SimpleCollider;
@@ -18,7 +19,9 @@ import org.bukkit.inventory.PlayerInventory;
 import java.util.Collections;
 import java.util.UUID;
 
-public final class SimulatorBasicTests extends Tests {
+import static org.bukkit.GameMode.SURVIVAL;
+
+public final class SimulatorBasicTests extends IntegrationTests {
   private static final UUID EMPTY_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
 
   private User testUser;
@@ -45,6 +48,18 @@ public final class SimulatorBasicTests extends Tests {
             return EMPTY_ID;
           case "getActivePotionEffects":
             return Collections.emptyList();
+          case "isFlying":
+          case "getAllowFlight":
+          case "isSprinting":
+          case "isSneaking":
+            return false;
+          case "getFallDistance":
+            return 0.0f;
+          case "getGameMode":
+            return SURVIVAL;
+          case "getFlySpeed":
+          case "getWalkSpeed":
+            return 0.2f;
         }
         return null;
       }
@@ -52,7 +67,7 @@ public final class SimulatorBasicTests extends Tests {
 
     MockFullBlockStaticPlane plane = new MockFullBlockStaticPlane();
     plane.horizontalFill(1);
-    testUser = UserFactory.createTestUserFor(player, s -> {
+    testUser = UserFactory.createTestUserFor(player, (usr, s) -> {
       switch (s) {
         case "collider":
           return collider;
@@ -91,7 +106,7 @@ public final class SimulatorBasicTests extends Tests {
     }
 
     Simulator simulator = Simulators.PLAYER;
-    MovementConfiguration configuration = MovementConfiguration.noAction();
+    MovementConfiguration configuration = MovementConfiguration.blank();
     TestSimulationEnvironment environment = new TestSimulationEnvironment();
 
     environment.setPositionY(250);
@@ -101,14 +116,15 @@ public final class SimulatorBasicTests extends Tests {
     environment.setFriction(0.09998f);
     environment.setAiMovementSpeed(0.1f);
 
-    simulator.prepareNextTick(
+    Motion afterFirstMotion = Motion.newEmpty();
+    simulator.simulateAfterTick(
       testUser,
       environment,
-      environment.positionX(),
-      environment.positionY(),
-      environment.positionZ(),
-      0, 0, 0
+      environment.position(),
+      afterFirstMotion
     );
+
+    environment.setBaseMotion(afterFirstMotion);
 
     for (int i = 1; i < relativeMotion.length; i++) {
       double lastMotionX = relativeMotion[i - 1][0];
@@ -125,10 +141,10 @@ public final class SimulatorBasicTests extends Tests {
       environment.setPositionY(environment.positionY() + motionY);
       environment.setPositionZ(environment.positionZ() + motionZ);
 
-      Simulation simulation = simulator.simulate(
+      Simulation simulation = simulator.simulateTick(
         testUser,
-        environment.baseMotion(),
-        environment,
+        environment.mutableBaseMotionCopy(),
+        environment.unmodifiable(),
         configuration
       );
 
@@ -138,19 +154,15 @@ public final class SimulatorBasicTests extends Tests {
         fail("Simulation accuracy deviation: " + accuracy);
       }
 
-//      if (environment.positionY() < 0) {
-//        fail("Dummy player fell through the floor: ypos=" + environment.positionY() + " ymotion=" + motionY);
-//      }
-
-//      System.out.println("#" + i + " (" + lastMotion + " -> " + simulation.motion() + ") accuracy: " + accuracy);
-
-      simulator.prepareNextTick(
+      Motion modifiableSimulationMotion = simulation.motion();
+      simulator.simulateAfterTick(
         testUser,
         environment,
         environment.position(),
-        simulation.motion()
+        modifiableSimulationMotion
       );
 
+      environment.setBaseMotion(modifiableSimulationMotion);
       environment.copyPositionToVerifiedPosition();
     }
   }

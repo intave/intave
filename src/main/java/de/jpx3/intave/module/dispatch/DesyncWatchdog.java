@@ -179,7 +179,7 @@ public final class DesyncWatchdog extends Module {
   }
 
   private Position intaveAcceptedPositionOf(User user) {
-    return user.meta().movement().verifiedPosition();
+    return user.meta().movement().verifiedLastPosition();
   }
 
   private Position serverPositionOf(User user) {

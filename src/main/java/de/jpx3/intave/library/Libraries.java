@@ -16,6 +16,7 @@ public final class Libraries {
     // commons
     loadLibrary(fromMavenGradle("org.apache.commons", "commons-lang3", "3.11"));
 
+    loadLibrary(fromMavenGradle("net.bytebuddy", "byte-buddy", "1.18.2"));
 
     // apiguardian
     loadLibrary(fromMavenGradle("org.apiguardian", "apiguardian-api", "1.1.2"));

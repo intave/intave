@@ -81,7 +81,7 @@ class StairPatch extends BlockShapePatch {
       for (BoundingBox boundingBox : shapes) {
         contextualizedShapes.add(boundingBox.contextualized(posX, posY, posZ));
       }
-      return BlockShapes.mergeBoxes(contextualizedShapes);
+      return BlockShapes.optimizedMerge(contextualizedShapes);
     }
     return shape;
   }

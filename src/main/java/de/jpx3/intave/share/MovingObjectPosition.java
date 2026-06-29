@@ -26,23 +26,23 @@ public class MovingObjectPosition {
   /**
    * The vector position of the hit
    */
-  public NativeVector hitVec;
+  public RawVector3d hitVec;
 
   /**
    * The hit entity
    */
   public Entity entityHit;
 
-  public MovingObjectPosition(NativeVector hitVecIn, Direction facing, BlockPosition blockPosIn) {
+  public MovingObjectPosition(RawVector3d hitVecIn, Direction facing, BlockPosition blockPosIn) {
     this(MovingObjectPosition.MovingObjectType.BLOCK, hitVecIn, facing, blockPosIn);
   }
 
-  public MovingObjectPosition(NativeVector p_i45552_1_, Direction facing) {
+  public MovingObjectPosition(RawVector3d p_i45552_1_, Direction facing) {
     this(MovingObjectPosition.MovingObjectType.BLOCK, p_i45552_1_, facing, BlockPosition.ORIGIN);
   }
 
   public MovingObjectPosition(Entity entity) {
-    this(entity, new NativeVector(
+    this(entity, new RawVector3d(
       entity.getLocation().getX(),
       entity.getLocation().getY(),
       entity.getLocation().getZ())
@@ -51,15 +51,15 @@ public class MovingObjectPosition {
 
   public MovingObjectPosition(
     MovingObjectPosition.MovingObjectType typeOfHitIn,
-    NativeVector hitVecIn, Direction sideHitIn, BlockPosition blockPosIn
+    RawVector3d hitVecIn, Direction sideHitIn, BlockPosition blockPosIn
   ) {
     this.typeOfHit = typeOfHitIn;
     this.sideHit = sideHitIn;
-    this.hitVec = new NativeVector(hitVecIn.xCoord, hitVecIn.yCoord, hitVecIn.zCoord);
+    this.hitVec = new RawVector3d(hitVecIn.x, hitVecIn.y, hitVecIn.z);
     this.blockPos = blockPosIn;
   }
 
-  public MovingObjectPosition(Entity entityHitIn, NativeVector hitVecIn) {
+  public MovingObjectPosition(Entity entityHitIn, RawVector3d hitVecIn) {
     this.typeOfHit = MovingObjectPosition.MovingObjectType.ENTITY;
     this.entityHit = entityHitIn;
     this.hitVec = hitVecIn;
@@ -69,13 +69,13 @@ public class MovingObjectPosition {
     if (blockRaytrace == null) {
       return none();
     }
-    Vector direction = to.clone().subtract(from).normalize();
+    Vector direction = to.subtract(from).normalize();
     double distance = blockRaytrace.lengthOffset();
-    Position hit = Position.of(from.clone().add(direction.multiply(distance)));
+    Position hit = from.add(direction.multiply(distance));
 
     return new MovingObjectPosition(
       MovingObjectType.BLOCK,
-      new NativeVector(hit.getX(), hit.getY(), hit.getZ()),
+      new RawVector3d(hit.getX(), hit.getY(), hit.getZ()),
       blockRaytrace.direction(),
       blockPos
     );
@@ -120,7 +120,7 @@ public class MovingObjectPosition {
           if (!movingObjectPositionBaseField.isAccessible())
             movingObjectPositionBaseField.setAccessible(true);
           Object pos = movingObjectPositionBaseField.get(movingObjectPosition);
-          NativeVector wrappedPos = WrapperConverter.vectorFromVec3D(pos);
+          RawVector3d wrappedPos = WrapperConverter.vectorFromVec3D(pos);
           Field bField = movingObjectPositionBlock.getDeclaredField("b");
           if (!bField.isAccessible())
             bField.setAccessible(true);
@@ -152,7 +152,7 @@ public class MovingObjectPosition {
       Object direction = movingObjectPositionClass.getField("direction").get(movingObjectPosition);
       Object pos = movingObjectPositionClass.getField("pos").get(movingObjectPosition);
       Object entity = movingObjectPositionClass.getField("entity").get(movingObjectPosition);
-      NativeVector wrappedPos = WrapperConverter.vectorFromVec3D(pos);
+      RawVector3d wrappedPos = WrapperConverter.vectorFromVec3D(pos);
       if (entity == null) {
         BlockPosition wrappedBlockPosition = WrapperConverter.blockPositionFromNativeBlockPosition(blockPosition);
         String typeName = (String) Enum.class.getMethod("name").invoke(type);

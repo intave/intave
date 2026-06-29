@@ -1,13 +1,12 @@
 package de.jpx3.intave.player.collider;
 
-import de.jpx3.intave.check.movement.physics.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.player.collider.complex.*;
 import de.jpx3.intave.player.collider.simple.SimpleCollider;
 import de.jpx3.intave.player.collider.simple.SimpleColliderResult;
 import de.jpx3.intave.player.collider.simple.UniversalSimpleCollider;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
-import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
@@ -79,23 +78,12 @@ public final class Colliders {
   public static SimpleColliderResult simplifiedCollision(
     Player player,
     SimulationEnvironment environment,
-    Position position,
-    Motion motion
-    ) {
-    User user = UserRepository.userOf(player);
-    BoundingBox boundingBox = BoundingBox.fromPosition(user, environment, position);
-    return user.simplifiedCollider().collide(user, boundingBox, motion);
-  }
-
-  public static SimpleColliderResult simplifiedCollision(
-    Player player,
-    SimulationEnvironment environment,
     double positionX, double positionY, double positionZ,
     double motionX, double motionY, double motionZ
   ) {
     User user = UserRepository.userOf(player);
     BoundingBox boundingBox = BoundingBox.fromPosition(user, environment, positionX, positionY, positionZ);
     SimpleCollider simpleCollider = user.simplifiedCollider();
-    return simpleCollider.collide(user, boundingBox, motionX, motionY, motionZ);
+    return simpleCollider.collide(user, environment, boundingBox, Motion.of(motionX, motionY, motionZ));
   }
 }

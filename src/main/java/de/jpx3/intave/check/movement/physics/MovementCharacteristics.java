@@ -8,7 +8,6 @@ import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.EffectMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
@@ -20,8 +19,7 @@ import static de.jpx3.intave.block.collision.Collision.rasterizedLiquidPresentEn
 import static de.jpx3.intave.share.ClientMath.floor;
 
 public final class MovementCharacteristics {
-  public static double jumpMotionFor(Player player, float jumpUpwardsMotion) {
-    User user = UserRepository.userOf(player);
+  public static double jumpMotionFor(User user, float jumpUpwardsMotion) {
     boolean infiniteEffectsAllowed = user.protocolVersion() >= 763;
     EffectMetadata potionData = user.meta().potions();
     int potionDuration = potionData.potionEffectJumpDuration;
@@ -66,12 +64,11 @@ public final class MovementCharacteristics {
   }
 
   public static boolean isOffsetPositionInLiquid(
-    Player player,
-    BoundingBox entityBoundingBox,
+    User user, BoundingBox entityBoundingBox,
     double x, double y, double z
   ) {
     BoundingBox boundingBox = entityBoundingBox.offset(x, y, z);
-    return Collision.nonePresent(player, boundingBox) && !rasterizedLiquidPresentEnforcement(UserRepository.userOf(player), boundingBox);
+    return Collision.nonePresent(user, user.meta().movement(), boundingBox) && !rasterizedLiquidPresentEnforcement(user, boundingBox);
   }
 
   public static boolean onClimbable(User user, double positionX, double positionY, double positionZ) {

@@ -65,6 +65,9 @@ final class ModuleLoader {
     // emulate
 //    prepareModule("de.jpx3.intave.module.emulate.MovementEmulation", lateBoot);
 
+    prepareModule("de.jpx3.intave.module.test.ChestLootProvider", lateBoot);
+    prepareModule("de.jpx3.intave.module.test.PhysicsTestRecorder", lateBoot);
+
     // misc
     prepareModule("de.jpx3.intave.module.nayoro.Nayoro", defaultBoot);
     prepareModule("de.jpx3.intave.module.event.CustomEvents", defaultBoot);
@@ -76,7 +79,6 @@ final class ModuleLoader {
     prepareModule("de.jpx3.intave.module.player.UserLifetimeService", defaultBoot);
     prepareModule("de.jpx3.intave.module.player.StorageLoader", defaultBoot);
     prepareModule("de.jpx3.intave.module.player.PlaytimeUpdater", lateBoot);
-    prepareModule("de.jpx3.intave.module.testing.ChestLootProvider", lateBoot);
     prepareModule("de.jpx3.intave.module.player.MiscBukkitEvents", defaultBoot);
     prepareModule("de.jpx3.intave.module.actionbar.ActionBarDisplayer", defaultBoot);
   }

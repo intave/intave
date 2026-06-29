@@ -34,7 +34,7 @@ public final class LongTermViolationStorage implements Storage {
       if (interestingViolations.size() < VIOLATION_OVERALL_LIMIT) {
         StorageViolationEvent event = new StorageViolationEvent(
           violation.toLowerCase(Locale.ROOT),
-          IntavePlugin.version().toLowerCase(Locale.ROOT),
+          IntavePlugin.fullVersion().toLowerCase(Locale.ROOT),
           vl, System.currentTimeMillis()
         );
         addViolationEvent(event);
@@ -64,7 +64,7 @@ public final class LongTermViolationStorage implements Storage {
           StorageViolationEvent event = new StorageViolationEvent(
             checkName.toLowerCase(Locale.ROOT),
             details.toLowerCase(Locale.ROOT),
-            IntavePlugin.version().toLowerCase(Locale.ROOT),
+            IntavePlugin.fullVersion().toLowerCase(Locale.ROOT),
             violationLevelAfter,
             System.currentTimeMillis()
           );

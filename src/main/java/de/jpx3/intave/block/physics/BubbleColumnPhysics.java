@@ -1,6 +1,6 @@
 package de.jpx3.intave.block.physics;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.variant.BlockVariant;
 import de.jpx3.intave.share.Motion;
@@ -27,7 +27,7 @@ final class BubbleColumnPhysics implements BlockPhysic {
   }
 
   @Override
-  public Motion entityCollidedWithBlock(User user, Location location, Location from, double motionX, double motionY, double motionZ) {
+  public Motion entityInside(User user, Location location, Location from, double motionX, double motionY, double motionZ) {
     ProtocolMetadata protocol = user.meta().protocol();
     if (protocol.waterUpdate()) {
       boolean water = VolatileBlockAccess.fluidAccess(user, location.clone().add(0, 1, 0)).isOfWater();
@@ -59,7 +59,7 @@ final class BubbleColumnPhysics implements BlockPhysic {
     } else {
       motionY = Math.min(1.8D, motionY + 0.1D);
     }
-    return new Motion(motionX, motionY, motionZ);
+	  return new Motion(motionX, motionY, motionZ);
   }
 
   @Override

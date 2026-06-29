@@ -1,6 +1,6 @@
 package de.jpx3.intave.klass.locate;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.adapter.MinecraftVersion;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
@@ -25,7 +25,7 @@ final class ClassLocations implements Iterable<ClassLocation> {
 
   public ClassLocations reduceToCurrentVersion() {
     return filter(
-      classLocation -> classLocation.matchesVersion(MinecraftVersion.getCurrentVersion())
+      classLocation -> classLocation.matchesVersion(MinecraftVersion.current())
     );
   }
 

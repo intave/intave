@@ -4,13 +4,13 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.test.IntegrationTests;
 import de.jpx3.intave.test.Test;
-import de.jpx3.intave.test.Tests;
 
 import static com.comphenix.protocol.PacketType.Play.Server.PING;
 import static com.comphenix.protocol.PacketType.Play.Server.TRANSACTION;
 
-public final class FeedbackTests extends Tests {
+public final class FeedbackTests extends IntegrationTests {
   private static final boolean USE_PING_PONG_PACKETS = MinecraftVersions.VER1_17_0.atOrAbove();
 
   public FeedbackTests() {

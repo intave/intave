@@ -12,6 +12,7 @@ import de.jpx3.intave.packet.reader.AbilityInReader;
 import de.jpx3.intave.packet.reader.AbilityOutReader;
 import de.jpx3.intave.packet.reader.EntityReader;
 import de.jpx3.intave.packet.reader.GameStateChangeReader;
+import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;
@@ -20,7 +21,6 @@ import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
@@ -50,7 +50,7 @@ public final class AbilityTracker extends Module {
       if (flying) {
         abilityData.setFlying(true);
       } else {
-        movementData.disabledFlying = true;
+        abilityData.disabledFlying = true;
       }
     }
   }
@@ -87,9 +87,9 @@ public final class AbilityTracker extends Module {
     }
     if (critical) {
       if (movement.criticalFlyingDisallowStacks++ == 0) {
-        movement.criticalEnterPosX = movement.verifiedPositionX;
-        movement.criticalEnterPosY = movement.verifiedPositionY;
-        movement.criticalEnterPosZ = movement.verifiedPositionZ;
+        movement.criticalEnterPosX = movement.verifiedLastPositionX;
+        movement.criticalEnterPosY = movement.verifiedLastPositionY;
+        movement.criticalEnterPosZ = movement.verifiedLastPositionZ;
       }
     }
     user.packetTickFeedback(event, () -> {
@@ -114,13 +114,12 @@ public final class AbilityTracker extends Module {
     if (movementData.criticalFlyingDisallowStacks > 0 &&
       !movementData.criticalFlyingDisallowWasTeleported
     ) {
-      double deltaX = movementData.verifiedPositionX - movementData.criticalEnterPosX;
-      double deltaY = movementData.verifiedPositionY - movementData.criticalEnterPosY;
-      double deltaZ = movementData.verifiedPositionZ - movementData.criticalEnterPosZ;
+      double deltaX = movementData.verifiedLastPositionX - movementData.criticalEnterPosX;
+      double deltaY = movementData.verifiedLastPositionY - movementData.criticalEnterPosY;
+      double deltaZ = movementData.verifiedLastPositionZ - movementData.criticalEnterPosZ;
       double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
       if (distance > 3 && movementData.criticalTeleportRateLimiter.tryAcquire()) {
-        Vector setback = new Vector(0, 0, 0);
-        Modules.mitigate().movement().emulationSetBack(player, setback, 3, 2, false);
+        Modules.mitigate().movement().emulationSetBack(player, Motion.newEmpty(), 3, 2, false);
         if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
           player.sendMessage(IntavePlugin.prefix() + "Teleport to " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " for " + ChatColor.RED + " critical flying disallow protection");
         }

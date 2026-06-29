@@ -14,7 +14,6 @@ import de.jpx3.intave.diagnostic.message.DebugBroadcast;
 import de.jpx3.intave.diagnostic.message.MessageCategory;
 import de.jpx3.intave.diagnostic.message.MessageSeverity;
 import de.jpx3.intave.executor.BackgroundExecutors;
-import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.user.User;
@@ -27,11 +26,10 @@ import org.bukkit.event.player.PlayerJoinEvent;
 
 @HighOrderService
 public final class TrustFactorService implements BukkitEventSubscriber {
-  private static final TrustFactorResolver DEFAULT_RESOLVER = new DefaultForwardingPermissionTrustFactorResolver(new EmptyTrustFactorResolver());
-  private static final TrustFactorResolver AUTO_STORAGE_RESOLVER = new DefaultForwardingPermissionTrustFactorResolver(
-    /*Python.available() ?*/ new EmptyTrustFactorResolver()/* : new StorageTrustfactorResolver()*/
+  private static final TrustFactorResolver DEFAULT_RESOLVER = new DefaultForwardingPermissionTrustFactorResolver(
+    new EmptyTrustFactorResolver()
   );
-  private final IntavePlugin plugin;
+	private final IntavePlugin plugin;
   private TrustFactorResolver trustFactorResolver, customTrustFactorResolver;
   private TrustFactorConfiguration trustFactorConfiguration;
   private TrustFactor defaultTrustFactor = TrustFactor.ORANGE;
@@ -43,10 +41,24 @@ public final class TrustFactorService implements BukkitEventSubscriber {
   public void setup() {
     TrustFactorLoader trustFactorLoader = IntaveControl.USE_DEBUG_TRUSTFACTOR_RESOURCE ? new DebugYamlTrustFactorLoader() : new InternetYamlTrustFactorLoader();
     trustFactorConfiguration = trustFactorLoader.fetch();
-    trustFactorResolver = DEFAULT_RESOLVER;
+
+    if (floodgatePresent()) {
+      trustFactorResolver = new GeyserTrustFactorResolver(DEFAULT_RESOLVER);
+    } else {
+      trustFactorResolver = DEFAULT_RESOLVER;
+    }
 
     plugin.eventLinker().registerEventsIn(this);
     StartupTasks.add(() -> BackgroundExecutors.execute(this::resolveTrustFactorForAll));
+  }
+
+  private boolean floodgatePresent() {
+    try {
+      Class.forName("org.geysermc.floodgate.api.FloodgateApi");
+      return true;
+    } catch (ClassNotFoundException e) {
+      return false;
+    }
   }
 
   @BukkitEventSubscription(priority = EventPriority.NORMAL)
@@ -61,10 +73,6 @@ public final class TrustFactorService implements BukkitEventSubscriber {
     }
   }
 
-  private boolean hasEnabledAutoStorageTrustFactor() {
-    return IntavePlugin.singletonInstance().settings().getBoolean("storage.auto-trustfactor", true);
-  }
-
   private void resolveTrustFactorFor(Player player) {
     User user = UserRepository.userOf(player);
     user.setTrustFactor(defaultTrustFactor);
@@ -74,9 +82,6 @@ public final class TrustFactorService implements BukkitEventSubscriber {
     }
     if (trustFactorResolver == null) {
       trustFactorResolver = DEFAULT_RESOLVER;
-    }
-    if (trustFactorResolver == DEFAULT_RESOLVER && Modules.storage().hasStorageGateway() && hasEnabledAutoStorageTrustFactor()) {
-      trustFactorResolver = AUTO_STORAGE_RESOLVER;
     }
     trustFactorResolver.resolve(
       player, (trustFactor) -> trustfactorApply(player, trustFactor, trustFactorResolver.toString())

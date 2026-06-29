@@ -1,6 +1,6 @@
 package de.jpx3.intave.klass.locate;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.adapter.MinecraftVersion;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -28,7 +28,7 @@ final class FieldLocations implements Iterable<FieldLocation> {
   }
 
   public FieldLocations reduceToCurrentVersion() {
-    return filter(fieldLocation -> fieldLocation.matchesVersion(MinecraftVersion.getCurrentVersion()));
+    return filter(fieldLocation -> fieldLocation.matchesVersion(MinecraftVersion.current()));
   }
 
   public Stream<FieldLocation> stream() {

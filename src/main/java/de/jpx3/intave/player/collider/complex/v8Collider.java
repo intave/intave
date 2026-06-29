@@ -2,19 +2,20 @@ package de.jpx3.intave.player.collider.complex;
 
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.shape.BlockShape;
-import de.jpx3.intave.check.movement.physics.SimulationEnvironment;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.User;
-import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.share.Direction.Axis.*;
 
 public final class v8Collider implements Collider {
   @Override
-  public ColliderResult collide(User user, SimulationEnvironment environment, Motion motion, double positionX, double positionY, double positionZ, boolean inWeb) {
-    Player player = user.player();
-    if (inWeb) {
+  public ColliderResult collide(
+    User user, SimulationEnvironment environment, Motion motion,
+    double positionX, double positionY, double positionZ, boolean inWeb
+  ) {
+	  if (inWeb) {
       motion.motionX *= 0.25D;
       motion.motionY *= 0.05f;
       motion.motionZ *= 0.25D;
@@ -28,7 +29,7 @@ public final class v8Collider implements Collider {
     if (environment.onGround() && environment.isSneaking()) {
       BoundingBox boundingBox = environment.boundingBox();
       double size;
-      for (size = 0.05D; motion.motionX != 0.0D && Collision.nonePresent(player, boundingBox.offset(motion.motionX, -1.0D, 0.0D)); startMotionX = motion.motionX) {
+      for (size = 0.05D; motion.motionX != 0.0D && Collision.nonePresent(user, environment, boundingBox.offset(motion.motionX, -1.0D, 0.0D)); startMotionX = motion.motionX) {
         if (motion.motionX < size && motion.motionX >= -size) {
           motion.motionX = 0.0D;
         } else if (motion.motionX > 0.0D) {
@@ -38,7 +39,7 @@ public final class v8Collider implements Collider {
         }
         edgeSneak = true;
       }
-      for (; motion.motionZ != 0.0D && Collision.nonePresent(player, boundingBox.offset(0.0D, -1.0D, motion.motionZ)); startMotionZ = motion.motionZ) {
+      for (; motion.motionZ != 0.0D && Collision.nonePresent(user, environment, boundingBox.offset(0.0D, -1.0D, motion.motionZ)); startMotionZ = motion.motionZ) {
         if (motion.motionZ < size && motion.motionZ >= -size) {
           motion.motionZ = 0.0D;
         } else if (motion.motionZ > 0.0D) {
@@ -48,7 +49,7 @@ public final class v8Collider implements Collider {
         }
         edgeSneak = true;
       }
-      for (; motion.motionX != 0.0D && motion.motionZ != 0.0D && Collision.nonePresent(player, boundingBox.offset(motion.motionX, -1.0D, motion.motionZ)); startMotionZ = motion.motionZ) {
+      for (; motion.motionX != 0.0D && motion.motionZ != 0.0D && Collision.nonePresent(user, environment, boundingBox.offset(motion.motionX, -1.0D, motion.motionZ)); startMotionZ = motion.motionZ) {
         if (motion.motionX < size && motion.motionX >= -size) {
           motion.motionX = 0.0D;
         } else if (motion.motionX > 0.0D) {
@@ -67,7 +68,7 @@ public final class v8Collider implements Collider {
         edgeSneak = true;
       }
     }
-    BlockShape collisionShape = Collision.shape(player, environment.boundingBox().expand(motion.motionX, motion.motionY, motion.motionZ));
+    BlockShape collisionShape = Collision.shape(user, environment, environment.boundingBox().expand(motion.motionX, motion.motionY, motion.motionZ));
     BoundingBox startBoundingBox = environment.boundingBox();
     BoundingBox entityBoundingBox = environment.boundingBox();
     motion.motionY = collisionShape.allowedOffset(Y_AXIS, entityBoundingBox, motion.motionY);
@@ -84,7 +85,7 @@ public final class v8Collider implements Collider {
       BoundingBox axisalignedbb3 = entityBoundingBox;
       entityBoundingBox = startBoundingBox;
       motion.motionY = environment.stepHeight();
-      BlockShape shape = Collision.shape(player, entityBoundingBox.expand(startMotionX, motion.motionY, startMotionZ));
+      BlockShape shape = Collision.shape(user, environment, entityBoundingBox.expand(startMotionX, motion.motionY, startMotionZ));
       BoundingBox axisalignedbb4 = entityBoundingBox;
       BoundingBox axisalignedbb5 = axisalignedbb4.expand(startMotionX, 0.0D, startMotionZ);
       double d9 = motion.motionY;
@@ -143,8 +144,8 @@ public final class v8Collider implements Collider {
     motion.motionY = newPositionY - positionY;
     motion.motionZ = newPositionZ - positionZ;
     return new ColliderResult(
-      Motion.copyFrom(motion), onGround,
-      collidedHorizontally, collidedVertically,
+      Motion.copyFrom(motion), null,
+      onGround, collidedHorizontally, collidedVertically,
       moveResetX, moveResetZ, step, edgeSneak, stepHeight
     );
   }

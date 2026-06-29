@@ -17,6 +17,9 @@ public final class CodecTranslator {
 
   private static StreamCodec<?, ?, ?> translateCodecOf(Class<?> clazz) {
     Object rawStreamCodec = rawStreamCodecOf(clazz);
+    if (rawStreamCodec instanceof StreamCodec<?, ?, ?>) {
+      return (StreamCodec<?, ?, ?>) rawStreamCodec;
+    }
     Class<?> aClass = rawStreamCodec.getClass();
     Method encodeMethod, decodeMethod;
     try {

@@ -2,10 +2,10 @@ package de.jpx3.intave.check.combat.heuristics.combatpatterns;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.Entity;
@@ -18,17 +18,16 @@ import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.DMG_MEDIUM;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_8;
 
 public final class PreAttackHeuristic extends ClassicHeuristic<PreAttackHeuristic.PreAttackMeta> {
-  private final IntavePlugin plugin;
 
-  public PreAttackHeuristic(Heuristics parentCheck) {
+	public PreAttackHeuristic(Heuristics parentCheck) {
     super(parentCheck, HeuristicsClassicType.PRE_ATTACK, PreAttackMeta.class);
-    plugin = IntavePlugin.singletonInstance();
-  }
+	}
 
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
@@ -86,9 +85,9 @@ public final class PreAttackHeuristic extends ClassicHeuristic<PreAttackHeuristi
     User user = userOf(player);
     ProtocolMetadata clientData = user.meta().protocol();
     AttackMetadata attackData = user.meta().attack();
-    MovementMetadata movementData = user.meta().movement();
+    SimulationEnvironment movementData = user.meta().movement();
     Entity entity = attackData.lastAttackedEntity();
-    if (entity == null || !entity.clientSynchronized || movementData.lastTeleport < 5) {
+    if (entity == null || !entity.clientSynchronized || movementData.ticksPast(TELEPORT) < 5) {
       return;
     }
     if (clientData.outdatedClient()) {

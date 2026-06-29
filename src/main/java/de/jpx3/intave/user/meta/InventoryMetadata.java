@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.RIPTIDE_SPIN;
+
 public final class InventoryMetadata {
   private final Player player;
   private final User user;
@@ -149,7 +151,7 @@ public final class InventoryMetadata {
       ItemStack offhandItem = offhandItem();
       if ((heldItem != null && Enchantments.tridentRiptideEnchanted(heldItem))
         || (offhandItem != null && Enchantments.tridentRiptideEnchanted(offhandItem))) {
-        movementData.pastRiptideSpin = 0;
+        movementData.activeTick(RIPTIDE_SPIN);
         movementData.highestLocalRiptideLevel = Math.max(
           movementData.highestLocalRiptideLevel,
           Math.max(Enchantments.resolveRiptideModifier(heldItem), Enchantments.resolveRiptideModifier(offhandItem))
@@ -184,6 +186,25 @@ public final class InventoryMetadata {
     releaseItemType = heldItemType();
   }
 
+  public void updateSlotSwitch() {
+    if (slotSwitchData != null) {
+      int slot = slotSwitchData.slot();
+      ItemStack item = slotSwitchData.item();
+
+      boolean primaryItemUsable = ItemProperties.canItemBeUsed(player, item);
+      boolean offhandItemUsage = ItemProperties.canItemBeUsed(player, offhandItem());
+      boolean handActive = (primaryItemUsable || offhandItemUsage) && handActive();
+      if (handActive) {
+        activateHand();
+      } else {
+       deactivateHand();
+      }
+      setHeldItemSlot(slot);
+      pastHotBarSlotChange = 0;
+      slotSwitchData = null;
+    }
+  }
+
   public void setHeldItemSlot(int slot) {
     this.handSlot = slot;
   }
@@ -210,6 +231,20 @@ public final class InventoryMetadata {
 
   public boolean foodItem() {
     return foodItem;
+  }
+
+  public void tickComplete() {
+    pastSlotSwitch++;
+    pastHotBarSlotChange++;
+    pastItemUsageTransition++;
+
+    if (handActive()) {
+      handActiveTicks++;
+      pastHandActiveTicks = 0;
+    } else {
+      pastHandActiveTicks++;
+      handActiveTicks = 0;
+    }
   }
 
   private static final Material CROSSBOW = MaterialSearch.materialThatIsNamed("CROSSBOW");

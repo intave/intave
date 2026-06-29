@@ -5,6 +5,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.entity.datawatcher.DataWatcherAccess;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.Hypot;
@@ -16,6 +17,8 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
 import org.bukkit.entity.Player;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.FLYING_PACKET_ACCURATE;
+import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
 import static de.jpx3.intave.entity.datawatcher.DataWatcherAccess.WATCHER_SNEAK_ID;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
@@ -44,7 +47,7 @@ public final class PacketPlayerActionToggleHeuristic extends ClassicHeuristic<Pa
     Player player = event.getPlayer();
     User user = userOf(player);
     MetadataBundle meta = user.meta();
-    MovementMetadata movementData = meta.movement();
+    SimulationEnvironment movementData = meta.movement();
     AbilityMetadata abilityData = meta.abilities();
     ProtocolMetadata clientData = meta.protocol();
     PunishmentMetadata punishmentData = user.meta().punishment();
@@ -64,7 +67,7 @@ public final class PacketPlayerActionToggleHeuristic extends ClassicHeuristic<Pa
       return;
     }
 
-    if (movementData.lastTeleport < 10) {
+    if (movementData.ticksPast(TELEPORT) < 10) {
       return;
     }
 
@@ -80,7 +83,7 @@ public final class PacketPlayerActionToggleHeuristic extends ClassicHeuristic<Pa
           ? "sent too many sprint toggles per tick (" + heuristicMeta.sprintTogglesInTick + ")"
           : "sent too many sneak toggles per tick (" + heuristicMeta.sneakTogglesInTick + ")";
         if (!flyingPacketStream) {
-          description += " (last flying: " + movementData.pastFlyingPacketAccurate() + ")";
+          description += " (last flying: " + movementData.ticksPast(FLYING_PACKET_ACCURATE) + ")";
         }
         this.flag(player, description);
 

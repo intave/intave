@@ -1,10 +1,10 @@
 package de.jpx3.intave.share;
 
+import de.jpx3.intave.test.IntegrationTests;
 import de.jpx3.intave.test.Severity;
 import de.jpx3.intave.test.Test;
-import de.jpx3.intave.test.Tests;
 
-public final class ShareTests extends Tests {
+public final class ShareTests extends IntegrationTests {
   public ShareTests() {
     super("SHR");
   }

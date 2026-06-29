@@ -20,6 +20,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
 import static de.jpx3.intave.module.linker.packet.ListenerPriority.LOWEST;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION;
@@ -98,7 +99,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
 
     boolean inVehicle = movement.isInVehicle();
     boolean sneaking = movement.isSneaking();
-    boolean recentlyTeleported = movement.lastTeleport <= 3;
+    boolean recentlyTeleported = movement.ticksPast(TELEPORT) <= 3;
     boolean jumped = movement.physicsJumped;
 
     int movementFlags = 0;

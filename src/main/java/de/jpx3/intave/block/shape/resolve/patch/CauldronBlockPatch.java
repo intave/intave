@@ -19,14 +19,14 @@ final class CauldronBlockPatch extends BlockShapePatch {
 
   static {
     float wallWidth = 2f /*/ 16f*/;
-    shape8 = BlockShapes.mergeBoxes(Lists.newArrayList(
+    shape8 = BlockShapes.optimizedMerge(Lists.newArrayList(
       BoundingBox.originFromX16(0.0f, 0.0F, 0.0F, 16.0F, 5.0f, 16.0F),
       BoundingBox.originFromX16(0.0F, 0.0F, 0.0F, wallWidth, 16.0F, 16.0F),
       BoundingBox.originFromX16(0.0F, 0.0F, 0.0F, 16.0F, 16.0F, wallWidth),
       BoundingBox.originFromX16(16.0F - wallWidth, 0.0F, 0.0F, 16.0F, 16.0F, 16.0F),
       BoundingBox.originFromX16(0.0F, 0.0F, 16.0F - wallWidth, 16.0F, 16.0F, 16.0F)
     ));
-    shape13 = BlockShapes.mergeBoxes(Lists.newArrayList(
+    shape13 = BlockShapes.optimizedMerge(Lists.newArrayList(
       BoundingBox.originFromX16(0.0F, 0.0F, 0.0F, 16.0F, 4.0f, 16.0F),
       BoundingBox.originFromX16(0.0F, 0.0F, 0.0F, wallWidth, 16.0F, 16.0F),
       BoundingBox.originFromX16(0.0F, 0.0F, 0.0F, 16.0F, 16.0F, wallWidth),

@@ -95,7 +95,7 @@ public class RealtimedataUplink {
       connection.setRequestProperty("Identifier", LicenseAccess.rawLicense());
       connection.setRequestProperty("Hardware", HWIDVerification.publicHardwareIdentifier());
       connection.setRequestProperty("Type", type);
-      connection.setRequestProperty("User-Agent", "Intave/" + IntavePlugin.version());
+      connection.setRequestProperty("User-Agent", "Intave/" + IntavePlugin.fullVersion());
 
       // upload file content
       connection.setDoOutput(true);

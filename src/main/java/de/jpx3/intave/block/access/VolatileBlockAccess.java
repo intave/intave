@@ -16,6 +16,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.metadata.MetadataValue;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -91,7 +92,7 @@ public final class VolatileBlockAccess {
   }
 
   public static Block blockAccess(World blockAccess, BlockPosition position) {
-    return blockAccess(blockAccess, position.xCoord, position.yCoord, position.zCoord);
+    return blockAccess(blockAccess, position.x, position.y, position.z);
   }
 
   public static Block blockAccess(World blockAccess, double x, double y, double z) {
@@ -168,6 +169,10 @@ public final class VolatileBlockAccess {
     return typeAccess(user, user.player().getWorld(), position.getBlockX(), position.getBlockY(), position.getBlockZ());
   }
 
+  public static Material typeAccess(User user, Position position) {
+    return typeAccess(user, user.player().getWorld(), position.getBlockX(), position.getBlockY(), position.getBlockZ());
+  }
+
   public static Material typeAccess(User user, World world, Position position) {
     return typeAccess(user, world, position.getBlockX(), position.getBlockY(), position.getBlockZ());
   }
@@ -177,11 +182,15 @@ public final class VolatileBlockAccess {
     return typeAccess(user, world, blockX, blockY, blockZ);
   }
 
+  public static Material typeAccess(User user, double x, double y, double z) {
+    return typeAccess(user, user.player().getWorld(), floor(x), floor(y), floor(z));
+  }
+
   public static Material typeAccess(User user, World blockAccess, double x, double y, double z) {
     return typeAccess(user, blockAccess, floor(x), floor(y), floor(z));
   }
 
-  public static Material typeAccess(User user, World blockAccess, int blockX, int blockY, int blockZ) {
+  public static @NotNull Material typeAccess(User user, World blockAccess, int blockX, int blockY, int blockZ) {
     if (blockAccess == null || isInLoadedChunk(blockAccess, blockX, blockZ) || Bukkit.isPrimaryThread()) {
       return user.blockCache().typeAt(blockX, blockY, blockZ);
     }
@@ -238,7 +247,7 @@ public final class VolatileBlockAccess {
   }
 
   public static BlockShape collisionShapeAccess(User user, BlockPosition position) {
-    return collisionShapeAccess(user, position.xCoord, position.yCoord, position.zCoord);
+    return collisionShapeAccess(user, position.x, position.y, position.z);
   }
 
   public static BlockShape collisionShapeAccess(User user, double x, double y, double z) {

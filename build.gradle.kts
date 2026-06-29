@@ -10,9 +10,25 @@ plugins {
   id("xyz.jpenilla.run-paper") version "3.0.2"
 }
 
+val gitTag by lazy {
+  try {
+    providers.exec {
+      commandLine("git", "describe", "--tags", "--abbrev=0")
+    }.standardOutput.asText.get().trim()
+  } catch (e: Exception) {
+    "dev-snapshot"
+  }
+}
+
+val gitCommitHash by lazy {
+  providers.exec {
+    commandLine("git", "rev-parse", "--short", "HEAD")
+  }.standardOutput.asText.get().trim()
+}
+
 val simpleName = "Intave"
 group = "de.jpx3"
-version = "14.9.3"
+version = "$gitTag-$gitCommitHash"
 description = "Automated cheat detection and prevention"
 
 /*
@@ -24,6 +40,7 @@ repositories {
   maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
   maven { url = uri("https://oss.sonatype.org/content/repositories/central") }
   maven { url = uri("https://repo.papermc.io/repository/maven-public/") }
+  maven("https://repo.opencollab.dev/maven-snapshots")
 }
 
 dependencies {
@@ -39,8 +56,10 @@ dependencies {
     files(fileTree(mapOf("dir" to "libs/", "include" to listOf("*.jar"))).files.sorted())
   )
 
-  // Testing
-  testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
+  testRuntimeOnly("it.unimi.dsi:fastutil:8.5.12")
+  testImplementation("org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT")
+  testImplementation("net.dmulloy2:ProtocolLib:5.4.0")
+  testImplementation("io.netty:netty-all:4.2.15.Final")
 
   // random shit
   compileOnly("org.jetbrains:annotations:23.1.0")
@@ -57,6 +76,16 @@ dependencies {
   compileOnly("org.bytedeco:javacpp-presets:1.5.9")
 
   compileOnly("org.spigotmc:spigot-api:1.21.1-R0.1-SNAPSHOT")
+
+  // bytebuddy
+  compileOnly("net.bytebuddy:byte-buddy:1.18.2")
+
+  // floodgate
+  compileOnly("org.geysermc.floodgate:api:2.0-SNAPSHOT")
+
+  testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
+  testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
+  testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 /*
@@ -244,6 +273,7 @@ val paperRunConfigs = mapOf(
   Pair("1.21.7", 21),
   Pair("1.21.11", 25),
   Pair("26.1.2", 25),
+  Pair("26.2", 25),
 )
 
 val foliaRunConfigs = mapOf(
@@ -263,7 +293,7 @@ run {
 fun registerPaperTestTask(serverVersion: String, javaVersion: Int) {
   tasks.register<RunServer>("test_${serverVersion}") {
     group = simpleName
-    dependsOn("build")
+    dependsOn("shadowJar")
     pluginJars.from("build/libs/$simpleName.jar")
     minecraftVersion(serverVersion)
     // Minecraft 1.8.8 requires special patches to work with Java 17
@@ -301,7 +331,7 @@ fun registerTestAllTask() {
 fun registerPaperRunTask(serverVersion: String, javaVersion: Int) {
   tasks.register<RunServer>("run_${serverVersion}") {
     group = simpleName
-    dependsOn("build")
+    dependsOn("shadowJar")
     pluginJars.from("build/libs/$simpleName.jar")
     minecraftVersion(serverVersion)
     // Minecraft 1.8.8 requires special patches to work with Java 17
@@ -313,6 +343,10 @@ fun registerPaperRunTask(serverVersion: String, javaVersion: Int) {
     }
     if (serverVersion == "1.21.7") {
       serverJar(File("libs/servers/paper-1.21.7-15.jar"))
+    }
+    downloadPlugins {
+      modrinth("viaversion", "5.9.1")
+      modrinth("viabackwards", "5.9.1")
     }
     runDirectory(File("runs/paper_${serverVersion}-j$javaVersion"))
     jvmArgs("-Dcom.mojang.eula.agree=true")
@@ -380,6 +414,7 @@ tasks {
   }
 
   test {
+    useJUnitPlatform()
     failOnNoDiscoveredTests = false
   }
 }

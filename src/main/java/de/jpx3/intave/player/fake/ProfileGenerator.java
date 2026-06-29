@@ -29,7 +29,7 @@ public final class ProfileGenerator {
       connection.setDefaultUseCaches(false);
       connection.setReadTimeout(1000);
       connection.setConnectTimeout(1000);
-      connection.addRequestProperty("User-Agent", "Intave/" + IntavePlugin.version());
+      connection.addRequestProperty("User-Agent", "Intave/" + IntavePlugin.fullVersion());
       connection.addRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate");
       connection.addRequestProperty("Pragma", "no-cache");
       InputStream inputStream = connection.getInputStream();

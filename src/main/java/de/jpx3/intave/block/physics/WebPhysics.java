@@ -1,6 +1,6 @@
 package de.jpx3.intave.block.physics;
 
-import com.comphenix.protocol.utility.MinecraftVersion;
+import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.User;
@@ -23,7 +23,7 @@ final class WebPhysics implements BlockPhysic {
   }
 
   @Override
-  public Motion entityCollidedWithBlock(User user, Location location, Location from, double motionX, double motionY, double motionZ) {
+  public Motion entityInside(User user, Location location, Location from, double motionX, double motionY, double motionZ) {
     ProtocolMetadata clientData = user.meta().protocol();
     MovementMetadata movementData = user.meta().movement();
     movementData.inWeb = true;

@@ -18,6 +18,7 @@ import de.jpx3.intave.module.tracker.player.AbilityTracker;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.*;
@@ -31,12 +32,12 @@ import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.util.Vector;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.LOGIN;
 
@@ -119,7 +120,7 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
     }
     // Exclude players in certain states such as creative, spectator or teleport
     // We also have to check if the player received the initial join packet due to proxies doing weird things
-    if (!checkMeta.gameJoinReceived || movementData.lastTeleport == 0
+    if (!checkMeta.gameJoinReceived || movementData.ticksPast(TELEPORT) == 0
       || abilityData.inGameModeIncludePending(AbilityTracker.GameMode.CREATIVE) || abilityData.ignoringMovementPackets() || user.meta().movement().isInVehicle()) {
       return;
     }
@@ -151,8 +152,7 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
         checkMeta.lastTimerFlag = System.currentTimeMillis();
         movementData.invalidMovement = true;
         statisticApply(user, CheckStatistics::increaseFails);
-        Vector setback = new Vector(0, 0, 0);
-        Modules.mitigate().movement().emulationSetBack(player, setback, 3, 2, false);
+        Modules.mitigate().movement().emulationSetBack(player, Motion.newEmpty(), 3, 2, false);
         if (violationContext.violationLevelAfter() > 50) {
           user.nerfPermanently(AttackNerfStrategy.DMG_HIGH, "timer");
         }
@@ -175,8 +175,8 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
         .withDetails(balanceAsString + " ticks behind")
         .withVL(0)
         .build();
-      ViolationContext violationContext = Modules.violationProcessor().processViolation(violation);
-      Vector setback = new Vector(0, 0, 0);
+	    Modules.violationProcessor().processViolation(violation);
+	    Motion setback = Motion.newEmpty();
       Modules.mitigate().movement().emulationSetBack(player, setback, 1, 2, false);
     }
     statisticApply(user, CheckStatistics::increasePasses);

@@ -12,11 +12,27 @@ import java.util.Map;
 import java.util.Set;
 
 public final class Enchantments {
-  public static final Enchantment ENCHANTMENT_RIPTIDE = Enchantment.getByName("RIPTIDE");
-  private static final Enchantment ENCHANTMENT_SWIFT_SNEAK = Enchantment.getByName("SWIFT_SNEAK");
-  private static final Enchantment ENCHANTMENT_SOUL_SPEED = Enchantment.getByName("SOUL_SPEED");
-  private static final Enchantment ENCHANTMENT_DEPTH_STRIDER =
-    Enchantment.getByName("DEPTH_STRIDER");
+  public static final Enchantment ENCHANTMENT_RIPTIDE;
+	private static final Enchantment ENCHANTMENT_SWIFT_SNEAK;
+	private static final Enchantment ENCHANTMENT_SOUL_SPEED;
+  private static final Enchantment ENCHANTMENT_DEPTH_STRIDER;
+
+  static {
+    Enchantment riptide = null;
+    Enchantment swiftSneak = null;
+    Enchantment soulSpeed = null;
+    Enchantment depthStrider = null;
+    try {
+      riptide = Enchantment.getByName("RIPTIDE");
+      swiftSneak = Enchantment.getByName("SWIFT_SNEAK");
+      soulSpeed = Enchantment.getByName("SOUL_SPEED");
+      depthStrider = Enchantment.getByName("DEPTH_STRIDER");
+    } catch (Throwable ignored) {}
+    ENCHANTMENT_RIPTIDE = riptide;
+    ENCHANTMENT_SWIFT_SNEAK = swiftSneak;
+    ENCHANTMENT_SOUL_SPEED = soulSpeed;
+    ENCHANTMENT_DEPTH_STRIDER = depthStrider;
+  }
 
   public static boolean tridentRiptideEnchanted(ItemStack itemStack) {
     return itemStack.getEnchantments().containsKey(ENCHANTMENT_RIPTIDE);

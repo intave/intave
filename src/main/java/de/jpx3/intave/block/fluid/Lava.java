@@ -1,9 +1,20 @@
 package de.jpx3.intave.block.fluid;
 
-class Lava implements Fluid {
+import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.codec.StreamCodec;
+import io.netty.buffer.ByteBuf;
+
+final class Lava implements Fluid {
   private final float height;
   private final int heightIndex;
   private final boolean falling;
+
+  public static final StreamCodec<ByteBuf, ByteBuf, Lava> STREAM_CODEC = StreamCodec.compound(
+    ByteBufStreamCodecs.FLOAT, Lava::height,
+    ByteBufStreamCodecs.INTEGER, Lava::level,
+    ByteBufStreamCodecs.BOOLEAN, Lava::falling,
+    Lava::of
+  );
 
   private Lava(float height, int heightIndex, boolean falling) {
     this.height = height;
@@ -54,7 +65,7 @@ class Lava implements Fluid {
       '}';
   }
 
-  public static Lava ofHeight(float height, int level, boolean falling) {
+  public static Lava of(float height, int level, boolean falling) {
     return new Lava(height, level, falling);
   }
 }

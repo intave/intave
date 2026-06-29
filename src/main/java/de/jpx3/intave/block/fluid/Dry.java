@@ -1,7 +1,12 @@
 package de.jpx3.intave.block.fluid;
 
+import de.jpx3.intave.codec.StreamCodec;
+import io.netty.buffer.ByteBuf;
+
 final class Dry implements Fluid {
   private static final Dry INSTANCE = new Dry();
+
+  public static final StreamCodec<ByteBuf, ByteBuf, Dry> STREAM_CODEC = StreamCodec.of(INSTANCE);
 
   @Override
   public boolean isOfWater() {

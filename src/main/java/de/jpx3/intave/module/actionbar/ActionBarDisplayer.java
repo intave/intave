@@ -12,6 +12,7 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.player.ActionBar;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.Player;
@@ -103,30 +104,9 @@ public final class ActionBarDisplayer extends Module {
       }
       String text = targetUser.actionDisplayOf(DisplayType.CLICKS);
       if (text != null) {
-        sendActionBar(receiver.player(), text);
+        ActionBar.sendActionBar(receiver.player(), text);
       }
     }, 1, 1).startAsync();
-  }
-
-  private static final boolean TYPE_AS_GAME_INFO = MinecraftVersions.VER1_12_0.atOrAbove();
-  private static final boolean DEDICATED_ACTION_BAR_PACKET = MinecraftVersions.VER1_17_0.atOrAbove();
-
-  private void sendActionBar(Player player, String message) {
-    PacketContainer packet = new PacketContainer(DEDICATED_ACTION_BAR_PACKET ? SET_ACTION_BAR_TEXT : CHAT);
-    packet.getChatComponents().write(0, WrappedChatComponent.fromText(message));
-
-    if (!DEDICATED_ACTION_BAR_PACKET) {
-      if (TYPE_AS_GAME_INFO) {
-        packet.getChatTypes().write(0, EnumWrappers.ChatType.GAME_INFO);
-      } else {
-        packet.getBytes().write(0, (byte) 2);
-      }
-    }
-
-    PacketSender.sendServerPacketWithoutEvent(player, packet);
-//    Synchronizer.synchronize(() -> {
-//      player.sendMessage(message);
-//    });
   }
 
   @Override

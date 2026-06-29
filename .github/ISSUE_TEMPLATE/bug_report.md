@@ -6,6 +6,9 @@ labels: bug
 assignees: ventolotl
 
 ---
+**Video description**
+Having a video helps us immensely.
+Please avoid streamable and enable "/intave verbose" during recording.
 
 **Description of the bug**
 Include a precise description of the bug here

@@ -11,7 +11,6 @@ import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.fluid.Fluid;
-import de.jpx3.intave.block.fluid.Fluids;
 import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.type.MaterialSearch;
@@ -52,6 +51,8 @@ import java.util.stream.Collectors;
 
 import static de.jpx3.intave.IntaveControl.DUMP_BLOCK_HITBOX_ON_RIGHT_CLICK;
 import static de.jpx3.intave.IntaveControl.REMOVE_PLACED_BLOCKS_WITH_DELAY;
+import static de.jpx3.intave.check.movement.physics.MoveMetric.BLOCK_PLACEMENT;
+import static de.jpx3.intave.check.movement.physics.MoveMetric.NEARBY_COLLISION_INACCURACY;
 
 public final class InteractionEmulator implements EventProcessor {
   private final IntavePlugin plugin;
@@ -168,7 +169,7 @@ public final class InteractionEmulator implements EventProcessor {
       Location verifiedLocation = user.meta().movement().verifiedLocation();
       if (distance(verifiedLocation, blockPosition) < 2
         && blockPosition.getY() < verifiedLocation.getBlockY()) {
-        user.meta().movement().pastNearbyCollisionInaccuracy = 0;
+        user.meta().movement().activeTick(NEARBY_COLLISION_INACCURACY);
       }
 
       Material material = blockStateAccess.typeAt(blockX, blockY, blockZ);
@@ -278,7 +279,7 @@ public final class InteractionEmulator implements EventProcessor {
 
       Material presentType = VolatileBlockAccess.typeAccess(user, blockX, blockY, blockZ);
       int presentVariant = VolatileBlockAccess.variantIndexAccess(user, world, blockX, blockY, blockZ);
-      movement.pastBlockPlacement = 0;
+      movement.activeTick(BLOCK_PLACEMENT);
       blockStates.override(world, blockX, blockY, blockZ, placedBlockType, variant, "PLACE");
       blockStates.invalidateCacheAround(blockX, blockY, blockZ);
       blockStates.lockOverride(blockX, blockY, blockZ);
@@ -315,7 +316,7 @@ public final class InteractionEmulator implements EventProcessor {
         movement.positionY + movement.eyeHeight(),
         movement.positionZ
       );
-      Position endOfRaytrace = Position.empty();
+      Position endOfRaytrace = Position.mutableEmpty();
       if (interaction.hasRaytraceResult()) {
         MovingObjectPosition movingObjectPosition = interaction.raytraceResult();
         endOfRaytrace = movingObjectPosition.hitVec.toPosition();
@@ -507,7 +508,7 @@ public final class InteractionEmulator implements EventProcessor {
     Block clickedBlock = clickedBlockLocation == null ? null : VolatileBlockAccess.blockAccess(clickedBlockLocation);
     Material itemTypeInHand = interaction.itemTypeInHand();
     Location placementLocation = clickedBlock == null ? null :
-      clickedBlockLocation.clone().add(Direction.getFront(interaction.targetDirectionIndex()).directionVecAsVector());
+      clickedBlockLocation.clone().add(Direction.getFront(interaction.targetDirectionIndex()).normalVec());
     emulateItemInteraction(player, itemTypeInHand);
     if (clickedBlock != null) {
       emulateInteractWithHandItem(player, clickedBlock, interaction.type(), placementLocation, itemTypeInHand);
@@ -641,7 +642,7 @@ public final class InteractionEmulator implements EventProcessor {
       int variant = blockStateAccess.variantIndexAt(block.getX(), block.getY(), block.getZ());
       BlockVariant properties = BlockVariantRegister.variantOf(type, variant);
       String propertyString = "{"+properties.propertyNames().stream().map(s -> s + ": " + properties.propertyOf(s)).collect(Collectors.joining(", ")) +"}";
-      Fluid fluid = Fluids.fluidAt(userOf(player), block.getX(), block.getY(), block.getZ());
+      Fluid fluid = VolatileBlockAccess.fluidAccess(userOf(player), block.getX(), block.getY(), block.getZ());
       player.sendMessage(type + "/" + variant + "."+propertyString+" f"+ fluid +" -> " + blockStateAccess.collisionShapeAt(block.getX(), block.getY(), block.getZ()) +"/"+blockStateAccess.outlineShapeAt(block.getX(), block.getY(), block.getZ()));
     }
 

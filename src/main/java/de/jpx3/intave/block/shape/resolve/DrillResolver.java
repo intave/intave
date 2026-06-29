@@ -9,10 +9,10 @@ import de.jpx3.intave.klass.rewrite.PatchyLoadingInjector;
 import static de.jpx3.intave.adapter.MinecraftVersions.VER1_13_0;
 import static de.jpx3.intave.adapter.MinecraftVersions.VER1_9_0;
 
-final class DrillResolver {
-  private static final ShapeResolverPipeline drill;
+public final class DrillResolver {
+  private static ShapeResolverPipeline drill;
 
-  static {
+  public static void serverInit() {
 //    PatchyClassSwitchLoader<?> acbbResolver = PatchyClassSwitchLoader
 //      .builderFor("de.jpx3.intave.block.shape.drill.acbbs.v{ver}AlwaysCollidingBoundingBox")
 //      .withVersions(VER1_8_0, VER1_9_0, VER1_12_0)
@@ -53,6 +53,10 @@ final class DrillResolver {
 
     // server resolver
     drill = instanceOf(drillClassName);
+  }
+
+  public static void manualInit(ShapeResolverPipeline drill) {
+    DrillResolver.drill = drill;
   }
 
   public static ShapeResolverPipeline selectedDrill() {

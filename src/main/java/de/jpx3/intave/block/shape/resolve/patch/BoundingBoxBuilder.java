@@ -47,7 +47,7 @@ public final class BoundingBoxBuilder {
   }
 
   public BlockShape applyAndResolveAsShape() {
-    return BlockShapes.mergeBoxes(applyAndResolve());
+    return BlockShapes.optimizedMerge(applyAndResolve());
   }
 
   public void apply() {

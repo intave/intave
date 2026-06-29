@@ -7,12 +7,16 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserFactory;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
-public final class BlockShapeDrillTests extends Tests {
+import java.util.Collections;
+import java.util.UUID;
+
+public final class BlockShapeDrillTests extends IntegrationTests {
   private Block block;
   private Player player;
   private User user;
@@ -28,7 +32,23 @@ public final class BlockShapeDrillTests extends Tests {
     World world = Bukkit.getWorlds().get(0);
     block = world.getBlockAt(0, 0, 0);
     priorMaterial = BlockStorage.store(block);
-    player = FakePlayerFactory.createPlayer();
+    player = FakePlayerFactory.createPlayer(
+      (methodName, args) -> {
+        switch (methodName) {
+          case "getWorld":
+            return world;
+          case "getInventory":
+            return new MockEmptyInventory();
+          case "getLocation":
+            return new Location(world, 0, 0, 0);
+          case "getUniqueId":
+            return UUID.randomUUID();
+          case "getActivePotionEffects":
+            return Collections.emptyList();
+        }
+        return null;
+      }
+    );
     user = UserFactory.createTestUserFor(player);
     UserRepository.manuallyRegisterUser(player, user);
     drill = DrillResolver.selectedDrill();

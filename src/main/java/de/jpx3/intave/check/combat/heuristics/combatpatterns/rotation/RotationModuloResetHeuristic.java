@@ -1,7 +1,6 @@
 package de.jpx3.intave.check.combat.heuristics.combatpatterns.rotation;
 
 import com.comphenix.protocol.events.PacketEvent;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
@@ -13,16 +12,15 @@ import de.jpx3.intave.world.raytrace.Raytrace;
 import de.jpx3.intave.world.raytrace.Raytracing;
 import org.bukkit.entity.Player;
 
+import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.LOOK;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION_LOOK;
 
 public final class RotationModuloResetHeuristic extends ClassicHeuristic<RotationModuloResetHeuristic.RotationModuloResetHeuristicMeta> {
-  private final IntavePlugin plugin;
 
-  public RotationModuloResetHeuristic(Heuristics parentCheck) {
+	public RotationModuloResetHeuristic(Heuristics parentCheck) {
     super(parentCheck, HeuristicsClassicType.ROTATION_MODULO_RESET, RotationModuloResetHeuristicMeta.class);
-    this.plugin = IntavePlugin.singletonInstance();
-  }
+	}
 
   @PacketSubscription(
     packetsIn = {
@@ -37,7 +35,7 @@ public final class RotationModuloResetHeuristic extends ClassicHeuristic<Rotatio
     RotationModuloResetHeuristicMeta heuristicMeta = metaOf(user);
 
     Entity attackedEntity = attackData.lastAttackedEntity();
-    if (attackedEntity == null || attackData.recentlySwitchedEntity(5000) || movementData.lastTeleport < 100) {
+    if (attackedEntity == null || attackData.recentlySwitchedEntity(5000) || movementData.ticksPast(TELEPORT) < 100) {
       return;
     }
 

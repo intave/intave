@@ -20,13 +20,13 @@ abstract class BlockShapePatch {
     // this method should be overridden
     // calls bb collision patch function if not
 
-    List<BoundingBox> input = shape.boundingBoxes();
+    List<BoundingBox> input = shape.elementaryBoxes();
     List<BoundingBox> output = collisionPatch(world, player, posX, posY, posZ, type, blockState, input);
 
     if (input.equals(output)) {
       return shape;
     } else {
-      return BlockShapes.mergeBoxes(output);
+      return BlockShapes.optimizedMerge(output);
     }
   }
 
@@ -39,13 +39,13 @@ abstract class BlockShapePatch {
     // this method should be overridden
     // calls bb outline patch function if not
 
-    List<BoundingBox> input = shape.boundingBoxes();
+    List<BoundingBox> input = shape.elementaryBoxes();
     List<BoundingBox> output = outlinePatch(world, player, posX, posY, posZ, type, blockState, input);
 
     if (input.equals(output)) {
       return shape;
     } else {
-      return BlockShapes.mergeBoxes(output);
+      return BlockShapes.optimizedMerge(output);
     }
   }
 

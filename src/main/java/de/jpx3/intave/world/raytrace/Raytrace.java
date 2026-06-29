@@ -1,7 +1,7 @@
 package de.jpx3.intave.world.raytrace;
 
-import de.jpx3.intave.share.NativeVector;
 import de.jpx3.intave.share.Position;
+import de.jpx3.intave.share.RawVector3d;
 
 public final class Raytrace {
   private final Position from;
@@ -27,8 +27,8 @@ public final class Raytrace {
   }
 
   public static Raytrace ofNative(
-    NativeVector nativeEyeVector,
-    NativeVector nativeTargetVector,
+    RawVector3d nativeEyeVector,
+    RawVector3d nativeTargetVector,
     double reach
   ) {
     return new Raytrace(nativeEyeVector.toPosition(), nativeTargetVector == null ? null : nativeTargetVector.toPosition(), reach);

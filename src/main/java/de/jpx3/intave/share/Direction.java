@@ -6,22 +6,19 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import org.bukkit.util.Vector;
 
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import static de.jpx3.intave.share.Direction.Axis.*;
 import static de.jpx3.intave.share.Direction.AxisDirection.NEGATIVE;
 import static de.jpx3.intave.share.Direction.AxisDirection.POSITIVE;
 
 public enum Direction {
-  DOWN(0, 1, -1, "down", NEGATIVE, Y_AXIS, new NativeVector(0, -1, 0)),
-  UP(1, 0, -1, "up", POSITIVE, Y_AXIS, new NativeVector(0, 1, 0)),
-  NORTH(2, 3, 2, "north", NEGATIVE, Z_AXIS, new NativeVector(0, 0, -1)),
-  SOUTH(3, 2, 0, "south", POSITIVE, Z_AXIS, new NativeVector(0, 0, 1)),
-  WEST(4, 5, 1, "west", NEGATIVE, X_AXIS, new NativeVector(-1, 0, 0)),
-  EAST(5, 4, 3, "east", POSITIVE, X_AXIS, new NativeVector(1, 0, 0));
+  DOWN(0, 1, -1, "down", NEGATIVE, Y_AXIS, new RawVector3d(0, -1, 0)),
+  UP(1, 0, -1, "up", POSITIVE, Y_AXIS, new RawVector3d(0, 1, 0)),
+  NORTH(2, 3, 2, "north", NEGATIVE, Z_AXIS, new RawVector3d(0, 0, -1)),
+  SOUTH(3, 2, 0, "south", POSITIVE, Z_AXIS, new RawVector3d(0, 0, 1)),
+  WEST(4, 5, 1, "west", NEGATIVE, X_AXIS, new RawVector3d(-1, 0, 0)),
+  EAST(5, 4, 3, "east", POSITIVE, X_AXIS, new RawVector3d(1, 0, 0));
 
   /**
    * Ordering index for D-U-N-S-W-E
@@ -44,7 +41,7 @@ public enum Direction {
   /**
    * Normalized Vector that points in the direction of this Facing
    */
-  private final NativeVector directionVec;
+  private final RawVector3d directionVec;
   private final Motion directionVecAsMotion;
   private final Vector directionVecAsVector;
 
@@ -59,7 +56,7 @@ public enum Direction {
   private static final Direction[] HORIZONTALS = new Direction[4];
   private static final Map<String, Direction> NAME_LOOKUP = Maps.newHashMap();
 
-  Direction(int indexIn, int oppositeIn, int horizontalIndexIn, String nameIn, Direction.AxisDirection axisDirectionIn, Direction.Axis axisIn, NativeVector directionVecIn) {
+  Direction(int indexIn, int oppositeIn, int horizontalIndexIn, String nameIn, Direction.AxisDirection axisDirectionIn, Direction.Axis axisIn, RawVector3d directionVecIn) {
     this.index = indexIn;
     this.horizontalIndex = horizontalIndexIn;
     this.opposite = oppositeIn;
@@ -69,6 +66,13 @@ public enum Direction {
     this.directionVec = directionVecIn;
     this.directionVecAsMotion = directionVecIn.toMotion();
     this.directionVecAsVector = directionVecIn.convertToBukkitVec();
+  }
+
+  private static final List<Direction.Axis> YXZ_AXIS_ORDER = Collections.unmodifiableList(Arrays.asList(Y_AXIS, X_AXIS, Z_AXIS));
+  private static final List<Direction.Axis> YZX_AXIS_ORDER = Collections.unmodifiableList(Arrays.asList(Y_AXIS, Z_AXIS, X_AXIS));
+
+  public static List<Axis> axisStepOrder(Motion motion) {
+    return Math.abs(motion.motionX) < Math.abs(motion.motionZ) ? YZX_AXIS_ORDER : YXZ_AXIS_ORDER;
   }
 
   public static Direction getFacingFromAxisDirection(Direction.Axis axisIn, Direction.AxisDirection axisDirectionIn) {
@@ -292,7 +296,7 @@ public enum Direction {
     Direction enumfacing = NORTH;
     float f = Float.MIN_VALUE;
     for (Direction enumfacing1 : values()) {
-      float f1 = p_176737_0_ * (float) enumfacing1.directionVec.xCoord + p_176737_1_ * (float) enumfacing1.directionVec.yCoord + p_176737_2_ * (float) enumfacing1.directionVec.zCoord;
+      float f1 = p_176737_0_ * (float) enumfacing1.directionVec.x + p_176737_1_ * (float) enumfacing1.directionVec.y + p_176737_2_ * (float) enumfacing1.directionVec.z;
       if (f1 > f) {
         f = f1;
         enumfacing = enumfacing1;
@@ -327,15 +331,15 @@ public enum Direction {
   /**
    * Get a normalized Vector that points in the direction of this Facing.
    */
-  public NativeVector directionVector() {
+  public RawVector3d directionVector() {
     return this.directionVec;
   }
 
-  public Motion directionVecAsMotion() {
+  public Motion normalMotion() {
     return this.directionVecAsMotion;
   }
 
-  public Vector directionVecAsVector() {
+  public Vector normalVec() {
     return this.directionVecAsVector;
   }
 
@@ -363,6 +367,16 @@ public enum Direction {
       public <T> T select(T x, T y, T z) {
         return x;
       }
+
+      @Override
+      public Direction positive() {
+        return Direction.EAST;
+      }
+
+      @Override
+      public Direction negative() {
+        return Direction.WEST;
+      }
     },
     Y_AXIS("y", Direction.Plane.VERTICAL) {
       public int select(int x, int y, int z) {
@@ -377,6 +391,16 @@ public enum Direction {
       public <T> T select(T x, T y, T z) {
         return y;
       }
+
+      @Override
+      public Direction positive() {
+        return Direction.UP;
+      }
+
+      @Override
+      public Direction negative() {
+        return Direction.DOWN;
+      }
     },
     Z_AXIS("z", Direction.Plane.HORIZONTAL) {
       public int select(int x, int y, int z) {
@@ -390,6 +414,16 @@ public enum Direction {
       @Override
       public <T> T select(T x, T y, T z) {
         return z;
+      }
+
+      @Override
+      public Direction positive() {
+        return Direction.SOUTH;
+      }
+
+      @Override
+      public Direction negative() {
+        return Direction.NORTH;
       }
     };
 
@@ -439,6 +473,10 @@ public enum Direction {
     public abstract double select(double x, double y, double z);
 
     public abstract <T> T select(T x, T y, T z);
+
+    public abstract Direction positive();
+
+    public abstract Direction negative();
 
     static {
       for (Direction.Axis value : values()) {

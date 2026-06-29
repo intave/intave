@@ -16,9 +16,9 @@ public interface FluidResolver {
     if (dry) {
       return Dry.of();
     } else if (isWater) {
-      return Water.ofHeight(height, level, falling);
+      return Water.of(height, level, falling);
     } else if (isLava) {
-      return Lava.ofHeight(height, level, falling);
+      return Lava.of(height, level, falling);
     }
     return Dry.of();
   }

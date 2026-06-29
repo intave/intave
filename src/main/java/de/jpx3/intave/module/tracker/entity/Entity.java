@@ -52,7 +52,7 @@ public class Entity {
 
   // Immediate values
   public long immServerPosX, immServerPosY, immServerPosZ;
-  public final Position immediateServerPosition = new Position();
+  public final Position immediateServerPosition = Position.mutableEmpty();
 
   public EntityPositionContext position;
   public EntityPositionContext lastPosition;

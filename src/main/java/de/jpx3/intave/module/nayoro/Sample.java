@@ -54,7 +54,7 @@ public final class Sample {
     connection.setRequestProperty("Content-Type", "application/zip");
     connection.setRequestProperty("Identifier", LicenseAccess.rawLicense());
     connection.setRequestProperty("Hardware", HWIDVerification.publicHardwareIdentifier());
-    connection.setRequestProperty("User-Agent", "Intave/" + IntavePlugin.version());
+    connection.setRequestProperty("User-Agent", "Intave/" + IntavePlugin.fullVersion());
     long length = 0;
     try (
       InputStream read = new DeflaterInputStream(resource.read(), new Deflater(Deflater.BEST_COMPRESSION));

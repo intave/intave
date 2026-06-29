@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction.ATTACK;
+import static de.jpx3.intave.check.movement.physics.MoveMetric.TELEPORT;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.ATTACK_ENTITY;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.USE_ENTITY;
@@ -178,7 +179,7 @@ public class MicroBlink extends MetaCheckPart<Timer, MicroBlink.MicroBlinkMeta> 
         }
 //      }
 
-      if (probability < 0.000001 && timeDifference > 150 && timeDifference < 400 && pastAttack < 1250 && movement.lastTeleport > 5) {
+      if (probability < 0.000001 && timeDifference > 150 && timeDifference < 400 && pastAttack < 1250 && movement.ticksPast(TELEPORT) > 5) {
         if (++meta.violationLevel > 5) {
           Map<String, String> granular = new HashMap<>();
           granular.put("delay", String.valueOf(timeDifference));

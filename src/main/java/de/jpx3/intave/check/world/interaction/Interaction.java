@@ -106,7 +106,10 @@ public final class Interaction {
   }
 
   public boolean hasTargetBlock() {
-    return targetBlock != null && (targetBlock.getX() != -1 && targetBlock.getY() != -1 && targetBlock.getZ() != -1 && targetDirection != 255) ;
+    if (targetBlock == null) {
+      return false;
+    }
+	  return targetBlock.getX() != -1 || targetBlock.getY() != -1 || targetBlock.getZ() != -1 || targetDirection != 255;
   }
 
   public Direction targetDirection() {
