@@ -45,7 +45,7 @@ final class FoliaTaskScheduler implements TaskScheduler {
 
 	@Override
 	public void startSync(Task task) {
-		System.out.println("Starting task " + task.name() + " synchronously");
+//		System.out.println("Starting task " + task.name() + " synchronously");
 		ScheduledTask outTask;
 		if (task.period() >= 1) {
 			outTask = globalScheduler.runAtFixedRate(
@@ -70,7 +70,7 @@ final class FoliaTaskScheduler implements TaskScheduler {
 
 	@Override
 	public void startUserSync(Task task, User user) {
-		System.out.println("Starting task " + task.name() + " user-synchronously");
+//		System.out.println("Starting task " + task.name() + " user-synchronously");
 		EntityScheduler scheduler = schedulerFromEntity.apply(user.player());
 		ScheduledTask outTask;
 		if (task.period() >= 1) {
@@ -97,7 +97,7 @@ final class FoliaTaskScheduler implements TaskScheduler {
 
 	@Override
 	public void startAsync(Task task) {
-		System.out.println("Starting task " + task.name() + " asynchronously");
+//		System.out.println("Starting task " + task.name() + " asynchronously");
 		ScheduledTask outTask;
 		if (task.period() >= 1) {
 			outTask = asyncScheduler.runAtFixedRate(

@@ -364,7 +364,7 @@ fun registerFoliaRunTask(serverVersion: String, javaVersion: Int) {
   runPaper.folia.registerTask({
 //    name = "run_folia_$serverVersion"
     group = simpleName
-    dependsOn("build")
+    dependsOn("shadowJar")
     pluginJars.from("build/libs/$simpleName.jar")
     minecraftVersion(serverVersion)
     runDirectory(File("runs/folia_${serverVersion}-j$javaVersion"))
