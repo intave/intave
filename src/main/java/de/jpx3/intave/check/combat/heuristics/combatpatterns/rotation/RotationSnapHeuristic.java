@@ -85,6 +85,18 @@ public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHe
     return Math.toDegrees(Math.atan2(strafe, forward)) - 90;
   }
 
+  static double computeYawMotion(float lastRotationYaw, float rotationYaw) {
+    return Math.abs(lastRotationYaw - rotationYaw);
+  }
+
+  static boolean isRotationSnapDetected(
+    double previousYawMotion, double lastYawMotion, double currentYawMotion,
+    boolean recentSwingOrAttack, int rotationPacketCounter, int ticksPastTeleport
+  ) {
+    boolean isSuspicious = previousYawMotion < 9 && lastYawMotion > 40 && currentYawMotion < 9;
+    return isSuspicious && recentSwingOrAttack && rotationPacketCounter > 10 && ticksPastTeleport > 7;
+  }
+
   private double floorModDouble(double x, double y) {
     return (x - Math.floor(x / y) * y);
   }
@@ -111,7 +123,7 @@ public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHe
         meta.internalViolation = 0;
     }
 
-    double yawMotion = Math.abs(movementData.lastRotationYaw - movementData.rotationYaw);
+    double yawMotion = computeYawMotion(movementData.lastRotationYaw, movementData.rotationYaw);
     AttackMetadata attackData = user.meta().attack();
 
     if ((yawMotion > 40 && meta.yawMotions[1] < 9) || (yawMotion > 25 && meta.yawMotions[1] == 0)) {
@@ -144,9 +156,14 @@ public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHe
     boolean isSuspicious = (meta.yawMotions[1] == 0 && meta.yawMotions[0] > 25 && yawMotion < 9);
     boolean liteFlag = isSuspicious && meta.silentMovements[1] == KeyStates.SILENTMOVE && meta.rotationPacketCounter > 10 && movementData.ticksPast(TELEPORT) > 7;
 
-    isSuspicious = meta.yawMotions[1] < 9 && meta.yawMotions[0] > 40 && yawMotion < 9;
+    boolean snapDetected = isRotationSnapDetected(
+      meta.yawMotions[1], meta.yawMotions[0], yawMotion,
+      wasRecent(meta.lastSwing) || wasRecent(meta.lastAttack),
+      meta.rotationPacketCounter,
+      movementData.ticksPast(TELEPORT)
+    );
 
-    if (isSuspicious && (wasRecent(meta.lastSwing) || wasRecent(meta.lastAttack)) && meta.rotationPacketCounter > 10 && movementData.ticksPast(TELEPORT) > 7) {
+    if (snapDetected) {
       double valueOfSnap = meta.yawMotions[0];
       String description = "rotation snap ["
         + MathHelper.formatDouble(meta.yawMotions[1], 2)

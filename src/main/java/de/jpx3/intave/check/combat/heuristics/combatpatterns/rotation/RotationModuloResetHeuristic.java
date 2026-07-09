@@ -60,14 +60,16 @@ public final class RotationModuloResetHeuristic extends ClassicHeuristic<Rotatio
     2: Prepare for stage 1
      */
     if (attackData.recentlyAttacked(1000) && attackData.lastReach() > 1.0) {
-      float receivedDistance = Math.abs(rotationYaw - lastRotationYaw);
-      boolean roundingConditions = Math.abs(rotationYaw) <= 360 && Math.abs(lastRotationYaw) <= 360;
-      boolean suspiciousYaw = roundingConditions && receivedDistance > 100;
-
-      if (suspiciousYaw && entityInLineOfSight(user)) {
+      if (isSuspiciousYawJump(rotationYaw, lastRotationYaw) && entityInLineOfSight(user)) {
         heuristicMeta.roundedRotationLooking = true;
       }
     }
+  }
+
+  static boolean isSuspiciousYawJump(float rotationYaw, float lastRotationYaw) {
+    float receivedDistance = Math.abs(rotationYaw - lastRotationYaw);
+    boolean roundingConditions = Math.abs(rotationYaw) <= 360 && Math.abs(lastRotationYaw) <= 360;
+    return roundingConditions && receivedDistance > 100;
   }
 
   private boolean entityInLineOfSight(User user) {
