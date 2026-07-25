@@ -19,6 +19,7 @@ import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
+import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
@@ -112,6 +113,14 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   private boolean stepHeightOverridden;
   private float stepHeight;
   private boolean postTickMotionCandidatesOverridden;
+  private BlockPosition mainSupportingBlockPos;
+  private boolean mainSupportingBlockPosOverridden;
+  private boolean onGroundNoBlocks;
+  private boolean onGroundNoBlocksOverridden;
+  private Material frictionMaterial = Material.AIR, previousFrictionMaterial = Material.AIR;
+  private Material collideMaterial = Material.AIR, previousCollideMaterial = Material.AIR;
+  private boolean frictionMaterialOverridden, collideMaterialOverridden,
+    previousFrictionMaterialOverridden, previousCollideMaterialOverridden;
   private List<Motion> postTickMotionCandidates;
   private boolean sleepingOverridden;
   private boolean sleeping;
@@ -576,18 +585,27 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   }
 
   @Override
-  public void checkSupportingBlock(Motion motion) {
-    deferredMutations.add(environment -> environment.checkSupportingBlock(motion));
+  public BlockPosition mainSupportingBlockPos() {
+    return mainSupportingBlockPosOverridden ? this.mainSupportingBlockPos : delegate.mainSupportingBlockPos();
   }
 
   @Override
-  public void clearSupportingBlock() {
-    deferredMutations.add(SimulationEnvironment::clearSupportingBlock);
+  public void setMainSupportingBlockPos(BlockPosition mainSupportingBlockPos) {
+    mainSupportingBlockPosOverridden = true;
+    this.mainSupportingBlockPos = mainSupportingBlockPos;
+    deferredMutations.add(environment -> environment.setMainSupportingBlockPos(mainSupportingBlockPos));
   }
 
   @Override
-  public void compileSpecialBlocks() {
-    deferredMutations.add(SimulationEnvironment::compileSpecialBlocks);
+  public boolean onGroundNoBlocks() {
+    return onGroundNoBlocksOverridden ? onGroundNoBlocks : delegate.onGroundNoBlocks();
+  }
+
+  @Override
+  public void setOnGroundNoBlocks(boolean onGroundNoBlocks) {
+    this.onGroundNoBlocks = onGroundNoBlocks;
+    this.onGroundNoBlocksOverridden = true;
+    deferredMutations.add(environment -> environment.setOnGroundNoBlocks(onGroundNoBlocks));
   }
 
   @Override
@@ -615,22 +633,50 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
 
   @Override
   public Material collideMaterial() {
-    return delegate.collideMaterial();
+    return collideMaterialOverridden ? collideMaterial : delegate.collideMaterial();
   }
 
   @Override
   public Material frictionMaterial() {
-    return delegate.frictionMaterial();
+    return frictionMaterialOverridden ? frictionMaterial : delegate.frictionMaterial();
   }
 
   @Override
   public Material previousCollideMaterial() {
-    return delegate.previousCollideMaterial();
+    return previousCollideMaterialOverridden ? previousCollideMaterial : delegate.previousCollideMaterial();
   }
 
   @Override
   public Material previousFrictionMaterial() {
-    return delegate.previousFrictionMaterial();
+    return previousFrictionMaterialOverridden ? previousFrictionMaterial : delegate.previousFrictionMaterial();
+  }
+
+  @Override
+  public void setCollideMaterial(Material collideMaterial) {
+    collideMaterialOverridden = true;
+    this.collideMaterial = collideMaterial;
+    deferredMutations.add(environment -> environment.setCollideMaterial(collideMaterial));
+  }
+
+  @Override
+  public void setFrictionMaterial(Material frictionMaterial) {
+    frictionMaterialOverridden = true;
+    this.frictionMaterial = frictionMaterial;
+    deferredMutations.add(environment -> environment.setFrictionMaterial(frictionMaterial));
+  }
+
+  @Override
+  public void setPreviousCollideMaterial(Material previousCollideMaterial) {
+    previousCollideMaterialOverridden = true;
+    this.previousCollideMaterial = previousCollideMaterial;
+    deferredMutations.add(environment -> environment.setPreviousCollideMaterial(previousCollideMaterial));
+  }
+
+  @Override
+  public void setPreviousFrictionMaterial(Material previousFrictionMaterial) {
+    previousFrictionMaterialOverridden = true;
+    this.previousFrictionMaterial = previousFrictionMaterial;
+    deferredMutations.add(environment -> environment.setPreviousFrictionMaterial(previousFrictionMaterial));
   }
 
   @Override

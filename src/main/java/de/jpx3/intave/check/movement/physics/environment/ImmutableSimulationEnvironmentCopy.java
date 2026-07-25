@@ -19,6 +19,7 @@ import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
+import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
@@ -99,6 +100,8 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	private final boolean areEyesInWater;
 	private final boolean clientElytraFlying;
 	private final boolean sleeping;
+	private final BlockPosition mainSupportingBlockPos;
+	private final boolean onGroundNoBlocks;
 	private final EnumMap<MoveMetric, Integer> activeTracker;
 	private final EnumMap<MoveMetric, Integer> pastTracker;
 
@@ -208,7 +211,9 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 		this.baseMoveSpeed = source.baseMoveSpeed();
 		this.clientElytraFlying = source.shouldHaveFallFlyingPose();
 		this.sleeping = source.isSleeping();
-		this.postTickMotionCandidates =  new ArrayList<>(source.postTickMotionCandidates());
+		this.postTickMotionCandidates = new ArrayList<>(source.postTickMotionCandidates());
+		this.mainSupportingBlockPos = source.mainSupportingBlockPos();
+		this.onGroundNoBlocks = source.onGroundNoBlocks();
 		this.activeTracker = new EnumMap<>(MoveMetric.class);
 		this.pastTracker = new EnumMap<>(MoveMetric.class);
 		for (MoveMetric metric : MoveMetric.values()) {
@@ -599,12 +604,22 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
-	public void checkSupportingBlock(Motion motion) {
+	public BlockPosition mainSupportingBlockPos() {
+		return mainSupportingBlockPos;
+	}
+
+	@Override
+	public void setMainSupportingBlockPos(BlockPosition mainSupportingBlockPos) {
 		throw immutableCopyException();
 	}
 
 	@Override
-	public void clearSupportingBlock() {
+	public boolean onGroundNoBlocks() {
+		return onGroundNoBlocks;
+	}
+
+	@Override
+	public void setOnGroundNoBlocks(boolean onGroundNoBlocks) {
 		throw immutableCopyException();
 	}
 
@@ -657,6 +672,26 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	@Override
 	public Material previousFrictionMaterial() {
 		return previousFrictionMaterial;
+	}
+
+	@Override
+	public void setCollideMaterial(Material collideMaterial) {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public void setFrictionMaterial(Material frictionMaterial) {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public void setPreviousCollideMaterial(Material previousCollideMaterial) {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public void setPreviousFrictionMaterial(Material previousFrictionMaterial) {
+		throw immutableCopyException();
 	}
 
 	@Override

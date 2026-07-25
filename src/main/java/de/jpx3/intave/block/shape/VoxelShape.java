@@ -736,11 +736,6 @@ public final class VoxelShape implements BlockShape {
 		));
 	}
 
-	private final static VoxelShape EMPTY = new VoxelShape();
-
-	public static VoxelShape empty() {
-		return EMPTY;
-	}
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
@@ -753,5 +748,11 @@ public final class VoxelShape implements BlockShape {
 		}, true);
 		builder.append("]");
 		return builder.toString();
+	}
+
+	private final static VoxelShape EMPTY = new VoxelShape();
+
+	public static VoxelShape empty() {
+		return EMPTY;
 	}
 }

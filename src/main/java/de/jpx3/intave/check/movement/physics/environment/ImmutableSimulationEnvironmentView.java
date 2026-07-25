@@ -19,6 +19,7 @@ import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
+import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
@@ -453,12 +454,22 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	}
 
 	@Override
-	public void checkSupportingBlock(Motion motion) {
+	public BlockPosition mainSupportingBlockPos() {
+		return delegate.mainSupportingBlockPos();
+	}
+
+	@Override
+	public void setMainSupportingBlockPos(BlockPosition mainSupportingBlockPos) {
 		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}
 
 	@Override
-	public void clearSupportingBlock() {
+	public boolean onGroundNoBlocks() {
+		return delegate.onGroundNoBlocks();
+	}
+
+	@Override
+	public void setOnGroundNoBlocks(boolean onGroundNoBlocks) {
 		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}
 
@@ -505,6 +516,26 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	@Override
 	public Material previousFrictionMaterial() {
 		return delegate.previousFrictionMaterial();
+	}
+
+	@Override
+	public void setCollideMaterial(Material collideMaterial) {
+		throw new UnsupportedOperationException("Can not modify unmodifiable view");
+	}
+
+	@Override
+	public void setFrictionMaterial(Material frictionMaterial) {
+		throw new UnsupportedOperationException("Can not modify unmodifiable view");
+	}
+
+	@Override
+	public void setPreviousCollideMaterial(Material previousCollideMaterial) {
+		throw new UnsupportedOperationException("Can not modify unmodifiable view");
+	}
+
+	@Override
+	public void setPreviousFrictionMaterial(Material previousFrictionMaterial) {
+		throw new UnsupportedOperationException("Can not modify unmodifiable view");
 	}
 
 	@Override

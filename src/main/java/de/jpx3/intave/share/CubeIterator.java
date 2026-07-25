@@ -1,6 +1,21 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.share;
 
-public class CubeIterator {
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Iterator;
+
+public class CubeIterator implements Iterable<MutableBlockPosition> {
   public static final int TYPE_INSIDE = 0;
   public static final int TYPE_FACE = 1;
   public static final int TYPE_EDGE = 2;
@@ -64,5 +79,26 @@ public class CubeIterator {
       ++onEdge;
     }
     return onEdge;
+  }
+
+  @Override
+  public @NotNull Iterator<MutableBlockPosition> iterator() {
+    return new Iterator<MutableBlockPosition>() {
+      private final MutableBlockPosition pos = new MutableBlockPosition();
+
+      @Override
+      public boolean hasNext() {
+        return CubeIterator.this.index < CubeIterator.this.end;
+      }
+
+      @Override
+      public MutableBlockPosition next() {
+        CubeIterator.this.advance();
+        pos.setX(CubeIterator.this.nextX());
+        pos.setY(CubeIterator.this.nextY());
+        pos.setZ(CubeIterator.this.nextZ());
+        return this.pos;
+      }
+    };
   }
 }

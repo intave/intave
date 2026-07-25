@@ -17,7 +17,6 @@ import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
@@ -622,7 +621,7 @@ public final class MovementDispatcher extends Module {
     }
     inventory.lastFoodConsumptionBlockRequest = System.currentTimeMillis();
     PacketContainer packet = protocolManager.createPacket(PacketType.Play.Client.BLOCK_DIG);
-    packet.getBlockPositionModifier().write(0, new BlockPosition(0, 0, 0));
+    packet.getBlockPositionModifier().write(0, new com.comphenix.protocol.wrappers.BlockPosition(0, 0, 0));
     packet.getDirections().write(0, EnumWrappers.Direction.DOWN);
     packet.getPlayerDigTypes().write(0, EnumWrappers.PlayerDigType.RELEASE_USE_ITEM);
     user.ignoreNextInboundPacket();
@@ -839,7 +838,7 @@ public final class MovementDispatcher extends Module {
     }
     if (reader.animation() == AnimationReader.Animation.WAKEUP) {
       MovementMetadata movement = user.meta().movement();
-      de.jpx3.intave.share.BlockPosition sleepingBedPosition = movement.sleepingBedPosition;
+      BlockPosition sleepingBedPosition = movement.sleepingBedPosition;
       if (sleepingBedPosition != null) {
         Optional<Position> wakeupPosition = BedWakeupPositionSearch.findStandUpPosition(user, sleepingBedPosition, 0);
         user.packetTickFeedback(event, () -> {
