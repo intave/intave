@@ -32,8 +32,6 @@ final class SprintingBrancher extends MovementSearchBrancher {
     List<MovementSearchBranch> outputBranches
   ) {
     User user = input.user();
-    ProtocolMetadata protocol = user.meta().protocol();
-    MovementMetadata movement = user.meta().movement();
     if (!input.sprintingBranchNecessary()) {
       outputBranches.add(inputBranch);
       return;
