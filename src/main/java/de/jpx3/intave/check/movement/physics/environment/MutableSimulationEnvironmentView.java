@@ -372,6 +372,16 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   }
 
   @Override
+  public void setMotionMultiplier(Vector motionMultiplier) {
+    Vector copy = motionMultiplier.clone();
+    motionMultiplierOverridden = true;
+    this.motionMultiplier = copy;
+    fallDistanceOverridden = true;
+    fallDistance = 0.0;
+    deferredMutations.add(environment -> environment.setMotionMultiplier(copy.clone()));
+  }
+
+  @Override
   public void resetMotionMultiplier() {
     motionMultiplierOverridden = true;
     motionMultiplier = null;
@@ -462,11 +472,6 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
   @Override
   public double gravity() {
     return delegate.gravity();
-  }
-
-  @Override
-  public float blockSpeedFactor() {
-    return delegate.blockSpeedFactor();
   }
 
   @Override
@@ -1249,7 +1254,11 @@ public final class MutableSimulationEnvironmentView implements SimulationEnviron
       other.setBaseMotion(baseMotionX, baseMotionY, baseMotionZ);
     }
     if (motionMultiplierOverridden) {
-      other.resetMotionMultiplier();
+      if (motionMultiplier == null) {
+        other.resetMotionMultiplier();
+      } else {
+        other.setMotionMultiplier(motionMultiplier.clone());
+      }
     }
     if (jumpMotionOverridden) {
       other.setJumpMotion(jumpMotion);

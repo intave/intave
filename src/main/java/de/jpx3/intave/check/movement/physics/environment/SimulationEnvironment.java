@@ -15,7 +15,10 @@ import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.fluid.Fluid;
+import de.jpx3.intave.block.physics.BlockProperties;
+import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.block.shape.BlockShape;
+import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.simulator.BoatSimulator.Status;
 import de.jpx3.intave.check.movement.physics.simulator.Simulation;
@@ -49,6 +52,10 @@ public interface SimulationEnvironment {
   double positionX();
   double positionY();
   double positionZ();
+
+  default BlockPosition blockPosition() {
+    return new BlockPosition(floor(positionX()), floor(positionY()), floor(positionZ()));
+  }
 
   Vector lookVector();
 
@@ -205,6 +212,7 @@ public interface SimulationEnvironment {
   boolean motionZReset();
 
   Vector motionMultiplier();
+  void setMotionMultiplier(Vector motionMultiplier);
   void resetMotionMultiplier();
 
   WorldBorder border();
@@ -235,7 +243,24 @@ public interface SimulationEnvironment {
 
   double gravity();
 
-  float blockSpeedFactor();
+  // Entity.getBlockSpeedFactor @ 1.19
+  default float blockSpeedFactor() {
+    User user = user();
+    ProtocolMetadata protocol = user.meta().protocol();
+    if (protocol.trailsAndTailsUpdate()) {
+      Material material = VolatileBlockAccess.typeAccess(user, blockPosition());
+      float f = BlockProperties.speedFactorOf(material);
+
+      if (!MaterialMagic.isWater(material) && material != BlockTypeAccess.BUBBLE_COLUMN) {
+        return f == 1.0 ? BlockProperties.speedFactorOf(frictionMaterial()) : f;
+      } else {
+        return f;
+      }
+    } else {
+      return BlockProperties.speedFactorOf(frictionMaterial());
+    }
+  }
+
   float jumpMovementFactor();
 
   boolean isSprinting();
@@ -262,23 +287,26 @@ public interface SimulationEnvironment {
   boolean collidedVertically();
 
   // don't override
-  default void checkSupportingBlock(Motion motion) {
+  default void checkSupportingBlock(boolean onGround, Motion motion) {
     User user = user();
     ProtocolMetadata protocol = user.meta().protocol();
     if (protocol.trailsAndTailsUpdate()) {
-      if (onGround()) {
-        BlockPosition supportingBlock;
+      if (onGround) {
         BoundingBox boundingBox = BoundingBox.fromPosition(user, this, positionX(), positionY(), positionZ());
         BoundingBox testArea = new BoundingBox(
           boundingBox.minX, boundingBox.minY - 0.000001, boundingBox.minZ,
           boundingBox.maxX, boundingBox.minY, boundingBox.maxZ
         );
-        supportingBlock = findSupportingBlock(user, testArea);
-        if (supportingBlock == null && !onGroundNoBlocks()) {
-          BoundingBox thirdBoundingBox = testArea.move(-motion.motionX, 0.0, -motion.motionZ);
+        BlockPosition supportingBlock = findSupportingBlock(user, testArea);
+        BlockPosition result;
+        if (supportingBlock != null || onGroundNoBlocks()) {
+          result = supportingBlock;
+	      } else {
+	        BoundingBox thirdBoundingBox = testArea.move(-motion.motionX, 0.0, -motion.motionZ);
           supportingBlock = findSupportingBlock(user, thirdBoundingBox);
-        }
-        setMainSupportingBlockPos(supportingBlock);
+          result = supportingBlock;
+	      }
+	      setMainSupportingBlockPos(result);
         setOnGroundNoBlocks(supportingBlock == null);
       } else {
         setMainSupportingBlockPos(null);

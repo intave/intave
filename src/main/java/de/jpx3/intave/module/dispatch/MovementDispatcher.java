@@ -754,6 +754,9 @@ public final class MovementDispatcher extends Module {
         inputBooleans.read(5),
         inputBooleans.read(6)
       );
+      if (user.receives(MessageChannel.DEBUG_SENT_INPUT)) {
+        ActionBar.sendActionBar(player, String.valueOf(movementData.input));
+      }
     } else {
       int strafeKey = (int) (packet.getFloat().read(0) / 0.98f);
       int forwardKey = (int) (packet.getFloat().read(1) / 0.98f);

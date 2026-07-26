@@ -81,11 +81,26 @@ public final class Input {
   }
 
   public int forwardKey() {
-    return forward ? 1 : backward ? -1 : 0;
+//    return forward ? 1 : backward ? -1 : 0;
+    int forward = 0;
+    if (this.forward) {
+      forward += 1;
+    }
+    if (this.backward) {
+      forward -= 1;
+    }
+    return forward;
   }
 
   public int sidewaysKey() {
-    return left ? 1 : right ? -1 : 0;
+    int sideways = 0;
+    if (this.left) {
+      sideways += 1;
+    }
+    if (this.right) {
+      sideways -= 1;
+    }
+    return sideways;
   }
 
   public boolean forward() {

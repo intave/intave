@@ -64,14 +64,14 @@ public final class BlockPhysics {
 
   @Nullable
   public static Motion entityInside(
-    User user,
-    Material material,
+    User user, Material material,
+    SimulationEnvironment environment,
     Location location, Location from,
     double motionX, double motionY, double motionZ
   ) {
     BlockPhysic collision = physicLookup(material);
     if (collision != null) {
-      return collision.entityInside(user, location, from, motionX, motionY, motionZ);
+      return collision.entityInside(user, environment, location, from, motionX, motionY, motionZ);
     }
     return null;
   }

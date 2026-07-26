@@ -13,9 +13,11 @@ package de.jpx3.intave.check.movement.physics.branch;
 
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.math.Hypot;
+import de.jpx3.intave.share.Input;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.InventoryMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
+import de.jpx3.intave.user.meta.ProtocolMetadata;
 
 import java.util.List;
 
@@ -35,6 +37,7 @@ final class KeypressBrancher extends MovementSearchBrancher {
   @Override
   public void branch(MovementSearchInput input, MovementSearchBranch inputBranch, List<MovementSearchBranch> outputBranches) {
     User user = input.user();
+    ProtocolMetadata protocol = user.meta().protocol();
     MovementMetadata movement = user.meta().movement();
 
     // Elytra is key-independent
@@ -50,6 +53,18 @@ final class KeypressBrancher extends MovementSearchBrancher {
         movement.legacyVehicleStrafeKey
       ));
       return;
+    }
+
+    if (protocol.sendsInputs()) {
+      Input sentInput = movement.input;
+      int forward = sentInput.forwardKey();
+      int strafe = sentInput.sidewaysKey();
+      if (isValidPress(input, inputBranch, forward, strafe)) {
+        outputBranches.add(inputBranch.withKeypress(forward, strafe));
+      } else {
+        outputBranches.add(inputBranch.withKeypress(0, 0));
+      }
+	    return;
     }
 
     int resultStart = outputBranches.size();

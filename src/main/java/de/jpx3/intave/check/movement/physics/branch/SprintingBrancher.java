@@ -12,6 +12,8 @@
 package de.jpx3.intave.check.movement.physics.branch;
 
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 
 import java.util.List;
@@ -29,6 +31,9 @@ final class SprintingBrancher extends MovementSearchBrancher {
     MovementSearchInput input, MovementSearchBranch inputBranch,
     List<MovementSearchBranch> outputBranches
   ) {
+    User user = input.user();
+    ProtocolMetadata protocol = user.meta().protocol();
+    MovementMetadata movement = user.meta().movement();
     if (!input.sprintingBranchNecessary()) {
       outputBranches.add(inputBranch);
       return;
@@ -42,17 +47,37 @@ final class SprintingBrancher extends MovementSearchBrancher {
       return;
     }
 
+    int numOutputBranches = 0;
     for (boolean sprinting : selector) {
-      if (sprinting && input.user().meta().abilities().foodLevel < 6) {
+      if (!isValidSprintingSelection(user, sprinting)) {
         continue;
       }
+      // Double W press sprint doesn't count as sprinting?
+      // what even is the purpose of the input packet if the contents are wrong
+//      if (protocol.sendsInputs()) {
+//        Input sentInput = movement.input;
+//        if (sprinting != sentInput.sprinting()) {
+//          continue;
+//        }
+//      }
       boolean certain = environment.ticksPast(SPRINT_CHANGE) > 1;
       if (certain) {
         outputBranches.add(inputBranch.withPredictedSprintingSetTo(sprinting));
       } else {
         outputBranches.add(inputBranch.withSprintingSetTo(sprinting));
       }
+      numOutputBranches++;
     }
+    if (numOutputBranches == 0) {
+      outputBranches.add(inputBranch.withSprintingSetTo(false));
+    }
+  }
+
+  private boolean isValidSprintingSelection(User user, boolean sprinting) {
+    if (sprinting && user.meta().abilities().foodLevel < 6) {
+      return false;
+    }
+    return true;
   }
 
   private boolean[] sprintSelector(MovementSearchInput input, SimulationEnvironment environment) {

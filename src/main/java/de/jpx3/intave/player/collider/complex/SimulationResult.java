@@ -106,6 +106,16 @@ public final class SimulationResult {
 		return actualMotion().horizontalDistance(offsetMotion()) > 0.001;
 	}
 
+	public boolean offsetMotionDiffersFromActualMotionInY() {
+		if (actualMotion == null) {
+			return false;
+		}
+		if (offsetMotion == null) {
+			return false;
+		}
+		return Math.abs(actualMotion().motionY - offsetMotion().motionY) > 0.0000001;
+	}
+
 	public Motion intermittentResult() {
 		return intermittentResult;
 	}

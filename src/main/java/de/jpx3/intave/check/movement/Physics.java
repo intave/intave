@@ -460,6 +460,15 @@ public final class Physics extends Check {
       onLadder, collidedWithBoat, horizontalTags
     );
 
+    if (IntaveControl.NO_TOLERANCE_PHYSICS) {
+      if (verticalViolationIncrease > 1) {
+        verticalViolationIncrease = 10000;
+      }
+      if (horizontalViolationIncrease > 1) {
+        horizontalViolationIncrease = 10000;
+      }
+    }
+
     if (onLadder) {
       movementData.artificialFallDistance = 0;
     }

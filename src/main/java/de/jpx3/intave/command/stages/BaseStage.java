@@ -218,6 +218,7 @@ public final class BaseStage extends CommandStage {
     HITRAY(MessageChannel.DEBUG_HITRAY),
     MOVEMENT(MessageChannel.DEBUG_MOVEMENT),
     MOTION(MessageChannel.DEBUG_MOTION),
+    SENT_INPUT(MessageChannel.DEBUG_SENT_INPUT),
     PLAYER_ACTIONS(MessageChannel.DEBUG_PLAYER_ACTIONS),
     ATTACK_RAYTRACE(MessageChannel.DEBUG_ATTACK_RAYTRACE),
 

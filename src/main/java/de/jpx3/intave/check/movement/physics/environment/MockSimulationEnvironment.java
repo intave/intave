@@ -441,6 +441,12 @@ public final class MockSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
+  public void setMotionMultiplier(Vector motionMultiplier) {
+    this.motionMultiplier = motionMultiplier;
+    fallDistance = 0.0;
+  }
+
+  @Override
   public void resetMotionMultiplier() {
     motionMultiplier = null;
   }
@@ -518,11 +524,6 @@ public final class MockSimulationEnvironment implements SimulationEnvironment {
   @Override
   public double gravity() {
     return gravity;
-  }
-
-  @Override
-  public float blockSpeedFactor() {
-    return 1;
   }
 
   @Override

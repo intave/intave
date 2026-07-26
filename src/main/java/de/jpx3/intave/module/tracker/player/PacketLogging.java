@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.tracker.player;
 
 import com.comphenix.protocol.PacketType;
@@ -167,10 +178,14 @@ public class PacketLogging extends Module {
     StringBuilder extra = new StringBuilder();
     if (typeName.equalsIgnoreCase("ENTITY_VELOCITY")) {
       // convert
-      double x = packet.getIntegers().readSafely(1) / 8000.0;
-      double y = packet.getIntegers().readSafely(2) / 8000.0;
-      double z = packet.getIntegers().readSafely(3) / 8000.0;
-      extra.append("x=").append(x).append(", y=").append(y).append(", z=").append(z);
+      try {
+        double x = packet.getIntegers().readSafely(1) / 8000.0;
+        double y = packet.getIntegers().readSafely(2) / 8000.0;
+        double z = packet.getIntegers().readSafely(3) / 8000.0;
+        extra.append("x=").append(x).append(", y=").append(y).append(", z=").append(z);
+      } catch (Exception exception) {
+        // ignore
+      }
     }
     return "{" + String.join(", ", array) + "}" + (extra.length() == 0 ? "" : " [" + extra + "]");
   }

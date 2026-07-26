@@ -15,6 +15,7 @@ import com.google.common.collect.ImmutableList;
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.fluid.Fluid;
+import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -40,7 +41,7 @@ final class FluidPhysics implements BlockPhysic {
   }
 
   @Override
-  public Motion entityInside(User user, Location location, Location from, double motionX, double motionY, double motionZ) {
+  public Motion entityInside(User user, SimulationEnvironment environment, Location location, Location from, double motionX, double motionY, double motionZ) {
     ProtocolMetadata clientData = user.meta().protocol();
     if (clientData.aquaticUpdate()) {
       MovementMetadata movementData = user.meta().movement();

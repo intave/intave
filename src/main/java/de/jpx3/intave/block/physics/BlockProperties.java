@@ -57,6 +57,10 @@ public final class BlockProperties {
     );
   }
 
+  public static float speedFactorOf(Material material) {
+    return of(material).speedFactor();
+  }
+
   public static final class Property {
     private final Material[] materials;
     private final float slipperiness;

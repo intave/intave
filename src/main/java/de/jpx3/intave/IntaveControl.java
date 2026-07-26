@@ -84,6 +84,7 @@ public final class IntaveControl {
   public static final boolean CLIENT_KEEP_ALIVE_NETTY_CHECK = false;
   public static final boolean NOTIFY_MISSING_PACKET_FLUSHES = false;
   public static final boolean FIRST_TICK_MUST_BE_FULLY_SIMULATED = false;
+  public static final boolean NO_TOLERANCE_PHYSICS = false;
 
   public static final OperationalMode SAMPLE_OPERATIONAL_MODE = GOMME ? /*GOMME_UPLOAD*/CLOUD_STORAGE : (PRODUCTION ? CLOUD_STORAGE : LOCAL_STORAGE);
 

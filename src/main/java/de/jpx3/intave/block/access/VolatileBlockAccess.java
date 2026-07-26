@@ -212,7 +212,7 @@ public final class VolatileBlockAccess {
   }
 
   public static @NotNull Material typeAccess(User user, World blockAccess, int blockX, int blockY, int blockZ) {
-    if (blockAccess == null || isInLoadedChunk(blockAccess, blockX, blockZ) || Bukkit.isPrimaryThread()) {
+    if (isInLoadedChunk(blockAccess, blockX, blockZ) || Bukkit.isPrimaryThread()) {
       return user.blockCache().typeAt(blockX, blockY, blockZ);
     }
     return Material.AIR;

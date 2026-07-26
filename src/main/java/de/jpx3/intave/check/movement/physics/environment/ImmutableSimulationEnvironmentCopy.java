@@ -52,7 +52,7 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	private final float aiMoveSpeed, sprintAiMoveSpeed;
 	private final float friction, sprintFriction;
 	private final double stepHeight, resetMotion, jumpMotion, gravity;
-	private final float blockSpeedFactor, jumpMovementFactor;
+	private final float jumpMovementFactor;
 	private final boolean hasJumpedInTick;
 	private final boolean sneaking, sprinting, hasSprintSpeed, sprintingAllowed;
 	private final boolean lastSprinting;
@@ -143,7 +143,6 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 		this.jumpMotion = source.jumpMotion();
 		this.hasJumpedInTick = source.isJumping();
 		this.gravity = source.gravity();
-		this.blockSpeedFactor = source.blockSpeedFactor();
 		this.jumpMovementFactor = source.jumpMovementFactor();
 		this.sneaking = source.isSneaking();
 		this.sprinting = source.isSprinting();
@@ -419,6 +418,11 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	}
 
 	@Override
+	public void setMotionMultiplier(Vector motionMultiplier) {
+		throw immutableCopyException();
+	}
+
+	@Override
 	public void resetMotionMultiplier() {
 		throw immutableCopyException();
 	}
@@ -496,11 +500,6 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 	@Override
 	public double gravity() {
 		return gravity;
-	}
-
-	@Override
-	public float blockSpeedFactor() {
-		return blockSpeedFactor;
 	}
 
 	@Override
@@ -1082,6 +1081,8 @@ public final class ImmutableSimulationEnvironmentCopy implements SimulationEnvir
 		other.setBaseMotion(baseMotionX, baseMotionY, baseMotionZ);
 		if (motionMultiplier == null) {
 			other.resetMotionMultiplier();
+		} else {
+			other.setMotionMultiplier(copyVector(motionMultiplier));
 		}
 		other.setJumpMotion(jumpMotion);
 		other.setInWater(inWater);

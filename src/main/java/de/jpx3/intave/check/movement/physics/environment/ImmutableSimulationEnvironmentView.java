@@ -264,6 +264,11 @@ public final class ImmutableSimulationEnvironmentView implements SimulationEnvir
 	}
 
 	@Override
+	public void setMotionMultiplier(Vector motionMultiplier) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
 	public void resetMotionMultiplier() {
 		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
 	}

@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.type;
 
 import de.jpx3.intave.access.IntaveInternalException;
@@ -27,6 +38,8 @@ public final class BlockTypeAccess {
   public static final Material SKULL = resolveFrom("SKULL", "LEGACY_SKULL");
   public static final Material COBBLESTONE_WALL = resolveFrom("COBBLESTONE_WALL", "COBBLE_WALL");
   public static final Material POWDER_SNOW = MaterialSearch.materialThatIsNamed("POWDER_SNOW");
+  public static final Material BUBBLE_COLUMN = Material.getMaterial("BUBBLE_COLUMN");
+
 
   public static void setup() {
   }

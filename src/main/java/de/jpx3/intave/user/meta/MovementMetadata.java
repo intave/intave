@@ -20,7 +20,6 @@ import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.fluid.Fluid;
 import de.jpx3.intave.block.physics.BlockProperties;
-import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.block.tick.ShulkerBox;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
@@ -221,8 +220,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   public final RateLimiter criticalTeleportRateLimiter = new RateLimiter(10, 2, TimeUnit.SECONDS);
   public final RateLimiter simulationRateLimiter = new RateLimiter(100_000, 1_000, TimeUnit.SECONDS);
   private volatile Location verifiedLocation;
-  public Input input = Input.none();
-  public Input lastInput = Input.none();
+  public volatile Input input = Input.none();
+  public volatile Input lastInput = Input.none();
   private @NotNull WorldBorder worldBorder = WorldBorder.createDefault();
   public final MaskedMotionTolerance maskedMotionTolerance = new MaskedMotionTolerance();
 
@@ -488,28 +487,6 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   private float jumpFactorOf(Material material) {
     return BlockProperties.of(material).jumpFactor();
-  }
-
-  private final Material bubbleColumnMaterial = Material.getMaterial("BUBBLE_COLUMN");
-
-  // Entity.getBlockSpeedFactor @ 1.19
-  public float blockSpeedFactor() {
-    if (user.meta().protocol().trailsAndTailsUpdate()) {
-      Material material = VolatileBlockAccess.typeAccess(user, positionX, positionY, positionZ);
-      float f = blockSpeedFactorOf(material);
-      if (!MaterialMagic.isWater(material) && material != bubbleColumnMaterial) {
-        if (Math.abs(f - 1.0f) < 0.00001f) {
-          return blockSpeedFactorOf(frictionMaterial());
-        }
-      }
-      return f;
-    } else {
-      return blockSpeedFactorOf(frictionMaterial());
-    }
-  }
-
-  private float blockSpeedFactorOf(Material material) {
-    return BlockProperties.of(material).speedFactor();
   }
 
   @Override
@@ -1609,6 +1586,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     this.boundingBox = entityBoundingBox;
   }
 
+  @Override
   public void setMotionMultiplier(Vector motionMultiplier) {
     this.artificialFallDistance = 0f;
     this.motionMultiplier = motionMultiplier;

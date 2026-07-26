@@ -468,8 +468,14 @@ class BaseSimulator extends Simulator {
     }
 
     // Update supporting block if on-ground
-    if (user.meta().protocol().trailsAndTailsUpdate()) {
-      environment.checkSupportingBlock(motion);
+    if (user.meta().protocol().trailsAndTailsUpdate() && result != null) {
+      Motion actualMotion = result.actualMotion();
+
+      if (actualMotion != null && Math.abs(actualMotion.motionY()) > 0) {
+        boolean verticalCollision = result.offsetMotionDiffersFromActualMotionInY();
+        boolean verticalCollisionBelow = verticalCollision && actualMotion.motionY < 0.0;
+        environment.checkSupportingBlock(verticalCollisionBelow, motion);
+      }
       environment.compileSpecialBlocks();
     }
 
@@ -580,6 +586,7 @@ class BaseSimulator extends Simulator {
             Material material = VolatileBlockAccess.typeAccess(user, world, x, y, z);
             Motion collisionMotion = BlockPhysics.entityInside(
               user, material,
+              environment,
               location, blockCollisionFrom,
               motion.motionX, motion.motionY, motion.motionZ
             );

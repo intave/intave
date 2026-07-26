@@ -86,7 +86,7 @@ public final class MutableSimulationEnvironmentViewBenchmark {
 			view.setLastOnGround((iteration & 7) == 0);
 			view.setPushedByEntity((iteration & 15) == 0);
 			view.setSimulationResult(state.results[sample]);
-			view.checkSupportingBlock(state.motions[sample]);
+			view.checkSupportingBlock(true, state.motions[sample]);
 			view.compileSpecialBlocks();
 			view.activeTick(MoveMetric.FLYING_PACKET_CLIENT);
 			view.inactiveTick(MoveMetric.VELOCITY);
