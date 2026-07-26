@@ -55,7 +55,7 @@ final class JumpBrancher extends MovementSearchBrancher {
       }
       if (protocol.sendsInputs()) {
         Input sentInput = movement.input;
-        boolean claimedJumping = sentInput.jump();
+        boolean claimedJumping = sentInput.jumpKey();
         // user can press jump, tell us he's jumping, but the client not actually jump
         // we can only enforce it so that if he didn't claim pressing jump, he is not allowed to
         if (jumped && !claimedJumping) {

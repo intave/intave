@@ -12,13 +12,40 @@
 package de.jpx3.intave.player.attribute;
 
 import com.comphenix.protocol.wrappers.WrappedAttributeModifier;
+import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.share.MinecraftKey;
+import io.netty.buffer.ByteBuf;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.*;
+
 public final class AttributeModifier {
+	public static final StreamCodec<ByteBuf, ByteBuf, AttributeModifier> STREAM_CODEC = StreamCodec.of(
+		(buffer, modifier) -> {
+			MinecraftKey.STREAM_CODEC.nullable(BOOLEAN).encode(buffer, modifier.key);
+			UUID.nullable(BOOLEAN).encode(buffer, modifier.uuid);
+			STRING.encode(buffer, modifier.name == null ? "" : modifier.name);
+			INTEGER.encode(buffer, modifier.operation.getId());
+			DOUBLE.encode(buffer, modifier.amount);
+		},
+		buffer -> {
+			MinecraftKey key = MinecraftKey.STREAM_CODEC.nullable(BOOLEAN).decode(buffer);
+			java.util.UUID uuid = UUID.nullable(BOOLEAN).decode(buffer);
+			String name = STRING.decode(buffer);
+			return new AttributeModifier(
+				key,
+				uuid,
+				name.isEmpty() ? null : name,
+				Operation.fromId(INTEGER.decode(buffer)),
+				DOUBLE.decode(buffer)
+			);
+		}
+	);
+
 	private final MinecraftKey key;
 	private final UUID uuid;
 	private final String name;
@@ -110,6 +137,23 @@ public final class AttributeModifier {
 			", operation=" + operation +
 			", amount=" + amount +
 			'}';
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (!(obj instanceof AttributeModifier)) return false;
+		AttributeModifier other = (AttributeModifier) obj;
+		return Double.compare(amount, other.amount) == 0
+			&& Objects.equals(key == null ? null : key.fullKey(), other.key == null ? null : other.key.fullKey())
+			&& Objects.equals(uuid, other.uuid)
+			&& Objects.equals(name, other.name)
+			&& operation == other.operation;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(key == null ? null : key.fullKey(), uuid, name, operation, amount);
 	}
 
 	public static Builder newBuilder(UUID uuid) {

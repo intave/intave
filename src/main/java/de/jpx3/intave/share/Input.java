@@ -24,25 +24,25 @@ import static de.jpx3.intave.codec.JsonStreamCodecs.object;
 
 public final class Input {
   public static final StreamCodec<JsonReader, JsonWriter, Input> JSON_CODEC = object(
-    booleanField("forward", Input::forward),
-    booleanField("backward", Input::backward),
-    booleanField("left", Input::left),
-    booleanField("right", Input::right),
-    booleanField("jump", Input::jump),
-    booleanField("sneaking", Input::sneaking),
-    booleanField("sprinting", Input::sprinting),
+    booleanField("forward", Input::forwardKey),
+    booleanField("backward", Input::backwardKey),
+    booleanField("left", Input::leftKey),
+    booleanField("right", Input::rightKey),
+    booleanField("jump", Input::jumpKey),
+    booleanField("sneaking", Input::sneakKey),
+    booleanField("sprinting", Input::sprintKey),
     Input::new
   );
   public static final StreamCodec<ByteBuf, ByteBuf, Input> STREAM_CODEC = StreamCodec.of(
     (buf, value) -> {
       byte flags = 0;
-      flags = (byte)(flags | (value.forward() ? 1 : 0));
-      flags = (byte)(flags | (value.backward() ? 2 : 0));
-      flags = (byte)(flags | (value.left() ? 4 : 0));
-      flags = (byte)(flags | (value.right() ? 8 : 0));
-      flags = (byte)(flags | (value.jump() ? 16 : 0));
-      flags = (byte)(flags | (value.sneaking() ? 32 : 0));
-      flags = (byte)(flags | (value.sprinting() ? 64 : 0));
+      flags = (byte)(flags | (value.forwardKey() ? 1 : 0));
+      flags = (byte)(flags | (value.backwardKey() ? 2 : 0));
+      flags = (byte)(flags | (value.leftKey() ? 4 : 0));
+      flags = (byte)(flags | (value.rightKey() ? 8 : 0));
+      flags = (byte)(flags | (value.jumpKey() ? 16 : 0));
+      flags = (byte)(flags | (value.sneakKey() ? 32 : 0));
+      flags = (byte)(flags | (value.sprintKey() ? 64 : 0));
       buf.writeByte(flags);
     },
     buf -> {
@@ -80,8 +80,7 @@ public final class Input {
     this.sprint = sprint;
   }
 
-  public int forwardKey() {
-//    return forward ? 1 : backward ? -1 : 0;
+  public int forward() {
     int forward = 0;
     if (this.forward) {
       forward += 1;
@@ -92,7 +91,7 @@ public final class Input {
     return forward;
   }
 
-  public int sidewaysKey() {
+  public int strafe() {
     int sideways = 0;
     if (this.left) {
       sideways += 1;
@@ -103,31 +102,31 @@ public final class Input {
     return sideways;
   }
 
-  public boolean forward() {
+  public boolean forwardKey() {
     return forward;
   }
 
-  public boolean backward() {
+  public boolean backwardKey() {
     return backward;
   }
 
-  public boolean left() {
+  public boolean leftKey() {
     return left;
   }
 
-  public boolean right() {
+  public boolean rightKey() {
     return right;
   }
 
-  public boolean jump() {
+  public boolean jumpKey() {
     return jump;
   }
 
-  public boolean sneaking() {
+  public boolean sneakKey() {
     return shift;
   }
 
-  public boolean sprinting() {
+  public boolean sprintKey() {
     return sprint;
   }
 

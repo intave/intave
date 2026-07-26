@@ -39,7 +39,8 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion> {
 	private final int build;
 	private final String development;
 	private final SnapshotVersion snapshot;
-	private Boolean atCurrentOrAbove;
+	private MinecraftVersion atCurrentOrAboveFor;
+	private boolean atCurrentOrAbove;
 
 	public MinecraftVersion(Server server) {
 		this(extractVersion(server.getVersion()));
@@ -170,11 +171,12 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion> {
 	}
 
 	public boolean atOrAbove() {
-		if (this.atCurrentOrAbove == null) {
-			this.atCurrentOrAbove = atOrAbove(this);
+		MinecraftVersion current = current();
+		if (atCurrentOrAboveFor != current) {
+			atCurrentOrAbove = current.isAtLeast(this);
+			atCurrentOrAboveFor = current;
 		}
-
-		return this.atCurrentOrAbove;
+		return atCurrentOrAbove;
 	}
 
 	public String getVersion() {
@@ -199,7 +201,7 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion> {
 		// development stage: Ordering.natural().nullsLast()
 		String aDev = this.getDevelopmentStage();
 		String bDev = o.getDevelopmentStage();
-		if (aDev != bDev) { // handles when one is null and/or different
+		if (!Objects.equals(aDev, bDev)) { // handles when one is null and/or different
 			if (aDev == null) return 1; // nulls last => null > non-null
 			if (bDev == null) return -1;
 			cmp = aDev.compareTo(bDev);
@@ -209,7 +211,7 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion> {
 		// snapshot: Ordering.natural().nullsFirst()
 		SnapshotVersion aSnap = this.getSnapshot();
 		SnapshotVersion bSnap = o.getSnapshot();
-		if (aSnap != bSnap) {
+		if (!Objects.equals(aSnap, bSnap)) {
 			if (aSnap == null) return -1; // nulls first => null < non-null
 			if (bSnap == null) return 1;
 			return aSnap.compareTo(bSnap);
@@ -236,13 +238,13 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion> {
 			return false;
 		} else {
 			MinecraftVersion other = (MinecraftVersion) obj;
-			return this.getMajor() == other.getMajor() && this.getMinor() == other.getMinor() && this.getBuild() == other.getBuild() && Objects.equals(this.getDevelopmentStage(), other.getDevelopmentStage());
+			return this.getMajor() == other.getMajor() && this.getMinor() == other.getMinor() && this.getBuild() == other.getBuild() && Objects.equals(this.getDevelopmentStage(), other.getDevelopmentStage()) && Objects.equals(this.getSnapshot(), other.getSnapshot());
 		}
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(new Object[]{this.getMajor(), this.getMinor(), this.getBuild()});
+		return Objects.hash(this.getMajor(), this.getMinor(), this.getBuild(), this.getDevelopmentStage(), this.getSnapshot());
 	}
 
 	@Override

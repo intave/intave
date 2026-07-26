@@ -36,6 +36,7 @@ import de.jpx3.intave.test.FakeWorldFactory;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserFactory;
 import de.jpx3.intave.user.UserRepository;
+import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -121,6 +122,7 @@ final class MovementRecordingPhysicsTests {
 
 		User user = createReplayUser(recording, blockCache, world, currentLocation);
 		MovementMetadata metadata = user.meta().movement();
+		applyAttributesForTick(recording, user, firstPositionFrame);
 		seedInitialMovementState(user, metadata, initialPosition, initialRotation);
 
 		SimulationSearch processor = new ThreeTickSimulationSearch(false, false);
@@ -131,6 +133,7 @@ final class MovementRecordingPhysicsTests {
 			MoveFrame frame = frames.get(tick);
 			Input input = frame.input();
 
+			applyAttributesForTick(recording, user, tick);
 			applyInputsForTick(user, input);
 			applyActionsForTick(recording.actions(), metadata, tick);
 			blockCache.updateBlocks(frame.blocks());
@@ -177,7 +180,7 @@ final class MovementRecordingPhysicsTests {
 			String output = formatDouble(loss, 4) + " " + simulation.offsetMotion() + " [actual: " + metadata.sentOffsetMotion() + "] " + simulation.configuration() + (!simulation.blueDetails().isEmpty() ? " [" + simulation.blueDetails() + "]" : "");
 			lastMessages.add(output);
 
-			System.out.println(loss);
+//			System.out.println(loss);
 
 			if (loss > allowedLoss && tick > 16) {
 				System.out.println("\r" + "[FAILED] " + resourcePath + " (tick " + tick + ")");
@@ -195,6 +198,7 @@ final class MovementRecordingPhysicsTests {
 				System.err.println("==== </HISTORY> ====");
 
 				System.err.println("==== <USERDATA> ====");
+				System.err.println("Input: " + metadata.input);
 				System.err.println("Position");
 				System.err.println("  Sim   " + metadata.lastPosition().mutable().add(simulation.offsetMotion()));
 				System.err.println("  Sent  " + metadata.position());
@@ -380,16 +384,34 @@ final class MovementRecordingPhysicsTests {
 	private static void applyInputsForTick(
 		User user, Input input
 	) {
-		boolean inputIsNotPartial = !user.meta().protocol().sendsInputs() && !MinecraftVersions.VER1_21_3.atOrAbove();
 		MovementMetadata movement = user.meta().movement();
-		if (inputIsNotPartial) {
+		if (user.meta().protocol().sendsInputs() && MinecraftVersions.VER1_21_3.atOrAbove()) {
 			movement.input = input;
 		}
-		if (movement.sprinting != input.sprinting()) {
+		boolean sprinting = user.meta().protocol().sendsInputs()
+			? input.sprintKey() || movement.sprinting && input.forwardKey()
+			: input.sprintKey();
+		if (movement.sprinting != sprinting) {
 			movement.activeTick(SPRINT_CHANGE);
 		}
-		movement.sneaking = input.sneaking();
-		movement.sprinting = input.sprinting();
+		movement.sneaking = input.sneakKey();
+		movement.sprinting = sprinting;
+	}
+
+	private static void applyAttributesForTick(
+		MovementRecording recording,
+		User user,
+		int tick
+	) {
+		var attributes = recording.attributesForFrame(tick);
+		if (!attributes.isEmpty()) {
+			var abilities = user.meta().abilities();
+			abilities.replaceAttributeSnapshot(attributes);
+			var movementSpeed = abilities.findAttribute("generic.movementSpeed");
+			user.meta().movement().hasSprintSpeed = movementSpeed != null
+				&& abilities.modifiersOf(movementSpeed).stream()
+				.anyMatch(modifier -> !AbilityMetadata.EXCLUDE_SPRINT_MODIFIER.test(modifier));
+		}
 	}
 
 	private static int firstPositionFrame(List<MoveFrame> frames) {

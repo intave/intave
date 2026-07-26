@@ -23,6 +23,7 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.module.test.record.action.Action;
+import de.jpx3.intave.player.attribute.Attribute;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.User;
@@ -55,6 +56,10 @@ public final class MovementRecording {
 				Fluid.STREAM_CODEC
 			)
 		);
+	private static final StreamCodec<ByteBuf, ByteBuf, Map<String, Attribute>> ATTRIBUTES_CODEC =
+		ByteBufStreamCodecs.mapCodec(ByteBufStreamCodecs.STRING, Attribute.STREAM_CODEC);
+	private static final StreamCodec<ByteBuf, ByteBuf, List<Map<String, Attribute>>> FRAME_ATTRIBUTES_CODEC =
+		ByteBufStreamCodecs.listCodecOf(ATTRIBUTES_CODEC);
 
 	public static final StreamCodec<ByteBuf, ByteBuf, MovementRecording> STREAM_CODEC = ByteBufStreamCodecs
 		.smartReflectionCodecBuilder(MovementRecording.class)
@@ -62,6 +67,7 @@ public final class MovementRecording {
 		.field("clientProtocolVersion", ByteBufStreamCodecs.INTEGER, () -> 47)
 		.field("serverVersion", MinecraftVersion.STREAM_CODEC, () -> MinecraftVersions.VER1_21_4)
 		.field("frames", MoveFrame.LIST_STREAM_CODEC)
+		.field("frameAttributes", FRAME_ATTRIBUTES_CODEC, LinkedList::new)
 		.field("actions", Action.LIST_STREAM_CODEC, LinkedList::new)
 		.field("collisionShapes", COLLISION_SHAPES_CODEC, HashMap::new)
 		.field("fluids", FLUIDS_CODEC, HashMap::new)
@@ -72,6 +78,7 @@ public final class MovementRecording {
 	private final MinecraftVersion serverVersion;
 	private final List<Action> actions = new LinkedList<>();
 	private final List<MoveFrame> frames = new LinkedList<>();
+	private final List<Map<String, Attribute>> frameAttributes = new LinkedList<>();
 	private final Map<BlockPosition, MaterialVariantStore> blocks = new HashMap<>();
 	private final Map<Material, Map<Integer, BlockShape>> collisionShapes;
 	private final Map<Material, Map<Integer, Fluid>> fluids;
@@ -81,6 +88,7 @@ public final class MovementRecording {
 		int clientProtocolVersion,
 		MinecraftVersion serverVersion,
 		List<MoveFrame> frames,
+		List<Map<String, Attribute>> frameAttributes,
 		List<Action> actions,
 		Map<Material, Map<Integer, BlockShape>> collisionShapes,
 		Map<Material, Map<Integer, Fluid>> fluids
@@ -89,6 +97,7 @@ public final class MovementRecording {
 		this.clientProtocolVersion = clientProtocolVersion;
 		this.serverVersion = Objects.requireNonNull(serverVersion, "serverVersion cannot be null");
 		this.frames.addAll(Objects.requireNonNull(frames, "frames cannot be null"));
+		this.frameAttributes.addAll(Objects.requireNonNull(frameAttributes, "frameAttributes cannot be null"));
 		this.actions.addAll(Objects.requireNonNull(actions, "actions cannot be null"));
 		this.collisionShapes = Objects.requireNonNull(collisionShapes, "collisionShapes cannot be null");
 		this.fluids = Objects.requireNonNull(fluids, "fluids cannot be null");
@@ -105,10 +114,22 @@ public final class MovementRecording {
 		@Nullable Rotation rotation,
 		BlockCache blockCache
 	) {
+		insertFrame(boundingBox, input, position, rotation, blockCache, Collections.emptyMap());
+	}
+
+	public void insertFrame(
+		BoundingBox boundingBox,
+		Input input,
+		@Nullable Position position,
+		@Nullable Rotation rotation,
+		BlockCache blockCache,
+		Map<String, Attribute> attributes
+	) {
 		Map<BlockPosition, MaterialVariantStore> dirtyBlocks = insertAndDelta(
 			nearbyBlocks(blockCache, boundingBox, position)
 		);
 		appendFrame(new MoveFrame(position, rotation, dirtyBlocks, input));
+		frameAttributes.add(new HashMap<>(attributes));
 	}
 
 	public void insertAction(Action action) {
@@ -139,6 +160,7 @@ public final class MovementRecording {
 
 	public void clear() {
 		frames.clear();
+		frameAttributes.clear();
 		blocks.clear();
 	}
 
@@ -222,6 +244,13 @@ public final class MovementRecording {
 		return frames;
 	}
 
+	Map<String, Attribute> attributesForFrame(int frame) {
+		if (frame < 0 || frame >= frameAttributes.size()) {
+			return Collections.emptyMap();
+		}
+		return new HashMap<>(frameAttributes.get(frame));
+	}
+
 	public Map<Material, Map<Integer, Fluid>> fluids() {
 		return fluids;
 	}
@@ -248,6 +277,7 @@ public final class MovementRecording {
 			clientProtocolVersion == that.clientProtocolVersion &&
 			Objects.equals(serverVersion, that.serverVersion) &&
 			Objects.equals(frames, that.frames) &&
+			frameAttributesEqual(frameAttributes, that.frameAttributes) &&
 			Objects.equals(collisionShapes, that.collisionShapes) &&
 			Objects.equals(actions, that.actions) &&
 			Objects.equals(fluids, that.fluids);
@@ -256,6 +286,23 @@ public final class MovementRecording {
 	@Override
 	public int hashCode() {
 		return Objects.hash(internalId, clientProtocolVersion, serverVersion);
+	}
+
+	private static boolean frameAttributesEqual(
+		List<Map<String, Attribute>> first,
+		List<Map<String, Attribute>> second
+	) {
+		int size = Math.max(first.size(), second.size());
+		for (int i = 0; i < size; i++) {
+			Map<String, Attribute> firstFrame =
+				i < first.size() ? first.get(i) : Collections.emptyMap();
+			Map<String, Attribute> secondFrame =
+				i < second.size() ? second.get(i) : Collections.emptyMap();
+			if (!firstFrame.equals(secondFrame)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public int frameCount() {
@@ -280,6 +327,7 @@ public final class MovementRecording {
 			UUID.randomUUID(),
 			clientProtocolVersion,
 			serverVersion,
+			new LinkedList<>(),
 			new LinkedList<>(),
 			new ArrayList<>(),
 			new HashMap<>(),

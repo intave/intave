@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.test.record;
 
 import de.jpx3.intave.adapter.MinecraftVersion;
@@ -8,12 +19,11 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.module.test.record.action.Action;
+import de.jpx3.intave.player.attribute.Attribute;
+import de.jpx3.intave.player.attribute.AttributeModifier;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
-import de.jpx3.intave.share.BoundingBox;
-import de.jpx3.intave.share.Input;
-import de.jpx3.intave.share.Position;
-import de.jpx3.intave.share.Rotation;
+import de.jpx3.intave.share.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.bukkit.Material;
@@ -24,6 +34,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.zip.DeflaterOutputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -97,6 +109,46 @@ final class MovementRecordingSerializerTest {
 		MovementRecording movementRecording = MovementRecording.loadFrom(resource);
 		assertFalse(movementRecording.frames().isEmpty());
 		assertEquals(recording, movementRecording);
+	}
+
+	@Test
+	void serializeFrameAttributes() {
+		MovementRecording recording = MovementRecording.create();
+		AttributeModifier powderSnow = new AttributeModifier(
+			new MinecraftKey("minecraft", "powder_snow"),
+			UUID.randomUUID(),
+			null,
+			AttributeModifier.Operation.ADD_NUMBER,
+			-0.025
+		);
+		Attribute movementSpeed = Attribute.newBuilder()
+			.withAttributeKey("movement_speed")
+			.withBaseValue(0.1)
+			.withAttributeModifiers(Set.of(powderSnow))
+			.build();
+		recording.insertFrame(
+			BoundingBox.empty(),
+			Input.none(),
+			Position.immutableEmpty(),
+			Rotation.zero(),
+			new MockFullBlockStaticPlane(),
+			Map.of("movement_speed", movementSpeed)
+		);
+
+		ByteBuf buffer = Unpooled.buffer();
+		try {
+			MovementRecording.STREAM_CODEC.encode(buffer, recording);
+			MovementRecording decoded = MovementRecording.STREAM_CODEC.decode(buffer);
+
+			assertEquals(recording, decoded);
+			Attribute decodedSpeed = decoded.attributesForFrame(0).get("movement_speed");
+			assertNotNull(decodedSpeed);
+			assertEquals(0.1, decodedSpeed.baseValue());
+			assertEquals(-0.025, decodedSpeed.modifiers().iterator().next().amount());
+			assertNull(decodedSpeed.modifiers().iterator().next().name());
+		} finally {
+			buffer.release();
+		}
 	}
 
 	@Test

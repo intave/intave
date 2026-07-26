@@ -57,8 +57,8 @@ final class KeypressBrancher extends MovementSearchBrancher {
 
     if (protocol.sendsInputs()) {
       Input sentInput = movement.input;
-      int forward = sentInput.forwardKey();
-      int strafe = sentInput.sidewaysKey();
+      int forward = sentInput.forward();
+      int strafe = sentInput.strafe();
       if (isValidPress(input, inputBranch, forward, strafe)) {
         outputBranches.add(inputBranch.withKeypress(forward, strafe));
       } else {

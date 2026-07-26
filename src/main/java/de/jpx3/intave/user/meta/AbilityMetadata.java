@@ -194,6 +194,31 @@ public final class AbilityMetadata {
     return attributeModifiers.get().get(keyTranslation(attribute.attributeKey()));
   }
 
+  public Map<String, Attribute> attributeSnapshot() {
+    Map<String, Attribute> snapshot = new HashMap<>();
+    Map<String, Attribute> currentAttributes = attributes.get();
+    Map<String, List<AttributeModifier>> currentModifiers = attributeModifiers.get();
+    currentAttributes.forEach((key, attribute) -> snapshot.put(
+      key,
+      Attribute.newBuilder(attribute)
+        .withAttributeModifiers(new HashSet<>(currentModifiers.getOrDefault(key, Collections.emptyList())))
+        .build()
+    ));
+    return snapshot;
+  }
+
+  public void replaceAttributeSnapshot(Map<String, Attribute> snapshot) {
+    Map<String, Attribute> newAttributes = new HashMap<>();
+    Map<String, List<AttributeModifier>> newModifiers = new HashMap<>();
+    snapshot.forEach((key, attribute) -> {
+      newAttributes.put(key, Attribute.newBuilder(attribute).withAttributeModifiers(Collections.emptySet()).build());
+      newModifiers.put(key, new CopyOnWriteArrayList<>(attribute.modifiers()));
+    });
+    attributes.set(newAttributes);
+    attributeModifiers.set(newModifiers);
+    clearAttributeCaches();
+  }
+
   private Attribute reduceNumberPrecision(Attribute input) {
     double baseValue = reducePrecision(input.baseValue());
     return Attribute.newBuilder(input).withBaseValue(baseValue).build();

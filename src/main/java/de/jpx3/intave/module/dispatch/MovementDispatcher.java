@@ -742,7 +742,7 @@ public final class MovementDispatcher extends Module {
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
     PacketContainer packet = event.getPacket();
-    if (MinecraftVersions.VER1_21_3.atOrAbove()) {
+    if (MinecraftVersions.VER1_21_3.atOrAbove() && user.meta().protocol().sendsInputs()) {
       StructureModifier<Boolean> inputBooleans = packet.getStructures().read(0).getBooleans();
       movementData.lastInput = movementData.input;
       movementData.input = new Input(
@@ -1198,7 +1198,7 @@ public final class MovementDispatcher extends Module {
       InputConverter.inputClass, InputConverter.INSTANCE
     );
     Input input = inputs.read(0);
-    boolean sneaking = input.sneaking();
+    boolean sneaking = input.sneakKey();
     if (sneaking && !movement.sneaking) {
       startSneak(user, event);
     } else if (!sneaking && movement.sneaking) {
