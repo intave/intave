@@ -2,6 +2,7 @@ package de.jpx3.intave.entity;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.klass.locate.MethodSearchBySignature;
 import org.bukkit.World;
@@ -31,6 +32,16 @@ public final class EntityLookup {
   }
 
   public static @Nullable Entity findEntity(World world, int identifier) {
+    if (Synchronizer.onFolia()) {
+      // ServerLevel.getEntity(id) is a chunk-system read; AsyncCatcher/region
+      // checks forbid it off the owning region thread, and Intave's packet
+      // listeners here can run on Netty or another plugin's async flush thread
+      // (e.g. TAB draining the send queue). entityById already caught that
+      // exception and returned null (spamming a stack trace each time); the
+      // bukkit entity would also be unusable off-region (getHandle faults), so
+      // callers already fall back to handle-free resolution. Return null cleanly.
+      return null;
+    }
     Entity entity = entityAccessCache.getIfPresent(identifier);
     if (entity != null) {
       return entity;

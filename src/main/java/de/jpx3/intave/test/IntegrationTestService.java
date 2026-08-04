@@ -31,6 +31,7 @@ import de.jpx3.intave.security.HWIDVerification;
 import de.jpx3.intave.security.HashAccess;
 import de.jpx3.intave.share.ShareTests;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.plugin.Plugin;
@@ -146,8 +147,24 @@ public final class IntegrationTestService implements EventProcessor {
   public void scheduleTestsForFifthTick() {
     if (!environmentKnown() || IS_INTEGRATION_TEST_RUN) {
       Modules.linker().bukkitEvents().registerEventsIn(this);
-      Synchronizer.synchronizeDelayed(this::performTests, 5);
+      Location anchor = testAnchor();
+      if (anchor != null) {
+        // The world-touching self-tests read/write the block at (0,1,0) of the
+        // primary world. On Folia that must happen on the region owning that
+        // block, so anchor the whole test run to that location.
+        Synchronizer.synchronizeDelayed(anchor, this::performTests, 5);
+      } else {
+        // No world loaded yet; performTests() re-queues itself on WorldLoadEvent.
+        Synchronizer.synchronizeDelayed(this::performTests, 5);
+      }
     }
+  }
+
+  private static Location testAnchor() {
+    if (Bukkit.getWorlds().isEmpty()) {
+      return null;
+    }
+    return new Location(Bukkit.getWorlds().get(0), 0, 1, 0);
   }
 
   private final Queue<Runnable> loadQueue = new ConcurrentLinkedQueue<>();
@@ -156,10 +173,31 @@ public final class IntegrationTestService implements EventProcessor {
   // on world load event
   public void on(WorldLoadEvent event) {
     Runnable runnable;
+    Location anchor = new Location(event.getWorld(), 0, 1, 0);
     while ((runnable = loadQueue.poll()) != null) {
-      Synchronizer.synchronize(runnable);
+      Synchronizer.synchronize(anchor, runnable);
     }
   }
+
+  private static final Class<?>[] TEST_CLASSES = {
+    // parts
+    BlockAccessTests.class,
+    BlockVariantTests.class,
+    BlockShapeDrillTests.class,
+    BlockShapePipelineTests.class,
+    BlockShapeTests.class,
+    EntitySizeTests.class,
+    StorageTests.class,
+    FeedbackTests.class,
+    ReaderTests.class,
+    FluidTests.class,
+    ShareTests.class,
+    MovementConfigurationTests.class,
+    // checks
+    SimulatorBasicTests.class,
+    // locate
+    ReferenceExistenceTests.class,
+  };
 
   public void performTests() {
     if (Bukkit.getWorlds().isEmpty()) {
@@ -171,51 +209,61 @@ public final class IntegrationTestService implements EventProcessor {
     if (IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
       IntaveLogger.logger().info("Start integration testing..");
     }
-    long start = System.currentTimeMillis();
-    try {
-      // we can assume all classes loaded
+    // The self-tests touch real world state at spawn, so they must run on that
+    // region's thread. But the suite is CPU-heavy; running it all in one tick
+    // would stall the region past Folia's watchdog threshold. Run each test
+    // class on its own region tick instead: this yields between classes (short
+    // ticks, watchdog stays happy) while preserving sequential, single-threaded
+    // execution. On non-Folia servers this simply runs on the main thread.
+    runTestChain(0, System.currentTimeMillis());
+  }
 
-      // parts
-      performTest(BlockAccessTests.class);
-      performTest(BlockVariantTests.class);
-      performTest(BlockShapeDrillTests.class);
-      performTest(BlockShapePipelineTests.class);
-      performTest(BlockShapeTests.class);
-      performTest(EntitySizeTests.class);
-      performTest(StorageTests.class);
-      performTest(FeedbackTests.class);
-      performTest(ReaderTests.class);
-      performTest(FluidTests.class);
-      performTest(ShareTests.class);
-      performTest(MovementConfigurationTests.class);
-
-      // checks
-      performTest(SimulatorBasicTests.class);
-
-      // locate
-      performTest(ReferenceExistenceTests.class);
-
-    } catch (Throwable werfbares) {
-      Throwable throwable = werfbares;
-      while (throwable.getCause() != null) {
-        throwable = throwable.getCause();
-      }
-      String exceptionName = throwable.getClass().getSimpleName();
-      IntaveLogger.logger().error("Reported " + resolveArticleOf(exceptionName) + " " + exceptionName + ": " + throwable.getMessage());
-      IntaveLogger.logger().error("You are hereby advised to report this fault to us before using this version of Intave.");
-      IntaveLogger.logger().error("If possible, include the following stacktrace in your report:");
-      throwable.printStackTrace();
-      if (IS_INTEGRATION_TEST_RUN) {
-        IntaveLogger.logger().error("Shutting down server due to test failure");
-        BackgroundExecutors.execute(() -> System.exit(1));
-      }
+  @SuppressWarnings("unchecked")
+  private void runTestChain(int index, long startMillis) {
+    if (index >= TEST_CLASSES.length) {
+      finishTests(startMillis);
       return;
-    } finally {
-      testsWereRun = true;
     }
+    Class<? extends IntegrationTests> testClass = (Class<? extends IntegrationTests>) TEST_CLASSES[index];
+    Runnable runOne = () -> {
+      try {
+        performTest(testClass);
+      } catch (Throwable werfbares) {
+        reportTestFailure(werfbares);
+        return; // abort the remaining chain on a hard failure
+      }
+      runTestChain(index + 1, startMillis);
+    };
+    Location anchor = testAnchor();
+    if (anchor != null) {
+      Synchronizer.synchronize(anchor, runOne);
+    } else {
+      Synchronizer.synchronize(runOne);
+    }
+  }
+
+  private void reportTestFailure(Throwable werfbares) {
+    testsWereRun = true;
+    Throwable throwable = werfbares;
+    while (throwable.getCause() != null) {
+      throwable = throwable.getCause();
+    }
+    String exceptionName = throwable.getClass().getSimpleName();
+    IntaveLogger.logger().error("Reported " + resolveArticleOf(exceptionName) + " " + exceptionName + ": " + throwable.getMessage());
+    IntaveLogger.logger().error("You are hereby advised to report this fault to us before using this version of Intave.");
+    IntaveLogger.logger().error("If possible, include the following stacktrace in your report:");
+    throwable.printStackTrace();
+    if (IS_INTEGRATION_TEST_RUN) {
+      IntaveLogger.logger().error("Shutting down server due to test failure");
+      BackgroundExecutors.execute(() -> System.exit(1));
+    }
+  }
+
+  private void finishTests(long startMillis) {
+    testsWereRun = true;
     dontCheckThisEnvironmentAgain();
     if (IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
-      IntaveLogger.logger().info("No problems found after " + MathHelper.formatDouble((System.currentTimeMillis() - start) / 1000d, 1) + "s.");
+      IntaveLogger.logger().info("No problems found after " + MathHelper.formatDouble((System.currentTimeMillis() - startMillis) / 1000d, 1) + "s.");
     } else {
       IntaveLogger.logger().info("All integration tests completed successfully.");
     }

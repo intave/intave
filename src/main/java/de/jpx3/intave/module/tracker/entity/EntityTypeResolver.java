@@ -14,6 +14,7 @@ import de.jpx3.intave.entity.size.HitboxSize;
 import de.jpx3.intave.entity.size.HitboxSizeAccess;
 import de.jpx3.intave.entity.type.EntityTypeData;
 import de.jpx3.intave.entity.type.EntityTypeDataAccessor;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.packet.reader.EntityMetadataReader;
 import de.jpx3.intave.packet.reader.EntityReader;
@@ -84,7 +85,10 @@ public final class EntityTypeResolver {
     Entity entity = entityReader.entityBy(event);
     entityReader.release();
 
-    if (entity != null) {
+    // On Folia the bukkit-entity branch touches the live NMS handle (getHandle())
+    // off the owning region thread and crashes; force the handle-free branch that
+    // resolves from the packet's type id + the static entity-type registry.
+    if (entity != null && !Synchronizer.onFolia()) {
       return entityTypeDataOfBukkitEntity(entity);
     } else {
       if (ENTITY_TYPE_ACCESS_UNDER_1_14) {
@@ -100,10 +104,20 @@ public final class EntityTypeResolver {
         return new EntityTypeData("Invalid", HitboxSize.zero(), -2, false, 3);
       } else {
         EntityType entityType = packet.getEntityTypeModifier().read(0);
-        Class<? extends Entity> entityClass = extractSubClassFromEntity(entityType.getEntityClass());
+        Class<? extends Entity> bukkitClass = entityType.getEntityClass();
+        Class<? extends Entity> entityClass = extractSubClassFromEntity(bukkitClass);
         String entityClassName = entityClass.getSimpleName();
         HitboxSize size = HitboxSizeAccess.dimensionsOfNMSEntityClass(entityClass);
-        return new EntityTypeData(entityClassName, size, -2, false, 4);
+        // Modern MC spawns EVERY entity -- players and mobs included -- through
+        // SPAWN_ENTITY, so this branch must not blanket-mark them non-living. On
+        // Folia the bukkit-entity branch above is skipped (it would touch the live
+        // handle off-region), so living-ness has to come from the packet's bukkit
+        // EntityType class, which is handle-free. Hardcoding false here left every
+        // player/mob failing PeriodicEntityCoverageSelector's living-entity filter,
+        // so nothing entered the traced set and the movement engine was blind to
+        // entity pushes -> constant combat/crowd false-positives on Folia.
+        boolean living = bukkitClass != null && LivingEntity.class.isAssignableFrom(bukkitClass);
+        return new EntityTypeData(entityClassName, size, -2, living, 4);
       }
     }
   }
@@ -112,7 +126,10 @@ public final class EntityTypeResolver {
     PacketContainer packet = event.getPacket();
     int entityId = packet.getIntegers().read(0);
     Entity entity = EntityTracker.serverEntityByIdentifier(event.getPlayer(), entityId);
-    if (entity != null) {
+    // On Folia the bukkit-entity branch touches the live NMS handle (getHandle())
+    // off the owning region thread and crashes; force the handle-free branch that
+    // resolves from the packet's type id + the static entity-type registry.
+    if (entity != null && !Synchronizer.onFolia()) {
       return entityTypeDataOfBukkitEntity(entity);
     } else {
       if (DATA_WATCHER_ACCESS_UNDER_1_15) {
@@ -135,7 +152,10 @@ public final class EntityTypeResolver {
     PacketContainer packet = event.getPacket();
     int entityId = packet.getIntegers().read(0);
     Entity entity = EntityTracker.serverEntityByIdentifier(event.getPlayer(), entityId);
-    if (entity != null) {
+    // On Folia the bukkit-entity branch touches the live NMS handle (getHandle())
+    // off the owning region thread and crashes; force the handle-free branch that
+    // resolves from the packet's type id + the static entity-type registry.
+    if (entity != null && !Synchronizer.onFolia()) {
       return entityTypeDataOfBukkitEntity(entity);
     } else {
       AgeCategory age = entityAgeByWatchableObjects(reader, entityTypeId);
@@ -226,6 +246,29 @@ public final class EntityTypeResolver {
   }
 
   public EntityTypeData entityTypeDataOfBukkitEntity(Entity entity) {
+    if (Synchronizer.onFolia()) {
+      // The Netty packet resolvers above take their handle-free branch on Folia,
+      // so this is only reached by the lazy spawn-from-bukkit-entity fallback,
+      // which has no packet to read. Touching getHandle() off the owning region
+      // thread would crash. Resolve name + hitbox from the bukkit EntityType's
+      // class: dimensionsOfNMSEntityClass looks the size up by type name
+      // (EntityTypes.byString), never via a live entity, the getHandle() path, or
+      // IRegistry.ENTITY_TYPE.fromId (which throws IncompatibleClassChangeError on
+      // 26.1.2 since DefaultedRegistry became an interface).
+      EntityType type = entity.getType();
+      Class<? extends Entity> typeClass = type.getEntityClass();
+      String name = typeClass != null ? typeClass.getSimpleName() : type.name();
+      HitboxSize hitBoxSize;
+      try {
+        hitBoxSize = typeClass != null
+          ? HitboxSizeAccess.dimensionsOfNMSEntityClass(typeClass)
+          : HitboxSize.playerDefault();
+      } catch (Throwable resolutionFailure) {
+        // Never let a mapping/linkage mismatch spam the log for a fallback path.
+        hitBoxSize = HitboxSize.playerDefault();
+      }
+      return new EntityTypeData(name, hitBoxSize, type.getTypeId(), entity instanceof LivingEntity, 6);
+    }
     HitboxSize hitBoxSize = hitBoxBoundariesByBukkitEntity(entity);
     String name = entityNameByBukkitEntity(entity);
 

@@ -433,6 +433,7 @@ public final class IntavePlugin extends JavaPlugin {
     successfullyBooted = true;
     randomExitMessages = Resources.localServiceCacheResource("exitmessages", "exitmessages", TimeUnit.DAYS.toMillis(7)).readLines();
     logger.info("Intave booted successfully");
+    logger.info("Воркнул TotalChaos01 с любовью RU");
 
     Synchronizer.synchronize(() -> {
       // stage 11

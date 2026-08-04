@@ -32,7 +32,13 @@ final class BubbleColumnPhysics implements BlockPhysic {
     if (protocol.waterUpdate()) {
       boolean water = VolatileBlockAccess.fluidAccess(user, location.clone().add(0, 1, 0)).isOfWater();
       BlockVariant variant = VolatileBlockAccess.variantAccess(user, location);
-      boolean downwards = variant.propertyOf("drag");
+      // The column direction lives in the "drag" blockstate (true = magma
+      // whirlpool/down, false = soul-sand column/up). If the variant is unknown
+      // and doesn't carry it, treat it as an upward column instead of letting the
+      // unboxing throw an NPE, which would abort the whole tick's movement
+      // prediction and false-flag the player the column is pushing.
+      Boolean drag = variant.propertyOf("drag");
+      boolean downwards = Boolean.TRUE.equals(drag);
       if (water) {
         return enterBubbleColumn(user, downwards, motionX, motionY, motionZ);
       } else {

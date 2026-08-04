@@ -216,7 +216,8 @@ public final class Metrics {
       }
       // Nevertheless we want our code to run in the Bukkit main thread, so we have to use the Bukkit scheduler
       // Don't be afraid! The connection to the bStats server is still async, only the stats collection is sync ;)
-      Bukkit.getScheduler().runTask(plugin, this::submitData);
+      // Folia has no single main thread; route the collection through the global region scheduler instead.
+      de.jpx3.intave.executor.task.Tasks.delayedNamed("bStats.submitData", this::submitData, 0).startSync();
     };
 
     // Many servers tend to restart at a fixed time at xx:00 which causes an uneven distribution of requests on the

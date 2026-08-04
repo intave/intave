@@ -3,6 +3,7 @@ package de.jpx3.intave.executor.task;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.user.User;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,6 +36,12 @@ final class BukkitTaskScheduler implements TaskScheduler {
 
 	@Override
 	public void startUserSync(Task task, User user) {
+		startSync(task);
+	}
+
+	@Override
+	public void startRegionSync(Task task, Location location) {
+		// On non-Folia servers all regions share the single main thread.
 		startSync(task);
 	}
 

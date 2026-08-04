@@ -12,6 +12,7 @@ import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.check.movement.Physics;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.executor.FoliaSafeTeleport;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.klass.trace.Caller;
@@ -486,6 +487,16 @@ public final class SetbackSimulator extends Module {
         Location dest = event.getTo();
         if (dest == null) {
           throw new IntaveBootFailureException("Setback location cannot be null");
+        }
+        if (!FoliaSafeTeleport.ownedByCurrentRegion(dest)) {
+          // The setback drags the player back into a chunk this region thread does not
+          // own (they crossed a region boundary since the anchor was taken). Moving the
+          // entity there directly throws "Cannot move entity off-main" out of the region
+          // tick, so the whole emulation tick dies half-applied. teleportAsync is the
+          // only way across a region boundary; it costs the packet-level timing this
+          // path exists for, but the player does get set back.
+          FoliaSafeTeleport.teleport(player, dest);
+          return;
         }
         if (Math.abs(nativeYaw) > 360f) {
           teleportMethodContainer.teleport(player, dest, motionY, nativeYaw % 360f, nativePitch, false);

@@ -128,6 +128,15 @@ final class TestUser implements User {
   }
 
   @Override
+  public boolean synthetic() {
+    return true;
+  }
+
+  @Override
+  public void noteFeedbackFault() {
+  }
+
+  @Override
   public CheckCustomMetadata checkMetadata(Class<? extends CheckCustomMetadata> metaClass) {
     return metadataPool.computeIfAbsent(metaClass, initializeMe -> {
       try {
@@ -398,10 +407,7 @@ final class TestUser implements User {
 
   }
 
-  @Override
-  public void noteFeedbackFault() {
 
-  }
 
   @Override
   public void kick(String reason) {

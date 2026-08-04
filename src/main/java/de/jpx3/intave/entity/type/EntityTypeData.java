@@ -14,6 +14,7 @@ public final class EntityTypeData {
   private boolean shulker;
   private boolean fireball;
   private boolean armorstand;
+  private boolean slimeLike;
 
   public EntityTypeData(String entityName, HitboxSize hitBoxSize, int entityTypeId, boolean isLivingEntity, int creationId) {
     this.entityName = entityName;
@@ -38,7 +39,28 @@ public final class EntityTypeData {
       case "armorstand":
         this.armorstand = true;
         break;
+      case "slime":
+      case "magmacube":
+        this.slimeLike = true;
+        break;
     }
+  }
+
+  /**
+   * Slimes and magma cubes are the entities whose hitbox is per-instance rather than
+   * per-type: it scales with the size value they carry in their metadata. Everything
+   * else of their type shares one box.
+   */
+  public boolean isSlimeLike() {
+    return slimeLike;
+  }
+
+  /**
+   * A copy of this type with a different hitbox, for the entities whose real size only
+   * becomes known from their metadata.
+   */
+  public EntityTypeData withSize(HitboxSize size) {
+    return new EntityTypeData(entityName, size, entityTypeId, isLivingEntity, creationId);
   }
 
   public boolean isLivingEntity() {

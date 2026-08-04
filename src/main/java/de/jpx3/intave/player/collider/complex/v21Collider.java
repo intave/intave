@@ -144,6 +144,10 @@ public final class v21Collider implements Collider {
         Motion stepCappedMotion = collideSingleBox(simulatedStep, box2, combinedShape);
         if (stepCappedMotion.horizontalLengthSqr() > firstCollision.horizontalLengthSqr()) {
           double boxYShift = box.minY - box2.minY;
+          // the 1.14 collider reports this, this one never did: everything gated on
+          // "the simulation stepped up" (the client-ground-state override in
+          // MovementDispatcher, the STEP metric, the debug output) was dead on 1.21+
+          stepped[0] = true;
           return stepCappedMotion.add(0.0D, -boxYShift, 0.0D);
         }
       }

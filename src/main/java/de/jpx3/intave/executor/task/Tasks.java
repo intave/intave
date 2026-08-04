@@ -45,6 +45,10 @@ public final class Tasks {
 		scheduler.startUserSync(task, user);
 	}
 
+	static void startRegionSync(Task task, org.bukkit.Location location) {
+		scheduler.startRegionSync(task, location);
+	}
+
 	static void startAsync(Task task) {
 		scheduler.startAsync(task);
 	}

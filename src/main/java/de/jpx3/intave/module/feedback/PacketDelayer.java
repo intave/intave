@@ -10,6 +10,7 @@ import de.jpx3.intave.diagnostic.LatencyStudy;
 import de.jpx3.intave.diagnostic.message.DebugBroadcast;
 import de.jpx3.intave.diagnostic.message.MessageCategory;
 import de.jpx3.intave.diagnostic.message.MessageSeverity;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -38,6 +39,19 @@ public final class PacketDelayer extends Module {
     this.reverseBlink = timerCheck.reverseBlink();
     this.reverseLag = timerCheck.reverseLag();
     this.lowTolerance = timerCheck.lowToleranceMode();
+    if (Synchronizer.onFolia()) {
+      // The packet buffer releases held packets by re-calling sendServerPacket
+      // from inside this outbound packet listener (sendPacket -> ... ->
+      // Connection.send). On CanvasMC + the ProtocolLib fork the event-loop proxy
+      // runs the listener inline on the player's region thread, so the release
+      // re-enters Connection.flushQueue/processQueue on that same thread; once a
+      // lagging player has buffered a lot of entity packets this spins the region
+      // tick past Folia's 5s watchdog and force-stops the server. Disable the
+      // reverse-blink / reverse-lag buffering on Folia until the release path is
+      // reworked to not re-enter the send path on the region thread.
+      this.reverseBlink = false;
+      this.reverseLag = false;
+    }
   }
 
 //  @PacketSubscription(

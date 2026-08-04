@@ -73,6 +73,18 @@ public interface User {
   Player player();
 
   /**
+   * Whether this user is synthetic — a test or fallback user that has no real,
+   * region-owned player entity. Synthetic users have no per-entity Folia
+   * scheduler, so user-synchronized work must fall back to a region-independent
+   * scheduler instead of the entity scheduler.
+   *
+   * @return {@code true} for test/fallback users, {@code false} for real players
+   */
+  default boolean synthetic() {
+    return false;
+  }
+
+  /**
    * Retrieve a user's {@link MetadataBundle}
    *
    * @return a users {@link MetadataBundle}

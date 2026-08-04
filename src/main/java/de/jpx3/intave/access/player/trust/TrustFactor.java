@@ -26,15 +26,25 @@ public enum TrustFactor implements Comparable<TrustFactor> {
       return GREEN;
     }
     TrustFactor[] values = values();
-    return values[MathHelper.minmax(0, ordinal() - 1, values.length)];
+    return values[MathHelper.minmax(0, ordinal() - 1, values.length - 1)];
   }
 
+  /**
+   * The next level down, saturating at {@link #DARK_RED}.
+   * <p>
+   * The clamp is against {@code length - 1} because it indexes the array: with
+   * {@code length} it read one past the end, so calling this on DARK_RED threw
+   * {@link ArrayIndexOutOfBoundsException} — and since the one caller
+   * ({@code StorageTrustfactorResolver}) lowers the level once per past violation inside a
+   * {@code catch (Exception)} that falls back to the default, the automatic trust factor
+   * silently reverted to the default for exactly the players with the most violations.
+   */
   public TrustFactor unsafer() {
     if (this == BYPASS) {
       return BYPASS;
     }
     TrustFactor[] values = values();
-    return values[MathHelper.minmax(0, ordinal() + 1, values.length)];
+    return values[MathHelper.minmax(0, ordinal() + 1, values.length - 1)];
   }
 
   public boolean atLeast(TrustFactor trustFactor) {

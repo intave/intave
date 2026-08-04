@@ -248,10 +248,58 @@ public final class SimulationEvaluator {
       }
     }
 
+    // Bubble column ejection desync
+    if (movement.ticksPast(IN_WATER) <= 10 && Math.max(receivedMotionY, predictedY) > 0.35) {
+      verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.8);
+      tags.add(EvaluationTag.WATERFLOW);
+    }
+
     // Sometimes shit happens
     if (movement.ticks(SNEAKING) <= 1 && !movement.inWater && !movement.inWeb && (movement.onGround() || movement.lastOnGround()) && movement.motionY() <= 0 && movement.motionY() >= -0.5 && movement.lastSneaking) {
       verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.08f);
       tags.add(EvaluationTag.SNEAKING);
+    }
+
+    // Knockback timing tolerance -- see the horizontal counterpart in
+    // calculateHorizontalViolationIncrease. Bounded by the velocity actually sent.
+    if (movement.velocityToleranceTicks > 0) {
+      verticalLegitimateDeviation = Math.max(
+        verticalLegitimateDeviation,
+        Math.min(0.45, movement.velocityToleranceMagnitude * 0.9)
+      );
+      tags.add(EvaluationTag.KNOCKBACK);
+    }
+
+    // Entity pushes are horizontal, but being shoved changes which blocks the player
+    // collides with, so steps and ground contact land a tick apart from ours.
+    if (movement.pushedByEntity || movement.entityPushToleranceTicks > 0) {
+      verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.06);
+      tags.add(EvaluationTag.ENTITY_PUSH);
+    }
+
+    // Inside a block: see the horizontal counterpart. Vertically this is the worse
+    // half -- we resolve ground contact against a box the player is inside, so we
+    // disagree about whether they are standing, falling or being lifted.
+    if (movement.insideBlockToleranceTicks > 0) {
+      verticalLegitimateDeviation = Math.max(verticalLegitimateDeviation, 0.2);
+      tags.add(EvaluationTag.COLLISION_INACCURACY);
+    }
+
+    // A launch off the ground that is WEAKER than the one we predicted (block jump
+    // factor, jump boost, a jump-strength attribute the server resolved differently)
+    // cannot be an advantage, so don't punish the difference. Only upward motion
+    // qualifies -- falling faster than predicted stays a violation.
+    // (receivedMotionY >= 0 on purpose: "we predicted a step or a jump the client did
+    // not take" is the same situation seen from the other side, and staying put is
+    // never an advantage)
+    if ((movement.lastOnGround() || movement.onGround())
+      && receivedMotionY >= 0 && predictedY > 0.1 && predictedY > receivedMotionY
+    ) {
+      verticalLegitimateDeviation = Math.max(
+        verticalLegitimateDeviation,
+        Math.min(0.45, predictedY - receivedMotionY)
+      );
+      tags.add(EvaluationTag.WEAK_JUMP);
     }
 
     double abuseVertically = Math.max(0, differenceY - verticalLegitimateDeviation);
@@ -287,10 +335,42 @@ public final class SimulationEvaluator {
     }
 
     boolean justInPowderSnow = movement.ticksPast(IN_POWDER_SNOW) < 5;
-    double maxLadderVel = justInPowderSnow ? LADDER_UPWARDS_MOTION * 1.5 : LADDER_UPWARDS_MOTION;
-    if ((onLadder || justInPowderSnow) && movement.motionY() <= maxLadderVel && movement.motionY() >= -0.05) {
+    // The exact climb speed is not one constant: it differs per climbable (ladder,
+    // vine, scaffolding, powder snow), between client versions, and again when the
+    // player climbs while in water or lets go and slides. Pinning it to
+    // LADDER_UPWARDS_MOTION flagged ordinary climbing on 1.21.x. Accept the whole
+    // plausible climbing band instead -- being on a climbable is not an advantage,
+    // the player still cannot leave it, and horizontal speed is judged separately.
+    if (onLadder || justInPowderSnow) {
+      if (movement.motionY() <= 0.4 && movement.motionY() >= -0.5) {
+        abuseVertically = 0;
+        tags.add(EvaluationTag.LADDER);
+      }
+    }
+
+    // Bubble columns (soul sand up / magma down). Whether we reproduce the column at
+    // all depends on resolving the block AND the water above it AND the "drag"
+    // property on this server version; when any of that is off, the whole column
+    // impulse shows up as a vertical difference every tick of the ride. Being in one
+    // is not an advantage -- you cannot steer it and it only exists where the server
+    // itself placed the blocks.
+    if (movement.bubbleColumnToleranceTicks > 0) {
       abuseVertically = 0;
-      tags.add(EvaluationTag.LADDER);
+      tags.add(EvaluationTag.WATERFLOW);
+    }
+
+    // Auto-step. Walking into a slab/stair/bottom-trapdoor edge lifts the client by up
+    // to its step height inside a single tick. If we did not reproduce that step -- a
+    // block shape we resolve differently, or the collision landing a tick apart -- the
+    // entire step shows up as vertical abuse. Requiring ground contact before AND
+    // after keeps this from being usable as a lift: there has to be a real block.
+    if (receivedMotionY > 0 && receivedMotionY <= 0.6
+      && movement.lastOnGround()
+      && Hypot.fast(receivedMotionX, receivedMotionZ) > 0.02
+      && predictedY < receivedMotionY
+    ) {
+      abuseVertically = 0;
+      tags.add(EvaluationTag.STEP);
     }
 
     // Long teleport
@@ -499,9 +579,76 @@ public final class SimulationEvaluator {
       tags.add(EvaluationTag.SNEAKING);
     }
 
-    if (movement.pushedByEntity) {
-      horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, 0.05);
+    // Entity-collision push tolerance. Keyed off a decaying proximity window
+    // (armed in Physics#nearPushableEntity), not just the exact tick our simulator
+    // reproduced a push: the client applies push against its own network-desynced
+    // view of entity positions, so a fixed single-tick flag misses the pushes that
+    // caused false flags in high-ping combat. Tolerance is 0.08 because a diagonal
+    // push reaches ~0.05/axis (~0.07 combined) plus prediction slop.
+    boolean entityPushActive = movement.pushedByEntity || movement.entityPushToleranceTicks > 0;
+    if (entityPushActive) {
+      // Up to 0.05 per axis (~0.07 diagonally) each side, and the client may push off
+      // an entity we did not predict a push against while we predicted one it did not
+      // -- so the two can disagree by more than a single push.
+      horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, 0.12);
       tags.add(EvaluationTag.ENTITY_PUSH);
+    }
+
+    // Knockback timing tolerance. The client applies a server velocity on the tick the
+    // packet reaches it; we apply it when the transaction anchoring that packet is
+    // acknowledged. Under latency (and, on region-threaded servers, packet reordering)
+    // those are different ticks, and for that handful of ticks the received motion
+    // legitimately differs from the prediction by up to the knockback itself. Bounded
+    // by the velocity that was actually sent, so this can never grant more speed than
+    // the server itself handed out.
+    boolean knockbackActive = movement.velocityToleranceTicks > 0;
+    if (knockbackActive) {
+      horizontalLegitimateDeviation = Math.max(
+        horizontalLegitimateDeviation,
+        Math.min(0.5, movement.velocityToleranceMagnitude * 0.8)
+      );
+      tags.add(EvaluationTag.KNOCKBACK);
+    }
+
+    // The prone ("moving slowly") state is resolved one tick apart from the client's,
+    // see PredictiveSimulationProcessor#resolveProneAmbiguity. The retry there usually
+    // finds the right assumption; this covers the ticks where neither variant fits
+    // because the transition happened mid-tick.
+    // Auto-step, horizontal half: when the client walks up a slab/stair/bottom
+    // trapdoor and we do not reproduce the step, our collider stops the player dead at
+    // the block edge while the client keeps its full speed over it -- so the same tick
+    // that mispredicts the height also mispredicts the whole horizontal move. Gated on
+    // a step-shaped upward move from the ground that ends on the ground or against a
+    // wall, which a jump into open air does not match.
+    boolean steppedUnexpectedly = motionY > 0 && motionY <= 0.6
+      && movement.lastOnGround() && (movement.onGround() || movement.collidedHorizontally)
+      && distanceMoved > predictedDistanceMoved;
+    if (steppedUnexpectedly) {
+      horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, 0.25);
+      tags.add(EvaluationTag.STEP);
+    }
+
+    // Bubble column: the ride perturbs the horizontal too (the column re-centres the
+    // player), and on the way out the client is briefly in air physics while we still
+    // think it is in water.
+    if (movement.bubbleColumnToleranceTicks > 0) {
+      horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, 0.15);
+      tags.add(EvaluationTag.WATERFLOW);
+    }
+
+    // Inside a block (a trapdoor closed on the player, a block placed into them): our
+    // collider resolves against a box they are already in, the client's does not push
+    // them out at all, so the two disagree on every axis.
+    if (movement.insideBlockToleranceTicks > 0) {
+      horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, 0.15);
+      tags.add(EvaluationTag.COLLISION_INACCURACY);
+    }
+
+    // because the retry keeps whichever variant is closer, the leftover can only be
+    // about half the difference between crawling and walking acceleration
+    if (movement.proneAmbiguityTicks > 0) {
+      horizontalLegitimateDeviation = Math.max(horizontalLegitimateDeviation, 0.045);
+      tags.add(EvaluationTag.DESYNC);
     }
 
     double abuseHorizontally = Math.max(0, distance - horizontalLegitimateDeviation);
@@ -537,13 +684,27 @@ public final class SimulationEvaluator {
     }
 
     double stackMultiplier = Math.exp(-Math.min(violationLevelData.physicsInvalidMovementsInRow, 4) / 2);
+    // Repeated violations are supposed to tighten these thresholds, but the raw
+    // multiplier bottoms out at 0.135 and then a THREE CENTIMETRE residual returns
+    // 1000 -- which is how one desynced tick escalated into a permanent storm. The
+    // floor keeps the escalation (still ~3x tighter than baseline) without letting
+    // rounding-sized differences count as "moved way too quickly".
+    double thresholdScale = Math.max(stackMultiplier, 0.35);
 
-    boolean movedTooQuicklyCheckable = (distanceMoved > 0.125 * stackMultiplier || violationLevelData.physicsInvalidMovementsInRow >= 8)
+    boolean movedTooQuicklyCheckable = (distanceMoved > 0.125 * thresholdScale || violationLevelData.physicsInvalidMovementsInRow >= 8)
       && !flewWithElytra;
 
-    if (movedTooQuickly && movedTooQuicklyCheckable && !movement.physicsUnpredictableVelocityExpected) {
+    // The prone window is a pose transition (standing up out of a crawl, a trapdoor
+    // toggling above the player): for those few ticks the client and we disagree about
+    // whether the input was scaled, which is a centimetres-sized difference -- not a
+    // reason to take the branch that answers with 1000.
+    if (movedTooQuickly && movedTooQuicklyCheckable && !movement.physicsUnpredictableVelocityExpected
+      && !entityPushActive && !knockbackActive && !steppedUnexpectedly
+      && movement.proneAmbiguityTicks <= 0
+      && movement.insideBlockToleranceTicks <= 0
+      && movement.bubbleColumnToleranceTicks <= 0) {
 //      player.sendMessage("moved too quickly: " + distanceMoved + " " + predictedDistanceMoved + " " + abuseHorizontally + " " + stackMultiplier);
-      if (abuseHorizontally > 0.2 * stackMultiplier) {
+      if (abuseHorizontally > 0.2 * thresholdScale) {
         return 1000;
       }
       if (distanceMoved - 0.1 > predictedDistanceMoved && distanceMoved > 0.3) {
@@ -552,9 +713,25 @@ public final class SimulationEvaluator {
       return Math.max(15, abuseHorizontally * 250);
     }
     boolean noCollisions = Collision.nonePresent(user, movement, BoundingBox.fromPosition(user, movement, movement.positionX, movement.positionY, movement.positionZ).grow(0.1));
+    // The stack multiplier is a positive feedback loop: flagged ticks raise
+    // physicsInvalidMovementsInRow, which raises the multiplier, which raises the
+    // violation level, which keeps the player desynced and flagging. Left uncapped it
+    // reached ~7.4x and turned centimetre residuals into +1000 detections. Capped, a
+    // repeated real violation still escalates, just not exponentially.
+    double stackAmplifier = Math.min(1 / stackMultiplier, 3.0);
     double multiplier = (abuseHorizontally > 0.1 ? 20.0 : 10.0) *
       (noCollisions ? 3 : 2) *
-      (1 / stackMultiplier);
+      stackAmplifier;
+    if (knockbackActive) {
+      multiplier = Math.min(multiplier, 10.0);
+    }
+    if (entityPushActive) {
+      // Never let ping-desynced collision residue feed the exponential stack
+      // multiplier (1/stackMultiplier) -- that positive-feedback loop is what turned
+      // sub-0.05 residuals into the 15 -> 300 -> 20000 escalation. Any residue beyond
+      // the 0.08 tolerance stays linear and small while entities are in contact.
+      multiplier = Math.min(multiplier, 10.0);
+    }
 //    player.sendMessage("abuseHorizontally: " + abuseHorizontally + " multiplier: " + multiplier);
     if (abuseHorizontally < 0.1 && Math.abs(motionX) + Math.abs(motionZ) < 0.1 && !inLiquid && !movement.inWeb) {
       multiplier *= 0.1;

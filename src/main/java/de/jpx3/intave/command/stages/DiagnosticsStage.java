@@ -13,6 +13,7 @@ import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.collision.Collision;
+import de.jpx3.intave.check.world.interaction.PrinterMode;
 import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckStatistics;
 import de.jpx3.intave.cleanup.GarbageCollector;
@@ -22,7 +23,10 @@ import de.jpx3.intave.command.SubCommand;
 import de.jpx3.intave.diagnostic.PacketSynchronizations;
 import de.jpx3.intave.diagnostic.timings.Timing;
 import de.jpx3.intave.diagnostic.timings.Timings;
+import de.jpx3.intave.executor.FoliaSafeTeleport;
 import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.executor.task.Task;
+import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
@@ -122,6 +126,9 @@ public final class DiagnosticsStage extends CommandStage {
     sender.sendMessage(ChatColor.GRAY + "Spigot is " + ChatColor.WHITE + serverVersion);
     sender.sendMessage(ChatColor.GRAY + "ProtocolLib is " + ChatColor.WHITE + protocolLibVersion);
     sender.sendMessage(ChatColor.GRAY + "Intave is " + ChatColor.WHITE + intaveVersion);
+    sender.sendMessage(ChatColor.GRAY + "Printer mode is " + ChatColor.WHITE + PrinterMode.describe());
+    sender.sendMessage(ChatColor.GRAY + "Trust factor resolver is " + ChatColor.WHITE
+      + IntavePlugin.singletonInstance().trustFactorService().trustFactorResolver());
 
     TextComponent message = new TextComponent("[Copy report message to chat]");
     message.setColor(net.md_5.bungee.api.ChatColor.GRAY);
@@ -231,7 +238,7 @@ public final class DiagnosticsStage extends CommandStage {
   public void turtleCommand(User user) {
     Player player = user.player();
     if (MinecraftVersions.VER1_20.atOrAbove()) {
-      Bukkit.getScheduler().runTask(IntavePlugin.singletonInstance(), () -> {
+      Synchronizer.synchronize(user, () -> {
         Turtle turtle = player.getWorld().spawn(player.getLocation(), Turtle.class);
         turtle.setPassenger(player);
       });
@@ -529,10 +536,10 @@ public final class DiagnosticsStage extends CommandStage {
     Player player = user.player();
     player.sendMessage(ChatColor.RED + "Logout to stop");
 
-    int[] id = {0};
-    id[0] = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+    Task[] task = new Task[1];
+    task[0] = Tasks.periodicNamed("DiagnosticsStage.teleportSpam", () -> {
       if (!player.isOnline()) {
-        Bukkit.getScheduler().cancelTask(id[0]);
+        task[0].cancel();
         return;
       }
       int attempts = 100;
@@ -555,12 +562,13 @@ public final class DiagnosticsStage extends CommandStage {
       } while (Collision.present(player, playerBox.move(0, 0, moveZ)) && attempts-- > 0);
       if (attempts <= 0) moveZ = 0;
       if (attempts <= 0) moveY = 0;
-      player.teleport(player.getLocation().clone().add(moveX, moveY, moveZ));
+      FoliaSafeTeleport.teleport(player, player.getLocation().clone().add(moveX, moveY, moveZ));
 
       if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
         player.sendMessage(IntavePlugin.prefix() + "Teleport to " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " as " + ChatColor.RED + " it was command-requested");
       }
     }, 20, 3);
+    task[0].startUserSync(user);
   }
 
   @SubCommand(
@@ -572,10 +580,10 @@ public final class DiagnosticsStage extends CommandStage {
     Player player = user.player();
     player.sendMessage(ChatColor.RED + "Logout to stop");
 
-    int[] id = {0};
-    id[0] = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+    Task[] task = new Task[1];
+    task[0] = Tasks.periodicNamed("DiagnosticsStage.velocitySpam", () -> {
       if (!player.isOnline()) {
-        Bukkit.getScheduler().cancelTask(id[0]);
+        task[0].cancel();
         return;
       }
       player.setVelocity(new Vector(
@@ -584,6 +592,7 @@ public final class DiagnosticsStage extends CommandStage {
         ThreadLocalRandom.current().nextGaussian() * 0.2
       ));
     }, 20, 20 * 2);
+    task[0].startUserSync(user);
   }
 
   @SubCommand(
@@ -596,16 +605,17 @@ public final class DiagnosticsStage extends CommandStage {
     Player player = user.player();
     player.sendMessage(ChatColor.RED + "Logout to stop");
 
-    int[] id = {0};
-    id[0] = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, () -> {
+    Task[] task = new Task[1];
+    task[0] = Tasks.periodicNamed("DiagnosticsStage.flyingSwitch", () -> {
       if (!player.isOnline()) {
-        Bukkit.getScheduler().cancelTask(id[0]);
+        task[0].cancel();
         return;
       }
       boolean canFly = player.getAllowFlight();
       Synchronizer.synchronizeDelayed(user, () -> player.setAllowFlight(!canFly), 40);
       player.sendMessage(IntavePlugin.prefix() + "Flying will be " + ChatColor.RED + (!canFly ? "enabled" : "disabled") + ChatColor.GRAY + " in 2 seconds");
     }, 20, 20 * 10);
+    task[0].startUserSync(user);
   }
 
   @SubCommand(

@@ -35,7 +35,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import de.jpx3.intave.IntaveLogger;
 import org.bukkit.block.Block;
+import org.bukkit.event.EventPriority;
+import org.bukkit.plugin.RegisteredListener;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -66,6 +69,86 @@ public final class InteractionEmulator implements EventProcessor {
     plugin.eventLinker().registerEventsIn(this);
   }
 
+  /**
+   * The server's own verdict on a placement. Reached only if the packet made it past
+   * every packet listener, so a trace line here proves the placement was handed over -
+   * and {@code cancelled=true} names a Bukkit listener (a protection plugin, or Intave
+   * itself elsewhere) as the thing that stopped it rather than this check.
+   * <p>
+   * Probed at the first and the last priority: if the event is already cancelled at
+   * {@code LOWEST} the canceller runs before everything, otherwise it sits between the
+   * two, and {@link #dumpBlockPlaceListenersOnce()} names the plugins that could be it.
+   */
+  @BukkitEventSubscription(priority = EventPriority.LOWEST)
+  public void traceOutcomeLowest(BlockPlaceEvent place) {
+    traceOutcomeAt(place, "LOWEST");
+  }
+
+  @BukkitEventSubscription(priority = EventPriority.LOW)
+  public void traceOutcomeLow(BlockPlaceEvent place) {
+    traceOutcomeAt(place, "LOW");
+  }
+
+  @BukkitEventSubscription(priority = EventPriority.HIGH)
+  public void traceOutcomeHigh(BlockPlaceEvent place) {
+    traceOutcomeAt(place, "HIGH");
+  }
+
+  @BukkitEventSubscription(priority = EventPriority.HIGHEST)
+  public void traceOutcomeHighest(BlockPlaceEvent place) {
+    traceOutcomeAt(place, "HIGHEST");
+  }
+
+  @BukkitEventSubscription(priority = EventPriority.MONITOR)
+  public void traceOutcome(BlockPlaceEvent place) {
+    traceOutcomeAt(place, "MONITOR");
+    if (place.isCancelled() && IntaveLogger.traceEnabled()) {
+      dumpBlockPlaceListenersOnce();
+    }
+  }
+
+  /**
+   * One probe per priority band. The band where {@code cancelled} flips from false to
+   * true is the band the canceller is registered in, which - together with the listener
+   * dump - names the plugin.
+   */
+  private void traceOutcomeAt(BlockPlaceEvent place, String band) {
+    if (!IntaveLogger.traceEnabled()) {
+      return;
+    }
+    Block block = place.getBlock();
+    IntaveLogger.trace("[PLACE-DEBUG] " + place.getPlayer().getName()
+      + " server BlockPlaceEvent(" + band + ") " + block.getType()
+      + "@" + block.getX() + "," + block.getY() + "," + block.getZ()
+      + " against=" + place.getBlockAgainst().getType()
+      + " canBuild=" + place.canBuild()
+      + " cancelled=" + place.isCancelled());
+  }
+
+  private boolean dumpedBlockPlaceListeners;
+
+  /**
+   * Once per session, list every plugin listening to {@code BlockPlaceEvent} with its
+   * priority. A placement that reaches the server, is allowed by it and still ends up
+   * cancelled was cancelled by one of these, and Intave is not among them.
+   */
+  private void dumpBlockPlaceListenersOnce() {
+    if (dumpedBlockPlaceListeners) {
+      return;
+    }
+    dumpedBlockPlaceListeners = true;
+    StringBuilder listeners = new StringBuilder();
+    for (RegisteredListener listener : BlockPlaceEvent.getHandlerList().getRegisteredListeners()) {
+      if (listeners.length() > 0) {
+        listeners.append(", ");
+      }
+      listeners.append(listener.getPlugin().getName())
+        .append('/').append(listener.getPriority().name());
+    }
+    IntaveLogger.trace("[PLACE-DEBUG] a placement the server allowed was cancelled by a"
+      + " BlockPlaceEvent listener - listeners are: " + listeners);
+  }
+
   @BukkitEventSubscription(ignoreCancelled = true)
   public void onPre(BlockPlaceEvent place) {
     if (place.getClass().equals(BlockPlaceEvent.class)) {
@@ -75,9 +158,9 @@ public final class InteractionEmulator implements EventProcessor {
       //      blockStateAccess.invalidateOverride(block.getX(), block.getY(), block.getZ());
     }
     if (REMOVE_PLACED_BLOCKS_WITH_DELAY) {
-      Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> {
-        place.getBlock().setType(Material.AIR);
-      }, 20 * 5);
+      Block placedBlock = place.getBlock();
+      // setType touches world state, so it must run on the region owning the block.
+      Synchronizer.synchronizeDelayed(placedBlock.getLocation(), () -> placedBlock.setType(Material.AIR), 20 * 5);
     }
   }
 
@@ -203,7 +286,9 @@ public final class InteractionEmulator implements EventProcessor {
     World world = interaction.world();
     Location blockAgainstLocation = interaction.targetBlock().toLocation(world);
 
-    if (System.currentTimeMillis() - user.meta().violationLevel().lastBlockPlaceDenyRequest < 1250) {
+    boolean printerMode = PrinterMode.enabled();
+
+    if (!printerMode && System.currentTimeMillis() - user.meta().violationLevel().lastBlockPlaceDenyRequest < 1250) {
       return EmulationResult.FAILED_CRITICAL;
     }
 
@@ -271,9 +356,12 @@ public final class InteractionEmulator implements EventProcessor {
 //        }
       }
 
-      if (!movement.placementTrustChain.tryAction(
+      boolean trusted = movement.placementTrustChain.tryAction(
         new de.jpx3.intave.share.BlockPosition(blockPlacementLocation),
-        new de.jpx3.intave.share.BlockPosition(blockAgainstLocation))) {
+        new de.jpx3.intave.share.BlockPosition(blockAgainstLocation));
+      // A printer places against blocks it placed itself a tick earlier, so the chain of
+      // still unconfirmed placements gets longer than a hand-placing player's ever does.
+      if (!trusted && !printerMode) {
         return EmulationResult.FAILED_CRITICAL;
       }
 
@@ -309,6 +397,12 @@ public final class InteractionEmulator implements EventProcessor {
       //        Synchronizer.synchronize(() -> blockStates.invalidateOverride(blockX, blockY,
       // blockZ));
       //      });
+
+      if (printerMode) {
+        // The cloud analysis judges placements the same way the local scaffold checks do,
+        // and those are off in printer mode - feeding it would just ban on its verdict.
+        return EmulationResult.SUCCEEDED;
+      }
 
       Nayoro nayoro = Modules.nayoro();
       Position eyePosition = Position.of(

@@ -24,12 +24,19 @@ public final class HurttimeModifier {
     if (punishmentData.damageTicksBefore != -1) {
       return;
     }
-    int noDamageTicksBefore = resolveNoDamageTicksOf(player);
-    int newNoDamageTicks = calculateNewNoDamageTicks(noDamageTicksBefore, additionalHurtTime);
-    punishmentData.damageTicksBefore = noDamageTicksBefore;
-    punishmentData.appliedDamageTicks = newNoDamageTicks;
-    setNoDamageTicksOf(player, newNoDamageTicks);
-    Synchronizer.synchronizeDelayed(() -> removeNoDamageTickChangeOf(user), durationTicks);
+    // resolve/set touch the player's live NMS handle (maxNoDamageTicks). On Folia
+    // that is only legal on the player's own region thread, so run it there.
+    Synchronizer.synchronize(user, () -> {
+      int noDamageTicksBefore = resolveNoDamageTicksOf(player);
+      int newNoDamageTicks = calculateNewNoDamageTicks(noDamageTicksBefore, additionalHurtTime);
+      punishmentData.damageTicksBefore = noDamageTicksBefore;
+      punishmentData.appliedDamageTicks = newNoDamageTicks;
+      setNoDamageTicksOf(player, newNoDamageTicks);
+    });
+    // The revert also touches the handle; the no-arg delayed variant runs on
+    // Folia's global scheduler (which may not touch entity state), so scope it
+    // to the player's region thread.
+    Synchronizer.synchronizeDelayed(user, () -> removeNoDamageTickChangeOf(user), durationTicks);
   }
 
   private static int calculateNewNoDamageTicks(int noDamageTicks, int ticks) {

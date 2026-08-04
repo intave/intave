@@ -113,6 +113,10 @@ public class Entity {
 
   public void setTypeData(EntityTypeData typeData) {
     this.typeData = typeData;
+    // The cached box is built from the type's hitbox, so a retype (a mob turning out to
+    // be a baby, a slime reporting its real size) has to invalidate it or the old size
+    // survives until the entity next moves.
+    this.boundingBox = null;
   }
 
   public static class EntityPositionContext implements Cloneable {
@@ -593,6 +597,15 @@ public class Entity {
   public void setResponseTracingEnabled(boolean enabledResponseTracing) {
     this.wasTracedLastCycle = this.enabledResponseTracing;
     this.enabledResponseTracing = enabledResponseTracing;
+    if (!enabledResponseTracing) {
+      // Only traced entities have their position confirmed against the client, so an
+      // entity dropping out of the traced set has no verified position from here on.
+      // Leaving the flag set meant a crowd -- where the traced set reshuffles
+      // constantly and only holds a few entities -- kept handing out stale "the client
+      // sees it exactly here" claims, and attacks were ray-traced against a position
+      // the client never had.
+      this.clientSynchronized = false;
+    }
   }
 
   public FeedbackObserver feedbackTracker() {

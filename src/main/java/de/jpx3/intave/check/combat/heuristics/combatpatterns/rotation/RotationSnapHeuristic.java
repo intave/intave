@@ -4,6 +4,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
+import de.jpx3.intave.check.world.interaction.PrinterMode;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
@@ -141,12 +142,20 @@ public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHe
       meta.movementAtTick[0] = tick;
     }
 
+    // A schematic printer turns the player towards each block, swings, and turns back -
+    // a snap next to an arm swing is what it does all the time, and the scaffold variant
+    // of this flag describes it outright. Under printer mode only a snap around an actual
+    // attack packet is judged, which is what this heuristic is for; see PrinterMode.
+    boolean printerMode = PrinterMode.enabled();
+
     boolean isSuspicious = (meta.yawMotions[1] == 0 && meta.yawMotions[0] > 25 && yawMotion < 9);
-    boolean liteFlag = isSuspicious && meta.silentMovements[1] == KeyStates.SILENTMOVE && meta.rotationPacketCounter > 10 && movementData.ticksPast(TELEPORT) > 7;
+    boolean liteFlag = !printerMode && isSuspicious && meta.silentMovements[1] == KeyStates.SILENTMOVE && meta.rotationPacketCounter > 10 && movementData.ticksPast(TELEPORT) > 7;
 
     isSuspicious = meta.yawMotions[1] < 9 && meta.yawMotions[0] > 40 && yawMotion < 9;
 
-    if (isSuspicious && (wasRecent(meta.lastSwing) || wasRecent(meta.lastAttack)) && meta.rotationPacketCounter > 10 && movementData.ticksPast(TELEPORT) > 7) {
+    boolean aroundCombat = wasRecent(meta.lastAttack) || (!printerMode && wasRecent(meta.lastSwing));
+
+    if (isSuspicious && aroundCombat && meta.rotationPacketCounter > 10 && movementData.ticksPast(TELEPORT) > 7) {
       double valueOfSnap = meta.yawMotions[0];
       String description = "rotation snap ["
         + MathHelper.formatDouble(meta.yawMotions[1], 2)

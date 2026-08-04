@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.ViaVersionAdapter;
 import de.jpx3.intave.cleanup.ShutdownTasks;
+import de.jpx3.intave.executor.task.Tasks;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -27,7 +28,7 @@ public final class Analytics {
     setupRecorder(TimingsRecorder.class);
 
     ShutdownTasks.addBeforeAll(this::saveAndResetAll);
-    Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, this::saveAndResetAll, 20 * 60 * 60 * 6);
+    Tasks.delayedNamed("Analytics.saveAndResetAll", this::saveAndResetAll, 20 * 60 * 60 * 6).startSync();
   }
 
   private void setupRecorder(Class<? extends Recorder> recorderClass) {

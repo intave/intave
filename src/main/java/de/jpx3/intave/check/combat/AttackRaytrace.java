@@ -297,8 +297,15 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 
         boolean hasNotTimedOut = !entityInTimeout(user, attackedEntity, pendingAttack.pendingFeedbackPackets());
         boolean unsafeSynchronization = movement.dropPostTickMotionProcessing && protocol.protocolVersion() >= 755;
+        // Only traced entities get their position confirmed against the client, and the
+        // traced set holds just the few nearest ones -- inside a mob crowd the entity
+        // being hit is regularly not among them. Ray-tracing such an entity against a
+        // single unverified server position produces a miss whenever the crowd shoved
+        // it between our position and the one the client clicked, which is every tick.
+        // Fall back to the position-history search instead, which is what that path
+        // exists for.
         boolean entityOutOfSync = (!protocol.flyingPacketsAreSent() && !protocol.sendsClientTickEnd() && movement.receivedFlyingPacketIn(2))
-          || !attackedEntity.clientSynchronized || unsafeSynchronization;
+          || !attackedEntity.clientSynchronized || !attackedEntity.tracingEnabled() || unsafeSynchronization;
 
         // As entity attack redirections are processed inside this, we don't need to do anything extra to block hits besides
         // just not raytracing

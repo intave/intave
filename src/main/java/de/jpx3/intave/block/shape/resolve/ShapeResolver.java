@@ -47,6 +47,13 @@ public final class ShapeResolver {
     resolver = new CubeMemoryPipe(resolver);
     // patch reshaper
     resolver = new PatcherReshaperPipe(resolver);
+    if (VER1_13_0.atOrAbove()) {
+      // Drill failure subroutine, on top of the caches on purpose: a drill that cannot
+      // read a shape now throws instead of guessing "cube" or "empty", so the caches
+      // below remember nothing and the next lookup tries again. Answering here keeps
+      // callers -- collision, pose selection, ray tracing -- free of the failure.
+      resolver = new DrillRescuePipe(resolver);
+    }
     return resolver;
   }
 

@@ -11,6 +11,11 @@ public final class ViolationMetadata {
   public double physicsVelocityVL;
   public double physicsVehicleVL;
   public double physicsInvalidMovementsInRow;
+  // Consecutive flagged movements whose deviation stayed desync-sized. Used to break
+  // the runaway: while the check flags, the verified location stops advancing and
+  // setbacks keep rewriting the client's motion, so a single mispredicted tick can
+  // keep a legitimate player in a permanently disagreeing state.
+  public int physicsDesyncTicks;
   public volatile boolean isInActiveTeleportBundle;
   public volatile boolean disableActiveTeleportBundleNextTeleportAccept;
   public volatile boolean doNotVerifyBaseMotion;

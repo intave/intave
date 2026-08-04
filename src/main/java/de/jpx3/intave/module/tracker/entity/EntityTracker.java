@@ -769,7 +769,10 @@ public final class EntityTracker extends Module {
       bukkitEntity.getType() == EntityType.PLAYER
     );
 
-    if (bukkitEntity instanceof LivingEntity) {
+    // getHealth() reads the live NMS handle, which is illegal off the owning
+    // region thread on Folia (this lazy spawn runs on the Netty/packet thread);
+    // the health is refreshed shortly after via the ENTITY_METADATA health path.
+    if (bukkitEntity instanceof LivingEntity && !Synchronizer.onFolia()) {
       LivingEntity livingEntity = (LivingEntity) bukkitEntity;
       entity.health = (float) livingEntity.getHealth();
     }
@@ -1031,13 +1034,76 @@ public final class EntityTracker extends Module {
       // Health
       processHealthMetadata(player, entity, reader);
 
-      // Entity Size
-      EntityTypeData entityTypedata = entityTypeResolver.entityTypeDataOfEntityMetadata(event, entityTypeId, reader);
-      if (entityTypedata != null) {
-        entity.setTypeData(entityTypedata);
+      // Entity Size. Skipped on Folia: entityTypeDataOfEntityMetadata ->
+      // EntityTypeDataAccessor.resolveFromId -> IRegistry.ENTITY_TYPE.fromId is a
+      // compiled invokevirtual on DefaultedRegistry, which became an interface on
+      // 26.1.2 -> IncompatibleClassChangeError, thrown once per metadata packet now
+      // that entities are correctly typed as living. The spawn packet already gave
+      // this entity valid living typeData + base hitbox; only the metadata-driven
+      // baby-hitbox refinement is lost, consistent with the other Folia fallbacks.
+      if (!Synchronizer.onFolia()) {
+        EntityTypeData entityTypedata = entityTypeResolver.entityTypeDataOfEntityMetadata(event, entityTypeId, reader);
+        if (entityTypedata != null) {
+          entity.setTypeData(entityTypedata);
+        }
       }
+
+      processSlimeSizeMetadata(entity, type, reader);
     }
     reader.release();
+  }
+
+  /**
+   * Sizes a slime or magma cube from its metadata.
+   * <p>
+   * These are the only mobs whose hitbox is per-instance: vanilla scales the type's box
+   * by the size value they carry, so a big one is several blocks across while the
+   * registry entry every other code path uses describes the smallest. Everything that
+   * consults the entity box -- the attack ray trace above all -- was therefore aiming at
+   * a box far smaller than the mob the player can see, which reads as a miss, or as a
+   * hit from too far away because the ray had to travel deeper to reach it. On Paper the
+   * live entity handle papered over this; the handle-free path Folia forces did not.
+   */
+  private void processSlimeSizeMetadata(Entity entity, EntityTypeData type, EntityMetadataReader reader) {
+    if (SLIME_SIZE_INDEX < 0 || !type.isSlimeLike()) {
+      return;
+    }
+    Object raw = reader.fetchRaw(SLIME_SIZE_INDEX);
+    if (!(raw instanceof Integer)) {
+      return;
+    }
+    int size = (int) raw;
+    if (size < 1 || size > 128) {
+      return; // not a size value, or a nonsensical one
+    }
+    float extent = SLIME_SIZE_PER_STAGE * size;
+    HitboxSize current = type.size();
+    if (Math.abs(current.width() - extent) < 1.0E-4 && Math.abs(current.height() - extent) < 1.0E-4) {
+      return;
+    }
+    entity.setTypeData(type.withSize(HitboxSize.of(extent, extent)));
+  }
+
+  // Vanilla sizes a slime cube-shaped, one "stage" per size step. The exact constant
+  // moved by ~2% across versions, which is far below the expansion the attack ray trace
+  // already applies, so one value covers all of them.
+  private static final float SLIME_SIZE_PER_STAGE = 0.51F;
+  private static final int SLIME_SIZE_INDEX = resolveSlimeSizeIndex();
+
+  private static int resolveSlimeSizeIndex() {
+    if (MinecraftVersions.VER1_17_0.atOrAbove()) {
+      return 16;
+    }
+    if (MinecraftVersions.VER1_15_0.atOrAbove()) {
+      return 15;
+    }
+    if (MinecraftVersions.VER1_14_0.atOrAbove()) {
+      return 15;
+    }
+    if (MinecraftVersions.VER1_10_0.atOrAbove()) {
+      return 12;
+    }
+    return -1; // not worth guessing on older protocols
   }
 
   private void handleFirework(Player player, EntityMetadataReader reader) {

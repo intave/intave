@@ -5,6 +5,7 @@ import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.world.placementanalysis.*;
 import de.jpx3.intave.check.world.placementanalysis.clicking.Stability;
+import de.jpx3.intave.check.world.interaction.PrinterMode;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
@@ -25,6 +26,11 @@ public final class PlacementAnalysis extends Check {
   }
 
   public void setupSubChecks() {
+    if (PrinterMode.enabled()) {
+      // Every sub-check here judges how a placement was aimed and timed. A printer does
+      // not aim at all, so none of them can be run without flagging it - see PrinterMode.
+      return;
+    }
     boolean useTimings = configuration().settings().boolBy("check-timings", configuration().settings().boolBy("check_timings", true));
     appendPlayerCheckPart(Constraint.class);
     appendPlayerCheckPart(SmartSpeed.class);

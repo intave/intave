@@ -24,6 +24,13 @@ and many other cheats that cannot be detected by solely simulating client logic.
 For more information, see the documentation of Intave's
 checks [here](https://docs.intave.ac/mechanics/checks-01-overview.html).
 
+## Folia support
+
+This branch runs on Folia-based servers and brings the movement prediction closer to what a
+vanilla client actually does on 1.21.2+. It also adds two options — `printer-mode` for build
+clients and `trace` for hunting false positives. See [this document](docs/FOLIA.md)
+(English / Русский).
+
 ## Development
 
 ### Setup

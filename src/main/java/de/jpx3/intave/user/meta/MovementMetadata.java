@@ -19,6 +19,7 @@ import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.check.world.interaction.BlockTrustChain;
 import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.executor.RateLimiter;
+import de.jpx3.intave.executor.FoliaSafeTeleport;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.tracker.entity.Entity;
@@ -44,6 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static de.jpx3.intave.IntaveControl.REPLACE_JOAP_SETBACK_WITH_CM;
 import static de.jpx3.intave.check.movement.physics.MoveMetric.*;
+import static de.jpx3.intave.check.movement.physics.MovementCharacteristics.currentSlipperiness;
 import static de.jpx3.intave.check.movement.physics.MovementCharacteristics.resolveFriction;
 import static de.jpx3.intave.player.attribute.AttributeModifier.Operation.ADD_PERCENTAGE;
 import static de.jpx3.intave.share.ClientMath.*;
@@ -121,7 +123,6 @@ public final class MovementMetadata implements SimulationEnvironment {
   public BoundingBox pistonCollisionArea;
   public List<BlockPosition> shulkers = new ArrayList<>();
   public Map<BlockPosition, ShulkerBox> shulkerData = new HashMap<>();
-  public Map<Integer, ShulkerBox> shulkerDataHashCodeAccess = new HashMap<>();
   // Will be set to true if the player sends a flying packet and receives server velocity later
   public boolean physicsUnpredictableVelocityExpected;
   // Jump prevention
@@ -131,6 +132,10 @@ public final class MovementMetadata implements SimulationEnvironment {
   // Entity collision
   public boolean enforceBoatStep;
   public volatile Location nearestBoatLocation = null;
+  // Dimensions of the entity nearestBoatLocation refers to, so the range test below can
+  // be made against the thing's actual size. Default to a boat's, which is all this
+  // covered before. Written by LazyEntityCollisionService together with the location.
+  public volatile double nearestStandableWidth = 1.375, nearestStandableHeight = 0.5625;
   public float boatGlide, momentum;
   public double waterLevel;
   public BoatSimulator.Status boatStatus = BoatSimulator.Status.ON_LAND,
@@ -161,6 +166,58 @@ public final class MovementMetadata implements SimulationEnvironment {
   public boolean inSpeculation = false;
   // States if an external entity push onto the player is estimated
   public boolean pushedByEntity;
+  // Ticks of remaining movement tolerance after being near a pushable entity.
+  // Entity-collision push is resolved client-side against the client's (network-
+  // desynced) view of entity positions, so our exact-tick pushedByEntity flag
+  // misses pushes the client applied when the server-side boxes disagreed. This
+  // decaying window keeps the tolerance active across the whole contact period.
+  public int entityPushToleranceTicks;
+  // Ticks of remaining movement tolerance after the server applied a velocity
+  // (knockback) to the player, plus the magnitude that was applied. The client
+  // applies the velocity on the tick the packet arrives, which -- depending on
+  // latency, packet batching and transaction ordering -- is not necessarily the
+  // tick we merge it into the base motion. During that window the received motion
+  // legitimately differs from the prediction by up to the knockback itself.
+  public int velocityToleranceTicks;
+  public double velocityToleranceMagnitude;
+  // Ticks of remaining movement tolerance after standing in (or right next to) a
+  // bubble column. Reproducing one needs the column block, the water above it and its
+  // "drag" property to all resolve correctly; when any of them doesn't, the column's
+  // impulse lands in the deviation every tick of the ride.
+  public int bubbleColumnToleranceTicks;
+  // Ticks of remaining movement tolerance while the player's box overlaps a block.
+  // Vanilla never pushes entities out of blocks, so this is a legal state (a trapdoor
+  // closed on you, a block placed into you, a late chunk) in which our collision
+  // resolution and the client's disagree about almost everything.
+  public int insideBlockToleranceTicks;
+  // How many movement packets in a row have been rejected for arriving more than 50
+  // blocks from the verified position. The first one is information; every one after it
+  // is the *same* stale anchor being re-reported, because the rejection path never
+  // re-anchors and only asks for a setback -- so if that setback does not land, the
+  // player keeps walking and every packet repeats the offence. Counting them all is what
+  // turned one missed teleport into 207 detections and a pinned VL of 1000.
+  public int unsafePositionRejections;
+  // Whether the player is in a bed, tracked from Bukkit's bed events rather than read
+  // off the live entity: the physics check runs on the packet thread, where touching
+  // entity state is illegal on region-threaded servers.
+  public volatile boolean sleeping;
+  // Ticks of remaining movement tolerance around entering/leaving a bed. Both sides do
+  // that move on their own -- there is no teleport packet to anchor on -- so for a
+  // moment our idea of where the player is and theirs differ by the whole distance to
+  // the bed.
+  public int sleepToleranceTicks;
+  private int movingWhileSleepingTicks;
+  // Ticks in which the client's prone ("moving slowly") state is ambiguous, i.e.
+  // the crawl pose was entered/left recently. Our pose is derived from the position
+  // the client already moved to, while the client scaled its input with the pose it
+  // held at the START of the tick, so around every transition the two disagree for a
+  // tick or two. Within this window the simulation may retry with the opposite
+  // assumption (see PredictiveSimulationProcessor#simulate).
+  public int proneAmbiguityTicks;
+  // -1 = force the prone slowdown off, 0 = derive it from the pose, 1 = force it on.
+  // Only set for the duration of a single alternative simulation.
+  public int proneSlowdownOverride;
+  private boolean lastCrawling;
   // Key inputs sent by the client
   public boolean externalKeyApply = false;
   public int clientForwardKey = 0;
@@ -335,6 +392,17 @@ public final class MovementMetadata implements SimulationEnvironment {
     if (hasMovement || hasRotation) {
       updatePose();
     }
+  }
+
+  /**
+   * Applies a rotation that arrived outside the tick's own movement packet - an extra
+   * rotation update, see the surplus rotation handling in {@code MovementDispatcher}.
+   * The derived look vector and its sine/cosine have to follow it, since the ray traces
+   * use them, but nothing else about the tick changes: {@code lastRotation*} deliberately
+   * keeps pointing at the rotation the tick started with.
+   */
+  public void applyRotationOnly(float newRotationYaw, float newRotationPitch) {
+    setRotation(newRotationYaw, newRotationPitch);
   }
 
   private void setRotation(float newRotationYaw, float newRotationPitch) {
@@ -585,6 +653,17 @@ public final class MovementMetadata implements SimulationEnvironment {
     return this.eyesInWater;
   }
 
+  /**
+   * Whether the player is in a bed.
+   * <p>
+   * Deliberately reads the flag tracked from Bukkit's bed events instead of asking the
+   * player: {@code Player#isSleeping()} goes through the live entity handle, and the
+   * pose is resolved on the packet thread, where region-threaded servers refuse that.
+   */
+  public boolean isSleeping() {
+    return sleeping;
+  }
+
   public void updatePose() {
     boolean modernPose = user.protocolVersion() >= VER_1_14;
     Pose pose;
@@ -594,7 +673,7 @@ public final class MovementMetadata implements SimulationEnvironment {
           pose = Pose.SWIMMING;
         } else if (elytraFlying) {
           pose = Pose.FALL_FLYING;
-        } else if (player.isSleeping()) {
+        } else if (isSleeping()) {
           pose = Pose.SLEEPING;
         } else if (poseSneaking(user)) {
           pose = Pose.CROUCHING;
@@ -618,7 +697,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     } else {
       if (isSwimming(user)) {
         pose = Pose.SWIMMING;
-      } else if (player.isSleeping()) {
+      } else if (isSleeping()) {
         pose = Pose.SLEEPING;
       } else if (elytraFlying) {
         pose = Pose.FALL_FLYING;
@@ -628,6 +707,14 @@ public final class MovementMetadata implements SimulationEnvironment {
         pose = Pose.STANDING;
       }
       this.pose = pose;
+    }
+
+    // The pose is recomputed from the position the client has already moved to, while
+    // the client scaled this tick's movement input with the pose it held before the
+    // move. Flag the tick a crawl starts or ends as ambiguous right away -- waiting
+    // for tickComplete would leave the transition tick itself uncovered.
+    if (crawling() != lastCrawling) {
+      proneAmbiguityTicks = 4;
     }
 
     updateSize();
@@ -656,6 +743,9 @@ public final class MovementMetadata implements SimulationEnvironment {
     if (swimming) {
       return sprinting && movement.inWater;
     } else {
+      if (protocol.protocolVersion() >= VER_1_13) {
+        return sprinting && movement.inWater;
+      }
       return sprinting && ((movement.pose() == Pose.FALL_FLYING && movement.inWater) || movement.areEyesInWater());
     }
   }
@@ -743,8 +833,27 @@ public final class MovementMetadata implements SimulationEnvironment {
     return beforeMoveCollider;
   }
 
+  /**
+   * Whether the player is on or against an entity they can stand on.
+   * <p>
+   * The range is measured against the entity's own box, not as a 2-block sphere around
+   * its feet. A happy ghast is 4×4, so a player standing on one is about four blocks
+   * above the location this compares against and a sphere of radius 2 can never contain
+   * them — which is why widening the *search* in LazyEntityCollisionService alone did not
+   * help: this second test rejected the entity again at the point of use.
+   */
   public boolean collidedWithBoat() {
-    return nearestBoatLocation != null && distanceToVerifiedLocation(nearestBoatLocation) < 2;
+    Location standable = nearestBoatLocation;
+    if (standable == null) {
+      return false;
+    }
+    double xDiff = verifiedLastPositionX - standable.getX();
+    double zDiff = verifiedLastPositionZ - standable.getZ();
+    if (Math.sqrt(xDiff * xDiff + zDiff * zDiff) > nearestStandableWidth / 2 + 2) {
+      return false;
+    }
+    double yDiff = verifiedLastPositionY - standable.getY();
+    return yDiff > -2 && yDiff < nearestStandableHeight + 2;
   }
 
   public double distanceToVerifiedLocation(Location location) {
@@ -796,6 +905,19 @@ public final class MovementMetadata implements SimulationEnvironment {
 
   public void refreshFriction(boolean sprinting) {
     friction = resolveFriction(user, sprinting, verifiedLastPositionX, verifiedLastPositionY, verifiedLastPositionZ);
+    if (de.jpx3.intave.IntaveLogger.traceEnabled()) {
+      float slip = lastOnGround
+        ? currentSlipperiness(user, user.player().getWorld(), verifiedLastPositionX, verifiedLastPositionY - frictionPosSubtraction, verifiedLastPositionZ)
+        : -1.0f;
+      de.jpx3.intave.IntaveLogger.trace("[FRICTION-DEBUG] " + user.player().getName()
+        + " onGround=" + lastOnGround
+        + " slip=" + slip
+        + " fMult=" + frictionMultiplier
+        + " aiMove=" + aiMoveSpeed(sprinting)
+        + " jumpF=" + jumpMovementFactor
+        + " fMat=" + frictionMaterial()
+        + " => speed=" + friction);
+    }
   }
 
   public boolean blockOnPositionSoulSpeedAffected() {
@@ -927,14 +1049,21 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
   }
 
+  /**
+   * The animating shulker box at a position, or null if there is none.
+   * <p>
+   * This used to consult a parallel {@code Map<Integer, ShulkerBox>} keyed by
+   * {@code x << 12 | y << 8 | z} first. That key overlaps its own bit ranges, so
+   * unrelated positions collided and the collision modifier could hand a block the
+   * opening animation of a completely different shulker; and its entries were removed
+   * with the ShulkerBox's own identity hash instead of that key, so they never went
+   * away and kept overriding the shape of a position long after the box had shut.
+   * Standing on or near a shulker box was enough to be predicted against a wrong shape.
+   * The position-keyed map is the authoritative one, so just use it.
+   */
   public ShulkerBox shulkerBoxAt(int posX, int posY, int posZ) {
     if (shulkerData.isEmpty()) {
       return null;
-    }
-    int positionHash = posX << 12 | posY << 8 | posZ;
-    ShulkerBox shulkerBox = shulkerDataHashCodeAccess.get(positionHash);
-    if (shulkerBox != null) {
-      return shulkerBox;
     }
     return shulkerData.get(new BlockPosition(posX, posY, posZ));
   }
@@ -1056,6 +1185,57 @@ public final class MovementMetadata implements SimulationEnvironment {
       pistonMotionToleranceRemaining--;
     }
 
+    if (entityPushToleranceTicks > 0) {
+      entityPushToleranceTicks--;
+    }
+
+    if (velocityToleranceTicks > 0) {
+      velocityToleranceTicks--;
+      if (velocityToleranceTicks == 0) {
+        velocityToleranceMagnitude = 0;
+      }
+    }
+
+    if (bubbleColumnToleranceTicks > 0) {
+      bubbleColumnToleranceTicks--;
+    }
+
+    if (insideBlockToleranceTicks > 0) {
+      insideBlockToleranceTicks--;
+    }
+
+    if (sleepToleranceTicks > 0) {
+      sleepToleranceTicks--;
+    }
+
+    // Self-heal a stuck belief. Waking always fires the bed-leave event, but if one is
+    // ever missed -- a plugin moving a sleeping player, an unusual disconnect path --
+    // the flag would suppress the physics check for the rest of the session. A sleeping
+    // player does not move, so sustained real movement means they are not in that bed
+    // anymore. Cannot be gamed: holding it requires standing still.
+    if (sleeping) {
+      if (motion().horizontalLength() > 0.1) {
+        if (++movingWhileSleepingTicks > 10) {
+          sleeping = false;
+          movingWhileSleepingTicks = 0;
+        }
+      } else {
+        movingWhileSleepingTicks = 0;
+      }
+    }
+
+    // Track the crawl ("moving slowly") state so both the transition into and out
+    // of it are treated as ambiguous: our pose comes from the position the client
+    // has already moved to, the client's from the position it started the tick at.
+    proneSlowdownOverride = 0;
+    boolean crawlingNow = crawling();
+    if (crawlingNow || crawlingNow != lastCrawling) {
+      proneAmbiguityTicks = 4;
+    } else if (proneAmbiguityTicks > 0) {
+      proneAmbiguityTicks--;
+    }
+    lastCrawling = crawlingNow;
+
     tick(IN_WEB, inWeb());
     tick(IN_WATER, inWater());
     tick(SNEAKING, isSneaking());
@@ -1112,7 +1292,6 @@ public final class MovementMetadata implements SimulationEnvironment {
         if (shulkerBox.complete()) {
           iterator.remove();
           shulkerData.remove(shulkerBlock);
-          shulkerDataHashCodeAccess.remove(shulkerBox.hashCode());
         } else if (shulkerBox.shouldTick()) {
           shulkerBox.tick();
         }
@@ -1297,6 +1476,32 @@ public final class MovementMetadata implements SimulationEnvironment {
   @Override
   public Pose pose() {
     return pose;
+  }
+
+  /**
+   * Mirrors vanilla {@code Player#isVisuallyCrawling()}: the swimming pose while not
+   * actually in water, i.e. a player forced prone by a low ceiling (trapdoor, slab,
+   * one-block gap) or crawling voluntarily. The client counts this as
+   * {@code isMovingSlowly()} and scales its movement input by the sneaking-speed
+   * attribute (0.3 by default) exactly like crouching, so the simulation has to do
+   * the same or it over-predicts every crawling tick by a factor of ~2.
+   */
+  public boolean crawling() {
+    return pose == Pose.SWIMMING && !inWater() && ticksPast(IN_WATER) > 2;
+  }
+
+  /**
+   * Opens the knockback timing tolerance window. Called when a server velocity is
+   * merged into the base motion; the window scales with latency because that is what
+   * bounds the disagreement between the tick the client applied the velocity on and
+   * the tick we did.
+   */
+  public void armVelocityTolerance(int latency, Motion velocity) {
+    velocityToleranceTicks = 3 + Math.min(12, Math.max(0, latency) / 50);
+    velocityToleranceMagnitude = Math.max(
+      velocityToleranceMagnitude,
+      Math.max(velocity.horizontalLength(), Math.abs(velocity.motionY))
+    );
   }
 
   @Override
@@ -1502,7 +1707,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     if (positionReset) {
       Synchronizer.synchronize(user, () -> {
         // player.getLocation() is assumed to be correct
-        player.teleport(player.getLocation());
+        FoliaSafeTeleport.teleport(player, player.getLocation());
         if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
           player.sendMessage(IntavePlugin.prefix() + "Teleport to " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " because " + ChatColor.RED + " you dismounted a vehicle");
         }

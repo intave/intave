@@ -1,6 +1,7 @@
 package de.jpx3.intave.check.movement;
 
 import com.comphenix.protocol.PacketType;
+import de.jpx3.intave.IntaveLogger;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
@@ -58,6 +59,9 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.player.PlayerBedEnterEvent;
+import org.bukkit.event.player.PlayerBedLeaveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
 import java.util.*;
@@ -73,6 +77,16 @@ import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.ENDER_PE
 public final class Physics extends Check {
   private static final double VL_DECREMENT_PER_VALID_MOVE = 0.08;
   private static final double VELOCITY_VL_THRESHOLD = 6;
+
+  // Cascade breaker: a deviation this small can be produced by latency alone, and
+  // this many consecutive flagged ticks of it mean we are the ones out of sync.
+  private static final double CASCADE_PLAUSIBLE_DESYNC_DISTANCE = 0.3;
+  private static final int CASCADE_REANCHOR_TICKS = 30;
+
+  // null on server versions without bubble columns
+  private static final Material BUBBLE_COLUMN_MATERIAL = Material.getMaterial("BUBBLE_COLUMN");
+  private static final Material SOUL_SAND_MATERIAL = Material.getMaterial("SOUL_SAND");
+  private static final Material MAGMA_MATERIAL = Material.getMaterial("MAGMA_BLOCK");
 
   private static final long TOTAL_RESET = 1000 * 60 * 60;
   private static final int AVAILABLE_POINTS = 8;
@@ -302,6 +316,89 @@ public final class Physics extends Check {
   }
 
   /**
+   * True if the player's bounding box (grown generously, extra for high ping) is
+   * within push range of any traced, client-synchronized entity. Deliberately more
+   * lenient than {@link BaseSimulator}'s exact-tick push detection: it only needs to
+   * know that a collision COULD be happening client-side, so the physics check can
+   * tolerate the resulting motion instead of flagging it. Cheap: runs once per tick
+   * over the already-tracked nearby-entity set (fewer iterations than the per-search
+   * push pass in the simulator).
+   */
+  private boolean nearPushableEntity(User user, MovementMetadata movementData) {
+    if (!user.meta().protocol().combatUpdate()) {
+      return false; // pre-1.9 clients don't push off entities
+    }
+    List<Entity> entities = user.meta().connection().tracedEntities();
+    if (entities.isEmpty()) {
+      return false;
+    }
+    // Base slack ~ one entity width; add up to ~0.5 more as ping grows, since the
+    // client and server disagree on entity positions by roughly latency worth of ticks.
+    double margin = 0.35 + Math.min(0.5, user.latency() / 1000.0);
+    BoundingBox selfBox = movementData.boundingBox().grow(margin);
+    for (Entity entity : entities) {
+      // NB: deliberately NOT gated on clientSynchronized. An entity that is tracked
+      // but momentarily unsynchronized is exactly the case where the client's view of
+      // it differs from ours -- i.e. where a push we cannot reproduce is most likely,
+      // not least. Requiring it left the tolerance unarmed on entities the client was
+      // being shoved by (tEntOk=0 while tEnt>0 in the traces).
+      if (!entity.tracingEnabled()) {
+        continue;
+      }
+      if (!entity.hasTypeData() || entity.typeData().isArmorStand()) {
+        continue; // armor stands don't push (matches performGlobalEntityPush)
+      }
+      if (entity.boundingBox().intersectsWith(selfBox)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * True if a bubble column is inside or right next to the player's box. Riding one is
+   * unsteerable and only possible where the server placed the blocks, so the physics
+   * check can tolerate the impulse instead of flagging a player it fails to reproduce
+   * (the column needs the block, the water above it and its "drag" state to all
+   * resolve correctly on this server version). Only called on ticks that mispredict,
+   * so the block scan costs nothing during normal play.
+   */
+  private boolean nearBubbleColumn(User user, MovementMetadata movementData) {
+    Material bubbleColumn = BUBBLE_COLUMN_MATERIAL;
+    if (bubbleColumn == null) {
+      return false;
+    }
+    // The column blocks themselves only exist while the water above the source block
+    // is there; if we resolve them wrongly (which is exactly when this tolerance is
+    // needed) we would never find one, so the source blocks count as well -- but only
+    // with water involved, so soul sand on dry land stays fully checked.
+    boolean acceptSourceBlocks = movementData.inWater() || movementData.ticksPast(IN_WATER) < 40;
+    BoundingBox box = movementData.boundingBox();
+    int minX = floor(box.minX - 0.5);
+    int maxX = floor(box.maxX + 0.5);
+    int minZ = floor(box.minZ - 0.5);
+    int maxZ = floor(box.maxZ + 0.5);
+    // one below (standing on the soul sand) up to one above the head (the column
+    // continues, and the client may already be reacting to the next block up)
+    int minY = floor(box.minY - 1);
+    int maxY = floor(box.maxY + 1);
+    for (int x = minX; x <= maxX; x++) {
+      for (int y = minY; y <= maxY; y++) {
+        for (int z = minZ; z <= maxZ; z++) {
+          Material type = VolatileBlockAccess.typeAccess(user, user.player().getWorld(), x, y, z);
+          if (type == bubbleColumn) {
+            return true;
+          }
+          if (acceptSourceBlocks && (type == SOUL_SAND_MATERIAL || type == MAGMA_MATERIAL)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
    * This method is too big, please refactor
    */
   private void evaluateBestSimulation(User user, Simulation simulation) {
@@ -350,6 +447,44 @@ public final class Physics extends Check {
     boolean collidedWithBoat = movementData.collidedWithBoat();
     boolean skipVLCalculation = distance <= 0.00005;
 
+    // Arm the entity-push tolerance window while in (or recently near) contact with
+    // another entity. Player-vs-player/mob shoving imparts up to ~0.05/axis that the
+    // client resolves against ITS view of entity positions -- desynced from ours by
+    // the round-trip latency -- so we can't reproduce it exactly and must tolerate it
+    // for the whole contact period rather than only on ticks our server-side boxes
+    // happened to intersect. Window scales with ping (2 ticks/100ms) so laggy combat,
+    // where the desync is worst, gets proportionally more slack.
+    if (movementData.pushedByEntity || nearPushableEntity(user, movementData)) {
+      int window = 8 + Math.min(24, user.latency() / 50);
+      if (movementData.entityPushToleranceTicks < window) {
+        movementData.entityPushToleranceTicks = window;
+      }
+    }
+
+    // Bubble columns: scanned only on ticks that already disagree, and the window is
+    // long enough to cover the ride out of the water, where the column keeps pushing
+    // from the air block above the surface.
+    if (distance > 0.001 && movementData.bubbleColumnToleranceTicks <= 5
+      && nearBubbleColumn(user, movementData)) {
+      movementData.bubbleColumnToleranceTicks = 40;
+    }
+
+    // True while a known, bounded client/server disagreement is in flight: a
+    // knockback whose application tick we cannot pin down, entity contact, or an
+    // ambiguous prone state. The deviation such a window produces is expected, so it
+    // must not feed any of the escalating mechanics below (accumulated offset, motion
+    // override, velocity multiplier) -- that feedback is what turned single
+    // mispredicted ticks into minute-long detection storms.
+    boolean toleranceEngaged = movementData.velocityToleranceTicks > 0
+      || movementData.entityPushToleranceTicks > 0
+      || movementData.pushedByEntity
+      || movementData.proneAmbiguityTicks > 0
+      || movementData.sleeping
+      || movementData.sleepToleranceTicks > 0
+      // A piston moves the player positionally, so the displacement lands in our base
+      // motion as if it were velocity and mispredicts the tick after it too.
+      || movementData.pistonMotionToleranceRemaining > 0;
+
     Set<EvaluationTag> verticalTags = EnumSet.noneOf(EvaluationTag.class);
     Set<EvaluationTag> horizontalTags = EnumSet.noneOf(EvaluationTag.class);
 
@@ -361,9 +496,16 @@ public final class Physics extends Check {
     }
 
     double biasedDistance = MathHelper.hypot3d(differenceX, differenceY * 2, differenceZ);
-    violationLevelData.physicsOffset += biasedDistance;
+    // Deviation collected while a tolerance window is open barely counts: it is
+    // mostly latency, not evidence. Without this the accumulated offset saturates
+    // after a few seconds of laggy combat and then gates in every later detection.
+    violationLevelData.physicsOffset += toleranceEngaged ? Math.min(biasedDistance * 0.2, 0.01) : biasedDistance;
     violationLevelData.physicsOffset -= movementData.receivedFlyingPacketIn(2) && movementData.motion().length() < 0.1 ? Math.min(0.03, biasedDistance) : 0;
     violationLevelData.physicsOffset -= violationLevelData.physicsOffset > 0.6 ? 0.002 : 0.001;
+    // Clean ticks have to be able to pay off a burst in seconds rather than half a
+    // minute, otherwise one disturbance keeps the detection gate open long after the
+    // player is being predicted perfectly again.
+    violationLevelData.physicsOffset -= biasedDistance < 0.005 ? 0.006 : 0;
     violationLevelData.physicsOffset -= movementData.ticksPast(ELYTRA_FLYING) < 3 ? 0.025 : 0;
 
     // clamp the offset
@@ -386,10 +528,21 @@ public final class Physics extends Check {
       boolean noCollisionOnHighVersion = !(protocol.cavesAndCliffsUpdate()
         && Collision.present(user, movementData, movementData.boundingBox().growHorizontally(0.3)));
 
+      // Ignoring knockback means moving as if the velocity had never been applied, so
+      // the deviation is on the order of the knockback itself. Deviations far below
+      // that are timing noise -- the client applies the velocity when the packet
+      // lands, we apply it when the anchoring transaction is acknowledged -- and
+      // multiplying those by 20 is what produced the +300/+1000 detections in
+      // ordinary high-ping combat. Require a share of the actual knockback before
+      // treating the difference as an attempt to ignore it.
+      double knockbackNoiseFloor = Math.max(0.05, movementData.velocityToleranceMagnitude * 0.35);
+      boolean ignoresKnockback = distance > knockbackNoiseFloor;
+
       if (distance > 0.005 && !onLadder && noCollisionOnHighVersion) {
         if (actuallyMoved) {
-          boolean aggressive = violationLevelData.physicsVelocityVL++ >= VELOCITY_VL_THRESHOLD || movementData.ticksPast(EXTERNAL_VELOCITY) == 0;
-          if (aggressive || distance > 0.01) {
+          boolean aggressive = ignoresKnockback
+            && (violationLevelData.physicsVelocityVL++ >= VELOCITY_VL_THRESHOLD || movementData.ticksPast(EXTERNAL_VELOCITY) == 0);
+          if (aggressive || (distance > 0.01 && ignoresKnockback)) {
             if (aggressive) {
               horizontalViolationIncrease = Math.max(2, horizontalViolationIncrease);
               velocityDetected = true;
@@ -417,7 +570,14 @@ public final class Physics extends Check {
       movementData.endMotionYOverride = predictedY;
     }
 
-    boolean expectProblems = movementData.ticksPast(ELYTRA_FLYING) <= 2 || movementData.ticksPast(IN_WATER) <= 2;
+    // Rewriting the motion the player carries into the next tick is only correct if
+    // the deviation was really the player's doing. While a tolerance window is open it
+    // is ours, and replacing the client's momentum with our (smaller) prediction makes
+    // the NEXT tick deviate even more -- the self-feeding loop that turned one bad
+    // tick into a violation level pinned at its cap.
+    boolean expectProblems = toleranceEngaged
+      || movementData.ticksPast(ELYTRA_FLYING) <= 2
+      || movementData.ticksPast(IN_WATER) <= 2;
 
     if (distance > 0.01 && !expectProblems && (verticalViolationIncrease > 5 || horizontalViolationIncrease > 5)) {
       if (Math.abs(receivedMotionX) > 0.15 && differenceX > 0.025) {
@@ -464,6 +624,96 @@ public final class Physics extends Check {
     }
     if (distance > 0.001) {
       movementData.suspiciousMovement = true;
+      if (IntaveLogger.traceEnabled()) {
+        // Log EVERY input to the disputed prediction on one line, gated on the
+        // exact failure condition (a rate-limited log would sample passing
+        // ticks and hide the bug). "primPred" is what actually fired the VL --
+        // the displayed DET "actual:" value is the setback reassigned below.
+        Motion base = movementData.mutableBaseMotionCopy();
+        // Diagnostics for the open false-positive classes. allEnt vs tEnt vs tEntOk
+        // pinpoints WHERE entity-push detection dies on Folia (nothing tracked / not
+        // selected into the traced set / traced but failing the push gate); nrEnt is
+        // the nearest pushable entity so a too-small margin is distinguishable from a
+        // truly empty set. pose/bbH/inWater/inLava discriminate crawl / trapdoor-prone
+        // / bubble-column launch.
+        List<Entity> tracedForDebug = user.meta().connection().tracedEntities();
+        int debugPushable = 0;
+        double debugNearest = Double.NaN;
+        for (Entity debugEntity : tracedForDebug) {
+          if (!debugEntity.tracingEnabled() || !debugEntity.clientSynchronized
+            || !debugEntity.hasTypeData() || debugEntity.typeData().isArmorStand()) {
+            continue;
+          }
+          debugPushable++;
+          double debugDx = movementData.positionX() - debugEntity.position.posX;
+          double debugDz = movementData.positionZ() - debugEntity.position.posZ;
+          double debugDistance = Math.sqrt(debugDx * debugDx + debugDz * debugDz);
+          if (Double.isNaN(debugNearest) || debugDistance < debugNearest) {
+            debugNearest = debugDistance;
+          }
+        }
+        IntaveLogger.trace("[FAIL-DEBUG] " + player.getName()
+          + " kFwd=" + keyForward + " kStrafe=" + keyStrafe
+          + " inFwd=" + movementData.input.forwardKey() + " inStrafe=" + movementData.input.sidewaysKey()
+          + " extKey=" + movementData.externalKeyApply
+          + " fric=" + movementData.friction()
+          + " aiG=" + movementData.aiMoveSpeed(false) + " aiS=" + movementData.aiMoveSpeed(true)
+          + " sprintAllow=" + movementData.sprintingAllowed()
+          + " lastOnGnd=" + movementData.lastOnGround() + " onGnd=" + movementData.onGround()
+          + " base=(" + formatDouble(base.motionX, 3) + "," + formatDouble(base.motionZ, 3) + ")"
+          + " primPred=(" + formatDouble(predictedX, 3) + "," + formatDouble(predictedZ, 3) + ")"
+          + " primPredY=" + formatDouble(predictedY, 4)
+          + " recv=(" + formatDouble(receivedMotionX, 3) + "," + formatDouble(receivedMotionZ, 3) + ")"
+          + " recvY=" + formatDouble(receivedMotionY, 4)
+          + " dist=" + formatDouble(distance, 4)
+          + " hInc=" + formatDouble(horizontalViolationIncrease, 2)
+          + " vInc=" + formatDouble(verticalViolationIncrease, 2)
+          + " vl=" + formatDouble(violationLevelData.physicsVL, 2)
+          + " off=" + formatDouble(violationLevelData.physicsOffset, 3)
+          // Velocity/knockback context: a transaction-anchored velocity that is
+          // applied late (or never) leaves knockback out of baseMotion and
+          // mispredicts every tick until the ack lands -- correlate tVel/pend
+          // with ping to spot it.
+          + " tVel=" + movementData.ticksPast(VELOCITY)
+          + " tExtVel=" + movementData.ticksPast(EXTERNAL_VELOCITY)
+          + " pendVel=" + movementData.pendingVelocityPackets.get()
+          + " lastVel=(" + formatDouble(movementData.lastVelocity.motionX, 3)
+          + "," + formatDouble(movementData.lastVelocity.motionY, 3)
+          + "," + formatDouble(movementData.lastVelocity.motionZ, 3) + ")"
+          + " ping=" + user.latency()
+          // Entity-push window state: if a residual flag survives while pushEnt>0 or
+          // pushTol>0, the collision tolerance is engaged and this is expected slack.
+          + " pushEnt=" + movementData.pushedByEntity
+          + " pushTol=" + movementData.entityPushToleranceTicks
+          // Tolerance windows engaged for this tick: a residual flag while any of
+          // them is open is expected slack, not a missing fix. crawl/proneAmb tell
+          // the "client scaled its input by the sneaking speed" case apart from a
+          // genuine mismatch, desync counts the cascade breaker's progress.
+          + " velTol=" + movementData.velocityToleranceTicks
+          + " velMag=" + formatDouble(movementData.velocityToleranceMagnitude, 3)
+          + " crawl=" + movementData.crawling()
+          + " proneAmb=" + movementData.proneAmbiguityTicks
+          + " desync=" + violationLevelData.physicsDesyncTicks
+          + " bubbleTol=" + movementData.bubbleColumnToleranceTicks
+          + " inBlkTol=" + movementData.insideBlockToleranceTicks
+          + " pistonTol=" + movementData.pistonMotionToleranceRemaining
+          + " sleep=" + movementData.sleeping + " sleepTol=" + movementData.sleepToleranceTicks
+          // Which blocks we think the player is standing on / inside, plus whether the
+          // simulation stepped: a step, pose or friction that disagrees with the client
+          // usually means we resolved one of these two block shapes differently.
+          + " blkOn=" + movementData.frictionMaterial()
+          + " blkIn=" + movementData.collideMaterial()
+          + " step=" + movementData.step
+          + " collH=" + movementData.collidedHorizontally
+          + " collV=" + movementData.collidedVertically
+          + " ladder=" + onLadder
+          + " pose=" + movementData.pose()
+          + " bbH=" + formatDouble(movementData.height(), 2)
+          + " inWater=" + movementData.inWater() + " inLava=" + movementData.inLava()
+          + " allEnt=" + user.meta().connection().entityIds().size()
+          + " tEnt=" + tracedForDebug.size() + " tEntOk=" + debugPushable
+          + " nrEnt=" + formatDouble(debugNearest, 2));
+      }
       Simulation otherSimulation;
       if (IntaveControl.SETBACK_WITH_PRESSED_KEYS) {
         otherSimulation = simulationProcessor.simulateWithKeyPress(user, selectSimulator(user), movementData.keyForward, movementData.keyStrafe, false);
@@ -494,6 +744,16 @@ public final class Physics extends Check {
       violationLevelIncrease = 0;
     }
 
+    // A sleeping player does not move: the position they report is the one the server
+    // put them in. There is nothing here worth checking, and the two moves that bracket
+    // a night -- into the bed and back out -- are server-driven and unannounced, so let
+    // the verified location follow the client instead of accumulating the difference.
+    if (movementData.sleeping || movementData.sleepToleranceTicks > 0) {
+      violationLevelIncrease = 0;
+      violationLevelData.physicsInvalidMovementsInRow = 0;
+      violationLevelData.physicsDesyncTicks = 0;
+    }
+
     if (violationLevelData.physicsInsignificantBufferVL < 3 &&
       violationLevelData.physicsVL + violationLevelIncrease > 50 &&
       violationLevelIncrease > 0 && !movementData.inWeb && !movementData.inWater &&
@@ -520,6 +780,31 @@ public final class Physics extends Check {
       }
     }
 
+    // Cascade breaker: while we keep flagging, the verified location stops advancing
+    // and every detection sets the player back, which desyncs them further and
+    // produces the next flag. If the deviation never grows past what a desync can
+    // explain, the sustained disagreement is ours, not the player's: forget the
+    // stacking state and re-anchor on the client's position so the chain restarts
+    // from a state both sides agree on. The violation level itself is NOT reset --
+    // an actual cheat keeps accumulating it, it just cannot inflate itself anymore.
+    boolean reAnchor = false;
+    if (violationLevelIncrease > 0) {
+      if (distance < CASCADE_PLAUSIBLE_DESYNC_DISTANCE) {
+        reAnchor = ++violationLevelData.physicsDesyncTicks >= CASCADE_REANCHOR_TICKS;
+      } else {
+        violationLevelData.physicsDesyncTicks = 0;
+      }
+    } else {
+      violationLevelData.physicsDesyncTicks = 0;
+    }
+    if (reAnchor) {
+      violationLevelData.physicsDesyncTicks = 0;
+      violationLevelData.physicsInvalidMovementsInRow = 0;
+      // zeroing the increase also lets the verified location advance below
+      violationLevelIncrease = 0;
+      violationLevelData.physicsOffset = Math.min(violationLevelData.physicsOffset, 0.55);
+    }
+
     if (violationLevelIncrease == 0 && violationLevelData.physicsVL > 0) {
       violationLevelData.physicsVL *= 0.990;
       violationLevelData.physicsVL -= 0.012;
@@ -531,12 +816,35 @@ public final class Physics extends Check {
 
     boolean boundingBoxIntersectionLast = Collision.present(user, movementData, verifiedBoundingBox);
     boolean boundingBoxIntersectionCurrent = Collision.present(user, movementData, currentBoundingBox);
-    boolean movedIntoBlock = !boundingBoxIntersectionLast && boundingBoxIntersectionCurrent;
+    // A player standing inside a block is a legitimate vanilla state: closing a
+    // trapdoor on yourself, a block placed into you, a chunk arriving late. Blocks do
+    // not push entities out, so the client keeps moving normally while our simulation
+    // resolves collisions against a box the player is already inside -- everything it
+    // predicts from here is a guess. Tolerate it for the duration (and a moment after)
+    // instead of flagging every tick of it.
+    if (boundingBoxIntersectionCurrent || boundingBoxIntersectionLast) {
+      movementData.insideBlockToleranceTicks = 10;
+    }
+    // "Moved into" means moved: phasing through a block requires movement, while a
+    // block closing around a standing player does not. Without this, the trapdoor a
+    // player closes on themselves produced a setback.
+    boolean actuallyMovedIn = movementData.motion().length() > 0.05;
+    boolean movedIntoBlock = !boundingBoxIntersectionLast && boundingBoxIntersectionCurrent && actuallyMovedIn;
     if (boundingBoxIntersectionCurrent && !spectator) {
       List<BoundingBox> intersectionBoundingBoxesCurrent = Collision.__INVALID__resolveBoxes__OnlyForBoxIntersectionChecks__(player, currentBoundingBox);
-      if (movedIntoBlock && !intersectionBoundingBoxesCurrent.isEmpty()) {
+      BoundingBox firstIntersection = intersectionBoundingBoxesCurrent.isEmpty()
+        ? null : intersectionBoundingBoxesCurrent.get(0);
+      // Landing on a block whose collision box is taller than it looks -- walls and
+      // fences are 1.5 high -- puts the player's feet inside it for the tick the
+      // client needs to resolve the landing. That is not phasing into a block, and
+      // setting them back for it is what produced the "moved into stonebrickwall"
+      // rubber-band while running along walls.
+      boolean landingOnTop = firstIntersection != null
+        && movementData.motionY() <= 0
+        && receivedPositionY >= firstIntersection.maxY - 0.3;
+      if (movedIntoBlock && firstIntersection != null && !landingOnTop) {
         movementData.invalidMovement = true;
-        BoundingBox boundingBox = intersectionBoundingBoxesCurrent.get(0);
+        BoundingBox boundingBox = firstIntersection;
         double blockPositionX = (boundingBox.minX + boundingBox.maxX) / 2.0;
         double blockPositionY = (boundingBox.minY + boundingBox.maxY) / 2.0;
         double blockPositionZ = (boundingBox.minZ + boundingBox.maxZ) / 2.0;
@@ -571,8 +879,14 @@ public final class Physics extends Check {
       movementData.currentlyInBlock = false;
     }
 
-    // Update the player's verified location
-    if (spectator || violationLevelIncrease == 0 && !boundingBoxIntersectionCurrent) {
+    // Update the player's verified location. Refusing to anchor inside a block keeps
+    // setbacks from teleporting a player into one, but a player who legitimately
+    // STAYS inside one (that trapdoor again) would otherwise keep an ever more stale
+    // anchor -- and the setback that eventually fires yanks them back to wherever they
+    // were when it froze. Once they were already inside at the anchor too, there is
+    // nothing safer to hold on to, so let it follow.
+    boolean anchorBlockedByCollision = boundingBoxIntersectionCurrent && !boundingBoxIntersectionLast;
+    if (spectator || (violationLevelIncrease == 0 && !anchorBlockedByCollision)) {
       Location location = new Location(player.getWorld(), receivedPositionX, receivedPositionY, receivedPositionZ, movementData.rotationYaw, movementData.rotationPitch);
       movementData.setVerifiedLocation(location);
     }
@@ -1138,6 +1452,39 @@ public final class Physics extends Check {
     if ((Double.isNaN(receivedMotionZ) || Double.isInfinite(receivedMotionZ)) && FaultKicks.POSITION_FAULTS) {
       user.kick("Intolerable position fault (sanity check #7)");
     }
+  }
+
+  /**
+   * Entering and leaving a bed moves the player without a teleport packet: the server
+   * repositions them onto the bed and the client does the same move on its own, so
+   * there is nothing for the movement engine to anchor on and it sees a several-block
+   * jump out of nowhere. While asleep the client then holds a position we never
+   * predicted, and every tick reports the whole offset as motion.
+   * <p>
+   * MONITOR priority so a listener that cancels the bed entry is respected, and the
+   * flag is read on the packet thread instead of {@code Player#isSleeping()}, which
+   * would touch the live entity handle off its region.
+   */
+  @BukkitEventSubscription(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  public void onBedEnter(PlayerBedEnterEvent event) {
+    markSleeping(event.getPlayer(), true);
+  }
+
+  @BukkitEventSubscription(priority = EventPriority.MONITOR)
+  public void onBedLeave(PlayerBedLeaveEvent event) {
+    markSleeping(event.getPlayer(), false);
+  }
+
+  private void markSleeping(Player player, boolean sleeping) {
+    User user = UserRepository.userOf(player);
+    if (user == null) {
+      return;
+    }
+    MovementMetadata movementData = user.meta().movement();
+    movementData.sleeping = sleeping;
+    // Covers the move onto the bed and the one back out of it, plus the round trip it
+    // takes for the two sides to agree on where that left the player.
+    movementData.sleepToleranceTicks = 20 + Math.min(40, user.latency() / 25);
   }
 
   private String shortenTypeName(Material type) {

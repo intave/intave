@@ -334,18 +334,22 @@ public final class ViolationProcessor extends Module {
       logTransmittor.addPlayerLog(player, "(EXE) " + command);
 
       if (command.contains("{log-id}")) {
-        logTransmittor.awaitLogIdOf(player, logId -> {
-          String commandWithLogId = command.replace("{log-id}", logId);
-          Synchronizer.synchronize(user, () -> {
-            plugin.logger().commandExecution(commandWithLogId);
-            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), commandWithLogId);
-          });
-        });
+        logTransmittor.awaitLogIdOf(player, logId ->
+          dispatchCommandGlobally(command.replace("{log-id}", logId)));
       } else {
-
-        plugin.logger().commandExecution(command);
-        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+        dispatchCommandGlobally(command);
       }
+    });
+  }
+
+  private void dispatchCommandGlobally(String command) {
+    // Folia only allows Bukkit.dispatchCommand on the global tick thread, but the
+    // enclosing violation task runs on the offending player's region thread.
+    // synchronize() with no user routes to the global region scheduler (and to
+    // the main thread on non-Folia servers), which is where commands must run.
+    Synchronizer.synchronize(() -> {
+      plugin.logger().commandExecution(command);
+      Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
     });
   }
 

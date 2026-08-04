@@ -2,6 +2,7 @@ package de.jpx3.intave.module.tracker.player;
 
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.executor.FoliaSafeTeleport;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
@@ -77,7 +78,7 @@ public final class AbilityTracker extends Module {
           Location position = moovement.verifiedLocation().clone();
           Player player = user.player();
           position.setWorld(player.getWorld());
-          player.teleport(position);
+          FoliaSafeTeleport.teleport(player, position);
           moovement.criticalFlyingBlockMovementStacks++;
           if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
             player.sendMessage(IntavePlugin.prefix() + "Teleport to " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " as " + ChatColor.RED + " not responding to critical flight disallow");
@@ -127,7 +128,7 @@ public final class AbilityTracker extends Module {
       }
     } else if (movementData.criticalFlyingBlockMovementStacks > 0 && movementData.criticalTeleportRateLimiter.tryAcquire()) {
       Synchronizer.synchronize(user, () -> {
-        player.teleport(player.getLocation());
+        FoliaSafeTeleport.teleport(player, player.getLocation());
       });
       if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
         player.sendMessage(IntavePlugin.prefix() + "Teleport to " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " for " + ChatColor.RED + " critical flying disallow protection (movement block)");

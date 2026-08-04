@@ -1,6 +1,7 @@
 package de.jpx3.intave.executor.task;
 
 import de.jpx3.intave.user.User;
+import org.bukkit.Location;
 
 public interface Task {
 	void run();
@@ -30,6 +31,11 @@ public interface Task {
 
 	default Task startUserSync(User user) {
 		Tasks.startUserSync(this, user);
+		return this;
+	}
+
+	default Task startRegionSync(Location location) {
+		Tasks.startRegionSync(this, location);
 		return this;
 	}
 

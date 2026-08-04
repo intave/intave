@@ -1,6 +1,8 @@
 package de.jpx3.intave.module.dispatch;
 
 import com.comphenix.protocol.PacketType;
+import de.jpx3.intave.IntaveLogger;
+import de.jpx3.intave.check.world.interaction.PrinterMode;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
@@ -24,6 +26,7 @@ import de.jpx3.intave.check.movement.Physics;
 import de.jpx3.intave.check.movement.Timer;
 import de.jpx3.intave.check.movement.physics.Pose;
 import de.jpx3.intave.check.world.InteractionRaytrace;
+import de.jpx3.intave.executor.FoliaSafeTeleport;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
@@ -115,7 +118,7 @@ public final class MovementDispatcher extends Module {
     if (toLocation.getWorld() != player.getWorld() || teleportDistance > 8) {
       Location fixed = fixLocation(user, toLocation);
       Synchronizer.synchronize(user, () -> {
-        player.teleport(fixed, PlayerTeleportEvent.TeleportCause.NETHER_PORTAL);
+        FoliaSafeTeleport.teleport(player, fixed);
       });
     }
     MovementMetadata movementData = user.meta().movement();
@@ -287,6 +290,50 @@ public final class MovementDispatcher extends Module {
     }
   }
 
+  /**
+   * A vanilla client sends exactly one movement packet per tick, 50ms apart. Two of them
+   * this close together are therefore not two ticks of the client's clock: the second one
+   * was produced outside the tick loop, which is what a schematic printer does when it
+   * turns the player towards the block it is placing.
+   */
+  private static final long SURPLUS_ROTATION_WINDOW_MS = 30;
+
+  /**
+   * Whether this movement packet is an extra rotation update rather than a tick, and may
+   * be applied without being counted as one. Deliberately narrow, because "packets that
+   * do not count" is exactly what a timer cheat wants:
+   * <ul>
+   *   <li>only under printer mode, so nothing changes for a normal server;</li>
+   *   <li>only a packet that carries <b>no position</b> - there is no movement in it to
+   *       hide, so ignoring it as a tick cannot buy distance or speed;</li>
+   *   <li>only when the previous movement packet arrived less than
+   *       {@link #SURPLUS_ROTATION_WINDOW_MS} ago, so the one packet a turning-in-place
+   *       player legitimately sends per tick still counts in full.</li>
+   * </ul>
+   * A client that sends its packets too fast still does so with position packets, which
+   * are unaffected, so the timer check keeps working.
+   */
+  private boolean isSurplusRotationPacket(User user, PlayerMoveReader reader, boolean hasMovement, boolean hasRotation) {
+    if (!hasRotation || !PrinterMode.enabled()) {
+      return false;
+    }
+    long lastMovementPacket = user.meta().connection().lastMovementPacket();
+    if (lastMovementPacket == 0
+      || System.currentTimeMillis() - lastMovementPacket >= SURPLUS_ROTATION_WINDOW_MS) {
+      return false;
+    }
+    if (!hasMovement) {
+      return true;
+    }
+    // The printer also restores the rotation afterwards, and that one carries a position -
+    // the position it already reported this tick. It counts as surplus only while it is
+    // exactly that, so anything with actual movement in it stays a tick.
+    MovementMetadata movement = user.meta().movement();
+    return Math.abs(reader.positionX() - movement.positionX) < 0.00001
+      && Math.abs(reader.positionY() - movement.positionY) < 0.00001
+      && Math.abs(reader.positionZ() - movement.positionZ) < 0.00001;
+  }
+
   @PacketSubscription(
     priority = ListenerPriority.LOW,
     packetsIn = {
@@ -340,6 +387,28 @@ public final class MovementDispatcher extends Module {
 
     if (reader.anyNaNOrInfiniteValue() && FaultKicks.POSITION_FAULTS) {
       user.kick("NaN/infinite in server-bound movement packet");
+      return;
+    }
+
+    if (isSurplusRotationPacket(user, reader, hasMovement, hasRotation)) {
+      // A schematic printer turns the player towards each block it places and back, and
+      // it does that outside the client's tick loop: the rotation is sent as an extra
+      // movement packet within a tick that already sent one. Every check downstream
+      // counts one movement packet as one tick, so such a packet is a phantom tick - it
+      // pushes the timer's clock 50ms ahead of real time (the "moved too frequently
+      // (~1.1 ticks ahead)" flags) and gives the physics chain a tick in which the
+      // client reported no movement while we keep applying gravity and momentum (the
+      // "received (0,0,0) vs predicted (…, 0.33, …)" detections).
+      // The rotation itself is real, so it is applied - the packet just is not a tick.
+      movement.applyRotationOnly(reader.yaw(), reader.pitch());
+      logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: Surplus rotation packet (printer mode)");
+      if (IntaveLogger.traceEnabled()) {
+        IntaveLogger.trace("[PLACE-DEBUG] " + player.getName()
+          + " surplus rotation packet " + packetType.name()
+          + " " + (System.currentTimeMillis() - connectionData.lastMovementPacket())
+          + "ms after the previous movement packet - not counted as a tick");
+      }
+      reader.release();
       return;
     }
 
@@ -442,7 +511,32 @@ public final class MovementDispatcher extends Module {
       logging.logSystemMessage(user, () -> "MOVEMENT REJECTED: Distance over limit: " + distance);
       movement.dropPostTickMotionProcessing = true;
       event.setCancelled(true);
-      Modules.mitigate().movement().emulationSetBack(player, movement.mutableBaseMotionCopy(), 10, false);
+
+      // This path never re-anchors: it cancels the packet and asks for a setback, and the
+      // verified position only moves again once that setback lands. When it does not --
+      // an unseen teleport (a missed outbound send on Folia), a cancelled or failed
+      // setback -- the player simply walks on and every single packet is the same offence
+      // again. Live proof: 207 consecutive rejections in 13 seconds whose distance rose
+      // and fell by the player's own step (50.19 -> 56.27 -> 50.41, i.e. they walked away
+      // and back, never being moved), +25 VL each, VL pinned at its 1000 cap, resolved
+      // only when DesyncWatchdog force-teleported them 24 seconds later.
+      //
+      // The repeats carry no information the first one did not, so only the first is
+      // counted. Cancelling and re-requesting the setback continues unchanged, so a
+      // player genuinely throwing 50-block positions is still stopped every tick and
+      // still takes the violation that starts it.
+      boolean firstRejection = movement.unsafePositionRejections == 0;
+      movement.unsafePositionRejections++;
+
+      if (firstRejection) {
+        Modules.mitigate().movement().emulationSetBack(player, movement.mutableBaseMotionCopy(), 10, false);
+      } else {
+        // Re-arming the emulation every tick stacks setback bundles on top of each other,
+        // which is its own source of teleport churn; the one in flight is enough.
+        reader.release();
+        return;
+      }
+
       String message = "sent unsafe position";
       String details = "moved " + MathHelper.formatDouble(distance, 2) + " blocks";
       Map<String, String> granulars = new HashMap<>();
@@ -458,6 +552,8 @@ public final class MovementDispatcher extends Module {
       reader.release();
       return;
     }
+
+    movement.unsafePositionRejections = 0;
 
     Entity attachedEntity = movement.ridingEntity();
     if (attachedEntity != null && !attachedEntity.isEntityAlive()
@@ -683,6 +779,22 @@ public final class MovementDispatcher extends Module {
         if (shulkerInteraction) {
           requiredFallDistance = Math.max(requiredFallDistance, 3);
         }
+        // A piston displaces the player (or the block they stand on) without giving
+        // them any velocity, so for a moment our idea of where the ground is and the
+        // client's disagree by up to the block the piston moved.
+        if (movement.pistonMotionToleranceRemaining > 0) {
+          requiredFallDistance = Math.max(requiredFallDistance, 3);
+        }
+        // A player standing on an entity is standing on nothing as far as this check is
+        // concerned: the simulator collides against blocks only, so their support is
+        // invisible to it and it has them falling for as long as they stand there. The
+        // evaluator already tolerates that for the movement itself (collidedWithBoat);
+        // without the same exemption here the ground claim alone still costs 0.5 VL a
+        // tick. Five blocks covers the tallest thing that can carry a player -- a happy
+        // ghast is four high -- and applies only while one is actually next to them.
+        if (movement.collidedWithBoat()) {
+          requiredFallDistance = Math.max(requiredFallDistance, 5);
+        }
         if (movement.artificialFallDistance > requiredFallDistance && !movement.onGround && claimsToBeOnGround) {
           Violation violation = Violation.builderFor(Physics.class)
             .forUser(user)
@@ -756,6 +868,16 @@ public final class MovementDispatcher extends Module {
         inputBooleans.read(5),
         inputBooleans.read(6)
       );
+      if (IntaveLogger.traceEnabled()) {
+        Input in = movementData.input;
+        IntaveLogger.trace("[INPUT-DEBUG] " + player.getName()
+          + " fwd=" + in.forward() + " back=" + in.backward()
+          + " left=" + in.left() + " right=" + in.right()
+          + " jump=" + in.jump() + " sneak=" + in.sneaking() + " sprint=" + in.sprinting()
+          + " -> fKey=" + in.forwardKey() + " sKey=" + in.sidewaysKey()
+          + " | aiMoveSpeed=" + movementData.aiMoveSpeed()
+          + " friction/speed=" + movementData.friction());
+      }
     } else {
       int strafeKey = (int) (packet.getFloat().read(0) / 0.98f);
       int forwardKey = (int) (packet.getFloat().read(1) / 0.98f);
@@ -934,6 +1056,12 @@ public final class MovementDispatcher extends Module {
       movementData.lastVelocity = velocity.copy();
       if (!movementData.willReceiveSetbackVelocity && !movementData.willReceiveFinalSetbackVelocity) {
         movementData.activeTick(EXTERNAL_VELOCITY);
+        // Open the knockback timing window. We merge the velocity into the base
+        // motion when the anchoring transaction is acknowledged; the client applied
+        // it when the packet arrived. Those are the same tick only on a quiet
+        // connection, so for the next few ticks the received motion may differ from
+        // the prediction by up to the knockback itself (see SimulationEvaluator).
+        movementData.armVelocityTolerance(user.latency(), velocity);
       }
       movementData.willReceiveSetbackVelocity = false;
       movementData.willReceiveFinalSetbackVelocity = false;
@@ -946,6 +1074,30 @@ public final class MovementDispatcher extends Module {
   private static final Set<Material> SHULKER_BOX_MATERIALS = MaterialSearch.materialsThatContain("SHULKER_BOX");
 
   private static final Set<Material> PISTON_MATERIALS = MaterialSearch.materialsThatContain("PISTON");
+  // A piston extends over two ticks and displaces what it pushes by one block, so it
+  // moves a player half a block in a tick -- positionally, with no velocity for us to
+  // have predicted. Add the tick of gravity we did predict against it, plus slop: still
+  // comfortably under the one block a single extension can ever amount to.
+  private static final double PISTON_PUSH_PER_TICK = 0.65;
+  private static final int PISTON_MAX_PUSH_LENGTH = 12;
+  private static final int PISTON_TOLERANCE_TICKS = 10;
+
+  /**
+   * The volume a piston extension can displace something in: the column of up to
+   * {@link #PISTON_MAX_PUSH_LENGTH} blocks it pushes, starting at the head, plus one
+   * more block past the end for a player being carried on top of the last one, and half
+   * a block laterally for a player standing on an edge.
+   */
+  private static BoundingBox pushCorridorOf(int headX, int headY, int headZ, RawVector3d direction) {
+    int reach = PISTON_MAX_PUSH_LENGTH + 1;
+    double endX = headX + direction.x * reach;
+    double endY = headY + direction.y * reach;
+    double endZ = headZ + direction.z * reach;
+    return BoundingBox.fromBounds(
+      Math.min(headX, endX), Math.min(headY, endY), Math.min(headZ, endZ),
+      Math.max(headX, endX) + 1, Math.max(headY, endY) + 1, Math.max(headZ, endZ) + 1
+    ).grow(0.5);
+  }
   @PacketSubscription(
     packetsOut = BLOCK_ACTION
   )
@@ -959,7 +1111,14 @@ public final class MovementDispatcher extends Module {
       BlockPosition blockPosition = reader.blockPosition();
       World world = player.getWorld();
       BlockVariant variant = VolatileBlockAccess.variantAccess(user, blockPosition.toLocation(world));
-      Direction facing = variant.enumProperty(Direction.class, "facing");
+      Direction variantFacing = variant.enumProperty(Direction.class, "facing");
+      // An unknown variant leaves the facing null, and everything downstream
+      // dereferences it (facing.axis() here, direction.ordinal() in ShulkerBox), so the
+      // whole callback used to die before arming any tolerance -- the opening lid then
+      // pushed the player while nothing accounted for it. Assume the common upright
+      // orientation and, since the guess may be wrong, tolerate on every axis.
+      boolean facingKnown = variantFacing != null;
+      Direction facing = facingKnown ? variantFacing : Direction.UP;
       boolean opening = reader.data() == 1;
       user.tickFeedback(() -> {
         if (movement.shulkerData.containsKey(blockPosition)) {
@@ -970,11 +1129,9 @@ public final class MovementDispatcher extends Module {
             shulkerBox.close();
           }
         } else {
-          int positionHash = blockPosition.getX() << 12 | blockPosition.getY() << 8 | blockPosition.getZ();
           ShulkerBox box = opening ? ShulkerBox.opening(facing) : ShulkerBox.closing(facing);
           movement.shulkerData.put(blockPosition, box);
           movement.shulkers.add(blockPosition);
-          movement.shulkerDataHashCodeAccess.putIfAbsent(positionHash, box);
         }
         double distanceToShulker = MathHelper.distanceOf(
           movement.positionX, movement.positionY, movement.positionZ,
@@ -983,16 +1140,22 @@ public final class MovementDispatcher extends Module {
         if (distanceToShulker <= 4) {
           movement.lowestShulkerY = Math.min(movement.lowestShulkerY, blockPosition.getY());
           movement.highestShulkerY = Math.max(movement.highestShulkerY, blockPosition.getY() + 1);
-          switch (facing.axis()) {
-            case X_AXIS:
-              movement.shulkerXToleranceRemaining = 20;
-              break;
-            case Y_AXIS:
-              movement.shulkerYToleranceRemaining = 20;
-              break;
-            case Z_AXIS:
-              movement.shulkerZToleranceRemaining = 20;
-              break;
+          if (!facingKnown) {
+            movement.shulkerXToleranceRemaining = 20;
+            movement.shulkerYToleranceRemaining = 20;
+            movement.shulkerZToleranceRemaining = 20;
+          } else {
+            switch (facing.axis()) {
+              case X_AXIS:
+                movement.shulkerXToleranceRemaining = 20;
+                break;
+              case Y_AXIS:
+                movement.shulkerYToleranceRemaining = 20;
+                break;
+              case Z_AXIS:
+                movement.shulkerZToleranceRemaining = 20;
+                break;
+            }
           }
         }
       });
@@ -1000,18 +1163,38 @@ public final class MovementDispatcher extends Module {
       BlockPosition blockPosition = reader.blockPosition();
       World world = player.getWorld();
       BlockVariant variant = VolatileBlockAccess.variantAccess(user, blockPosition.toLocation(world));
-      Direction facing = variant.enumProperty(Direction.class, "facing");
+      Direction pistonFacing = variant.enumProperty(Direction.class, "facing");
+      if (pistonFacing == null) {
+        // An unknown variant used to leave this null and NPE inside the callback below,
+        // killing the whole arming step -- the piston then moved the player with no
+        // tolerance at all. There is nothing sensible to guess about a direction, so
+        // cover every axis instead.
+        movement.pistonMotionToleranceRemaining = PISTON_TOLERANCE_TICKS;
+        movement.pistonCollisionArea = new BoundingBox(0, 0, 0, 1, 1, 1)
+          .offset(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ())
+          .grow(PISTON_MAX_PUSH_LENGTH + 1);
+        movement.pistonHorizontalAllowance = PISTON_PUSH_PER_TICK;
+        movement.pistonVerticalAllowance = PISTON_PUSH_PER_TICK;
+        return;
+      }
+      Direction facing = pistonFacing;
       Boolean extended = variant.propertyOf("extended");
       boolean isExtending = true;//extended == null || !extended;
       if (isExtending) {
         Modules.feedback().synchronize(player, nothing -> {
           // First off, check if the player is even affected by this
           RawVector3d directionVec = facing.directionVector();
-          BoundingBox pistonCollisionArea = new BoundingBox(0, 0, 0, 1.1f, 1.1f, 1.1f);
           int expectedPistonX = (int) directionVec.x + blockPosition.getX();
           int expectedPistonY = (int) directionVec.y + blockPosition.getY();
           int expectedPistonZ = (int) directionVec.z + blockPosition.getZ();
-          BoundingBox expandingBlockArea = pistonCollisionArea.offset(expectedPistonX, expectedPistonY, expectedPistonZ);
+          // A piston pushes a whole column -- up to 12 blocks -- so the player can be
+          // standing on, or in the way of, any block along it, not just the one in front
+          // of the head. Checking only that first block meant "a piston moved the block
+          // I am standing on" armed no tolerance whenever the stack was longer than one.
+          // One extra block past the end covers the player carried on top of the last one.
+          BoundingBox expandingBlockArea = pushCorridorOf(
+            expectedPistonX, expectedPistonY, expectedPistonZ, directionVec
+          );
           boolean playerAffected = expandingBlockArea.intersectsWith(user.meta().movement().boundingBox());
 
           // Only do something if the player is actually affected
@@ -1019,34 +1202,40 @@ public final class MovementDispatcher extends Module {
             // Might seem like a high value, doesn't it?
             // Well this is fine as we constantly check if the player is inside the critical area
             // where he would get false-mitigated
-            movement.pistonMotionToleranceRemaining = 10;
+            movement.pistonMotionToleranceRemaining = PISTON_TOLERANCE_TICKS;
             movement.pistonCollisionArea = expandingBlockArea;
 
             float xOffset = (float) Math.abs(expectedPistonX - user.meta().movement().positionX);
             float yOffsetBottom = (float) Math.abs((expectedPistonY + 1) - user.meta().movement().boundingBox().minY);
             float yOffsetTop = (float) Math.abs(expectedPistonY - user.meta().movement().boundingBox().maxY);
             float zOffset = (float) Math.abs(expectedPistonZ - user.meta().movement().positionZ);
+            // The distance to the piston is not the size of the error. A piston displaces
+            // what it pushes by a whole block over two ticks -- 0.5 per tick -- and does
+            // so positionally, without handing the entity any velocity we could predict.
+            // A player standing right on the head therefore had an allowance of 0.05
+            // against a 0.5 move. Floor every allowance at the push speed; that is a hard
+            // physical bound on what a piston can do to a player in a tick.
             switch (facing.axis()) {
               case X_AXIS: {
                 // Magical hack to get the proper bounding box factor
                 float horizontalBoundingBoxFactor = (float) (user.meta().movement().width() / 2f * directionVec.x);
-                movement.pistonHorizontalAllowance = xOffset + horizontalBoundingBoxFactor + 0.05f;
+                movement.pistonHorizontalAllowance = Math.max(PISTON_PUSH_PER_TICK, xOffset + horizontalBoundingBoxFactor + 0.05f);
                 break;
               }
               case Z_AXIS: {
                 // Magical hack to get the proper bounding box factor
                 float horizontalBoundingBoxFactor = (float) (user.meta().movement().width() / 2f * directionVec.z);
-                movement.pistonHorizontalAllowance = zOffset + horizontalBoundingBoxFactor + 0.05f;
+                movement.pistonHorizontalAllowance = Math.max(PISTON_PUSH_PER_TICK, zOffset + horizontalBoundingBoxFactor + 0.05f);
                 break;
               }
               case Y_AXIS: {
                 // Cannot be done with directional vectors unfortunately :(
                 switch (facing) {
                   case UP:
-                    movement.pistonVerticalAllowance = yOffsetBottom + 0.05f;
+                    movement.pistonVerticalAllowance = Math.max(PISTON_PUSH_PER_TICK, yOffsetBottom + 0.05f);
                     break;
                   case DOWN:
-                    movement.pistonVerticalAllowance = yOffsetTop + 0.05f;
+                    movement.pistonVerticalAllowance = Math.max(PISTON_PUSH_PER_TICK, yOffsetTop + 0.05f);
                     break;
                 }
                 break;

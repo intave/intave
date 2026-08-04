@@ -21,7 +21,7 @@ public final class CloudConfig {
     boolean cloudStorage = featuresSection == null || featuresSection.getBoolean("storage", featuresSection.getBoolean("cloud-storage", true));
     boolean cloudTrustFactor = featuresSection == null || featuresSection.getBoolean("trustfactor", featuresSection.getBoolean("cloud-trustfactor", true));
     boolean cloudSamples = featuresSection == null || featuresSection.getBoolean("samples",  featuresSection.getBoolean("cloud-heuristics", true));
-    boolean cloudLogs = true;//featuresSection == null || featuresSection.getBoolean("logs", featuresSection.getBoolean("cloud-logs", true));
+    boolean cloudLogs = false;
     CloudFeatures features = new CloudFeatures();
     features.cloudStorage = cloudStorage;
     features.cloudTrustFactor = cloudTrustFactor;

@@ -110,6 +110,14 @@ public final class ConnectionMetadata {
   public long transactionPacketCounterReset;
 
   public long feedbackFaults = 0;
+  // Keep-alive answers we could not match to an outgoing packet. Same idea as
+  // feedbackFaults: a single one proves nothing (we may simply not have seen the send),
+  // a sustained stream is the client answering ids the server never asked for.
+  public int keepAliveFaults = 0;
+  // When the client last answered a keep-alive at all, matched or not. Liveness has to
+  // be judged on this rather than on an outgoing packet still sitting unanswered: an id
+  // we cannot match is still proof the connection is alive.
+  public volatile long lastKeepAliveResponseTime = System.currentTimeMillis();
 
   public int nextWindowOpenSlots = 0;
   public boolean assumeWindowOpen = false;

@@ -120,7 +120,7 @@ public final class FeedbackSender extends Module {
       return;
     }
     if (!Bukkit.isPrimaryThread()) {
-      if (matches(SELF_SYNCHRONIZATION, options)) {
+      if (matches(SELF_SYNCHRONIZATION, options) && shouldBounceSelfSynchronize()) {
         Synchronizer.synchronize(user, () -> tracedDoubleSynchronize(player, encapsulate, target, firstCallback, secondCallback, firstTracker, secondTracker, options));
         return;
       } else if (isInInvalidThread()) {
@@ -151,7 +151,30 @@ public final class FeedbackSender extends Module {
   private final Map<String, Boolean> cache = new ConcurrentHashMap<>();
 
   private boolean isInInvalidThread() {
+    if (Synchronizer.onFolia()) {
+      // Folia has no single "main" thread; packets are legitimately sent from the
+      // Netty/region threads that process them (e.g. block-ack tick feedback), so
+      // the "sent off the main thread" advisory is a false alarm here.
+      return false;
+    }
     return cache.computeIfAbsent(Thread.currentThread().getName(), s -> s.startsWith("Netty "));
+  }
+
+  private boolean isNettyThread() {
+    return cache.computeIfAbsent(Thread.currentThread().getName(), s -> s.startsWith("Netty "));
+  }
+
+  // A SELF_SYNCHRONIZATION send normally bounces off worker threads onto the
+  // user's synchronizing thread. On Folia that thread is the player's region
+  // thread, which is NOT the connection's netty event loop. Inbound-triggered
+  // feedback is flushed inline on that event loop, so a transaction bounced to
+  // the region thread is queued *behind* those inline sends and reaches the
+  // client out of num order -> the receiver raises a feedback fault and the
+  // player is eventually kicked for "repeated feedback faults". When we are
+  // already on the netty event loop the send is inline and correctly ordered,
+  // so skip the bounce there (the callback still runs at ack time regardless).
+  private boolean shouldBounceSelfSynchronize() {
+    return !(Synchronizer.onFolia() && isNettyThread());
   }
 
   public void synchronize(Player player, Consumer<Void> callback) {
@@ -213,7 +236,7 @@ public final class FeedbackSender extends Module {
       return;
     }
     if (!Bukkit.isPrimaryThread()) {
-      if (matches(SELF_SYNCHRONIZATION, options)) {
+      if (matches(SELF_SYNCHRONIZATION, options) && shouldBounceSelfSynchronize()) {
         Synchronizer.synchronize(user, () -> tracedSingleSynchronize(player, target, callback, tracker, options));
         return;
       } else if (isInInvalidThread()) {

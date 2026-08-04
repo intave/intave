@@ -55,6 +55,7 @@ public final class Cloud {
 
   private final Map<Shard, Session> sessions = new HashMap<>();
   private final Map<Shard, Integer> reconnectAttempts = new ConcurrentHashMap<>();
+  private volatile long lastUnsendablePacketLog = 0L;
   private final Map<UUID, Request<TrustFactor>> trustfactorRequests = new HashMap<>();
   private final Map<UUID, Request<ByteBuffer>> storageRequests = new HashMap<>();
   private final Map<UUID, Request<Classifier>> sampleTransmissionRequests = new HashMap<>();
@@ -135,7 +136,7 @@ public final class Cloud {
           wasConnected = false;
         }
 
-        IntaveLogger.logger().warning(
+        IntaveLogger.logger().info(
           String.format("Cloud reconnect unsuccessful, retrying in %d seconds, attempt %d/20", retryingIn, attempts + 1)
         );
         if (attempts < 20) {
@@ -253,7 +254,14 @@ public final class Cloud {
       }
       boolean cloudWasDeactivated = !cloudConfig.isEnabled();
       if (!sent && !cloudWasDeactivated) {
-        IntaveLogger.logger().error("Unable to send packet " + packet.name() + " to any shard");
+        // While the cloud is enabled but not connected, every upload (logs, join
+        // state, …) lands here; the reconnect loop already reports the connection
+        // state, so rate-limit this to avoid flooding the console.
+        long now = System.currentTimeMillis();
+        if (now - lastUnsendablePacketLog > 30_000L) {
+          lastUnsendablePacketLog = now;
+          IntaveLogger.logger().error("Unable to send packet " + packet.name() + " to any shard (no shard connected; suppressing repeats for 30s)");
+        }
       }
     });
   }
@@ -316,10 +324,16 @@ public final class Cloud {
   }
 
   public void uploadSample(Player player, ByteBuffer buffer) {
+    if (!available()) {
+      return;
+    }
     sendPacket(new ServerboundPassNayoro(Identity.from(player), buffer));
   }
 
   public void uploadPlayerLogs(Player player, int nonce, List<String> logs, Consumer<String> callback) {
+    if (!cloudConfig.features().isCloudLogs() || !available()) {
+      return;
+    }
     Request<String> request = uploadLogRequests.computeIfAbsent(nonce, k -> new Request<>());
     request.subscribe(callback);
     sendPacket(new ServerboundUploadLogs(Identity.from(player), nonce, logs));
@@ -366,6 +380,9 @@ public final class Cloud {
   }
 
   public void saveStorage(UUID id, ByteBuffer buffer) {
+    if (!available()) {
+      return;
+    }
     sendPacket(new ServerboundUploadStorage(Identity.from(id), buffer));
   }
 

@@ -9,6 +9,7 @@ import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.physics.MaterialMagic;
+import de.jpx3.intave.executor.FoliaSafeTeleport;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
@@ -166,7 +167,24 @@ public final class TeleportController implements PacketEventSubscriber {
     /*
      * ViaBackwards messes up the order of teleportation packets, so we need to account for that
      */
-    if (/*!user.meta().protocol().outdatedClient() &&*/ teleportFeedbackSyncEnforcement) {
+    // During the join grace window the initial spawn teleport is emitted inside
+    // placeNewPlayer, where ProtocolLib runs our outbound listeners synchronously
+    // on the region thread. Sandwiching it between feedback transactions there
+    // sends packets that can't be acked until the player is fully in-game, and
+    // the added synchronous work blows the Folia region-tick deadline (join
+    // loop). Skip the sync-enforcement while just-joined; the teleport is simply
+    // allowed immediately, exactly as when the feature is disabled.
+    //
+    // On Folia the same sandwich is unsafe for *every* teleport, not just the
+    // join one. doubleTickFeedback resends the encapsulated teleport as a clone
+    // guarded by the per-user "ignore next outbound packet" flag, which is only
+    // correct if the resend's outbound filter runs inline on the sending thread
+    // before the flag is cleared. Folia emits setback teleports from a region
+    // thread while block-ack feedback flips the same flag from a Netty thread, so
+    // the clone gets reprocessed as a brand-new teleport and the region tick
+    // spins in the feedback path until the watchdog force-stops the server. Fall
+    // back to allowing the teleport immediately, as when the feature is disabled.
+    if (/*!user.meta().protocol().outdatedClient() &&*/ teleportFeedbackSyncEnforcement && !user.justJoined() && !Synchronizer.onFolia()) {
       user.doubleTickFeedback(
         event,
         () -> movementData.transactionTeleportAllow = true,
@@ -229,7 +247,7 @@ public final class TeleportController implements PacketEventSubscriber {
         Location randomLocation = player.getLocation().clone().add(Math.random() * 1000 - 500, 0, Math.random() * 1000 - 500);
         Block highestBlockAt = randomLocation.getWorld().getHighestBlockAt(randomLocation);
         randomLocation.setY(highestBlockAt.getY());
-        player.teleport(randomLocation);
+        FoliaSafeTeleport.teleport(player, randomLocation);
 
         if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
           user.sendMessage(IntavePlugin.prefix() + "Teleport to random " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " as " + ChatColor.RED + " it was command-requested");
@@ -279,7 +297,7 @@ public final class TeleportController implements PacketEventSubscriber {
 
           location.setYaw(movementData.rotationYaw());
           location.setPitch(movementData.rotationPitch());
-          player.teleport(location, UNKNOWN);
+          FoliaSafeTeleport.teleport(player, location);
 
           if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
             user.sendMessage(IntavePlugin.prefix() + "Teleport to " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " since " + ChatColor.RED + " you are not responding to teleport requests");
@@ -309,7 +327,7 @@ public final class TeleportController implements PacketEventSubscriber {
         }
         location.setYaw(movementData.rotationYaw());
         location.setPitch(movementData.rotationPitch());
-        player.teleport(location, UNKNOWN);
+        FoliaSafeTeleport.teleport(player, location);
 
         if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
           player.sendMessage(IntavePlugin.prefix() + "Teleport to " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " to " + ChatColor.RED + " since you are not responding to outgoing teleport requests");

@@ -111,6 +111,11 @@ final class FallbackUser implements User {
   }
 
   @Override
+  public boolean synthetic() {
+    return true;
+  }
+
+  @Override
   public CheckCustomMetadata checkMetadata(Class<? extends CheckCustomMetadata> classTarget) {
     try {
       return classTarget.newInstance();

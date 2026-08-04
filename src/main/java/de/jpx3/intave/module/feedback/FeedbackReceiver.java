@@ -7,6 +7,7 @@ import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.adapter.ViaVersionAdapter;
 import de.jpx3.intave.diagnostic.LatencyStudy;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
@@ -203,6 +204,19 @@ public final class FeedbackReceiver extends Module {
         receiveRequest(user, missedRequest);
       }
       user.noteFeedbackFault();
+    } else if (Synchronizer.onFolia()) {
+      // The ProtocolLib fork used on Folia runs outbound packet listeners inline
+      // on the region thread, so any feedback transaction triggered by an
+      // outbound packet (chunk loads, entity tracking, effects, ...) is written
+      // off the connection's event loop and can legitimately reach the client
+      // out of num order. feedbackFaults never resets, so those benign reorders
+      // slowly accumulate to the kick threshold for every active player. Decay
+      // the counter on each clean, in-order ack: isolated reorders are forgiven,
+      // while a client that keeps producing faults faster than clean acks (real
+      // feedback manipulation) still reaches the threshold and is removed.
+      if (connection.feedbackFaults > 0) {
+        connection.feedbackFaults--;
+      }
     }
 
     if (IntaveControl.DEBUG_FEEDBACK_PACKETS) {

@@ -7,6 +7,7 @@ import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.movement.Timer;
 import de.jpx3.intave.cleanup.GarbageCollector;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.feedback.FeedbackOptions;
@@ -52,6 +53,18 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
     decrementer = parentCheck.decrementer();
 
     Tasks.periodicNamed("PlayerTime.transactionQueue", () -> {
+      // Folia processes inbound packets — and flushes the feedback transactions
+      // they trigger — inline on each connection's netty event loop. A dedicated
+      // transaction emitted from any other thread is queued *behind* those inline
+      // sends, so it can reach the client out of order; the receiver then sees
+      // received != expected, raises a feedback fault, and (faults never reset)
+      // eventually kicks the player for "repeated feedback faults". Sending our
+      // own probe every tick from an off-loop thread made this fire for every
+      // player within seconds. Instead, on Folia we append onto the next real
+      // transaction (no packet leaves the event loop out of order) while still
+      // getting the transaction-confirmed time baseline the check needs. Non-Folia
+      // servers keep the original dedicated send.
+      int options = Synchronizer.onFolia() ? FeedbackOptions.APPEND : 0;
       UserRepository.applyOnAll(user -> {
         ConnectionMetadata connectionData = user.meta().connection();
         PlayerTimeMeta checkMeta = metaOf(user);
@@ -61,7 +74,7 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
             checkMeta.time = Math.max(checkMeta.time, checkMeta.limitToBeApplied);
             checkMeta.queuedLimit = time;
           });
-        });
+        }, options);
       });
     }, 0, 1).startAsync();
   }

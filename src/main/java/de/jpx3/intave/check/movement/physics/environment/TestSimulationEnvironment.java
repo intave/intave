@@ -41,6 +41,7 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
   private boolean inWeb;
   private boolean onGround;
   private boolean lastOnGround;
+  private Pose pose = Pose.STANDING;
 
   private Fluid interactingFluid;
   private BoundingBox boundingBox = BoundingBox.fromBounds(0, 0, 0, 0, 0, 0);
@@ -174,9 +175,13 @@ public final class TestSimulationEnvironment implements SimulationEnvironment {
     this.lastOnGround = lastOnGround;
   }
 
+  public void setPose(Pose pose) {
+    this.pose = pose;
+  }
+
   @Override
   public Pose pose() {
-    return Pose.STANDING;
+    return pose;
   }
 
   @Override

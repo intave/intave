@@ -6,8 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public final class FeedbackQueue {
   private static final int MAX_DIRECT_SIZE = 2048;
@@ -16,13 +15,17 @@ public final class FeedbackQueue {
   private final Map<Short, FeedbackEntry> fallbackLocalAccess = new ConcurrentHashMap<>();
   private FeedbackEntry head, tail;
   private int size;
-  private final ReadWriteLock lock = new ReentrantReadWriteLock();
-  private final Lock readLock = lock.readLock();
-  private final Lock writeLock = lock.writeLock();
+  // Under Folia this per-user queue is touched concurrently (region packet
+  // thread on join, inbound-ack drain, per-tick transaction task). The former
+  // ReadWriteLock let the region thread block for seconds behind writers and
+  // deadlocked the tick. All operations here are O(1) (pollUpTo yields
+  // periodically), and the per-user feedback lock is always taken *before* this
+  // lock and never after, so a single mutex cannot form a lock cycle.
+  private final Lock lock = new ReentrantLock();
 
   public void add(FeedbackRequest<?> request) {
     FeedbackEntry entry = new FeedbackEntry(request);
-    writeLock.lock();
+    lock.lock();
     try {
       short userKey = request.userKey();
       if (userKey > -DIRECT_TRANSLATION && userKey < DIRECT_TRANSLATION) {
@@ -45,21 +48,21 @@ public final class FeedbackQueue {
       }
       size++;
     } finally {
-      writeLock.unlock();
+      lock.unlock();
     }
   }
 
   public FeedbackRequest<?> peek() {
-    readLock.lock();
+    lock.lock();
     try {
       return head == null ? null : head.request;
     } finally {
-      readLock.unlock();
+      lock.unlock();
     }
   }
 
   public FeedbackRequest<?> peek(short userKey) {
-    readLock.lock();
+    lock.lock();
     try {
       FeedbackEntry entry;
       if (userKey > -DIRECT_TRANSLATION && userKey < DIRECT_TRANSLATION) {
@@ -69,12 +72,12 @@ public final class FeedbackQueue {
       }
       return entry == null ? null : entry.request;
     } finally {
-      readLock.unlock();
+      lock.unlock();
     }
   }
 
   public FeedbackRequest<?> poll() {
-    writeLock.lock();
+    lock.lock();
     try {
       if (head == null) {
         return null;
@@ -100,13 +103,13 @@ public final class FeedbackQueue {
       size--;
       return entry.request;
     } finally {
-      writeLock.unlock();
+      lock.unlock();
     }
   }
 
   // can be a bit expensive, shouldn't be used too often though
-  public synchronized List<FeedbackRequest<?>> pollUpTo(long globalKey) {
-    writeLock.lock();
+  public List<FeedbackRequest<?>> pollUpTo(long globalKey) {
+    lock.lock();
     try {
       if (head == null) {
         return Collections.emptyList();
@@ -138,18 +141,18 @@ public final class FeedbackQueue {
         size--;
         entry = head;
         if (list.size() > 500 && list.size() % 100 == 0) {
-          writeLock.unlock();
-          writeLock.lock();
+          lock.unlock();
+          lock.lock();
         }
       }
       return list == null ? Collections.emptyList() : list;
     } finally {
-      writeLock.unlock();
+      lock.unlock();
     }
   }
 
-  public synchronized boolean hasUserKey(short userKey) {
-    readLock.lock();
+  public boolean hasUserKey(short userKey) {
+    lock.lock();
     try {
       if (userKey > -DIRECT_TRANSLATION && userKey < DIRECT_TRANSLATION) {
         return directLocalAccess[userKey + DIRECT_TRANSLATION] != null;
@@ -157,16 +160,16 @@ public final class FeedbackQueue {
         return fallbackLocalAccess.containsKey(userKey);
       }
     } finally {
-      readLock.unlock();
+      lock.unlock();
     }
   }
 
-  public synchronized int size() {
-    readLock.lock();
+  public int size() {
+    lock.lock();
     try {
       return size;
     } finally {
-      readLock.unlock();
+      lock.unlock();
     }
   }
 

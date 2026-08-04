@@ -6,8 +6,10 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.trust.DefaultForwardingPermissionTrustFactorResolver;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.access.player.trust.TrustFactorResolver;
+import de.jpx3.intave.access.player.trust.StorageTrustfactorResolver;
 import de.jpx3.intave.annotate.HighOrderService;
 import de.jpx3.intave.cleanup.StartupTasks;
+import de.jpx3.intave.config.ConfiguredFlag;
 import de.jpx3.intave.connect.cloud.LogTransmittor;
 import de.jpx3.intave.diagnostic.ConsoleOutput;
 import de.jpx3.intave.diagnostic.message.DebugBroadcast;
@@ -26,9 +28,27 @@ import org.bukkit.event.player.PlayerJoinEvent;
 
 @HighOrderService
 public final class TrustFactorService implements BukkitEventSubscriber {
-  private static final TrustFactorResolver DEFAULT_RESOLVER = new DefaultForwardingPermissionTrustFactorResolver(
-    new EmptyTrustFactorResolver()
-  );
+  /**
+   * Option deciding what a player without any {@code intave.trust.*} permission gets.
+   * <p>
+   * On: their trust factor is derived from their own history — playtime, joins and past
+   * violations ({@link StorageTrustfactorResolver}). Off: nothing is issued and they keep
+   * {@link #defaultTrustFactor}, which is what this did before the option existed.
+   */
+  public static final String AUTO_TRUST_FACTOR_PATH = "trustfactor.automatic";
+
+  private static final ConfiguredFlag AUTO_TRUST_FACTOR = new ConfiguredFlag(AUTO_TRUST_FACTOR_PATH, true);
+
+  private static TrustFactorResolver defaultResolver() {
+    // An explicit permission always wins; the fallback only answers for players who have
+    // none, so granting intave.trust.* keeps overriding whatever the history says.
+    return new DefaultForwardingPermissionTrustFactorResolver(
+      AUTO_TRUST_FACTOR.enabled()
+        ? new StorageTrustfactorResolver()
+        : new EmptyTrustFactorResolver()
+    );
+  }
+
 	private final IntavePlugin plugin;
   private TrustFactorResolver trustFactorResolver, customTrustFactorResolver;
   private TrustFactorConfiguration trustFactorConfiguration;
@@ -43,9 +63,9 @@ public final class TrustFactorService implements BukkitEventSubscriber {
     trustFactorConfiguration = trustFactorLoader.fetch();
 
     if (floodgatePresent()) {
-      trustFactorResolver = new GeyserTrustFactorResolver(DEFAULT_RESOLVER);
+      trustFactorResolver = new GeyserTrustFactorResolver(defaultResolver());
     } else {
-      trustFactorResolver = DEFAULT_RESOLVER;
+      trustFactorResolver = defaultResolver();
     }
 
     plugin.eventLinker().registerEventsIn(this);
@@ -81,7 +101,7 @@ public final class TrustFactorService implements BukkitEventSubscriber {
       return;
     }
     if (trustFactorResolver == null) {
-      trustFactorResolver = DEFAULT_RESOLVER;
+      trustFactorResolver = defaultResolver();
     }
     trustFactorResolver.resolve(
       player, (trustFactor) -> trustfactorApply(player, trustFactor, trustFactorResolver.toString())

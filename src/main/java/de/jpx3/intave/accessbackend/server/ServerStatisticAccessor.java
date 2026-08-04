@@ -4,6 +4,8 @@ import com.google.common.collect.Maps;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.server.ServerHealthStatisticAccess;
 import de.jpx3.intave.cleanup.ShutdownTasks;
+import de.jpx3.intave.executor.task.Task;
+import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.metric.ServerHealth;
 
 import java.util.ArrayList;
@@ -15,7 +17,7 @@ public final class ServerStatisticAccessor {
   private final IntavePlugin plugin;
   private ServerHealthStatisticAccess statisticAccess;
   private final Map<ServerHealthStatisticAccess.TimeSpan, List<DoubleConsumer>> subscriptions = Maps.newConcurrentMap();
-  private int schedulerId;
+  private Task schedulerTask;
 
   public ServerStatisticAccessor(IntavePlugin plugin) {
     this.plugin = plugin;
@@ -30,20 +32,20 @@ public final class ServerStatisticAccessor {
   }
 
   private void loadScheduler() {
-    schedulerId = plugin.getServer().getScheduler().scheduleAsyncRepeatingTask(plugin, () -> {
+    schedulerTask = Tasks.periodicNamed("ServerStatisticAccessor", () -> {
       subscriptions.forEach((timeSpan, doubleConsumers) -> {
         double tickAverage = tickAverageOf(timeSpan);
         for (DoubleConsumer doubleConsumer : doubleConsumers) {
           doubleConsumer.accept(tickAverage);
         }
       });
-    }, 20, 20 * 5);
+    }, 20, 20 * 5).startAsync();
     ShutdownTasks.add(this::shutdownScheduler);
   }
 
   public void shutdownScheduler() {
-    if (schedulerId > 0 && statisticAccess != null) {
-      plugin.getServer().getScheduler().cancelTask(schedulerId);
+    if (schedulerTask != null && statisticAccess != null) {
+      schedulerTask.cancel();
     }
   }
 

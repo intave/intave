@@ -79,6 +79,12 @@ public final class UserRepository {
 
   public static void applyOnAll(Consumer<? super User> consumer) {
     for (User user : repository.values()) {
+      if (user.synthetic()) {
+        // Test/fallback users have no real player connection. Production
+        // iterators (transaction packets, connection/desync checks, ...) must
+        // not touch them; they remain reachable directly via userOf(...).
+        continue;
+      }
       consumer.accept(user);
     }
   }

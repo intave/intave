@@ -34,8 +34,9 @@ public final class MovementCharacteristics {
     MovementMetadata movementData = user.meta().movement();
     World world = user.player().getWorld();
     float speed;
+    float slipperiness = -1;
     if (movementData.lastOnGround) {
-      float slipperiness = currentSlipperiness(
+      slipperiness = currentSlipperiness(
         user,
         world,
         positionX,

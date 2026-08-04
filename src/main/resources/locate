@@ -419,6 +419,15 @@ Holder -> {
   [1.21-26.2.0] -> "net/minecraft/core/Holder"
 }
 
+## The block accessor vanilla itself uses to build a block state's static shape cache:
+## air everywhere, no block entities. Handing it to a shape lookup yields exactly the
+## shape vanilla caches on the state, which is what a block whose real shape needs a
+## block entity (shulker box, moving piston) falls back to anyway.
+EmptyBlockGetter -> {
+  [1.17-1.20.4] -> "net/minecraft/world/level/BlockAccessAir"
+  [1.21-26.2.0] -> "net/minecraft/world/level/EmptyBlockGetter"
+}
+
 IBlockAccess -> {
   [1.17-1.20.4] -> "net/minecraft/world/level/IBlockAccess"
   [1.21-26.2.0] -> "net/minecraft/world/level/BlockGetter"

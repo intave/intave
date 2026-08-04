@@ -29,6 +29,9 @@ import static de.jpx3.intave.IntaveLogger.FileLoggingState.UNRESOLVED;
 public final class IntaveLogger extends PluginLogger {
   public static FileLoggingState FILE_OUTPUT = UNRESOLVED;
   public static boolean DISABLE_COLOR_OUTPUT = JavaVersion.current() > 8;
+  // Detailed diagnostic logging (physics prediction internals etc.),
+  // toggled via "trace: true" in advanced.yml. Off by default.
+  public static volatile boolean TRACE = false;
 
   private static final String LOG_PATH = "plugins" + File.separator + "Intave" + File.separator + "logs";
   private final IntavePlugin plugin;
@@ -50,6 +53,10 @@ public final class IntaveLogger extends PluginLogger {
       if (enabled) {
         setup();
       }
+      TRACE = plugin.settings().getBoolean("trace", false);
+      if (TRACE) {
+        info("Trace logging is ENABLED (advanced.yml 'trace: true') - expect verbose diagnostic output");
+      }
     });
   }
 
@@ -69,6 +76,14 @@ public final class IntaveLogger extends PluginLogger {
     String message = logRecord.getMessage();
     if (levelInt == Integer.MAX_VALUE) {
       return;
+    }
+    Throwable thrown = logRecord.getThrown();
+    if (thrown != null) {
+      // Never swallow stack traces routed through the plugin logger, e.g. the
+      // scheduler's "Async task ... generated an exception" reports.
+      java.io.StringWriter stackWriter = new java.io.StringWriter();
+      thrown.printStackTrace(new java.io.PrintWriter(stackWriter));
+      message = (message == null ? "" : message + System.lineSeparator()) + stackWriter;
     }
     if (levelInt >= Level.SEVERE.intValue()) {
       error(message);
@@ -301,6 +316,25 @@ public final class IntaveLogger extends PluginLogger {
 
   public static IntaveLogger logger() {
     return singletonInstance;
+  }
+
+  public static boolean traceEnabled() {
+    return TRACE;
+  }
+
+  /**
+   * Emits a diagnostic trace line, but only when 'trace: true' is set in
+   * advanced.yml. Callers should gate any expensive message construction on
+   * {@link #traceEnabled()} themselves.
+   */
+  public static void trace(String message) {
+    if (!TRACE) {
+      return;
+    }
+    IntaveLogger logger = singletonInstance;
+    if (logger != null) {
+      logger.info(message);
+    }
   }
 
   enum FileLoggingState {

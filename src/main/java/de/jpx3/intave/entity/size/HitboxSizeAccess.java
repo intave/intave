@@ -1,5 +1,6 @@
 package de.jpx3.intave.entity.size;
 
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.klass.Lookup;
@@ -19,6 +20,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class HitboxSizeAccess {
@@ -123,7 +125,20 @@ public final class HitboxSizeAccess {
       if (className.startsWith("Entity")) {
         className = className.substring("Entity".length());
       }
-      Optional<net.minecraft.server.v1_14_R1.EntityTypes<?>> optional = net.minecraft.server.v1_14_R1.EntityTypes.a(className.toLowerCase());
+      // The registry is keyed in snake_case ("armor_stand", "ender_dragon") while the
+      // class name is CamelCase, so looking it up as one lowercase word only ever
+      // matched single-word types. Everything else fell through to a ZERO hitbox, which
+      // makes the entity impossible to hit: every attack on an armor stand came back
+      // "out of sight" and got cancelled. Ask Bukkit for the entity type's real key
+      // first (it also covers the names that do not follow the class at all, such as
+      // MushroomCow -> mooshroom), then fall back to name-derived guesses.
+      Optional<net.minecraft.server.v1_14_R1.EntityTypes<?>> optional = Optional.empty();
+      for (String candidate : registryKeyCandidates(entityClass, className)) {
+        optional = net.minecraft.server.v1_14_R1.EntityTypes.a(candidate);
+        if (optional.isPresent()) {
+          break;
+        }
+      }
       if (optional.isPresent()) {
         net.minecraft.server.v1_14_R1.EntityTypes<?> entityTypes = optional.get();
         Object size;
@@ -153,8 +168,93 @@ public final class HitboxSizeAccess {
           return HitboxSize.of(k.width, k.height);
         }
       } else {
-        return HitboxSize.zero();
+        // A zero hitbox is not a safe answer: nothing can ever hit the entity and every
+        // attack on it is reported as a miss. Report it once and fall back to a
+        // player-sized box, which is wrong by centimetres instead of by everything.
+        if (REPORTED_UNRESOLVED_HITBOXES.add(className)) {
+          IntaveLogger.logger().warn("Could not resolve the hitbox of " + className
+            + " - using a player-sized one for it");
+        }
+        return HitboxSize.playerDefault();
       }
     }
+  }
+
+  static final Set<String> REPORTED_UNRESOLVED_HITBOXES = ConcurrentHashMap.newKeySet();
+  static Method entityTypeKeyAccess;
+  static boolean entityTypeKeyAccessResolved;
+
+  /**
+   * Registry keys to try for an entity class, best first. Bukkit's own key is
+   * authoritative where it is available - it is the registry key by definition, and it
+   * is the only one that gets the types whose name does not follow their class right
+   * (MushroomCow is "mooshroom", Snowman is "snow_golem", PrimedTnt is "tnt"). The
+   * name-derived guesses stay as a fallback for NMS classes, which have no Bukkit type.
+   */
+  static java.util.List<String> registryKeyCandidates(Class<?> entityClass, String className) {
+    java.util.List<String> candidates = new java.util.ArrayList<>(4);
+    for (org.bukkit.entity.EntityType type : org.bukkit.entity.EntityType.values()) {
+      if (type.getEntityClass() != entityClass) {
+        continue;
+      }
+      String key = bukkitRegistryKeyOf(type);
+      if (key != null) {
+        candidates.add(key);
+      }
+      candidates.add(type.name().toLowerCase());
+      break;
+    }
+    candidates.add(className.toLowerCase());
+    candidates.add(snakeCaseKeyOf(className));
+    return candidates;
+  }
+
+  /**
+   * {@code EntityType#getKey()} exists since 1.14 but not in the API this is compiled
+   * against, so it is called reflectively; a server without it just uses the other
+   * candidates.
+   */
+  static String bukkitRegistryKeyOf(org.bukkit.entity.EntityType type) {
+    if (!entityTypeKeyAccessResolved) {
+      entityTypeKeyAccessResolved = true;
+      try {
+        entityTypeKeyAccess = org.bukkit.entity.EntityType.class.getMethod("getKey");
+      } catch (NoSuchMethodException ignored) {
+        entityTypeKeyAccess = null;
+      }
+    }
+    if (entityTypeKeyAccess == null) {
+      return null;
+    }
+    try {
+      Object namespacedKey = entityTypeKeyAccess.invoke(type);
+      return namespacedKey == null ? null
+        : (String) namespacedKey.getClass().getMethod("getKey").invoke(namespacedKey);
+    } catch (Exception ignored) {
+      return null;
+    }
+  }
+
+  /**
+   * Converts a CamelCase entity class name into the registry key it is stored under
+   * ({@code ArmorStand} to {@code armor_stand}). Runs of capitals are kept together so
+   * acronym-style names do not explode into single letters.
+   */
+  static String snakeCaseKeyOf(String className) {
+    StringBuilder key = new StringBuilder(className.length() + 4);
+    for (int index = 0; index < className.length(); index++) {
+      char character = className.charAt(index);
+      if (Character.isUpperCase(character)) {
+        boolean previousIsLower = index > 0 && !Character.isUpperCase(className.charAt(index - 1));
+        boolean nextIsLower = index + 1 < className.length() && !Character.isUpperCase(className.charAt(index + 1));
+        if (index > 0 && (previousIsLower || nextIsLower)) {
+          key.append('_');
+        }
+        key.append(Character.toLowerCase(character));
+      } else {
+        key.append(character);
+      }
+    }
+    return key.toString();
   }
 }

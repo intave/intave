@@ -137,7 +137,24 @@ class BaseSimulator extends Simulator {
 
     motion = motion.copy();
 
-    if (crouching || (!protocol.beeUpdate() && environment.isSneaking())) {
+    // Vanilla LocalPlayer#modifyInput scales the movement input by the sneaking-speed
+    // attribute whenever Player#isMovingSlowly() holds, which is isCrouching() OR
+    // isVisuallyCrawling() -- the swimming pose out of water, i.e. a player pushed
+    // prone by a low ceiling (trapdoor/slab/1-block gap) or crawling on purpose. Only
+    // the crouching half was implemented here, so every crawling tick was predicted at
+    // full walking acceleration while the client used 0.3x of it: the prediction ran
+    // ~2x the received motion for the whole crawl and flagged continuously (this is
+    // the "always flags while crawling / under trapdoors" false positive).
+    // proneSlowdownOverride lets the caller re-run the tick with the opposite
+    // assumption while the state is ambiguous (see PredictiveSimulationProcessor).
+    // The IN_WATER window keeps a player whose water state flickered for a tick (at
+    // the surface, or from a stale block cache) from being mistaken for a crawler --
+    // an actually swimming player keeps the full input.
+    MovementMetadata movementData = meta.movement();
+    boolean crawling = movementData.proneSlowdownOverride != 0
+      ? movementData.proneSlowdownOverride > 0
+      : (swimming && !inWater && environment.ticksPast(IN_WATER) > 2);
+    if (crouching || crawling || (!protocol.beeUpdate() && environment.isSneaking())) {
       double sneakingSpeed = user.meta().abilities().attributeValue("player.sneaking_speed");
       if (Double.isNaN(sneakingSpeed)) {
         sneakingSpeed = 0.3 + Enchantments.resolveSwiftSpeedModifier(user.player()) * 0.15f;
@@ -199,7 +216,11 @@ class BaseSimulator extends Simulator {
         }
       }
     }
-    if (waterUpdate && swimming) {
+    // Vanilla applies the swim steering inside LivingEntity#travel's in-water branch
+    // only. Without the inWater guard it also ran for the swimming pose on land
+    // (crawling), pulling the predicted motionY towards the look direction for a
+    // player the client keeps flat on the floor.
+    if (waterUpdate && swimming && inWater) {
       double d3 = environment.lookVector().getY();
       double d4 = d3 < -0.2D ? 0.085D : 0.06D;
       boolean liquidPresent = Fluids.fluidPresentAt(user, positionX, positionY + 1.0 - 0.1, positionZ);

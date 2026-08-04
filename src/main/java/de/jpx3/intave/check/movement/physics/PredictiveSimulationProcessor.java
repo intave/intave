@@ -1,11 +1,14 @@
 package de.jpx3.intave.check.movement.physics;
 
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.diagnostic.IterativeStudy;
 import de.jpx3.intave.diagnostic.KeyPressStudy;
 import de.jpx3.intave.diagnostic.timings.Timings;
+import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.player.ItemProperties;
+import de.jpx3.intave.share.Input;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
@@ -34,16 +37,226 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
     MovementMetadata movementData = user.meta().movement();
     boolean searchKeys = simulator.affectedByMovementKeys();
 
+    if (IntaveLogger.traceEnabled()) {
+      IntaveLogger.trace("[BRANCH-DEBUG] " + user.player().getName()
+        + " simulator=" + simulator.getClass().getSimpleName()
+        + " searchKeys=" + searchKeys
+        + " externalKeyApply=" + movementData.externalKeyApply
+        + " elytraFlying=" + movementData.elytraFlying
+        + " inWater=" + movementData.inWater
+        + " inLava=" + movementData.inLava()
+        + " isInVehicle=" + movementData.isInVehicle()
+        + " inputFwd=" + movementData.input.forwardKey());
+    }
+
     if (movementData.externalKeyApply) {
       // vehicles sent us the keys
       return simulateWithKeyPress(user, simulator, movementData.clientForwardKey, movementData.clientStrafeKey, movementData.clientPressedJump);
     } else if (searchKeys) {
-      // we must search and guess the keys
+      if (MinecraftVersions.VER1_21_3.atOrAbove()) {
+        // 1.21.2+ clients report their movement keys directly via the
+        // ServerboundPlayerInputPacket (mapped to STEER_VEHICLE here). It is only
+        // resent when the input *changes*, so the current key state lives
+        // persistently in movementData.input rather than the per-tick
+        // externalKeyApply flag. Use it instead of brute-force guessing: the guess
+        // path was resolving to "no keys pressed", so the prediction was pure
+        // friction decay (~0.55x of the real speed) and every walking player got
+        // flagged for moving too fast. The received motion is still validated
+        // against the simulated result, so a speed cheat pressing forward is
+        // caught the same way.
+        //
+        // NB: only the *movement* keys (forward/strafe) are taken from the input
+        // packet -- those apply every tick while held, so they're accurate. The
+        // jump bit is NOT usable directly: it reports "jump key held", not "jumped
+        // this tick". A player holding jump while bunny-hopping reports jump=true
+        // every tick, but only actually jumps on a ground-contact tick; feeding the
+        // held bit in made us predict a jump (+0.42 Y, +0.2 sprint boost) on every
+        // ground tick and over-predict -> false "moved incorrectly" flags. So the
+        // jump is detected from the received vertical motion instead, exactly like
+        // the legacy key-search path does.
+        Input input = movementData.input;
+        boolean jumped = detectJumpFromMotion(movementData);
+        Simulation simulation = simulateWithKeyPress(user, simulator, input.forwardKey(), input.sidewaysKey(), jumped);
+        simulation = resolveProneAmbiguity(user, simulator, simulation, input, jumped);
+        simulation = resolveJumpAmbiguity(user, simulator, simulation, input, jumped);
+        return resolveStaleInput(user, simulator, simulation);
+      }
+      // legacy clients: we must search and guess the keys
       return performKeySearchSimulation(user, simulator);
     } else {
       // keys don't matter
       return simulateWithKeyPress(user, simulator, 0, 0, false);
     }
+  }
+
+  /**
+   * Detects whether the player jumped on this tick purely from the received
+   * vertical motion, mirroring the legacy key-search paths
+   * ({@link #simulateMovementKeyPredictionBiased} / {@link #simulateMovementLastKeyBiased}).
+   * This is used instead of the client's (held) jump input bit for 1.21.2+.
+   */
+  private boolean detectJumpFromMotion(MovementMetadata movementData) {
+    if (movementData.denyJump()) {
+      return false;
+    }
+    if (movementData.inWater || movementData.inLava()) {
+      // In liquids the held jump bit IS per-tick accurate: vanilla's
+      // jumpInLiquid() adds +0.04 to motionY on EVERY tick the key is held
+      // (even while sinking), exactly like movement keys apply while held.
+      // The "held vs edge-triggered" problem only exists for ground jumps.
+      // Detecting from motionY > 0 here was wrong: a player holding space
+      // while descending in water still gets the +0.04 boost, so we
+      // under-predicted Y by exactly 0.04 every tick -> false flags while
+      // swimming.
+      return movementData.input.jump();
+    }
+    if (movementData.lastOnGround) {
+      double motionY = movementData.motionY();
+      if (Math.abs(motionY - 0.2) < 1e-5 || motionY == movementData.jumpMotion()) {
+        return true;
+      }
+      // A launch close to, but not exactly, our jumpMotion() is still a jump (jump
+      // boost, a jump-strength attribute the server resolved differently). Anything
+      // clearly below it is far more likely an auto-step -- the block edge the player
+      // walked into lifts them without any vertical velocity (0.1875 onto a bottom
+      // trapdoor, 0.3125 from there onto a slab, 0.5 onto a slab) -- and guessing
+      // "jump" there costs a whole ballistic arc plus an airborne model for the ticks
+      // after it. Whichever way this guess lands, resolveJumpAmbiguity retries the
+      // other one when the movement is not reproduced.
+      return motionY >= movementData.jumpMotion() * 0.9
+        && motionY <= movementData.jumpMotion() + 0.05
+        && movementData.ticksPast(EXTERNAL_VELOCITY) > 1;
+    }
+    return false;
+  }
+
+  private static final double AMBIGUITY_RETRY_ACCURACY = 0.002;
+  private static final double STALE_INPUT_SEARCH_ACCURACY = 0.01;
+
+  /**
+   * Falls back to the brute-force key search when the client's reported input does not
+   * explain the movement at all.
+   * <p>
+   * {@code ServerboundPlayerInputPacket} is only sent when the input CHANGES, so
+   * {@link MovementMetadata#input} is persistent state rather than a per-tick fact. One
+   * dropped, delayed or reordered packet leaves it wrong until the player next changes
+   * keys, and every tick until then is predicted without the acceleration the client
+   * actually applied -- a detection storm that starts and stops out of nowhere. Live
+   * traces show it happening: ground ticks reporting no keys at all while the player
+   * accelerates, received motion running 2x to 10x the prediction. The pre-1.21.2 path
+   * never trusted a single hypothesis for exactly this reason, so borrow it whenever
+   * ours does not fit; when the input is right (the overwhelming majority of ticks) the
+   * search is never even entered.
+   */
+  private Simulation resolveStaleInput(User user, Simulator simulator, Simulation simulation) {
+    MovementMetadata movementData = user.meta().movement();
+    double accuracy = simulation.accuracy(movementData.motion());
+    if (accuracy <= STALE_INPUT_SEARCH_ACCURACY) {
+      return simulation;
+    }
+    int keyForward = movementData.keyForward;
+    int keyStrafe = movementData.keyStrafe;
+    boolean physicsJumped = movementData.physicsJumped;
+    Simulation previous = simulation.reusableCopy();
+    Simulation searched = performKeySearchSimulation(user, simulator);
+    if (searched.accuracy(movementData.motion()) < accuracy) {
+      return searched;
+    }
+    // the search overwrote these while trying its candidates
+    movementData.keyForward = keyForward;
+    movementData.keyStrafe = keyStrafe;
+    movementData.physicsJumped = physicsJumped;
+    return previous;
+  }
+
+  /**
+   * Resolves whether the client really jumped this tick.
+   * <p>
+   * Upward motion off the ground is not proof of a jump: the auto-step lifts the
+   * player by the height of the block edge they walked into -- 0.1875 onto a bottom
+   * trapdoor, 0.3125 from one onto a slab, 0.5 onto a slab -- while their vertical
+   * velocity stays zero. Predicting a jump there produces a whole ballistic arc the
+   * client never flies, and worse, it leaves our model airborne for the following
+   * ticks, where none of the ground-based tolerances apply anymore. Conversely a real
+   * jump that misses our jumpMotion() (block jump factor, jump boost) must not be
+   * predicted as a step. Both directions are cheap to just try: simulate the other
+   * assumption and keep whichever reproduces the received motion, which is what the
+   * legacy key search does with the very same bit.
+   */
+  private Simulation resolveJumpAmbiguity(
+    User user, Simulator simulator, Simulation simulation, Input input, boolean jumped
+  ) {
+    MovementMetadata movementData = user.meta().movement();
+    double accuracy = simulation.accuracy(movementData.motion());
+    if (accuracy <= AMBIGUITY_RETRY_ACCURACY) {
+      return simulation;
+    }
+    boolean alternative = !jumped;
+    if (alternative && (!movementData.lastOnGround || movementData.denyJump())
+      && !movementData.inWater && !movementData.inLava()) {
+      return simulation; // a jump was not possible here, nothing to try
+    }
+    Simulation previous = simulation.reusableCopy();
+    Simulation retry = simulateWithKeyPress(
+      user, simulator, input.forwardKey(), input.sidewaysKey(), alternative
+    );
+    return retry.accuracy(movementData.motion()) < accuracy ? retry : previous;
+  }
+
+  private static final double PRONE_AMBIGUITY_RETRY_ACCURACY = AMBIGUITY_RETRY_ACCURACY;
+
+  /**
+   * Resolves the one-tick ambiguity of the client's prone ("moving slowly") state.
+   * <p>
+   * The client scales its movement input by the sneaking-speed attribute while
+   * crawling, using the pose it held at the START of the tick; our pose is derived
+   * from the position the client has already moved to. Around every transition into
+   * or out of the crawl the two therefore disagree for a tick or two, and that is
+   * worth a factor of ~3 on the acceleration -- more than enough to flag. While the
+   * state is ambiguous, re-run the tick with the opposite assumption and keep
+   * whichever reproduces the received motion, exactly like the legacy key search
+   * tries the plausible client states. The worst a cheater gains is walking speed
+   * while prone, for the few ticks around a pose change.
+   */
+  private Simulation resolveProneAmbiguity(
+    User user, Simulator simulator, Simulation simulation, Input input, boolean jumped
+  ) {
+    MovementMetadata movementData = user.meta().movement();
+    double accuracy = simulation.accuracy(movementData.motion());
+    if (accuracy <= PRONE_AMBIGUITY_RETRY_ACCURACY) {
+      return simulation;
+    }
+    // Deliberately NOT limited to the transition window: our pose comes from a
+    // collision test against our own block shapes, so a block we resolve wrongly
+    // (a bottom trapdoor, a slab, a ladder) can make us believe a player is prone
+    // for as long as they stand on it. Assuming the slowdown then under-predicts by
+    // 3x for the whole time, which is worse than never having applied it. Whenever
+    // the primary guess does not reproduce the movement, the other assumption gets a
+    // chance -- picking the closer one can only ever lower the speed we accept for a
+    // prone player, so it cannot be turned into an advantage.
+    // the pooled simulation object is reused by the next simulateTick call
+    Simulation previous = simulation.reusableCopy();
+    boolean alternativeAccepted = false;
+    movementData.proneSlowdownOverride = movementData.crawling() ? -1 : 1;
+    try {
+      Simulation alternative = simulateWithKeyPress(
+        user, simulator, input.forwardKey(), input.sidewaysKey(), jumped
+      );
+      if (alternative.accuracy(movementData.motion()) < accuracy) {
+        // the pose we derived disagreed with the client: keep the evaluator lenient
+        // for a few ticks, the next ones are likely to disagree the same way, and
+        // leave the override in place so the setback simulation for this tick uses
+        // the assumption we just accepted (tickComplete clears it)
+        alternativeAccepted = true;
+        movementData.proneAmbiguityTicks = 4;
+        return alternative;
+      }
+    } finally {
+      if (!alternativeAccepted) {
+        movementData.proneSlowdownOverride = 0;
+      }
+    }
+    return previous;
   }
 
   @Override
@@ -52,7 +265,11 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
   ) {
     MetadataBundle meta = user.meta();
     MovementMetadata movementData = meta.movement();
-    jumped &= movementData.lastOnGround;
+    // A ground jump requires standing on the ground last tick, but a liquid
+    // jump (+0.04/tick, see BaseSimulator's inWater/inLava branches) does not
+    // -- lastOnGround is false while swimming, and masking with it here
+    // silently dropped every liquid jump and under-predicted Y by 0.04/tick.
+    jumped &= movementData.lastOnGround || movementData.inWater || movementData.inLava();
     movementData.keyForward = forward;
     movementData.keyStrafe = strafe;
     movementData.physicsJumped = jumped;
@@ -65,6 +282,12 @@ public final class PredictiveSimulationProcessor implements SimulationProcessor 
       movementData.sprintingAllowed(),
       jumped, meta.inventory().handActive(), false
     );
+    // Every other simulateTick caller refreshes friction first (see the
+    // before-velocity / locked-key / key-search paths); this direct path did not,
+    // so the friction-influenced move speed stayed at the metadata's default 0 and
+    // the simulation applied ZERO acceleration -> prediction was pure friction
+    // decay and every moving player was flagged. Refresh it here too.
+	  movementData.refreshFriction(configuration.isSprinting());
 	  return simulator.simulateTick(user, motion, movementData, configuration);
   }
 

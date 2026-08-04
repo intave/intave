@@ -12,6 +12,23 @@
 version: "14.0.0"
 state: 0
 
+# Verbose diagnostic trace logging (physics prediction internals: branch
+# selection, friction, client input keys and failed-prediction dumps).
+# Only enable this while hunting false positives - it is VERY noisy.
+trace: false
+
+trustfactor:
+  # How a player with no intave.trust.* permission gets their trust factor.
+  #
+  # true:  derived from their own history - playtime, total joins and past
+  #        violations. A long-standing player is trusted further (checks get
+  #        more tolerant), a brand new one less. Recomputed on every join.
+  # false: nothing is derived; everyone without a permission stays on the
+  #        default (orange). This is how Intave behaved before this option.
+  #
+  # An explicit intave.trust.* permission always wins over this.
+  automatic: true
+
 check:
   physics:
     # Severely nerfs the physics check
@@ -181,7 +198,17 @@ check:
     enabled: true
     check_timings: false
 
-    # Set a limit for the cumulative rotation in a 5 second window
+    # Printer mode: let schematic clients place blocks (Litematica printer + easy-place,
+    # build clients). Placements are then forwarded to the server exactly as the client
+    # sent them and are no longer validated here: placing against nothing ("airplace"),
+    # against a block the player is not looking at, with a block face or hit vector the
+    # player's own view does not produce, and long fast chains of placements are all
+    # allowed and never flagged.
+    # This gives up scaffold detection completely. Everything else (block breaking,
+    # interaction, reach, movement, combat) keeps being checked as usual.
+    printer-mode: false
+
+    # Set a limit for the cumulative rotation in a 5 second wвindow
     # This helps to prevent very strong high-rotation scaffold cheats
     # In certain scenarios Intave will deduct up to 1250 combined degrees from this value
     # 360 degrees = 1 full rotation

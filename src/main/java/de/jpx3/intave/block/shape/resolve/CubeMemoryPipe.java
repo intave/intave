@@ -4,6 +4,7 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.diagnostic.ShapeAccessFlowStudy;
+import de.jpx3.intave.executor.Synchronizer;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -76,6 +77,13 @@ final class CubeMemoryPipe implements ShapeResolverPipeline {
   }
 
   public static boolean isInLoadedChunk(World world, int x, int z) {
+    if (Synchronizer.onFolia()) {
+      // Another chunk-system read that is illegal off the owning region thread. It only
+      // guards against learning a shape that was resolved from an unloaded chunk, and
+      // the drill now reports such a failure by throwing instead of returning a guess,
+      // so anything that got this far is trustworthy.
+      return true;
+    }
     return world.isChunkLoaded(x >> 4, z >> 4);
   }
 

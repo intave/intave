@@ -5,8 +5,10 @@ import de.jpx3.intave.user.User;
 import io.papermc.paper.threadedregions.scheduler.AsyncScheduler;
 import io.papermc.paper.threadedregions.scheduler.EntityScheduler;
 import io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler;
+import io.papermc.paper.threadedregions.scheduler.RegionScheduler;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 
 import java.lang.reflect.Method;
@@ -20,12 +22,14 @@ import java.util.function.Function;
 final class FoliaTaskScheduler implements TaskScheduler {
 	private final static AsyncScheduler asyncScheduler;
 	private final static GlobalRegionScheduler globalScheduler;
+	private final static RegionScheduler regionScheduler;
 	private final static Function<Entity, EntityScheduler> schedulerFromEntity;
 
 	static {
 		try {
 			globalScheduler = (GlobalRegionScheduler) Bukkit.getServer().getClass().getMethod("getGlobalRegionScheduler").invoke(Bukkit.getServer());
 			asyncScheduler = (AsyncScheduler) Bukkit.getServer().getClass().getMethod("getAsyncScheduler").invoke(Bukkit.getServer());
+			regionScheduler = (RegionScheduler) Bukkit.getServer().getClass().getMethod("getRegionScheduler").invoke(Bukkit.getServer());
 			Method getScheduler = Entity.class.getMethod("getScheduler");
 			schedulerFromEntity = entity -> {
 				try {
@@ -43,9 +47,20 @@ final class FoliaTaskScheduler implements TaskScheduler {
 
 	private final Map<Task, ScheduledTask> taskMap = new ConcurrentHashMap<>();
 
+	private static boolean pluginDisabled() {
+		// During shutdown a still-running async task (e.g. PlayerTime's transaction
+		// loop) can try to schedule region/entity work; Folia throws
+		// IllegalPluginAccessException once the plugin is disabled. Skip scheduling
+		// rather than let that exception spam the log.
+		return !IntavePlugin.singletonInstance().isEnabled();
+	}
+
 	@Override
 	public void startSync(Task task) {
 //		System.out.println("Starting task " + task.name() + " synchronously");
+		if (pluginDisabled()) {
+			return;
+		}
 		ScheduledTask outTask;
 		if (task.period() >= 1) {
 			outTask = globalScheduler.runAtFixedRate(
@@ -71,6 +86,15 @@ final class FoliaTaskScheduler implements TaskScheduler {
 	@Override
 	public void startUserSync(Task task, User user) {
 //		System.out.println("Starting task " + task.name() + " user-synchronously");
+		if (pluginDisabled()) {
+			return;
+		}
+		if (user.synthetic()) {
+			// Test/fallback users have no region-owned entity and therefore no
+			// EntityScheduler; run region-independently on the global scheduler.
+			startSync(task);
+			return;
+		}
 		EntityScheduler scheduler = schedulerFromEntity.apply(user.player());
 		ScheduledTask outTask;
 		if (task.period() >= 1) {
@@ -96,8 +120,41 @@ final class FoliaTaskScheduler implements TaskScheduler {
 	}
 
 	@Override
+	public void startRegionSync(Task task, Location location) {
+		if (pluginDisabled()) {
+			return;
+		}
+		ScheduledTask outTask;
+		if (task.period() >= 1) {
+			outTask = regionScheduler.runAtFixedRate(
+				IntavePlugin.singletonInstance(),
+				location,
+				scheduledTask -> task.run(),
+				Math.max(1L, task.delay()), task.period()
+			);
+		} else if (task.delay() <= 0) {
+			outTask = regionScheduler.run(
+				IntavePlugin.singletonInstance(),
+				location,
+				scheduledTask -> task.run()
+			);
+		} else {
+			outTask = regionScheduler.runDelayed(
+				IntavePlugin.singletonInstance(),
+				location,
+				scheduledTask -> task.run(),
+				task.delay()
+			);
+		}
+		taskMap.put(task, outTask);
+	}
+
+	@Override
 	public void startAsync(Task task) {
 //		System.out.println("Starting task " + task.name() + " asynchronously");
+		if (pluginDisabled()) {
+			return;
+		}
 		ScheduledTask outTask;
 		if (task.period() >= 1) {
 			outTask = asyncScheduler.runAtFixedRate(

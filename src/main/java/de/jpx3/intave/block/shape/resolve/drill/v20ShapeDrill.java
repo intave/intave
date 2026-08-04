@@ -2,7 +2,9 @@ package de.jpx3.intave.block.shape.resolve.drill;
 
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
+import de.jpx3.intave.block.shape.resolve.ShapeResolutionFailure;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
+import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.klass.rewrite.PatchyAutoTranslation;
 import de.jpx3.intave.klass.rewrite.PatchyTranslateParameters;
@@ -20,6 +22,7 @@ import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_17_R1.CraftWorld;
 import org.bukkit.entity.Player;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -29,24 +32,34 @@ public final class v20ShapeDrill extends AbstractShapeDrill {
   @PatchyAutoTranslation
   public BlockShape collisionShapeOf(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
     IBlockData blockData = (IBlockData) BlockVariantRegister.rawVariantOf(type, blockState);
-    IBlockAccess blockAccess = chunkAccessOf(world, posX, posZ);
-    if (blockData == null || blockAccess == null) {
+    if (blockData == null) {
       return BlockShapes.emptyShape();
     }
-    VoxelShape collisionShape = blockData.getCollisionShape(blockAccess, blockPositionOf(posX, posY, posZ));
-    return shapeFromVoxel(collisionShape, posX, posY, posZ);
+    IBlockAccess blockAccess = chunkAccessOf(world, posX, posZ);
+    try {
+      VoxelShape collisionShape = blockData.getCollisionShape(blockAccess, blockPositionOf(posX, posY, posZ));
+      return shapeFromVoxel(collisionShape, posX, posY, posZ);
+    } catch (Throwable throwable) {
+      // Never answer "full cube" here: the pipeline caches the result per block
+      // variant, so guessing turns one failed lookup into a permanently wrong shape.
+      throw new ShapeResolutionFailure("collision shape of " + type + "[" + blockState + "]", throwable);
+    }
   }
 
   @Override
   @PatchyAutoTranslation
   public BlockShape outlineShapeOf(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
     IBlockData blockData = (IBlockData) BlockVariantRegister.rawVariantOf(type, blockState);
-    IBlockAccess blockAccess = chunkAccessOf(world, posX, posZ);
-    if (blockData == null || blockAccess == null) {
+    if (blockData == null) {
       return BlockShapes.emptyShape();
     }
-    VoxelShape shape = blockData.getShape(blockAccess, blockPositionOf(posX, posY, posZ));
-    return shapeFromVoxel(shape, posX, posY, posZ);
+    IBlockAccess blockAccess = chunkAccessOf(world, posX, posZ);
+    try {
+      VoxelShape shape = blockData.getShape(blockAccess, blockPositionOf(posX, posY, posZ));
+      return shapeFromVoxel(shape, posX, posY, posZ);
+    } catch (Throwable throwable) {
+      throw new ShapeResolutionFailure("outline shape of " + type + "[" + blockState + "]", throwable);
+    }
   }
 
   @PatchyAutoTranslation
@@ -77,8 +90,50 @@ public final class v20ShapeDrill extends AbstractShapeDrill {
   @PatchyAutoTranslation
   @PatchyTranslateParameters
   private IBlockAccess chunkAccessOf(World world, int posX, int posZ) {
+    if (Synchronizer.onFolia()) {
+      // Fetching the chunk is a chunk-system read, and region-threaded servers only
+      // allow those on the thread owning the region -- shapes, however, are resolved
+      // wherever a movement or interaction packet is handled. Since 1.13 a block's
+      // shape is fully determined by its state (wall/fence connections, slab and
+      // trapdoor halves, stair shapes are all stored in the state itself), and vanilla
+      // serves it straight from the block state's shape cache without touching the
+      // level, so resolving without one returns the same shape for every block that
+      // does not declare a dynamic shape.
+      //
+      // Pass the empty accessor rather than null: the handful of blocks whose shape
+      // does read the level only read it to find their block entity, and this is the
+      // very accessor vanilla builds its own static shape cache with, so they answer
+      // with the shape they fall back to when there is no block entity -- a full cube
+      // for a shulker box (its closed shape), nothing for a moving piston. Passing
+      // null instead made those throw, and the rescue pipe then answered with a
+      // neutral 0.25-0.75 box: a player standing on a shulker box was standing on a
+      // surface 0.25 too low in our model, so we had them falling while they stood
+      // still.
+      return emptyBlockAccess();
+    }
     WorldServer handle = ((CraftWorld) world).getHandle();
     return findChunk(handle.getChunkProvider(), posX >> 4, posZ >> 4);//handle.getChunkProvider().c(posX >> 4, posZ >> 4);
+  }
+
+  private static Object emptyBlockAccessInstance;
+  private static boolean emptyBlockAccessResolved;
+
+  @PatchyAutoTranslation
+  @PatchyTranslateParameters
+  private IBlockAccess emptyBlockAccess() {
+    if (!emptyBlockAccessResolved) {
+      emptyBlockAccessResolved = true;
+      try {
+        Field instance = Lookup.serverField("EmptyBlockGetter", "INSTANCE");
+        instance.setAccessible(true);
+        emptyBlockAccessInstance = instance.get(null);
+      } catch (Throwable throwable) {
+        // a server without it just gets the old null behaviour: shapes that need a
+        // block entity throw and are answered by the rescue pipe
+        emptyBlockAccessInstance = null;
+      }
+    }
+    return (IBlockAccess) emptyBlockAccessInstance;
   }
 
   @PatchyAutoTranslation

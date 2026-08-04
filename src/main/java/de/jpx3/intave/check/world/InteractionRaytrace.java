@@ -9,6 +9,7 @@ import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.MovingObjectPositionBlock;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.IntaveControl;
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersions;
@@ -78,6 +79,41 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     super("InteractionRaytrace", "interactionraytrace", InteractionMeta.class);
 	  this.decrementer = new CheckViolationLevelDecrementer(this, 1);
     this.interactionEmulator = new InteractionEmulator(plugin);
+  }
+
+  /**
+   * With printer mode on, a placement is never validated against our own ray trace:
+   * schematic helpers place blocks the player is not looking at, against nothing, and
+   * with hand-picked hit vectors, none of which this check can reproduce. See
+   * {@link PrinterMode}.
+   * <p>
+   * This also covers the clicks such a helper makes with a block in hand that do not
+   * become a placement here — it re-clicks a position to get the block state it wants,
+   * and Intave classifies a click that cannot place (the block is already there, or the
+   * placement would be inside the player) as an {@code INTERACT}. Those are exempt too,
+   * but only while the item in hand is a block and the clicked block is not something
+   * with its own right-click behaviour: interacting with chests, doors and the like keeps
+   * being validated, so this stays a placement exemption rather than a blanket one.
+   */
+  private boolean unvalidatedPlacement(Interaction interaction) {
+    if (!PrinterMode.enabled()) {
+      return false;
+    }
+    InteractionType type = interaction.type();
+    if (type == InteractionType.PLACE) {
+      return true;
+    }
+    if (type != InteractionType.INTERACT) {
+      return false;
+    }
+    Material itemInHand = interaction.itemTypeInHand();
+    if (itemInHand == null || itemInHand == Material.AIR || !itemInHand.isBlock()) {
+      return false;
+    }
+    Material clicked = VolatileBlockAccess.typeAccess(
+      userOf(interaction.player()), interaction.targetBlock().toLocation(interaction.world())
+    );
+    return !BlockInteractionAccess.isClickable(clicked);
   }
 
   @PacketSubscription(
@@ -189,6 +225,25 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         player.sendMessage(type + " " + typeUsedInHand + " " + enumDirection + " " + presentType + "/" + typeUsedInHand);
       }
 
+      if (IntaveLogger.traceEnabled()) {
+        // The classification matters as much as the outcome: a placement Intave decided
+        // to call an INTERACT is still validated, printer mode or not.
+        IntaveLogger.trace("[PLACE-DEBUG] " + player.getName()
+          + " type=" + type
+          + " printer=" + PrinterMode.enabled()
+          + " item=" + typeUsedInHand
+          + " clicked=" + clickedType + "@" + blockPosition.getX() + "," + blockPosition.getY() + "," + blockPosition.getZ()
+          + " dir=" + enumDirection
+          + " placeAt=" + blockX + "," + blockY + "," + blockZ + " present=" + presentType
+          + " clickable=" + clickedIsInteractable
+          + " selfCollide=" + raytraceCollidesWithPosition
+          + " creative=" + abilityMetadata.inGameMode(CREATIVE)
+          // a server that awaits a teleport confirmation discards use_item_on silently,
+          // so a placement can die without anyone cancelling anything
+          + " awaitTp=" + movementData.awaitTeleport
+          + " seq=" + reader.sequenceNumber(user));
+      }
+
       Interaction interaction =
         new Interaction(
           interactionMeta.nextInteractionId++,
@@ -209,8 +264,14 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         interactionMeta.speculativeInteraction = interaction;
       }
 
-      boolean mustPostValidate = interactionMeta.remainingBlockStart > 0;// || !interactionMeta.interactionList.isEmpty();
+      boolean mustPostValidate = interactionMeta.remainingBlockStart > 0 // || !interactionMeta.interactionList.isEmpty();
+        && !unvalidatedPlacement(interaction);
       PreprocessResult result = mustPostValidate ? PreprocessResult.ENFORCE_ROUTING : preprocessInteraction(interaction);
+
+      if (IntaveLogger.traceEnabled() && result != PreprocessResult.OK) {
+        IntaveLogger.trace("[PLACE-DEBUG] " + player.getName() + " " + type
+          + " held back by preprocess: " + result);
+      }
 
       switch (result) {
         case FAILED_MINOR:
@@ -218,6 +279,10 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
           interaction.doNotSendPacket();
         case OK:
           InteractionEmulator.EmulationResult emulate = interactionEmulator.emulate(interaction);
+          if (IntaveLogger.traceEnabled() && emulate != InteractionEmulator.EmulationResult.SUCCEEDED) {
+            IntaveLogger.trace("[PLACE-DEBUG] " + player.getName() + " " + type
+              + " emulation " + emulate + (emulate.denyForward() ? " -> packet cancelled" : ""));
+          }
           if (emulate.denyForward()) {
             if (MinecraftVersions.VER1_19.atOrAbove()) {
               int sequenceNumber = packet.getIntegers().read(0);
@@ -286,6 +351,27 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     } finally {
       reader.release();
     }
+  }
+
+  /**
+   * Last word on an interaction packet: whether anything (this check, the feedback
+   * transaction timeout, another plugin's ProtocolLib listener) cancelled it before it
+   * could reach the server. Without this, a trace showing a clean placement cannot be
+   * told apart from a placement cancelled after us.
+   */
+  @PacketSubscription(
+    priority = ListenerPriority.MONITOR,
+    packetsIn = {
+      BLOCK_PLACE, USE_ITEM, USE_ITEM_ON
+    }
+  )
+  public void traceInteractionOutcome(PacketEvent event) {
+    if (!IntaveLogger.traceEnabled()) {
+      return;
+    }
+    IntaveLogger.trace("[PLACE-DEBUG] " + event.getPlayer().getName()
+      + " packet " + event.getPacketType().name()
+      + " leaves Intave cancelled=" + event.isCancelled());
   }
 
   @PacketSubscription(
@@ -498,6 +584,12 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
 
     if (interaction.type() == START_BREAK && interaction.digType() == ABORT_DESTROY_BLOCK) {
       // the block will be invalid regardless
+      return PreprocessResult.OK;
+    }
+
+    if (unvalidatedPlacement(interaction)) {
+      // Never route a placement through the ray trace: routing is what holds the packet
+      // back and eventually drops it, which is what makes an airplace impossible.
       return PreprocessResult.OK;
     }
 
@@ -885,6 +977,22 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     boolean refreshBlocks = interaction.type() != InteractionType.INTERACT;
     boolean canBeReceivedAsIsWithoutProblems = interaction.digType() == ABORT_DESTROY_BLOCK;
 
+    if (unvalidatedPlacement(interaction)) {
+      // Hand the packet to the server exactly as the client sent it: no rewrite to the
+      // block we ray traced, no drop, and no block refresh that would take the placement
+      // back on the client.
+      receiveExcludedPacket(player, interaction.thePacket());
+      return;
+    }
+
+    if (IntaveLogger.traceEnabled() && interaction.type() == InteractionType.PLACE) {
+      IntaveLogger.trace("[PLACE-DEBUG] " + player.getName() + " forwarding PLACE"
+        + " response=" + response + " hitMiss=" + hitMiss
+        + " ray=" + (raycastResult == null ? "null" : "hit")
+        + " flag=" + flag + " enforceCancel=" + enforceCancel
+        + (hitMiss || raycastResult == null ? " -> DROPPED (never reaches the server)" : ""));
+    }
+
     if (response == ResponseType.RAYTRACE_CAST) {
       if (hitMiss || raycastResult == null) {
         if (refreshBlocks && (targetLocation != null)) {
@@ -979,6 +1087,10 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     Player player = interaction.player();
     User user = userOf(player);
     InteractionType type = interaction.type();
+    if (unvalidatedPlacement(interaction)) {
+      // no violation, no counter-measure - the placement is not judged at all
+      return false;
+    }
     Location raycastLocation = raytraceEval.raycastLocation();
     boolean hitMiss = raytraceEval.hitMiss();
     Block targetLocationBlock = VolatileBlockAccess.blockAccess(targetLocation);
