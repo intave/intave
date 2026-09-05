@@ -253,14 +253,13 @@ public final class SetbackSimulator extends Module {
     int delay,
     boolean cancellable
   ) {
-    if (!Bukkit.isPrimaryThread()) {
-      Motion finalMotion1 = motion;
-      Synchronizer.synchronizeDelayed(() -> proceedEmulationTick(world, player, finalMotion1, ticks, startingTicks, delay, cancellable), 0);
-      return;
-    }
-
     User user = UserRepository.userOf(player);
     if (!user.hasPlayer()) {
+      return;
+    }
+    if (!Synchronizer.isSynchronized(user)) {
+      Motion finalMotion1 = motion;
+      Synchronizer.synchronizeDelayed(user, () -> proceedEmulationTick(world, player, finalMotion1, ticks, startingTicks, delay, cancellable), 0);
       return;
     }
 
@@ -396,7 +395,7 @@ public final class SetbackSimulator extends Module {
       //   s += " @" + movementData.entityBoundingBox();
 
       Motion finalMotion = motion.copy();
-      Synchronizer.synchronizeDelayed(() -> proceedEmulationTick(world, player, finalMotion, ticks - 1, startingTicks, delay, cancellable), delay);
+      Synchronizer.synchronizeDelayed(user, () -> proceedEmulationTick(world, player, finalMotion, ticks - 1, startingTicks, delay, cancellable), delay);
 
       // velocity
       Motion futureMotion = motionProceed(motion, user, boundingBox, true);

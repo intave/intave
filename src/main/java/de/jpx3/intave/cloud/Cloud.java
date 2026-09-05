@@ -33,7 +33,8 @@ import de.jpx3.intave.cloud.protocol.CloudToken;
 import de.jpx3.intave.cloud.request.CloudStorageGateaway;
 import de.jpx3.intave.executor.BackgroundExecutors;
 import de.jpx3.intave.executor.Synchronizer;
-import de.jpx3.intave.executor.TaskTracker;
+import de.jpx3.intave.executor.task.Task;
+import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -56,7 +57,7 @@ public final class Cloud {
 	private final ObjectStore objectStore = new ObjectStore();
 
 	private CloudConfig cloudConfig;
-	private int taskId;
+	private Task keepAliveTask;
 	private boolean lastAttemptFailed = false;
 	private volatile boolean shuttingDown;
 
@@ -94,8 +95,10 @@ public final class Cloud {
 		if (activeSession != null) {
 			activeSession.close();
 		}
-		Bukkit.getScheduler().cancelTask(taskId);
-		TaskTracker.stopped(taskId);
+		if (keepAliveTask != null) {
+			keepAliveTask.cancel();
+			keepAliveTask = null;
+		}
 	}
 
 	public void openSession(CloudToken cloudToken) {
@@ -120,9 +123,9 @@ public final class Cloud {
 						lastAttemptFailed = false;
 					}
 					setTrustAndStorage();
-					Synchronizer.synchronize(() ->
-						Bukkit.getOnlinePlayers().forEach(this::playerLogin)
-					);
+					Synchronizer.synchronize(() -> UserRepository.applyOnAll(user ->
+						Synchronizer.synchronize(user, () -> playerLogin(user.player()))
+					));
 				});
 			} else {
 				if (shuttingDown) {
@@ -168,10 +171,9 @@ public final class Cloud {
 	}
 
 	private void setupKeepAliveTick() {
-		taskId = Bukkit.getScheduler().scheduleAsyncRepeatingTask(
-			IntavePlugin.singletonInstance(), this::heartbeat, 20 * 10, 20 * 60
-		);
-		TaskTracker.begun(taskId);
+		keepAliveTask = Tasks.periodicNamed(
+			"Cloud.heartbeat", this::heartbeat, 20 * 10, 20 * 60
+		).startAsync();
 	}
 
 	private void setTrustAndStorage() {

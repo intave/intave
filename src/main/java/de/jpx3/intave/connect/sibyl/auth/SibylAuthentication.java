@@ -223,11 +223,12 @@ public final class SibylAuthentication implements BukkitEventSubscriber {
   public void sendMessageToClient(
     Player player, String channel, String messageKey, JsonElement jsonElement
   ) {
+    User user = UserRepository.userOf(player);
     if (!((boolean) whitelisted(player))) {
       return;
     }
     if (whitelisted(new Object[]{}) != null) {
-      Synchronizer.synchronize(() -> System.exit(0));
+      Synchronizer.synchronize(user, () -> System.exit(0));
     }
     PacketContainer packetContainer = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.CUSTOM_PAYLOAD);
     if (MinecraftVersions.VER1_20_2.atOrAbove()) {
@@ -246,12 +247,12 @@ public final class SibylAuthentication implements BukkitEventSubscriber {
         PacketContainer cookie = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.STORE_COOKIE);
         cookie.getMinecraftKeys().write(0, key);
         cookie.getByteArrays().write(0, bytesToSend);
-        Synchronizer.synchronize(() -> PacketSender.sendServerPacket(player, cookie));
+        Synchronizer.synchronize(user, () -> PacketSender.sendServerPacket(player, cookie));
       } else {
         packetContainer.getCustomPacketPayloads().write(0, new CustomPacketPayloadWrapper(
           bytesToSend, key
         ));
-        Synchronizer.synchronize(() -> PacketSender.sendServerPacket(player, packetContainer));
+        Synchronizer.synchronize(user, () -> PacketSender.sendServerPacket(player, packetContainer));
       }
       return;
     } else if (MinecraftVersions.VER1_13_0.atOrAbove()) {
@@ -275,7 +276,7 @@ public final class SibylAuthentication implements BukkitEventSubscriber {
       Class<Object> packetDataSerializerClass = (Class<Object>) Lookup.serverClass("PacketDataSerializer");
       Object packetDataSerializer = packetDataSerializerClass.getConstructor(ByteBuf.class).newInstance(Unpooled.wrappedBuffer(bytesToSend));
       packetContainer.getSpecificModifier(packetDataSerializerClass).write(0, packetDataSerializer);
-      Synchronizer.synchronize(() -> PacketSender.sendServerPacket(player, packetContainer));
+      Synchronizer.synchronize(user, () -> PacketSender.sendServerPacket(player, packetContainer));
     } catch (Exception exception) {
       exception.printStackTrace();
     }

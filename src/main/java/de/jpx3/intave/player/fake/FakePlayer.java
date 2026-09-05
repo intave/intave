@@ -4,9 +4,9 @@ import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.executor.Synchronizer;
-import de.jpx3.intave.executor.TaskTracker;
+import de.jpx3.intave.executor.task.Task;
+import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.player.fake.action.*;
 import de.jpx3.intave.player.fake.movement.FloatingMovement;
 import de.jpx3.intave.player.fake.movement.Movement;
@@ -15,7 +15,6 @@ import de.jpx3.intave.player.fake.movement.WalkingMovement;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.AttackMetadata;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
@@ -32,7 +31,6 @@ import static de.jpx3.intave.player.fake.ProfileGenerator.acquireGameProfile;
 
 public final class FakePlayer extends FakePlayerBody {
   public static final float SPAWN_HEALTH_STATE = 20.0f;
-  private static final IntavePlugin plugin = IntavePlugin.singletonInstance();
   private static final int LATENCY_JITTER_INTERVAL = 25;
   private static final double MAX_RELATIVE_MOVE_DIST = 3.5;
   private final Map<Class<? extends Action>, Action> actions;
@@ -45,7 +43,7 @@ public final class FakePlayer extends FakePlayerBody {
   private final Consumer<FakePlayer> attackSubscriber;
   public double killAuraVL = 0;
   public long lastPingPacketSent;
-  private int taskId;
+  private Task tickTask;
   private int previousLatency = 0, ticks = 0;
   private long lastHurtAction;
 
@@ -94,13 +92,14 @@ public final class FakePlayer extends FakePlayerBody {
   }
 
   public void startTicking() {
-    this.taskId = Bukkit.getScheduler().scheduleAsyncRepeatingTask(plugin, this::tick, 0, 1);
-    TaskTracker.begun(taskId);
+    this.tickTask = Tasks.periodicNamed("FakePlayer.tick", this::tick, 0, 1).startUserSync(user);
   }
 
   public void stopTicking() {
-    Bukkit.getScheduler().cancelTask(taskId);
-    TaskTracker.stopped(taskId);
+    if (tickTask != null) {
+      tickTask.cancel();
+      tickTask = null;
+    }
   }
 
   public void create(Location spawn) {
@@ -269,7 +268,7 @@ public final class FakePlayer extends FakePlayerBody {
   ) {
     Action action = actions.get(actionClass);
     if (action != null) {
-      Synchronizer.synchronize(action::perform);
+      Synchronizer.synchronize(user, action::perform);
     }
   }
 
@@ -294,10 +293,10 @@ public final class FakePlayer extends FakePlayerBody {
   }
 
   private boolean threadEscape(Runnable apply) {
-    if (Bukkit.isPrimaryThread()) {
+    if (Synchronizer.isSynchronized(user)) {
       return false;
     }
-    Synchronizer.synchronize(apply);
+    Synchronizer.synchronize(user, apply);
     return true;
   }
 

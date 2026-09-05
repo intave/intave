@@ -89,7 +89,8 @@ public final class InteractionEmulator implements EventProcessor {
       //      blockStateAccess.invalidateOverride(block.getX(), block.getY(), block.getZ());
     }
     if (REMOVE_PLACED_BLOCKS_WITH_DELAY) {
-      Bukkit.getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+      User user = userOf(place.getPlayer());
+      Synchronizer.synchronizeDelayed(user, () -> {
         place.getBlock().setType(Material.AIR);
       }, 20 * 5);
     }
@@ -305,7 +306,7 @@ public final class InteractionEmulator implements EventProcessor {
         );
       }
       if (protocol.selfAcknowledgePlacements()) {
-        Synchronizer.synchronize(() -> {
+        Synchronizer.synchronize(user, () -> {
           user.tickFeedback(() ->
             user.blockCache().moveClientSpeculationsToOverride(player.getWorld(), sequenceNumber)
           );

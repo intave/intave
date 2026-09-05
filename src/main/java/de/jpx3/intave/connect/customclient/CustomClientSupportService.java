@@ -56,11 +56,11 @@ public final class CustomClientSupportService implements EventProcessor {
       return;
     }
     ByteBuf bytes = reader.readBytes();
+    User user = UserRepository.userOf(player);
     try {
       bytes.markReaderIndex();
       String messageKey = LabyModChannelHelper.readString(bytes, 100);
       if (messageKey.equalsIgnoreCase("clientconfig")) {
-        User user = UserRepository.userOf(player);
         ConnectionMetadata connectionData = user.meta().connection();
         if (System.currentTimeMillis() - connectionData.lastCCCInfoMessageSent > 4000) {
           IntaveLogger.logger().info(player.getName() + " has sent a custom client configuration (client has special Intave support)");
@@ -75,13 +75,14 @@ public final class CustomClientSupportService implements EventProcessor {
       }
     } catch (RuntimeException exception) {
       exception.printStackTrace();
-      Synchronizer.synchronize(() -> player.kickPlayer("Invalid Intave client support payload packet"));
+      Synchronizer.synchronize(user, () -> player.kickPlayer("Invalid Intave client support payload packet"));
     } finally {
       bytes.resetReaderIndex();
     }
   }
 
   private void sendCustomDataPacket(Player player, String channel, String data, String prefix, String key) {
+    User user = UserRepository.userOf(player);
     PacketContainer packetContainer = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.CUSTOM_PAYLOAD);
     if (MinecraftVersions.VER1_13_0.atOrAbove()) {
       packetContainer.getMinecraftKeys().write(0, new MinecraftKey(prefix, key));
@@ -93,7 +94,7 @@ public final class CustomClientSupportService implements EventProcessor {
       Class<Object> packetDataSerializerClass = (Class<Object>) Lookup.serverClass("PacketDataSerializer");
       Object packetDataSerializer = packetDataSerializerClass.getConstructor(ByteBuf.class).newInstance(Unpooled.wrappedBuffer(LabyModChannelHelper.getBytesToSend(channel, data)));
       packetContainer.getSpecificModifier(packetDataSerializerClass).write(0, packetDataSerializer);
-      Synchronizer.synchronize(() -> PacketSender.sendServerPacket(player, packetContainer));
+      Synchronizer.synchronize(user, () -> PacketSender.sendServerPacket(player, packetContainer));
     } catch (Exception exception) {
       exception.printStackTrace();
     }

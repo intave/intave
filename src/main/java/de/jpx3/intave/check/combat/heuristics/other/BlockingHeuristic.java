@@ -103,7 +103,7 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
           //dmc6
           user.nerf(AttackNerfStrategy.BLOCKING, "block:speed");
           punishmentData.timeLastBlockCancel = System.currentTimeMillis();
-          Synchronizer.synchronize(() -> DataWatcherAccess.setDataWatcherFlag(player, DataWatcherAccess.WATCHER_BLOCKING_ID, false));
+          Synchronizer.synchronize(user, () -> DataWatcherAccess.setDataWatcherFlag(player, DataWatcherAccess.WATCHER_BLOCKING_ID, false));
         }
 
       }

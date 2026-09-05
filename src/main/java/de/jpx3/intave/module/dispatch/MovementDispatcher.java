@@ -358,7 +358,7 @@ public final class MovementDispatcher extends Module {
       if (protocol.protocolVersion() >= VER_1_16) {
         user.refreshSprintState();
       }
-      Synchronizer.synchronize(inventory::releaseItemNextTick);
+      Synchronizer.synchronize(user, inventory::releaseItemNextTick);
       movement.baseMotionX = 0;
       movement.baseMotionY = 0;
       movement.baseMotionZ = 0;
@@ -715,7 +715,7 @@ public final class MovementDispatcher extends Module {
     user.ignoreNextInboundPacket();
     PacketSender.receiveClientPacketFrom(player, packet);
     updatePlayerHandItem(player);
-    Synchronizer.synchronize(player::updateInventory);
+    Synchronizer.synchronize(user, player::updateInventory);
     if (IntaveControl.DEBUG_ITEM_USAGE) {
       player.sendMessage(ChatColor.DARK_PURPLE + "Release item");
     }

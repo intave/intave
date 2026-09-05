@@ -271,7 +271,7 @@ public final class CombatMitigator extends Module {
       type = AttackNerfStrategy.HT_LIGHT;
     }
     AttackNerfStrategy finalType = type;
-    Synchronizer.synchronize(() -> {
+    Synchronizer.synchronize(user, () -> {
       AttackNerfer nerfer = user.meta().punishment().nerferOfType(finalType);
       boolean wasActive = nerfer.active();
       nerfer.activate();
@@ -283,7 +283,7 @@ public final class CombatMitigator extends Module {
 
   @Deprecated
   public void mitigateOnce(User user, AttackNerfStrategy type, String checkId) {
-    Synchronizer.synchronize(() -> {
+    Synchronizer.synchronize(user, () -> {
       AttackNerfer nerfer = user.meta().punishment().nerferOfType(type);
       boolean wasActive = nerfer.active();
       nerfer.activateOnce();
@@ -294,7 +294,7 @@ public final class CombatMitigator extends Module {
   }
 
   public void mitigatePermanently(User user, AttackNerfStrategy type, String checkId) {
-    Synchronizer.synchronize(() -> {
+    Synchronizer.synchronize(user, () -> {
       AttackNerfer nerfer = user.meta().punishment().nerferOfType(type);
       boolean wasActive = nerfer.active();
       nerfer.activatePermanently();
@@ -356,7 +356,7 @@ public final class CombatMitigator extends Module {
       for (Player player1 : MessageChannelSubscriptions.receiverOf(MessageChannel.COMBAT_MODIFIERS)) {
         User user1 = UserRepository.userOf(player1);
         if (user1.receives(MessageChannel.COMBAT_MODIFIERS)) {
-          Synchronizer.synchronizeDelayed(() -> {
+          Synchronizer.synchronizeDelayed(user1, () -> {
             player1.sendMessage(kMessage);
           }, 4);
         }

@@ -9,6 +9,8 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriber;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -148,7 +150,8 @@ public final class PlayerListService implements BukkitEventSubscriber {
     if (!enabled()) {
       return;
     }
-    Synchronizer.synchronize(() -> disconnect(player));
+    User user = UserRepository.userOf(player);
+    Synchronizer.synchronize(user, () -> disconnect(player));
   }
 
   @BukkitEventSubscription
@@ -208,10 +211,11 @@ public final class PlayerListService implements BukkitEventSubscriber {
       return;
     }
     blocked.add(player.getAddress().getAddress());
-    Synchronizer.synchronize(() -> {
+    User user = UserRepository.userOf(player);
+    Synchronizer.synchronize(user, () -> {
       if (messageInChat) {
         player.sendMessage(kickMessage);
-        Synchronizer.synchronizeDelayed(() ->
+        Synchronizer.synchronizeDelayed(user, () ->
           player.kickPlayer(""), 5
         );
       } else {

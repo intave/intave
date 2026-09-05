@@ -263,7 +263,7 @@ public final class MovementMetadata implements SimulationEnvironment {
       if (player.hasMetadata("intave.testplayer.gliding")) {
         this.gliding = player.getMetadata("intave.testplayer.gliding").get(0).asBoolean();
       } else {
-        Synchronizer.synchronize(() -> this.gliding = flyingWithElytra(player));
+        Synchronizer.synchronize(user, () -> this.gliding = flyingWithElytra(player));
       }
     }
     applyPlayerStats();
@@ -1761,7 +1761,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
     setVerifiedLocation(player.getLocation());
     if (positionReset) {
-      Synchronizer.synchronize(() -> {
+      Synchronizer.synchronize(user, () -> {
         // player.getLocation() is assumed to be correct
         Location target = player.getLocation();
         Modules.tracker().packetLogging().logSystemMessage(user, () ->

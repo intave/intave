@@ -146,14 +146,14 @@ public final class StandardClientRetriever extends ChannelInboundHandlerAdapter 
 
 	@Override
 	public void onSetTrustfactor(ClientboundSetTrustfactor packet) {
-		UUID playerId = session.playerUUIDBy(packet.id());
-		if (playerId == null) {
+		User user = session.userById(packet.id());
+		if (!user.hasPlayer()) {
 			IntaveLogger.logger().error("[Cloud] Cannot apply packet '" + packet.name() + "': player id " + packet.id() + " is not mapped in this cloud session");
 			return;
 		}
-		Synchronizer.synchronize(() -> {
-			Player player = Bukkit.getPlayer(playerId);
-			if (player == null || !player.isOnline()) {
+		Synchronizer.synchronize(user, () -> {
+			Player player = user.player();
+			if (!player.isOnline()) {
 				IntaveLogger.logger().warn("[Cloud] Player id " + packet.id() + " went offline before packet '" + packet.name() + "' could be applied");
 				return;
 			}
@@ -220,15 +220,15 @@ public final class StandardClientRetriever extends ChannelInboundHandlerAdapter 
 
 	@Override
 	public void onSendMessage(ClientboundSendMessage packet) {
-		UUID playerId = session.playerUUIDBy(packet.playerId());
-		if (playerId == null) {
+		User user = session.userById(packet.playerId());
+		if (!user.hasPlayer()) {
 			IntaveLogger.logger().error("[Cloud] Cannot deliver clientbound packet '" + packet.name() + "': player id " + packet.playerId() + " is not mapped in this cloud session");
 			return;
 		}
 		List<TextComponent> lines = new ArrayList<>(packet.lines());
-		Synchronizer.synchronize(() -> {
-			Player player = Bukkit.getPlayer(playerId);
-			if (player == null || !player.isOnline()) {
+		Synchronizer.synchronize(user, () -> {
+			Player player = user.player();
+			if (!player.isOnline()) {
 				IntaveLogger.logger().warn("[Cloud] Player id " + packet.playerId() + " went offline before packet '" + packet.name() + "' could be delivered");
 				return;
 			}
@@ -245,15 +245,15 @@ public final class StandardClientRetriever extends ChannelInboundHandlerAdapter 
 
 	@Override
 	public void onSendActionbar(ClientboundSendActionbar packet) {
-		UUID playerId = session.playerUUIDBy(packet.playerId());
-		if (playerId == null) {
+		User user = session.userById(packet.playerId());
+		if (!user.hasPlayer()) {
 			IntaveLogger.logger().error("[Cloud] Cannot deliver actionbar: player id " + packet.playerId() + " is not mapped");
 			return;
 		}
 		String line = packet.line() == null ? "" : packet.line().toLegacyText();
-		Synchronizer.synchronize(() -> {
-			Player player = Bukkit.getPlayer(playerId);
-			if (player != null && player.isOnline()) {
+		Synchronizer.synchronize(user, () -> {
+			Player player = user.player();
+			if (player.isOnline()) {
 				ActionBar.sendActionBar(player, line);
 			}
 		});
@@ -261,13 +261,13 @@ public final class StandardClientRetriever extends ChannelInboundHandlerAdapter 
 
 	@Override
 	public void onRequestPermissions(ClientboundRequestPermissions packet) {
-		UUID playerId = session.playerUUIDBy(packet.playerId());
-		if (playerId == null) {
+		User user = session.userById(packet.playerId());
+		if (!user.hasPlayer()) {
 			return;
 		}
-		Synchronizer.synchronize(() -> {
-			Player player = Bukkit.getPlayer(playerId);
-			if (player == null || !player.isOnline()) {
+		Synchronizer.synchronize(user, () -> {
+			Player player = user.player();
+			if (!player.isOnline()) {
 				return;
 			}
 			List<String> permissions = player.getEffectivePermissions().stream().filter(PermissionAttachmentInfo::getValue).map(PermissionAttachmentInfo::getPermission).collect(Collectors.toList());
@@ -378,8 +378,9 @@ public final class StandardClientRetriever extends ChannelInboundHandlerAdapter 
 			return;
 		}
 		boolean enabled = packet.newState() == ClientboundSetPacketLoggingState.PacketLoggingState.START;
-		Synchronizer.synchronize(() -> {
-			Player player = Bukkit.getPlayer(playerId);
+		User user = session.userById(packet.playerId());
+		Runnable update = () -> {
+			Player player = user.hasPlayer() ? user.player() : null;
 			if (enabled && (player == null || !player.isOnline())) {
 				IntaveLogger.logger().warn("[Cloud] Player id " + packet.playerId() + " went offline before packet logging could start");
 				return;
@@ -388,18 +389,23 @@ public final class StandardClientRetriever extends ChannelInboundHandlerAdapter 
 			if (!enabled) {
 				session.sendPacket(new ServerboundPacketLog(packet.playerId(), packetLog));
 			}
-		});
+		};
+		if (user.hasPlayer()) {
+			Synchronizer.synchronize(user, update);
+		} else {
+			Synchronizer.synchronize(update);
+		}
 	}
 
 	@Override
 	public void onKickPlayer(ClientboundKickPlayer packet) {
-		UUID playerId = session.playerUUIDBy(packet.playerId());
-		if (playerId == null) {
+		User user = session.userById(packet.playerId());
+		if (!user.hasPlayer()) {
 			IntaveLogger.logger().error("[Cloud] Cannot kick player: player id " + packet.playerId() + " is not mapped");
 			return;
 		}
-		Synchronizer.synchronize(() -> {
-      Player player = Bukkit.getPlayer(playerId);
+		Synchronizer.synchronize(user, () -> {
+			Player player = user.player();
       String reason = packet.reason() == null ? "" : packet.reason();
       if (player != null && player.isOnline()) {
         session.rememberKickRequest(packet.playerId(), packet.requestUuid());

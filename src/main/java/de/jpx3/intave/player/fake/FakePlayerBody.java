@@ -11,7 +11,8 @@ import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.share.ClientMath;
-import org.bukkit.Bukkit;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
@@ -347,10 +348,11 @@ public abstract class FakePlayerBody extends FakePlayerIdentity {
   }
 
   private boolean threadEscape(Runnable apply) {
-    if (Bukkit.isPrimaryThread()) {
+    User user = UserRepository.userOf(observer);
+    if (Synchronizer.isSynchronized(user)) {
       return false;
     }
-    Synchronizer.synchronize(apply);
+    Synchronizer.synchronize(user, apply);
     return true;
   }
 

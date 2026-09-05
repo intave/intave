@@ -1,5 +1,6 @@
 package de.jpx3.intave.metric;
 
+import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.math.MathHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
@@ -10,6 +11,10 @@ public final class ServerHealth {
   private static double[] tpsAccess;
 
   public static void setup() {
+    if (Tasks.isFoliaServer()) {
+      tpsAccess = new double[]{20, 20, 20};
+      return;
+    }
     try {
       Server server = Bukkit.getServer();
       Field consoleField = server.getClass().getDeclaredField("console");

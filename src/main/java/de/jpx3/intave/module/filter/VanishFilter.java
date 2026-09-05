@@ -4,10 +4,8 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.PlayerInfoData;
-import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.linker.packet.PrioritySlot;
@@ -21,63 +19,17 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
-import static com.comphenix.protocol.wrappers.EnumWrappers.NativeGameMode.SURVIVAL;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
 
 public final class VanishFilter extends Filter {
   private final boolean disabled;
-  private boolean yukiJoined = false;
-  private long lastYukiJoin = 0;
 
   public VanishFilter(IntavePlugin plugin) {
     super("vanish");
     disabled = plugin.settings().getBoolean("command.fix-tab-kicks", false);
-
-    int taskId = Bukkit.getScheduler().scheduleAsyncRepeatingTask(plugin, () -> {
-
-      if (yukiJoined) {
-        // 25% chance that yuki will leave
-        if (ThreadLocalRandom.current().nextInt(1, 100) <= 25) {
-          Synchronizer.synchronizeDelayed(() -> {
-            yukiJoined = false;
-          }, 20 * ThreadLocalRandom.current().nextInt(60, 120));
-        }
-      } else {
-        int hourOfDay = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        boolean primeTime = hourOfDay >= 22 || hourOfDay <= 3;
-        int chance = primeTime ? 10 : 2;
-        if (ThreadLocalRandom.current().nextInt(1, 100) <= chance) {
-          Synchronizer.synchronizeDelayed(() -> {
-            yukiJoined = true;
-            FAKE_DATA = new PlayerInfoData(
-              new WrappedGameProfile(
-                UUID.fromString("3ad99947-352f-4719-be96-9bfccc36ae71"),
-                "funkeln"
-              ),
-              ThreadLocalRandom.current().nextInt(1, 100),
-              SURVIVAL,
-              null
-            );
-            lastYukiJoin = System.currentTimeMillis();
-          }, 20 * ThreadLocalRandom.current().nextInt(60, 120));
-        }
-      }
-      // every 15 minutes
-    }, 20 * 60 * 15, 20 * 60 * 15);
   }
-
-  private static PlayerInfoData FAKE_DATA = new PlayerInfoData(
-    new WrappedGameProfile(
-      UUID.fromString("3ad99947-352f-4719-be96-9bfccc36ae71"),
-      "funkeln"
-    ),
-    ThreadLocalRandom.current().nextInt(1, 100),
-    SURVIVAL,
-    null
-  );
 
   @PacketSubscription(
     packetsOut = {PLAYER_INFO}

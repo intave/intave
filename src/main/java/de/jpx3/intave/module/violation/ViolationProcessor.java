@@ -337,7 +337,8 @@ public final class ViolationProcessor extends Module {
   private void executeCommand(ViolationContext violationContext, String command) {
     Violation violation = violationContext.violation();
     Player player = violation.findPlayer().orElseThrow(IllegalStateException::new);
-	  Synchronizer.synchronize(() -> {
+    User user = UserRepository.userOf(player);
+	  Synchronizer.synchronize(user, () -> {
       String resolvedCommand = command.replace("{log-id}", "No Log-Id");
       plugin.logger().commandExecution(resolvedCommand);
       Bukkit.dispatchCommand(Bukkit.getConsoleSender(), resolvedCommand);
@@ -389,7 +390,8 @@ public final class ViolationProcessor extends Module {
   }
 
   private void synchronizedMessage(Player player, String message, Map<String, String> granularInfos) {
-    if (Bukkit.isPrimaryThread()) {
+    User user = UserRepository.userOf(player);
+    if (Synchronizer.isSynchronized(user)) {
       // Send spigot message with hoverable text
       TextComponent textComponent = new TextComponent(message);
       if (!granularInfos.isEmpty()) {
@@ -397,7 +399,7 @@ public final class ViolationProcessor extends Module {
       }
       player.spigot().sendMessage(textComponent);
     } else {
-      Synchronizer.synchronize(() -> synchronizedMessage(player, message, granularInfos));
+      Synchronizer.synchronize(user, () -> synchronizedMessage(player, message, granularInfos));
     }
   }
 

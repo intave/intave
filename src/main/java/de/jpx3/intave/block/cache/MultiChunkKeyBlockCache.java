@@ -127,7 +127,7 @@ final class MultiChunkKeyBlockCache implements BlockCache {
     speculationKeys.add(bigKey(posX, posY, posZ));
     User user = UserRepository.userOf(player);
     if (IntaveControl.BLOCK_CACHE_DEBUG || user.receives(MessageChannel.DEBUG_BLOCK_CACHE)) {
-      Synchronizer.synchronize(() -> {
+      Synchronizer.synchronize(user, () -> {
         player.sendMessage(ChatColor.LIGHT_PURPLE + "SPECULATING " + ChatColor.AQUA+ type + ChatColor.LIGHT_PURPLE + " at " + ChatColor.GRAY + position);
       });
     }
@@ -214,7 +214,7 @@ final class MultiChunkKeyBlockCache implements BlockCache {
     replacementCache.insert(position, blockState);
     User user = UserRepository.userOf(player);
     if (IntaveControl.BLOCK_CACHE_DEBUG || user.receives(MessageChannel.DEBUG_BLOCK_CACHE)) {
-      Synchronizer.synchronize(() -> {
+      Synchronizer.synchronize(user, () -> {
         player.sendMessage(ChatColor.LIGHT_PURPLE + "OVERRIDE " + ChatColor.AQUA  + type + ChatColor.LIGHT_PURPLE + " at " + ChatColor.GRAY + position + ChatColor.LIGHT_PURPLE + " for " + ChatColor.RED + reason);
       });
     }
@@ -241,7 +241,7 @@ final class MultiChunkKeyBlockCache implements BlockCache {
     replacementCache.lock(Position.of(posX, posY, posZ));
     User user = UserRepository.userOf(player);
     if (IntaveControl.BLOCK_CACHE_DEBUG || user.receives(MessageChannel.DEBUG_BLOCK_CACHE)) {
-      Synchronizer.synchronize(() -> {
+      Synchronizer.synchronize(user, () -> {
         player.sendMessage(ChatColor.LIGHT_PURPLE + "LOCK " + ChatColor.GRAY + Position.of(posX, posY, posZ));
       });
     }
@@ -252,7 +252,7 @@ final class MultiChunkKeyBlockCache implements BlockCache {
     if (replacementCache.unlock(Position.of(posX, posY, posZ))) {
       User user = UserRepository.userOf(player);
       if (IntaveControl.BLOCK_CACHE_DEBUG || user.receives(MessageChannel.DEBUG_BLOCK_CACHE)) {
-        Synchronizer.synchronize(() -> {
+        Synchronizer.synchronize(user, () -> {
           player.sendMessage(ChatColor.LIGHT_PURPLE + "UNLOCK " + ChatColor.GRAY + Position.of(posX, posY, posZ));
         });
       }

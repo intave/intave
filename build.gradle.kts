@@ -59,6 +59,7 @@ object IntaveTaskGroups {
  */
 repositories {
   mavenCentral()
+  maven { url = uri("https://repo.papermc.io/repository/maven-public/") }
   maven { url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") }
   maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
   maven { url = uri("https://oss.sonatype.org/content/repositories/central") }
@@ -69,6 +70,7 @@ repositories {
 dependencies {
   // Spigot
   compileOnly("org.spigotmc:spigot-api:1.12.2-R0.1-SNAPSHOT")
+  compileOnly("dev.folia:folia-api:1.20.1-R0.1-SNAPSHOT")
   // It is important to explicitly define the .jar dependency order, since the order of fileTree
   // is  file system dependent and may lead to compilation errors. If issues occur in the future,
   // it may be needed to create the list explicitly instead of just sorting.
@@ -155,6 +157,7 @@ registerBenchmarkTask(
  */
 bukkit {
   name = simpleName
+  foliaSupported = true
   authors = listOf("DarkAndBlue", "Jpx3", "vento", "vxcus", "lennoxlotl", "NotLucky", "Trattue")
   version = "${rootProject.version}"
   description = "${rootProject.description}"

@@ -157,7 +157,8 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
 	}
 
 	private void refreshBlocksAround(Player player, Location targetLocation) {
-		Synchronizer.synchronize(() -> {
+		User user = userOf(player);
+		Synchronizer.synchronize(user, () -> {
 			player.updateInventory();
 			refreshBlock(player, targetLocation);
 		});

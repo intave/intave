@@ -6,6 +6,8 @@ import com.comphenix.protocol.events.PacketContainer;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.player.fake.FakePlayer;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.Player;
 
 public abstract class Action {
@@ -25,10 +27,11 @@ public abstract class Action {
   }
 
   public final void tryPerform() {
+    User user = UserRepository.userOf(observer);
     if (++loop % this.probability.randomProbability() == 0) {
-      Synchronizer.synchronize(this::perform);
+      Synchronizer.synchronize(user, this::perform);
     } else {
-      Synchronizer.synchronize(this::performMissed);
+      Synchronizer.synchronize(user, this::performMissed);
     }
   }
 

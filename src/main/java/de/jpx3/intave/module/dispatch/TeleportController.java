@@ -350,7 +350,7 @@ public final class TeleportController implements PacketEventSubscriber {
     PacketContainer packet = event.getPacket();
     if (packet.getPlayerDigTypes().read(0) == DROP_ITEM && user.meta().inventory().heldItemType() == Material.AIR) {
       if (IntaveControl.TELEPORT_FAR_AWAY_ON_Q_PRESS) {
-        Synchronizer.synchronize(() -> {
+        Synchronizer.synchronize(user, () -> {
           Location from = player.getLocation().clone();
           Location randomLocation = player.getLocation().clone().add(Math.random() * 1000 - 500, 0, Math.random() * 1000 - 500);
           Block highestBlockAt = randomLocation.getWorld().getHighestBlockAt(randomLocation);
@@ -375,7 +375,7 @@ public final class TeleportController implements PacketEventSubscriber {
       }
 
       if (IntaveControl.GIVE_VELOCITY_ON_Q_PRESS) {
-        Synchronizer.synchronize(() -> {
+        Synchronizer.synchronize(user, () -> {
 //          Vector randomVelocity = new Vector(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
 //          player.setVelocity(new Vector(3, 0.4, 0.3));
           Vector randomVelocity = player.getLocation().getDirection().clone();
@@ -395,7 +395,7 @@ public final class TeleportController implements PacketEventSubscriber {
       }
 
       if (IntaveControl.EXTREME_VELOCITY_ON_Q_PRESS) {
-        Synchronizer.synchronize(() -> {
+        Synchronizer.synchronize(user, () -> {
           Vector extremeVelocity = player.getLocation().getDirection().normalize().multiply(8.0);
           Vector transmittedVelocity = sendVelocityPacket(player, extremeVelocity);
           player.setFallDistance(0.0f);
@@ -544,7 +544,7 @@ public final class TeleportController implements PacketEventSubscriber {
       if (IntaveControl.DEBUG_TELEPORT_LOCKS) {
         IntaveLogger.logger().printLine("[Intave] Resent outgoing teleport with shift to " + player.getName());
       }
-      Synchronizer.synchronize(() -> {
+      Synchronizer.synchronize(user, () -> {
         Location teleportLocation = movementData.teleportLocation;
         if (teleportLocation == null) {
           teleportLocation = player.getLocation();
@@ -578,7 +578,7 @@ public final class TeleportController implements PacketEventSubscriber {
     int expectedTeleportId,
     long expectedTeleportGeneration
   ) {
-    Synchronizer.synchronizeDelayed(() -> {
+    Synchronizer.synchronizeDelayed(user, () -> {
       MovementMetadata movementData = user.meta().movement();
       boolean matchingTeleport = movementData.teleportId == expectedTeleportId &&
         movementData.teleportGeneration == expectedTeleportGeneration;

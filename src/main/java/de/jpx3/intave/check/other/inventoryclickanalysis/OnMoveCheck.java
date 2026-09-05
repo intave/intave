@@ -74,7 +74,7 @@ public final class OnMoveCheck extends CheckPart<InventoryClickAnalysis> {
         .withVL(0)
         .build();
       Modules.violationProcessor().processViolation(violation);
-      Synchronizer.synchronize(player::closeInventory);
+      Synchronizer.synchronize(user, player::closeInventory);
       event.setCancelled(true);
     }
   }

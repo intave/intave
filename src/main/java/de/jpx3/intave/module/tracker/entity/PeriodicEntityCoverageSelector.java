@@ -1,12 +1,11 @@
 package de.jpx3.intave.module.tracker.entity;
 
-import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.executor.BackgroundExecutors;
-import de.jpx3.intave.executor.TaskTracker;
+import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.executor.task.Task;
+import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -25,7 +24,7 @@ public final class PeriodicEntityCoverageSelector {
   private final BiConsumer<? super User, ? super Entity> entityAdditionListener;
   private final BiConsumer<? super User, ? super Entity> entityRemovalListener;
 
-  private int taskId;
+  private Task task;
 
   public PeriodicEntityCoverageSelector(
     int ticks, double requiredDistance,
@@ -51,17 +50,18 @@ public final class PeriodicEntityCoverageSelector {
   }
 
   public void enableTask() {
-    taskId = Bukkit.getScheduler().scheduleAsyncRepeatingTask(IntavePlugin.singletonInstance(), () -> {
-      for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-        BackgroundExecutors.executeExternallyScheduled(() -> selectEntitiesToTraceFor(onlinePlayer));
-      }
-    }, ticks, ticks);
-    TaskTracker.begun(taskId);
+    task = Tasks.periodicNamed("PeriodicEntityCoverageSelector.select", () -> {
+      UserRepository.applyOnOnlineUsers(user ->
+        Synchronizer.synchronize(user, () -> selectEntitiesToTraceFor(user.player()))
+      );
+    }, ticks, ticks).startAsync();
   }
 
   public void disableTask() {
-    Bukkit.getScheduler().cancelTask(taskId);
-    TaskTracker.stopped(taskId);
+    if (task != null) {
+      task.cancel();
+      task = null;
+    }
   }
 
   private void selectEntitiesToTraceFor(Player player) {

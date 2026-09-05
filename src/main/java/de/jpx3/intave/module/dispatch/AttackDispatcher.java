@@ -154,7 +154,8 @@ public final class AttackDispatcher extends Module {
   )
   public void sentRespawn(PacketEvent event) {
     Player player = event.getPlayer();
-    Synchronizer.synchronizeDelayed(() -> disableReducing(player), 4);
+    User user = UserRepository.userOf(player);
+    Synchronizer.synchronizeDelayed(user, () -> disableReducing(player), 4);
   }
 
   @PacketSubscription(

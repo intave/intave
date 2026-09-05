@@ -155,7 +155,12 @@ public final class IntegrationTestService implements EventProcessor {
   public void scheduleTestsForFifthTick() {
     if (!environmentKnown() || IS_INTEGRATION_TEST_RUN) {
       Modules.linker().bukkitEvents().registerEventsIn(this);
-      Synchronizer.synchronizeDelayed(this::performTests, 5);
+      List<org.bukkit.World> worlds = Bukkit.getWorlds();
+      if (worlds.isEmpty()) {
+        Synchronizer.synchronizeDelayed(this::performTests, 5);
+      } else {
+        Synchronizer.synchronizeDelayed(worlds.get(0), 0, 0, this::performTests, 5);
+      }
     }
   }
 
@@ -166,7 +171,7 @@ public final class IntegrationTestService implements EventProcessor {
   public void on(WorldLoadEvent event) {
     Runnable runnable;
     while ((runnable = loadQueue.poll()) != null) {
-      Synchronizer.synchronize(runnable);
+      Synchronizer.synchronize(event.getWorld(), 0, 0, runnable);
     }
   }
 

@@ -13,6 +13,8 @@ import de.jpx3.intave.connect.sibyl.data.packet.SibylPacket;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.bukkit.entity.Player;
@@ -68,6 +70,7 @@ public final class SibylPacketTransmitter {
       return;
     }
     PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(CUSTOM_PAYLOAD);
+    User user = UserRepository.userOf(player);
     if (MinecraftVersions.VER1_13_0.atOrAbove()) {
       packet.getMinecraftKeys().write(0, new MinecraftKey("labymod3", "main"));
     } else {
@@ -81,7 +84,7 @@ public final class SibylPacketTransmitter {
         .getConstructor(ByteBuf.class)
         .newInstance(Unpooled.wrappedBuffer(bytesToSend));
       packet.getSpecificModifier(packetDataSerializerClass).write(0, packetDataSerializer);
-      Synchronizer.synchronize(() -> PacketSender.sendServerPacket(player, packet));
+      Synchronizer.synchronize(user, () -> PacketSender.sendServerPacket(player, packet));
     } catch (Exception exception) {
       exception.printStackTrace();
     }

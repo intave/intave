@@ -3,12 +3,12 @@ package de.jpx3.intave.module.player;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.storage.EmptyStorageGateway;
 import de.jpx3.intave.access.player.storage.StorageGateway;
 import de.jpx3.intave.executor.BackgroundExecutors;
 import de.jpx3.intave.executor.Synchronizer;
-import de.jpx3.intave.executor.TaskTracker;
+import de.jpx3.intave.executor.task.Task;
+import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.packet.PacketSender;
@@ -33,22 +33,26 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 public final class StorageLoader extends Module {
   private StorageGateway storageGateway = new EmptyStorageGateway();
   private static final long AUTO_REFRESH = MINUTES.toMillis(20);
+  private Task refreshTask;
 
   @Override
   public void enable() {
     Bukkit.getOnlinePlayers().forEach(this::requestStorageFor);
-    int taskId = Bukkit.getScheduler().scheduleAsyncRepeatingTask(
-      IntavePlugin.singletonInstance(),
-      () -> Bukkit.getOnlinePlayers().forEach(this::saveStorageFor),
+    refreshTask = Tasks.periodicNamed(
+      "StorageLoader.autoRefresh",
+      () -> UserRepository.applyOnOnlineUsers(this::saveStorageFor),
       AUTO_REFRESH / 50,
       AUTO_REFRESH / 50
-    );
-    TaskTracker.begun(taskId);
+    ).startAsync();
   }
 
   @Override
   public void disable() {
-    Bukkit.getOnlinePlayers().forEach(this::saveStorageFor);
+    if (refreshTask != null) {
+      refreshTask.cancel();
+      refreshTask = null;
+    }
+    UserRepository.applyOnOnlineUsers(this::saveStorageFor);
   }
 
   @BukkitEventSubscription(priority = EventPriority.HIGHEST)
@@ -105,7 +109,8 @@ public final class StorageLoader extends Module {
   }
 
   private void recurringLevelSet(Player player, int tick, int level) {
-    Synchronizer.synchronizeDelayed(() -> {
+    User user = UserRepository.userOf(player);
+    Synchronizer.synchronizeDelayed(user, () -> {
       sendPacketWithExperience(player, tick > 0 ? level : player.getLevel());
       if (tick > 0) {
         recurringLevelSet(player, tick - 1, level);
@@ -123,10 +128,15 @@ public final class StorageLoader extends Module {
 
   public void saveStorageFor(Player player) {
     User user = UserRepository.userOf(player);
+    saveStorageFor(user);
+  }
+
+  private void saveStorageFor(User user) {
     Storage storage = user.mainStorage();
     if (!user.hasPlayer()) {
       return;
     }
+    Player player = user.player();
     UUID id = player.getUniqueId();
     ByteBuffer buffer = StorageIOProcessor.outputFrom(storage);
     if (buffer.array().length > 40_000) {

@@ -166,7 +166,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         if (raytrace.reach() <= blockReachDistance) {
           firstRaytraceSuccessful = true;
           if (user.receives(MessageChannel.DEBUG_ATTACK_RAYTRACE)) {
-            Synchronizer.synchronize(() -> {
+            Synchronizer.synchronize(user, () -> {
               player.sendMessage("[AR] Prelim ray successful, reach: " + formatDouble(raytrace.reach(), 12) + " blocks");
             });
           }
@@ -184,11 +184,11 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       }
       if (user.receives(MessageChannel.DEBUG_PACKET_HOLD)) {
         if (resendLater) {
-          Synchronizer.synchronize(() -> {
+          Synchronizer.synchronize(user, () -> {
             player.sendMessage("%PH " + ChatColor.RED + "Await ATTACK at " + (System.currentTimeMillis() % 1000) + " since prelim ray failed");
           });
         } else {
-          Synchronizer.synchronize(() -> {
+          Synchronizer.synchronize(user, () -> {
             player.sendMessage("%PH " + ChatColor.GREEN + "Allowing ATTACK without hold at " + (System.currentTimeMillis() % 1000));
           });
         }
@@ -296,7 +296,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 
         if (user.receives(MessageChannel.DEBUG_PACKET_HOLD)) {
           if (pendingAttack.shouldResend) {
-            Synchronizer.synchronize(() -> {
+            Synchronizer.synchronize(user, () -> {
               player.sendMessage("%PH " + ChatColor.YELLOW + "Processing ATTACK at " + (System.currentTimeMillis() % 1000));
             });
           }
@@ -328,7 +328,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
           }
         } else {
           if (user.receives(MessageChannel.DEBUG_ATTACK_RAYTRACE)) {
-            Synchronizer.synchronize(() -> {
+            Synchronizer.synchronize(user, () -> {
               player.sendMessage("[AR] Attack timed out, ignoring attack");
             });
           }
@@ -726,7 +726,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     }
 
     if (user.receives(MessageChannel.DEBUG_ATTACK_RAYTRACE)) {
-      Synchronizer.synchronize(() -> {
+      Synchronizer.synchronize(user, () -> {
         player.sendMessage("[AR] Raytrace result: " + result + ", reach: " + formatDouble(raytrace.reach(), 12) + ", expansion: " + expansion + ", estimated: " + estimated);
       });
     }

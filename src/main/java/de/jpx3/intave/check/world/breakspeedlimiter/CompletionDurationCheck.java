@@ -25,6 +25,7 @@ import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.packet.converter.BlockPositionConverter;
 import de.jpx3.intave.reflect.access.ReflectiveEntityAccess;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.InventoryMetadata;
 import org.bukkit.Location;
@@ -171,7 +172,8 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
   }
 
   private void refreshBlocksAround(Player player, Location targetLocation) {
-    Synchronizer.synchronize(() -> {
+    User user = UserRepository.userOf(player);
+    Synchronizer.synchronize(user, () -> {
       player.updateInventory();
       refreshBlock(player, targetLocation);
 //      for (EnumDirection direction : EnumDirection.values()) {

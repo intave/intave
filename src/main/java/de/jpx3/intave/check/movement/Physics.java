@@ -75,6 +75,7 @@ import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.*;
 import de.jpx3.intave.user.storage.ViolationBufferStorage;
 import org.bukkit.ChatColor;
@@ -1255,7 +1256,7 @@ public final class Physics extends Check {
       String finalDebug = debug;
       if (!anyDebugRequested) {
         String finalFinalDebug = finalDebug;
-        Synchronizer.synchronize(() -> player.sendMessage(finalFinalDebug));
+        Synchronizer.synchronize(user, () -> player.sendMessage(finalFinalDebug));
       } else {
         finalDebug = ChatColor.stripColor(finalDebug);
         if (faultDebugRequested && violationLevelIncrease > 0) {
@@ -1309,12 +1310,13 @@ public final class Physics extends Check {
   }
 
   private void sendPacketWithExperience(Player player, int level) {
+    User user = UserRepository.userOf(player);
     BackgroundExecutors.execute(() -> {
       PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.EXPERIENCE);
       packet.getFloat().write(0, 0f);
       packet.getIntegers().write(0, 0);
       packet.getIntegers().write(1, level);
-      Synchronizer.synchronize(() ->
+      Synchronizer.synchronize(user, () ->
         PacketSender.sendServerPacket(player, packet));
     });
   }
@@ -1326,7 +1328,7 @@ public final class Physics extends Check {
     BoundingBox box = BoundingBox.fromPosition(user, user.meta().movement(), x, y, z).grow(1.2);
     Player player = user.player();
     List<Position> positions = Collision.collectCollidingPositions(player, box, 16, Collectors.toList());
-    Synchronizer.synchronize(() -> {
+    Synchronizer.synchronize(user, () -> {
       for (Position position : positions) {
         refreshBlock(player, position.toLocation(player.getWorld()));
       }

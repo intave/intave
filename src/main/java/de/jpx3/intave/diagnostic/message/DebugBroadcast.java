@@ -4,6 +4,8 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.connect.sibyl.SibylIntegrationService;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.user.MessageChannelSubscriptions;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -57,7 +59,8 @@ public final class DebugBroadcast {
             String prefix = configuration.prefixSelector().formatPrefix(severity, category.name());
             String theMessage = configuration.detailOf(category).select(fullMessage, shortMessage);
             String completeMessage = ChatColor.RED + "(insecure) " + color + prefix + " " + theMessage;
-            receiver.sendMessage(completeMessage);
+            User receiverUser = UserRepository.userOf(receiver);
+            receiverUser.sendMessage(completeMessage);
           }
         }
       }

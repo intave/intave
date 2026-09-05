@@ -5,6 +5,8 @@ import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Chest;
@@ -70,7 +72,8 @@ public class ChestLootProvider extends Module {
     }
     Player player = (Player) close.getPlayer();
     if (lootChests.containsKey(player)) {
-      Synchronizer.synchronizeDelayed(() -> {
+      User user = UserRepository.userOf(player);
+      Synchronizer.synchronizeDelayed(user, () -> {
         // clear player inventory
         player.getInventory().clear();
         player.getInventory().setArmorContents(new ItemStack[4]);

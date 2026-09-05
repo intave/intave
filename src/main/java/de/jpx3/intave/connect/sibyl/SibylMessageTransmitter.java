@@ -2,14 +2,17 @@ package de.jpx3.intave.connect.sibyl;
 
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 public final class SibylMessageTransmitter {
   public static void sendMessage(Player player, String message, String... args) {
-    if (!Bukkit.isPrimaryThread()) {
-      Synchronizer.synchronize(() -> sendMessage(player, message, args));
+    User user = UserRepository.userOf(player);
+    if (!Synchronizer.isSynchronized(user)) {
+      Synchronizer.synchronize(user, () -> sendMessage(player, message, args));
       return;
     }
     SibylIntegrationService sibyl = IntavePlugin.singletonInstance().sibyl();

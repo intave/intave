@@ -61,7 +61,7 @@ public final class AutoTotem extends MetaCheckPart<InventoryClickAnalysis, AutoT
             .withDetails(timeSincePickup + "ms delay")
             .withVL(meta.vl).build();
           Modules.violationProcessor().processViolation(violation);
-          Synchronizer.synchronizeDelayed(() -> {
+          Synchronizer.synchronizeDelayed(user, () -> {
             PlayerInventory inventory = user.player().getInventory();
             int freeSlot = inventory.firstEmpty();
             // move totem to free slot, if possible
@@ -73,7 +73,7 @@ public final class AutoTotem extends MetaCheckPart<InventoryClickAnalysis, AutoT
               meta.sus = false;
               meta.locked = true;
               user.refreshSprintState(x -> {
-                Synchronizer.synchronizeDelayed(() -> {
+                Synchronizer.synchronizeDelayed(user, () -> {
                   PlayerInventory inventory2 = user.player().getInventory();
                   // undo if not sus
                   if (!meta.sus) {

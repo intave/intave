@@ -461,9 +461,9 @@ public final class EntityTracker extends Module {
 
     connection.markForDeletion(entityId);
 
-    Synchronizer.synchronize(() -> {
+    Synchronizer.synchronize(user, () -> {
       user.tickFeedback(() -> {
-        Synchronizer.synchronize(() -> {
+        Synchronizer.synchronize(user, () -> {
           user.tickFeedback(() -> {
             connection.removeEntityIfMarked(entityId);
           }/*, APPEND_ON_OVERFLOW*/);
@@ -490,7 +490,7 @@ public final class EntityTracker extends Module {
     }
 
     if (IntaveControl.DEBUG_ENTITY_TRACKING) {
-      Synchronizer.synchronize(() -> {
+      Synchronizer.synchronize(user, () -> {
         Player target = user.player();
         if (target == null || entity == null) {
           return;
@@ -872,7 +872,7 @@ public final class EntityTracker extends Module {
     }
 
     if (IntaveControl.DEBUG_ENTITY_TRACKING) {
-      Synchronizer.synchronize(() -> {
+      Synchronizer.synchronize(user, () -> {
         Player target = user.player();
         if (target == null) {
           return;

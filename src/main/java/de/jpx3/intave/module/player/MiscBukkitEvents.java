@@ -207,6 +207,11 @@ public final class MiscBukkitEvents extends Module {
   }
 
   private void sendPrefixedMessage(String message, CommandSender target) {
+    if (target instanceof Player) {
+      User user = UserRepository.userOf((Player) target);
+      user.sendMessage(IntavePlugin.prefix() + message);
+      return;
+    }
     if (!Bukkit.isPrimaryThread()) {
       Synchronizer.synchronize(() -> sendPrefixedMessage(message, target));
       return;

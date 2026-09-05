@@ -289,11 +289,11 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       //      }
       if (user.receives(MessageChannel.DEBUG_PACKET_HOLD)) {
         if (!event.isCancelled()) {
-          Synchronizer.synchronize(() -> {
+          Synchronizer.synchronize(user, () -> {
             player.sendMessage("%PH " + ChatColor.GREEN + "Allowing " + interaction.type().name() + " without hold at " + (System.currentTimeMillis() % 1000));
           });
         } else {
-          Synchronizer.synchronize(() -> {
+          Synchronizer.synchronize(user, () -> {
             player.sendMessage("%PH " + ChatColor.RED + "Awaiting " + interaction.type().name() + " packet at " + (System.currentTimeMillis() % 1000) + ": prelim->"+ result);
           });
         }
@@ -420,11 +420,11 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     }
     if (user.receives(MessageChannel.DEBUG_PACKET_HOLD)) {
       if (!event.isCancelled()) {
-        Synchronizer.synchronize(() -> {
+        Synchronizer.synchronize(user, () -> {
           player.sendMessage("%PH " + ChatColor.GREEN + "Allowing " + interaction.type().name() + " without hold at " + (System.currentTimeMillis() % 1000));
         });
       } else {
-        Synchronizer.synchronize(() -> {
+        Synchronizer.synchronize(user, () -> {
           player.sendMessage("%PH " + ChatColor.RED + "Awaiting " + interaction.type().name() + " packet at " + (System.currentTimeMillis() % 1000) + ": prelim->"+ preprocess);
         });
       }
@@ -711,7 +711,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     }
 
     if (interaction.shouldSendPacket() && user.receives(MessageChannel.DEBUG_PACKET_HOLD)) {
-      Synchronizer.synchronize(() -> {
+      Synchronizer.synchronize(user, () -> {
         player.sendMessage("%PH " + ChatColor.YELLOW + "Processing " + interaction.type().name() + " packet at " + (System.currentTimeMillis() % 1000));
       });
     }
@@ -967,7 +967,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     ConnectionMetadata connection = user.meta().connection();
     RateLimiter refreshBlockRatelimit = connection.refreshBlockRatelimit;
     if (refreshBlockRatelimit.tryAcquire()) {
-      Synchronizer.synchronize(() -> {
+      Synchronizer.synchronize(user, () -> {
         if (IntaveControl.DEBUG_INTERACTION_REFRESHES) {
           player.sendMessage("Refreshed blocks around " + targetLocation);
         }
@@ -1160,7 +1160,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     boolean requireFeedbackTimedRemoval = trustChain.collapseState(blockPosition, !event.isCancelled());
     if (requireFeedbackTimedRemoval) {
       // next tick
-      Synchronizer.synchronize(() ->
+      Synchronizer.synchronize(user, () ->
         user.tickFeedback(() -> trustChain.removeCollapsedState(blockPosition)));
     }
   }

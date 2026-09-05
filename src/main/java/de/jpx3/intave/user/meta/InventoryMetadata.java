@@ -166,7 +166,7 @@ public final class InventoryMetadata {
 
       if (IntaveControl.DEBUG_ITEM_USAGE) {
         Material activeItem = this.activeItemType;
-        Synchronizer.synchronize(() -> {
+        Synchronizer.synchronize(user, () -> {
           player.sendMessage("Item usage started: " + activeItem);
         });
       }
@@ -200,7 +200,7 @@ public final class InventoryMetadata {
       this.deactivatedItemThisTick = true;
       Material activeItem = this.activeItemType;
       if (IntaveControl.DEBUG_ITEM_USAGE) {
-        Synchronizer.synchronize(() -> {
+        Synchronizer.synchronize(user, () -> {
           player.sendMessage("Item usage ended: " + activeItem);
         });
 //        Thread.dumpStack();

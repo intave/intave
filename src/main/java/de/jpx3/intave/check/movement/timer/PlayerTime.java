@@ -12,13 +12,14 @@
 package de.jpx3.intave.check.movement.timer;
 
 import com.comphenix.protocol.events.PacketEvent;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.check.CheckStatistics;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.movement.Timer;
 import de.jpx3.intave.cleanup.GarbageCollector;
+import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.feedback.FeedbackOptions;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
@@ -33,7 +34,6 @@ import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.*;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -63,8 +63,8 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
     super(parentCheck, PlayerTimeMeta.class);
     decrementer = parentCheck.decrementer();
 
-    Bukkit.getScheduler().runTaskTimer(IntavePlugin.singletonInstance(), () -> {
-      UserRepository.applyOnAll(user -> {
+    Tasks.periodicNamed("PlayerTime.transactionQueue", () -> {
+      UserRepository.applyOnOnlineUsers(user -> Synchronizer.synchronize(user, () -> {
         ConnectionMetadata connectionData = user.meta().connection();
         PlayerTimeMeta checkMeta = metaOf(user);
         //noinspection deprecation
@@ -74,8 +74,8 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
             checkMeta.queuedLimit = time;
           });
         });
-      });
-    }, 0, 1);
+      }));
+    }, 0, 1).startAsync();
   }
 
   @PacketSubscription(

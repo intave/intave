@@ -66,7 +66,7 @@ public final class NotOpenCheck extends CheckPart<InventoryClickAnalysis> {
           .withDetails("slot " + reader.slot() + " in inventory " + reader.containerId())
           .withVL(5).build();
         Modules.violationProcessor().processViolation(violation);
-        Synchronizer.synchronize(player::closeInventory);
+        Synchronizer.synchronize(user, player::closeInventory);
         cancellable.setCancelled(true);
       } else if (isNativeInventoryClick) {
         user.meta().inventory().updateInventoryOpenState(true);

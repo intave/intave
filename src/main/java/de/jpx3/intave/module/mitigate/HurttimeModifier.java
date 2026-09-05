@@ -29,7 +29,7 @@ public final class HurttimeModifier {
     punishmentData.damageTicksBefore = noDamageTicksBefore;
     punishmentData.appliedDamageTicks = newNoDamageTicks;
     setNoDamageTicksOf(player, newNoDamageTicks);
-    Synchronizer.synchronizeDelayed(() -> removeNoDamageTickChangeOf(user), durationTicks);
+    Synchronizer.synchronizeDelayed(user, () -> removeNoDamageTickChangeOf(user), durationTicks);
   }
 
   private static int calculateNewNoDamageTicks(int noDamageTicks, int ticks) {

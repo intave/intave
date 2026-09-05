@@ -125,7 +125,7 @@ final class PlayerUser implements User {
     this.fluidFlow = Fluids.suitableFluidflowFor(this);
     this.simpleCollider = Colliders.suitableSimpleColliderProcessorFor(this);
     this.blockInsideChecks = BlockInsideChecks.suitableFor(this);
-    Synchronizer.synchronize(this::setDefaultMessagingChannel);
+    Synchronizer.synchronize(this, this::setDefaultMessagingChannel);
     this.playerContext = PlayerContext.of(player);
     this.storage = Storages.emptyPlayerStorageFor(player.getUniqueId());
     this.poseSizes = Pose.poseSizesByVersion(metadata.protocol().protocolVersion());
@@ -543,7 +543,7 @@ final class PlayerUser implements User {
       IntaveLogger.logger().info("Queuing manual disconnect of player " + player().getName() + " for " + reason.toLowerCase());
       IntaveLogger.logger().info("This measure is a security-constraint necessity, but feel free to contact us if this happens too often");
     }
-    Synchronizer.synchronize(() -> {
+    Synchronizer.synchronize(this, () -> {
       Player player = player();
       if (player.isOnline()) {
         player.kickPlayer(reason);
@@ -558,7 +558,7 @@ final class PlayerUser implements User {
 
   @Override
   public void sendMessage(String message) {
-    Synchronizer.synchronize(() -> {
+    Synchronizer.synchronize(this, () -> {
       Player player = player();
       if (player.isOnline()) {
         player.sendMessage(message);

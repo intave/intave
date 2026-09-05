@@ -4,9 +4,8 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.other.inventoryclickanalysis.*;
-import de.jpx3.intave.executor.TaskTracker;
+import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.user.UserRepository;
-import org.bukkit.Bukkit;
 
 public final class InventoryClickAnalysis extends Check {
   public static final double MAX_VL_DECREMENT_PER_SECOND = 1;
@@ -22,11 +21,11 @@ public final class InventoryClickAnalysis extends Check {
   }
 
   private void startDecrementTask() {
-    int taskId = Bukkit.getScheduler().scheduleAsyncRepeatingTask(
-      IntavePlugin.singletonInstance(),
-      () -> UserRepository.applyOnAll(user -> decrementer.decrement(user, 0.05))
-      , 40, 40);
-    TaskTracker.begun(taskId);
+    Tasks.periodicNamed(
+      "InventoryClickAnalysis.decrement",
+      () -> UserRepository.applyOnOnlineUsers(user -> decrementer.decrement(user, 0.05)),
+      40, 40
+    ).startAsync();
   }
 
   private void setupCheckParts() {

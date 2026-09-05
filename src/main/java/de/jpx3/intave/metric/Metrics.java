@@ -7,6 +7,7 @@ import com.google.gson.JsonPrimitive;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.executor.BackgroundExecutors;
 import de.jpx3.intave.executor.IntaveThreadFactory;
+import de.jpx3.intave.executor.task.Tasks;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -216,7 +217,7 @@ public final class Metrics {
       }
       // Nevertheless we want our code to run in the Bukkit main thread, so we have to use the Bukkit scheduler
       // Don't be afraid! The connection to the bStats server is still async, only the stats collection is sync ;)
-      Bukkit.getScheduler().runTask(plugin, this::submitData);
+      Tasks.delayedNamed("Metrics.submitData", this::submitData, 0).startSync();
     };
 
     // Many servers tend to restart at a fixed time at xx:00 which causes an uneven distribution of requests on the

@@ -17,6 +17,8 @@ import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.check.movement.Physics;
 import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.executor.task.Task;
+import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
@@ -29,7 +31,6 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -44,11 +45,25 @@ public final class DesyncWatchdog extends Module {
     UserLocal.withInitial(() -> new AtomicInteger());
 
   private static long lastActionIssued = System.currentTimeMillis();
+  private Task watchdogTask;
 
   @Override
   public void enable() {
-    Bukkit.getScheduler().runTaskTimer(plugin, () ->
-      UserRepository.applyOnAll(this::performDesyncCheck), 20, 20);
+    watchdogTask = Tasks.periodicNamed(
+      "DesyncWatchdog.check",
+      () -> UserRepository.applyOnOnlineUsers(user ->
+        Synchronizer.synchronize(user, () -> performDesyncCheck(user))
+      ),
+      20, 20
+    ).startAsync();
+  }
+
+  @Override
+  public void disable() {
+    if (watchdogTask != null) {
+      watchdogTask.cancel();
+      watchdogTask = null;
+    }
   }
 
   private void performDesyncCheck(User user) {
@@ -89,7 +104,7 @@ public final class DesyncWatchdog extends Module {
 
         if (System.currentTimeMillis() - lastActionIssued > 10_000) {
           lastActionIssued = System.currentTimeMillis();
-          Synchronizer.synchronize(() -> {
+          Synchronizer.synchronize(user, () -> {
             Player player = user.player();
             Location location = player.getLocation().clone();
             while (BlockTypeAccess.typeAccess(location.getBlock(), player) != Material.AIR) {

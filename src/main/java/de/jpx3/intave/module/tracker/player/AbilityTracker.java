@@ -82,7 +82,7 @@ public final class AbilityTracker extends Module {
     boolean critical = abilityData.allowFlying() && !allowedFlight && movement.criticalTeleportRateLimiter.tryAcquire();
     if (critical /*&& movement.lastTeleport < 20*/) {
       // Teleport again to force transaction synchronization
-      Synchronizer.synchronizeDelayed(() -> {
+      Synchronizer.synchronizeDelayed(user, () -> {
         MovementMetadata moovement = user.meta().movement();
         if (moovement.criticalFlyingDisallowStacks > 0) {
           Location position = moovement.verifiedLocation().clone();
@@ -143,7 +143,7 @@ public final class AbilityTracker extends Module {
         movementData.criticalFlyingDisallowStacks = 0;
       }
     } else if (movementData.criticalFlyingBlockMovementStacks > 0 && movementData.criticalTeleportRateLimiter.tryAcquire()) {
-      Synchronizer.synchronize(() -> {
+      Synchronizer.synchronize(user, () -> {
         Location target = player.getLocation();
         Modules.tracker().packetLogging().logSystemMessage(user, () ->
           "TELEPORT ACTION source=FLIGHT_DISALLOW_MOVEMENT_BLOCK target=" + target

@@ -12,22 +12,24 @@
 package de.jpx3.intave.module.player;
 
 import ac.intave.cloud.protocol.packets.player.ServerboundPlaytime;
-import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.executor.task.Task;
+import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import org.bukkit.Bukkit;
 
 public final class PlaytimeRecorder extends Module {
-	private int taskId;
+	private Task task;
 
 	@Override
 	public void enable() {
-		taskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(IntavePlugin.singletonInstance(), this::heartbeat, 0L, 20L * 60 * 2);
+		task = Tasks.periodicNamed(
+			"PlaytimeRecorder.heartbeat", this::heartbeat, 0L, 20L * 60 * 2
+		).startAsync();
 	}
 
 	private void heartbeat() {
-		UserRepository.applyOnAll(user -> {
+		UserRepository.applyOnOnlineUsers(user -> {
 			MovementMetadata movement = user.meta().movement();
 			long activeTicks = movement.activeTicks.sumThenReset();
 			long passiveTicks = movement.passiveTicks.sumThenReset();
@@ -39,6 +41,9 @@ public final class PlaytimeRecorder extends Module {
 
 	@Override
 	public void disable() {
-		Bukkit.getScheduler().cancelTask(taskId);
+		if (task != null) {
+			task.cancel();
+			task = null;
+		}
 	}
 }

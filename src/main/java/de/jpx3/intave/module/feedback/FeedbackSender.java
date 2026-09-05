@@ -126,9 +126,13 @@ public final class FeedbackSender extends Module {
     FeedbackObserver firstTracker, FeedbackObserver secondTracker,
     int options
   ) {
-    if (!Bukkit.isPrimaryThread()) {
+    User user = UserRepository.userOf(player);
+    if (!user.hasPlayer()) {
+      return;
+    }
+    if (!Synchronizer.isSynchronized(user)) {
       if (matches(SELF_SYNCHRONIZATION, options)) {
-        Synchronizer.synchronize(() -> tracedDoubleSynchronize(player, encapsulate, target, firstCallback, secondCallback, firstTracker, secondTracker, options));
+        Synchronizer.synchronize(user, () -> tracedDoubleSynchronize(player, encapsulate, target, firstCallback, secondCallback, firstTracker, secondTracker, options));
         return;
       } else if (isInInvalidThread()) {
         if (WARNINGS_LEFT-- > 0) {
@@ -142,20 +146,11 @@ public final class FeedbackSender extends Module {
 //        return;
       }
     }
-    User user = UserRepository.userOf(player);
-    if (!user.hasPlayer()) {
-      return;
-    }
     ReentrantLock lock = userLock(user);
     try {
       lock.lock();
       tracedSingleSynchronize(player, target, firstCallback, firstTracker, options);
-      user.ignoreNextOutboundPacket();
-      try {
-        PacketSender.sendServerPacket(player, encapsulate.shallowClone());
-      } finally {
-        user.receiveNextOutboundPacketAgain();
-      }
+      PacketSender.sendServerPacketWithoutEvent(player, encapsulate.shallowClone());
       tracedSingleSynchronize(player, target, secondCallback, secondTracker, options);
     } finally {
       lock.unlock();
@@ -222,9 +217,13 @@ public final class FeedbackSender extends Module {
     Player player, T target, FeedbackCallback<T> callback, FeedbackObserver tracker, int options,
     @Nullable PacketEvent toBundle
   ) {
-    if (!Bukkit.isPrimaryThread()) {
+    User user = UserRepository.userOf(player);
+    if (!user.hasPlayer()) {
+      return;
+    }
+    if (!Synchronizer.isSynchronized(user)) {
       if (matches(SELF_SYNCHRONIZATION, options)) {
-        Synchronizer.synchronize(() -> tracedSingleSynchronize(player, target, callback, tracker, options));
+        Synchronizer.synchronize(user, () -> tracedSingleSynchronize(player, target, callback, tracker, options));
         return;
       } else if (isInInvalidThread()) {
 //        IntaveLogger.logger().error("We can't perform tick-validation on thread " + Thread.currentThread().getName());
@@ -241,10 +240,6 @@ public final class FeedbackSender extends Module {
     ReentrantLock lock = userLock(userOf(player));
     try {
       lock.lock();
-      User user = UserRepository.userOf(player);
-      if (!user.hasPlayer()) {
-        return;
-      }
       boolean append = false;
       if (matches(APPEND_ON_OVERFLOW, options)) {
         boolean tooManyPending = pendingTransactions(userOf(player)) > OPTIONAL_PENDING_LIMIT;
@@ -326,7 +321,7 @@ public final class FeedbackSender extends Module {
         generatedKey = IdGeneratorMode.highestCompatibility().generate(user, connection.lastFeedbackUserKey);
       }
       counter = (short) generatedKey;
-    } while ((feedbackQueue.hasUserKey(counter) && attempts > 5) && lastGeneration != counter && attempts-- > 0);
+    } while (feedbackQueue.hasUserKey(counter) && lastGeneration != counter && --attempts > 0);
     // if 100 searches are not enough
     if (attempts <= 0) {
       // relax uniqueness requirements
@@ -404,12 +399,7 @@ public final class FeedbackSender extends Module {
         toBundle.setReadOnly(false);
       }
       toBundle.setCancelled(true);
-      user.ignoreNextOutboundPacket();
-      try {
-        PacketSender.sendServerPacketWithoutEvent(receiver, bundle);
-      } finally {
-        user.receiveNextOutboundPacketAgain();
-      }
+      PacketSender.sendServerPacketWithoutEvent(receiver, bundle);
     } else {
       // with event
       PacketSender.sendServerPacket(receiver, packet);

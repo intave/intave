@@ -41,13 +41,14 @@ public final class UserRepository {
 
   public static void registerUser(Player player) {
     repository.put(player.getUniqueId(), UserFactory.createUserFor(player));
+    User user = repository.get(player.getUniqueId());
     if (IntaveControl.RESET_HURT_TIME_ON_JOIN) {
-      Synchronizer.synchronizeDelayed(() -> {
+      Synchronizer.synchronizeDelayed(user, () -> {
         HurttimeModifier.setNoDamageTicksOf(player, 20);
       }, 20);
     }
     if (IntaveControl.GIVE_RIPTIDE_V_TRIDENT_ON_JOIN && MinecraftVersions.VER1_14_0.atOrAbove()) {
-      Synchronizer.synchronizeDelayed(() -> {
+      Synchronizer.synchronizeDelayed(user, () -> {
         if (!player.getInventory().contains(Material.getMaterial("TRIDENT"))) {
           ItemStack trident = new ItemStack(Material.getMaterial("TRIDENT"));
           trident.addUnsafeEnchantment(Enchantment.getByName("RIPTIDE"), 5);
@@ -91,6 +92,15 @@ public final class UserRepository {
   public static void applyOnAll(Consumer<? super User> consumer) {
     for (User user : repository.values()) {
       consumer.accept(user);
+    }
+  }
+
+  public static void applyOnOnlineUsers(Consumer<? super User> consumer) {
+    for (Player player : Bukkit.getOnlinePlayers()) {
+      User user = repository.get(player.getUniqueId());
+      if (user != null) {
+        consumer.accept(user);
+      }
     }
   }
 

@@ -5,9 +5,8 @@ import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.world.breakspeedlimiter.CompletionDurationCheck;
 import de.jpx3.intave.check.world.breakspeedlimiter.RestartCheck;
-import de.jpx3.intave.executor.TaskTracker;
+import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.user.UserRepository;
-import org.bukkit.Bukkit;
 
 public final class BreakSpeedLimiter extends Check {
   private final CheckViolationLevelDecrementer decrementer;
@@ -20,11 +19,11 @@ public final class BreakSpeedLimiter extends Check {
   }
 
   private void startDecrementTask() {
-    int taskId = Bukkit.getScheduler().scheduleAsyncRepeatingTask(
-      IntavePlugin.singletonInstance(),
-      () -> UserRepository.applyOnAll(user -> decrementer.decrement(user, 0.05))
-      , 40, 40);
-    TaskTracker.begun(taskId);
+    Tasks.periodicNamed(
+      "BreakSpeedLimiter.decrement",
+      () -> UserRepository.applyOnOnlineUsers(user -> decrementer.decrement(user, 0.05)),
+      40, 40
+    ).startAsync();
   }
 
   public void setupParts() {

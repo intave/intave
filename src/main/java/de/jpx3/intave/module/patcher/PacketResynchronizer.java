@@ -8,6 +8,8 @@ import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
@@ -29,8 +31,9 @@ public final class PacketResynchronizer extends Module {
     if (isInInvalidThread()) {
       event.setCancelled(true);
       Player player = event.getPlayer();
+      User user = UserRepository.userOf(player);
       PacketContainer packet = event.getPacket();
-      Synchronizer.synchronize(() -> sendPacket(player, packet));
+      Synchronizer.synchronize(user, () -> sendPacket(player, packet));
       PacketSynchronizations.enterResynchronization(event.getPacketType());
     }
   }

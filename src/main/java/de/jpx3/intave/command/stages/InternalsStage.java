@@ -117,7 +117,8 @@ public final class InternalsStage extends CommandStage {
     for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
       if (!onlinePlayer.equals(target) && onlinePlayer.getAddress().getAddress().equals(target.getAddress().getAddress())) {
         String parsedMessage = ChatColor.translateAlternateColorCodes('&', message);
-        Synchronizer.synchronize(() -> onlinePlayer.kickPlayer(parsedMessage));
+        User user = UserRepository.userOf(onlinePlayer);
+        Synchronizer.synchronize(user, () -> onlinePlayer.kickPlayer(parsedMessage));
       }
     }
   }

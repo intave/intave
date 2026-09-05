@@ -49,7 +49,7 @@ public final class UserLifetimeService extends Module {
   private void setupUser(Player player) {
     UserRepository.registerUser(player);
     User user = UserRepository.userOf(player);
-    Synchronizer.synchronizeDelayed(user::delayedSetup, 20);
+    Synchronizer.synchronizeDelayed(user, user::delayedSetup, 20);
   }
 
   @BukkitEventSubscription(priority = EventPriority.HIGHEST)

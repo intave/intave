@@ -87,8 +87,8 @@ public final class Nayoro extends Module {
   ) {
     localRecordingLock.lock();
     try {
-      if (!Bukkit.isPrimaryThread()) {
-        Synchronizer.synchronize(() -> enableRecordingFor(user, classifier, mode, transmissionId));
+      if (!Synchronizer.isSynchronized(user)) {
+        Synchronizer.synchronize(user, () -> enableRecordingFor(user, classifier, mode, transmissionId));
         return;
       }
       if (recordingActiveFor(user)) {
@@ -109,8 +109,8 @@ public final class Nayoro extends Module {
   public synchronized void pushSink(User user, EventSink sink) {
     localRecordingLock.lock();
     try {
-      if (!Bukkit.isPrimaryThread()) {
-        Synchronizer.synchronize(() -> pushSink(user, sink));
+      if (!Synchronizer.isSynchronized(user)) {
+        Synchronizer.synchronize(user, () -> pushSink(user, sink));
         return;
       }
       eventSinks.get(user).add(sink);
@@ -122,8 +122,8 @@ public final class Nayoro extends Module {
   public synchronized void disableRecordingFor(User user) {
     localRecordingLock.lock();
     try {
-      if (!Bukkit.isPrimaryThread()) {
-        Synchronizer.synchronize(() -> disableRecordingFor(user));
+      if (!Synchronizer.isSynchronized(user)) {
+        Synchronizer.synchronize(user, () -> disableRecordingFor(user));
         return;
       }
       if (!recordingActiveFor(user)) {
