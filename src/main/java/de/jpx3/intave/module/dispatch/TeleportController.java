@@ -22,8 +22,6 @@ import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.DispatchTarget;
-import de.jpx3.intave.block.access.VolatileBlockAccess;
-import de.jpx3.intave.block.physics.MaterialMagic;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
@@ -167,6 +165,14 @@ public final class TeleportController implements PacketEventSubscriber {
     if (NEW_TELEPORTATION) {
       movementData.teleportId = packet.getIntegers().read(0);
     }
+    long teleportGeneration = ++movementData.teleportGeneration;
+    int teleportId = movementData.teleportId;
+    movementData.awaitTeleport = true;
+    movementData.awaitOutgoingTeleport = false;
+    movementData.expectTeleport = false;
+    movementData.transactionTeleportAllow = false;
+    movementData.teleportResendCountdown = 20;
+    movementData.isTeleportConfirmationPacket = false;
     movementData.activeTick(TELEPORT);
 
     double finalPositionX = positionX;
@@ -180,7 +186,8 @@ public final class TeleportController implements PacketEventSubscriber {
         " resolved=" + formatDouble(finalPositionX, 6) + " " +
         formatDouble(finalPositionY, 6) + " " + formatDouble(finalPositionZ, 6) +
         " flags=" + flags + " yaw=" + yaw + " pitch=" + pitch +
-        " teleport_id=" + movementData.teleportId +
+        " teleport_id=" + teleportId +
+        " generation=" + teleportGeneration +
         " feedback_sync=" + teleportFeedbackSyncEnforcement +
         " funky=" + finalFunkyBoolean
     );
@@ -207,12 +214,58 @@ public final class TeleportController implements PacketEventSubscriber {
       user.doubleTickFeedback(
         event,
         () -> {
-          movementData.transactionTeleportAllow = true;
-          logging.logSystemMessage(user, () -> "TELEPORT TRANSACTION WINDOW OPEN teleport_id=" + movementData.teleportId);
+          boolean matchingTeleport = movementData.teleportGeneration == teleportGeneration &&
+            movementData.teleportId == teleportId;
+          if (movementData.awaitTeleport && matchingTeleport) {
+            movementData.transactionTeleportAllow = true;
+            logging.logSystemMessage(user, () ->
+              "TELEPORT TRANSACTION WINDOW OPEN teleport_id=" + teleportId +
+                " generation=" + teleportGeneration
+            );
+          } else if (!matchingTeleport) {
+            logStaleFeedback(user, "OPEN", teleportId, teleportGeneration);
+          }
         },
         () -> {
+          boolean matchingTeleport = movementData.teleportGeneration == teleportGeneration &&
+            movementData.teleportId == teleportId;
+          if (!matchingTeleport) {
+            logStaleFeedback(user, "CLOSE", teleportId, teleportGeneration);
+            return;
+          }
+          if (!movementData.awaitTeleport) {
+            logging.logSystemMessage(user, () ->
+              "TELEPORT FEEDBACK BARRIER PASSED teleport_id=" + teleportId +
+                " generation=" + teleportGeneration +
+                " fallback=false"
+            );
+            return;
+          }
+
+          // The vanilla client sends the teleport accept and its position update before
+          // replying to the feedback packet that follows the teleport. Finalize here as
+          // a fallback when an earlier feedback response was skipped and emulated.
+          if (!NEW_TELEPORTATION || movementData.expectTeleport) {
+            checkPotentialTeleport(player);
+          }
+
+          if (!movementData.awaitTeleport) {
+            logging.logSystemMessage(user, () ->
+              "TELEPORT FEEDBACK BARRIER PASSED teleport_id=" + teleportId +
+                " generation=" + teleportGeneration +
+                " fallback=true"
+            );
+            return;
+          }
+
           movementData.transactionTeleportAllow = false;
-          logging.logSystemMessage(user, () -> "TELEPORT TRANSACTION WINDOW CLOSED teleport_id=" + movementData.teleportId);
+          logging.logSystemMessage(user, () ->
+            "TELEPORT FEEDBACK BARRIER FAILED teleport_id=" + teleportId +
+              " generation=" + teleportGeneration +
+              " accept_received=" + movementData.expectTeleport +
+              " retry=immediate"
+          );
+          resendAwaitedTeleport(player, user, "POST_FEEDBACK_RESEND", teleportId, teleportGeneration);
         }
       );
     } else {
@@ -220,15 +273,12 @@ public final class TeleportController implements PacketEventSubscriber {
       logging.logSystemMessage(user, () -> "TELEPORT TRANSACTION WINDOW PERMANENT teleport_id=" + movementData.teleportId);
     }
 
-    movementData.awaitTeleport = true;
-    movementData.awaitOutgoingTeleport = false;
     movementData.expectTeleportWithRotation = expectRotation;
-    movementData.teleportResendCountdown = 20;
 //    movementData.outgoingTeleportCountdown = 5;
-    movementData.isTeleportConfirmationPacket = false;
 
     logging.logSystemMessage(user, () ->
-      "TELEPORT LOCK ARMED teleport_id=" + movementData.teleportId +
+      "TELEPORT LOCK ARMED teleport_id=" + teleportId +
+        " generation=" + teleportGeneration +
         " await=" + movementData.awaitTeleport +
         " await_outgoing=" + movementData.awaitOutgoingTeleport +
         " resend_countdown=" + movementData.teleportResendCountdown +
@@ -236,6 +286,23 @@ public final class TeleportController implements PacketEventSubscriber {
     );
 
     reader.release();
+  }
+
+  private void logStaleFeedback(
+    User user,
+    String phase,
+    int callbackTeleportId,
+    long callbackGeneration
+  ) {
+    MovementMetadata movement = user.meta().movement();
+    Modules.tracker().packetLogging().logSystemMessage(user, () ->
+      "TELEPORT TRANSACTION WINDOW STALE phase=" + phase +
+        " callback_id=" + callbackTeleportId +
+        " callback_generation=" + callbackGeneration +
+        " current_id=" + movement.teleportId +
+        " current_generation=" + movement.teleportGeneration +
+        " await=" + movement.awaitTeleport
+    );
   }
 
   @PacketSubscription(
@@ -326,7 +393,46 @@ public final class TeleportController implements PacketEventSubscriber {
 //          }, 2);
         });
       }
+
+      if (IntaveControl.EXTREME_VELOCITY_ON_Q_PRESS) {
+        Synchronizer.synchronize(() -> {
+          Vector extremeVelocity = player.getLocation().getDirection().normalize().multiply(8.0);
+          Vector transmittedVelocity = sendVelocityPacket(player, extremeVelocity);
+          player.setFallDistance(0.0f);
+          if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
+            player.sendMessage(IntavePlugin.prefix() + "Sent extreme velocity " + transmittedVelocity.getX() + " " + transmittedVelocity.getY() + " " + transmittedVelocity.getZ() + " as " + ChatColor.RED + " it was command-requested");
+          }
+        });
+      }
     }
+  }
+
+  private static Vector sendVelocityPacket(Player player, Vector velocity) {
+    PacketContainer packet = ProtocolLibrary.getProtocolManager()
+      .createPacket(PacketType.Play.Server.ENTITY_VELOCITY);
+    packet.getIntegers().write(0, player.getEntityId());
+    Vector transmittedVelocity = velocity;
+    if (packet.getVectors().size() > 0) {
+      packet.getVectors().write(0, velocity);
+    } else {
+      int motionX = encodeLegacyVelocity(velocity.getX());
+      int motionY = encodeLegacyVelocity(velocity.getY());
+      int motionZ = encodeLegacyVelocity(velocity.getZ());
+      packet.getIntegers().write(1, motionX);
+      packet.getIntegers().write(2, motionY);
+      packet.getIntegers().write(3, motionZ);
+      transmittedVelocity = new Vector(
+        motionX / 8000.0D,
+        motionY / 8000.0D,
+        motionZ / 8000.0D
+      );
+    }
+    ProtocolLibrary.getProtocolManager().sendServerPacket(player, packet);
+    return transmittedVelocity;
+  }
+
+  private static int encodeLegacyVelocity(double velocity) {
+    return (int) Math.max(Short.MIN_VALUE, Math.min(Short.MAX_VALUE, velocity * 8000.0D));
   }
 
 
@@ -427,40 +533,10 @@ public final class TeleportController implements PacketEventSubscriber {
         if (IntaveControl.DEBUG_TELEPORT_LOCKS) {
           IntaveLogger.logger().printLine("[Intave] Resent teleport to " + player.getName());
         }
-        Synchronizer.synchronize(() -> {
-          Location location = movementData.teleportLocation.clone();
-          Location originalLocation = location.clone();
-          int rescueShifts = 0;
-          if (System.currentTimeMillis() - movementData.lastRescueAttempt > 5000 && !MaterialMagic.blocksMovement(VolatileBlockAccess.typeAccess(user, location.clone().add(0, 1, 0)))) {
-            Material material = VolatileBlockAccess.typeAccess(user, location);
-            int limit = 100;
-            while (limit-- > 0 && ((material.isBlock() && material != Material.AIR) || MaterialMagic.blocksMovement(material))) {
-              location.add(0, 0.01, 0);
-              rescueShifts++;
-              material = VolatileBlockAccess.typeAccess(user, location);
-            }
-            movementData.lastRescueAttempt = System.currentTimeMillis();
-          }
-
-          location.setYaw(movementData.rotationYaw());
-          location.setPitch(movementData.rotationPitch());
-          int finalRescueShifts = rescueShifts;
-          Location resendLocation = location.clone();
-          PacketLogging logging = Modules.tracker().packetLogging();
-          logging.logSystemMessage(user, () ->
-            "TELEPORT ACTION source=AWAIT_ACCEPT_RESEND original=" + MathHelper.formatPosition(originalLocation) +
-              " target=" + MathHelper.formatPosition(resendLocation) +
-              " rescue_shifts=" + finalRescueShifts
-          );
-          boolean teleported = player.teleport(location, UNKNOWN);
-          logging.logSystemMessage(user, () ->
-            "TELEPORT ACTION RESULT source=AWAIT_ACCEPT_RESEND accepted=" + teleported
-          );
-
-          if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
-            player.sendMessage(IntavePlugin.prefix() + "Teleport to " + player.getLocation().getBlockX() + " " + player.getLocation().getBlockY() + " " + player.getLocation().getBlockZ() + " " + " since " + ChatColor.RED + " you are not responding to teleport requests");
-          }
-        });
+        resendAwaitedTeleport(
+          player, user, "AWAIT_ACCEPT_RESEND",
+          movementData.teleportId, movementData.teleportGeneration
+        );
       }
     }
     if (movementData.awaitOutgoingTeleport && movementData.outgoingTeleportCountdown-- < 0) {
@@ -475,26 +551,13 @@ public final class TeleportController implements PacketEventSubscriber {
         }
         Location location = teleportLocation.clone();
         Location originalLocation = location.clone();
-        int rescueShifts = 0;
-        if (System.currentTimeMillis() - movementData.lastRescueAttempt > 5000 && !MaterialMagic.blocksMovement(VolatileBlockAccess.typeAccess(user, location.clone().add(0, 1, 0)))) {
-          Material material = VolatileBlockAccess.typeAccess(user, location);
-          int limit = 100;
-          while (limit-- > 0 && ((material.isBlock() && material != Material.AIR) || MaterialMagic.blocksMovement(material))) {
-            location.add(0, 0.01, 0);
-            rescueShifts++;
-            material = VolatileBlockAccess.typeAccess(user, location);
-          }
-          movementData.lastRescueAttempt = System.currentTimeMillis();
-        }
         location.setYaw(movementData.rotationYaw());
         location.setPitch(movementData.rotationPitch());
-        int finalRescueShifts = rescueShifts;
         Location resendLocation = location.clone();
         PacketLogging logging = Modules.tracker().packetLogging();
         logging.logSystemMessage(user, () ->
           "TELEPORT ACTION source=AWAIT_OUTGOING_RESEND original=" + MathHelper.formatPosition(originalLocation) +
-            " target=" + MathHelper.formatPosition(resendLocation) +
-            " rescue_shifts=" + finalRescueShifts
+            " target=" + MathHelper.formatPosition(resendLocation)
         );
         boolean teleported = player.teleport(location, UNKNOWN);
         logging.logSystemMessage(user, () ->
@@ -506,6 +569,57 @@ public final class TeleportController implements PacketEventSubscriber {
         }
       });
     }
+  }
+
+  private void resendAwaitedTeleport(
+    Player player,
+    User user,
+    String source,
+    int expectedTeleportId,
+    long expectedTeleportGeneration
+  ) {
+    Synchronizer.synchronizeDelayed(() -> {
+      MovementMetadata movementData = user.meta().movement();
+      boolean matchingTeleport = movementData.teleportId == expectedTeleportId &&
+        movementData.teleportGeneration == expectedTeleportGeneration;
+      if (!player.isOnline() || !movementData.awaitTeleport || !matchingTeleport) {
+        Modules.tracker().packetLogging().logSystemMessage(user, () ->
+          "TELEPORT RESEND SKIPPED source=" + source +
+            " expected_id=" + expectedTeleportId +
+            " expected_generation=" + expectedTeleportGeneration +
+            " current_id=" + movementData.teleportId +
+            " current_generation=" + movementData.teleportGeneration +
+            " await=" + movementData.awaitTeleport
+        );
+        return;
+      }
+
+      Location location = movementData.teleportLocation.clone();
+      Location originalLocation = location.clone();
+      location.setYaw(movementData.rotationYaw());
+      location.setPitch(movementData.rotationPitch());
+      Location resendLocation = location.clone();
+      PacketLogging logging = Modules.tracker().packetLogging();
+      logging.logSystemMessage(user, () ->
+        "TELEPORT ACTION source=" + source +
+          " original=" + MathHelper.formatPosition(originalLocation) +
+          " target=" + MathHelper.formatPosition(resendLocation)
+      );
+      boolean teleported = player.teleport(location, UNKNOWN);
+      logging.logSystemMessage(user, () ->
+        "TELEPORT ACTION RESULT source=" + source + " accepted=" + teleported
+      );
+
+      if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
+        player.sendMessage(
+          IntavePlugin.prefix() + "Teleport to " +
+            player.getLocation().getBlockX() + " " +
+            player.getLocation().getBlockY() + " " +
+            player.getLocation().getBlockZ() + " since " +
+            ChatColor.RED + "you are not responding to teleport requests"
+        );
+      }
+    }, 2);
   }
 
   private void checkPotentialTeleport(Player player) {

@@ -130,6 +130,7 @@ public final class IntavePlugin extends JavaPlugin {
   private PlayerListService blackListService; // module candidate
   private Metrics metrics;
   private IntegrationTestService integrationTestService;
+  private boolean viaBackwardsPingAcknowledgementsMisconfigured;
 
   public IntavePlugin() {
     // stage 2
@@ -403,11 +404,16 @@ public final class IntavePlugin extends JavaPlugin {
     }
 
     Plugin viaBackwards = Bukkit.getPluginManager().getPlugin("ViaBackwards");
-    if (viaBackwards != null) {
-      if (!viaBackwards.getConfig().getBoolean("handle-pings-as-inv-acknowledgements", false)) {
-        logger.warn("ViaBackwards is misconfigured, causing false-positives and fault kicks");
-        logger.warn("Go to plugins/ViaBackwards/config.yml and set \"handle-pings-as-inv-acknowledgements\" to TRUE");
-      }
+    viaBackwardsPingAcknowledgementsMisconfigured = viaBackwards != null &&
+      !viaBackwards.getConfig().getBoolean("handle-pings-as-inv-acknowledgements", false);
+    if (viaBackwardsPingAcknowledgementsMisconfigured) {
+      logger.warn("============================================================");
+      logger.warn("CRITICAL VIABACKWARDS CONFIGURATION ERROR");
+      logger.warn("Teleport confirmations can fail and cause false positives or repeated teleport resends");
+      logger.warn("Edit plugins/ViaBackwards/config.yml and set:");
+      logger.warn("handle-pings-as-inv-acknowledgements: true");
+      logger.warn("Restart the server after changing the setting");
+      logger.warn("============================================================");
     }
 
     Modules.linker().packetEvents().refreshLinkages();
@@ -678,6 +684,10 @@ public final class IntavePlugin extends JavaPlugin {
 
   public IntaveLogger logger() {
     return logger;
+  }
+
+  public boolean viaBackwardsPingAcknowledgementsMisconfigured() {
+    return viaBackwardsPingAcknowledgementsMisconfigured;
   }
 
   public Cloud cloud() {

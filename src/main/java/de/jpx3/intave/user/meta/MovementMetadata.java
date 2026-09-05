@@ -163,7 +163,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   public boolean dropPostTickMotionProcessing;
   public boolean willReceiveSetbackVelocity;
   public boolean willReceiveFinalSetbackVelocity;
-  public int teleportId;
+  public volatile int teleportId;
+  public volatile long teleportGeneration;
   public volatile boolean awaitTeleport = false, expectTeleport = false, awaitOutgoingTeleport = false;
   public volatile boolean expectTeleportWithRotation = false;
   public volatile boolean transactionTeleportAllow = false;
@@ -173,7 +174,6 @@ public final class MovementMetadata implements SimulationEnvironment {
   public Set<Relative> teleportRelatives = EnumSet.noneOf(Relative.class);
   public int teleportResendCountdown = 20;
   public int outgoingTeleportCountdown = 5;
-  public long lastRescueAttempt;
   public long lastSimulationSprintResetAttempt;
   // States if an external entity push onto the player is estimated
   public boolean pushedByEntity;

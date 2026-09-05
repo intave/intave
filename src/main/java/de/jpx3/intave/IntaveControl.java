@@ -42,6 +42,7 @@ public final class IntaveControl {
   public static final boolean DEBUG_TELEPORT_PACKET_STACKTRACE = false;
   public static final boolean TELEPORT_FAR_AWAY_ON_Q_PRESS = false;
   public static final boolean GIVE_VELOCITY_ON_Q_PRESS = false;
+  public static final boolean EXTREME_VELOCITY_ON_Q_PRESS = false;
   public static final boolean DEBUG_INTAVE_TELEPORT_EVENT_CANCELS = false;
   public static final boolean DISABLE_BLOCK_CACHING_ENTIRELY = false;
   public static final boolean BLOCK_CACHE_DEBUG = false;
