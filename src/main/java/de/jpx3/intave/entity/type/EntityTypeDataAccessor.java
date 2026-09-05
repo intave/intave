@@ -1,23 +1,13 @@
 package de.jpx3.intave.entity.type;
 
-import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.klass.rewrite.PatchyLoadingInjector;
-
 public final class EntityTypeDataAccessor {
-  private static final boolean DIRECT_RESOLVE = MinecraftVersions.VER1_14_0.atOrAbove();
-  private static EntityTypeDataResolver resolver;
+  private static EntityTypeDataRegistry registry;
 
   public static void setup() {
-    if (DIRECT_RESOLVE) {
-      PatchyLoadingInjector.loadUnloadedClassPatched(IntavePlugin.class.getClassLoader(), "de.jpx3.intave.entity.type.ServerEntityTypeDataLookup");
-      resolver = new ServerEntityTypeDataLookup();
-    } else {
-      resolver = new EntityTypeDataRegistry();
-    }
+    registry = new EntityTypeDataRegistry();
   }
 
   public static EntityTypeData resolveFromId(int entityTypeId, boolean isLivingEntity) {
-    return resolver.resolveFor(entityTypeId, isLivingEntity);
+    return registry.resolveFor(entityTypeId, isLivingEntity);
   }
 }

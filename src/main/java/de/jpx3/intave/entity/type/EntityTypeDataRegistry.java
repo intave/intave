@@ -1,92 +1,128 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.entity.type;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import de.jpx3.intave.access.IntaveInternalException;
+import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.entity.size.HitboxSize;
+import de.jpx3.intave.resource.Resource;
+import de.jpx3.intave.resource.Resources;
 
-import java.util.HashMap;
-import java.util.Map;
+final class EntityTypeDataRegistry {
+  private static final String RESOURCE_DIRECTORY = "registry/entity_ids/";
+  private static final MinecraftVersion UNIFIED_IDENTIFIER_VERSION = new MinecraftVersion("1.14");
 
-final class EntityTypeDataRegistry implements EntityTypeDataResolver {
-  private static final Map<Integer, EntityTypeData> entityTypeRegister = new HashMap<>();
+	private final EntityTypeData[] livingEntities;
+  private final EntityTypeData[] nonLivingEntities;
 
-  public static void setup() {
-    registerTileEntity(1, "Item", HitboxSize.of(0.25F, 0.25F));
-    registerTileEntity(2, "XPOrb", HitboxSize.of(0.5F, 0.5F));
-    registerTileEntity(8, "LeashKnot", HitboxSize.of(0.5F, 0.5F));
-    registerTileEntity(9, "Painting", HitboxSize.of(0.5F, 0.5F));
-    registerTileEntity(10, "Arrow", HitboxSize.of(0.5F, 0.5F));
-    registerTileEntity(11, "Snowball", HitboxSize.of(0.25F, 0.25F));
-    registerTileEntity(12, "Fireball", HitboxSize.of(3.0F, 3.0F));
-    registerTileEntity(13, "SmallFireball", HitboxSize.of(1.0F, 1.0F));
-    registerTileEntity(14, "ThrownEnderpearl", HitboxSize.of(0.25F, 0.25F));
-    registerTileEntity(15, "EyeOfEnderSignal", HitboxSize.of(0.25F, 0.25F));
-    registerTileEntity(16, "ThrownPotion", HitboxSize.of(0.25F, 0.25F));
-    registerTileEntity(17, "ThrownExpBottle", HitboxSize.of(0.25F, 0.25F));
-    registerTileEntity(18, "ItemFrame", HitboxSize.of(0.5F, 0.5F));
-    registerTileEntity(19, "WitherSkull", HitboxSize.of(0.3125F, 0.3125F));
-    registerTileEntity(20, "PrimedTnt", HitboxSize.of(0.98F, 0.98F));
-    registerTileEntity(21, "FallingSand", HitboxSize.of(0.98F, 0.98F));
-    registerTileEntity(22, "FireworksRocketEntity", HitboxSize.of(0.25F, 0.25F));
-    registerTileEntity(30, "ArmorStand", HitboxSize.of(0.5F, 1.975F));
-    registerTileEntity(41, "Boat", HitboxSize.of(1.5F, 0.6F));
-    registerTileEntity(42, "Minecart", HitboxSize.of(0.98F, 0.7F));
-    registerTileEntity(43, "MinecartChest", HitboxSize.of(0.98F, 0.7F));
-    registerTileEntity(44, "MinecartFurnace", HitboxSize.of(0.98F, 0.7F));
-    registerTileEntity(45, "MinecartTNT", HitboxSize.of(0.98F, 0.7F));
-    registerTileEntity(46, "MinecartHopper", HitboxSize.of(0.98F, 0.7F));
-    registerTileEntity(47, "MinecartMobSpawner", HitboxSize.of(0.98F, 0.7F));
-    registerTileEntity(40, "MinecartCommandBlock", HitboxSize.of(0.98F, 0.7F));
-    registerLivingEntity(48, "Mob", HitboxSize.of(0, 0));
-    registerLivingEntity(49, "Monster", HitboxSize.of(0, 0));
-    registerLivingEntity(50, "Creeper", HitboxSize.of(0.6F, 1.95F));
-    registerLivingEntity(51, "Skeleton", HitboxSize.of(0.6F, 1.95F));
-    registerLivingEntity(52, "Spider", HitboxSize.of(1.4F, 0.9F));
-    registerLivingEntity(53, "Giant", HitboxSize.of(0.6f * 6f, 1.95f * 6f));
-    registerLivingEntity(54, "Zombie", HitboxSize.of(0.6F, 1.95F));
-    registerLivingEntity(55, "Slime", HitboxSize.of(0.51000005F, 0.51000005F));
-    registerLivingEntity(56, "Ghast", HitboxSize.of(4.0F, 4.0F));
-    registerLivingEntity(57, "PigZombie", HitboxSize.of(0.6F, 1.95F));
-    registerLivingEntity(58, "Enderman", HitboxSize.of(0.6F, 2.9F));
-    registerLivingEntity(59, "CaveSpider", HitboxSize.of(0.7F, 0.5F));
-    registerLivingEntity(60, "Silverfish", HitboxSize.of(0.4F, 0.3F));
-    registerLivingEntity(61, "Blaze", HitboxSize.of(0.6F, 1.95F));
-    registerLivingEntity(62, "LavaSlime", HitboxSize.of(0.51000005F, 0.51000005F));
-    registerLivingEntity(63, "EnderDragon", HitboxSize.of(16.0F, 8.0F));
-    registerLivingEntity(64, "WitherBoss", HitboxSize.of(0.9F, 3.5F));
-    registerLivingEntity(65, "Bat", HitboxSize.of(0.5F, 0.9F));
-    registerLivingEntity(66, "Witch", HitboxSize.of(0.6F, 1.95F));
-    registerLivingEntity(67, "Endermite", HitboxSize.of(0.4F, 0.3F));
-    registerLivingEntity(68, "Guardian", HitboxSize.of(0.85F, 0.85F));
-    registerLivingEntity(90, "Pig", HitboxSize.of(0.9F, 0.9F));
-    registerLivingEntity(91, "Sheep", HitboxSize.of(0.9F, 1.3F));
-    registerLivingEntity(92, "Cow", HitboxSize.of(0.9F, 1.3F));
-    registerLivingEntity(93, "Chicken", HitboxSize.of(0.4F, 0.7F));
-    registerLivingEntity(94, "Squid", HitboxSize.of(0.95F, 0.95F));
-    registerLivingEntity(95, "Wolf", HitboxSize.of(0.6F, 0.8F));
-    registerLivingEntity(96, "MushroomCow", HitboxSize.of(0.9F, 1.3F));
-    registerLivingEntity(97, "SnowMan", HitboxSize.of(0.7F, 1.9F));
-    registerLivingEntity(98, "Ozelot", HitboxSize.of(0.6F, 0.7F));
-    registerLivingEntity(99, "VillagerGolem", HitboxSize.of(1.4F, 2.9F));
-    registerLivingEntity(100, "Horse", HitboxSize.of(1.4F, 1.6F));
-    registerLivingEntity(101, "Rabbit", HitboxSize.of(0.6F, 0.7F));
-    registerLivingEntity(105, "Player", HitboxSize.of(0.6F, 1.8F));
-    registerLivingEntity(120, "Villager", HitboxSize.of(0.6F, 1.8F));
-    registerTileEntity(200, "EnderCrystal", HitboxSize.of(2.0F, 2.0F));
+  EntityTypeDataRegistry() {
+    this(MinecraftVersion.current());
   }
 
-  private static void registerLivingEntity(int identifier, String name, HitboxSize dimensions) {
-    entityTypeRegister.put(identifier, new EntityTypeData(name, dimensions, identifier, true, 9));
+  EntityTypeDataRegistry(MinecraftVersion serverVersion) {
+    String resourceVersion = nearestResourceVersion(serverVersion);
+    boolean unifiedIdentifiers = new MinecraftVersion(resourceVersion).isAtLeast(UNIFIED_IDENTIFIER_VERSION);
+    JsonArray entries = readJsonArray(RESOURCE_DIRECTORY + resourceVersion + ".json");
+
+	  livingEntities = new EntityTypeData[largestIdentifier(entries, unifiedIdentifiers) + 1];
+    nonLivingEntities = new EntityTypeData[largestIdentifier(entries, unifiedIdentifiers) + 1];
+    for (JsonElement element : entries) {
+      register(element.getAsJsonObject(), unifiedIdentifiers);
+    }
   }
 
-  private static void registerTileEntity(int identifier, String name, HitboxSize dimensions) {
-    entityTypeRegister.put(identifier, new EntityTypeData(name, dimensions, identifier, false, 10));
+  private void register(JsonObject entry, boolean unifiedIdentifiers) {
+    JsonElement identifierElement = entry.get(unifiedIdentifiers ? "id" : "internalId");
+    if (identifierElement == null || identifierElement.isJsonNull()) {
+      return;
+    }
+
+    int identifier = identifierElement.getAsInt();
+    String name = entry.get("name").getAsString();
+    HitboxSize size = HitboxSize.of(numberOrZero(entry, "width"), numberOrZero(entry, "height"));
+
+    if (unifiedIdentifiers) {
+      livingEntities[identifier] = new EntityTypeData(name, size, identifier, true, 11);
+      nonLivingEntities[identifier] = new EntityTypeData(name, size, identifier, false, 11);
+      return;
+    }
+
+    boolean living = "mob".equals(entry.get("type").getAsString());
+    (living ? livingEntities : nonLivingEntities)[identifier] = new EntityTypeData(
+      name, size, identifier, living, living ? 9 : 10
+    );
   }
 
-  @Override
+  private static int largestIdentifier(JsonArray entries, boolean unifiedIdentifiers) {
+    String identifierName = unifiedIdentifiers ? "id" : "internalId";
+    int largest = -1;
+    for (JsonElement element : entries) {
+      JsonElement identifier = element.getAsJsonObject().get(identifierName);
+      if (identifier != null && !identifier.isJsonNull()) {
+        largest = Math.max(largest, identifier.getAsInt());
+      }
+    }
+    return largest;
+  }
+
+  private static float numberOrZero(JsonObject object, String name) {
+    JsonElement value = object.get(name);
+    return value == null || value.isJsonNull() ? 0.0F : value.getAsFloat();
+  }
+
+  private static String nearestResourceVersion(MinecraftVersion serverVersion) {
+    String nearest = null;
+    int nearestDistance = Integer.MAX_VALUE;
+    for (JsonElement element : readJsonArray(RESOURCE_DIRECTORY + "index.json")) {
+      String name = element.getAsString();
+      MinecraftVersion candidate = new MinecraftVersion(name);
+      if (candidate.getMajor() != serverVersion.getMajor()
+        || candidate.getMinor() != serverVersion.getMinor()) {
+        continue;
+      }
+      int distance = Math.abs(candidate.getBuild() - serverVersion.getBuild());
+      if (distance < nearestDistance
+        || distance == nearestDistance && candidate.getBuild() > serverVersion.getBuild()) {
+        nearest = name;
+        nearestDistance = distance;
+      }
+    }
+    if (nearest == null) {
+      throw new IntaveInternalException("Unsupported Minecraft version " + serverVersion.getVersion());
+    }
+    return nearest;
+  }
+
+  private static JsonArray readJsonArray(String path) {
+    Resource resource = Resources.resourceFromJarOrBuild(path);
+    if (!resource.available()) {
+      throw new IntaveInternalException("Missing resource " + path);
+    }
+    try {
+      return new JsonParser().parse(resource.readAsString()).getAsJsonArray();
+    } catch (RuntimeException exception) {
+      throw new IntaveInternalException("Unable to load " + path, exception);
+    }
+  }
+
   public EntityTypeData resolveFor(int entityType, boolean isLivingEntity) {
-    if (entityType != -1) {
-      return entityTypeRegister.get(entityType);
-    } else {
+    EntityTypeData[] data = isLivingEntity ? livingEntities : nonLivingEntities;
+    if (entityType < 0 || entityType >= data.length) {
       return null;
     }
+    return data[entityType];
   }
 }
