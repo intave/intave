@@ -546,8 +546,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
    */
   private double findLowestPossibleReachIterative(User user, Entity entity) {
     MetadataBundle meta = user.meta();
-    MovementMetadata movement = meta.movement();
-    double blockReachDistance = Raytracing.reachDistanceOf(meta);
+	  double blockReachDistance = Raytracing.reachDistanceOf(meta);
     double minReach = findLowestPossibleReachIterative(user, entity, false);
     // Stop if reach is already lower than block reach distance to save performance
     if (minReach < blockReachDistance) {
