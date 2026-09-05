@@ -41,6 +41,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
@@ -60,10 +61,16 @@ final class PtrBranchingVisualizationTest {
 
 	@TestFactory
 	Stream<DynamicTest> writesInteractiveBranchTracesForAllRecordings() throws IOException {
-		return MovementRecordingPhysicsTests.findMovementRecordings().stream().map(path -> {
-			String resource = MovementRecordingPhysicsTests.resourcePathOf(path);
-			return dynamicTest(resource, () -> writeInteractiveBranchTrace(resource));
-		});
+		return MovementRecordingPhysicsTests.findMovementRecordings().stream()
+			.filter(PtrBranchingVisualizationTest::shouldVisualize)
+			.map(path -> {
+				String resource = MovementRecordingPhysicsTests.resourcePathOf(path);
+				return dynamicTest(resource, () -> writeInteractiveBranchTrace(resource));
+			});
+	}
+
+	private static boolean shouldVisualize(Path recordingPath) {
+		return !recordingPath.getFileName().toString().startsWith("_");
 	}
 
 	private static void writeInteractiveBranchTrace(String resource) throws IOException {
@@ -108,6 +115,12 @@ final class PtrBranchingVisualizationTest {
 	@Test
 	void reportLinkIncludesExactTick() {
 		assertTrue(reportUri(Path.of("build", "reports", "ptr-branching", "sample.html"), 37).endsWith("sample.html?tick=37"));
+	}
+
+	@Test
+	void underscorePrefixedRecordingsAreNotVisualized() {
+		assertFalse(shouldVisualize(Path.of("nested", "_disabled.ptr")));
+		assertTrue(shouldVisualize(Path.of("enabled.ptr")));
 	}
 
 	private static Path outputPath(String resource) {

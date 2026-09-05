@@ -630,7 +630,7 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		MovementMetadata movement = user.meta().movement();
 		MovementSearchBranch[] sorted = branches.toArray(new MovementSearchBranch[0]);
 
-		if (movement.branchFrequencyTrimCounter <= 256 || sorted.length < 2) {
+		if (sorted.length < 2) {
 			return Arrays.asList(sorted);
 		}
 		Long2LongMap frequencies = movement.branchFrequency;

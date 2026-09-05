@@ -679,6 +679,11 @@ class BaseSimulator extends Simulator {
     Motion collisionInput = result.intermittentResult() == null
       ? result.actualMotion()
       : result.intermittentResult();
+
+    if (collisionInput == null || result.offsetMotion() == null) {
+      return;
+    }
+
     Motion clippedMovement = result.offsetMotion();
     boolean xCollision = !similar(collisionInput.motionX, clippedMovement.motionX);
     boolean zCollision = !similar(collisionInput.motionZ, clippedMovement.motionZ);
