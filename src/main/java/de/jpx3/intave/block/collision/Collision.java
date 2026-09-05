@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.block.collision;
 
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.block.collision.entity.StaticEntityCollisions;
@@ -50,6 +51,7 @@ import static de.jpx3.intave.share.ClientMath.floor;
 public final class Collision {
   // usually we collide with 8 blocks, so a limit of 256 comes with a very big margin
   private static final int COLLISION_CHECK_LIMIT = 256;
+  private static int OVER_COLLISION_WARNINGS_LEFT = 10;
 
   private static final Collector<BlockShape, ?, BlockShape> SHAPE_COMPILATION =
     Collectors.collectingAndThen(Collectors.toList(), BlockShapes::merge);
@@ -109,6 +111,14 @@ public final class Collision {
       }
       accumulator.accept(container, pistonShape);
       if (--collisionsRemaining <= 0) {
+        if (collisionLimit > 64 && --OVER_COLLISION_WARNINGS_LEFT > 0) {
+          IntaveLogger.logger().warn(
+            String.format(
+              "User %s has exceeded the collision limit of %d.",
+              user.player().getName(), collisionLimitAdjusted
+            )
+          );
+        }
         return finisher.apply(container);
       }
     }
@@ -132,6 +142,14 @@ public final class Collision {
               }
               accumulator.accept(container, borderShape);
               if (--collisionsRemaining <= 0) {
+                if (collisionLimit > 64 && --OVER_COLLISION_WARNINGS_LEFT > 0) {
+                  IntaveLogger.logger().warn(
+                    String.format(
+                      "User %s has exceeded the collision limit of %d.",
+                      user.player().getName(), collisionLimitAdjusted
+                    )
+                  );
+                }
                 return finisher.apply(container);
               }
             }
@@ -146,6 +164,14 @@ public final class Collision {
               }
               accumulator.accept(container, entityInducedShape);
               if (--collisionsRemaining <= 0) {
+                if (collisionLimit > 64 && --OVER_COLLISION_WARNINGS_LEFT > 0) {
+                  IntaveLogger.logger().warn(
+                    String.format(
+                      "User %s has exceeded the collision limit of %d.",
+                      user.player().getName(), collisionLimitAdjusted
+                    )
+                  );
+                }
                 return finisher.apply(container);
               }
             }
@@ -171,6 +197,14 @@ public final class Collision {
             }
             accumulator.accept(container, resolve);
             if (--collisionsRemaining <= 0) {
+              if (collisionLimit > 64 && --OVER_COLLISION_WARNINGS_LEFT > 0 ) {
+                IntaveLogger.logger().warn(
+                  String.format(
+                    "User %s has exceeded the collision limit of %d.",
+                    user.player().getName(), collisionLimitAdjusted
+                  )
+                );
+              }
               return finisher.apply(container);
             }
           }
