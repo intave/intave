@@ -1188,8 +1188,7 @@ final class MovementRecordingPhysicsTests {
 			abilities.replaceAttributeSnapshot(attributes);
 			var movementSpeed = abilities.findAttribute("generic.movementSpeed");
 			user.meta().movement().hasSprintSpeed = movementSpeed != null
-				&& abilities.modifiersOf(movementSpeed).stream()
-				.anyMatch(modifier -> !AbilityMetadata.EXCLUDE_SPRINT_MODIFIER.test(modifier));
+				&& AbilityMetadata.hasSprintModifier(abilities.modifiersOf(movementSpeed));
 		}
 	}
 

@@ -29,9 +29,22 @@ import static de.jpx3.intave.module.tracker.player.AbilityTracker.GameMode.NOT_S
 
 public final class AbilityMetadata {
   private static final UUID SPEED_MODIFIER_SPRINTING_UUID = UUID.fromString("662A6B8D-DA3E-4C1C-8813-96EA6097278D");
-  public static final Predicate<AttributeModifier> EXCLUDE_SPRINT_MODIFIER = modifier -> modifier.id() == null ?
-    !"662A6B8D-DA3E-4C1C-8813-96EA6097278D".equalsIgnoreCase(modifier.key().path()) && !"minecraft:sprinting".equalsIgnoreCase(modifier.key().fullKey())
-    : !modifier.id().equals(SPEED_MODIFIER_SPRINTING_UUID);
+  public static final Predicate<AttributeModifier> EXCLUDE_SPRINT_MODIFIER = modifier -> !isSprintModifier(modifier);
+
+  public static boolean isSprintModifier(AttributeModifier modifier) {
+    if (SPEED_MODIFIER_SPRINTING_UUID.equals(modifier.id())) {
+      return true;
+    }
+    if (modifier.key() == null) {
+      return false;
+    }
+    return "662A6B8D-DA3E-4C1C-8813-96EA6097278D".equalsIgnoreCase(modifier.key().path())
+      || "minecraft:sprinting".equalsIgnoreCase(modifier.key().fullKey());
+  }
+
+  public static boolean hasSprintModifier(Collection<AttributeModifier> modifiers) {
+    return modifiers.stream().anyMatch(AbilityMetadata::isSprintModifier);
+  }
 
 
   private final Player player;

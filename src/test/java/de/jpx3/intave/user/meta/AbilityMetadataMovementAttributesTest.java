@@ -16,6 +16,8 @@ import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.cache.MockFullBlockStaticPlane;
 import de.jpx3.intave.check.movement.physics.simulator.Simulators;
 import de.jpx3.intave.player.attribute.Attribute;
+import de.jpx3.intave.player.attribute.AttributeModifier;
+import de.jpx3.intave.share.MinecraftKey;
 import de.jpx3.intave.test.FakePlayerFactory;
 import de.jpx3.intave.test.FakeWorldFactory;
 import de.jpx3.intave.user.User;
@@ -28,13 +30,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 final class AbilityMetadataMovementAttributesTest {
+  private static final UUID LEGACY_SPRINT_MODIFIER_ID = UUID.fromString("662A6B8D-DA3E-4C1C-8813-96EA6097278D");
+
   @BeforeEach
   void setUp() {
     MinecraftVersion.setCurrent(MinecraftVersions.VER1_21_4);
@@ -179,6 +183,46 @@ final class AbilityMetadataMovementAttributesTest {
     assertEquals(1.0D, abilities.airDragModifier());
     assertEquals(0.0D, abilities.bounciness());
     assertEquals(1.0D, abilities.frictionModifier());
+  }
+
+  @Test
+  void detectsLegacySprintModifierByIdentity() {
+    AttributeModifier sprinting = new AttributeModifier(
+      new MinecraftKey("intave", "custom_modifier"),
+      LEGACY_SPRINT_MODIFIER_ID,
+      "Sprinting speed boost",
+      AttributeModifier.Operation.ADD_PERCENTAGE,
+      0.30000001192092896D
+    );
+
+	  assertNotEquals(sprinting, MovementMetadata.SPRINTING_MODIFIER);
+    assertTrue(AbilityMetadata.hasSprintModifier(List.of(sprinting)));
+  }
+
+  @Test
+  void detectsModernSprintModifierByKey() {
+    AttributeModifier sprinting = new AttributeModifier(
+      new MinecraftKey("minecraft", "sprinting"),
+      null,
+      null,
+      AttributeModifier.Operation.ADD_PERCENTAGE,
+      0.3D
+    );
+
+    assertTrue(AbilityMetadata.hasSprintModifier(List.of(sprinting)));
+  }
+
+  @Test
+  void rejectsUnrelatedMovementSpeedModifier() {
+    AttributeModifier unrelated = new AttributeModifier(
+      new MinecraftKey("minecraft", "powder_snow"),
+      UUID.randomUUID(),
+      "Powder snow slow",
+      AttributeModifier.Operation.ADD_NUMBER,
+      -0.025D
+    );
+
+    assertFalse(AbilityMetadata.hasSprintModifier(List.of(unrelated)));
   }
 
   @Test
