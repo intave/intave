@@ -2,6 +2,7 @@ package de.jpx3.intave.codec;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.bukkit.Material;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -84,6 +85,17 @@ final class StreamCodecTest {
 			REFLECTED.encode(buffer, expected);
 			ReflectedExample decoded = REFLECTED.decode(buffer);
 			assertEquals(expected, decoded);
+		} finally {
+			buffer.release();
+		}
+	}
+
+	@Test
+	void materialCodecMapsLegacyWoodDoorToOakDoor() {
+		ByteBuf buffer = Unpooled.buffer();
+		try {
+			ByteBufStreamCodecs.STRING.encode(buffer, "WOOD_DOOR");
+			assertEquals(Material.OAK_DOOR, ByteBufStreamCodecs.MATERIAL.decode(buffer));
 		} finally {
 			buffer.release();
 		}

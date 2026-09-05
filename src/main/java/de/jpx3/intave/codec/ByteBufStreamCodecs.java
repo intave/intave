@@ -96,6 +96,7 @@ public final class ByteBufStreamCodecs {
   static {
     MATERIAL_ALIASES.put("STATIONARY_WATER", "WATER");
     MATERIAL_ALIASES.put("STATIONARY_LAVA", "LAVA");
+    MATERIAL_ALIASES.put("WOOD_DOOR", "OAK_DOOR");
   }
 
   private static Material findOrThrow(String name) {
