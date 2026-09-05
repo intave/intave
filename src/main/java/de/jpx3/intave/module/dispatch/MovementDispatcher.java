@@ -24,7 +24,7 @@ import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
-import de.jpx3.intave.block.collision.custom.BedWakeupPositionSearch;
+import de.jpx3.intave.block.special.BedWakeupPositionSearch;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.type.MaterialSearch;
