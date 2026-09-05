@@ -43,11 +43,20 @@ jobs:
           path: build/libs/Intave.jar
           archive: false
           retention-days: 7
+      - name: Upload Bundled Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: Intave-bundled-${{ steps.vars.outputs.sha_short }}.jar
+          path: build/libs/Intave-bundled.jar
+          archive: false
+          retention-days: 7
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: build/libs/*.jar
+          files: |
+            build/libs/Intave.jar
+            build/libs/Intave-bundled.jar
           generate_release_notes: true
           draft: false
           prerelease: false
@@ -60,9 +69,12 @@ jobs:
         with:
           tag_name: nightly
           name: Nightly Build
-          files: build/libs/*.jar
+          files: |
+            build/libs/Intave.jar
+            build/libs/Intave-bundled.jar
           body: |
             Automated nightly build.
+            Install one build: Intave.jar downloads and caches libraries; Intave-bundled.jar includes libraries and all supported classloader natives.
             Last updated: ${{ github.event.repository.updated_at }}
           prerelease: true
           make_latest: true

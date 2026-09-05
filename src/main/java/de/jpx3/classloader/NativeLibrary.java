@@ -160,7 +160,8 @@ public final class NativeLibrary {
 
   public String suffix() {
     String operatingSystem = System.getProperty("os.name").toLowerCase(Locale.ROOT);
-    String arch = System.getProperty("os.arch").toLowerCase(Locale.ROOT).replace("amd64", "x86_64");
+    String arch = System.getProperty("os.arch").toLowerCase(Locale.ROOT)
+      .replace("amd64", "x86_64").replace("arm64", "aarch64");
 
     if (operatingSystem.contains("win")) {
       return "windows-" + arch + ".dll";

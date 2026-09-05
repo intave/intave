@@ -154,12 +154,12 @@ public final class Library {
         Field pathField = urlClassPath.getClass().getDeclaredField("path");
         long pathOffset = unsafe.objectFieldOffset(pathField);
         //noinspection unchecked
-        List<String> paths = (List<String>) unsafe.getObject(urlClassPath, pathOffset);
+        List<URL> paths = (List<URL>) unsafe.getObject(urlClassPath, pathOffset);
         urls.add(cacheFile.toURI().toURL());
-        paths.add(cacheFile.getAbsolutePath());
+        paths.add(cacheFile.toURI().toURL());
       }
     } catch (Exception exception) {
-      exception.printStackTrace();
+      throw new IllegalStateException("Unable to load library " + name + " " + version, exception);
     }
   }
 

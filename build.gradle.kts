@@ -76,36 +76,24 @@ dependencies {
     files(fileTree(mapOf("dir" to "libs/", "include" to listOf("*.jar"))).files.sorted())
   )
 
-  testRuntimeOnly("it.unimi.dsi:fastutil:8.5.12")
+  // Bundled libraries.
+  implementation("ac.intave:samples:0.0.8") { isTransitive = false }
+  implementation("ac.intave:cloud-protocol:0.0.6") { isTransitive = false }
+  implementation("it.unimi.dsi:fastutil:8.5.12")
+  implementation("net.bytebuddy:byte-buddy:1.18.2")
+  implementation("org.bouncycastle:bcpkix-jdk18on:1.85")
+  implementation("com.github.luben:zstd-jni:1.5.7-12")
+
+  // Server-provided APIs and compile-time annotations.
+  compileOnly("org.spigotmc:spigot-api:1.21.1-R0.1-SNAPSHOT")
+  compileOnly("org.jetbrains:annotations:23.1.0")
+  compileOnly("org.geysermc.floodgate:api:2.0-SNAPSHOT")
+  compileOnly("com.github.retrooper:packetevents-spigot:2.13.0")
+
+  // Test environment.
   testImplementation("org.spigotmc:spigot-api:26.2-R0.1-SNAPSHOT")
   testImplementation("net.dmulloy2:ProtocolLib:5.4.0")
   testImplementation("io.netty:netty-all:4.2.15.Final")
-
-  // Intave-owned APIs are packaged into the shaded plugin jar.
-  implementation("ac.intave:samples:0.0.8") { isTransitive = false }
-  implementation("ac.intave:cloud-protocol:0.0.6") { isTransitive = false }
-
-  // random shit[
-  compileOnly("org.jetbrains:annotations:23.1.0")
-  compileOnly("it.unimi.dsi:fastutil:8.5.12")
-
-  compileOnly("org.spigotmc:spigot-api:1.21.1-R0.1-SNAPSHOT")
-
-  // bytebuddy
-  compileOnly("net.bytebuddy:byte-buddy:1.18.2")
-
-  // Loaded by Libraries.setupLibraries() when the plugin starts.
-  compileOnly("org.bouncycastle:bcpkix-jdk18on:1.85")
-  compileOnly("com.github.luben:zstd-jni:1.5.7-12")
-  testImplementation("org.bouncycastle:bcpkix-jdk18on:1.85")
-  testImplementation("com.github.luben:zstd-jni:1.5.7-12")
-
-  // floodgate
-  compileOnly("org.geysermc.floodgate:api:2.0-SNAPSHOT")
-
-  // packetevents
-  compileOnly("com.github.retrooper:packetevents-spigot:2.13.0")
-
   testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -236,7 +224,7 @@ tasks.register<RunServer>("runAuthTest1_8_8") {
   buildConfigFieldSafe("boolean", "AUTHTEST", "true")
   dumpBuildConfig()
 
-  pluginJars.from("build/libs/$simpleName.jar")
+  pluginJars.from(tasks.named("shadowJar"))
   minecraftVersion("1.8.8")
   runDirectory(File("runs/authtest"))
   jvmArgs("-Dcom.mojang.eula.agree=true")
@@ -255,7 +243,7 @@ tasks.register<RunServer>("runGommeTest1_8_8") {
   buildConfigFieldSafe("boolean", "GOMME", "true")
   dumpBuildConfig()
 
-  pluginJars.from("build/libs/$simpleName.jar")
+  pluginJars.from(tasks.named("shadowJar"))
   minecraftVersion("1.8.8")
   runDirectory(File("runs/gommetest"))
   jvmArgs("-Dcom.mojang.eula.agree=true")
@@ -276,7 +264,7 @@ tasks.register<RunServer>("runAuthTest1_20_1") {
   buildConfigFieldSafe("boolean", "AUTHTEST", "true")
   dumpBuildConfig()
 
-  pluginJars.from("build/libs/$simpleName.jar")
+  pluginJars.from(tasks.named("shadowJar"))
   minecraftVersion("1.20.1")
   runDirectory(File("runs/authtest_1.20.1"))
   jvmArgs("-Dcom.mojang.eula.agree=true")
@@ -695,7 +683,7 @@ fun registerPaperTestTask(serverVersion: String, javaVersion: Int) {
     group = IntaveTaskGroups.SERVER_TESTS
     description = "Runs the Intave server test on Paper $serverVersion"
     dependsOn("shadowJar")
-    pluginJars.from("build/libs/$simpleName.jar")
+    pluginJars.from(tasks.named("shadowJar"))
     minecraftVersion(serverVersion)
     // Minecraft 1.8.8 requires special patches to work with Java 17
     if (serverVersion == "1.8.8") {
@@ -740,7 +728,7 @@ fun registerPaperRunTask(serverVersion: String, javaVersion: Int) {
     group = IntaveTaskGroups.SERVER_RUNS
     description = "Runs Intave on Paper $serverVersion"
     dependsOn("shadowJar")
-    pluginJars.from("build/libs/$simpleName.jar")
+    pluginJars.from(tasks.named("shadowJar"))
     minecraftVersion(serverVersion)
     // Minecraft 1.8.8 requires special patches to work with Java 17
     if (serverVersion == "1.8.8") {
@@ -776,7 +764,7 @@ fun registerFoliaRunTask(serverVersion: String, javaVersion: Int) {
     group = IntaveTaskGroups.SERVER_RUNS
     description = "Runs Intave on Folia $serverVersion"
     dependsOn("shadowJar")
-    pluginJars.from("build/libs/$simpleName.jar")
+    pluginJars.from(tasks.named("shadowJar"))
     minecraftVersion(serverVersion)
     runDirectory(File("runs/folia_${serverVersion}-j$javaVersion"))
     jvmArgs("-Dcom.mojang.eula.agree=true")
@@ -848,7 +836,7 @@ fun registerLeafRunTask(
     group = IntaveTaskGroups.SERVER_RUNS
     description = "Runs Intave on Leaf $serverVersion build $build"
     dependsOn("shadowJar", downloadTask)
-    pluginJars.from("build/libs/$simpleName.jar")
+    pluginJars.from(tasks.named("shadowJar"))
     minecraftVersion(serverVersion)
     serverJar(leafServerJar.asFile)
     downloadPlugins {
@@ -874,6 +862,8 @@ java {
   disableAutoTargetJvm()
 }
 
+apply(from = "gradle/packaging.gradle.kts")
+
 tasks {
   build { dependsOn(shadowJar) }
 
@@ -896,9 +886,19 @@ tasks {
   }
 
   shadowJar {
-    val classifier = "file"
-    archiveFileName.set("$simpleName.jar")
-    archiveClassifier.set(classifier)
+    archiveFileName.set("$simpleName-bundled.jar")
+    archiveClassifier.set("bundled")
+    from("src/bundled/resources")
+    minimize {
+      // Preserve public Intave APIs and libraries with reflection or JNI entry points.
+      exclude(dependency("ac.intave:.*:.*"))
+      exclude(dependency("net.bytebuddy:byte-buddy:.*"))
+      exclude(dependency("com.github.luben:zstd-jni:.*"))
+    }
+    exclude("META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA", "META-INF/*.EC")
+    exclude("module-info.class")
+    filesMatching("META-INF/services/**") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
+    mergeServiceFiles()
   }
 
   test {

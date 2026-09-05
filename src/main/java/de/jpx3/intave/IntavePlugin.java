@@ -148,9 +148,7 @@ public final class IntavePlugin extends JavaPlugin {
     redirectPluginLogger();
     checkClassLoaderAvailability();
 
-    System.setProperty("org.bytedeco.javacpp.cachedir", integrityFolder().getAbsolutePath());
-
-    Libraries.setupLibraries();
+    Libraries.setupLibraries(message -> logger.info(message));
 
     TickEnd.start();
 
