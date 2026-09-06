@@ -1211,6 +1211,7 @@ final class PtrBranchingVisualizationTest {
 		
 		const trace = __TRACE_DATA__;
 		const ASSET_VERSION = '__ASSET_VERSION__';
+		const CLIENT_PROTOCOL = __CLIENT_PROTOCOL__;
 		const EXACT_LOSS = 0.0001;
 		const ACCEPTED_LOSS = 0.01;
 		const TICK_DURATION_MS = 100;
@@ -1247,12 +1248,22 @@ final class PtrBranchingVisualizationTest {
 			tick.environment.originZ
 		]);
 		const hasElytraInTrace = trace.some(tick => tick.environment.elytraEquipped);
-		let accumulatedStride = 0;
-		const walkingPhases = trace.map(tick => {
-			const phase = accumulatedStride;
-			accumulatedStride += Math.hypot(tick.actualX, tick.actualZ) * 8;
-			return phase;
-		});
+		// PTRs do not contain the client's render state. Reconstruct its walking
+		// accumulator from recorded movement, independently of the focused branch.
+		// LivingEntity/WalkAnimationState: distance * 4, capped at 1, damping .4.
+		function walkingStatesFor(ticks) {
+			let speed = 0;
+			let position = 0;
+			return ticks.map(tick => {
+				const previousSpeed = speed;
+				const previousPosition = position;
+				const target = Math.min(1, Math.hypot(tick.actualX, tick.actualZ) * 4);
+				speed += (target - speed) * .4;
+				position += speed;
+				return { previousSpeed, speed, previousPosition, position };
+			});
+		}
+		const walkingStates = walkingStatesFor(trace);
 		const baseOrigin = recordedOrigins[0] ?? [0, 0, 0];
 		const originOffset = index => recordedOrigins[index].map(
 			(value, axis) => value - baseOrigin[axis]
@@ -1325,7 +1336,18 @@ final class PtrBranchingVisualizationTest {
 		sun.castShadow = true;
 		scene.add(sun);
 		const terrainGroup = new THREE.Group();
+		const cherryParticleGroup = new THREE.Group();
+		const cherryEmitters = new Map();
+		let cherryParticleMaterials = null;
+		// Integrate FallingLeavesParticle's flow acceleration once (300 ticks).
+		const cherryFlow = [0];
+		let cherryFlowSpeed = 0;
+		for (let age = 1; age <= 300; age++) {
+			cherryFlowSpeed += .005 * (age / 300) ** 1.25;
+			cherryFlow.push(cherryFlow[age - 1] + cherryFlowSpeed);
+		}
 		const pathGroup = new THREE.Group();
+		const possibilitiesGroup = new THREE.Group();
 		const playerGroup = new THREE.Group();
 		const referencePlane = new THREE.Mesh(
 			new THREE.PlaneGeometry(64, 64),
@@ -1351,7 +1373,7 @@ final class PtrBranchingVisualizationTest {
 		referenceGrid.material.opacity = darkTheme ? .46 : .5;
 		referenceGrid.material.depthWrite = false;
 		referenceGrid.renderOrder = -1;
-		scene.add(referencePlane, referenceGrid, terrainGroup, pathGroup, playerGroup);
+		scene.add(referencePlane, referenceGrid, terrainGroup, cherryParticleGroup, pathGroup, possibilitiesGroup, playerGroup);
 		const terrainCells = new Map();
 		let renderedPathTick = -1;
 		let worldActors = null;
@@ -1389,6 +1411,9 @@ final class PtrBranchingVisualizationTest {
 		const textures = { skin: pixelTexture(textureData.skin) };
 		const assetTextures = new Map([['embedded:skin', textures.skin]]);
 		const legacyAssets = ASSET_VERSION === '1.8.8';
+		const assetVersionParts = ASSET_VERSION.split('.').map(Number);
+		const equipmentAssets = assetVersionParts[0] > 1 || assetVersionParts[1] > 21
+			|| (assetVersionParts[1] === 21 && (assetVersionParts[2] ?? 0) >= 2);
 		const assetTexture = reference => {
 			if (assetTextures.has(reference)) return assetTextures.get(reference);
 			const separator = reference.indexOf(':');
@@ -1456,14 +1481,17 @@ final class PtrBranchingVisualizationTest {
 		resizeWorld();
 		renderer.setAnimationLoop(now => {
 			updatePlayback(now);
+			updateCherryParticles(now / 1000);
 			controls.update();
 			renderer.render(scene, camera);
 		});
 		
 		function clearGroup(group) {
 			while (group.children.length) {
-				const child = group.children.pop();
+				const child = group.children[0];
+				group.remove(child);
 				child.traverse(object => {
+					if (object.isInstancedMesh) object.dispose();
 					object.geometry?.dispose();
 					if (Array.isArray(object.material)) object.material.forEach(material => material.dispose());
 					else object.material?.dispose();
@@ -1471,7 +1499,28 @@ final class PtrBranchingVisualizationTest {
 			}
 		}
 		
+		function stairTextureMaterial(material) {
+			// Stairs use their block family's textures; their recorded collision
+			// boxes already supply the straight, corner, and upside-down geometry.
+			const base = material.slice(0, -'_STAIRS'.length);
+			if (['OAK', 'SPRUCE', 'BIRCH', 'JUNGLE', 'ACACIA', 'DARK_OAK',
+				'MANGROVE', 'CHERRY', 'PALE_OAK', 'BAMBOO', 'CRIMSON', 'WARPED'].includes(base)) {
+				const wood = base.toLowerCase();
+				return legacyAssets ? `planks_${wood === 'dark_oak' ? 'big_oak' : wood}` : `${wood}_planks`;
+			}
+			const aliases = {
+				BRICK: legacyAssets ? 'brick' : 'bricks',
+				STONE_BRICK: legacyAssets ? 'stonebrick' : 'stone_bricks',
+				NETHER_BRICK: legacyAssets ? 'nether_brick' : 'nether_bricks',
+				PURPUR: 'purpur_block', QUARTZ: 'quartz_block_side', SMOOTH_QUARTZ: 'quartz_block_bottom',
+				SMOOTH_SANDSTONE: 'sandstone_top', SMOOTH_RED_SANDSTONE: 'red_sandstone_top'
+			};
+			const plural = base.endsWith('_BRICK') || base.endsWith('_TILE') ? 's' : '';
+			return aliases[base] ?? base.replace('WAXED_', '').toLowerCase() + plural;
+		}
+
 		function textureReference(material, properties) {
+			if (material.endsWith('_STAIRS')) return stairTextureMaterial(material);
 			if (material.endsWith('_CORAL_WALL_FAN')) {
 				return material.replace('_WALL_FAN', '_FAN').toLowerCase();
 			}
@@ -1506,10 +1555,14 @@ final class PtrBranchingVisualizationTest {
 				side = 'podzol_side';
 				top = 'podzol_top';
 				bottom = 'dirt';
-			} else if (material === 'SANDSTONE') {
-				side = 'sandstone_normal';
-				top = 'sandstone_top';
-				bottom = 'sandstone_bottom';
+			} else if (['SANDSTONE', 'SANDSTONE_STAIRS', 'RED_SANDSTONE_STAIRS'].includes(material)) {
+				const stone = material.startsWith('RED_') ? 'red_sandstone' : 'sandstone';
+				side = legacyAssets ? `${stone}_normal` : stone;
+				top = `${stone}_top`;
+				bottom = `${stone}_bottom`;
+			} else if (material === 'QUARTZ_STAIRS') {
+				top = 'quartz_block_top';
+				bottom = 'quartz_block_bottom';
 			} else if (material === 'CACTUS') {
 				side = 'cactus_side';
 				top = 'cactus_top';
@@ -1539,7 +1592,7 @@ final class PtrBranchingVisualizationTest {
 			}
 		
 			if (foliageBlocks.has(material)) {
-				const tint = material === 'BIRCH_LEAVES' ? 0x80a755 : 0x77ab2f;
+				const tint = material === 'CHERRY_LEAVES' ? 0xffffff : material === 'BIRCH_LEAVES' ? 0x80a755 : 0x77ab2f;
 				sideTint = tint;
 				topTint = tint;
 				bottomTint = tint;
@@ -1616,6 +1669,14 @@ final class PtrBranchingVisualizationTest {
 		
 		function addBlockBatch(group, batch, offset) {
 			const { material, collidable, properties, blocks } = batch;
+			if (material === 'BREWING_STAND') {
+				// Only the wide base collider anchors a model. The narrow post is
+				// another collision box for the same stand, not a second model.
+				for (const block of blocks) {
+					if (block[5] > .125 && block[7] > .125) addBrewingStand(group, block, offset);
+				}
+				return;
+			}
 			const faces = blockFaces(material, properties);
 			const geometry = new THREE.BoxGeometry(1, 1, 1);
 			if (material === 'PLAYER_HEAD') setSkinUVs(geometry, 0, 0, 8, 8, 8);
@@ -1754,6 +1815,7 @@ final class PtrBranchingVisualizationTest {
 			const retainedBlocks = [];
 			for (const cell of terrainCells.values()) retainedBlocks.push(...cell.blocks);
 			addBlocks(terrainGroup, retainedBlocks, [0, 0, 0]);
+			syncCherryParticles();
 		}
 		
 		function addHitbox(position, width, height, color, opacity, parent = playerGroup) {
@@ -1799,8 +1861,151 @@ final class PtrBranchingVisualizationTest {
 		""";
 
 	private static final String HTML_TAIL = """
+		function cherryParticlePosition(particle, age) {
+			const index = Math.min(299, Math.floor(age));
+			const flow = THREE.MathUtils.lerp(cherryFlow[index], cherryFlow[index + 1], age - index);
+			return [particle.x + particle.windX * flow,
+				particle.y - .000375 * age * (age + 1), particle.z + particle.windZ * flow];
+		}
+
+		function cherryParticleLifetime(particle) {
+			let previous = cherryParticlePosition(particle, 0);
+			for (let age = 1; age <= 300; age++) {
+				const point = cherryParticlePosition(particle, age);
+				const x = terrainCellCoordinate(point[0], baseOrigin[0]);
+				const z = terrainCellCoordinate(point[2], baseOrigin[2]);
+				const bottom = terrainCellCoordinate(point[1], baseOrigin[1]);
+				const top = terrainCellCoordinate(previous[1], baseOrigin[1]);
+				for (let y = bottom; y <= top; y++) {
+					const cell = terrainCells.get(terrainCellKey(x, y, z));
+					if (cell?.blocks.some(([, solid, bx, by, bz, sx, sy, sz]) => solid
+						&& Math.abs(point[0] - bx) <= sx / 2 && Math.abs(point[2] - bz) <= sz / 2
+						&& point[1] <= by + sy / 2 && previous[1] >= by - sy / 2)) return age - 1;
+				}
+				previous = point;
+			}
+			return 300;
+		}
+
+		function syncCherryParticles() {
+			const origin = originOffset(state.tickIndex);
+			const leaves = [];
+			for (const [key, cell] of terrainCells) {
+				const block = cell.blocks.find(block => block[0] === 'CHERRY_LEAVES');
+				if (!block) continue;
+				const below = terrainCells.get(terrainCellKey(cell.x, cell.y - 1, cell.z));
+				// Vanilla only emits beneath leaves without a full supporting face.
+				if (below?.blocks.some(([, solid, , y, , sx, sy, sz]) => solid && sx >= 1 && sz >= 1
+					&& y + sy / 2 >= block[3] - block[6] / 2 - .000001)) continue;
+				leaves.push({ key, block, distance: Math.hypot(block[2] - origin[0], block[3] - origin[1], block[4] - origin[2]) });
+			}
+			// Four staggered petals per leaf, capped at 192 sprites for dense canopies.
+			leaves.sort((a, b) => a.distance - b.distance || a.key.localeCompare(b.key));
+			const active = new Set(leaves.slice(0, 48).map(leaf => leaf.key));
+			for (const [key, particles] of cherryEmitters) {
+				if (active.has(key)) continue;
+				for (const particle of particles) {
+					cherryParticleGroup.remove(particle.sprite);
+					particle.sprite.material.dispose();
+				}
+				cherryEmitters.delete(key);
+			}
+			for (const { key, block } of leaves.slice(0, 48)) {
+				if (!cherryEmitters.has(key)) {
+					cherryParticleMaterials ??= Array.from({ length: 12 }, (_, index) => new THREE.SpriteMaterial({
+						map: assetTexture(`particle:cherry_${index}`), transparent: true, alphaTest: .1, depthWrite: false
+					}));
+					// PTRs do not record cosmetic random ticks. Seed the decoration by
+					// block coordinates so terrain rebuilds and exported frames stay stable.
+					let seed = 2166136261;
+					for (const character of key) seed = Math.imul(seed ^ character.charCodeAt(0), 16777619);
+					const random = () => { seed = Math.imul(seed, 1664525) + 1013904223 | 0; return (seed >>> 0) / 4294967296; };
+					const phase = random() * 300;
+					const particles = Array.from({ length: 4 }, (_, slot) => {
+						const sprite = new THREE.Sprite(cherryParticleMaterials[Math.floor(random() * 12)].clone());
+						sprite.scale.setScalar(random() < .5 ? .1 : .15);
+						const angle = random() * Math.PI / 3;
+						const particle = { sprite, x: block[2] + (random() - .5) * block[5],
+							y: block[3] - block[6] / 2 - .05, z: block[4] + (random() - .5) * block[7],
+							windX: Math.cos(angle), windZ: Math.sin(angle), phase: phase + slot * 75,
+							spin: (random() < .5 ? -1 : 1) * Math.PI / 6,
+							spinAcceleration: (random() < .5 ? -1 : 1) * Math.PI / 36 };
+						cherryParticleGroup.add(sprite);
+						return particle;
+					});
+					cherryEmitters.set(key, particles);
+				}
+				// Stop petals at the recorded terrain, including newly observed blocks.
+				for (const particle of cherryEmitters.get(key)) particle.lifetime = cherryParticleLifetime(particle);
+			}
+		}
+
+		function updateCherryParticles(seconds) {
+			const time = reducedMotion ? 0 : seconds * 20;
+			for (const particles of cherryEmitters.values()) for (const particle of particles) {
+				const age = (time + particle.phase) % 300;
+				particle.sprite.visible = age < particle.lifetime;
+				if (!particle.sprite.visible) continue;
+				particle.sprite.position.set(...cherryParticlePosition(particle, age));
+				particle.sprite.material.rotation = particle.spin * age / 20 + particle.spinAcceleration * age * (age + 1) / 800;
+				particle.sprite.material.opacity = Math.min(1, age / 8, (particle.lifetime - age) / 10);
+			}
+		}
+
+		function addBrewingStand(group, block, offset) {
+			const [, , x, y, z, , height, , properties = ''] = block;
+			const stand = new THREE.Group();
+			stand.position.set(x + offset[0], y - height / 2 + offset[1], z + offset[2]);
+			group.add(stand);
+			const postMaterial = faceMaterial(assetTexture('brewing_stand'));
+			const baseMaterial = faceMaterial(assetTexture('brewing_stand_base'));
+			const holderMaterial = faceMaterial(assetTexture('brewing_stand'), 1, 0xffffff, .1);
+			holderMaterial.side = THREE.DoubleSide;
+			const setFaceUv = (geometry, face, [u0, v0, u1, v1]) => {
+				const uv = geometry.attributes.uv;
+				uv.setXY(face * 4, u0 / 16, 1 - v0 / 16);
+				uv.setXY(face * 4 + 1, u1 / 16, 1 - v0 / 16);
+				uv.setXY(face * 4 + 2, u0 / 16, 1 - v1 / 16);
+				uv.setXY(face * 4 + 3, u1 / 16, 1 - v1 / 16);
+			};
+			const addBox = (from, to, sideUv, endUv, topUv, material) => {
+				const geometry = new THREE.BoxGeometry(...to.map((value, axis) => (value - from[axis]) / 16));
+				// Three.js box faces: east, west, up, down, south, north.
+				[endUv, endUv, topUv, topUv, sideUv, sideUv].forEach((uv, face) => setFaceUv(geometry, face, uv));
+				const mesh = new THREE.Mesh(geometry, material);
+				mesh.position.set((from[0] + to[0]) / 32 - .5, (from[1] + to[1]) / 32, (from[2] + to[2]) / 32 - .5);
+				mesh.castShadow = mesh.receiveShadow = true;
+				stand.add(mesh);
+			};
+			// Vanilla models/block/brewing_stand.json: the visual base is three
+			// separate feet, while the PTR stores a single wide collision plate.
+			addBox([7, 0, 7], [9, 14, 9], [7, 2, 9, 16], [7, 2, 9, 16], [7, 7, 9, 9], postMaterial);
+			for (const [x0, z0] of [[9, 5], [1, 1], [1, 9]]) {
+				addBox([x0, 0, z0], [x0 + 6, 2, z0 + 6],
+					[x0, 14, x0 + 6, 16], [z0, 14, z0 + 6, 16], [x0, z0, x0 + 6, z0 + 6], baseMaterial);
+			}
+			const namedProperties = new Set(properties.toLowerCase().split(',').map(value => value.trim()));
+			for (let slot = 0; slot < 3; slot++) {
+				// Old reports may contain only an opaque variant hash; in that
+				// case show empty holders instead of guessing bottle contents.
+				const bottle = namedProperties.has(`has_bottle_${slot}=true`);
+				const geometry = new THREE.PlaneGeometry(.5, 1);
+				const u0 = slot === 0 ? 8 : bottle ? 0 : 16;
+				const u1 = slot === 0 ? bottle ? 0 : 16 : 8;
+				setFaceUv(geometry, 0, [u0, 0, u1, 16]);
+				const holder = new THREE.Mesh(geometry, holderMaterial);
+				holder.position.set(slot === 0 ? .25 : -4.41 / 16, .5, 0);
+				holder.castShadow = holder.receiveShadow = true;
+				const pivot = new THREE.Group();
+				pivot.rotation.y = slot === 0 ? 0 : slot === 1 ? -Math.PI / 4 : Math.PI / 4;
+				pivot.add(holder);
+				stand.add(pivot);
+			}
+		}
+
 		function skinPart(parent, size, center, innerUv, outerUv, pivot = center) {
 			const part = new THREE.Group();
+			part.rotation.order = 'ZYX'; // Minecraft ModelPart applies Z, then Y, then X.
 			part.position.set(...pivot);
 			const localCenter = center.map((value, axis) => value - pivot[axis]);
 			parent.add(part);
@@ -1837,7 +2042,7 @@ final class PtrBranchingVisualizationTest {
 		
 		function createElytra(parent) {
 			const material = new THREE.MeshStandardMaterial({
-				map: assetTexture('entity:elytra'),
+				map: assetTexture(equipmentAssets ? 'entity:equipment/wings/elytra' : 'entity:elytra'),
 				transparent: true,
 				alphaTest: .01,
 				side: THREE.DoubleSide,
@@ -1846,11 +2051,14 @@ final class PtrBranchingVisualizationTest {
 			});
 			const wing = (pivotX, centerX, mirrored) => {
 				const pivot = new THREE.Group();
-				pivot.position.set(pivotX, 24, 2);
+				pivot.rotation.order = 'ZYX';
+				// ElytraModel + WingsLayer, converted to Y-up with the skin front
+				// at +Z: vanilla's Y/Z coordinates and Y/Z rotations change sign.
+				pivot.position.set(pivotX, 24, -2);
 				const geometry = new THREE.BoxGeometry(12, 22, 4);
 				setSkinUVs(geometry, 22, 0, 10, 20, 2, 64, 32);
 				const mesh = new THREE.Mesh(geometry, material);
-				mesh.position.set(centerX, -10, 1);
+				mesh.position.set(centerX, -10, -1);
 				if (mirrored) mesh.scale.x = -1;
 				mesh.castShadow = true;
 				pivot.add(mesh);
@@ -1872,11 +2080,13 @@ final class PtrBranchingVisualizationTest {
 			rig.add(bodyRoot);
 			model.add(rig);
 			const slimArm = 3;
+			// Slim shoulders moved up half a pixel in 1.21.2's PlayerModel.
+			const shoulderY = CLIENT_PROTOCOL >= 768 ? 22 : 21.5;
 			const parts = {
 				head: skinPart(bodyRoot, [8, 8, 8], [0, 28, 0], [0, 0], [32, 0], [0, 24, 0]),
 				body: skinPart(bodyRoot, [8, 12, 4], [0, 18, 0], [16, 16], [16, 32], [0, 24, 0]),
-				rightArm: skinPart(bodyRoot, [slimArm, 12, 4], [-5.5, 18, 0], [40, 16], [40, 32], [-5.5, 24, 0]),
-				leftArm: skinPart(bodyRoot, [slimArm, 12, 4], [5.5, 18, 0], [32, 48], [48, 48], [5.5, 24, 0]),
+				rightArm: skinPart(bodyRoot, [slimArm, 12, 4], [-5.5, shoulderY - 4, 0], [40, 16], [40, 32], [-5, shoulderY, 0]),
+				leftArm: skinPart(bodyRoot, [slimArm, 12, 4], [5.5, shoulderY - 4, 0], [32, 48], [48, 48], [5, shoulderY, 0]),
 				rightLeg: skinPart(bodyRoot, [4, 12, 4], [-2, 6, 0], [0, 16], [0, 32], [-2, 12, 0]),
 				leftLeg: skinPart(bodyRoot, [4, 12, 4], [2, 6, 0], [16, 48], [0, 48], [2, 12, 0])
 			};
@@ -1886,7 +2096,7 @@ final class PtrBranchingVisualizationTest {
 			model.rotation.y = THREE.MathUtils.degToRad(-yaw);
 			playerGroup.add(model);
 			const hitbox = addHitbox(position, width, height, fitColor, .95);
-			return { model, rig, parts, elytra, hitbox };
+			return { model, rig, parts, elytra, hitbox, shoulderY };
 		}
 		
 		function createMotionArrow(color) {
@@ -1939,6 +2149,76 @@ final class PtrBranchingVisualizationTest {
 			controls.target.copy(followTarget);
 		}
 		
+		function renderPossibilities(tick, origin, width, height) {
+			clearGroup(possibilitiesGroup);
+			// Include every diagnostic layer and retention outcome. Older reports
+			// without a candidate tree still have their first-tick branch endpoints.
+			const candidates = tick.multiTick?.candidates?.length
+				? tick.multiTick.candidates : (tick.branches ?? []);
+			const byId = new Map(candidates.map(candidate => [candidate.id, candidate]));
+			const endpoints = new Map();
+			const segments = new Map();
+			for (const candidate of candidates) {
+				const end = [candidate.x, candidate.y, candidate.z];
+				const parent = candidate.parent >= 0 ? byId.get(candidate.parent) : null;
+				const start = parent ? [parent.x, parent.y, parent.z] : [0, 0, 0];
+				// Coincident branches share geometry, but no candidate is filtered out.
+				endpoints.set(end.join(','), end);
+				segments.set([...start, ...end].join(','), [start, end]);
+			}
+			possibilitiesGroup.userData = {
+				candidateCount: candidates.length, endpointCount: endpoints.size, segmentCount: segments.size
+			};
+			if (!endpoints.size) return;
+			const color = darkTheme ? 0x93c8ff : 0x3276b8;
+			const density = Math.sqrt(endpoints.size);
+			const geometry = new THREE.BoxGeometry(width, height, width);
+			const material = new THREE.MeshBasicMaterial({
+				color, transparent: true, opacity: .08 / density, depthWrite: false, depthTest: false
+			});
+			const volumes = new THREE.InstancedMesh(geometry, material, endpoints.size);
+			volumes.renderOrder = 10;
+			const matrix = new THREE.Matrix4();
+			const edgeGeometry = new THREE.EdgesGeometry(geometry);
+			const localEdges = edgeGeometry.attributes.position.array;
+			const edges = [];
+			const points = [];
+			let index = 0;
+			for (const end of endpoints.values()) {
+				const x = origin[0] + end[0], y = origin[1] + end[1], z = origin[2] + end[2];
+				volumes.setMatrixAt(index++, matrix.makeTranslation(x, y + height / 2, z));
+				points.push(x, y + .035, z);
+				for (let edge = 0; edge < localEdges.length; edge += 3) {
+					edges.push(x + localEdges[edge], y + height / 2 + localEdges[edge + 1], z + localEdges[edge + 2]);
+				}
+			}
+			edgeGeometry.dispose();
+			volumes.instanceMatrix.needsUpdate = true;
+			const line = (positions, opacity) => {
+				const buffer = new THREE.BufferGeometry();
+				buffer.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+				const lines = new THREE.LineSegments(buffer, new THREE.LineBasicMaterial({
+					color, transparent: true, opacity, depthWrite: false, depthTest: false
+				}));
+				lines.renderOrder = 11;
+				possibilitiesGroup.add(lines);
+			};
+			possibilitiesGroup.add(volumes);
+			line(edges, .38 / density);
+			const paths = [];
+			for (const segment of segments.values()) {
+				for (const point of segment) paths.push(origin[0] + point[0], origin[1] + point[1] + .035, origin[2] + point[2]);
+			}
+			line(paths, .65 / Math.sqrt(segments.size));
+			const pointGeometry = new THREE.BufferGeometry();
+			pointGeometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+			const markers = new THREE.Points(pointGeometry, new THREE.PointsMaterial({
+				color, size: .045, transparent: true, opacity: .55, depthWrite: false, depthTest: false
+			}));
+			markers.renderOrder = 12;
+			possibilitiesGroup.add(markers);
+		}
+
 		function addMultiTickPath(tick, origin, width, height) {
 			const path = tick.multiTick?.path ?? [];
 			if (path.length < 2) return;
@@ -1991,17 +2271,24 @@ final class PtrBranchingVisualizationTest {
 		
 		function animatePlayerModel(player, tick, nextTick, motion, progress, position) {
 			const nextMotion = [nextTick.actualX, nextTick.actualY, nextTick.actualZ];
-			const distance = Math.hypot(motion[0], motion[2]);
-			const walking = !tick.environment.fallFlying
-				&& tick.environment.pose !== 'SWIMMING'
-				&& tick.environment.pose !== 'SLEEPING';
-			const walkAmount = walking ? Math.min(1, distance * 8) : 0;
-			const walkPhase = walkingPhases[state.tickIndex] + distance * 8 * progress;
-			const legSwing = Math.cos(walkPhase) * .82 * walkAmount;
-			player.parts.rightLeg.rotation.x = legSwing;
-			player.parts.leftLeg.rotation.x = -legSwing;
-			player.parts.rightArm.rotation.x = -legSwing * .72;
-			player.parts.leftArm.rotation.x = legSwing * .72;
+			const walk = walkingStates[state.tickIndex];
+			const partialTick = reducedMotion ? progress : Math.max(0, Math.min(1, state.progress));
+			const walkPosition = THREE.MathUtils.lerp(walk.previousPosition, walk.position, partialTick);
+			const walkSpeed = tick.environment.pose === 'SLEEPING'
+				? 0 : THREE.MathUtils.lerp(walk.previousSpeed, walk.speed, partialTick);
+			const speedSquared = tick.actualX ** 2 + tick.actualY ** 2 + tick.actualZ ** 2;
+			const flightDamping = tick.environment.fallFlying ? Math.max(1, (speedSquared / .2) ** 3) : 1;
+			const walkAmount = walkSpeed / flightDamping;
+			const walkPhase = walkPosition * .6662;
+			const age = tick.tick - 1 + partialTick;
+			const idleX = Math.sin(age * .067) * .05;
+			const idleZ = Math.cos(age * .09) * .05 + .05;
+			// ModelBiped/HumanoidModel: opposite arm/leg pairs, with a smaller
+			// arm amplitude. Y-up and the +Z skin front reverse vanilla's Z roll.
+			player.parts.rightLeg.rotation.set(Math.cos(walkPhase) * 1.4 * walkAmount, 0, 0);
+			player.parts.leftLeg.rotation.set(Math.cos(walkPhase + Math.PI) * 1.4 * walkAmount, 0, 0);
+			player.parts.rightArm.rotation.set(Math.cos(walkPhase + Math.PI) * walkAmount + idleX, 0, -idleZ);
+			player.parts.leftArm.rotation.set(Math.cos(walkPhase) * walkAmount - idleX, 0, idleZ);
 		
 			const nextCrouching = nextTick.environment.pose === 'CROUCHING' ? 1 : 0;
 			const crouching = THREE.MathUtils.lerp(
@@ -2009,17 +2296,46 @@ final class PtrBranchingVisualizationTest {
 				nextCrouching,
 				progress
 			);
-			player.parts.body.rotation.x = crouching * .22;
+			player.parts.body.rotation.x = crouching * .5;
+			player.parts.body.position.y = 24 - crouching * 3.2;
+			player.parts.head.position.y = 24 - crouching * 4.2;
 			player.parts.head.rotation.x = THREE.MathUtils.degToRad(
 				THREE.MathUtils.lerp(tick.environment.pitch, nextTick.environment.pitch, progress)
-			) - player.parts.body.rotation.x;
-			player.parts.rightArm.rotation.x += crouching * .18;
-			player.parts.leftArm.rotation.x += crouching * .18;
+			);
+			player.parts.rightArm.rotation.x += crouching * .4;
+			player.parts.leftArm.rotation.x += crouching * .4;
+			player.parts.rightArm.position.y = player.parts.leftArm.position.y = player.shoulderY - crouching * 3.2;
+			player.parts.rightLeg.position.z = player.parts.leftLeg.position.z = -crouching * 4;
+			const swimming = THREE.MathUtils.lerp(
+				tick.environment.pose === 'SWIMMING' ? 1 : 0,
+				nextTick.environment.pose === 'SWIMMING' ? 1 : 0, progress
+			);
+			if (swimming > 0) {
+				// HumanoidModel's 26-unit swimming stroke and alternating kicks.
+				const cycle = walkPosition % 26;
+				let armX = 0;
+				let sweep = 0;
+				if (cycle < 14) sweep = 1.8707964 * (cycle * cycle - 65 * cycle) / (14 * 14 - 65 * 14);
+				else if (cycle < 22) {
+					const phase = (cycle - 14) / 8;
+					armX = Math.PI / 2 * phase;
+					sweep = 1.8707964 * (1 - phase);
+				} else armX = Math.PI / 2 * (1 - (cycle - 22) / 4);
+				const blendAngle = (from, to) => from + Math.atan2(Math.sin(to - from), Math.cos(to - from)) * swimming;
+				for (const [arm, side] of [[player.parts.rightArm, 1], [player.parts.leftArm, -1]]) {
+					arm.rotation.x = blendAngle(arm.rotation.x, armX);
+					arm.rotation.y = blendAngle(arm.rotation.y, -Math.PI);
+					arm.rotation.z = blendAngle(arm.rotation.z, -Math.PI + side * sweep);
+				}
+				player.parts.rightLeg.rotation.x = THREE.MathUtils.lerp(player.parts.rightLeg.rotation.x, .3 * Math.cos(walkPosition / 3), swimming);
+				player.parts.leftLeg.rotation.x = THREE.MathUtils.lerp(player.parts.leftLeg.rotation.x, .3 * Math.cos(walkPosition / 3 + Math.PI), swimming);
+			}
+			const horizontal = sample => sample.environment.fallFlying || sample.environment.pose === 'SWIMMING';
 		
-			const currentFlightAngle = tick.environment.fallFlying
+			const currentFlightAngle = horizontal(tick)
 				? Math.PI / 2 + THREE.MathUtils.degToRad(tick.environment.pitch)
 				: 0;
-			const nextFlightAngle = nextTick.environment.fallFlying
+			const nextFlightAngle = horizontal(nextTick)
 				? Math.PI / 2 + THREE.MathUtils.degToRad(nextTick.environment.pitch)
 				: 0;
 			player.rig.rotation.x = THREE.MathUtils.lerp(
@@ -2028,16 +2344,16 @@ final class PtrBranchingVisualizationTest {
 				progress
 			);
 			const flightBlend = THREE.MathUtils.lerp(
-				tick.environment.fallFlying ? 1 : 0,
-				nextTick.environment.fallFlying ? 1 : 0,
+				horizontal(tick) ? 1 : 0,
+				horizontal(nextTick) ? 1 : 0,
 				progress
 			);
-			const bob = walking ? Math.sin(walkPhase * 2) * .018 * walkAmount : 0;
+			player.parts.head.rotation.x = THREE.MathUtils.lerp(player.parts.head.rotation.x, -Math.PI / 4, flightBlend);
 			const modelCenter = 1.8 / 2;
 			const flightCenterOffset = tick.environment.playerHeight / 2 - modelCenter;
 			player.model.position.set(
 				position[0],
-				position[1] + bob + flightCenterOffset * flightBlend,
+				position[1] + flightCenterOffset * flightBlend,
 				position[2]
 			);
 		
@@ -2058,8 +2374,8 @@ final class PtrBranchingVisualizationTest {
 			);
 			player.elytra.left.position.y = 24 - wingOffset;
 			player.elytra.right.position.y = 24 - wingOffset;
-			player.elytra.left.rotation.set(wingX, wingY, wingZ);
-			player.elytra.right.rotation.set(wingX, -wingY, -wingZ);
+			player.elytra.left.rotation.set(wingX, -wingY, -wingZ);
+			player.elytra.right.rotation.set(wingX, wingY, wingZ);
 		}
 		
 		function focusedPossibility(tick) {
@@ -2136,6 +2452,7 @@ final class PtrBranchingVisualizationTest {
 			if (renderedPathTick !== state.tickIndex) {
 				clearGroup(pathGroup);
 				addMultiTickPath(tick, origin, width, height);
+				renderPossibilities(tick, origin, width, height);
 				renderedPathTick = state.tickIndex;
 			}
 			const fit = fitOf(possibility.loss);

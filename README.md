@@ -23,7 +23,7 @@ with exceptional support for all movement features from 1.8 to 26.2.
 
 ![](docs/assets/ptr-highlights/05-lava-motion.gif)
 
-Our simulation engine is currently the only one able to simulate multiple ticks between sent and last movement (necessary for 1.9-1.20.2).
+Our simulation engine is currently the only one able to simulate multiple ticks between the currently sent and previous movement -- necessary for 1.9-1.20.1 simulation.
 This also means the core simulation code comes out of any anticheat closest to the actual Minecraft source-code.
 
 ![](docs/assets/ptr-highlights/10-branch-search.gif)
@@ -37,9 +37,9 @@ Intave also checks for known cheat patterns, such as unnatural aiming, suspiciou
 and automated inventory actions. These checks run directly on your server and catch cheats
 that protocol validation alone cannot detect.
 
-### Cloud-based Machine Learning
+### Cloud-based detection
 
-We offer as a paid service cloud-based machine learning to analyze gameplay samples to detect cheats that are harder to catch with fixed rules,
+We offer as a paid service cloud-based machine learning to analyze gameplay samples to detect cheats that are difficult to catch with fixed rules,
 including killaura, scaffold, and macro cheats.
 Cloud detection is optional and requires a paid plan; the other checks work without it.
 
