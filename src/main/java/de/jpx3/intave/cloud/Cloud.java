@@ -16,16 +16,14 @@ import ac.intave.cloud.protocol.listener.Serverbound;
 import ac.intave.cloud.protocol.packets.ServerboundCommand;
 import ac.intave.cloud.protocol.packets.ServerboundRequestTrustfactor;
 import ac.intave.cloud.protocol.packets.base.ServerboundIncidentIdRequest;
-import ac.intave.cloud.protocol.packets.player.ServerboundRequestPlaytime;
 import ac.intave.cloud.protocol.packets.player.ServerboundPlayerKicked;
+import ac.intave.cloud.protocol.packets.player.ServerboundRequestPlaytime;
 import ac.intave.cloud.protocol.packets.player.ServerboundViolationHistoryRequest;
 import ac.intave.cloud.protocol.packets.player.playtime.PlaytimeOfDay;
 import ac.intave.cloud.protocol.packets.player.violation.ViolationHistorySession;
-import ac.intave.cloud.protocol.packets.sampling.ServerboundPassPhysicsRecording;
 import ac.intave.cloud.protocol.packets.sampling.ServerboundPassSample;
 import de.jpx3.intave.IntaveAccessor;
 import de.jpx3.intave.IntaveLogger;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveAccess;
 import de.jpx3.intave.annotate.HighOrderService;
 import de.jpx3.intave.cleanup.ShutdownTasks;
@@ -38,7 +36,6 @@ import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
@@ -335,40 +332,6 @@ public final class Cloud {
 		Player player, UUID transmissionId, int sampleSubIndex
 	) {
 		uploadSample(player, ByteBuffer.allocate(0), transmissionId, sampleSubIndex);
-	}
-
-	public boolean canUploadPhysicsRecordings() {
-		Session target = session;
-		return target != null && target.canSend(ServerboundPassPhysicsRecording.class);
-	}
-
-	public boolean uploadPhysicsRecording(User user, PhysicsRecordingUpload upload) {
-		Session target = session;
-		if (target == null || !target.canSend(ServerboundPassPhysicsRecording.class)) {
-			return false;
-		}
-		int chunkCount = upload.chunkCount(ServerboundPassPhysicsRecording.MAX_CHUNK_BYTES);
-		for (int chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++) {
-			int finalChunkIndex = chunkIndex;
-			target.sendUserPacket(
-				user,
-				id -> new ServerboundPassPhysicsRecording(
-					id,
-					upload.recordingId(),
-					upload.frameCount(),
-					upload.clientProtocolVersion(),
-					upload.serverVersion(),
-					upload.reason(),
-					upload.details(),
-					upload.addedViolationPoints(),
-					upload.violationLevelAfter(),
-					finalChunkIndex,
-					chunkCount,
-					upload.chunk(finalChunkIndex, ServerboundPassPhysicsRecording.MAX_CHUNK_BYTES)
-				)
-			);
-		}
-		return true;
 	}
 
 	public boolean isEnabled() {

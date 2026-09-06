@@ -24,9 +24,9 @@ import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
-import de.jpx3.intave.block.special.BedWakeupPositionSearch;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
+import de.jpx3.intave.block.special.BedWakeupPositionSearch;
 import de.jpx3.intave.block.type.MaterialSearch;
 import de.jpx3.intave.block.variant.BlockVariant;
 import de.jpx3.intave.check.CheckService;
@@ -1018,9 +1018,7 @@ public final class MovementDispatcher extends Module {
           movementData.queueTickAmbiguousUpdate(velocity.get());
         },
         () -> {
-          recorder.completeVelocity(
-            user, recordingVelocity.get()
-          );
+          recorder.completeVelocity(recordingVelocity.get());
           MotionSetUpdate myMotionSetUpdate = velocity.get();
           if (myMotionSetUpdate != null) {
             myMotionSetUpdate.canNotRunAfterThisTick(movementData);

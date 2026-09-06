@@ -149,8 +149,8 @@ public final class Position implements Serializable, Cloneable {
 		return new Position(x + normal.getX() * length, y + normal.getY() * length, z + normal.getZ() * length);
 	}
 
-	public Position add(double x, double y, double z) {
-		return new Position(this.x + x, this.y + y, this.z + z);
+	public Position add(double dx, double dy, double dz) {
+		return new Position(this.x + dx, this.y + dy, this.z + dz);
 	}
 
 	public Position add(Position position) {

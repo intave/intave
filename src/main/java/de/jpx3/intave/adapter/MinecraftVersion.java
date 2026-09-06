@@ -179,6 +179,10 @@ public final class MinecraftVersion implements Comparable<MinecraftVersion> {
 		return atCurrentOrAbove;
 	}
 
+	public boolean below() {
+		return !this.atOrAbove();
+	}
+
 	public String getVersion() {
 		return this.getDevelopmentStage() == null ? String.format("%s.%s.%s", this.getMajor(), this.getMinor(), this.getBuild()) : String.format("%s.%s.%s-%s%s", this.getMajor(), this.getMinor(), this.getBuild(), this.getDevelopmentStage(), this.isSnapshot() ? this.snapshot : "");
 	}

@@ -51,21 +51,19 @@ final class MovementRecordingVelocityTest {
 	}
 
 	@Test
-	void windowCarriesTheCompletedFutureTick() {
-		MovementRecording source = recording();
-		insert(source, 0);
-		MovementRecording.VelocityToken velocity =
-			source.beginVelocity(new Motion(1, 0, 0));
-		insert(source, 1);
-		source.completeVelocity(velocity);
+	void savingClipsUnacknowledgedVelocityToRecordedFrames() {
+		MovementRecording recording = recording();
+		insert(recording, 0);
+		recording.beginVelocity(new Motion(1, 0, 0));
+		insert(recording, 1);
+		insert(recording, 2);
 
-		MovementRecording tail = MovementRecordingWindow.tail(source, 1);
-		insert(tail, 2);
-		tail.materializeVelocities();
+		recording.materializeVelocities();
 
-		assertEquals(1, tail.actions().size());
-		ReceiveVelocity action = (ReceiveVelocity) tail.actions().get(0);
-		assertEquals(TickRange.betweenExclusive(0, 2), action.tickRange());
+		assertEquals(1, recording.actions().size());
+		ReceiveVelocity action = (ReceiveVelocity) recording.actions().get(0);
+		assertEquals(new Motion(1, 0, 0), action.motion());
+		assertEquals(TickRange.betweenExclusive(1, 3), action.tickRange());
 	}
 
 	@Test

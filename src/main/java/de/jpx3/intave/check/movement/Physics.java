@@ -59,7 +59,6 @@ import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
-import de.jpx3.intave.module.test.PhysicsTestRecorder;
 import de.jpx3.intave.module.tracker.player.PacketLogging;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
@@ -945,20 +944,11 @@ public final class Physics extends Check {
         setback = false;
       }
 
-      PhysicsTestRecorder recorder = Modules.physicsTestRecorder();
-      boolean recording = recorder.isRecording(user);
-      if (recording) {
+      if (Modules.physicsTestRecorder().isRecording(user)) {
         setback = false;
       }
 
       if (setback) {
-        recorder.physicsSetback(
-          user,
-          violation.message(),
-          violation.details(),
-          violation.addedViolationPoints(),
-          violationContext.violationLevelAfter()
-        );
         // resend attributes
         statisticApply(user, CheckStatistics::increaseFails);
 

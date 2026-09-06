@@ -8,6 +8,12 @@ on:
     branches: [ "master" ]
   schedule:
     - cron: '0 0 * * *'
+  workflow_dispatch:
+
+# Serialize builds of the same ref so an older upload cannot finish after a newer one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -80,3 +86,92 @@ jobs:
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare Modrinth Dev Build
+        id: modrinth
+        if: >-
+          github.repository == 'intave/intave' &&
+          github.ref == 'refs/heads/master' &&
+          (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+        uses: actions/github-script@v8
+        env:
+          MODRINTH_ID: ${{ vars.MODRINTH_ID }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        with:
+          script: |
+            core.setOutput('publish', 'false');
+            const project = process.env.MODRINTH_ID;
+            if (!project || !process.env.MODRINTH_TOKEN) {
+              core.notice('Modrinth publishing is disabled. Set the MODRINTH_ID variable and MODRINTH_TOKEN secret to enable it.');
+              return;
+            }
+
+            // Re-running an old workflow must not make an old commit the latest dev build.
+            const { data: branch } = await github.rest.repos.getBranch({
+              ...context.repo,
+              branch: 'master',
+            });
+            if (branch.commit.sha !== context.sha) {
+              core.notice('Skipping Modrinth upload because master has a newer commit.');
+              return;
+            }
+
+            // Commit-based versions stay stable across retries and moving nightly tags.
+            const version = `dev-${context.sha.slice(0, 12)}`;
+            const response = await fetch(
+              `https://api.modrinth.com/v2/project/${encodeURIComponent(project)}/version/${version}`,
+              {
+                headers: {
+                  'User-Agent': 'intave/intave GitHub Actions (https://github.com/intave/intave)',
+                  Authorization: process.env.MODRINTH_TOKEN,
+                },
+                signal: AbortSignal.timeout(30000),
+              },
+            );
+            if (response.ok) {
+              core.notice(`Modrinth already contains ${version}; skipping upload.`);
+              return;
+            }
+            if (response.status !== 404) {
+              throw new Error(`Modrinth version lookup failed: HTTP ${response.status}`);
+            }
+
+            const url = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}`;
+            const { execFileSync } = require('node:child_process');
+            const subject = execFileSync('git', ['log', '-1', '--format=%s'], { encoding: 'utf8' }).trim();
+            core.setOutput('version', version);
+            core.setOutput('changelog', [
+              `Development build from [${context.sha.slice(0, 7)}](${url}/commit/${context.sha}).`,
+              '',
+              subject,
+              '',
+              `[Build details](${url}/actions/runs/${context.runId})`,
+              '',
+              'Install one build: Intave.jar downloads and caches libraries; Intave-bundled.jar includes libraries and all supported classloader natives.',
+            ].join('\n'));
+            core.setOutput('publish', 'true');
+
+      - name: Publish Dev Build to Modrinth
+        if: steps.modrinth.outputs.publish == 'true'
+        uses: Kir-Antipov/mc-publish@52307b03863581dec6b652b83e597aec02ebb075 # v3.3
+        with:
+          modrinth-id: ${{ vars.MODRINTH_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-featured: false
+          modrinth-unfeature-mode: none
+          files: |
+            build/libs/Intave.jar
+            build/libs/Intave-bundled.jar
+          name: Intave ${{ steps.modrinth.outputs.version }}
+          version: ${{ steps.modrinth.outputs.version }}
+          version-type: alpha
+          changelog: ${{ steps.modrinth.outputs.changelog }}
+          environment: server
+          loaders: |
+            bukkit
+            spigot
+            paper
+            purpur
+            folia
+          # Keep the upper bound in sync with the supported server versions in build.gradle.kts.
+          game-versions: '>=1.8 <=26.2'

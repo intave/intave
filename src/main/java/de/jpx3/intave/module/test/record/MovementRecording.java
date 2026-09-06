@@ -129,9 +129,7 @@ public final class MovementRecording {
 	/**
 	 * Starts a velocity acknowledgement interval at the current recording tick.
 	 *
-	 * <p>The interval remains recording-native until the recording is detached for serialization.
-	 * This lets a replay window carry an acknowledgement across a segment boundary without a
-	 * second timeline in the rolling recorder.
+	 * <p>The interval remains open until acknowledged or clipped to the final frame when saving.
 	 */
 	public synchronized VelocityToken beginVelocity(Motion motion) {
 		VelocityToken token = new VelocityToken();
@@ -172,22 +170,6 @@ public final class MovementRecording {
 		velocities.clear();
 	}
 
-	/**
-	 * Copies and rebases native intervals when a live recording is reduced to a frame window.
-	 */
-	synchronized void inheritVelocities(MovementRecording source, long fromInclusive) {
-		for (Map.Entry<VelocityToken, VelocityInterval> entry : source.velocities.entrySet()) {
-			VelocityInterval sourceVelocity = entry.getValue();
-			Long sourceEnd = sourceVelocity.endExclusive;
-			if (sourceEnd != null && sourceEnd <= fromInclusive) {
-				continue;
-			}
-			long startInclusive = Math.max(sourceVelocity.startInclusive, fromInclusive) - fromInclusive;
-			Long endExclusive = sourceEnd == null ? null : sourceEnd - fromInclusive;
-			velocities.put(entry.getKey(), new VelocityInterval(sourceVelocity.motion.copy(), startInclusive, endExclusive));
-		}
-	}
-
 	public long ticks() {
 		return frames.size();
 	}
@@ -220,16 +202,6 @@ public final class MovementRecording {
 		fluids.clear();
 		blockVariants.clear();
 		recordedMetadata.clear();
-	}
-
-	void seedBlocks(Map<BlockPosition, MaterialVariantStore> blockState) {
-		blocks.clear();
-		for (Map.Entry<BlockPosition, MaterialVariantStore> entry : blockState.entrySet()) {
-			MaterialVariantStore store = entry.getValue();
-			if (store.type() != Material.AIR) {
-				blocks.put(entry.getKey().toLong(), store);
-			}
-		}
 	}
 
 	private Map<BlockPosition, MaterialVariantStore> nearbyBlockDelta(BlockCache blockCache, BoundingBox boundingBox, @Nullable Position position) {
@@ -464,13 +436,8 @@ public final class MovementRecording {
 		private Long endExclusive;
 
 		private VelocityInterval(Motion motion, long startInclusive) {
-			this(motion, startInclusive, null);
-		}
-
-		private VelocityInterval(Motion motion, long startInclusive, Long endExclusive) {
 			this.motion = motion;
 			this.startInclusive = startInclusive;
-			this.endExclusive = endExclusive;
 		}
 	}
 }

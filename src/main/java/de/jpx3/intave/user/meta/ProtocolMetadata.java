@@ -14,12 +14,15 @@ package de.jpx3.intave.user.meta;
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.adapter.ViaVersionAdapter;
+import de.jpx3.intave.entity.position.RotationTarget;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.version.ProtocolVersionConverter;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+
+import static de.jpx3.intave.entity.position.RotationTarget.*;
 
 public final class ProtocolMetadata {
   public static int VER_26_2 = 776; // 26.2
@@ -35,13 +38,15 @@ public final class ProtocolMetadata {
   public static int VER_1_20_5 = 766; // 1.20.5 - 1.20.6
   public static int VER_1_20_3 = 765; // 1.20.3 - 1.20.4
   public static int VER_1_20_2 = 764; // 1.20.2
-  public static int VER_1_20 = 763; // 1.20 - 1.20.1
+  public static int VER_1_20_1 = 763; // 1.20 - 1.20.1
   public static int VER_1_19_4 = 762; // 1.19.4
+  public static int VER_1_19_3 = 761; // 1.19.3
   public static int VER_1_19_2 = 760; // 1.19.1 - 1.19.2
   public static int VER_1_18_2 = 758; // 1.18.2
   public static int VER_1_17 = 755; // 1.17
   public static int VER_1_16 = 735; // 1.16
   public static int VER_1_15 = 573; // 1.15
+  public static int VER_1_14_4 = 498; // 1.14.4
   public static int VER_1_14 = 477; // 1.14
   public static int VER_1_13_2 = 404; // 1.13.2
   public static int VER_1_13 = 393; // 1.13
@@ -257,7 +262,7 @@ public final class ProtocolMetadata {
   }
 
   public boolean trailsAndTailsUpdate() {
-    return protocolVersion >= VER_1_20;
+    return protocolVersion >= VER_1_20_1;
   }
 
   public boolean supportsInteractionRangeAttributes() {
@@ -342,6 +347,44 @@ public final class ProtocolMetadata {
 
   public boolean sendsClientTickEnd() {
     return protocolVersion >= VER_1_21_2 && MinecraftVersions.VER1_21_2.atOrAbove();
+  }
+
+  public int entityPositionScale() {
+    if (MinecraftVersions.VER1_9_0.below()) {
+      return 32;
+    } else {
+      return 4096;
+    }
+  }
+
+  public RotationTarget entityRotationTarget() {
+    if (protocolVersion <= VER_1_14_4) {
+      return PACKET_BASE;
+    } else if (protocolVersion <= VER_1_20_1) {
+      return CURRENT_POSITION;
+    } else {
+      return INTERPOLATION_TARGET;
+    }
+  }
+
+  public boolean supportsEntityPositionSync() {
+    return MinecraftVersions.VER1_21_2.atOrAbove();
+  }
+
+  public boolean compensateEntitySnapDisplacement() {
+    return protocolVersion >= VER_1_21_5;
+  }
+
+  public boolean deduplicatesEntityTargets() {
+    return protocolVersion >= VER_1_21_9;
+  }
+
+  public boolean roundEntityEncoding() {
+    return protocolVersion >= VER_1_19_3;
+  }
+
+  public boolean multipliesEntityInterpolation() {
+    return protocolVersion >= VER_1_20_2;
   }
 
   public boolean sendsInputs() {
