@@ -95,14 +95,14 @@ jobs:
           (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         uses: actions/github-script@v8
         env:
-          MODRINTH_ID: ${{ vars.MODRINTH_ID }}
+          MODRINTH_ID: ${{ vars.MODRINTH_ID || secrets.MODRINTH_ID }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
         with:
           script: |
             core.setOutput('publish', 'false');
             const project = process.env.MODRINTH_ID;
             if (!project || !process.env.MODRINTH_TOKEN) {
-              core.notice('Modrinth publishing is disabled. Set the MODRINTH_ID variable and MODRINTH_TOKEN secret to enable it.');
+              core.notice('Modrinth publishing is disabled. Set MODRINTH_ID as a variable or secret and MODRINTH_TOKEN as a secret to enable it.');
               return;
             }
 
@@ -155,7 +155,7 @@ jobs:
         if: steps.modrinth.outputs.publish == 'true'
         uses: Kir-Antipov/mc-publish@52307b03863581dec6b652b83e597aec02ebb075 # v3.3
         with:
-          modrinth-id: ${{ vars.MODRINTH_ID }}
+          modrinth-id: ${{ vars.MODRINTH_ID || secrets.MODRINTH_ID }}
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           modrinth-featured: false
           modrinth-unfeature-mode: none
