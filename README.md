@@ -11,18 +11,39 @@ Intave source-available to everyone.
 - [Nightly Build](https://github.com/intave/intave/releases/download/nightly/Intave.jar)
 - [Modrinth](https://modrinth.com/plugin/intave)
 
-## General
+## Detection
 
-Unlike traditional module-based anticheats, Intave accurately simulates player movement, client-side entity and block
-data to detect even the smallest manipulations. Through this approach, Intave successfully prevents any kind of combat,
-movement and interaction exploits, such as speed/fly cheats or reaching beyond the 3.0 block range.
+Intave should be able to detect most of what is currently being used for cheating.
+Our detection spectrum is grounded by three large pillars: movement simulation, heuristics, and cloud-based machine learning.
 
-Additionally, Intave provides heuristic checks to counter aimbot, auto-clicker, timer, placement, block breaking,
-inventory
-and many other cheats that cannot be detected by solely simulating client logic.
+### Movement Simulation
 
-For more information, see the documentation of Intave's
-checks [here](https://docs.intave.ac/mechanics/checks-01-overview.html).
+Intave features one of the most advanced movement simulation engines,
+with exceptional support for all movement features from 1.8 to 26.2.
+
+![](docs/assets/ptr-highlights/05-lava-motion.gif)
+
+Our simulation engine is currently the only one able to simulate multiple ticks between sent and last movement (necessary for 1.9-1.20.2).
+This also means the core simulation code comes out of any anticheat closest to the actual Minecraft source-code.
+
+![](docs/assets/ptr-highlights/10-branch-search.gif)
+
+We unit-test the simulation engine on every build end-to-end using pre-recorded movement scenarios.
+Every new bug is added, ensuring it never resurfaces again.
+
+### Heuristics
+
+Intave also checks for known cheat patterns, such as unnatural aiming, suspicious block placement,
+and automated inventory actions. These checks run directly on your server and catch cheats
+that protocol validation alone cannot detect.
+
+### Cloud-based Machine Learning
+
+We offer as a paid service cloud-based machine learning to analyze gameplay samples to detect cheats that are harder to catch with fixed rules,
+including killaura, scaffold, and macro cheats.
+Cloud detection is optional and requires a paid plan; the other checks work without it.
+
+For more information, see a full list of checks [here](https://docs.intave.ac/mechanics/checks-01-overview.html).
 
 ## Development
 
