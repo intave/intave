@@ -28,6 +28,7 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
 import com.github.retrooper.packetevents.util.Vector3f;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientSteerVehicle;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerExplosion;
@@ -38,6 +39,7 @@ import de.jpx3.intave.packet.view.AnimationView;
 import de.jpx3.intave.packet.view.EntityVelocityView;
 import de.jpx3.intave.packet.view.FeedbackHandle;
 import de.jpx3.intave.packet.view.MovementView;
+import de.jpx3.intave.packet.view.MovementPlayerInputView;
 import de.jpx3.intave.packet.view.PacketEventsAnimationView;
 import de.jpx3.intave.packet.view.PacketEventsEntityVelocityView;
 import de.jpx3.intave.packet.view.ProtocolLibEntityVelocityView;
@@ -1006,12 +1008,18 @@ public final class MovementDispatcher extends Module {
    * vehicle packet.
    * <p>
    * The 1.21.2+ half of the ProtocolLib body reads the {@code net.minecraft.world.entity.player.Input}
-   * structure out of the new {@code PLAYER_INPUT} packet. PacketEvents 2.4.0 knows neither that
-   * packet type ({@code PacketType.Play.Client} stops at {@code STEER_VEHICLE}/{@code STEER_BOAT})
-   * nor a wrapper for it, and its newest supported {@code ServerVersion} is {@code V_1_21}, so the
-   * branch is unreachable on every server this engine can attach to. Mirroring the original's
-   * version switch therefore reproduces the ProtocolLib behaviour exactly wherever the PacketEvents
-   * engine actually runs, instead of guessing at a field layout that does not exist here.
+   * structure out of the {@code PLAYER_INPUT} packet that replaced this one. The previous note here
+   * said that half was unreachable because PacketEvents 2.4.0 knew neither the packet type nor a
+   * wrapper for it and stopped at {@code ServerVersion.V_1_21}. That is no longer the situation the
+   * build compiles against: 2.13.0 ships {@code WrapperPlayClientPlayerInput} with a named getter per
+   * key, and {@link de.jpx3.intave.module.linker.packet.pe.PacketEventsIdMapper} now binds this
+   * subscription to {@code PLAYER_INPUT} from 1.21.2 up - see the twin of {@link #onInputs(PacketEvent)}
+   * for the measurements. The version switch below is therefore a real gap on 1.21.2+ rather than a
+   * mirror of an unreachable branch, and closing it is deliberately left to its own change: the
+   * modern branch also writes {@code lastInput}/{@code input} and pushes an action bar, so it needs
+   * the ordering and the off thread Bukkit call reviewed on their own terms, not folded into a sneak
+   * bit port. Until then this twin covers exactly what it says - the pre 1.21.2 packet - and reads
+   * nothing when the id resolves to {@code PLAYER_INPUT}.
    */
   @PacketSubscription(
     engine = Engine.PACKETEVENTS,
@@ -1540,33 +1548,52 @@ public final class MovementDispatcher extends Module {
   private static final Set<Material> PISTON_MATERIALS = MaterialSearch.materialsThatContain("PISTON");
 
   /**
-   * ProtocolLib only. The blocker is <em>not</em> the packet sandwich, which is now available on
-   * both engines - {@link #sentVelocityPacket(PacketSendEvent, Player)} and
-   * {@link #sentExplosion(PacketSendEvent, Player)} are twinned through it, and the note in
+   * ProtocolLib only, and still so on packetevents 2.13.0. The blocker is <em>not</em> the packet
+   * sandwich, which is available on both engines - {@link #sentVelocityPacket(PacketSendEvent, Player)}
+   * and {@link #sentExplosion(PacketSendEvent, Player)} are twinned through it, and the note in
    * {@link FeedbackHandle} that once called it impossible has been corrected. What blocks this one
    * is the very first field the body reads: the block.
    * <p>
-   * Both branches switch on {@code BlockActionReader.blockType()}, an {@link Material}. ProtocolLib
+   * Both branches switch on {@code BlockActionReader.blockType()}, a {@link Material}. ProtocolLib
    * produces it by converting the packet's native {@code Block} through its block structure
-   * modifier. PacketEvents cannot reach the same value:
+   * modifier. The wire field is a block <em>type</em> registry id - {@code WrapperPlayServerBlockAction#read}
+   * takes it as the trailing varint - and PacketEvents 2.13.0 still offers no route from that id to
+   * a Bukkit {@link Material}. Re-checked against {@code libs/packetevents-api-2.13.0.jar} and
+   * {@code libs/packetevents-spigot-2.13.0.jar}:
    * <ul>
-   *   <li>{@code WrapperPlayServerBlockAction#getBlockType()} looks the field up with
-   *       {@code WrappedBlockState.getByGlobalId(clientVersion, blockTypeId)}. That is the global
-   *       block <em>state</em> palette; the packet's field is a block <em>type</em> registry id.
-   *       Two different number spaces, so the answer is a real but unrelated block - the worst
-   *       possible failure mode here, because it is silently plausible.</li>
-   *   <li>{@code getBlockTypeId()} does hand out the raw type id, and
-   *       {@code StateTypes.getById(clientVersion, id)} resolves it into a {@code StateType}. But a
-   *       {@code StateType}'s only identity is its namespaced name, and PacketEvents ships no
-   *       {@code StateType} to {@link Material} conversion: {@code SpigotConversionUtil} bridges
-   *       item types to materials and block <em>states</em> to {@code BlockData}, neither of which
-   *       is a block type. Rebuilding the material from the name means guessing Bukkit's enum
-   *       spelling per server version - {@code STICKY_PISTON} on modern servers,
-   *       {@code PISTON_STICKY_BASE} on the legacy ones this dispatcher still supports - and a miss
-   *       returns null rather than failing loudly.</li>
-   *   <li>Reading the block out of the world instead is not a substitute: a PacketEvents listener
-   *       runs on the connection's netty thread, where a Bukkit world lookup is unsafe, and it
-   *       answers with server state rather than with the field the packet carried.</li>
+   *   <li>{@code WrapperPlayServerBlockAction#getBlockType()} is unchanged from 2.4.0: its bytecode
+   *       is still {@code WrappedBlockState.getByGlobalId(serverVersion.toClientVersion(), blockTypeID)},
+   *       which reads the global block <em>state</em> palette with a block <em>type</em> id. Two
+   *       different number spaces, so the answer is a real but unrelated block - the worst possible
+   *       failure mode here, because it is silently plausible. Measured on a 1.21.4 mapping: piston
+   *       is type id 135 and comes back as {@code nether_gold_ore}, sticky piston is 128 and comes
+   *       back as {@code suspicious_gravel[dusted=3]}, shulker box is 641 and comes back as a
+   *       {@code note_block} state.</li>
+   *   <li>{@code StateTypes.getById(clientVersion, id)} <em>is</em> the correct lookup for that id,
+   *       and it is correct on every supported version - verified round trip on 1.8, 1.12.2, 1.13,
+   *       1.13.2, 1.16.4, 1.20.5 and 1.21.4, including the pre flattening ids (1.8: 29 is
+   *       {@code sticky_piston}, 33 is {@code piston}, 219 is {@code white_shulker_box}). It was
+   *       already there in 2.4.0; nothing about it changed. What it yields is a {@code StateType},
+   *       whose only identity is its namespaced name, and PacketEvents ships no {@code StateType} to
+   *       {@link Material} conversion in either release: 2.13.0's {@code SpigotConversionUtil}
+   *       bridges item types to materials and block <em>states</em> to {@code BlockData} or
+   *       {@code MaterialData}, none of which is a block type. Rebuilding the material from the name
+   *       means guessing Bukkit's enum spelling per server version - {@code STICKY_PISTON} on modern
+   *       servers, {@code PISTON_STICKY_BASE} on the legacy ones this dispatcher still supports -
+   *       and a miss returns null rather than failing loudly.</li>
+   *   <li>The indirect detour, {@code StateType#createBlockState(clientVersion)} into
+   *       {@code SpigotConversionUtil}, is not a way around that and is not new in 2.13.0 either.
+   *       {@code toBukkitBlockData} is {@code Bukkit.createBlockData(state.toString())} and
+   *       {@code toBukkitMaterialData} resolves {@code org.bukkit.block.data.BlockData} reflectively
+   *       before it can answer, so both are dark below 1.13 - which is inside the range this method
+   *       serves, since the piston branch starts at 1.9 and the shulker branch at 1.11. A twin built
+   *       on it would be registered, healthy and silently blind on exactly the legacy servers where
+   *       the ProtocolLib path works, and it would put a Bukkit block state parse on the connection's
+   *       netty thread for every block action packet.</li>
+   *   <li>Reading the block out of the world instead is not a substitute either: it answers with
+   *       current server state rather than with the field the packet carried, so a block that has
+   *       already changed - which is precisely what a block action announces - reports the wrong
+   *       type.</li>
    * </ul>
    * A wrong or null material silently skips {@link #queueShulkerBoxAction} and
    * {@link #queuePistonAction}, dropping the ambiguous motion updates the physics check needs -
@@ -1947,35 +1974,15 @@ public final class MovementDispatcher extends Module {
   }
 
   /**
-   * ProtocolLib only on PacketEvents 2.4.0: the exact getter this needs does not exist anywhere in
-   * that jar.
+   * Reads the sneak bit out of the input bitmask 1.21.2 moved into
+   * {@code net.minecraft.world.entity.player.Input}, which travels inside the packet that replaced
+   * {@code STEER_VEHICLE}. Below that range sneaking arrives as {@code ENTITY_ACTION} instead and
+   * {@link #receiveEntityActionPacket(User, PlayerActionReader, Cancellable)} handles it, which is why the
+   * {@code sneakAsVehicleSteer()} gate stands in front of the read.
    * <p>
-   * What this reads is the sneak bit (mask {@code 0x20}) of the input bitmask that 1.21.2 moved
-   * into {@code net.minecraft.world.entity.player.Input}, decoded here through
-   * {@link InputConverter}. On PacketEvents 2.4.0 the only class that can carry a steer vehicle
-   * payload is {@code WrapperPlayClientSteerVehicle}, and its complete getter set is
-   * {@code getSideways()}, {@code getForward()}, {@code getFlags()}, {@code isJump()} and
-   * {@code isUnmount()} - the missing getter is an {@code isShift()}, because the pre 1.21.2 wire
-   * format that wrapper decodes has no sneak bit in it at all ({@code getFlags()} holds only jump
-   * {@code 0x1} and unmount {@code 0x2}). {@code WrapperPlayClientPlayerInput} is not in the 2.4.0
-   * jar, and {@code PacketType.Play.Client} there ends at {@code STEER_VEHICLE} /
-   * {@code STEER_BOAT} with no {@code PLAYER_INPUT} constant. A 2.4.0 twin would therefore be dark
-   * across precisely the range this check exists for: clients on 1.21.2 and above (protocol 768+),
-   * which is the only range in which the sneak bit travels inside this packet. Below that range
-   * sneaking arrives as {@code ENTITY_ACTION} instead and this method does not run.
-   * <p>
-   * Concrete unblock condition, both halves required. First, the runtime floor has to rise to the
-   * build's {@code compileOnly} target, PacketEvents 2.13.0: that version does ship
-   * {@code WrapperPlayClientPlayerInput} with {@code isShift()} - the exact getter named above -
-   * next to {@code isForward()}, {@code isBackward()}, {@code isLeft()}, {@code isRight()},
-   * {@code isJump()} and {@code isSprint()}, plus a {@code PacketType.Play.Client.PLAYER_INPUT}
-   * constant. Second, {@link de.jpx3.intave.module.linker.packet.pe.PacketEventsIdMapper} needs a
-   * separate entry for it: it maps Intave's {@code STEER_VEHICLE} to the candidates
-   * {@code "STEER_VEHICLE"} then {@code "PLAYER_INPUT"} and resolves first match wins, so even on
-   * 2.13.0 it binds {@code STEER_VEHICLE} alone and a {@code PLAYER_INPUT} packet would never be
-   * delivered to a twin. Until both hold, the only way to write this against 2.4.0 would be to
-   * guess a bit position out of a byte that provably does not contain it, which in an anticheat is
-   * a fabricated field read and a false ban.
+   * ProtocolLib hands out the native {@code Input} object, decoded here through
+   * {@link InputConverter}; the PacketEvents twin is
+   * {@link #onInputs(PacketReceiveEvent, Player)}.
    */
   @PacketSubscription(
     packetsIn = {
@@ -1991,21 +1998,101 @@ public final class MovementDispatcher extends Module {
     if (!user.meta().protocol().sneakAsVehicleSteer()) {
       return;
     }
-    MovementMetadata movement = user.meta().movement();
     StructureModifier<Input> inputs = packet.getModifier().withType(
       InputConverter.inputClass, InputConverter.INSTANCE
     );
     Input input = inputs.read(0);
-    boolean sneaking = input.sneakKey();
-    if (sneaking && !movement.sneaking) {
-      startSneak(user, event);
-    } else if (!sneaking && movement.sneaking) {
-      stopSneak(user);
+    handleInputs(user, input.sneakKey(), () -> event.setCancelled(true));
+  }
+
+  /**
+   * PacketEvents twin of {@link #onInputs(PacketEvent)}.
+   * <p>
+   * Both halves of the condition the previous note on this method named as the unblocker now hold on
+   * the build's {@code compileOnly} target, packetevents 2.13.0, and both were re-verified against
+   * {@code libs/packetevents-api-2.13.0.jar} rather than taken from the changelog.
+   * <ul>
+   *   <li>The wrapper exists. {@code WrapperPlayClientPlayerInput} ships
+   *       {@code isForward()}, {@code isBackward()}, {@code isLeft()}, {@code isRight()},
+   *       {@code isJump()}, {@code isShift()} and {@code isSprint()} - so the sneak bit is read off
+   *       its own named getter, never off a bit position guessed out of a flag byte. The old
+   *       {@code WrapperPlayClientSteerVehicle} still has no such getter, because the pre 1.21.2
+   *       wire format it decodes genuinely does not carry the bit; {@code getFlags()} there holds
+   *       only jump {@code 0x1} and unmount {@code 0x2}.</li>
+   *   <li>The id mapper no longer binds {@code STEER_VEHICLE} forever.
+   *       {@link de.jpx3.intave.module.linker.packet.pe.PacketEventsIdMapper} still lists
+   *       {@code "STEER_VEHICLE"} then {@code "PLAYER_INPUT"} as the candidates for Intave's
+   *       {@code STEER_VEHICLE}, but {@code resolve} now keeps only the candidate the running server
+   *       version actually puts on the wire ({@code getId(clientVersion) >= 0}). Measured on 2.13.0:
+   *       {@code STEER_VEHICLE} answers 38 and {@code PLAYER_INPUT} -1 up to 1.21, and from 1.21.2
+   *       {@code STEER_VEHICLE} answers -1 while {@code PLAYER_INPUT} answers 40. So this
+   *       subscription binds {@code PLAYER_INPUT} on exactly the range that carries the bit.</li>
+   * </ul>
+   * The type check in front of the view is not redundant with that. A server below 1.21.2 binds this
+   * subscription to the real {@code STEER_VEHICLE}, whose buffer holds two floats and a flag byte;
+   * building the input wrapper over it would decode a sneak bit that was never sent, which is a
+   * fabricated field read and a false ban. Nothing is lost by returning there - below 1.21.2 the
+   * sneak state arrives as {@code ENTITY_ACTION}, which has its own twin above. That also makes the
+   * twin quieter than the ProtocolLib path on 1.21 and 1.21.1, where {@code sneakAsVehicleSteer()}
+   * already answers true but the packet is still the old format.
+   * <p>
+   * {@link MovementPlayerInputView#PACKET_TYPE_NAME} rather than
+   * {@code PacketType.Play.Client.PLAYER_INPUT}: that constant is absent from older PacketEvents
+   * releases and a hard reference to a missing constant fails with {@link NoSuchFieldError} at class
+   * initialisation, taking this whole dispatcher down with it - the reason
+   * {@code PacketEventsIdMapper} resolves everything by name. Reading the constant does not load the
+   * view class either, because a compile time String constant is inlined into this class by javac;
+   * so on a runtime without the wrapper, the view is never linked.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      STEER_VEHICLE
+    }
+  )
+  public void onInputs(PacketReceiveEvent event, Player player) {
+    if (player == null || !carriesPlayerInput(event)) {
+      return;
+    }
+    User user = UserRepository.userOf(player);
+    if (!user.meta().protocol().sneakAsVehicleSteer()) {
+      return;
+    }
+    MovementPlayerInputView view = MovementPlayerInputView.of(event);
+    if (view == null) {
+      return;
+    }
+    try {
+      handleInputs(user, view.sneaking(), () -> view.setCancelled(true));
+    } finally {
+      view.release();
     }
   }
 
-  private void startSneak(User user, Cancellable cancelable) {
-    applySneakStart(user, () -> cancelable.setCancelled(true));
+  /**
+   * @return whether the packet that reached the twin is the 1.21.2+ input packet rather than the
+   * legacy steer vehicle packet the same Intave id binds below that version. See the twin's javadoc
+   * for why this is asked by name and why it has to be asked before {@link MovementPlayerInputView}
+   * is touched.
+   */
+  private static boolean carriesPlayerInput(PacketReceiveEvent event) {
+    PacketTypeCommon type = event.getPacketType();
+    return type != null && MovementPlayerInputView.PACKET_TYPE_NAME.equals(type.getName());
+  }
+
+  /**
+   * Engine independent sneak handling for the vehicle steer / player input packet. Only the sneak
+   * bit crosses the seam, so it crosses as a boolean rather than through a view, the same way
+   * {@link #handleLegacyVehicleKeys} takes its three values; {@code cancelPacket} is the per engine
+   * half, exactly as in {@link #applySneakStart}.
+   */
+  private void handleInputs(User user, boolean sneaking, Runnable cancelPacket) {
+    MovementMetadata movement = user.meta().movement();
+    if (sneaking && !movement.sneaking) {
+      applySneakStart(user, cancelPacket);
+    } else if (!sneaking && movement.sneaking) {
+      stopSneak(user);
+    }
   }
 
   private void startSneak(User user, PlayerActionView view) {

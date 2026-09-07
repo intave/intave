@@ -50,9 +50,11 @@ import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.packet.PacketTypes;
 import de.jpx3.intave.packet.reader.EntityUseReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.packet.reader.PlayerMoveReader;
 import de.jpx3.intave.packet.view.AttackRaytraceReplay;
 import de.jpx3.intave.packet.view.PacketEventsAttackView;
 import de.jpx3.intave.packet.view.PacketEventsMovementView;
+import de.jpx3.intave.packet.view.ProtocolLibMovementView;
 import de.jpx3.intave.share.FriendlyByteBuf;
 import de.jpx3.intave.share.HistoryWindow;
 import de.jpx3.intave.share.Position;
@@ -482,9 +484,12 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
    * {@link #receiveUseEntityPacket(PacketEvent)}.
    * <p>
    * Two things come off the wire here: whether the packet is the client tick end marker, and
-   * whether it carries a position. The second is the boolean at index 1, read exactly where it was
-   * read before - after the client tick end early return and only for packets that are not that
-   * marker, which have no such field.
+   * whether it carries a position. The second is read through the pooled {@link PlayerMoveReader}
+   * behind {@link ProtocolLibMovementView#hasMovement()}, which indexes the boolean by version -
+   * 1.21.3 inserted a horizontal collision flag at index 1 and pushed the position flag to index 2,
+   * so the raw {@code getBooleans().read(1)} this used to perform read the collision flag there.
+   * The read still happens exactly where it did before: after the client tick end early return and
+   * only for packets that are not that marker, which have no such field and no reader.
    */
   @PacketSubscription(
     priority = NORMAL,
@@ -500,10 +505,19 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       return;
     }
 
-    handleMovementPacket(
-      player, user, isClientTickEnd,
-      !isClientTickEnd && event.getPacket().getBooleans().read(1)
-    );
+    boolean carriesPosition = false;
+    if (!isClientTickEnd) {
+      // The pooled reader owns the version indexing; releasing it hands the pool entry back the
+      // same way MovementDispatcher does for these packet types.
+      ProtocolLibMovementView view = new ProtocolLibMovementView(event);
+      try {
+        carriesPosition = view.hasMovement();
+      } finally {
+        view.release();
+      }
+    }
+
+    handleMovementPacket(player, user, isClientTickEnd, carriesPosition);
   }
 
   /**
@@ -511,19 +525,15 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
    * <p>
    * The queue this drains is now filled on both engines, so the loop has something to do here.
    *
-   * <h2>One deliberate divergence</h2>
-   * The ProtocolLib path reads the raw boolean at index 1 of the flying packet. On 1.21.2 and below
-   * that field is "carries a position". From 1.21.3 the client inserted a horizontal collision flag
-   * at index 1 and pushed the position flag to index 2, which is why
-   * {@code PlayerMoveReader#hasMovement()} indexes by version while the line above does not.
-   * PacketEvents exposes named accessors and no positional ones, so this twin necessarily reads the
-   * named "position changed" flag through {@link PacketEventsMovementView#hasMovement()}. The two
-   * engines therefore agree on every version up to 1.21.2 and, from 1.21.3, this twin reads the
-   * field the surrounding code is named for while the ProtocolLib path reads the collision flag.
-   * Reproducing the positional read was not possible without inventing a field PacketEvents does
-   * not expose, and inventing one is how false bans get written; the value only feeds
-   * {@code flyingPacketCounter}, which nudges the hit box expansion for pre-1.9 clients and never
-   * decides a violation on its own.
+   * <h2>Engine agreement</h2>
+   * PacketEvents exposes named accessors and no positional ones, so this twin reads the named
+   * "position changed" flag through {@link PacketEventsMovementView#hasMovement()}, which is
+   * {@code WrapperPlayClientPlayerFlying#hasPositionChanged}. The ProtocolLib path reads the same
+   * field through {@link PlayerMoveReader#hasMovement()}, whose boolean index follows the version -
+   * index 1 up to 1.21.2, index 2 from 1.21.3, where a horizontal collision flag took index 1.
+   * Neither reader's vehicle move short circuit applies here: this subscription binds the four
+   * flying packets and the client tick end marker, never VEHICLE_MOVE. The two engines therefore
+   * agree on every version.
    */
   @PacketSubscription(
     engine = Engine.PACKETEVENTS,

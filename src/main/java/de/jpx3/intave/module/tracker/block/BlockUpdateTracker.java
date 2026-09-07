@@ -258,7 +258,7 @@ public final class BlockUpdateTracker extends Module {
   }
 
   /**
-   * ProtocolLib only, no PacketEvents twin.
+   * ProtocolLib only, no PacketEvents twin. Re-checked against PacketEvents 2.13.0.
    * <p>
    * The feedback attachment itself would port fine (see {@link #blockChangedAck(PacketSendEvent)}),
    * but the body's payload does not: every changed block is turned into a
@@ -266,16 +266,52 @@ public final class BlockUpdateTracker extends Module {
    * {@link BlockVariantNativeAccess#variantAccess(com.comphenix.protocol.wrappers.WrappedBlockData)},
    * which looks the state up by the <em>native</em> {@code IBlockData} object
    * {@code WrappedBlockData.getHandle()} hands out. {@code BlockVariantRegister}'s index is keyed on
-   * exactly those server-side state instances (see {@code ModernIndexer}), so nothing but a real
-   * {@code IBlockData} resolves through it. PacketEvents describes the same blocks as a
-   * {@code WrappedBlockState}, a protocol level global palette id with no route to that object:
-   * {@code SpigotConversionUtil} converts block states only as far as
-   * {@code org.bukkit.block.data.BlockData}, and the property-map detour through
-   * {@code BlockVariantReverseLookup#variantIdOfProperties} demands an exact match of the whole
-   * property set against server-side names and returns -1 when it misses, which would silently
-   * write a wrong block into the client block cache. A wrong cached block is a wrong collision
-   * result and therefore a false positive, so this subscription stays on ProtocolLib until a
-   * verified state id to variant mapping exists.
+   * exactly those server-side state instances by identity (see {@code ModernIndexer}, which stores
+   * the elements of {@code block.getStates().a()} as map keys), so nothing but a real
+   * {@code IBlockData} resolves through it. PacketEvents describes the same block as a
+   * {@code WrappedBlockState}, a protocol level global palette id, and 2.13.0 still offers no route
+   * from one to the other.
+   * <p>
+   * <b>What 2.13.0 actually provides.</b> {@code SpigotConversionUtil} converts block states only as
+   * far as {@code org.bukkit.block.data.BlockData} - {@code toBukkitBlockData} is one line,
+   * {@code Bukkit.createBlockData(state.toString())}, which does not exist below 1.13 and therefore
+   * throws {@code NoSuchMethodError} on the 1.8 to 1.12 servers this plugin still supports. There is
+   * no inverse: the only native block bridge PacketEvents exposes is
+   * {@code SpigotReflectionUtil.GET_CRAFT_BLOCK_DATA_FROM_IBLOCKDATA}, which runs native to Bukkit,
+   * the direction that is already covered.
+   * <p>
+   * <b>Why that gap cannot be papered over.</b> Every block state lookup in 2.13.0 answers a miss
+   * with air rather than with a failure. {@code WrappedBlockState.getByGlobalId} and
+   * {@code getByString} both end in {@code Map.getOrDefault(key, AIR)}, and
+   * {@code SpigotConversionUtil.fromBukkitBlockData} is {@code getByString} over
+   * {@code BlockData.getAsString}. So neither direction carries a miss signal: a state PacketEvents'
+   * generated tables do not hold comes back as {@code minecraft:air}, a real and plausible block
+   * that would be written into the cache as if it had been read off the wire. That also rules out
+   * building a reverse table server-side and keying it on the global id, because the table itself
+   * would be built through the same silently-defaulting lookup.
+   * <p>
+   * <b>The property-map detour is not a fallback either.</b> The two sides do not share a
+   * vocabulary. {@code IndexedBlockVariant} stores enum values as the <em>NMS constant name</em>
+   * ({@code ((Enum) value).name()}), while Bukkit's {@code getAsString} and PacketEvents both emit
+   * the <em>serialized</em> name. {@code minecraft:piston_head} is a counterexample present on every
+   * supported version: {@code BlockPropertyPistonType.DEFAULT} serializes as {@code "normal"} and
+   * PacketEvents spells the same value {@code Type.NORMAL}, so the whole-property-set comparison in
+   * {@code BlockVariantReverseLookup#variantIdOfProperties} cannot match and it returns -1. Its only
+   * existing caller ({@code BlockInteractionPatch}) feeds it properties that came out of the
+   * register itself, which is why the exact match is safe there and not here.
+   * <p>
+   * <b>And an unknown block is not representable at this call site.</b> Both sinks below,
+   * {@code BlockCache#override} and {@code BlockCache#setClientSpeculationValue}, take a mandatory
+   * {@code (Material, int)} pair. Writing -1 makes {@code BlockVariantRegister#rawVariantOf} return
+   * null, and the shape drills answer a null state with {@code BlockShapes.emptyShape()} - a solid
+   * block that has no collision box in the client cache, which is precisely the false positive this
+   * port must not create. Skipping the entry instead is no better: it leaves the stale override in
+   * place and skips the {@code unlockOverride} and {@code invalidateCacheAround} that belong with it.
+   * <p>
+   * Below 1.13 {@code variantAccess} returns the legacy data nibble, which
+   * {@code SpigotConversionUtil.toBukkitMaterialData} does reach, but the modern half is the one
+   * that blocks and half a twin is worse than none. This becomes portable when a verified
+   * server-side state to variant mapping with a real miss signal exists, not before.
    */
   @PacketSubscription(
     packetsOut = {

@@ -54,6 +54,12 @@ import de.jpx3.intave.packet.view.EntityInteractIdView;
 import de.jpx3.intave.packet.view.EntityMetadataView;
 import de.jpx3.intave.packet.view.EntityRelativeMoveView;
 import de.jpx3.intave.packet.view.EntityStatusView;
+import de.jpx3.intave.packet.view.EntityTrackerPacketEventsPositionSyncView;
+import de.jpx3.intave.packet.view.EntityTrackerPacketEventsTeleportView;
+import de.jpx3.intave.packet.view.EntityTrackerPositionSyncView;
+import de.jpx3.intave.packet.view.EntityTrackerProtocolLibPositionSyncView;
+import de.jpx3.intave.packet.view.EntityTrackerProtocolLibTeleportView;
+import de.jpx3.intave.packet.view.EntityTrackerTeleportView;
 import de.jpx3.intave.packet.view.FeedbackHandle;
 import de.jpx3.intave.packet.view.PacketEventsEntityAttachView;
 import de.jpx3.intave.packet.view.PacketEventsEntityDestroyView;
@@ -94,6 +100,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
+import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.module.feedback.FeedbackOptions.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION;
@@ -302,18 +309,34 @@ public final class EntityTracker extends Module {
   }
 
   /**
-   * ProtocolLib only; there is deliberately no PacketEvents twin.
+   * ProtocolLib only; there is deliberately no PacketEvents twin. Checked against 2.13.0, the
+   * version the build targets, not against the 2.4.0 this note was first written for.
    * <p>
    * Spawn packets are the one place where Intave has to name an entity type it has never seen as a
    * Bukkit entity, and {@link EntityTypeResolver} does that through server internals rather than
-   * through the wire payload: {@code entityTypeDataOfLivingEntity} reads the packet's
-   * {@code WrappedDataWatcher}, pulls the live NMS entity out of it by a version specific field
-   * name and measures its hitbox off the NMS class, and {@code entityTypeDataOfDeadEntity} falls
-   * back to ProtocolLib's {@code getEntityTypeModifier} and to {@code HitboxSizeAccess}
-   * measurements of the resolved NMS class. PacketEvents decodes the metadata into its own
-   * {@code EntityData} values and never exposes the server side data watcher or the entity behind
-   * it, so that resolution has no equivalent - and a spawn whose type resolves wrong hands every
-   * downstream reach and hitbox check a wrong bounding box.
+   * through the wire payload. Two of its fallbacks have no PacketEvents equivalent on 2.13.0
+   * either:
+   * <ul>
+   *   <li>{@code entityTypeDataOfLivingEntity} reads the packet's {@code WrappedDataWatcher} below
+   *   1.15, pulls the <em>live server side entity</em> out of it by a version specific field name
+   *   and measures the hitbox off that object through {@code HitboxSizeAccess.dimensionsOfNative}.
+   *   2.13.0's {@code WrapperPlayServerSpawnLivingEntity} hands out
+   *   {@code List<EntityData<?>>} - metadata decoded into its own values. The server side data
+   *   watcher, and therefore the entity behind it, is not in that list and is not reachable from
+   *   it.</li>
+   *   <li>{@code entityTypeDataOfDeadEntity} takes ProtocolLib's {@code getEntityTypeModifier} from
+   *   1.14 on and measures {@code HitboxSizeAccess.dimensionsOfNMSEntityClass} off the class the
+   *   resolved Bukkit {@code EntityType} names. 2.13.0's {@code WrapperPlayServerSpawnEntity} does
+   *   expose {@code getEntityType()}, but it is PacketEvents' own {@code EntityType} - a mapped
+   *   registry entry carrying a name and per version ids, extending {@code MappedEntity}, with no
+   *   Java class on it - and that measurement takes a {@code Class}.</li>
+   * </ul>
+   * Independently of both, {@code entityTypeDataOfLivingEntity} and
+   * {@code entityTypeDataOfDeadEntity} take a ProtocolLib {@code PacketEvent}. Porting this
+   * subscription means giving {@link EntityTypeResolver} an engine neutral entry point the way
+   * {@code entityTypeDataOfEntityMetadata} got one, not adding a second entry point here. Until
+   * then a twin would have to re-implement type resolution beside it, and a spawn whose type
+   * resolves wrong hands every downstream reach and hitbox check a wrong bounding box.
    */
   @PacketSubscription(
     packetsOut = {
@@ -694,21 +717,6 @@ public final class EntityTracker extends Module {
     }
   }
 
-  /**
-   * ProtocolLib only; there is deliberately no PacketEvents twin.
-   * <p>
-   * {@code ENTITY_POSITION_SYNC} is the 1.21.2 replacement for the absolute entity teleport and
-   * PacketEvents 2.4.0 predates it: the bundled API declares no
-   * {@code PacketType.Play.Server.ENTITY_POSITION_SYNC} and ships no wrapper for it, so
-   * {@link de.jpx3.intave.module.linker.packet.pe.PacketEventsIdMapper} resolves the id through its
-   * fallback name and would hand a twin plain {@code ENTITY_TELEPORT} packets instead. On top of
-   * that, {@link Entity#immediateEntityPositionSync} and
-   * {@link Entity#handleEntityPositionSync(User, com.comphenix.protocol.events.PacketContainer)}
-   * decode through {@code PositionMoveRotation.firstFrom}, which converts the NMS
-   * {@code PositionMoveRotation} record out of a {@code PacketContainer} and has no PacketEvents
-   * counterpart. Feeding entity positions from the wrong packet is how a tracked entity ends up
-   * somewhere the client never saw it, so this one stays on the engine that can read it.
-   */
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsOut = {
@@ -716,29 +724,85 @@ public final class EntityTracker extends Module {
     }
   )
   public void receivePositionSync(PacketEvent event) {
-    Player player = event.getPlayer();
+    handlePositionSync(
+      new EntityTrackerProtocolLibPositionSyncView(event),
+      ProtocolLibFeedbackHandle.of(event),
+      event
+    );
+  }
+
+  /**
+   * PacketEvents entry point for {@link #receivePositionSync(PacketEvent)}.
+   * <p>
+   * Note for anyone reading an older revision of this file: this subscription was recorded here as
+   * unportable, on the grounds that PacketEvents 2.4.0 declares no
+   * {@code PacketType.Play.Server.ENTITY_POSITION_SYNC} and ships no wrapper for it, and that the
+   * payload is an NMS {@code PositionMoveRotation} record read out of a {@code PacketContainer}.
+   * Both statements were about 2.4.0. The build targets 2.13.0, which declares the constant and
+   * ships {@code WrapperPlayServerEntityPositionSync}; see
+   * {@link EntityTrackerPacketEventsPositionSyncView} for what it decodes, and for how the twin
+   * declines the teleport packets it would be handed on a server that predates this packet.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsOut = {
+      ENTITY_POSITION_SYNC
+    }
+  )
+  public void receivePositionSync(PacketSendEvent event) {
+    EntityTrackerPacketEventsPositionSyncView view =
+      EntityTrackerPacketEventsPositionSyncView.of(event);
+    if (view == null) {
+      return;
+    }
+    if (view.player() == null) {
+      return;
+    }
+    handlePositionSync(view, PacketEventsFeedbackHandle.of(event), null);
+  }
+
+  /**
+   * Engine independent absolute entity position synchronisation; see
+   * {@link EntityTrackerPositionSyncView}.
+   *
+   * @param decoySource the ProtocolLib event whose packet a decoy copy is cloned from, or null on a
+   * backend that cannot clone and re-send an encoded packet. See
+   * {@link #handleEntityMovement(EntityRelativeMoveView, FeedbackHandle, PacketEvent)} for why a
+   * null source skips a branch it could never have entered.
+   */
+  private void handlePositionSync(
+    EntityTrackerPositionSyncView view, FeedbackHandle handle, @Nullable PacketEvent decoySource
+  ) {
+    Player player = view.player();
     User user = UserRepository.userOf(player);
-    PacketContainer packet = event.getPacket();
-    Entity entity = wrappedEntityByEntityTeleportPacket(event);
+    Integer entityIdBoxed = view.entityId();
+    if (entityIdBoxed == null) {
+      view.release();
+      return;
+    }
+    Entity entity = trackedEntityByIdentifier(user, player, entityIdBoxed);
     if (entity == null) {
+      view.release();
       return;
     }
 
-    if (entity.duplicationId != 0) {
-      PacketContainer newPacket = packet.deepClone();
+    if (entity.duplicationId != 0 && decoySource != null) {
+      PacketContainer newPacket = decoySource.getPacket().deepClone();
       newPacket.getIntegers().write(0, entity.duplicationId);
       PacketSender.sendServerPacket(player, newPacket);
     }
 
     MovementMetadata movement = user.meta().movement();
     double distanceBefore = entity.distanceToPlayerCache > 8 ? 10 : entity.immediateServerPosition.distance(movement.positionX, movement.positionY, movement.positionZ);
-    entity.immediateEntityPositionSync(packet);
+    Position position = view.position();
+    applyImmediatePositionSync(entity, position);
     double distanceAfter = distanceBefore > 8 ? 10 : entity.immediateServerPosition.distance(movement.positionX, movement.positionY, movement.positionZ);
 
     if (entity.typeData().isLivingEntity() && entity.tracingEnabled()) {
       EmptyFeedbackCallback task = () -> {
         entity.verifiedPosition = false;
-        entity.handleEntityPositionSync(user, packet);
+        applyPositionSync(user, entity, position);
         entity.clientSynchronized = true;
         nayoroEntityPositionUpdate(player, entity);
       };
@@ -747,27 +811,49 @@ public final class EntityTracker extends Module {
       if (distanceBefore < 8 && distanceAfter < 8 && distanceBefore != distanceAfter) {
         options |= distanceAfter < distanceBefore ? TRACER_ENTITY_MOVED_CLOSER : TRACER_ENTITY_MOVED_FARTHER;
       }
-      user.tracedPacketTickFeedback(event, task, observer, options);
+      user.tracedPacketTickFeedback(handle, task, observer, options);
     } else {
-      entity.handleEntityPositionSync(user, packet);
+      applyPositionSync(user, entity, position);
       entity.clientSynchronized = false;
     }
+    view.release();
   }
 
   /**
-   * ProtocolLib only; there is deliberately no PacketEvents twin.
+   * Engine independent transcription of {@link Entity#immediateEntityPositionSync(PacketContainer)},
+   * which reads the position out of a ProtocolLib container and is therefore unreachable from the
+   * PacketEvents backend. Same three writes, same order, off the decoded position instead.
    * <p>
-   * From 1.21.3 the teleport payload is a {@code PositionMoveRotation} plus a set of relative
-   * flags, and {@link Entity#immediateEntityTeleport} and {@link Entity#handleEntityTeleport} read
-   * it through {@code PositionMoveRotation.firstFrom} and {@code Relative.flagsFrom}, both of which
-   * convert NMS values straight out of a {@code PacketContainer}. PacketEvents 2.4.0's
-   * {@code WrapperPlayServerEntityTeleport} predates that change: it decodes an absolute
-   * {@code Vector3d} and carries no relative flag set at all. A twin could therefore only be
-   * correct below 1.21.2, and on newer servers it would read every relative teleport as an absolute
-   * one - which silently moves the tracked entity to the delta itself. Since a wrong entity
-   * position feeds the reach and hitbox checks directly, this stays ProtocolLib only rather than
-   * being ported with a version hole in it.
+   * Both engines land here, so that method and its delayed counterpart have no caller left: editing
+   * them changes nothing until an engine is given a {@code PacketContainer} to hand them again.
    */
+  private void applyImmediatePositionSync(Entity entity, Position position) {
+    entity.immediateCodec.setBase(position);
+    entity.immediateServerPosition.setX(position.getX());
+    entity.immediateServerPosition.setY(position.getY());
+    entity.immediateServerPosition.setZ(position.getZ());
+  }
+
+  /**
+   * Engine independent transcription of
+   * {@link Entity#handleEntityPositionSync(User, PacketContainer)}: the container read it performs
+   * is what this method receives already decoded, and everything after it -
+   * {@link Entity#handleEntityPositionSync(Position)} and the protocol metadata note - is
+   * unchanged.
+   * <p>
+   * The position instance is the one the immediate half already applied, rather than a second decode
+   * of the same field. Nothing mutates it: the codec clones what it is given as its base, and the
+   * metadata note only stores it.
+   */
+  private void applyPositionSync(User user, Entity entity, Position position) {
+    entity.handleEntityPositionSync(position);
+    if (entity.entityName().toLowerCase().contains("chicken")) {
+      ProtocolMetadata protocol = user.meta().protocol();
+      protocol.lastEntityId = entity.entityId();
+      protocol.lastEntityPosition = position;
+    }
+  }
+
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsOut = {
@@ -776,16 +862,69 @@ public final class EntityTracker extends Module {
     ignoreCancelled = false
   )
   public void receiveEntityTeleport(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleEntityTeleport(
+      new EntityTrackerProtocolLibTeleportView(event),
+      ProtocolLibFeedbackHandle.of(event),
+      event
+    );
+  }
+
+  /**
+   * PacketEvents entry point for {@link #receiveEntityTeleport(PacketEvent)}.
+   * <p>
+   * Note for anyone reading an older revision of this file: this subscription was recorded here as
+   * unportable because PacketEvents' {@code WrapperPlayServerEntityTeleport} "decodes an absolute
+   * {@code Vector3d} and carries no relative flag set at all", so a twin would read every relative
+   * teleport of the 1.21.2 format as an absolute one and move the tracked entity to the offset
+   * itself. That was true of 2.4.0. The build targets 2.13.0, whose wrapper decodes the full
+   * {@code EntityPositionData} and exposes {@code getRelativeFlags()}; see
+   * {@link EntityTrackerPacketEventsTeleportView} for the mapping, flag by flag.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsOut = {
+      ENTITY_TELEPORT
+    },
+    ignoreCancelled = false
+  )
+  public void receiveEntityTeleport(PacketSendEvent event) {
+    EntityTrackerPacketEventsTeleportView view = EntityTrackerPacketEventsTeleportView.of(event);
+    if (view == null) {
+      return;
+    }
+    if (view.player() == null) {
+      return;
+    }
+    handleEntityTeleport(view, PacketEventsFeedbackHandle.of(event), null);
+  }
+
+  /**
+   * Engine independent absolute entity teleport tracking; see {@link EntityTrackerTeleportView}.
+   *
+   * @param decoySource the ProtocolLib event whose packet a decoy copy is cloned from, or null on a
+   * backend that cannot clone and re-send an encoded packet. See
+   * {@link #handleEntityMovement(EntityRelativeMoveView, FeedbackHandle, PacketEvent)} for why a
+   * null source skips a branch it could never have entered.
+   */
+  private void handleEntityTeleport(
+    EntityTrackerTeleportView view, FeedbackHandle handle, @Nullable PacketEvent decoySource
+  ) {
+    Player player = view.player();
     User user = UserRepository.userOf(player);
-    PacketContainer packet = event.getPacket();
-    Entity entity = wrappedEntityByEntityTeleportPacket(event);
+    Integer entityIdBoxed = view.entityId();
+    if (entityIdBoxed == null) {
+      view.release();
+      return;
+    }
+    Entity entity = trackedEntityByIdentifier(user, player, entityIdBoxed);
     if (entity == null) {
+      view.release();
       return;
     }
 
-    if (entity.duplicationId != 0) {
-      PacketContainer newPacket = packet.deepClone();
+    if (entity.duplicationId != 0 && decoySource != null) {
+      PacketContainer newPacket = decoySource.getPacket().deepClone();
       newPacket.getIntegers().write(0, entity.duplicationId);
       PacketSender.sendServerPacket(player, newPacket);
     }
@@ -793,13 +932,13 @@ public final class EntityTracker extends Module {
     MovementMetadata movement = user.meta().movement();
     double distanceBefore = entity.distanceToPlayerCache > 8 ? 10 : entity.immediateServerPosition.distance(movement.positionX, movement.positionY, movement.positionZ);
 
-    entity.immediateEntityTeleport(user, packet);
+    applyImmediateEntityTeleport(user, entity, view);
     double distanceAfter = distanceBefore > 8 ? 10 : entity.immediateServerPosition.distance(movement.positionX, movement.positionY, movement.positionZ);
 
     if (entity.typeData().isLivingEntity() && entity.tracingEnabled()) {
       EmptyFeedbackCallback task = () -> {
         entity.verifiedPosition = false;
-        entity.handleEntityTeleport(user, packet);
+        applyEntityTeleport(user, entity, view);
         entity.clientSynchronized = true;
         nayoroEntityPositionUpdate(player, entity);
       };
@@ -808,26 +947,127 @@ public final class EntityTracker extends Module {
       if (distanceBefore < 8 && distanceAfter < 8 && distanceBefore != distanceAfter) {
         options |= distanceAfter < distanceBefore ? TRACER_ENTITY_MOVED_CLOSER : TRACER_ENTITY_MOVED_FARTHER;
       }
-      user.tracedPacketTickFeedback(event, task, observer, options);
+      user.tracedPacketTickFeedback(handle, task, observer, options);
     } else {
 //      if (newTeleports) {
 //        entity.handleEntityTeleportModern(packet);
 //      } else {
 //      }
-      entity.handleEntityTeleport(user, packet);
+      applyEntityTeleport(user, entity, view);
       entity.clientSynchronized = false;
+    }
+    view.release();
+  }
+
+  /**
+   * Engine independent transcription of
+   * {@link Entity#immediateEntityTeleport(User, PacketContainer)}, which reads the payload out of a
+   * ProtocolLib container and is therefore unreachable from the PacketEvents backend.
+   * <p>
+   * Its three version branches collapse into one here without changing a value. The 1.21.3 branch
+   * resolved the payload against the tracked immediate position filtered by the relative flags;
+   * below that the flag set is empty, filtering by it yields the origin, and adding the payload to
+   * the origin is the payload - which is exactly what those branches did with their absolute
+   * coordinates. The fixed point accumulators keep being maintained on the older generations only,
+   * as before, in the unit that generation put on the wire; see
+   * {@link EntityTrackerTeleportView#toWirePosition(double)}. Everything from the "same position"
+   * threshold onwards is unchanged.
+   * <p>
+   * Both engines land here, so that method and its delayed counterpart have no caller left: editing
+   * them changes nothing until an engine is given a {@code PacketContainer} to hand them again.
+   */
+  private void applyImmediateEntityTeleport(User user, Entity entity, EntityTrackerTeleportView view) {
+    Position old = entity.immediateServerPosition.filtered(view.relativeFlags());
+    Position change = view.position();
+    double newPosX = old.getX() + change.getX();
+    double newPosY = old.getY() + change.getY();
+    double newPosZ = old.getZ() + change.getZ();
+    if (!view.resolvesRelatively()) {
+      entity.immServerPosX = view.toWirePosition(newPosX);
+      entity.immServerPosY = view.toWirePosition(newPosY);
+      entity.immServerPosZ = view.toWirePosition(newPosZ);
+    }
+    // Always set on 1.16+ as they removed the threshold
+    boolean samePosition =
+      Math.abs(entity.immediateServerPosition.getX() - newPosX) < 0.03125d &&
+        Math.abs(entity.immediateServerPosition.getY() - newPosY) < 0.015625d &&
+        Math.abs(entity.immediateServerPosition.getZ() - newPosZ) < 0.03125d;
+    if (samePosition && user.protocolVersion() < 735 /* 1.16 protocol version */) {
+      return;
+    }
+    entity.immediateServerPosition.setX(newPosX);
+    entity.immediateServerPosition.setY(newPosY);
+    entity.immediateServerPosition.setZ(newPosZ);
+  }
+
+  /**
+   * Engine independent transcription of {@link Entity#handleEntityTeleport(User, PacketContainer)};
+   * see {@link #applyImmediateEntityTeleport} for why the three version branches collapse into one
+   * resolution. The difference to the immediate half is the base the relative axes resolve against
+   * - the tracked position rather than the immediate one - and that the interpolation position
+   * accumulators are written on every generation.
+   * <p>
+   * The instant reposition test stays exclusive to the 1.21.2 and newer format, where the original
+   * computed it; the older branches left it false and always fed the lerp target.
+   */
+  private void applyEntityTeleport(User user, Entity entity, EntityTrackerTeleportView view) {
+    Position old = entity.position.toPosition().filtered(view.relativeFlags());
+    Position change = view.position();
+    double newPosX = old.getX() + change.getX();
+    double newPosY = old.getY() + change.getY();
+    double newPosZ = old.getZ() + change.getZ();
+    entity.serverPosX = view.toWirePosition(newPosX);
+    entity.serverPosY = view.toWirePosition(newPosY);
+    entity.serverPosZ = view.toWirePosition(newPosZ);
+    boolean immediateTeleport = view.resolvesRelatively()
+      && squaredDistanceTo(entity, newPosX, newPosY, newPosZ) > 4096;
+
+    ProtocolMetadata protocol = user.meta().protocol();
+    protocol.lastEntityId = entity.entityId();
+    protocol.lastEntityPosition = new Position(
+      newPosX, newPosY, newPosZ
+    );
+
+    if (immediateTeleport) {
+      entity.setPosition(newPosX, newPosY, newPosZ);
+      entity.pushDebug("TP(Set position) to " + formatDouble(newPosX, 3) + " " + formatDouble(newPosY, 3) + " " + formatDouble(newPosZ, 3));
+    } else {
+      // Always set on 1.16+ as they removed the threshold
+      boolean samePosition =
+        Math.abs(entity.position.posX - newPosX) < 0.03125d
+          && Math.abs(entity.position.posY - newPosY) < 0.015625d
+          && Math.abs(entity.position.posZ - newPosZ) < 0.03125d;
+      if (samePosition && user.protocolVersion() < 735 /* 1.16 protocol version */) {
+        entity.setPositionAndRotationEntityLiving(entity.position.posX, entity.position.posY, entity.position.posZ, 3);
+      } else {
+        entity.setPositionAndRotationEntityLiving(newPosX, newPosY, newPosZ, 3);
+      }
+      entity.pushDebug("TP(Set lerp target) to " + formatDouble(newPosX, 3) + " " + formatDouble(newPosY, 3) + " " + formatDouble(newPosZ, 3));
+    }
+    double alternativeNewPosY = (double) entity.serverPosY / 32d + 0.015625d;
+    if (Math.abs(entity.position.posX - newPosX) < 0.03125d &&
+      Math.abs(entity.alternativePosition.posY - alternativeNewPosY) < 0.015625d &&
+      Math.abs(entity.position.posZ - newPosZ) < 0.03125d) {
+      entity.setAlternativeYPosition(entity.alternativePosition.posY);
+    } else {
+      entity.setAlternativeYPosition(alternativeNewPosY);
     }
   }
 
-  private Entity wrappedEntityByEntityTeleportPacket(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
-    PacketContainer packet = event.getPacket();
-    Integer entityIdBoxed = packet.getIntegers().readSafely(0);
-    if (entityIdBoxed == null) {
-      return null;
-    }
-    int entityId = entityIdBoxed;
+  /** Copy of {@code Entity#squaredDistanceTo}, which is private to that class. */
+  private static double squaredDistanceTo(Entity entity, double newX, double newY, double newZ) {
+    double d = newX - entity.position.posX;
+    double e = newY - entity.position.posY;
+    double f = newZ - entity.position.posZ;
+    return d * d + e * e + f * f;
+  }
+
+  /**
+   * Engine independent form of the entity lookup both position packets perform: the tracked entity
+   * of that id, or a freshly tracked one built from the server side entity when the tracker has not
+   * seen it yet, or null when the server does not know it either.
+   */
+  private Entity trackedEntityByIdentifier(User user, Player player, int entityId) {
     Entity entity = entityByIdentifier(user, entityId);
     if (entity == null) {
       org.bukkit.entity.Entity bukkitEntity = serverEntityByIdentifier(player, entityId);
