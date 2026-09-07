@@ -5,6 +5,7 @@ import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.movement.Timer;
 import de.jpx3.intave.executor.IntaveThreadFactory;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
@@ -86,7 +87,25 @@ public final class BalanceButActuallyGood extends MetaCheckPart<Timer, BalanceBu
     }
   )
   public void clientTickUpdate(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleClientTick(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      POSITION_LOOK, POSITION, FLYING, LOOK
+    }
+  )
+  public void clientTickUpdate(Player player) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    handleClientTick(player);
+  }
+
+  /** Engine independent client tick accounting. */
+  private void handleClientTick(Player player) {
     User user = userOf(player);
     MovementFrequencyData frequencyData = metaOf(user);
 
@@ -99,7 +118,24 @@ public final class BalanceButActuallyGood extends MetaCheckPart<Timer, BalanceBu
     }
   )
   public void catchTeleport(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleTeleport(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsOut = {
+      PacketId.Server.POSITION
+    }
+  )
+  public void catchTeleport(Player player) {
+    if (player == null) {
+      return;
+    }
+    handleTeleport(player);
+  }
+
+  /** Engine independent teleport accounting. */
+  private void handleTeleport(Player player) {
     User user = UserRepository.userOf(player);
     MovementFrequencyData frequencyData = metaOf(user);
 

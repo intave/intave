@@ -247,6 +247,19 @@ clientwarning:
   enable: true
 
 compatibility:
+  # Which library Intave reads packets through.
+  #
+  #   protocollib  - the engine every release so far has used. Default.
+  #   packetevents - the PacketEvents engine. Requires the PacketEvents plugin.
+  #
+  # Only one engine is ever live: a check has one subscription per engine and they are two
+  # complete copies of it, so running both would count every packet twice. Switching to
+  # packetevents therefore switches every check at once. A handful of checks have no
+  # PacketEvents implementation and are simply inactive on that engine - each one is named
+  # in the startup log, and "/intave diagnostics packetengine" lists them again along with
+  # how much traffic every subscription has actually seen.
+  packet-engine: protocollib
+
   # Position-feedback synchronization enforcement
   # Disable for GuardSpigot compatibility.
   # THIS OPTION PREVENTS RESPAWN FLY

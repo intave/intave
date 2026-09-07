@@ -1,5 +1,6 @@
 package de.jpx3.intave.check.movement;
 
+import de.jpx3.intave.packet.view.MovementView;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckConfiguration.CheckSettings;
@@ -47,9 +48,9 @@ public final class Timer extends Check {
     appendCheckPart(microBlink);
   }
 
-  public void receiveMovement(PacketEvent event) {
-    playerTime.receiveMovement(event);
-    microBlink.receiveMovement(event);
+  public void receiveMovement(MovementView view) {
+    playerTime.receiveMovement(view);
+    microBlink.receiveMovement(view);
   }
 
   @Override

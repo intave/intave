@@ -15,6 +15,9 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
+import com.github.retrooper.packetevents.wrapper.PacketWrapper;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.player.trust.TrustFactor;
@@ -33,7 +36,10 @@ import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.feedback.FeedbackAnalysis;
 import de.jpx3.intave.module.feedback.FeedbackAnalysis.FeedbackAnalysisMeta.LatencyInfo;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.linker.packet.pe.PacketEventsIdMapper;
+import de.jpx3.intave.module.linker.packet.pe.PacketEventsSender;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.tracker.entity.EntityTracker;
@@ -44,6 +50,9 @@ import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.packet.PacketTypes;
 import de.jpx3.intave.packet.reader.EntityUseReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.packet.view.AttackRaytraceReplay;
+import de.jpx3.intave.packet.view.PacketEventsAttackView;
+import de.jpx3.intave.packet.view.PacketEventsMovementView;
 import de.jpx3.intave.share.FriendlyByteBuf;
 import de.jpx3.intave.share.HistoryWindow;
 import de.jpx3.intave.share.Position;
@@ -91,26 +100,153 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     }
   }
 
+  /**
+   * ProtocolLib entry point of the packet hold and replay machine.
+   *
+   * <h2>What the machine does</h2>
+   * This subscription and the two below it form a single machine. The attack is cancelled here and
+   * a {@code shallowClone()} of the inbound {@link PacketContainer} is parked in
+   * {@link AttackRaytraceMeta#queuedActions}. The next movement packet drains the queue in
+   * {@link #receiveMovementPacket(PacketEvent)}: every parked attack is ray-traced against the
+   * entity position that is by then confirmed, and the parked container is handed back to the
+   * server by {@link #redirectValidPacket(Player, PacketContainer)}, which is ProtocolLib's
+   * {@code ProtocolManager#receiveClientPacket}. The reach check <em>is</em> that delay. Without a
+   * working replay the hit is not postponed, it is swallowed.
+   *
+   * <h2>Where the twin is</h2>
+   * The machine runs on either engine. Everything this method decides lives in the engine
+   * independent {@link #handleUseEntityPacket(Player, boolean, HeldAttack)}; what stays engine
+   * specific is only <em>what</em> gets parked and how the packet is cancelled, which is what the
+   * {@link HeldAttack} handed in below supplies. The PacketEvents twin is
+   * {@link #receiveUseEntityPacket(PacketReceiveEvent)}.
+   */
   @PacketSubscription(
     priority = LOW,
     packetsIn = {ATTACK_ENTITY, USE_ENTITY}
   )
   public void receiveUseEntityPacket(PacketEvent event) {
     Player player = event.getPlayer();
+    PacketContainer packet = event.getPacket();
+    EntityUseReader reader = PacketReaders.readerOf(packet);
+    EntityUseAction action = reader.useAction();
+
+    handleUseEntityPacket(player, action == ATTACK, new HeldAttack() {
+      @Override
+      public int entityId() {
+        return packet.getIntegers().read(0);
+      }
+
+      @Override
+      public void cancel() {
+        if (event.isReadOnly()) {
+          event.setReadOnly(false);
+        }
+        event.setCancelled(true);
+      }
+
+      @Override
+      public Attack park(int entityId, boolean resendLater, long pendingFeedbackPackets, Pose pose) {
+        return new Attack(packet.shallowClone(), entityId, resendLater, pendingFeedbackPackets, pose);
+      }
+    });
+    reader.release();
+  }
+
+  /**
+   * PacketEvents entry point; the twin of {@link #receiveUseEntityPacket(PacketEvent)}.
+   * <p>
+   * Both blockers this used to carry are gone. There <em>is</em> something to park: an
+   * {@link AttackRaytraceReplay} keeps the decoded fields of the interaction and rebuilds an
+   * equivalent {@code WrapperPlayClientInteractEntity} when the queue drains, so nothing depends on
+   * the inbound {@code ByteBuf} outliving the listener. And there <em>is</em> replay suppression:
+   * {@code PacketEventsLinkage} mirrors {@code ForwardingPacketAdapter}'s ignore gate, so the packet
+   * {@link #redirectValidPacket(Player, Action)} hands back skips every Intave PacketEvents
+   * subscription exactly once instead of re-entering this method, being parked again, and looping.
+   * <p>
+   * The replay is decoded up front rather than inside {@code park} on purpose: a packet this engine
+   * could not rebuild must never be cancelled, because parking without a replay does not postpone
+   * the hit, it swallows it. A null replay is unreachable in practice - the view above already
+   * established the packet type - but the ordering makes that guarantee structural rather than
+   * incidental.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = LOW,
+    packetsIn = {ATTACK_ENTITY, USE_ENTITY}
+  )
+  public void receiveUseEntityPacket(PacketReceiveEvent event) {
+    PacketEventsAttackView view = PacketEventsAttackView.of(event);
+    if (view == null) {
+      return;
+    }
+    Player player = view.player();
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    boolean attackAction = view.isAttackPacket();
+    AttackRaytraceReplay replay = attackAction ? AttackRaytraceReplay.ofInteraction(event) : null;
+    if (attackAction && replay == null) {
+      return;
+    }
+    handleUseEntityPacket(player, attackAction, new HeldAttack() {
+      @Override
+      public int entityId() {
+        return view.entityId();
+      }
+
+      @Override
+      public void cancel() {
+        view.setCancelled(true);
+      }
+
+      @Override
+      public Attack park(int entityId, boolean resendLater, long pendingFeedbackPackets, Pose pose) {
+        return new PacketEventsAttack(replay, entityId, resendLater, pendingFeedbackPackets, pose);
+      }
+    });
+  }
+
+  /**
+   * The engine specific half of the attack hold: reading the attacked entity off the packet,
+   * cancelling the packet, and turning it into a queue entry that can be replayed later.
+   * <p>
+   * {@link #entityId()} is a method rather than a parameter so the id is read only once the packet
+   * is known to be an attack, which is where the ProtocolLib path has always read it. {@link #park}
+   * likewise only runs when the attack actually goes into the queue, which is what keeps
+   * ProtocolLib from cloning a container it then throws away.
+   */
+  private interface HeldAttack {
+    /** @return the interacted entity's runtime id. */
+    int entityId();
+
+    /** Stops the packet from reaching the server, so the replay can deliver it instead. */
+    void cancel();
+
+    /** @return the queue entry for this attack. */
+    Attack park(int entityId, boolean resendLater, long pendingFeedbackPackets, Pose pose);
+  }
+
+  /**
+   * Engine independent entity interaction handling; the body of
+   * {@link #receiveUseEntityPacket(PacketEvent)} and of its PacketEvents twin.
+   * <p>
+   * The ProtocolLib reader is released by the caller rather than here, because the caller is the
+   * only side that owns one. The early return below used to release it and return; it now only
+   * returns, and the release happens on the single exit of the ProtocolLib entry point instead -
+   * which is the same one release on every path it always was.
+   */
+  private void handleUseEntityPacket(Player player, boolean attackAction, HeldAttack held) {
     User user = userOf(player);
     AttackRaytraceMeta meta = metaOf(user);
     AbilityMetadata abilities = user.meta().abilities();
     MovementMetadata movement = user.meta().movement();
     ViolationMetadata violationMeta = user.meta().violationLevel();
 
-    PacketContainer packet = event.getPacket();
-    EntityUseReader reader = PacketReaders.readerOf(packet);
-    EntityUseAction action = reader.useAction();
-
     // Only process attacks, interactions should not be checked
-    if (action == ATTACK) {
+    if (attackAction) {
       List<Action> pendingActions = meta.queuedActions;
-      int entityId = packet.getIntegers().read(0);
+      int entityId = held.entityId();
       Entity entity = EntityTracker.entityByIdentifier(user, entityId);
       // Allow attacks on invalid entity states
       if (entity == null
@@ -120,7 +256,6 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         || abilities.inGameModeIncludePending(AbilityTracker.GameMode.SPECTATOR)
       ) {
         // check again?
-        reader.release();
         return;
       }
 
@@ -177,10 +312,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       boolean resendLater = !firstRaytraceSuccessful || !pendingPushable;
       if (resendLater) {
         // Cancel attack and redirect it
-        if (event.isReadOnly()) {
-          event.setReadOnly(false);
-        }
-        event.setCancelled(true);
+        held.cancel();
       }
       if (user.receives(MessageChannel.DEBUG_PACKET_HOLD)) {
         if (resendLater) {
@@ -195,9 +327,8 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       }
       // Only add attack to queue if queue size is small enough
       if (pendingPushable) {
-        PacketContainer clone = packet.shallowClone();
-        Attack attack = new Attack(
-          clone, entityId, resendLater, entity.pendingFeedbackPackets(),
+        Attack attack = held.park(
+          entityId, resendLater, entity.pendingFeedbackPackets(),
           user.meta().movement().pose()
         );
         pendingActions.add(attack);
@@ -211,7 +342,6 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         Modules.violationProcessor().processViolation(violation);
       }
     }
-    reader.release();
   }
 
 
@@ -234,15 +364,105 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     return bos.toByteArray();
   }
 
+  /**
+   * ProtocolLib entry point of the second half of the parking side, documented on
+   * {@link #receiveUseEntityPacket(PacketEvent)}. The swing that belongs to a held attack has to be
+   * held with it and replayed in the same order, or the server sees a hit without its animation.
+   * Note that this one parks the live {@link PacketContainer} rather than a clone, so it depends on
+   * the container outliving the listener call. The PacketEvents twin is
+   * {@link #receiveArmAnimationPacket(PacketReceiveEvent)}, which parks decoded fields instead
+   * precisely because a PacketEvents buffer does not have that property.
+   */
   @PacketSubscription(
     priority = LOW,
     packetsIn = ARM_ANIMATION
   )
   public void receiveArmAnimationPacket(PacketEvent event) {
     Player player = event.getPlayer();
+    PacketContainer packet = event.getPacket();
+
+    handleArmAnimationPacket(player, new HeldArmAnimation() {
+      @Override
+      public void cancel() {
+        event.setCancelled(true);
+      }
+
+      @Override
+      public ArmAnimation park() {
+        return new ArmAnimation(packet);
+      }
+    });
+  }
+
+  /**
+   * PacketEvents entry point; the twin of {@link #receiveArmAnimationPacket(PacketEvent)}.
+   * <p>
+   * The whole payload of the swing packet is the hand, so an {@link AttackRaytraceReplay} holds
+   * that one decoded value and rebuilds a {@code WrapperPlayClientAnimation} from it when the queue
+   * drains.
+   * <p>
+   * The packet type is checked here rather than left to {@link AttackRaytraceReplay#ofAnimation},
+   * which is what keeps the decode inside {@code park} safe: almost no swing is ever parked - the
+   * queue is empty unless an attack is being held - and paying for a decode on every swing of every
+   * player to serve the rare one would be pure waste. Having established the type, the decode
+   * cannot fail, so the packet is never cancelled without a replay behind it.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = LOW,
+    packetsIn = ARM_ANIMATION
+  )
+  public void receiveArmAnimationPacket(PacketReceiveEvent event) {
+    Object nativePlayer = event.getPlayer();
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (!(nativePlayer instanceof Player)) {
+      return;
+    }
+    if (event.getPacketType() != PeTypes.ARM_ANIMATION) {
+      return;
+    }
+    handleArmAnimationPacket((Player) nativePlayer, new HeldArmAnimation() {
+      @Override
+      public void cancel() {
+        event.setCancelled(true);
+      }
+
+      @Override
+      public ArmAnimation park() {
+        return new PacketEventsArmAnimation(AttackRaytraceReplay.ofAnimation(event));
+      }
+    });
+  }
+
+  /**
+   * The PacketEvents packet types this check names directly, held in a nested class so they are
+   * resolved the first time the PacketEvents path runs rather than when this check is loaded.
+   * PacketEvents spells the swing packet differently from ProtocolLib; it is the same packet.
+   * CLIENT_TICK_END is deliberately not here - it does not exist on every supported PacketEvents
+   * release and goes through {@link PacketEventsIdMapper} instead.
+   */
+  private static final class PeTypes {
+    static final PacketTypeCommon ARM_ANIMATION =
+      com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.ANIMATION;
+  }
+
+  /** The engine specific half of the swing hold; the counterpart of {@link HeldAttack}. */
+  private interface HeldArmAnimation {
+    /** Stops the packet from reaching the server, so the replay can deliver it instead. */
+    void cancel();
+
+    /** @return the queue entry for this swing. */
+    ArmAnimation park();
+  }
+
+  /**
+   * Engine independent swing handling; the body of
+   * {@link #receiveArmAnimationPacket(PacketEvent)} and of its PacketEvents twin. Nothing but the
+   * packet's existence is read, so the two engines share it whole.
+   */
+  private void handleArmAnimationPacket(Player player, HeldArmAnimation held) {
     User user = userOf(player);
     AttackRaytraceMeta meta = metaOf(user);
-    PacketContainer packet = event.getPacket();
     List<Action> pendingActions = meta.queuedActions;
 
     Action lastAction = pendingActions.isEmpty() ? null : pendingActions.get(pendingActions.size() - 1);
@@ -252,11 +472,20 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 
     // Only add arm animations to queue if queue size is small enough
     if (pendingActions.size() < MAX_ALLOWED_PENDING_ATTACKS) {
-      pendingActions.add(new ArmAnimation(packet));
-      event.setCancelled(true);
+      pendingActions.add(held.park());
+      held.cancel();
     }
   }
 
+  /**
+   * ProtocolLib entry point of the draining side of the hold and replay machine documented on
+   * {@link #receiveUseEntityPacket(PacketEvent)}.
+   * <p>
+   * Two things come off the wire here: whether the packet is the client tick end marker, and
+   * whether it carries a position. The second is the boolean at index 1, read exactly where it was
+   * read before - after the client tick end early return and only for packets that are not that
+   * marker, which have no such field.
+   */
   @PacketSubscription(
     priority = NORMAL,
     packetsIn = {FLYING, LOOK, POSITION, POSITION_LOOK, CLIENT_TICK_END}
@@ -271,18 +500,94 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       return;
     }
 
+    handleMovementPacket(
+      player, user, isClientTickEnd,
+      !isClientTickEnd && event.getPacket().getBooleans().read(1)
+    );
+  }
+
+  /**
+   * PacketEvents entry point; the twin of {@link #receiveMovementPacket(PacketEvent)}.
+   * <p>
+   * The queue this drains is now filled on both engines, so the loop has something to do here.
+   *
+   * <h2>One deliberate divergence</h2>
+   * The ProtocolLib path reads the raw boolean at index 1 of the flying packet. On 1.21.2 and below
+   * that field is "carries a position". From 1.21.3 the client inserted a horizontal collision flag
+   * at index 1 and pushed the position flag to index 2, which is why
+   * {@code PlayerMoveReader#hasMovement()} indexes by version while the line above does not.
+   * PacketEvents exposes named accessors and no positional ones, so this twin necessarily reads the
+   * named "position changed" flag through {@link PacketEventsMovementView#hasMovement()}. The two
+   * engines therefore agree on every version up to 1.21.2 and, from 1.21.3, this twin reads the
+   * field the surrounding code is named for while the ProtocolLib path reads the collision flag.
+   * Reproducing the positional read was not possible without inventing a field PacketEvents does
+   * not expose, and inventing one is how false bans get written; the value only feeds
+   * {@code flyingPacketCounter}, which nudges the hit box expansion for pre-1.9 clients and never
+   * decides a violation on its own.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = NORMAL,
+    packetsIn = {FLYING, LOOK, POSITION, POSITION_LOOK, CLIENT_TICK_END}
+  )
+  public void receiveMovementPacket(Player player, PacketReceiveEvent event) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    User user = userOf(player);
+
+    boolean isClientTickEnd = isClientEndTick(event.getPacketType());
+    if (user.meta().protocol().sendsClientTickEnd() && !isClientTickEnd) {
+      return;
+    }
+
+    boolean carriesPosition = false;
+    if (!isClientTickEnd) {
+      PacketEventsMovementView view = PacketEventsMovementView.of(event);
+      // A null view cannot happen for the four movement packets this subscribes to; treating it as
+      // "no position" keeps the drain running rather than leaking the parked attacks.
+      carriesPosition = view != null && view.hasMovement();
+    }
+
+    handleMovementPacket(player, user, isClientTickEnd, carriesPosition);
+  }
+
+  /**
+   * PacketEvents counterpart of {@link PacketTypes#isClientEndTick}.
+   * <p>
+   * Resolved through {@link PacketEventsIdMapper} rather than by referencing the constant, because
+   * CLIENT_TICK_END does not exist on older PacketEvents releases; an unresolved packet yields an
+   * empty list here, which simply never matches.
+   */
+  private static boolean isClientEndTick(PacketTypeCommon packetType) {
+    return packetType != null && CLIENT_TICK_END_TYPES.contains(packetType);
+  }
+
+  private static final List<PacketTypeCommon> CLIENT_TICK_END_TYPES =
+    PacketEventsIdMapper.typesOf(CLIENT_TICK_END);
+
+  /**
+   * Engine independent draining of the parked attacks; the body of
+   * {@link #receiveMovementPacket(PacketEvent)} and of its PacketEvents twin.
+   *
+   * @param carriesPosition whether this packet reported a position; always false for the client
+   *                        tick end marker, which has no such field on either engine.
+   */
+  private void handleMovementPacket(
+    Player player, User user, boolean isClientTickEnd, boolean carriesPosition
+  ) {
     AttackRaytraceMeta meta = metaOf(user);
     AbilityMetadata abilities = user.meta().abilities();
     MovementMetadata movement = user.meta().movement();
     ProtocolMetadata protocol = user.meta().protocol();
     List<Action> pendingAttacks = meta.queuedActions;
-    PacketContainer packet = event.getPacket();
     // Clear attacks if recently teleported
     if (movement.ticksPast(TELEPORT) <= 1 || movement.awaitTeleport) {
       pendingAttacks.clear();
     }
     // Apply flying packets (first boolean)
-    if (!isClientTickEnd && !packet.getBooleans().read(1)) {
+    if (!isClientTickEnd && !carriesPosition) {
       meta.flyingPacketCounter++;
     } else {
       meta.flyingPacketCounter = 0;
@@ -308,7 +613,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
           || attackedEntity instanceof Entity.Destroyed
           || (attackedEntity.hasTypeData() && attackedEntity.typeData().isFireball())
         ) {
-          redirectValidPacket(player, pendingAction.packet());
+          redirectValidPacket(player, pendingAction);
           continue;
         }
 
@@ -334,7 +639,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
           }
         }
       } else if (pendingAction instanceof ArmAnimation) {
-        redirectValidPacket(player, pendingAction.packet());
+        redirectValidPacket(player, pendingAction);
       }
     }
     pendingAttacks.clear();
@@ -719,7 +1024,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         }
         // Redirect if resend is allowed
         if (resendAllowed) {
-          redirectValidPacket(player, attack.packet());
+          redirectValidPacket(player, attack);
         }
         return;
       }
@@ -751,7 +1056,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     // Only allow attack if player has bypass trust-factor
     if (user.trustFactor().atLeast(TrustFactor.BYPASS)) {
       if (resendAllowed) {
-        redirectValidPacket(player, attack.packet());
+        redirectValidPacket(player, attack);
       }
       statisticApply(user, CheckStatistics::increasePasses);
     }
@@ -768,6 +1073,33 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     userOf(player).ignoreNextInboundPacket();
     PacketSender.receiveClientPacketFrom(player, packet);
     userOf(player).receiveNextInboundPacketAgain();
+  }
+
+  /**
+   * Redirects a validated queue entry to the server, whichever engine parked it.
+   * <p>
+   * The ProtocolLib entries fall straight through to
+   * {@link #redirectValidPacket(Player, PacketContainer)} with the very container they hold, so
+   * that path is what it always was; only the dispatch in front of it is new.
+   * <p>
+   * The PacketEvents branch mirrors that method line for line. The ignore flag has to be set by the
+   * caller because the replay does re-enter the listener chain on both engines; see
+   * {@link PacketEventsSender#receiveClientPacketFrom(Player, PacketWrapper)}.
+   * {@code PacketEventsLinkage} consumes the flag for the replayed packet, and the trailing clear
+   * is the same defensive one the ProtocolLib path performs - the replay is synchronous on the
+   * connection's netty thread, so by the time it returns the flag has already been consumed.
+   *
+   * @param player The player to redirect the packet for
+   * @param action The parked action to redirect
+   */
+  private void redirectValidPacket(Player player, Action action) {
+    if (action instanceof ReplayableAction) {
+      userOf(player).ignoreNextInboundPacket();
+      PacketEventsSender.receiveClientPacketFrom(player, ((ReplayableAction) action).rebuild());
+      userOf(player).receiveNextInboundPacketAgain();
+      return;
+    }
+    redirectValidPacket(player, action.packet());
   }
 
   /**
@@ -897,6 +1229,18 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
    */
   public static class AttackRaytraceMeta extends CheckCustomMetadata {
     public int flyingPacketCounter = 0;
+    /**
+     * The parked attacks and swings, in the order the client sent them.
+     * <p>
+     * Deliberately still one queue and still typed on {@link Action} after the PacketEvents port,
+     * rather than a second engine specific list. The drain in
+     * {@link #handleMovementPacket(Player, User, boolean, boolean)} is the reach check itself, and
+     * an anticheat that ray-traces one copy of that logic per engine is an anticheat whose two
+     * engines eventually disagree. The widening is therefore by subtype only:
+     * {@link PacketEventsAttack} and {@link PacketEventsArmAnimation} extend the ProtocolLib
+     * entries and add nothing the drain reads, so every read and write the ProtocolLib path
+     * performs on this list is exactly the one it performed before.
+     */
     public List<Action> queuedActions = new ArrayList<>();
     public Position lastPosition;
     public long lastReachDetection = 0;
@@ -921,6 +1265,22 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       Pose playerPose
     ) {
       this.packet = packet;
+      this.entityId = entityId;
+      this.shouldResend = shouldResend;
+      this.pendingFeedbackPackets = pendingFeedbackPackets;
+      this.playerPose = playerPose;
+    }
+
+    /**
+     * Parks an attack that has no ProtocolLib container behind it; see {@link PacketEventsAttack}.
+     * The engine that uses this one replays through {@link ReplayableAction#rebuild()}, so
+     * {@link #packet()} is never reached for such an entry.
+     */
+    protected Attack(
+      int entityId, boolean shouldResend,
+      long pendingFeedbackPackets, Pose playerPose
+    ) {
+      this.packet = null;
       this.entityId = entityId;
       this.shouldResend = shouldResend;
       this.pendingFeedbackPackets = pendingFeedbackPackets;
@@ -960,6 +1320,12 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       this.packet = packet;
     }
 
+    /** Parks a swing that has no ProtocolLib container behind it; the twin of
+     * {@link Attack#Attack(int, boolean, long, Pose)}. */
+    protected ArmAnimation() {
+      this.packet = null;
+    }
+
     public PacketContainer packet() {
       return packet;
     }
@@ -973,6 +1339,58 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
   public interface Action {
     PacketContainer packet();
     @Nullable Pose pose();
+  }
+
+  /**
+   * An {@link Action} that hands itself back to the server as a PacketEvents wrapper instead of a
+   * ProtocolLib {@link PacketContainer}.
+   * <p>
+   * A PacketEvents subscription never sees a container; it sees a wrapper over the connection's
+   * inbound buffer, which is recycled as soon as the listener returns. So the two implementations
+   * below park the packet's decoded fields in an {@link AttackRaytraceReplay} and build an
+   * equivalent packet again here, at the moment the queue drains.
+   * {@link #redirectValidPacket(Player, Action)} is the only caller.
+   */
+  public interface ReplayableAction extends Action {
+    /** @return a fresh wrapper equivalent to the packet that was parked. */
+    PacketWrapper<?> rebuild();
+  }
+
+  /**
+   * The PacketEvents shape of {@link Attack}. Everything the drain reads - the entity id, the
+   * pending feedback count, the pose, whether it should be resent - is inherited unchanged, so the
+   * ray-tracing logic never learns which engine parked the hit.
+   */
+  public static final class PacketEventsAttack extends Attack implements ReplayableAction {
+    private final AttackRaytraceReplay replay;
+
+    public PacketEventsAttack(
+      AttackRaytraceReplay replay, int entityId,
+      boolean shouldResend, long pendingFeedbackPackets,
+      Pose playerPose
+    ) {
+      super(entityId, shouldResend, pendingFeedbackPackets, playerPose);
+      this.replay = replay;
+    }
+
+    @Override
+    public PacketWrapper<?> rebuild() {
+      return replay.rebuild();
+    }
+  }
+
+  /** The PacketEvents shape of {@link ArmAnimation}. */
+  public static final class PacketEventsArmAnimation extends ArmAnimation implements ReplayableAction {
+    private final AttackRaytraceReplay replay;
+
+    public PacketEventsArmAnimation(AttackRaytraceReplay replay) {
+      this.replay = replay;
+    }
+
+    @Override
+    public PacketWrapper<?> rebuild() {
+      return replay.rebuild();
+    }
   }
 
   /**

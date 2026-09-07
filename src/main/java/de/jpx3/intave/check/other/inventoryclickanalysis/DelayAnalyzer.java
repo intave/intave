@@ -1,17 +1,21 @@
 package de.jpx3.intave.check.other.inventoryclickanalysis;
 
-import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.other.InventoryClickAnalysis;
-import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
+import de.jpx3.intave.packet.reader.WindowClickReader;
+import de.jpx3.intave.packet.view.PacketEventsWindowClickView;
+import de.jpx3.intave.packet.view.ProtocolLibWindowClickView;
+import de.jpx3.intave.packet.view.WindowClickView;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
@@ -26,17 +30,13 @@ import java.util.List;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.WINDOW_CLICK;
 
 public final class DelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, DelayAnalyzer.ClickDelayMeta> {
-  private static final boolean MODERN_WINDOW_CLICK = ProtocolLibraryAdapter.serverVersion().isAtLeast(MinecraftVersions.VER1_9_0);
-
   private final IntavePlugin plugin;
   private final boolean highToleranceMode;
-  private final Class<?> clickType;
 
   public DelayAnalyzer(InventoryClickAnalysis parentCheck, boolean highToleranceMode) {
     super(parentCheck, ClickDelayMeta.class);
     this.highToleranceMode = highToleranceMode;
     this.plugin = IntavePlugin.singletonInstance();
-    this.clickType = MODERN_WINDOW_CLICK ? Lookup.serverClass("InventoryClickType") : null;
   }
 
   @PacketSubscription(
@@ -45,8 +45,34 @@ public final class DelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, D
       WINDOW_CLICK
     }
   )
-  public void windowClickPacket(PacketEvent event) {
-    Player player = event.getPlayer();
+  public void windowClickPacket(Player player, WindowClickReader reader) {
+    handleWindowClick(new ProtocolLibWindowClickView(player, reader));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      WINDOW_CLICK
+    }
+  )
+  public void windowClickPacket(PacketReceiveEvent event) {
+    PacketEventsWindowClickView view = PacketEventsWindowClickView.of(event);
+    if (view == null || view.player() == null) {
+      return;
+    }
+    handleWindowClick(view);
+  }
+
+  /**
+   * Engine independent container click handling; see {@link WindowClickView}.
+   * <p>
+   * {@code droppedAnItem} was read by hand from the packet before: the modern enum click type on
+   * 1.9+ servers, the raw mode integer below that. {@link WindowClickView#isDrop()} performs the
+   * exact same two branches, so the behaviour is unchanged and the version gate lives in one place.
+   */
+  private void handleWindowClick(WindowClickView view) {
+    Player player = view.player();
     if (player.getGameMode().equals(GameMode.CREATIVE)) {
       return;
     }
@@ -61,16 +87,10 @@ public final class DelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, D
       return;
     }
 
-    int slot = event.getPacket().getIntegers().read(1);
-    ItemStack itemStack = event.getPacket().getItemModifier().read(0);
+    int slot = view.slot();
+    ItemStack itemStack = view.itemStack();
     Material clickedItemID = itemStack == null ? Material.AIR : itemStack.getType();
-    boolean droppedAnItem;
-    if (MODERN_WINDOW_CLICK) {
-      InventoryClickTypes clickTypes = event.getPacket().getEnumModifier(InventoryClickTypes.class, clickType).read(0);
-      droppedAnItem = clickTypes == InventoryClickTypes.THROW && slot != -999;
-    } else {
-      droppedAnItem = event.getPacket().getIntegers().read(3) == 4 && slot != -999;
-    }
+    boolean droppedAnItem = view.isDrop();
 
     if (slot != -999 && meta.lastClickedSlot != -999) {
       if ((clickedItemID != meta.lastClickedMaterial || droppedAnItem) && meta.lastClickedTimeStamp != 0) {

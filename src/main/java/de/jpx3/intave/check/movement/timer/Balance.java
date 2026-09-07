@@ -1,5 +1,6 @@
 package de.jpx3.intave.check.movement.timer;
 
+import de.jpx3.intave.packet.view.MovementView;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.check.CheckStatistics;
@@ -9,6 +10,7 @@ import de.jpx3.intave.check.movement.Timer;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
@@ -49,14 +51,32 @@ public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {
     }
   )
   public void respawnTolerance(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleRespawn(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsOut = {
+      RESPAWN
+    }
+  )
+  public void respawnTolerance(Player player) {
+    // PacketEvents delivers outbound packets before the Bukkit player exists during login.
+    if (player == null) {
+      return;
+    }
+    handleRespawn(player);
+  }
+
+  /** Engine independent respawn tolerance bump. */
+  private void handleRespawn(Player player) {
     metaOf(player).lastRespawn = System.currentTimeMillis();
     metaOf(player).timerBalance -= TimeUnit.MILLISECONDS.toNanos(50);
   }
 
   @DispatchTarget
-  public void receiveMovement(PacketEvent event) {
-    Player player = event.getPlayer();
+  public void receiveMovement(MovementView view) {
+    Player player = view.player();
     if (player == null) {
       return;
     }

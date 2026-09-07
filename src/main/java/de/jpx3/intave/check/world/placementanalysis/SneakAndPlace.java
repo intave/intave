@@ -2,16 +2,20 @@ package de.jpx3.intave.check.world.placementanalysis;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.packet.converter.PlayerAction;
-import de.jpx3.intave.packet.reader.PacketReaders;
-import de.jpx3.intave.packet.reader.PlayerActionReader;
+import de.jpx3.intave.packet.view.PacketEventsBlockInteractionView;
+import de.jpx3.intave.packet.view.PacketEventsPlayerActionView;
+import de.jpx3.intave.packet.view.PlayerActionView;
+import de.jpx3.intave.packet.view.ProtocolLibPlayerActionView;
 import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -53,7 +57,25 @@ public final class SneakAndPlace extends PlayerCheckPart<PlacementAnalysis> {
 		}
 	)
 	public void clientTickUpdate(PacketEvent event) {
-		Player player = event.getPlayer();
+		handleClientTick(event.getPlayer());
+	}
+
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		priority = ListenerPriority.HIGH,
+		packetsIn = {
+			FLYING, LOOK, POSITION, POSITION_LOOK
+		}
+	)
+	public void clientTickUpdate(Player player) {
+		if (player == null) {
+			return;
+		}
+		handleClientTick(player);
+	}
+
+	/** Engine independent body: a movement packet is only used here as a client tick marker. */
+	private void handleClientTick(Player player) {
 		if (placedInThisTick || sneakChangedInThisTick) {
 //      player.sendMessage(sneakInThisTick + "("+startSneakInThisTick+","+stopSneakInThisTick+")/" + placedInThisTick);
 			if (placedInThisTick) {
@@ -108,6 +130,31 @@ public final class SneakAndPlace extends PlayerCheckPart<PlacementAnalysis> {
 		if (facing == null) {
 			facing = 0;
 		}
+		handlePlacement(player, facing);
+	}
+
+	/**
+	 * PacketEvents entry point. The clicked face is taken from
+	 * {@link PacketEventsBlockInteractionView}, which reports the same 255 "empty interaction"
+	 * marker the ProtocolLib body reads out of the packet's first integer.
+	 */
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		priority = ListenerPriority.HIGH,
+		packetsIn = {
+			BLOCK_PLACE
+		}
+	)
+	public void receivePlacementPacket(PacketReceiveEvent event) {
+		PacketEventsBlockInteractionView view = PacketEventsBlockInteractionView.of(event);
+		if (view == null || view.player() == null) {
+			return;
+		}
+		handlePlacement(view.player(), view.enumDirection());
+	}
+
+	/** Engine independent body: only a placeable block against a real face arms the sneak check. */
+	private void handlePlacement(Player player, int facing) {
 		if (facing == 255) {
 			return;
 		}
@@ -127,11 +174,26 @@ public final class SneakAndPlace extends PlayerCheckPart<PlacementAnalysis> {
 		}
 	)
 	public void receiveEntityActionPacket(PacketEvent event) {
-		Player player = event.getPlayer();
-		PacketContainer packet = event.getPacket();
-		PlayerActionReader reader = PacketReaders.readerOf(packet);
+		handleEntityAction(new ProtocolLibPlayerActionView(event));
+	}
 
-		PlayerAction action = reader.playerAction();
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		priority = ListenerPriority.HIGH,
+		packetsIn = {
+			ENTITY_ACTION_IN
+		}
+	)
+	public void receiveEntityActionPacket(PacketReceiveEvent event) {
+		PacketEventsPlayerActionView view = PacketEventsPlayerActionView.of(event);
+		if (view != null) {
+			handleEntityAction(view);
+		}
+	}
+
+	/** Engine independent body; see {@link PlayerActionView}. */
+	private void handleEntityAction(PlayerActionView view) {
+		PlayerAction action = view.playerAction();
 		if (action.isStartSneak()) {
 			startSneakInThisTick = true;
 			sneakChangedInThisTick = true;
@@ -145,7 +207,7 @@ public final class SneakAndPlace extends PlayerCheckPart<PlacementAnalysis> {
 			sneakDuration = 0;
 		}
 
-		reader.release();
+		view.release();
 	}
 
 	@BukkitEventSubscription

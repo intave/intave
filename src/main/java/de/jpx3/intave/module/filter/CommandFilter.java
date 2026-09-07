@@ -1,10 +1,18 @@
 package de.jpx3.intave.module.filter;
 
-import com.comphenix.protocol.events.PacketContainer;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.comphenix.protocol.events.PacketEvent;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.packet.view.ChatTextView;
+import de.jpx3.intave.packet.view.PacketEventsChatTextView;
+import de.jpx3.intave.packet.view.PacketEventsTabCompleteView;
+import de.jpx3.intave.packet.view.ProtocolLibChatTextView;
+import de.jpx3.intave.packet.view.ProtocolLibTabCompleteView;
+import de.jpx3.intave.packet.view.TabCompleteView;
 import de.jpx3.intave.user.permission.BukkitPermissionCheck;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -40,8 +48,31 @@ public final class CommandFilter extends Filter {
     }
   )
   public void receiveChatPacket(PacketEvent event) {
-    Player player = event.getPlayer();
-    String message = event.getPacket().getStrings().getValues().get(0);
+    handleChatPacket(new ProtocolLibChatTextView(event));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      CHAT_IN, TAB_COMPLETE_IN
+    }
+  )
+  public void receiveChatPacket(PacketReceiveEvent event) {
+    PacketEventsChatTextView view = PacketEventsChatTextView.of(event);
+    if (view == null) {
+      return;
+    }
+    handleChatPacket(view);
+  }
+
+  /** Engine independent command rerouting and hiding; see {@link ChatTextView}. */
+  private void handleChatPacket(ChatTextView view) {
+    Player player = view.player();
+    String message = view.text();
+    if (player == null || message == null) {
+      view.release();
+      return;
+    }
 
     String trimmedMessage = message.trim().toLowerCase();
 
@@ -53,15 +84,16 @@ public final class CommandFilter extends Filter {
           continue;
         }
         trimmedMessage = redirect + trimmedMessage.substring(stringStringEntry.getKey().length());
-        event.getPacket().getStrings().writeSafely(0, trimmedMessage);
+        view.setText(trimmedMessage);
         trimmedMessage = trimmedMessage.trim().toLowerCase();
       }
     }
 
     boolean permitted = BukkitPermissionCheck.permissionCheck(player, "intave.command");
     if ((trimmedMessage.startsWith("/iac") || trimmedMessage.startsWith("/intave")) && !permitted) {
-      event.getPacket().getStrings().writeSafely(0, "/intavecommandforward");
+      view.setText("/intavecommandforward");
     }
+    view.release();
   }
 
 //  @PacketSubscription(
@@ -94,20 +126,44 @@ public final class CommandFilter extends Filter {
     }
   )
   public void receiveTabComplete(PacketEvent event) {
-    Player player = event.getPlayer();
-    PacketContainer packet = event.getPacket();
-    boolean permitted = BukkitPermissionCheck.permissionCheck(player, "intave.command");
-    if (permitted) {
+    handleTabComplete(new ProtocolLibTabCompleteView(event));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsOut = {
+      TAB_COMPLETE_OUT
+    }
+  )
+  public void receiveTabComplete(PacketSendEvent event) {
+    PacketEventsTabCompleteView view = PacketEventsTabCompleteView.of(event);
+    if (view == null) {
       return;
     }
-    String[] stuff = packet.getStringArrays().readSafely(0);
+    handleTabComplete(view);
+  }
+
+  /** Engine independent hiding of Intave's own commands; see {@link TabCompleteView}. */
+  private void handleTabComplete(TabCompleteView view) {
+    Player player = view.player();
+    if (player == null) {
+      view.release();
+      return;
+    }
+    boolean permitted = BukkitPermissionCheck.permissionCheck(player, "intave.command");
+    if (permitted) {
+      view.release();
+      return;
+    }
+    String[] stuff = view.matches();
     if (stuff != null) {
       List<String> newTabCompletions = Lists.newArrayList();
       Arrays.stream(stuff).filter(string -> !string.contains("/intave") && !string.contains("/iac")).forEach(newTabCompletions::add);
       if (newTabCompletions.size() != stuff.length) {
-        packet.getStringArrays().writeSafely(0, newTabCompletions.toArray(new String[0]));
+        view.setMatches(newTabCompletions.toArray(new String[0]));
       }
     }
+    view.release();
   }
 
   @Override

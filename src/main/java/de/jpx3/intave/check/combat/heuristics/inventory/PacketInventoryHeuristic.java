@@ -18,9 +18,13 @@ import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientClientStatus;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
+import de.jpx3.intave.packet.view.PacketEventsMovementView;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
@@ -46,10 +50,40 @@ public final class PacketInventoryHeuristic extends ClassicHeuristic<PacketInven
     }
   )
   public void receiveInventoryOpen(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
     EnumWrappers.ClientCommand clientCommand = event.getPacket().getClientCommands().read(0);
-    if (clientCommand == EnumWrappers.ClientCommand.OPEN_INVENTORY_ACHIEVEMENT) {
+    handleInventoryOpen(
+      event.getPlayer(),
+      clientCommand == EnumWrappers.ClientCommand.OPEN_INVENTORY_ACHIEVEMENT
+    );
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.LOW,
+    packetsIn = {
+      CLIENT_COMMAND
+    }
+  )
+  public void receiveInventoryOpen(PacketReceiveEvent event, Player player) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    // PacketEvents calls the client command packet CLIENT_STATUS; same packet, same action ids.
+    handleInventoryOpen(
+      player,
+      new WrapperPlayClientClientStatus(event).getAction()
+        == WrapperPlayClientClientStatus.Action.OPEN_INVENTORY_ACHIEVEMENT
+    );
+  }
+
+  /**
+   * Engine independent handling; the only thing read off the packet is whether it carried the
+   * "open inventory" command, so that is passed in rather than the packet.
+   */
+  private void handleInventoryOpen(Player player, boolean inventoryOpenCommand) {
+    User user = userOf(player);
+    if (inventoryOpenCommand) {
       PacketInventoryMeta meta = metaOf(user);
       meta.performedInventoryOpenOperation = true;
       meta.inventoryTicks = 0;
@@ -63,7 +97,25 @@ public final class PacketInventoryHeuristic extends ClassicHeuristic<PacketInven
     }
   )
   public void receiveInventoryClose(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleInventoryClose(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.LOW,
+    packetsIn = {
+      CLOSE_WINDOW
+    }
+  )
+  public void receiveInventoryClose(Player player) {
+    if (player == null) {
+      return;
+    }
+    handleInventoryClose(player);
+  }
+
+  /** Engine independent handling; the body only reads Intave's own metadata, not the packet. */
+  private void handleInventoryClose(Player player) {
     User user = userOf(player);
     PacketInventoryMeta meta = metaOf(user);
     ProtocolMetadata clientData = user.meta().protocol();
@@ -87,11 +139,39 @@ public final class PacketInventoryHeuristic extends ClassicHeuristic<PacketInven
     }
   )
   public void receiveMovement(PacketEvent event) {
-    Player player = event.getPlayer();
+    PacketContainer packet = event.getPacket();
+    // Left byte for byte as it was: this reads boolean index 2 directly rather than going through
+    // PlayerMoveReader.hasRotation(), which shifts that index on 1.21.3+.
+    boolean hasRotation = packet.getBooleans().read(2);
+    handleMovement(event.getPlayer(), hasRotation);
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      POSITION, POSITION_LOOK, FLYING, LOOK
+    }
+  )
+  public void receiveMovement(PacketReceiveEvent event) {
+    PacketEventsMovementView view = PacketEventsMovementView.of(event);
+    if (view == null) {
+      return;
+    }
+    Player player = view.player();
+    if (player == null) {
+      return;
+    }
+    handleMovement(player, view.hasRotation());
+  }
+
+  /**
+   * Engine independent handling; the only thing read off the packet is whether it carried a
+   * rotation, so that is passed in rather than the packet.
+   */
+  private void handleMovement(Player player, boolean hasRotation) {
     User user = userOf(player);
     PacketInventoryMeta meta = metaOf(user);
-    PacketContainer packet = event.getPacket();
-    boolean hasRotation = packet.getBooleans().read(2);
 
     InventoryMetadata inventoryData = user.meta().inventory();
     SimulationEnvironment movementData = user.meta().movement();

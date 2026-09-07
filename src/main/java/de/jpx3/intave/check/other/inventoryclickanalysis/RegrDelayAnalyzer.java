@@ -12,11 +12,13 @@
 package de.jpx3.intave.check.other.inventoryclickanalysis;
 
 import com.comphenix.protocol.events.PacketContainer;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.other.InventoryClickAnalysis;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.math.Matrix;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -25,6 +27,9 @@ import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.module.violation.ViolationProcessor;
 import de.jpx3.intave.packet.reader.WindowClickReader;
+import de.jpx3.intave.packet.view.PacketEventsWindowClickView;
+import de.jpx3.intave.packet.view.ProtocolLibWindowClickView;
+import de.jpx3.intave.packet.view.WindowClickView;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import org.bukkit.GameMode;
@@ -52,6 +57,22 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
     }
   )
   public void openWindowPacket(Player player, PacketContainer packet) {
+    handleOpenWindow(player);
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsOut = {
+      PacketId.Server.OPEN_WINDOW
+    }
+  )
+  public void openWindowPacket(Player player) {
+    handleOpenWindow(player);
+  }
+
+  /** Engine independent body; the subscription never read the packet, only the player. */
+  private void handleOpenWindow(Player player) {
     User user = userOf(player);
     ClickDelayMeta meta = metaOf(user);
     user.tickFeedback(() -> {
@@ -72,6 +93,27 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
     }
   )
   public void windowClickPacket(Player player, WindowClickReader windowClick) {
+    handleWindowClick(new ProtocolLibWindowClickView(player, windowClick));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      WINDOW_CLICK
+    }
+  )
+  public void windowClickPacket(PacketReceiveEvent event) {
+    PacketEventsWindowClickView view = PacketEventsWindowClickView.of(event);
+    if (view == null || view.player() == null) {
+      return;
+    }
+    handleWindowClick(view);
+  }
+
+  /** Engine independent container click handling; see {@link WindowClickView}. */
+  private void handleWindowClick(WindowClickView windowClick) {
+    Player player = windowClick.player();
     if (player.getGameMode().equals(GameMode.CREATIVE)) {
       return;
     }
@@ -104,6 +146,22 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
     }
   )
   public void closeWindowPacket(Player player) {
+    handleCloseWindow(player);
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      CLOSE_WINDOW
+    }
+  )
+  public void closeWindowPacketFromPacketEvents(Player player) {
+    handleCloseWindow(player);
+  }
+
+  /** Engine independent body; the subscription never read the packet, only the player. */
+  private void handleCloseWindow(Player player) {
     User user = userOf(player);
     ClickDelayMeta meta = metaOf(user);
 

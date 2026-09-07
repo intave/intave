@@ -12,10 +12,16 @@
 package de.jpx3.intave.module.tracker.player;
 
 import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerAbilities;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerCamera;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerChangeGameState;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -23,9 +29,16 @@ import de.jpx3.intave.packet.reader.AbilityInReader;
 import de.jpx3.intave.packet.reader.AbilityOutReader;
 import de.jpx3.intave.packet.reader.EntityReader;
 import de.jpx3.intave.packet.reader.GameStateChangeReader;
+import de.jpx3.intave.packet.view.AbilityView;
+import de.jpx3.intave.packet.view.FeedbackHandle;
+import de.jpx3.intave.packet.view.PacketEventsAbilityView;
+import de.jpx3.intave.packet.view.PacketEventsFeedbackHandle;
+import de.jpx3.intave.packet.view.ProtocolLibAbilityView;
+import de.jpx3.intave.packet.view.ProtocolLibFeedbackHandle;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -40,7 +53,22 @@ import static de.jpx3.intave.packet.reader.GameStateChangeReader.GameState.CHANG
 public final class AbilityTracker extends Module {
   @PacketSubscription(packetsOut = CAMERA)
   public void receiveCamera(User user, EntityReader reader) {
-    int entityId = reader.entityId();
+    handleCamera(user, reader.entityId());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsOut = CAMERA
+  )
+  public void receiveCamera(PacketSendEvent event, Player player) {
+    if (player == null) {
+      return;
+    }
+    handleCamera(UserRepository.userOf(player), new WrapperPlayServerCamera(event).getCameraId());
+  }
+
+  /** Engine independent camera handling; the packet only carries the viewed entity's id. */
+  private void handleCamera(User user, int entityId) {
     user.tickFeedback(() -> synchronizedCameraUpdate(user, entityId));
   }
 
@@ -54,9 +82,28 @@ public final class AbilityTracker extends Module {
     packetsIn = {ABILITIES_IN}
   )
   public void receiveAbilities(User user, AbilityInReader reader) {
+    handleAbilities(user, reader.requestedFlying());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {ABILITIES_IN}
+  )
+  public void receiveAbilities(PacketReceiveEvent event, Player player) {
+    if (player == null) {
+      return;
+    }
+    handleAbilities(
+      UserRepository.userOf(player),
+      new WrapperPlayClientPlayerAbilities(event).isFlying()
+    );
+  }
+
+  /** Engine independent inbound abilities handling; only the requested flying flag is read. */
+  private void handleAbilities(User user, boolean flying) {
     AbilityMetadata abilityData = user.meta().abilities();
     MovementMetadata movementData = user.meta().movement();
-    boolean flying = reader.requestedFlying();
     if (abilityData.allowFlying()) {
       if (flying) {
         abilityData.setFlying(true);
@@ -73,12 +120,55 @@ public final class AbilityTracker extends Module {
     }
   )
   public void sentAbilities(User user, AbilityOutReader reader, PacketEvent event) {
+    // The view wraps the reader the linker already injected, so the pooling and release semantics
+    // of this path are untouched: nothing here acquires or releases a reader.
+    handleSentAbilities(
+      user,
+      new ProtocolLibAbilityView(event, reader),
+      ProtocolLibFeedbackHandle.of(event)
+    );
+  }
+
+  /**
+   * PacketEvents entry point for the same packet.
+   * <p>
+   * The three fields this handler reads - fly speed, walk speed and the flight allowed flag - are
+   * exactly the outbound half of {@link AbilityView}, so
+   * {@link PacketEventsAbilityView} serves them without any per-version branching. The tick
+   * feedback is requested through the engine neutral {@link FeedbackHandle}; the PacketEvents
+   * handle reports no bundling target, so the transaction is sent unbundled, exactly as the
+   * ProtocolLib path does on every server below 1.19.4.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsOut = {
+      ABILITIES_OUT
+    }
+  )
+  public void sentAbilities(PacketSendEvent event, Player player) {
+    if (player == null) {
+      return;
+    }
+    PacketEventsAbilityView view = PacketEventsAbilityView.of(event);
+    if (view == null) {
+      return;
+    }
+    handleSentAbilities(
+      UserRepository.userOf(player),
+      view,
+      PacketEventsFeedbackHandle.of(event)
+    );
+  }
+
+  /** Engine independent outbound ability handling; every packet read goes through the view. */
+  private void handleSentAbilities(User user, AbilityView view, FeedbackHandle handle) {
     MetadataBundle meta = user.meta();
     MovementMetadata movement = meta.movement();
     AbilityMetadata abilityData = meta.abilities();
-    float flyingSpeed = reader.flyingSpeed();
-    float walkingSpeed = reader.walkingSpeed();
-    boolean allowedFlight = reader.flyingAllowed();
+    float flyingSpeed = view.flyingSpeed();
+    float walkingSpeed = view.walkingSpeed();
+    boolean allowedFlight = view.flyingAllowed();
     boolean critical = abilityData.allowFlying() && !allowedFlight && movement.criticalTeleportRateLimiter.tryAcquire();
     if (critical /*&& movement.lastTeleport < 20*/) {
       // Teleport again to force transaction synchronization
@@ -109,7 +199,7 @@ public final class AbilityTracker extends Module {
         movement.criticalEnterPosZ = movement.verifiedLastPositionZ;
       }
     }
-    user.packetTickFeedback(event, () -> {
+    user.packetTickFeedback(handle, () -> {
       abilityData.setWalkSpeed(walkingSpeed);
       abilityData.setFlySpeed(flyingSpeed);
       abilityData.setAllowFlying(allowedFlight);
@@ -127,6 +217,23 @@ public final class AbilityTracker extends Module {
     packetsIn = {FLYING, PacketId.Client.POSITION, LOOK, POSITION_LOOK}
   )
   public void incomingFlyingUpdate(User user, Player player) {
+    handleIncomingFlyingUpdate(user, player);
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {FLYING, PacketId.Client.POSITION, LOOK, POSITION_LOOK}
+  )
+  public void incomingFlyingUpdate(Player player) {
+    if (player == null) {
+      return;
+    }
+    handleIncomingFlyingUpdate(UserRepository.userOf(player), player);
+  }
+
+  /** Engine independent flying update handling; nothing of the packet body is read. */
+  private void handleIncomingFlyingUpdate(User user, Player player) {
     MovementMetadata movementData = user.meta().movement();
     if (movementData.criticalFlyingDisallowStacks > 0 &&
       !movementData.criticalFlyingDisallowWasTeleported
@@ -163,6 +270,22 @@ public final class AbilityTracker extends Module {
     packetsOut = PacketId.Server.POSITION
   )
   public void outgoingPositionUpdate(User user) {
+    handleOutgoingPositionUpdate(user);
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsOut = PacketId.Server.POSITION
+  )
+  public void outgoingPositionUpdate(Player player) {
+    if (player == null) {
+      return;
+    }
+    handleOutgoingPositionUpdate(UserRepository.userOf(player));
+  }
+
+  /** Engine independent outbound teleport handling; nothing of the packet body is read. */
+  private void handleOutgoingPositionUpdate(User user) {
     MovementMetadata movementData = user.meta().movement();
     movementData.criticalFlyingDisallowWasTeleported = movementData.criticalFlyingDisallowStacks == 1;
   }
@@ -179,7 +302,31 @@ public final class AbilityTracker extends Module {
     if (reader.type() != CHANGE_GAME_MODE) {
       return;
     }
-    GameMode gameMode = gameModeOf(reader.valueAsInt());
+    handleGameModeUpdate(user, reader.valueAsInt());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.NORMAL,
+    packetsOut = {
+      GAME_STATE_CHANGE
+    }
+  )
+  public void outgoingGameModeUpdate(PacketSendEvent event, Player player) {
+    if (player == null) {
+      return;
+    }
+    WrapperPlayServerChangeGameState wrapper = new WrapperPlayServerChangeGameState(event);
+    if (wrapper.getReason() != WrapperPlayServerChangeGameState.Reason.CHANGE_GAME_MODE) {
+      return;
+    }
+    // The reader rounds the float value the same way before resolving the game mode id.
+    handleGameModeUpdate(UserRepository.userOf(player), (int) (wrapper.getValue() + 0.5F));
+  }
+
+  /** Engine independent game mode handling; the packet only carries the new mode's id. */
+  private void handleGameModeUpdate(User user, int gameModeId) {
+    GameMode gameMode = gameModeOf(gameModeId);
     AbilityMetadata abilityData = user.meta().abilities();
     abilityData.setPendingGameMode(gameMode);
     user.tickFeedback(() -> abilityData.setGameMode(gameMode));

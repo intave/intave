@@ -53,6 +53,18 @@ public final class ChunkAccessPatcher extends Module {
     patchWorld(event.getWorld());
   }
 
+  /**
+   * No PacketEvents twin exists for this subscription, and none can. The check repairs a null field
+   * on the NMS respawn packet <em>object</em> before ProtocolLib re-serialises it - a hazard that
+   * only exists because ProtocolLib hands out the live object. PacketEvents intercepts the already
+   * encoded buffer, where the world type has necessarily survived vanilla's own encoder, so there is
+   * no null left to observe or to overwrite.
+   * <p>
+   * The field is not reachable either: PacketEvents 2.4.0's {@code WrapperPlayServerRespawn} has no
+   * legacy level type accessor at all - it folds the pre 1.16 level type string into its
+   * {@code worldFlat} and {@code worldDebug} booleans and exposes neither the raw string nor a
+   * setter for it.
+   */
   @PacketSubscription(
     packetsOut = PacketId.Server.RESPAWN
   )

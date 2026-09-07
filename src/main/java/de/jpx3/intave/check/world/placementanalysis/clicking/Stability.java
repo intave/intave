@@ -4,6 +4,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.violation.Violation;
@@ -38,7 +39,25 @@ public final class Stability extends PlayerCheckPart<PlacementAnalysis> {
 		packetsIn = BLOCK_PLACE
 	)
 	public void receiveSwing(PacketEvent event) {
-		Player player = event.getPlayer();
+		handlePlacement(event.getPlayer());
+	}
+
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		packetsIn = BLOCK_PLACE
+	)
+	public void receiveSwing(Player player) {
+		if (player == null) {
+			return;
+		}
+		handlePlacement(player);
+	}
+
+	/**
+	 * Engine independent body: the check only times the placements, it never reads a packet field,
+	 * so both backends can share it verbatim.
+	 */
+	private void handlePlacement(Player player) {
 		User user = userOf(player);
 
 		// Calculating when the last swing was

@@ -1,11 +1,17 @@
 package de.jpx3.intave.module.tracker.player;
 
 import com.comphenix.protocol.events.PacketContainer;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientUpdateCommandBlockMinecart;
 import de.jpx3.intave.connect.sibyl.LabyModChannelHelper;
 import de.jpx3.intave.module.Module;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.packet.reader.PayloadInReader;
+import de.jpx3.intave.packet.view.PacketEventsPayloadInView;
+import de.jpx3.intave.packet.view.PayloadInView;
+import de.jpx3.intave.packet.view.ProtocolLibPayloadInView;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -83,8 +89,32 @@ public final class MovementDebugTracker extends Module implements PluginMessageL
     try(
       PayloadInReader reader = PacketReaders.readerOf(packet);
     ) {
-      if (reader.tag().equalsIgnoreCase("MC|AdvCdm")) {
-        ByteBuf bytes = reader.readBytes();
+      handleCustomPayloadIn(user, new ProtocolLibPayloadInView(user.player(), reader, cancellable));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {CUSTOM_PAYLOAD_IN}
+  )
+  public void onCustomPayloadIn(PacketReceiveEvent event, Player player) {
+    if (!ENABLE_MOVEMENT_DEBUGGER_COLLECTOR || player == null) {
+      return;
+    }
+    PacketEventsPayloadInView view = PacketEventsPayloadInView.of(event);
+    if (view == null) {
+      return;
+    }
+    handleCustomPayloadIn(UserRepository.userOf(player), view);
+  }
+
+  /** Engine independent debug payload handling; see {@link PayloadInView}. */
+  private void handleCustomPayloadIn(User user, PayloadInView view) {
+    try {
+      if (view.tag().equalsIgnoreCase("MC|AdvCdm")) {
+        ByteBuf bytes = view.readBytes();
         int type = bytes.readByte();
         if (type != 1) {
           return;
@@ -98,14 +128,14 @@ public final class MovementDebugTracker extends Module implements PluginMessageL
         String[] split = subCommand.split(":");
         if (split.length != 2) {
           System.out.println("Invalid command format: " + command);
-          cancellable.setCancelled(true);
+          view.setCancelled(true);
           return;
         }
         String key = split[0];
         String value = split[1];
         ProtocolMetadata protocol = user.meta().protocol();
         protocol.debugStates.put(key, value);
-        cancellable.setCancelled(true);
+        view.setCancelled(true);
       }
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -131,20 +161,53 @@ public final class MovementDebugTracker extends Module implements PluginMessageL
     if (command == null) {
       return;
     }
-    if (!command.startsWith(PREFIX)) {
+    if (handleCommandMinecart(user, command)) {
+      cancellable.setCancelled(true);
+    }
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {SET_COMMAND_MINECART},
+    debug = true
+  )
+  public void onTabCompleteIn(PacketReceiveEvent event, Player player) {
+    if (!ENABLE_MOVEMENT_DEBUGGER_COLLECTOR || player == null) {
       return;
+    }
+    WrapperPlayClientUpdateCommandBlockMinecart wrapper =
+      new WrapperPlayClientUpdateCommandBlockMinecart(event);
+    if (wrapper.getEntityId() != -1) {
+      return;
+    }
+    String command = wrapper.getCommand();
+    if (command == null) {
+      return;
+    }
+    if (handleCommandMinecart(UserRepository.userOf(player), command)) {
+      event.setCancelled(true);
+    }
+  }
+
+  /**
+   * Engine independent debug command handling; the packet only carries the minecart id (already
+   * checked by the caller) and the command string.
+   *
+   * @return true when the packet has to be cancelled.
+   */
+  private boolean handleCommandMinecart(User user, String command) {
+    if (!command.startsWith(PREFIX)) {
+      return false;
     }
     String subCommand = command.substring(PREFIX.length());
     String[] split = subCommand.split(":");
     if (split.length != 2) {
-      cancellable.setCancelled(true);
-      return;
+      return true;
     }
     String key = split[0];
     String value = split[1];
     ProtocolMetadata protocol = user.meta().protocol();
     protocol.debugStates.put(key, value);
-    cancellable.setCancelled(true);
 
     if (key.equalsIgnoreCase("entity_pos_after_update")) {
       if (value != null) {
@@ -166,5 +229,6 @@ public final class MovementDebugTracker extends Module implements PluginMessageL
         }
       }
     }
+    return true;
   }
 }

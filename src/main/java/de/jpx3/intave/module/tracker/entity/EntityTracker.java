@@ -33,8 +33,14 @@ import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.feedback.EmptyFeedbackCallback;
 import de.jpx3.intave.module.feedback.FeedbackObserver;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.linker.packet.pe.PacketEventWrapper;
+import de.jpx3.intave.module.linker.packet.pe.PacketEventsIdMapper;
 import de.jpx3.intave.module.nayoro.Nayoro;
 import de.jpx3.intave.module.nayoro.SampleTypes;
 import de.jpx3.intave.packet.PacketSender;
@@ -42,6 +48,27 @@ import de.jpx3.intave.packet.PacketTypes;
 import de.jpx3.intave.packet.reader.EntityIterable;
 import de.jpx3.intave.packet.reader.EntityMetadataReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.packet.view.EntityAttachView;
+import de.jpx3.intave.packet.view.EntityDestroyView;
+import de.jpx3.intave.packet.view.EntityInteractIdView;
+import de.jpx3.intave.packet.view.EntityMetadataView;
+import de.jpx3.intave.packet.view.EntityRelativeMoveView;
+import de.jpx3.intave.packet.view.EntityStatusView;
+import de.jpx3.intave.packet.view.FeedbackHandle;
+import de.jpx3.intave.packet.view.PacketEventsEntityAttachView;
+import de.jpx3.intave.packet.view.PacketEventsEntityDestroyView;
+import de.jpx3.intave.packet.view.PacketEventsEntityInteractIdView;
+import de.jpx3.intave.packet.view.PacketEventsEntityMetadataView;
+import de.jpx3.intave.packet.view.PacketEventsEntityRelativeMoveView;
+import de.jpx3.intave.packet.view.PacketEventsEntityStatusView;
+import de.jpx3.intave.packet.view.PacketEventsFeedbackHandle;
+import de.jpx3.intave.packet.view.ProtocolLibEntityAttachView;
+import de.jpx3.intave.packet.view.ProtocolLibEntityDestroyView;
+import de.jpx3.intave.packet.view.ProtocolLibEntityInteractIdView;
+import de.jpx3.intave.packet.view.ProtocolLibEntityMetadataView;
+import de.jpx3.intave.packet.view.ProtocolLibEntityRelativeMoveView;
+import de.jpx3.intave.packet.view.ProtocolLibEntityStatusView;
+import de.jpx3.intave.packet.view.ProtocolLibFeedbackHandle;
 import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.player.fake.IdentifierReserve;
 import de.jpx3.intave.share.ClientMath;
@@ -117,63 +144,95 @@ public final class EntityTracker extends Module {
     ignoreCancelled = false
   )
   public void sendAttachEntityPacket(PacketEvent event) {
-    PacketContainer packet = event.getPacket();
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
-    if (event.getPacketType() == PacketType.Play.Server.MOUNT) {
+    handleAttachEntity(new ProtocolLibEntityAttachView(event));
+  }
+
+  /**
+   * PacketEvents entry point for {@link #sendAttachEntityPacket(PacketEvent)}.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsOut = {
+      MOUNT, ATTACH_ENTITY
+    },
+    ignoreCancelled = false
+  )
+  public void sendAttachEntityPacket(PacketSendEvent event) {
+    PacketEventsEntityAttachView view = PacketEventsEntityAttachView.of(event);
+    if (view == null) {
+      return;
+    }
+    if (view.player() == null) {
+      return;
+    }
+    handleAttachEntity(view);
+  }
+
+  /** Engine independent vehicle and passenger tracking; see {@link EntityAttachView}. */
+  private void handleAttachEntity(EntityAttachView view) {
+    User user = UserRepository.userOf(view.player());
+    if (view.isMount()) {
       //1.9+ servers
-      int vehicleId = packet.getIntegers().read(0);
-      Entity vehicle = UserRepository.userOf(player).meta().connection().entityBy(vehicleId);
-      if (vehicle == null) {
-//        IntaveLogger.logger().error("Vehicle entity not found in mount request: " + vehicleId);
-        detachEntity(user, vehicleId, -1);
-        return;
-      }
-      int[] newPassengers = event.getPacket().getIntegerArrays().read(0);
-      List<Entity> oldPassengers = vehicle.passengers();
-      List<Integer> toAdd = new ArrayList<>();
-      List<Integer> toRemove = new ArrayList<>();
-      for (int passengerId : newPassengers) {
-        boolean b = true;
-        for (Entity entity : oldPassengers) {
-          if (entity.entityId() == passengerId) {
-            b = false;
-            break;
-          }
-        }
-        if (b) {
-          toAdd.add(passengerId);
-        }
-      }
-      for (Entity passenger : oldPassengers) {
-        boolean b = true;
-        for (int id : newPassengers) {
-          if (id == passenger.entityId()) {
-            b = false;
-            break;
-          }
-        }
-        if (b) {
-          toRemove.add(passenger.entityId());
-        }
-      }
-      for (Integer passengerRemoval : toRemove) {
-        detachEntity(user, vehicleId, passengerRemoval);
-      }
-      for (Integer passengerAddition : toAdd) {
-        attachEntity(user, vehicleId, passengerAddition);
-      }
-    } else if (event.getPacketType() == PacketType.Play.Server.ATTACH_ENTITY) {
+      handleMount(user, view);
+    } else if (view.isLegacyAttach()) {
       // 1.8 servers
-      int isLeash = packet.getIntegers().read(0);
-      if (isLeash == 0) {
-        int passengerId = packet.getIntegers().read(1);
-        int vehicleId = packet.getIntegers().read(2);
-        if (vehicleId == -1) {
-          detachEntity(user, -1, passengerId);
-        } else {
-          attachEntity(user, vehicleId, passengerId);
+      handleLegacyAttach(user, view);
+    }
+    view.release();
+  }
+
+  private void handleMount(User user, EntityAttachView view) {
+    int vehicleId = view.vehicleId();
+    Entity vehicle = user.meta().connection().entityBy(vehicleId);
+    if (vehicle == null) {
+//        IntaveLogger.logger().error("Vehicle entity not found in mount request: " + vehicleId);
+      detachEntity(user, vehicleId, -1);
+      return;
+    }
+    int[] newPassengers = view.passengers();
+    List<Entity> oldPassengers = vehicle.passengers();
+    List<Integer> toAdd = new ArrayList<>();
+    List<Integer> toRemove = new ArrayList<>();
+    for (int passengerId : newPassengers) {
+      boolean b = true;
+      for (Entity entity : oldPassengers) {
+        if (entity.entityId() == passengerId) {
+          b = false;
+          break;
         }
+      }
+      if (b) {
+        toAdd.add(passengerId);
+      }
+    }
+    for (Entity passenger : oldPassengers) {
+      boolean b = true;
+      for (int id : newPassengers) {
+        if (id == passenger.entityId()) {
+          b = false;
+          break;
+        }
+      }
+      if (b) {
+        toRemove.add(passenger.entityId());
+      }
+    }
+    for (Integer passengerRemoval : toRemove) {
+      detachEntity(user, vehicleId, passengerRemoval);
+    }
+    for (Integer passengerAddition : toAdd) {
+      attachEntity(user, vehicleId, passengerAddition);
+    }
+  }
+
+  private void handleLegacyAttach(User user, EntityAttachView view) {
+    if (!view.isLeash()) {
+      int passengerId = view.passengerId();
+      int vehicleId = view.vehicleId();
+      if (vehicleId == -1) {
+        detachEntity(user, -1, passengerId);
+      } else {
+        attachEntity(user, vehicleId, passengerId);
       }
     }
   }
@@ -242,6 +301,20 @@ public final class EntityTracker extends Module {
     }
   }
 
+  /**
+   * ProtocolLib only; there is deliberately no PacketEvents twin.
+   * <p>
+   * Spawn packets are the one place where Intave has to name an entity type it has never seen as a
+   * Bukkit entity, and {@link EntityTypeResolver} does that through server internals rather than
+   * through the wire payload: {@code entityTypeDataOfLivingEntity} reads the packet's
+   * {@code WrappedDataWatcher}, pulls the live NMS entity out of it by a version specific field
+   * name and measures its hitbox off the NMS class, and {@code entityTypeDataOfDeadEntity} falls
+   * back to ProtocolLib's {@code getEntityTypeModifier} and to {@code HitboxSizeAccess}
+   * measurements of the resolved NMS class. PacketEvents decodes the metadata into its own
+   * {@code EntityData} values and never exposes the server side data watcher or the entity behind
+   * it, so that resolution has no equivalent - and a spawn whose type resolves wrong hands every
+   * downstream reach and hitbox check a wrong bounding box.
+   */
   @PacketSubscription(
     packetsOut = {
       SPAWN_ENTITY_LIVING, SPAWN_ENTITY, NAMED_ENTITY_SPAWN
@@ -414,12 +487,44 @@ public final class EntityTracker extends Module {
     ignoreCancelled = false
   )
   public void receiveEntityDestroy(PacketEvent event, Player player, EntityIterable iterable) {
-    iterable.forEach(entityId ->
-      enterEntityDestroy(event, player, entityId)
+    handleEntityDestroy(
+      new ProtocolLibEntityDestroyView(player, iterable),
+      ProtocolLibFeedbackHandle.of(event)
     );
   }
 
-  private void enterEntityDestroy(PacketEvent event, Player player, int entityID) {
+  /**
+   * PacketEvents entry point for {@link #receiveEntityDestroy(PacketEvent, Player, EntityIterable)}.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsOut = {
+      ENTITY_DESTROY
+    },
+    ignoreCancelled = false
+  )
+  public void receiveEntityDestroy(PacketSendEvent event) {
+    PacketEventsEntityDestroyView view = PacketEventsEntityDestroyView.of(event);
+    if (view == null) {
+      return;
+    }
+    if (view.player() == null) {
+      return;
+    }
+    handleEntityDestroy(view, PacketEventsFeedbackHandle.of(event));
+  }
+
+  /** Engine independent entity despawn tracking; see {@link EntityDestroyView}. */
+  private void handleEntityDestroy(EntityDestroyView view, FeedbackHandle handle) {
+    Player player = view.player();
+    view.forEachEntityId(entityId ->
+      enterEntityDestroy(handle, player, entityId)
+    );
+    view.release();
+  }
+
+  private void enterEntityDestroy(FeedbackHandle handle, Player player, int entityID) {
     // Entity destroy packets are NEVER to be synchronized
     /*
     Important: When the destroy entity packet is synchronised the spawn entity packet needs also be synchronized because:
@@ -431,10 +536,10 @@ public final class EntityTracker extends Module {
     if (connection.duplicatedEntityIds.contains(entityID)) {
       return;
     }
-    processEntityDestroy(event, player, entityID);
+    processEntityDestroy(handle, player, entityID);
   }
 
-  private void processEntityDestroy(PacketEvent event, Player player, int entityId) {
+  private void processEntityDestroy(FeedbackHandle handle, Player player, int entityId) {
     User user = UserRepository.userOf(player);
     AttackMetadata attackData = user.meta().attack();
     ConnectionMetadata connection = user.meta().connection();
@@ -446,7 +551,7 @@ public final class EntityTracker extends Module {
     }
     if (entity != null && isFireworkRocket(entity.typeData())
       && movementData.beginFireworkRocketDetachment(entityId)) {
-      user.packetTickFeedback(event, () ->
+      user.packetTickFeedback(handle, () ->
         movementData.confirmFireworkRocketDetachment(entityId)
       );
     }
@@ -508,11 +613,47 @@ public final class EntityTracker extends Module {
     }
   )
   public void receiveMovement(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
-    PacketType packetType = event.getPacketType();
+    handleMovement(event.getPlayer(), PacketTypes.isClientEndTick(event.getPacketType()));
+  }
 
-    boolean isClientTickEnd = PacketTypes.isClientEndTick(packetType);
+  /**
+   * PacketEvents entry point for {@link #receiveMovement(PacketEvent)}.
+   * <p>
+   * This subscription reads no packet payload at all - only who sent it and whether it was the
+   * client tick end marker - so it needs no packet view; the wrapper supplies both directly.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGHEST,
+    packetsIn = {
+      POSITION, POSITION_LOOK, LOOK, FLYING, STEER_VEHICLE, CLIENT_TICK_END
+    }
+  )
+  public void receiveMovement(PacketEventWrapper event) {
+    Player player = event.player();
+    if (player == null) {
+      return;
+    }
+    handleMovement(player, isClientEndTick(event.packetType()));
+  }
+
+  /**
+   * PacketEvents counterpart of {@link PacketTypes#isClientEndTick}.
+   * <p>
+   * Resolved through {@link PacketEventsIdMapper} rather than by referencing the constant, because
+   * CLIENT_TICK_END does not exist on older PacketEvents releases; an unresolved packet yields an
+   * empty list here, which simply never matches.
+   */
+  private static boolean isClientEndTick(PacketTypeCommon packetType) {
+    return packetType != null && CLIENT_TICK_END_TYPES.contains(packetType);
+  }
+
+  private static final List<PacketTypeCommon> CLIENT_TICK_END_TYPES =
+    PacketEventsIdMapper.typesOf(CLIENT_TICK_END);
+
+  /** Engine independent per packet entity tick. */
+  private void handleMovement(Player player, boolean isClientTickEnd) {
+    User user = UserRepository.userOf(player);
     if (user.meta().protocol().sendsClientTickEnd() && !isClientTickEnd) {
       return;
     }
@@ -553,6 +694,21 @@ public final class EntityTracker extends Module {
     }
   }
 
+  /**
+   * ProtocolLib only; there is deliberately no PacketEvents twin.
+   * <p>
+   * {@code ENTITY_POSITION_SYNC} is the 1.21.2 replacement for the absolute entity teleport and
+   * PacketEvents 2.4.0 predates it: the bundled API declares no
+   * {@code PacketType.Play.Server.ENTITY_POSITION_SYNC} and ships no wrapper for it, so
+   * {@link de.jpx3.intave.module.linker.packet.pe.PacketEventsIdMapper} resolves the id through its
+   * fallback name and would hand a twin plain {@code ENTITY_TELEPORT} packets instead. On top of
+   * that, {@link Entity#immediateEntityPositionSync} and
+   * {@link Entity#handleEntityPositionSync(User, com.comphenix.protocol.events.PacketContainer)}
+   * decode through {@code PositionMoveRotation.firstFrom}, which converts the NMS
+   * {@code PositionMoveRotation} record out of a {@code PacketContainer} and has no PacketEvents
+   * counterpart. Feeding entity positions from the wrong packet is how a tracked entity ends up
+   * somewhere the client never saw it, so this one stays on the engine that can read it.
+   */
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsOut = {
@@ -598,6 +754,20 @@ public final class EntityTracker extends Module {
     }
   }
 
+  /**
+   * ProtocolLib only; there is deliberately no PacketEvents twin.
+   * <p>
+   * From 1.21.3 the teleport payload is a {@code PositionMoveRotation} plus a set of relative
+   * flags, and {@link Entity#immediateEntityTeleport} and {@link Entity#handleEntityTeleport} read
+   * it through {@code PositionMoveRotation.firstFrom} and {@code Relative.flagsFrom}, both of which
+   * convert NMS values straight out of a {@code PacketContainer}. PacketEvents 2.4.0's
+   * {@code WrapperPlayServerEntityTeleport} predates that change: it decodes an absolute
+   * {@code Vector3d} and carries no relative flag set at all. A twin could therefore only be
+   * correct below 1.21.2, and on newer servers it would read every relative teleport as an absolute
+   * one - which silently moves the tracked entity to the delta itself. Since a wrong entity
+   * position feeds the reach and hitbox checks directly, this stays ProtocolLib only rather than
+   * being ported with a version hole in it.
+   */
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsOut = {
@@ -679,11 +849,53 @@ public final class EntityTracker extends Module {
     ignoreCancelled = false
   )
   public void receiveEntityMovement(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleEntityMovement(
+      new ProtocolLibEntityRelativeMoveView(event),
+      ProtocolLibFeedbackHandle.of(event),
+      event
+    );
+  }
+
+  /**
+   * PacketEvents entry point for {@link #receiveEntityMovement(PacketEvent)}.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsOut = {
+      REL_ENTITY_MOVE, REL_ENTITY_MOVE_LOOK, ENTITY_LOOK
+    },
+    ignoreCancelled = false
+  )
+  public void receiveEntityMovement(PacketSendEvent event) {
+    PacketEventsEntityRelativeMoveView view = PacketEventsEntityRelativeMoveView.of(event);
+    if (view == null) {
+      return;
+    }
+    if (view.player() == null) {
+      return;
+    }
+    handleEntityMovement(view, PacketEventsFeedbackHandle.of(event), null);
+  }
+
+  /**
+   * Engine independent relative entity movement tracking; see {@link EntityRelativeMoveView}.
+   *
+   * @param decoySource the ProtocolLib event whose packet a decoy copy is cloned from, or null on a
+   * backend that cannot clone and re-send an encoded packet. Only the decoy branch below needs it,
+   * and that branch is unreachable unless {@link Entity#duplicationId} is non zero, which is
+   * assigned in exactly one place - the currently disabled duplication block of
+   * {@link #sendEntitySpawn(PacketEvent)}, a ProtocolLib only subscription. A backend that passes
+   * null therefore skips a branch it could never have entered.
+   */
+  private void handleEntityMovement(
+    EntityRelativeMoveView view, FeedbackHandle handle, @Nullable PacketEvent decoySource
+  ) {
+    Player player = view.player();
     User user = UserRepository.userOf(player);
-    PacketContainer packet = event.getPacket();
-    Integer entityIdBoxed = packet.getIntegers().read(0);
+    Integer entityIdBoxed = view.entityId();
     if (entityIdBoxed == null) {
+      view.release();
       return;
     }
     /* NOTE: An entity can't be created by the entityID when the entity doesn't
@@ -691,40 +903,22 @@ public final class EntityTracker extends Module {
 
     Entity entity = entityByIdentifier(user, entityIdBoxed);
     if (entity == null) {
+      view.release();
       return;
     }
 
-    if (entity.duplicationId != 0) {
-      PacketContainer newPacket = packet.deepClone();
+    if (entity.duplicationId != 0 && decoySource != null) {
+      PacketContainer newPacket = decoySource.getPacket().deepClone();
       newPacket.getIntegers().write(0, entity.duplicationId);
       PacketSender.sendServerPacket(player, newPacket);
     }
 
     MovementMetadata movement = user.meta().movement();
     double distanceBefore = entity.distanceToPlayerCache > 8 ? 10 : entity.immediateServerPosition.distance(movement.positionX, movement.positionY, movement.positionZ);
-    long dx;
-    long dy;
-    long dz;
-    double divisor;
-    if (NEW_POSITION_PROCESSING_1_14) {
-      StructureModifier<Short> shorts = packet.getShorts();
-      dx = shorts.readSafely(0);
-      dy = shorts.readSafely(1);
-      dz = shorts.readSafely(2);
-      divisor = 4096d;
-    } else if (NEW_POSITION_PROCESSING_1_9) {
-      StructureModifier<Integer> integers = packet.getIntegers();
-      dx = integers.readSafely(1);
-      dy = integers.readSafely(2);
-      dz = integers.readSafely(3);
-      divisor = 4096d;
-    } else {
-      StructureModifier<Byte> bytes = packet.getBytes();
-      dx = bytes.readSafely(0);
-      dy = bytes.readSafely(1);
-      dz = bytes.readSafely(2);
-      divisor = 32d;
-    }
+    long dx = view.deltaX();
+    long dy = view.deltaY();
+    long dz = view.deltaZ();
+    double divisor = view.divisor();
     entity.applyImmediateRelativeMove(dx, dy, dz, divisor);
     double distanceAfter = distanceBefore > 8 ? 10 : entity.immediateServerPosition.distance(movement.positionX, movement.positionY, movement.positionZ);
 
@@ -739,11 +933,12 @@ public final class EntityTracker extends Module {
       if (distanceBefore < 8 && distanceAfter < 8 && distanceBefore != distanceAfter) {
         options |= distanceAfter < distanceBefore ? TRACER_ENTITY_MOVED_CLOSER : TRACER_ENTITY_MOVED_FARTHER;
       }
-      user.tracedPacketTickFeedback(event, task, tracker, options);
+      user.tracedPacketTickFeedback(handle, task, tracker, options);
     } else {
       entity.applyRelativeMove(dx, dy, dz, divisor);
       entity.clientSynchronized = false;
     }
+    view.release();
   }
 
   private void nayoroEntitySpawn(User user, Entity entity) {
@@ -935,11 +1130,36 @@ public final class EntityTracker extends Module {
     priority = ListenerPriority.LOWEST
   )
   public void receiveUseEntity(PacketEvent event) {
-    User user = UserRepository.userOf(event.getPlayer());
-    PacketContainer packet = event.getPacket();
+    handleUseEntity(new ProtocolLibEntityInteractIdView(event));
+  }
+
+  /**
+   * PacketEvents entry point for {@link #receiveUseEntity(PacketEvent)}.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      ATTACK_ENTITY, USE_ENTITY
+    },
+    priority = ListenerPriority.LOWEST
+  )
+  public void receiveUseEntity(PacketReceiveEvent event) {
+    PacketEventsEntityInteractIdView view = PacketEventsEntityInteractIdView.of(event);
+    if (view == null) {
+      return;
+    }
+    if (view.player() == null) {
+      return;
+    }
+    handleUseEntity(view);
+  }
+
+  /** Engine independent decoy redirect; see {@link EntityInteractIdView}. */
+  private void handleUseEntity(EntityInteractIdView view) {
+    User user = UserRepository.userOf(view.player());
     ConnectionMetadata connection = user.meta().connection();
 
-    Integer entityIdBoxed = packet.getIntegers().readSafely(0);
+    Integer entityIdBoxed = view.entityId();
     if (entityIdBoxed == null) {
       return;
     }
@@ -949,12 +1169,13 @@ public final class EntityTracker extends Module {
 
     if (duplicationOwners.containsKey(entityId)) {
       int owner = duplicationOwners.get(entityId);
-      packet.getIntegers().write(0, owner);
+      view.setEntityId(owner);
     }
 
     if (shouldNotBeAttacked.contains(entityId)) {
       connection.markAttackInvalid = true;
     }
+    view.release();
   }
 
   @PacketSubscription(
@@ -965,17 +1186,42 @@ public final class EntityTracker extends Module {
     ignoreCancelled = false
   )
   public void receiveEntityStatus(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
+    handleEntityStatus(new ProtocolLibEntityStatusView(event));
+  }
+
+  /**
+   * PacketEvents entry point for {@link #receiveEntityStatus(PacketEvent)}.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsOut = {
+      ENTITY_STATUS
+    },
+    ignoreCancelled = false
+  )
+  public void receiveEntityStatus(PacketSendEvent event) {
+    PacketEventsEntityStatusView view = PacketEventsEntityStatusView.of(event);
+    if (view == null) {
+      return;
+    }
+    if (view.player() == null) {
+      return;
+    }
+    handleEntityStatus(view);
+  }
+
+  /** Engine independent death animation tracking; see {@link EntityStatusView}. */
+  private void handleEntityStatus(EntityStatusView view) {
+    User user = UserRepository.userOf(view.player());
     if (!user.hasPlayer()) {
       return;
     }
-    PacketContainer packet = event.getPacket();
-    Integer entityID = packet.getIntegers().read(0);
+    Integer entityID = view.entityId();
     if (entityID == null) {
       return;
     }
-    Byte type = packet.getBytes().read(0);
+    Byte type = view.status();
     Entity entity = entityByIdentifier(user, entityID);
     if (entity == null || type != 3) {
       return;
@@ -986,6 +1232,7 @@ public final class EntityTracker extends Module {
     } else {
       updateDeadState(entity);
     }
+    view.release();
   }
 
   private void updateDeadState(Entity entity) {
@@ -1001,22 +1248,62 @@ public final class EntityTracker extends Module {
     ignoreCancelled = false
   )
   public void receiveEntityMetadata(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
-    PacketContainer packet = event.getPacket();
+    handleEntityMetadata(
+      new ProtocolLibEntityMetadataView(event),
+      ProtocolLibFeedbackHandle.of(event),
+      event
+    );
+  }
 
-    EntityMetadataReader reader = PacketReaders.readerOf(packet);
-    int entityId = reader.entityId();
+  /**
+   * PacketEvents entry point for {@link #receiveEntityMetadata(PacketEvent)}.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsOut = {
+      ENTITY_METADATA
+    },
+    ignoreCancelled = false
+  )
+  public void receiveEntityMetadata(PacketSendEvent event) {
+    PacketEventsEntityMetadataView view = PacketEventsEntityMetadataView.of(event);
+    if (view == null) {
+      return;
+    }
+    if (view.player() == null) {
+      return;
+    }
+    handleEntityMetadata(view, PacketEventsFeedbackHandle.of(event), null);
+  }
+
+  /**
+   * Engine independent entity metadata tracking; see {@link EntityMetadataView}.
+   *
+   * @param decoySource the ProtocolLib event whose packet the decoy branch replaces and clones, or
+   * null on a backend that cannot clone and re-send an encoded packet. See
+   * {@link #handleEntityMovement(EntityRelativeMoveView, FeedbackHandle, PacketEvent)} for why
+   * skipping that branch cannot change behaviour: {@link Entity#duplicationId} is only ever
+   * assigned by the disabled duplication block of the ProtocolLib only
+   * {@link #sendEntitySpawn(PacketEvent)}.
+   */
+  private void handleEntityMetadata(
+    EntityMetadataView view, FeedbackHandle handle, @Nullable PacketEvent decoySource
+  ) {
+    Player player = view.player();
+    User user = UserRepository.userOf(player);
+
+    int entityId = view.entityId();
 
     if (player.getEntityId() == entityId) {
-      synchronizePlayerHealth(player, reader);
-      reader.release();
+      synchronizePlayerHealth(player, view);
+      view.release();
       return;
     }
 
     Entity entity = entityByIdentifier(user, entityId);
     if (entity == null) {
-      reader.release();
+      view.release();
       return;
     }
 
@@ -1024,7 +1311,7 @@ public final class EntityTracker extends Module {
       MovementMetadata movement = user.meta().movement();
       double distance = entity.position.toPosition().distance(player.getLocation());
       if (distance < 2) {
-        Object raw = reader.fetchRaw(17);
+        Object raw = view.fetchRaw(17);
         if (raw != null) {
           user.tickFeedback(() -> {
             movement.lowestShulkerY = Math.min(movement.lowestShulkerY, (int) entity.position.posY - 1);
@@ -1040,7 +1327,7 @@ public final class EntityTracker extends Module {
     ConnectionMetadata connection = user.meta().connection();
 
     if (connection.duplicatedEntityIds.contains(entityId)) {
-      reader.release();
+      view.release();
       return;
     }
 
@@ -1049,11 +1336,12 @@ public final class EntityTracker extends Module {
 //    int targetId = duplicationOwners.get(entityId);
 
 //    if (duplicationOwners.containsKey(entityId)) {
-    if (entity.duplicationId != 0) {
+    if (entity.duplicationId != 0 && decoySource != null) {
       // Rule #3151235: When editing metadata, do a deepClone().
-      reader.release();
-      event.setPacket(packet = event.getPacket().deepClone());
-      reader = PacketReaders.readerOf(packet);
+      view.release();
+      PacketContainer packet = decoySource.getPacket().deepClone();
+      decoySource.setPacket(packet);
+      view = new ProtocolLibEntityMetadataView(decoySource);
 
       PacketContainer packetCopy = packet.deepClone();
       ConnectionMetadata.DecoySide decoySide = decoySides.get(entityId);
@@ -1065,7 +1353,7 @@ public final class EntityTracker extends Module {
 
     EntityTypeData type = entity.typeData();
     if (type == null) {
-      reader.release();
+      view.release();
       return;
     }
 
@@ -1075,41 +1363,41 @@ public final class EntityTracker extends Module {
 
     // Firework
     if (isFireworkRocket) {
-      handleFirework(event, player, entityId, reader);
+      handleFirework(handle, player, entityId, view);
     } else if (isLivingEntity) {
       // Health
-      processHealthMetadata(player, entity, reader);
+      processHealthMetadata(player, entity, view);
 
       // Entity Size
-      EntityTypeData entityTypedata = entityTypeResolver.entityTypeDataOfEntityMetadata(event, entityTypeId, reader);
+      EntityTypeData entityTypedata = entityTypeResolver.entityTypeDataOfEntityMetadata(view, entityTypeId);
       if (entityTypedata != null) {
         entity.setTypeData(entityTypedata);
       }
     }
-    reader.release();
+    view.release();
   }
 
   private static boolean isFireworkRocket(EntityTypeData type) {
     return type != null && type.name() != null && type.name().contains("Firework");
   }
 
-  private void handleFirework(PacketEvent event, Player player, int fireworkEntityId, EntityMetadataReader reader) {
+  private void handleFirework(FeedbackHandle handle, Player player, int fireworkEntityId, EntityMetadataView view) {
     if (!MinecraftVersions.VER1_11_0.atOrAbove()) {
       return;
     }
     if (MinecraftVersions.VER1_14_0.atOrAbove()) {
-      processFireworkModern(event, player, fireworkEntityId, reader);
+      processFireworkModern(handle, player, fireworkEntityId, view);
     } else {
-      processFireworkLegacy(event, player, fireworkEntityId, reader);
+      processFireworkLegacy(handle, player, fireworkEntityId, view);
     }
   }
 
   private void processFireworkLegacy(
-    PacketEvent event, Player player,
-    int fireworkEntityId, EntityMetadataReader reader
+    FeedbackHandle handle, Player player,
+    int fireworkEntityId, EntityMetadataView view
   ) {
     User user = UserRepository.userOf(player);
-    Object value = reader.fetchRaw(7);
+    Object value = view.fetchRaw(7);
     if (!(value instanceof Integer)) {
       return;
     }
@@ -1134,18 +1422,18 @@ public final class EntityTracker extends Module {
         }
       }
       movement.fireworkRocketsPower = power;
-      synchronizeFireworkAttachment(event, user, movement, fireworkEntityId);
+      synchronizeFireworkAttachment(handle, user, movement, fireworkEntityId);
     }
   }
 
   private static final int MODERN_ENTITY_ID_ACCESS_INDEX = MinecraftVersions.VER1_17_0.atOrAbove() ? 9 : 8;
 
   private void processFireworkModern(
-    PacketEvent event, Player player,
-    int fireworkEntityId, EntityMetadataReader reader
+    FeedbackHandle handle, Player player,
+    int fireworkEntityId, EntityMetadataView view
   ) {
     User user = UserRepository.userOf(player);
-    Object value = reader.fetchRaw(MODERN_ENTITY_ID_ACCESS_INDEX);
+    Object value = view.fetchRaw(MODERN_ENTITY_ID_ACCESS_INDEX);
     if (!(value instanceof OptionalInt)) {
       return;
     }
@@ -1174,16 +1462,16 @@ public final class EntityTracker extends Module {
         }
       }
       movement.fireworkRocketsPower = power;
-      synchronizeFireworkAttachment(event, user, movement, fireworkEntityId);
+      synchronizeFireworkAttachment(handle, user, movement, fireworkEntityId);
     }
   }
 
   private void synchronizeFireworkAttachment(
-    PacketEvent event, User user,
+    FeedbackHandle handle, User user,
     MovementMetadata movement, int fireworkEntityId
   ) {
     if (movement.beginFireworkRocketAttachment(fireworkEntityId)) {
-      user.packetTickFeedback(event, () ->
+      user.packetTickFeedback(handle, () ->
         movement.confirmFireworkRocketAttachment(fireworkEntityId)
       );
     }
@@ -1193,9 +1481,9 @@ public final class EntityTracker extends Module {
 
   private void processHealthMetadata(
     Player player, Entity entity,
-    EntityMetadataReader reader
+    EntityMetadataView view
   ) {
-    Object raw = reader.fetchRaw(HEALTH_INDEX);
+    Object raw = view.fetchRaw(HEALTH_INDEX);
     if (raw == null) {
       return;
     }
@@ -1212,9 +1500,9 @@ public final class EntityTracker extends Module {
   }
 
   private void synchronizePlayerHealth(
-    Player player, EntityMetadataReader reader
+    Player player, EntityMetadataView view
   ) {
-    Object raw = reader.fetchRaw(HEALTH_INDEX);
+    Object raw = view.fetchRaw(HEALTH_INDEX);
     if (raw == null) {
       return;
     }

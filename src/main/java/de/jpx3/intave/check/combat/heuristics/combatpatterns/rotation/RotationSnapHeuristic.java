@@ -12,15 +12,18 @@
 package de.jpx3.intave.check.combat.heuristics.combatpatterns.rotation;
 
 import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.packet.reader.EntityUseReader;
+import de.jpx3.intave.packet.view.PacketEventsAttackView;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.ClientMath;
 import de.jpx3.intave.user.User;
@@ -53,8 +56,26 @@ public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHe
     }
   )
   public void receiveSwingPacket(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
+    handleSwingPacket(userOf(event.getPlayer()));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      ARM_ANIMATION
+    }
+  )
+  public void receiveSwingPacket(Player player) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    handleSwingPacket(userOf(player));
+  }
+
+  /** Engine independent swing timestamp; the packet itself is never read. */
+  private void handleSwingPacket(User user) {
     RotationSnapHeuristicMeta meta = metaOf(user);
 
     meta.lastSwing = System.currentTimeMillis();
@@ -77,7 +98,31 @@ public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHe
   public void receiveAttackPacket(
     User user, EntityUseReader reader
   ) {
-    if (reader.isAttackPacket()) {
+    handleAttackPacket(user, reader.isAttackPacket());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      ATTACK_ENTITY, USE_ENTITY
+    }
+  )
+  public void receiveAttackPacket(Player player, PacketReceiveEvent event) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    PacketEventsAttackView view = PacketEventsAttackView.of(event);
+    if (view == null) {
+      return;
+    }
+    handleAttackPacket(userOf(player), view.isAttackPacket());
+  }
+
+  /** Engine independent attack timestamp; see {@link de.jpx3.intave.packet.view.AttackView}. */
+  private void handleAttackPacket(User user, boolean attackPacket) {
+    if (attackPacket) {
       metaOf(user).lastAttack = System.currentTimeMillis();
     }
   }
@@ -89,7 +134,27 @@ public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHe
     }
   )
   public void receiveRotationPacket(PacketEvent event) {
-    metaOf(userOf(event.getPlayer())).rotationPacketCounter++;
+    handleRotationPacket(userOf(event.getPlayer()));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      POSITION_LOOK, LOOK
+    }
+  )
+  public void receiveRotationPacket(Player player) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    handleRotationPacket(userOf(player));
+  }
+
+  /** Engine independent rotation packet counter; the packet itself is never read. */
+  private void handleRotationPacket(User user) {
+    metaOf(user).rotationPacketCounter++;
   }
 
   private double keysToRotation(int strafe, int forward) {
@@ -119,8 +184,27 @@ public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHe
     }
   )
   public void receiveMovementPacket(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
+    handleMovementPacket(userOf(event.getPlayer()));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      FLYING, LOOK, POSITION, POSITION_LOOK
+    }
+  )
+  public void receiveMovementPacket(Player player) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    handleMovementPacket(userOf(player));
+  }
+
+  /** Engine independent rotation snap evaluation; the packet itself is never read. */
+  private void handleMovementPacket(User user) {
+    Player player = user.player();
     MovementMetadata movementData = user.meta().movement();
 
     if (movementData.ticksPast(TELEPORT) == 0) {

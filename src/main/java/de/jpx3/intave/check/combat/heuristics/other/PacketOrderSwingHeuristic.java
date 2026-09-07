@@ -17,9 +17,12 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.packet.reader.EntityUseReader;
+import de.jpx3.intave.packet.view.PacketEventsAttackView;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
@@ -41,9 +44,38 @@ public final class PacketOrderSwingHeuristic extends ClassicHeuristic<PacketOrde
     }
   )
   public void receiveMovementPacket(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleMovementPacket(
+      event.getPlayer(),
+      event.getPacketType() == PacketType.Play.Client.ARM_ANIMATION
+    );
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      FLYING, POSITION, POSITION_LOOK, LOOK, ARM_ANIMATION
+    }
+  )
+  public void receiveMovementPacket(Player player, PacketReceiveEvent event) {
+    if (player == null) {
+      return;
+    }
+    // PacketEvents calls the client's arm swing packet ANIMATION; ProtocolLib calls it
+    // ARM_ANIMATION. Same packet, so the flag below means the same thing.
+    handleMovementPacket(
+      player,
+      event.getPacketType()
+        == com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.ANIMATION
+    );
+  }
+
+  /**
+   * Engine independent handling: the only thing read off the packet is whether it was the swing,
+   * so the discriminator is passed in as a boolean instead of the packet.
+   */
+  private void handleMovementPacket(Player player, boolean armAnimation) {
     PacketOrderSwingHeuristicMeta heuristicMeta = metaOf(player);
-    heuristicMeta.swingTick = event.getPacketType() == PacketType.Play.Client.ARM_ANIMATION;
+    heuristicMeta.swingTick = armAnimation;
   }
 
   @PacketSubscription(
@@ -54,12 +86,39 @@ public final class PacketOrderSwingHeuristic extends ClassicHeuristic<PacketOrde
   public void receiveUseEntity(
     User user, EntityUseReader reader
   ) {
+    handleUseEntity(user, reader.isAttackPacket());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      ATTACK_ENTITY, USE_ENTITY
+    }
+  )
+  public void receiveUseEntity(PacketReceiveEvent event) {
+    PacketEventsAttackView view = PacketEventsAttackView.of(event);
+    if (view == null) {
+      return;
+    }
+    Player player = view.player();
+    if (player == null) {
+      return;
+    }
+    handleUseEntity(userOf(player), view.isAttackPacket());
+  }
+
+  /**
+   * Engine independent handling; the only thing read off the packet is whether the interaction was
+   * an attack, which both backends normalise the same way (see
+   * {@link de.jpx3.intave.packet.view.AttackView}).
+   */
+  private void handleUseEntity(User user, boolean attackPacket) {
     ProtocolMetadata protocol = user.meta().protocol();
     PacketOrderSwingHeuristicMeta heuristicMeta = metaOf(user);
     if (user.meta().abilities().ignoringMovementPackets()) {
       return;
     }
-    if (reader.isAttackPacket() && protocol.emptyFlyingPacketsAreExplicitlySent() && !heuristicMeta.swingTick) {
+    if (attackPacket && protocol.emptyFlyingPacketsAreExplicitlySent() && !heuristicMeta.swingTick) {
       flag(user, "swing not correlated with attack", "version: " + protocol.versionString());
       //dmc11
       user.nerf(AttackNerfStrategy.DMG_LIGHT, "11");

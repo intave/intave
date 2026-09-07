@@ -13,6 +13,7 @@ package de.jpx3.intave.user;
 
 import ac.intave.cloud.protocol.Packet;
 import ac.intave.cloud.protocol.listener.Serverbound;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.access.UnsupportedFallbackOperationException;
 import de.jpx3.intave.access.player.trust.TrustFactor;
@@ -28,6 +29,7 @@ import de.jpx3.intave.entity.size.HitboxSize;
 import de.jpx3.intave.module.actionbar.DisplayType;
 import de.jpx3.intave.module.feedback.EmptyFeedbackCallback;
 import de.jpx3.intave.module.feedback.FeedbackObserver;
+import de.jpx3.intave.packet.view.FeedbackHandle;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.violation.placeholder.PlayerContext;
 import de.jpx3.intave.module.violation.placeholder.UserContext;
@@ -440,6 +442,16 @@ final class FallbackUser implements User {
   }
 
   @Override
+  public void packetTickFeedback(FeedbackHandle handle, EmptyFeedbackCallback callback) {
+
+  }
+
+  @Override
+  public void packetTickFeedback(FeedbackHandle handle, EmptyFeedbackCallback callback, int options) {
+    User.super.packetTickFeedback(handle, callback, options);
+  }
+
+  @Override
   public void tracedTickFeedback(EmptyFeedbackCallback callback, FeedbackObserver tracker) {
 
   }
@@ -447,6 +459,16 @@ final class FallbackUser implements User {
   @Override
   public void tracedPacketTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, FeedbackObserver tracker) {
 
+  }
+
+  @Override
+  public void tracedPacketTickFeedback(FeedbackHandle handle, EmptyFeedbackCallback callback, FeedbackObserver tracker) {
+
+  }
+
+  @Override
+  public void tracedPacketTickFeedback(FeedbackHandle handle, EmptyFeedbackCallback callback, FeedbackObserver tracker, int options) {
+    User.super.tracedPacketTickFeedback(handle, callback, tracker, options);
   }
 
   @Override
@@ -466,6 +488,26 @@ final class FallbackUser implements User {
 
   @Override
   public void doubleTracedTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker, int options) {
+    User.super.doubleTracedTickFeedback(event, callback, callback2, tracker, options);
+  }
+
+  @Override
+  public void doubleTickFeedback(PacketSendEvent event, EmptyFeedbackCallback before, EmptyFeedbackCallback after) {
+
+  }
+
+  @Override
+  public void doubleTickFeedback(PacketSendEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, int options) {
+    User.super.doubleTickFeedback(event, callback, callback2, options);
+  }
+
+  @Override
+  public void doubleTracedTickFeedback(PacketSendEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker) {
+
+  }
+
+  @Override
+  public void doubleTracedTickFeedback(PacketSendEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker, int options) {
     User.super.doubleTracedTickFeedback(event, callback, callback2, tracker, options);
   }
 }

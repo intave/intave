@@ -13,9 +13,14 @@ package de.jpx3.intave.module.tracker.player;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientKeepAlive;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerKeepAlive;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Module;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -40,7 +45,6 @@ public final class ConnectionTracker extends Module {
   )
   public void processOutgoingPingPackets(PacketEvent event) {
     Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
     long id;
     if (packet.getLongs().size() > 0) {
@@ -48,6 +52,31 @@ public final class ConnectionTracker extends Module {
     } else {
       id = packet.getIntegers().read(0);
     }
+    handleOutgoingPingPacket(UserRepository.userOf(player), id);
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.MONITOR,
+    prioritySlot = PrioritySlot.EXTERNAL,
+    packetsOut = {
+      PacketId.Server.KEEP_ALIVE
+    },
+    ignoreCancelled = false
+  )
+  public void processOutgoingPingPackets(PacketSendEvent event, Player player) {
+    if (player == null) {
+      return;
+    }
+    // PacketEvents already normalises the pre 1.12.2 int keep alive id into a long.
+    handleOutgoingPingPacket(
+      UserRepository.userOf(player),
+      new WrapperPlayServerKeepAlive(event).getId()
+    );
+  }
+
+  /** Engine independent outbound keep-alive handling; only the keep-alive id is read. */
+  private void handleOutgoingPingPacket(User user, long id) {
     long now = System.currentTimeMillis();
     ConnectionMetadata connection = user.meta().connection();
     connection.discardPendingKeepAlivesBefore(now - MAX_PENDING_AGE);
@@ -64,15 +93,40 @@ public final class ConnectionTracker extends Module {
   )
   public void processIncomingPingPackets(PacketEvent event) {
     Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
-    ConnectionMetadata synchronizeData = user.meta().connection();
     long id;
     if (packet.getLongs().size() > 0) {
       id = packet.getLongs().read(0);
     } else {
       id = Long.valueOf(packet.getIntegers().read(0));
     }
+    handleIncomingPingPacket(player, UserRepository.userOf(player), id);
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.MONITOR,
+    prioritySlot = PrioritySlot.EXTERNAL,
+    packetsIn = {
+      PacketId.Client.KEEP_ALIVE
+    },
+    ignoreCancelled = false
+  )
+  public void processIncomingPingPackets(PacketReceiveEvent event, Player player) {
+    if (player == null) {
+      return;
+    }
+    // PacketEvents already normalises the pre 1.12.2 int keep alive id into a long.
+    handleIncomingPingPacket(
+      player,
+      UserRepository.userOf(player),
+      new WrapperPlayClientKeepAlive(event).getId()
+    );
+  }
+
+  /** Engine independent inbound keep-alive handling; only the keep-alive id is read. */
+  private void handleIncomingPingPacket(Player player, User user, long id) {
+    ConnectionMetadata synchronizeData = user.meta().connection();
     if (id == 0) {
       return;
     }

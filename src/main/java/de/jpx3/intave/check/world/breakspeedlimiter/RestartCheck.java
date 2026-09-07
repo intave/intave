@@ -4,25 +4,30 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.BreakSpeedLimiter;
 import de.jpx3.intave.executor.Synchronizer;
-import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.linker.packet.pe.PacketEventWrapper;
+import de.jpx3.intave.module.linker.packet.pe.PacketEventsIdMapper;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.module.violation.ViolationProcessor;
 import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.packet.PacketTypes;
-import de.jpx3.intave.packet.converter.BlockPositionConverter;
+import de.jpx3.intave.packet.view.BlockPositionView;
+import de.jpx3.intave.packet.view.PacketEventsBlockPositionView;
+import de.jpx3.intave.packet.view.ProtocolLibBlockPositionView;
+import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
@@ -30,12 +35,24 @@ import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
+import java.util.List;
+
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 
 public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, RestartCheck.BreakSpeedStartMeta> {
 	private static final double CLOSE_ENOUGH_RESTART_DELAY_TICKS = 5.5D;
 	private static final double EXPECTED_RESTART_DELAY_TICKS = 6.0D;
 	private static final double MAX_STORED_RESTART_ADVANTAGE_TICKS = 20.0D;
+
+	/**
+	 * PacketEvents counterpart of the {@link PacketTypes#isClientEndTick} constant.
+	 * <p>
+	 * Resolved through {@link PacketEventsIdMapper} rather than by referencing the constant, because
+	 * CLIENT_TICK_END does not exist on older PacketEvents releases; an unresolved packet yields an
+	 * empty list here, which simply never matches.
+	 */
+	private static final List<PacketTypeCommon> CLIENT_TICK_END_TYPES =
+		PacketEventsIdMapper.typesOf(CLIENT_TICK_END);
 
 	public RestartCheck(BreakSpeedLimiter parentCheck) {
 		super(parentCheck, RestartCheck.BreakSpeedStartMeta.class);
@@ -45,10 +62,30 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
 		POSITION, POSITION_LOOK, LOOK, FLYING, VEHICLE_MOVE, CLIENT_TICK_END
 	})
 	public void tickUpdate(PacketEvent event) {
-		Player player = event.getPlayer();
+		handleTickUpdate(event.getPlayer(), PacketTypes.isClientEndTick(event.getPacketType()));
+	}
+
+	/**
+	 * PacketEvents entry point for {@link #tickUpdate(PacketEvent)}.
+	 * <p>
+	 * This subscription reads no packet payload at all - only who sent the packet and whether it was
+	 * the client tick end marker - so it needs no packet view; the wrapper supplies both directly.
+	 */
+	@PacketSubscription(engine = Engine.PACKETEVENTS, priority = ListenerPriority.LOWEST, packetsIn = {
+		POSITION, POSITION_LOOK, LOOK, FLYING, VEHICLE_MOVE, CLIENT_TICK_END
+	})
+	public void tickUpdate(PacketEventWrapper event) {
+		Player player = event.player();
+		if (player == null) {
+			return;
+		}
+		handleTickUpdate(player, isClientEndTick(event.packetType()));
+	}
+
+	/** Engine independent client tick counter; the packet itself is only a tick marker. */
+	private void handleTickUpdate(Player player, boolean clientTickEnd) {
 		User user = userOf(player);
 		ProtocolMetadata clientData = user.meta().protocol();
-		boolean clientTickEnd = PacketTypes.isClientEndTick(event.getPacketType());
 		if (clientData.sendsClientTickEnd()) {
 			if (!clientTickEnd) {
 				return;
@@ -60,23 +97,57 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
 		meta.ticks++;
 	}
 
+	private static boolean isClientEndTick(PacketTypeCommon packetType) {
+		return packetType != null && CLIENT_TICK_END_TYPES.contains(packetType);
+	}
+
 	@PacketSubscription(priority = ListenerPriority.LOWEST, packetsIn = {
 		BLOCK_DIG
 	})
 	public void receiveBlockAction(PacketEvent event) {
-		Player player = event.getPlayer();
+		ProtocolLibBlockPositionView view = new ProtocolLibBlockPositionView(event);
+		try {
+			handleBlockAction(view);
+		} finally {
+			view.release();
+		}
+	}
+
+	/**
+	 * PacketEvents entry point for {@link #receiveBlockAction(PacketEvent)}. The dig action and the
+	 * targeted block are the only fields the body reads, and both are served by
+	 * {@link PacketEventsBlockPositionView}.
+	 */
+	@PacketSubscription(engine = Engine.PACKETEVENTS, priority = ListenerPriority.LOWEST, packetsIn = {
+		BLOCK_DIG
+	})
+	public void receiveBlockAction(PacketReceiveEvent event) {
+		PacketEventsBlockPositionView view = PacketEventsBlockPositionView.of(event);
+		if (view == null || view.player() == null) {
+			return;
+		}
+		try {
+			handleBlockAction(view);
+		} finally {
+			view.release();
+		}
+	}
+
+	/** Engine independent block break restart accounting; see {@link BlockPositionView}. */
+	private void handleBlockAction(BlockPositionView view) {
+		Player player = view.player();
 		User user = userOf(player);
 		RestartCheck.BreakSpeedStartMeta meta = metaOf(user);
 		ProtocolMetadata clientData = user.meta().protocol();
 
-		PacketContainer packet = event.getPacket();
-		EnumWrappers.PlayerDigType digType = packet.getPlayerDigTypes().read(0);
+		BlockPositionView.DigAction digType = view.digAction();
+		if (digType == null) {
+			return;
+		}
 
 		switch (digType) {
 			case START_DESTROY_BLOCK: {
-				BlockPosition blockPosition = event.getPacket().getModifier()
-					.withType(Lookup.serverClass("BlockPosition"), BlockPositionConverter.threadConverter())
-					.read(0);
+				BlockPosition blockPosition = view.blockPosition();
 				if (isRepeatedActiveStart(meta.breakProcess, meta.targetBlockPosition, blockPosition)) {
 					return;
 				}
@@ -107,7 +178,7 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
 						.build();
 					ViolationContext violationContext = violationProcessor.processViolation(violation);
 					if (violationContext.shouldCounterThreat()) {
-						event.setCancelled(true);
+						view.setCancelled(true);
 						meta.cancelNextStop = true;
 					}
 					meta.restartFlagBreakSequence = meta.blockBreakSequence;
@@ -123,12 +194,11 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
 				meta.targetBlockPosition = null;
 				if (meta.cancelNextStop) {
 					meta.cancelNextStop = false;
-					event.setCancelled(true);
-					// BlockPosition blockPosition = packet.getBlockPositionModifier().read(0);
-					BlockPosition blockPosition = event.getPacket().getModifier()
-						.withType(Lookup.serverClass("BlockPosition"), BlockPositionConverter.threadConverter())
-						.read(0);
-					refreshBlocksAround(player, blockPosition.toLocation(player.getWorld()));
+					view.setCancelled(true);
+					BlockPosition blockPosition = view.blockPosition();
+					if (blockPosition != null) {
+						refreshBlocksAround(player, blockPosition.toLocation(player.getWorld()));
+					}
 				}
 				break;
 			}
@@ -174,7 +244,8 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
 		WrappedBlockData blockData = WrappedBlockData.fromHandle(handle);
 		packet.getBlockData().write(0, blockData);
 
-		BlockPosition position = new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+		com.comphenix.protocol.wrappers.BlockPosition position =
+			new com.comphenix.protocol.wrappers.BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ());
 		packet.getBlockPositionModifier().write(0, position);
 		PacketSender.sendServerPacket(player, packet);
 	}

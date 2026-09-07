@@ -12,16 +12,18 @@
 package de.jpx3.intave.check.combat.heuristics.combatpatterns.accuracy;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.math.MathHelper;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.packet.reader.EntityUseReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.packet.view.PacketEventsAttackView;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AttackMetadata;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
@@ -40,12 +42,41 @@ public final class AccuracyLongTermHeuristic extends ClassicHeuristic<AccuracyLo
     }
   )
   public void evaluateFightAccuracy(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
+    User user = userOf(event.getPlayer());
+    if (event.getPacketType() == PacketType.Play.Client.ARM_ANIMATION) {
+      handleFightAccuracy(user, true, false);
+      return;
+    }
+    boolean isAttack;
+    try (EntityUseReader reader = PacketReaders.readerOf(event.getPacket())) {
+      isAttack = reader.isAttackPacket();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+    handleFightAccuracy(user, false, isAttack);
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      ATTACK_ENTITY, USE_ENTITY, ARM_ANIMATION
+    }
+  )
+  public void evaluateFightAccuracy(Player player, PacketReceiveEvent event) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    // Of the subscribed packets only ATTACK_ENTITY and USE_ENTITY map to INTERACT_ENTITY, so a
+    // view that refuses the packet identifies the arm animation.
+    PacketEventsAttackView view = PacketEventsAttackView.of(event);
+    handleFightAccuracy(userOf(player), view == null, view != null && view.isAttackPacket());
+  }
+
+  /** Engine independent swing versus attack accounting. */
+  private void handleFightAccuracy(User user, boolean swing, boolean attack) {
     AttackMetadata attackData = user.meta().attack();
     ClickAccuracyMeta heuristicMeta = metaOf(user);
-    PacketType packetType = event.getPacketType();
-    PacketContainer packet = event.getPacket();
     Entity entity = attackData.lastAttackedEntity();
     if (entity == null || !entity.moving(0.05) || entity.ticksAlive < 200) {
       return;
@@ -53,16 +84,10 @@ public final class AccuracyLongTermHeuristic extends ClassicHeuristic<AccuracyLo
     if (!attackData.recentlyAttacked(500) || attackData.recentlySwitchedEntity(1000)) {
       return;
     }
-    if (packetType == PacketType.Play.Client.ARM_ANIMATION) {
+    if (swing) {
       heuristicMeta.swings++;
     } else {
-      boolean isAttack;
-      try (EntityUseReader reader = PacketReaders.readerOf(packet)) {
-        isAttack = reader.isAttackPacket();
-      } catch (Exception e) {
-	      throw new RuntimeException(e);
-      }
-	    if (isAttack) {
+	    if (attack) {
         heuristicMeta.attacks++;
         heuristicMeta.swings--;
         double failRate = (heuristicMeta.swings / heuristicMeta.attacks) * 100.0;

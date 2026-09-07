@@ -145,6 +145,11 @@ public final class PacketSubscriptionLinker extends Module {
     validParameterTypes.add(PacketContainer.class);
     validParameterTypes.add(PacketReader.class);
     validParameterTypes.add(PacketType.class);
+    // PacketEvents engine parameter types; only ever passed to Engine.PACKETEVENTS subscriptions.
+    validParameterTypes.add(com.github.retrooper.packetevents.event.PacketReceiveEvent.class);
+    validParameterTypes.add(com.github.retrooper.packetevents.event.PacketSendEvent.class);
+    validParameterTypes.add(com.github.retrooper.packetevents.protocol.player.User.class);
+    validParameterTypes.add(de.jpx3.intave.module.linker.packet.pe.PacketEventWrapper.class);
   }
 
   private boolean validParameters(Method method) {
@@ -168,11 +173,40 @@ public final class PacketSubscriptionLinker extends Module {
     ListenerPriority priority = metadata.priority();
     boolean ignoreCancelled = metadata.ignoreCancelled();
 
+    // A subscription and its twin on the other engine are two paths through the same check, so only
+    // the live engine's copy may be registered; see EngineSelection.
+    if (!EngineSelection.isActive(metadata.engine())) {
+      EngineSelection.recordSkipped(metadata.engine(), instanceProvider.type().getSimpleName() + "#" + methodName);
+      return;
+    }
+
     switch (metadata.engine()) {
       case INTERNAL:
         PacketSubscriptionMethodExecutor executor = assemblePESubscriptionMethodCaller(instanceProvider.type(), method, metadata.engine());
         PacketType[] packetTypes = translateProtocolLibPacketTypes(metadata.packetsIn(), metadata.packetsOut(), metadata.debug());
         performCustomLinkage(instanceProvider, priority, packetTypes, ignoreCancelled, methodName, executor);
+        break;
+      case PACKETEVENTS:
+        // PacketEvents delivers its own event types, so this path does not go through the
+        // ProtocolLib call-site generator; the subscriber method is bound reflectively instead.
+        boolean bound = de.jpx3.intave.module.linker.packet.pe.PacketEventsSubscriptions.register(
+          method,
+          player -> {
+            Object[] holder = new Object[1];
+            instanceProvider.apply(UserRepository.userOf(player), subscriber -> holder[0] = subscriber);
+            return holder[0];
+          },
+          metadata.packetsIn(),
+          metadata.packetsOut(),
+          priority,
+          ignoreCancelled,
+          metadata.identifier()
+        );
+        if (!bound) {
+          IntaveLogger.logger().warning(
+            "PacketEvents subscription '" + metadata.identifier() + "' (" + methodName + ") matched no packet type and stays inactive"
+          );
+        }
         break;
       case PROTOCOLLIB:
         executor = assemblePESubscriptionMethodCaller(instanceProvider.type(), method, metadata.engine());

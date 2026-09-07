@@ -11,6 +11,14 @@
 
 package de.jpx3.intave.module.dispatch;
 
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSetSlot;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
+import de.jpx3.intave.module.linker.packet.Engine;
+import de.jpx3.intave.packet.view.AttackView;
+import de.jpx3.intave.packet.view.PacketEventsAttackView;
+import de.jpx3.intave.packet.view.ProtocolLibAttackView;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
@@ -82,9 +90,33 @@ public final class AttackDispatcher extends Module {
   public void receiveUseEntity(
     User user, EntityUseReader reader, Cancellable cancellable
   ) {
+    handleUseEntity(user, new ProtocolLibAttackView(user.player(), reader, cancellable));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.LOW,
+    packetsIn = {
+      ATTACK_ENTITY, USE_ENTITY
+    }
+  )
+  public void receiveUseEntity(PacketReceiveEvent event) {
+    PacketEventsAttackView view = PacketEventsAttackView.of(event);
+    if (view == null) {
+      return;
+    }
+    Player player = view.player();
+    if (player == null) {
+      return;
+    }
+    handleUseEntity(UserRepository.userOf(player), view);
+  }
+
+  /** Engine independent entity interaction handling; see {@link AttackView}. */
+  private void handleUseEntity(User user, AttackView view) {
     Player player = user.player();
     if (player.isDead()) {
-      cancellable.setCancelled(true);
+      view.setCancelled(true);
       return;
     }
 
@@ -93,8 +125,8 @@ public final class AttackDispatcher extends Module {
     ConnectionMetadata connectionData = meta.connection();
     MovementMetadata movementData = meta.movement();
 
-	  int entityId = reader.entityId();
-    boolean isAttacking = reader.isAttackPacket();
+	  int entityId = view.entityId();
+    boolean isAttacking = view.isAttackPacket();
 
 	  InventoryMetadata inventoryData = user.meta().inventory();
     ItemStack itemStack = inventoryData.heldItem();
@@ -153,7 +185,25 @@ public final class AttackDispatcher extends Module {
     }
   )
   public void sentRespawn(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleRespawn(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsOut = {
+      RESPAWN
+    }
+  )
+  public void sentRespawn(Player player) {
+    if (player == null) {
+      return;
+    }
+    handleRespawn(player);
+  }
+
+  /** Engine independent respawn handling; nothing is read off the packet, only the player. */
+  private void handleRespawn(Player player) {
     User user = UserRepository.userOf(player);
     Synchronizer.synchronizeDelayed(user, () -> disableReducing(player), 4);
   }
@@ -167,6 +217,51 @@ public final class AttackDispatcher extends Module {
   public void filterSharpness(PacketEvent event) {
     PacketContainer packet = event.getPacket();
     ItemStack item = packet.getItemModifier().read(0).clone();
+    stripSharpness(item);
+    packet.getItemModifier().write(0, item);
+  }
+
+  /**
+   * PacketEvents entry point. The item this subscription rewrites is not part of the read only
+   * {@code WindowItemView} family, so the slot item is taken off and pushed back onto the
+   * PacketEvents wrapper here; the transformation itself lives in {@link #stripSharpness(ItemStack)}
+   * and is shared with the ProtocolLib path.
+   * <p>
+   * Unlike the ProtocolLib path, which always writes its clone back, the packet is only marked for
+   * re-encoding when the item actually changed - re-encoding an untouched item would be pure cost.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsOut = {
+      SET_SLOT
+    }
+  )
+  public void filterSharpness(PacketSendEvent event) {
+    if (event.getPacketType()
+      != com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Server.SET_SLOT) {
+      return;
+    }
+    WrapperPlayServerSetSlot wrapper = new WrapperPlayServerSetSlot(event);
+    ItemStack item = SpigotConversionUtil.toBukkitItemStack(wrapper.getItem());
+    if (item == null) {
+      return;
+    }
+    item = item.clone();
+    if (!stripSharpness(item)) {
+      return;
+    }
+    wrapper.setItem(SpigotConversionUtil.fromBukkitItemStack(item));
+    event.markForReEncode(true);
+  }
+
+  /**
+   * Engine independent slot item transformation: hides the sharpness enchantment from the client
+   * while attack reducing is disabled. Mutates the item in place.
+   *
+   * @return true when the item was changed.
+   */
+  private static boolean stripSharpness(ItemStack item) {
     if (REDUCING_DISABLED) {
       if (item.containsEnchantment(Enchantment.DAMAGE_ALL)) {
         int level = item.getEnchantmentLevel(Enchantment.DAMAGE_ALL);
@@ -182,6 +277,7 @@ public final class AttackDispatcher extends Module {
           itemMeta.addEnchant(Enchantment.DURABILITY, 0, true);
         }
         item.setItemMeta(itemMeta);
+        return true;
       }
     }
 //    if (IntaveControl.GOMME_MODE) {
@@ -201,7 +297,7 @@ public final class AttackDispatcher extends Module {
 //        item.setItemMeta(itemMeta);
 //      }
 //    }
-    packet.getItemModifier().write(0, item);
+    return false;
   }
 
   private static final int[] ROMAN_STEPS = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};

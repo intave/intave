@@ -6,6 +6,7 @@ import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
@@ -41,7 +42,25 @@ public final class SharpRotation extends PlayerCheckPart<PlacementAnalysis> {
 		}
 	)
 	public void on(PacketEvent event) {
-		Player player = event.getPlayer();
+		handleRotation(event.getPlayer());
+	}
+
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		priority = ListenerPriority.HIGH,
+		packetsIn = {
+			POSITION_LOOK, LOOK
+		}
+	)
+	public void on(Player player) {
+		if (player == null) {
+			return;
+		}
+		handleRotation(player);
+	}
+
+	/** Engine independent body: only rotation metadata is read, no packet field is needed. */
+	private void handleRotation(Player player) {
 		User user = userOf(player);
 		MovementMetadata movementData = user.meta().movement();
 		float rotationMovement = Math.min(MathHelper.distanceInDegrees(movementData.rotationYaw, movementData.lastRotationYaw), 360);

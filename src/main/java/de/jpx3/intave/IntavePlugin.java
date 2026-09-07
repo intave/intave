@@ -54,6 +54,7 @@ import de.jpx3.intave.library.pledge.TickEnd;
 import de.jpx3.intave.math.SinusCache;
 import de.jpx3.intave.metric.Metrics;
 import de.jpx3.intave.metric.ServerHealth;
+import de.jpx3.intave.module.linker.packet.PacketEngineReport;
 import de.jpx3.intave.module.BootSegment;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
@@ -163,6 +164,11 @@ public final class IntavePlugin extends JavaPlugin {
 
   @Override
   public void onLoad() {
+    // PacketEvents injects into the server channel pipeline and must be built before the first
+    // connection is accepted, which rules out onEnable. Reuses an existing instance when the
+    // standalone PacketEvents plugin already created one.
+    de.jpx3.intave.module.linker.packet.pe.PacketEventsBootstrap.load(this);
+
     // stage 3
     Modules.proceedBoot(BootSegment.STAGE_3);
   }
@@ -365,6 +371,12 @@ public final class IntavePlugin extends JavaPlugin {
 
     // stage 10
     Modules.proceedBoot(BootSegment.STAGE_10);
+
+    // Every subscription has been linked by now, so this is the first point at which the packet
+    // layer can say what it actually bound. See PacketEngineReport for why that is worth printing.
+    for (String line : PacketEngineReport.startupSummary()) {
+      logger.info(line);
+    }
 
     try {
       ViaVersionAdapter.patchConfiguration();
@@ -621,6 +633,13 @@ public final class IntavePlugin extends JavaPlugin {
 
   public void performShutdown() {
     logger.info("Stopping Intave");
+    try {
+      // Drops our packet subscriptions; only terminates the API when Intave created it, so a
+      // standalone PacketEvents plugin keeps serving its other consumers.
+      de.jpx3.intave.module.linker.packet.pe.PacketEventsLinkage.linkage().unsubscribeAll();
+      de.jpx3.intave.module.linker.packet.pe.PacketEventsBootstrap.terminate();
+    } catch (Throwable ignored) {
+    }
     try {
       configService.shutdown();
     } catch (Exception ignored) {

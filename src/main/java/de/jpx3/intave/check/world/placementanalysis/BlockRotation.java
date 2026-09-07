@@ -1,19 +1,21 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.BlockPosition;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import de.jpx3.intave.block.access.BlockInteractionAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
-import de.jpx3.intave.packet.reader.BlockInteractionReader;
-import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.packet.view.BlockInteractionView;
+import de.jpx3.intave.packet.view.PacketEventsBlockInteractionView;
+import de.jpx3.intave.packet.view.ProtocolLibBlockInteractionView;
+import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -45,23 +47,40 @@ public final class BlockRotation extends PlayerCheckPart<PlacementAnalysis> {
 		}
 	)
 	public void receivePlacementPacket(PacketEvent event) {
-		Player player = event.getPlayer();
+		handlePlacement(new ProtocolLibBlockInteractionView(event));
+	}
+
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		priority = ListenerPriority.LOW,
+		packetsIn = {
+			BLOCK_PLACE, USE_ITEM
+		}
+	)
+	public void receivePlacementPacket(PacketReceiveEvent event) {
+		PacketEventsBlockInteractionView view = PacketEventsBlockInteractionView.of(event);
+		if (view != null && view.player() != null) {
+			handlePlacement(view);
+		}
+	}
+
+	/** Engine independent placement handling; see {@link BlockInteractionView}. */
+	private void handlePlacement(BlockInteractionView view) {
+		Player player = view.player();
 		User user = userOf(player);
-		PacketContainer packet = event.getPacket();
 		MovementMetadata movement = user.meta().movement();
 		AbilityMetadata abilities = user.meta().abilities();
 
-		BlockInteractionReader reader = PacketReaders.readerOf(packet);
-		BlockPosition blockPosition = reader.blockPosition();
+		BlockPosition blockPosition = view.blockPosition();
 
-		if (blockPosition == null || event.isCancelled() || movement.isInVehicle()) {
-			reader.release();
+		if (blockPosition == null || view.cancelled() || movement.isInVehicle()) {
+			view.release();
 			return;
 		}
 
-		int enumDirection = reader.enumDirection();
+		int enumDirection = view.enumDirection();
 		if (enumDirection == 255) {
-			reader.release();
+			view.release();
 			return;
 		}
 
@@ -71,7 +90,7 @@ public final class BlockRotation extends PlayerCheckPart<PlacementAnalysis> {
 		boolean interactionIsPlacement = heldItemType != Material.AIR && heldItemType.isBlock() && !clickableInteraction && !abilities.inGameMode(GameMode.ADVENTURE);
 
 		if (!interactionIsPlacement || enumDirection < 2) {
-			reader.release();
+			view.release();
 			return;
 		}
 
@@ -100,6 +119,6 @@ public final class BlockRotation extends PlayerCheckPart<PlacementAnalysis> {
 			vl *= 0.98;
 			vl -= 0.002;
 		}
-		reader.release();
+		view.release();
 	}
 }

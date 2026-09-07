@@ -11,10 +11,15 @@
 
 package de.jpx3.intave.module.tracker.block;
 
+import com.github.retrooper.packetevents.event.PacketSendEvent;
 import de.jpx3.intave.module.Module;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.reader.UpdateTagReader;
+import de.jpx3.intave.packet.view.PacketEventsUpdateTagView;
+import de.jpx3.intave.packet.view.ProtocolLibUpdateTagView;
+import de.jpx3.intave.packet.view.UpdateTagView;
 import de.jpx3.intave.share.MinecraftKey;
 import de.jpx3.intave.user.User;
 
@@ -31,7 +36,24 @@ public final class BlockTagTracker extends Module {
 	) {
 //		PacketType.Configuration.Server.UPDATE_TAGS
 
-		for (Map.Entry<MinecraftKey, List<MinecraftKey>> minecraftKeyListEntry : reader.readTags().entrySet()) {
+		handleTags(new ProtocolLibUpdateTagView(reader));
+	}
+
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		packetsOut = PacketId.Server.UPDATE_TAGS
+	)
+	public void onTags(PacketSendEvent event) {
+		PacketEventsUpdateTagView view = PacketEventsUpdateTagView.of(event);
+		if (view == null) {
+			return;
+		}
+		handleTags(view);
+	}
+
+	/** Engine independent tag handling; see {@link UpdateTagView}. */
+	private void handleTags(UpdateTagView view) {
+		for (Map.Entry<MinecraftKey, List<MinecraftKey>> minecraftKeyListEntry : view.readTags().entrySet()) {
 			System.out.println("Tag: " + minecraftKeyListEntry.getKey() + " -> " + minecraftKeyListEntry.getValue());
 		}
 	}

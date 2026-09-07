@@ -14,7 +14,7 @@ package de.jpx3.intave.check.world.placementanalysis;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.BlockPosition;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import de.jpx3.intave.block.access.BlockInteractionAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.check.PlayerCheckPart;
@@ -22,11 +22,16 @@ import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.math.Histogram;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.packet.reader.BlockInteractionReader;
+import de.jpx3.intave.packet.view.BlockInteractionView;
+import de.jpx3.intave.packet.view.PacketEventsBlockInteractionView;
+import de.jpx3.intave.packet.view.ProtocolLibBlockInteractionView;
+import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
@@ -70,19 +75,39 @@ public class RotationFlick extends PlayerCheckPart<PlacementAnalysis> {
 	public void receivePlacementPacket(
 		Player player, PacketContainer packet, BlockInteractionReader reader, Cancellable cancellable
 	) {
+		handlePlacement(new ProtocolLibBlockInteractionView(player, packet, reader, cancellable));
+	}
+
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		priority = ListenerPriority.LOW,
+		packetsIn = {
+			BLOCK_PLACE, USE_ITEM
+		}
+	)
+	public void receivePlacementPacket(PacketReceiveEvent event) {
+		PacketEventsBlockInteractionView view = PacketEventsBlockInteractionView.of(event);
+		if (view != null && view.player() != null) {
+			handlePlacement(view);
+		}
+	}
+
+	/** Engine independent placement handling; see {@link BlockInteractionView}. */
+	private void handlePlacement(BlockInteractionView view) {
+		Player player = view.player();
 		User user = userOf(player);
 		MovementMetadata movement = user.meta().movement();
 		AbilityMetadata abilities = user.meta().abilities();
-		BlockPosition blockPosition = reader.blockPosition();
+		BlockPosition blockPosition = view.blockPosition();
 
-		if (blockPosition == null || cancellable.isCancelled() || movement.isInVehicle()) {
-			reader.release();
+		if (blockPosition == null || view.cancelled() || movement.isInVehicle()) {
+			view.release();
 			return;
 		}
 
-		int enumDirection = reader.enumDirection();
+		int enumDirection = view.enumDirection();
 		if (enumDirection == 255) {
-			reader.release();
+			view.release();
 			return;
 		}
 
@@ -92,7 +117,7 @@ public class RotationFlick extends PlayerCheckPart<PlacementAnalysis> {
 		boolean interactionIsPlacement = heldItemType != Material.AIR && heldItemType.isBlock() && !clickableInteraction && !abilities.inGameMode(GameMode.ADVENTURE);
 
 		if (!interactionIsPlacement || enumDirection < 2) {
-			reader.release();
+			view.release();
 			return;
 		}
 
@@ -101,7 +126,7 @@ public class RotationFlick extends PlayerCheckPart<PlacementAnalysis> {
 		while (lastBlocksPlaced.size() > 4 || (!lastBlocksPlaced.isEmpty() && System.currentTimeMillis() - lastPlacement > 5000)) {
 			lastBlocksPlaced.remove(0);
 		}
-		lastBlocksPlaced.add(blockPosition.toVector());
+		lastBlocksPlaced.add(blockPosition.convertToBukkitVec());
 
 		placementSpeedHistory.add(lastPlacementDiff);
 		lastPlacement = System.currentTimeMillis();
@@ -166,7 +191,7 @@ public class RotationFlick extends PlayerCheckPart<PlacementAnalysis> {
 			vl *= 0.99;
 			vl -= 0.01;
 		}
-		reader.release();
+		view.release();
 	}
 
 	private boolean isOneLine(List<? extends Vector> blocks) {
@@ -211,7 +236,38 @@ public class RotationFlick extends PlayerCheckPart<PlacementAnalysis> {
 		}
 	)
 	public void on(PacketEvent event) {
-		Player player = event.getPlayer();
+		handleMovement(
+			event.getPlayer(),
+			event.getPacketType() == PacketType.Play.Client.POSITION ||
+				event.getPacketType() == PacketType.Play.Client.FLYING
+		);
+	}
+
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		priority = ListenerPriority.LOW,
+		packetsIn = {
+			POSITION_LOOK, LOOK, POSITION, FLYING
+		}
+	)
+	public void on(PacketReceiveEvent event) {
+		Object player = event.getPlayer();
+		if (!(player instanceof Player)) {
+			return;
+		}
+		handleMovement(
+			(Player) player,
+			event.getPacketType() == com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.PLAYER_POSITION ||
+				event.getPacketType() == com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.PLAYER_FLYING
+		);
+	}
+
+	/**
+	 * Engine independent body. The only packet detail this check needs is whether the packet
+	 * carried a rotation, which both engines answer by packet type: the rotation history is only
+	 * appended for the two look carrying packets.
+	 */
+	private void handleMovement(Player player, boolean rotationlessPacket) {
 		User user = userOf(player);
 		MovementMetadata movementData = user.meta().movement();
 		float rotationMovement = Math.min(MathHelper.distanceInDegrees(movementData.rotationYaw, movementData.lastRotationYaw), 360);
@@ -227,7 +283,7 @@ public class RotationFlick extends PlayerCheckPart<PlacementAnalysis> {
 			return;
 		}
 //    player.sendMessage(ChatColor.GRAY + "" + movementData.rotationYaw + " " + (movementData.rotationYaw % 45));
-		if (event.getPacketType() == PacketType.Play.Client.POSITION || event.getPacketType() == PacketType.Play.Client.FLYING) {
+		if (rotationlessPacket) {
 			return;
 		}
 //    player.sendMessage(ChatColor.GRAY + "Rotation to " + movementData.rotationPitch + " " + MathHelper.formatDouble(rotationHistogram.mean(), 2) +  " " + MathHelper.formatDouble(rotationHistogram.variance(), 2));

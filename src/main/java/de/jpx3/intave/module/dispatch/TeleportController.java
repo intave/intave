@@ -11,6 +11,20 @@
 
 package de.jpx3.intave.module.dispatch;
 
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.wrapper.PacketWrapper;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientTeleportConfirm;
+import de.jpx3.intave.module.linker.packet.pe.PacketEventsBuffers;
+import de.jpx3.intave.module.linker.packet.Engine;
+import de.jpx3.intave.module.feedback.EmptyFeedbackCallback;
+import de.jpx3.intave.packet.view.BlockPositionView;
+import de.jpx3.intave.packet.view.MovementView;
+import de.jpx3.intave.packet.view.PacketEventsBlockPositionView;
+import de.jpx3.intave.packet.view.PacketEventsPlayerTeleportView;
+import de.jpx3.intave.packet.view.PlayerTeleportView;
+import de.jpx3.intave.packet.view.ProtocolLibBlockPositionView;
+import de.jpx3.intave.packet.view.ProtocolLibPlayerTeleportView;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
@@ -30,8 +44,6 @@ import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.player.PacketLogging;
 import de.jpx3.intave.packet.Relative;
-import de.jpx3.intave.packet.reader.PacketReaders;
-import de.jpx3.intave.packet.reader.PlayerTeleportReader;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.MessageChannel;
@@ -52,7 +64,6 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.DROP_ITEM;
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.LONG_TELEPORT;
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
@@ -82,6 +93,17 @@ public final class TeleportController implements PacketEventSubscriber {
     }
   }
 
+  /**
+   * ProtocolLib entry point of the outbound teleport lock.
+   * <p>
+   * The body itself is engine independent and lives in
+   * {@link #handleOutgoingTeleport(PlayerTeleportView, TeleportFeedback)}. Everything ProtocolLib
+   * specific about it - the pooled {@code PlayerTeleportReader}, the {@code getBooleans()} and
+   * {@code getIntegers()} field reads - sits behind {@link ProtocolLibPlayerTeleportView}, which
+   * keeps the reader's flush and release semantics exactly as they were. The packet sandwich is
+   * handed in as a {@link TeleportFeedback} rather than performed inline, because the two engines
+   * cancel and re-emit the observed packet through calls of different shapes.
+   */
   @PacketSubscription(
       priority = ListenerPriority.LOW,
       packetsOut = {
@@ -89,19 +111,136 @@ public final class TeleportController implements PacketEventSubscriber {
       }
   )
   public void receiveOutgoingTeleport(PacketEvent event) {
-    Player player = event.getPlayer();
-    PacketContainer packet = event.getPacket();
+    handleOutgoingTeleport(
+      new ProtocolLibPlayerTeleportView(event),
+      (user, before, after) -> {
+        user.doubleTickFeedback(event, before, after);
+        return true;
+      }
+    );
+  }
+
+  /**
+   * PacketEvents twin of {@link #receiveOutgoingTeleport(PacketEvent)}.
+   * <p>
+   * The sandwich this subscription depends on now exists on both engines:
+   * {@link User#doubleTickFeedback(PacketSendEvent, EmptyFeedbackCallback, EmptyFeedbackCallback)}
+   * cancels the send event and re-emits {@code getFullBufferClone()} through
+   * {@code ProtocolManager#sendPacketSilently(channel, buffer)}, the raw silent send that takes an
+   * already encoded buffer.
+   * <p>
+   * What makes this twin harder than the others is that the body does not only observe the packet,
+   * it <em>rewrites</em> it: relative coordinates are resolved against the last verified position
+   * and the positional relative flags they came from are stripped. The bytes that reach the client
+   * therefore have to be the rewritten ones - a teleport re-emitted with its original relative
+   * payload would be resolved against the client's own position instead and would put the player
+   * somewhere else entirely.
+   * <p>
+   * {@link #encodeIntoEventBuffer(PacketSendEvent)} is what makes that hold, and it is not
+   * optional: see its javadoc for why {@link PlayerTeleportView#flush()} on its own would leave the
+   * clone carrying the wrong bytes. When it cannot do its job the sandwich is skipped and the
+   * packet is left in the pipeline, because emitting a teleport whose contents are unknown is far
+   * worse than losing the feedback barrier for a single teleport.
+   */
+  @PacketSubscription(
+      engine = Engine.PACKETEVENTS,
+      priority = ListenerPriority.LOW,
+      packetsOut = {
+          POSITION
+      }
+  )
+  public void receiveOutgoingTeleport(PacketSendEvent event) {
+    PacketEventsPlayerTeleportView view = PacketEventsPlayerTeleportView.of(event);
+    if (view == null || view.player() == null) {
+      return;
+    }
+    handleOutgoingTeleport(view, (user, before, after) -> {
+      if (!encodeIntoEventBuffer(event)) {
+        return false;
+      }
+      user.doubleTickFeedback(event, before, after);
+      return true;
+    });
+  }
+
+  /**
+   * Encodes the modifications the view has cached in its wrapper into the event's own buffer, now,
+   * so that a {@code getFullBufferClone()} taken afterwards carries the rewritten packet.
+   * <p>
+   * PacketEvents never writes a wrapper setter through to the buffer at the point the setter is
+   * called. {@code PacketEventsPlayerTeleportView#flush()} pushes the resolved position and the
+   * stripped relative mask into the wrapper's fields and calls {@code markForReEncode(true)}; the
+   * buffer is only rewritten afterwards, by {@code PacketEventsImplHelper#handleClientBoundPacket},
+   * which clears it and replays {@code writeVarInt(getPacketId())} followed by
+   * {@code getLastUsedWrapper().write()}. That happens after the whole listener chain has returned,
+   * and only for an event that was not cancelled - and the sandwich cancels the event, so for this
+   * packet the encoder's rewrite never runs at all; the cancelled branch merely clears the buffer.
+   * <p>
+   * Two separate things would therefore be wrong with a clone taken straight after the flush:
+   * <ul>
+   *   <li>it would carry the <em>original</em> coordinates and relative flags, because no setter
+   *       has reached the buffer yet; and
+   *   <li>it would carry no payload whatsoever, because {@code getFullBufferClone()} copies
+   *       {@code readerIndex..writerIndex} and the wrapper's {@code read()} at view construction
+   *       has already consumed the payload. PacketEvents restores the reader index between
+   *       listeners, not within one, so inside a single handler the buffer reads as empty.
+   * </ul>
+   * Both are cured by performing the very rewrite PacketEvents would have performed, in the same
+   * order, and then putting the reader index back just past the packet id varint - which is exactly
+   * where the event was handed to this listener. The rest of the chain then reads the rewritten
+   * packet from the index it expects, and {@code getFullBufferClone()} sees the payload alone and
+   * prepends the id itself, producing the same bytes the encoder would have produced.
+   *
+   * @return false when there is no wrapper to encode from, in which case the caller must leave the
+   * packet alone rather than re-emit a buffer whose contents it cannot vouch for.
+   */
+  private static boolean encodeIntoEventBuffer(PacketSendEvent event) {
+    // The rewrite this handler needs is the same one every sandwich needs, so it lives in
+    // PacketEventsBuffers now and the feedback sender applies it too. Kept as a call here because
+    // the return value decides whether the sandwich can be armed at all, and because running it
+    // twice is idempotent - it clears and rewrites the same bytes.
+    return PacketEventsBuffers.encodeIntoEventBuffer(event);
+  }
+
+  /**
+   * How the observed teleport packet is handed to the feedback sandwich.
+   * <p>
+   * Both engines cancel the packet and put it back on the wire between the two transactions, but
+   * through calls of different shapes - ProtocolLib re-sends a {@code shallowClone()} of the
+   * {@code PacketContainer}, PacketEvents writes the encoded bytes of a buffer clone - so the
+   * shared body takes the operation rather than performing it.
+   *
+   * @return true when the sandwich was armed and the packet was cancelled, false when it could not
+   * be and the packet was therefore left in the pipeline untouched. A false answer makes the body
+   * fall back to the same permanent transaction window it uses when feedback sync enforcement is
+   * switched off. The ProtocolLib entry point always answers true.
+   */
+  @FunctionalInterface
+  private interface TeleportFeedback {
+    boolean sandwich(User user, EmptyFeedbackCallback before, EmptyFeedbackCallback after);
+  }
+
+  /**
+   * Engine independent outbound teleport lock; see {@link PlayerTeleportView}.
+   * <p>
+   * Resolves the relative coordinates of the teleport against the user's last verified position,
+   * rewrites the resolved absolutes back into the packet and strips the positional relative flags
+   * it consumed, arms the teleport lock, and hands the rewritten packet to the feedback sandwich.
+   * The view is flushed before the sandwich runs, because the sandwich copies the packet and the
+   * copy has to observe the rewritten values on either engine.
+   */
+  private void handleOutgoingTeleport(PlayerTeleportView view, TeleportFeedback feedback) {
+    Player player = view.player();
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
     PacketLogging logging = Modules.tracker().packetLogging();
 
-    PlayerTeleportReader reader = PacketReaders.readerOf(packet);
-    double positionX = reader.positionX();
-    double positionY = reader.positionY();
-    double positionZ = reader.positionZ();
-    float yaw = reader.yaw();
-    float pitch = reader.pitch();
-    Set<Relative> flags = reader.flags();
+    double positionX = view.positionX();
+    double positionY = view.positionY();
+    double positionZ = view.positionZ();
+    float yaw = view.yaw();
+    float pitch = view.pitch();
+    Set<Relative> flags = view.flags();
     double rawPositionX = positionX;
     double rawPositionY = positionY;
     double rawPositionZ = positionZ;
@@ -115,35 +254,32 @@ public final class TeleportController implements PacketEventSubscriber {
     boolean relativeZMotion = flags.contains(Relative.DELTA_Z);
     boolean rotateDelta = flags.contains(Relative.ROTATE_DELTA);
 
-    Boolean funkyBoolean = packet.getBooleans().readSafely(0);
-    if (funkyBoolean == null) {
-      funkyBoolean = false;
-    }
+    boolean funkyBoolean = view.dismountVehicle();
 
     boolean flagModification = false;
     if (relativeXPosition) {
       positionX += user.meta().movement().verifiedLastPositionX();
-      reader.setPositionX(positionX);
+      view.setPositionX(positionX);
       flags.remove(Relative.X);
       flagModification = true;
     }
 
     if (relativeYPosition) {
       positionY += user.meta().movement().verifiedLastPositionY();
-      reader.setPositionY(positionY);
+      view.setPositionY(positionY);
       flags.remove(Relative.Y);
       flagModification = true;
     }
 
     if (relativeZPosition) {
       positionZ += user.meta().movement().verifiedLastPositionZ();
-      reader.setPositionZ(positionZ);
+      view.setPositionZ(positionZ);
       flags.remove(Relative.Z);
       flagModification = true;
     }
 
     if (flagModification) {
-      reader.setFlags(flags);
+      view.setFlags(flags);
     }
 
     boolean expectRotation = false;
@@ -157,13 +293,13 @@ public final class TeleportController implements PacketEventSubscriber {
     Location teleportLocation = new Location(player.getWorld(), positionX, positionY, positionZ, yaw, pitch);
     movementData.teleportLocation = teleportLocation;
     if (relativeXMotion || relativeYMotion || relativeZMotion) {
-      movementData.teleportMotion.setTo(reader.motion());
+      movementData.teleportMotion.setTo(view.motion());
     }
     movementData.teleportRelatives = new HashSet<>(flags);
 
     movementData.setVerifiedLocation(teleportLocation.clone());
     if (NEW_TELEPORTATION) {
-      movementData.teleportId = packet.getIntegers().read(0);
+      movementData.teleportId = view.teleportId();
     }
     long teleportGeneration = ++movementData.teleportGeneration;
     int teleportId = movementData.teleportId;
@@ -201,18 +337,19 @@ public final class TeleportController implements PacketEventSubscriber {
     }
 
     /*
-      We flush the reader here, since the doubleTickFeedback code below performs a
+      We flush the view here, since the feedback sandwich below performs a
       copy of our packet to sandwich it between two feedback packets,
       we need this write operation before.
      */
-    reader.flush();
+    view.flush();
 
     /*
      * ViaBackwards messes up the order of teleportation packets, so we need to account for that
      */
+    boolean sandwiched = false;
     if (/*!user.meta().protocol().outdatedClient() &&*/ teleportFeedbackSyncEnforcement) {
-      user.doubleTickFeedback(
-        event,
+      sandwiched = feedback.sandwich(
+        user,
         () -> {
           boolean matchingTeleport = movementData.teleportGeneration == teleportGeneration &&
             movementData.teleportId == teleportId;
@@ -268,7 +405,9 @@ public final class TeleportController implements PacketEventSubscriber {
           resendAwaitedTeleport(player, user, "POST_FEEDBACK_RESEND", teleportId, teleportGeneration);
         }
       );
-    } else {
+    }
+
+    if (!sandwiched) {
       movementData.transactionTeleportAllow = true;
       logging.logSystemMessage(user, () -> "TELEPORT TRANSACTION WINDOW PERMANENT teleport_id=" + movementData.teleportId);
     }
@@ -285,7 +424,7 @@ public final class TeleportController implements PacketEventSubscriber {
         " target=" + MathHelper.formatPosition(movementData.teleportLocation)
     );
 
-    reader.release();
+    view.release();
   }
 
   private void logStaleFeedback(
@@ -312,12 +451,39 @@ public final class TeleportController implements PacketEventSubscriber {
       }
   )
   public void receiveTeleportAccept(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleTeleportAccept(event.getPlayer(), event.getPacket().getIntegers().read(0));
+  }
+
+  /**
+   * PacketEvents entry point. No engine neutral view exists for the teleport confirmation, so the
+   * single field this subscription reads - the teleport id the client echoes back - is pulled
+   * straight from the PacketEvents wrapper here.
+   */
+  @PacketSubscription(
+      engine = Engine.PACKETEVENTS,
+      priority = ListenerPriority.NORMAL,
+      packetsIn = {
+          TELEPORT_ACCEPT
+      }
+  )
+  public void receiveTeleportAccept(PacketReceiveEvent event) {
+    if (event.getPacketType()
+      != com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.TELEPORT_CONFIRM) {
+      return;
+    }
+    Object rawPlayer = event.getPlayer();
+    if (!(rawPlayer instanceof Player)) {
+      return;
+    }
+    // Decoded once: every PacketEvents getter re-reads the packet buffer.
+    handleTeleportAccept((Player) rawPlayer, new WrapperPlayClientTeleportConfirm(event).getTeleportId());
+  }
+
+  /** Engine independent teleport confirmation handling; only the teleport id is read off the packet. */
+  private void handleTeleportAccept(Player player, int teleportId) {
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
 
-    PacketContainer packet = event.getPacket();
-    Integer teleportId = packet.getIntegers().read(0);
     PacketLogging logging = Modules.tracker().packetLogging();
     logging.logSystemMessage(user, () ->
       "TELEPORT ACCEPT PACKET received_id=" + teleportId +
@@ -344,11 +510,40 @@ public final class TeleportController implements PacketEventSubscriber {
       }
   )
   public void clientClickUpdate(PacketEvent event) {
+    ProtocolLibBlockPositionView view = new ProtocolLibBlockPositionView(event);
+    try {
+      handleClientClickUpdate(view);
+    } finally {
+      view.release();
+    }
+  }
 
-    Player player = event.getPlayer();
+  @PacketSubscription(
+      engine = Engine.PACKETEVENTS,
+      priority = ListenerPriority.HIGH,
+      packetsIn = {
+          BLOCK_DIG
+      }
+  )
+  public void clientClickUpdate(PacketReceiveEvent event) {
+    PacketEventsBlockPositionView view = PacketEventsBlockPositionView.of(event);
+    if (view == null || view.kind() != BlockPositionView.Kind.BLOCK_DIG) {
+      return;
+    }
+    if (view.player() == null) {
+      return;
+    }
+    handleClientClickUpdate(view);
+  }
+
+  /**
+   * Engine independent debug teleport / velocity trigger; see {@link BlockPositionView}. The only
+   * field read off the packet is the dig action, which has to be the item drop.
+   */
+  private void handleClientClickUpdate(BlockPositionView view) {
+    Player player = view.player();
     User user = UserRepository.userOf(player);
-    PacketContainer packet = event.getPacket();
-    if (packet.getPlayerDigTypes().read(0) == DROP_ITEM && user.meta().inventory().heldItemType() == Material.AIR) {
+    if (view.digAction() == BlockPositionView.DigAction.DROP_ITEM && user.meta().inventory().heldItemType() == Material.AIR) {
       if (IntaveControl.TELEPORT_FAR_AWAY_ON_Q_PRESS) {
         Synchronizer.synchronize(user, () -> {
           Location from = player.getLocation().clone();
@@ -509,18 +704,18 @@ public final class TeleportController implements PacketEventSubscriber {
   }
 
   @DispatchTarget
-  void receiveMovement(PacketEvent event) {
-    Player player = event.getPlayer();
+  void receiveMovement(MovementView view) {
+    Player player = view.player();
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
-    resendIfLimitsExceeded(event);
+    resendIfLimitsExceeded(view);
     if (movementData.awaitTeleport && (!NEW_TELEPORTATION || movementData.expectTeleport)) {
       checkPotentialTeleport(player);
     }
   }
 
-  private void resendIfLimitsExceeded(PacketEvent event) {
-    Player player = event.getPlayer();
+  private void resendIfLimitsExceeded(MovementView view) {
+    Player player = view.player();
     User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
     if (movementData.awaitTeleport) {

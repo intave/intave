@@ -11,16 +11,19 @@
 
 package de.jpx3.intave.check.combat.heuristics.combatpatterns;
 
-import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientHeldItemChange;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.packet.reader.EntityUseReader;
+import de.jpx3.intave.packet.view.PacketEventsAttackView;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
 import de.jpx3.intave.world.raytrace.Raytrace;
@@ -47,7 +50,26 @@ public final class PreAttackHeuristic extends ClassicHeuristic<PreAttackHeuristi
     }
   )
   public void receiveSwing(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleSwing(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      ARM_ANIMATION
+    }
+  )
+  public void receiveSwing(Player player) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    handleSwing(player);
+  }
+
+  /** Engine independent swing bookkeeping; the packet itself is never read. */
+  private void handleSwing(Player player) {
     User user = userOf(player);
     metaOf(user).didSwing = true;
   }
@@ -61,7 +83,31 @@ public final class PreAttackHeuristic extends ClassicHeuristic<PreAttackHeuristi
   public void receiveAttack(
     Player player, EntityUseReader reader
   ) {
-    if (reader.isAttackPacket()) {
+    handleAttack(player, reader.isAttackPacket());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      ATTACK_ENTITY, USE_ENTITY
+    }
+  )
+  public void receiveAttack(Player player, PacketReceiveEvent event) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    PacketEventsAttackView view = PacketEventsAttackView.of(event);
+    if (view == null) {
+      return;
+    }
+    handleAttack(player, view.isAttackPacket());
+  }
+
+  /** Engine independent attack bookkeeping; see {@link de.jpx3.intave.packet.view.AttackView}. */
+  private void handleAttack(Player player, boolean attackPacket) {
+    if (attackPacket) {
       metaOf(player).didAttack = true;
     }
   }
@@ -73,10 +119,27 @@ public final class PreAttackHeuristic extends ClassicHeuristic<PreAttackHeuristi
     }
   )
   public void receiveSlotSwitch(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleSlotSwitch(event.getPlayer(), event.getPacket().getIntegers().read(0));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      HELD_ITEM_SLOT_IN
+    }
+  )
+  public void receiveSlotSwitch(Player player, PacketReceiveEvent event) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    handleSlotSwitch(player, new WrapperPlayClientHeldItemChange(event).getSlot());
+  }
+
+  /** Engine independent handling; the packet only carries the new hotbar slot. */
+  private void handleSlotSwitch(Player player, int slot) {
     PreAttackMeta meta = metaOf(player);
-    PacketContainer packet = event.getPacket();
-    Integer slot = packet.getIntegers().read(0);
 
     ItemStack item = player.getInventory().getItem(slot);
     if (item == null) {
@@ -92,8 +155,27 @@ public final class PreAttackHeuristic extends ClassicHeuristic<PreAttackHeuristi
     }
   )
   public void receiveMovement(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
+    handleMovement(userOf(event.getPlayer()));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.NORMAL,
+    packetsIn = {
+      FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
+    }
+  )
+  public void receiveMovement(Player player) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    handleMovement(userOf(player));
+  }
+
+  /** Engine independent per movement packet evaluation; the packet itself is never read. */
+  private void handleMovement(User user) {
+    Player player = user.player();
     ProtocolMetadata clientData = user.meta().protocol();
     AttackMetadata attackData = user.meta().attack();
     SimulationEnvironment movementData = user.meta().movement();

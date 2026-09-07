@@ -24,6 +24,9 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.trace.Caller;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import de.jpx3.intave.module.linker.packet.pe.PacketEventsBuffers;
+import de.jpx3.intave.module.linker.packet.pe.PacketEventsSender;
 import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -126,15 +129,72 @@ public final class FeedbackSender extends Module {
     FeedbackObserver firstTracker, FeedbackObserver secondTracker,
     int options
   ) {
+    // ProtocolLib: the packet is re-emitted from a shallow clone of the container, and the clone is
+    // taken here rather than inside the lock so the sandwich body stays identical on both engines.
+    sandwich(player, () -> PacketSender.sendServerPacketWithoutEvent(player, encapsulate.shallowClone()),
+      true, target, firstCallback, secondCallback, firstTracker, secondTracker, options);
+  }
+
+  /**
+   * PacketEvents twin of
+   * {@link #tracedDoubleSynchronize(Player, PacketEvent, Object, FeedbackCallback, FeedbackCallback, FeedbackObserver, FeedbackObserver, int)}.
+   * <p>
+   * Same three writes in the same order - transaction, the observed packet, transaction - with the
+   * middle one re-emitted from {@code getFullBufferClone()} through
+   * {@link PacketEventsSender#sendServerBufferWithoutEvent}, which writes the encoded bytes past
+   * every PacketEvents listener. That is the exact counterpart of ProtocolLib's
+   * {@code sendServerPacket(player, packet, filters = false)}: the packet does not re-enter the
+   * subscription that cancelled it, and it keeps its place between the two transactions rather than
+   * being deferred to a post-send task.
+   * <p>
+   * The buffer clone is taken <em>before</em> the event is cancelled, because it is a copy of the
+   * event's buffer and the event owns that buffer only for the duration of the listener call.
+   * <p>
+   * Off-thread warning is suppressed: PacketEvents is a netty pipeline injector, so every listener
+   * call legitimately arrives on an event loop thread. The ProtocolLib check exists to catch a
+   * <em>plugin</em> writing a packet off the main thread, which is a different situation and is not
+   * what this thread name means here.
+   */
+  public <T> void tracedDoubleSynchronize(
+    Player player,
+    PacketSendEvent event, T target,
+    FeedbackCallback<? super T> firstCallback, FeedbackCallback<? super T> secondCallback,
+    FeedbackObserver firstTracker, FeedbackObserver secondTracker,
+    int options
+  ) {
+    // Must precede the clone: a handler that decoded the packet through a view has already consumed
+    // the reader index, and a handler that rewrote it has writes that PacketEvents will never flush
+    // because the next statement cancels the event. See PacketEventsBuffers#encodeIntoEventBuffer.
+    PacketEventsBuffers.encodeIntoEventBuffer(event);
+    Object bufferClone = event.getFullBufferClone();
+    event.setCancelled(true);
+    sandwich(player, () -> PacketEventsSender.sendServerBufferWithoutEvent(player, bufferClone),
+      false, target, firstCallback, secondCallback, firstTracker, secondTracker, options);
+  }
+
+  /**
+   * The sandwich itself, shared by both engines. Only {@code resend} - how the cancelled packet is
+   * put back on the wire - and {@code warnOffThread} differ between them; everything else, the
+   * synchronization gate, the per-user lock and the order of the three writes, is common.
+   */
+  private <T> void sandwich(
+    Player player,
+    Runnable resend,
+    boolean warnOffThread,
+    T target,
+    FeedbackCallback<? super T> firstCallback, FeedbackCallback<? super T> secondCallback,
+    FeedbackObserver firstTracker, FeedbackObserver secondTracker,
+    int options
+  ) {
     User user = UserRepository.userOf(player);
     if (!user.hasPlayer()) {
       return;
     }
     if (!Synchronizer.isSynchronized(user)) {
       if (matches(SELF_SYNCHRONIZATION, options)) {
-        Synchronizer.synchronize(user, () -> tracedDoubleSynchronize(player, encapsulate, target, firstCallback, secondCallback, firstTracker, secondTracker, options));
+        Synchronizer.synchronize(user, () -> sandwich(player, resend, warnOffThread, target, firstCallback, secondCallback, firstTracker, secondTracker, options));
         return;
-      } else if (isInInvalidThread()) {
+      } else if (warnOffThread && isInInvalidThread()) {
         if (WARNINGS_LEFT-- > 0) {
           IntaveLogger.logger().info("Async packet sent from "+Caller.pluginInfo(true)+" on thread " + Thread.currentThread().getName());
           IntaveLogger.logger().info("It is highly recommended to only send packets on the main thread.");
@@ -150,7 +210,7 @@ public final class FeedbackSender extends Module {
     try {
       lock.lock();
       tracedSingleSynchronize(player, target, firstCallback, firstTracker, options);
-      PacketSender.sendServerPacketWithoutEvent(player, encapsulate.shallowClone());
+      resend.run();
       tracedSingleSynchronize(player, target, secondCallback, secondTracker, options);
     } finally {
       lock.unlock();

@@ -3,6 +3,7 @@ package de.jpx3.intave.check.combat.clickpatterns;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.ClickPatterns;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AttackMetadata;
@@ -37,7 +38,26 @@ public final class Fluctuation extends MetaCheckPart<ClickPatterns, Fluctuation.
             packetsIn = ARM_ANIMATION
     )
     public void receiveSwing(PacketEvent event) {
-        Player player = event.getPlayer();
+        handleSwing(event.getPlayer());
+    }
+
+    /**
+     * PacketEvents entry point. The swing packet carries nothing this check reads, so the player
+     * is the only argument the engine has to supply.
+     */
+    @PacketSubscription(
+        engine = Engine.PACKETEVENTS,
+        packetsIn = ARM_ANIMATION
+    )
+    public void receiveSwing(Player player) {
+        handleSwing(player);
+    }
+
+    /** Engine independent swing handling. */
+    private void handleSwing(Player player) {
+        if (player == null) {
+            return;
+        }
         User user = userOf(player);
         FluctuationMeta meta = metaOf(user);
 

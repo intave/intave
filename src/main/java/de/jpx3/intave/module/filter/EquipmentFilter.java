@@ -1,11 +1,13 @@
 package de.jpx3.intave.module.filter;
 
-import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.Pair;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.packet.view.EntityEquipmentView;
+import de.jpx3.intave.packet.view.PacketEventsEntityEquipmentView;
+import de.jpx3.intave.packet.view.ProtocolLibEntityEquipmentView;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -30,24 +32,34 @@ public final class EquipmentFilter extends Filter {
     }
   )
   public void filterEquipment(PacketEvent event) {
-    PacketContainer packet = event.getPacket();
+    filterEquipment(new ProtocolLibEntityEquipmentView(event));
+  }
 
-    if (packet.getItemModifier().readSafely(0) != null) {
-      // 1.8 - 1.15
-      ItemStack itemStack = packet.getItemModifier().readSafely(0);
-      ItemStack newItemStack = stripFromData(itemStack);
-      packet.getItemModifier().write(0, newItemStack);
-//      int a = packet.getIntegers().read(0);
-//      int b = packet.getIntegers().read(1);
-//      System.out.println("New equipment: " + itemStack + " " + a + " " + b);
-    } else {
-      List<Pair<EnumWrappers.ItemSlot, ItemStack>> read = packet.getSlotStackPairLists().read(0);
-      for (Pair<EnumWrappers.ItemSlot, ItemStack> itemSlotItemStackPair : read) {
-        ItemStack itemStack = itemSlotItemStackPair.getSecond().clone();
-        ItemStack newItemStack = stripFromData(itemStack);
-        itemSlotItemStackPair.setSecond(newItemStack);
-      }
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsOut = {
+      ENTITY_EQUIPMENT
     }
+  )
+  public void filterEquipment(PacketSendEvent event) {
+    PacketEventsEntityEquipmentView view = PacketEventsEntityEquipmentView.of(event);
+    if (view == null) {
+      return;
+    }
+    filterEquipment(view);
+  }
+
+  /** Engine independent equipment stripping; see {@link EntityEquipmentView}. */
+  private void filterEquipment(EntityEquipmentView view) {
+    List<ItemStack> items = view.items();
+    for (int index = 0; index < items.size(); index++) {
+      ItemStack itemStack = items.get(index);
+      if (itemStack == null) {
+        continue;
+      }
+      view.setItem(index, stripFromData(itemStack));
+    }
+    view.release();
   }
 
   private ItemStack stripFromData(ItemStack itemStack) {

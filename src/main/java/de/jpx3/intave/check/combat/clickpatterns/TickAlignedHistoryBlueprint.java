@@ -4,14 +4,20 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
+import com.github.retrooper.packetevents.protocol.player.DiggingAction;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerDigging;
 import de.jpx3.intave.check.Blueprint;
 import de.jpx3.intave.check.combat.ClickPatterns;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.packet.reader.EntityUseReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.packet.view.PacketEventsAttackView;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Material;
@@ -38,29 +44,81 @@ public abstract class TickAlignedHistoryBlueprint<E extends TickAlignedMeta> ext
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
 
-    TickAlignedMeta meta = metaOf(user);
-
     PacketContainer packet = event.getPacket();
     PacketType type = packet.getType();
     if (type == PacketType.Play.Client.USE_ENTITY) {
       EntityUseReader reader = PacketReaders.readerOf(packet);
       EnumWrappers.EntityUseAction entityUseAction = reader.useAction();
       if (entityUseAction == EnumWrappers.EntityUseAction.ATTACK) {
-        meta.attacks++;
+        countAttack(user);
       }
       reader.release();
     } else if (type == PacketType.Play.Client.ARM_ANIMATION) {
-      meta.clicks++;
+      countSwing(user);
     } else if (type == PacketType.Play.Client.BLOCK_DIG) {
       EnumWrappers.PlayerDigType digType = packet.getPlayerDigTypes().read(0);
 //      if (digType == )
-      if (digType == DROP_ITEM && user.meta().inventory().heldItemType() == Material.AIR) {
-
-      } else {
-        meta.breakingBlock = user.meta().attack().inBreakProcess;
-        meta.places++;
-      }
+      countDig(user, digType == DROP_ITEM);
     }
+  }
+
+  /**
+   * PacketEvents entry point for the same three packets. PacketEvents folds the separate attack
+   * packet of the newest protocols back into the interact packet, so the attack is told apart by
+   * the action just like the ProtocolLib reader does below 26.1.1.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      USE_ENTITY, ARM_ANIMATION, BLOCK_DIG
+    }
+  )
+  public final void clientClickUpdate(PacketReceiveEvent event, Player player) {
+    if (player == null) {
+      return;
+    }
+    User user = UserRepository.userOf(player);
+
+    PacketTypeCommon type = event.getPacketType();
+    if (type == com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.INTERACT_ENTITY) {
+      PacketEventsAttackView view = PacketEventsAttackView.of(event);
+      if (view == null) {
+        return;
+      }
+      if (view.isAttackPacket()) {
+        countAttack(user);
+      }
+      view.release();
+    } else if (type == com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.ANIMATION) {
+      countSwing(user);
+    } else if (type == com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.PLAYER_DIGGING) {
+      DiggingAction digType = new WrapperPlayClientPlayerDigging(event).getAction();
+      countDig(user, digType == DiggingAction.DROP_ITEM);
+    }
+  }
+
+  /** Engine independent: an attack on a tracked entity happened this tick. */
+  private void countAttack(User user) {
+    metaOf(user).attacks++;
+  }
+
+  /** Engine independent: a bare arm swing happened this tick. */
+  private void countSwing(User user) {
+    metaOf(user).clicks++;
+  }
+
+  /**
+   * Engine independent dig handling. A drop with an empty hand is not a click at all and is
+   * ignored, exactly as the ProtocolLib path did.
+   */
+  private void countDig(User user, boolean dropItem) {
+    if (dropItem && user.meta().inventory().heldItemType() == Material.AIR) {
+      return;
+    }
+    TickAlignedMeta meta = metaOf(user);
+    meta.breakingBlock = user.meta().attack().inBreakProcess;
+    meta.places++;
   }
 
   @PacketSubscription(
@@ -70,7 +128,29 @@ public abstract class TickAlignedHistoryBlueprint<E extends TickAlignedMeta> ext
     }
   )
   public final void clientTickUpdate(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleTick(event.getPlayer());
+  }
+
+  /**
+   * PacketEvents entry point. The movement packet itself is not read here, it only marks the tick
+   * boundary, so the player is the only argument the engine has to supply.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      FLYING, LOOK, POSITION, POSITION_LOOK
+    }
+  )
+  public final void clientTickUpdate(Player player) {
+    handleTick(player);
+  }
+
+  /** Engine independent tick boundary handling. */
+  private void handleTick(Player player) {
+    if (player == null) {
+      return;
+    }
     User user = UserRepository.userOf(player);
 
     TickAlignedMeta meta = metaOf(user);

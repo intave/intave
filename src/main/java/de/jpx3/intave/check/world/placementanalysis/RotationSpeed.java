@@ -18,6 +18,7 @@ import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
@@ -66,7 +67,28 @@ public final class RotationSpeed extends PlayerCheckPart<PlacementAnalysis> {
 		}
 	)
 	public void on(PacketEvent event) {
-		Player player = event.getPlayer();
+		handleRotation(event.getPlayer());
+	}
+
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		priority = ListenerPriority.LOW,
+		packetsIn = {
+			POSITION_LOOK, LOOK
+		}
+	)
+	public void on(Player player) {
+		if (player == null) {
+			return;
+		}
+		handleRotation(player);
+	}
+
+	/**
+	 * Engine independent body: only the player's rotation metadata is read, so no packet field has
+	 * to cross the engine boundary.
+	 */
+	private void handleRotation(Player player) {
 		User user = userOf(player);
 		MovementMetadata movementData = user.meta().movement();
 		float rotationMovement = Math.min(MathHelper.distanceInDegrees(movementData.rotationYaw, movementData.lastRotationYaw), 360);

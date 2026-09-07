@@ -17,6 +17,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.module.linker.nayoro.NayoroRelay;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.nayoro.PlayerContainer;
 import de.jpx3.intave.user.User;
@@ -58,7 +59,25 @@ public final class TestingHeuristic extends MetaCheckPart<Heuristics, TestingHeu
     }
   )
   public void receiveInteractionPacket(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleInteractionPacket(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      BLOCK_PLACE, BLOCK_DIG
+    }
+  )
+  public void receiveInteractionPacket(Player player) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    handleInteractionPacket(player);
+  }
+
+  /** Engine independent handling; the body never reads the packet, so no view is needed. */
+  private void handleInteractionPacket(Player player) {
     User user = userOf(player);
     ExampleMeta exampleMeta = metaOf(user);
   }

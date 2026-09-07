@@ -4,6 +4,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.MinecraftKey;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import de.jpx3.intave.IntaveLogger;
@@ -14,9 +15,13 @@ import de.jpx3.intave.connect.sibyl.LabyModChannelHelper;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.packet.reader.PayloadInReader;
+import de.jpx3.intave.packet.view.PacketEventsPayloadInView;
+import de.jpx3.intave.packet.view.PayloadInView;
+import de.jpx3.intave.packet.view.ProtocolLibPayloadInView;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
@@ -51,11 +56,34 @@ public final class CustomClientSupportService implements EventProcessor {
     }
   )
   public void receivePayloadPacket(Player player, PayloadInReader reader) {
-    String tag = reader.tag();
+    handlePayloadPacket(player, new ProtocolLibPayloadInView(player, reader));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      CUSTOM_PAYLOAD_IN
+    }
+  )
+  public void receivePayloadPacket(PacketReceiveEvent event, Player player) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    PacketEventsPayloadInView view = PacketEventsPayloadInView.of(event);
+    if (view == null) {
+      return;
+    }
+    handlePayloadPacket(player, view);
+  }
+
+  /** Engine independent custom client configuration handling; see {@link PayloadInView}. */
+  private void handlePayloadPacket(Player player, PayloadInView view) {
+    String tag = view.tag();
     if (!tag.equalsIgnoreCase("intave")) {
       return;
     }
-    ByteBuf bytes = reader.readBytes();
+    ByteBuf bytes = view.readBytes();
     User user = UserRepository.userOf(player);
     try {
       bytes.markReaderIndex();

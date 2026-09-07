@@ -13,16 +13,22 @@ package de.jpx3.intave.check.world.placementanalysis;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.math.MathHelper;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.reader.BlockInteractionReader;
+import de.jpx3.intave.packet.view.BlockInteractionView;
+import de.jpx3.intave.packet.view.PacketEventsBlockInteractionView;
+import de.jpx3.intave.packet.view.ProtocolLibBlockInteractionView;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
@@ -44,7 +50,28 @@ public final class Constraint extends PlayerCheckPart<PlacementAnalysis> {
 		}
 	)
 	public void receiveMovementPacket(PacketEvent event) {
-		Player player = event.getPlayer();
+		handleMovement(event.getPlayer());
+	}
+
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		priority = ListenerPriority.HIGH,
+		packetsIn = {
+			FLYING, LOOK, POSITION, POSITION_LOOK
+		}
+	)
+	public void receiveMovementPacket(Player player) {
+		if (player == null) {
+			return;
+		}
+		handleMovement(player);
+	}
+
+	/**
+	 * Engine independent body: the movement side of this check only reads the decoded input keys
+	 * from the user's metadata, so no packet field crosses the engine boundary.
+	 */
+	private void handleMovement(Player player) {
 		User user = userOf(player);
 		MovementMetadata movement = user.meta().movement();
 
@@ -87,14 +114,35 @@ public final class Constraint extends PlayerCheckPart<PlacementAnalysis> {
 		priority = ListenerPriority.LOW
 	)
 	public void rightClick(
-		User user, PacketContainer packet, BlockInteractionReader reader
+		User user, PacketContainer packet, BlockInteractionReader reader, Cancellable cancellable
 	) {
-		Player player = user.player();
 		String name = packet.getType().name();
+		handleRightClick(new ProtocolLibBlockInteractionView(user.player(), packet, reader, cancellable));
+	}
 
-		Direction direction = reader.direction();
-		String k = MathHelper.formatMotion(reader.facingVector());
-		if (reader.direction() == null) {
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		packetsIn = {USE_ITEM, BLOCK_PLACE},
+		priority = ListenerPriority.LOW
+	)
+	public void rightClick(PacketReceiveEvent event) {
+		PacketEventsBlockInteractionView view = PacketEventsBlockInteractionView.of(event);
+		if (view != null) {
+			handleRightClick(view);
+		}
+	}
+
+	/**
+	 * Engine independent body; see {@link BlockInteractionView}. The reader is not released here:
+	 * on the ProtocolLib path the subscription linker injected it and releases it after the call,
+	 * exactly as before.
+	 */
+	private void handleRightClick(BlockInteractionView view) {
+		Player player = view.player();
+
+		Direction direction = view.direction();
+		String k = MathHelper.formatMotion(view.facingVector());
+		if (view.direction() == null) {
 			blockClicks++;
 		}
 //    Synchronizer.synchronize(() -> {

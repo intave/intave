@@ -4,6 +4,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.movement.Timer;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
@@ -33,7 +34,25 @@ public final class PacketLoss extends MetaCheckPart<Timer, PacketLoss.PacketLoss
     }
   )
   public void clientTickUpdate(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleClientTick(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      POSITION_LOOK, POSITION, FLYING, LOOK
+    }
+  )
+  public void clientTickUpdate(Player player) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    handleClientTick(player);
+  }
+
+  /** Engine independent packet delay accounting. */
+  private void handleClientTick(Player player) {
     User user = userOf(player);
 
     long now = System.currentTimeMillis();

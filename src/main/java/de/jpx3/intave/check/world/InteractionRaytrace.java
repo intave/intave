@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.check.world;
 
+import de.jpx3.intave.packet.view.MovementView;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
@@ -43,7 +44,11 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
@@ -51,8 +56,13 @@ import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.packet.converter.BlockPositionConverter;
 import de.jpx3.intave.packet.reader.BlockInteractionReader;
-import de.jpx3.intave.packet.reader.EntityReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.packet.view.EntityGenericView;
+import de.jpx3.intave.packet.view.PacketEventsBlockInteractionView;
+import de.jpx3.intave.packet.view.PacketEventsEntityGenericView;
+import de.jpx3.intave.packet.view.ProtocolLibEntityGenericView;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerBlockPlacement;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerDigging;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.MessageChannel;
@@ -72,6 +82,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -91,6 +102,60 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     this.interactionEmulator = new InteractionEmulator(plugin);
   }
 
+  /**
+   * The hold and replay machine: this subscription and {@link #receiveBreak(PacketEvent)} park the
+   * inbound packet and hand it back to the server a tick later, once a movement packet has told
+   * them where the player actually was.
+   *
+   * <h2>What the machine does</h2>
+   * The interaction is wrapped in an {@link Interaction} that carries {@code packet.shallowClone()},
+   * the event is cancelled, and the interaction is queued on {@code InteractionMeta#interactionList}.
+   * The next movement packet drains that list through {@link #receiveMovement(MovementView)} into
+   * {@code processInteraction} and {@code forwardInteractionToServer}, which
+   * <em>rewrites the parked container in place</em> - {@link #writeBlockPosition} and
+   * {@link #writeEnumDirection} read the NMS {@code MovingObjectPositionBlock} out of it, patch the
+   * ray-traced block position and face into it and write it back on 1.14+ - and only then hands it
+   * to the server via {@code receiveExcludedPacket}, i.e. ProtocolLib's
+   * {@code ProtocolManager#receiveClientPacket}.
+   *
+   * <h2>How the PacketEvents twin hosts the same machine</h2>
+   * {@link #receiveInteractionAndPlace(PacketReceiveEvent)} runs the identical body and feeds the
+   * identical {@link Interaction} into the identical routing code. Only the parked packet differs,
+   * and it differs in exactly two places:
+   * <ol>
+   *   <li><b>There is nothing to clone.</b> A PacketEvents wrapper decoded off an inbound event
+   *   borrows that event's byte buffer, so re-injecting it would write into the packet still being
+   *   dispatched. The twin parks the decoded field values in a
+   *   {@link PacketEventsInteractionPacket} and builds a fresh wrapper from them at replay time,
+   *   the trade {@code PlayerHandTracker#replayDigPacket} already makes for its one-shot replay.</li>
+   *   <li><b>The parked packet cannot hang off {@link Interaction}.</b> {@code Interaction} and the
+   *   whole {@code check.world.interaction} package stay typed on {@link PacketContainer} for the
+   *   ProtocolLib path, which has to keep working bit for bit. The twin therefore keeps its parked
+   *   packets in {@code InteractionMeta#parkedPacketEventsPackets}, keyed by
+   *   {@link Interaction#interactionId()}, and {@code forwardInteractionToServer} consults that map
+   *   at the two sites that touch the packet at all - the patch and the re-injection. Nothing else
+   *   in the routing subsystem ever reads {@code thePacket()}, so nothing else had to change.</li>
+   * </ol>
+   * The replay is safe on both engines: {@code User#ignoreNextInboundPacket()} is honoured by
+   * {@code ForwardingPacketAdapter#onPacketReceiving} on the ProtocolLib side and by
+   * {@code PacketEventsLinkage#skipInbound} on the PacketEvents side, both consuming it exactly
+   * once, so the re-injected packet never re-enters the subscription that parked it.
+   * <p>
+   * <b>One flag, one consumer.</b> Because each gate consumes the flag, it hides a replay from the
+   * engine that sees the packet first and only from that one. That is the intended behaviour while
+   * exactly one engine drives a check - which is what the engine switch this port is building
+   * towards gives - but on a server that has both ProtocolLib and PacketEvents installed today,
+   * both of these subscriptions are live for the same packet and neither replay is hidden from the
+   * other engine's twin. Nothing here can fix that: it is the general consequence of registering
+   * both engines at once, which {@code PacketSubscriptionLinker#linkSubscription} still does for
+   * every twinned subscription in the plugin.
+   * <p>
+   * The outbound halves of the machine - {@link #acknowledgeBlockChange} and {@link #refreshBlock} -
+   * are shared rather than twinned. They send server packets, which is independent of the engine the
+   * interaction arrived on, and ProtocolLib is loaded unconditionally by
+   * {@code PacketSubscriptionLinker#enable()}, so a second implementation would only be a second
+   * thing to keep in sync.
+   */
   @PacketSubscription(
     priority = ListenerPriority.NORMAL,
     packetsIn = {
@@ -303,6 +368,272 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     }
   }
 
+  /**
+   * PacketEvents entry point for {@link #receiveInteractionAndPlace(PacketEvent)}; that method
+   * documents the machine and what the two engines share.
+   * <p>
+   * Field mapping against the ProtocolLib body, in the order it reads them:
+   * <ul>
+   *   <li>the acknowledgement sequence, the clicked block and the clicked face come from
+   *   {@link PacketEventsBlockInteractionView}, which is where this port keeps the blessed mapping
+   *   for all three, sequence simulation on versions predating the field included;</li>
+   *   <li>the cursor position replaces the three raw floats the ProtocolLib body reads off the
+   *   packet. Its {@code size() >= 3} guard becomes a null check: PacketEvents decodes a cursor for
+   *   every version that carries one and reports none for the bare use item packet, which is the
+   *   same condition;</li>
+   *   <li>the hand slot comes off the placement wrapper. It is the one field the view family does
+   *   not serve, and it is read here rather than added there because this is its only consumer;</li>
+   *   <li>the raw sequence handed to {@link #acknowledgeBlockChange} comes off the wrapper too.
+   *   {@code packet.getIntegers().read(0)} on the ProtocolLib side is that same field - the 1.19
+   *   placement packet carries exactly one integer - and not the simulated one the view hands out
+   *   below 1.19.2.</li>
+   * </ul>
+   * The wrapper is decoded a second time after the view already decoded one; PacketEvents caches
+   * the wrapper it decoded on the event and copies from it, so the second construction is free.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.NORMAL,
+    packetsIn = {
+      BLOCK_PLACE, USE_ITEM, USE_ITEM_ON
+    }
+  )
+  public void receiveInteractionAndPlace(PacketReceiveEvent event) {
+    Object bukkitPlayer = event.getPlayer();
+    if (!(bukkitPlayer instanceof Player)) {
+      return;
+    }
+    Player player = (Player) bukkitPlayer;
+    User user = userOf(player);
+    InteractionMeta interactionMeta = metaOf(user);
+    MetadataBundle meta = user.meta();
+    MovementMetadata movementData = meta.movement();
+    AbilityMetadata abilityMetadata = meta.abilities();
+    InventoryMetadata inventory = meta.inventory();
+    PacketEventsBlockInteractionView view = PacketEventsBlockInteractionView.of(event);
+    if (view == null) {
+      return;
+    }
+
+    inventory.lastBlockSequenceNumber = view.sequenceNumber(user);
+
+    try {
+      de.jpx3.intave.share.BlockPosition clickedBlock = view.blockPosition();
+      if (clickedBlock == null || event.isCancelled() || movementData.isInVehicle()) {
+        return;
+      }
+      com.comphenix.protocol.wrappers.BlockPosition blockPosition =
+        new com.comphenix.protocol.wrappers.BlockPosition(
+          clickedBlock.getX(), clickedBlock.getY(), clickedBlock.getZ()
+        );
+      int enumDirection = view.enumDirection();
+      if (enumDirection == 255) {
+        // INTERACT IS EMPTY
+      }
+
+      WrapperPlayClientPlayerBlockPlacement wrapper = new WrapperPlayClientPlayerBlockPlacement(event);
+
+      float facingX = -1;
+      float facingY = -1;
+      float facingZ = -1;
+      org.bukkit.util.Vector cursorPosition = view.facingVector();
+      if (cursorPosition != null && meta.protocol().sendsFacings()) {
+        facingX = (float) cursorPosition.getX();
+        facingY = (float) cursorPosition.getY();
+        facingZ = (float) cursorPosition.getZ();
+
+        if (Float.isNaN(facingX) || Float.isNaN(facingY) || Float.isNaN(facingZ)) {
+          if (MinecraftVersions.VER1_19.atOrAbove()) {
+            acknowledgeBlockChange(player, wrapper.getSequence());
+          }
+          event.setCancelled(true);
+          return;
+        }
+      }
+
+      World world = player.getWorld();
+      Material clickedType = VolatileBlockAccess.typeAccess(user, blockPosition.toLocation(world));
+      boolean clickedIsInteractable = BlockInteractionAccess.isClickable(clickedType);
+
+      if (clickedType == Material.WHEAT || clickedType == BlockTypeAccess.FARMLAND) {
+        // not important
+        return;
+      }
+
+      EnumWrappers.Hand handSlot = handOf(wrapper.getHand());
+
+      ItemStack heldItem = inventory.heldItem();
+      Material heldItemType = heldItem == null ? Material.AIR : heldItem.getType();
+      Material offHandItemType = inventory.offhandItemType();
+      Material typeUsedInHand = handSlot == EnumWrappers.Hand.MAIN_HAND ? heldItemType : offHandItemType;
+      if (typeUsedInHand == null) {
+        typeUsedInHand = Material.AIR;
+      }
+
+      Location placementLocation = interactionEmulator.placementLocation(
+        world, player, user.blockCache(),
+        typeUsedInHand, Direction.getFront(enumDirection),
+        blockPosition.toLocation(world)
+      );
+      int blockX = placementLocation.getBlockX();
+      int blockY = placementLocation.getBlockY();
+      int blockZ = placementLocation.getBlockZ();
+
+      int variant = VolatileBlockAccess.variantIndexAccess(user, placementLocation);
+
+      boolean raytraceCollidesWithPosition = typeUsedInHand.isBlock() && Collision.playerInImaginaryBlock(
+        user, user.meta().movement(), world,
+        blockX, blockY, blockZ,
+        typeUsedInHand, 0
+      );
+
+      Material presentType = user.blockCache().typeAt(blockX, blockY, blockZ);
+
+      boolean interactionIsPlacement = typeUsedInHand != Material.AIR
+        && typeUsedInHand.isBlock()
+        && !clickedIsInteractable
+        && !raytraceCollidesWithPosition
+        && typeUsedInHand != presentType
+        && !abilityMetadata.inGameMode(GameMode.ADVENTURE);
+
+      InteractionType type = enumDirection == 255 ? EMPTY_INTERACT : (interactionIsPlacement ? InteractionType.PLACE : InteractionType.INTERACT);
+
+      if (IntaveControl.DEBUG_INTERACTION) {
+        player.sendMessage(type + " " + typeUsedInHand + " " + enumDirection + " " + presentType + "/" + typeUsedInHand);
+      }
+
+      Interaction interaction =
+        new Interaction(
+          interactionMeta.nextInteractionId++,
+          // No container to park: the packet lives in the side map below instead.
+          null,
+          world, player,
+          blockPosition, enumDirection, type,
+          typeUsedInHand,
+          handSlot == EnumWrappers.Hand.MAIN_HAND
+            ? heldItem
+            : inventory.offhandItem(),
+          handSlot, null, facingX, facingY, facingZ,
+          view.sequenceNumber(user)
+        );
+      PacketEventsInteractionPacket parkedPacket = PacketEventsInteractionPacket.parkPlacement(wrapper);
+
+      boolean placementIs113Speculative = type == PLACE && meta.protocol().aquaticUpdate();
+
+      if (placementIs113Speculative) {
+        interactionMeta.speculativeInteraction = interaction;
+      }
+
+      boolean mustPostValidate = interactionMeta.remainingBlockStart > 0;
+      PreprocessResult result = mustPostValidate ? PreprocessResult.ENFORCE_ROUTING : preprocessInteraction(interaction);
+
+      switch (result) {
+        case FAILED_MINOR:
+          queueInteraction(interactionMeta, interaction, parkedPacket);
+          interaction.doNotSendPacket();
+        case OK:
+          InteractionEmulator.EmulationResult emulate = interactionEmulator.emulate(interaction);
+          if (emulate.denyForward()) {
+            if (MinecraftVersions.VER1_19.atOrAbove()) {
+              acknowledgeBlockChange(player, wrapper.getSequence());
+            }
+            refreshBlocksAround(player, blockPosition.toLocation(world));
+            event.setCancelled(true);
+            if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
+              System.out.println("[Intave/DID] PLACE/INITIAL/PREPRO/EMU_FAILED " + type + " " + typeUsedInHand + " " + enumDirection + " " + blockPosition.getY());
+            }
+            Violation violation = Violation.builderFor(InteractionRaytrace.class)
+              .forPlayer(player)
+              .withVL(0)
+              .withMessage("performed erroneous block placement")
+              .withDetails("emulation failed for " + type + " with " + typeUsedInHand + " in hand, direction " + enumDirection + " at y " + blockPosition.getY())
+              .build();
+            Modules.violationProcessor().processViolation(violation);
+          } else {
+            if (IntaveControl.DEBUG_INTERACTION_DISCREET && IntaveControl.INTERACTION_DEBUG_NAMES.contains(player.getName())) {
+              System.out.println("[Intave/DID] PLACE/INITIAL/PREPRO/EMU_SUCCESS " + type + " " + typeUsedInHand + " " + enumDirection + " " + blockPosition.getY());
+            }
+          }
+          break;
+        case FAILED_CRITICAL:
+        case ENFORCE_ROUTING:
+          queueInteraction(interactionMeta, interaction, parkedPacket);
+          boolean usable = ItemProperties.canItemBeUsed(user, heldItem)
+            && !ItemProperties.isPotion(interaction.itemTypeInHand());
+          if (!usable || type == EMPTY_INTERACT) {
+            if (MinecraftVersions.VER1_19.atOrAbove() && enumDirection != 255) {
+              acknowledgeBlockChange(player, wrapper.getSequence());
+            }
+            event.setCancelled(true);
+          } else {
+            interaction.doNotSendPacket();
+          }
+          if (interaction.type() == InteractionType.PLACE) {
+            interactionMeta.remainingBlockStart = 0;
+          }
+          break;
+        default:
+          break;
+      }
+      if (user.receives(MessageChannel.DEBUG_PACKET_HOLD)) {
+        if (!event.isCancelled()) {
+          Synchronizer.synchronize(user, () -> {
+            player.sendMessage("%PH " + ChatColor.GREEN + "Allowing " + interaction.type().name() + " without hold at " + (System.currentTimeMillis() % 1000));
+          });
+        } else {
+          Synchronizer.synchronize(user, () -> {
+            player.sendMessage("%PH " + ChatColor.RED + "Awaiting " + interaction.type().name() + " packet at " + (System.currentTimeMillis() % 1000) + ": prelim->"+ result);
+          });
+        }
+      }
+    } finally {
+      view.release();
+    }
+  }
+
+  /**
+   * PacketEvents twin of {@code packet.getHands().readSafely(0)} with its null fallback: the
+   * ProtocolLib modifier answers null on the versions whose placement packet has no hand field,
+   * and PacketEvents answers {@code MAIN_HAND} for the same packets, so both land on the main hand.
+   */
+  private static EnumWrappers.Hand handOf(com.github.retrooper.packetevents.protocol.player.InteractionHand hand) {
+    if (hand == null) {
+      return EnumWrappers.Hand.MAIN_HAND;
+    }
+    switch (hand) {
+      case OFF_HAND:
+        return EnumWrappers.Hand.OFF_HAND;
+      case MAIN_HAND:
+      default:
+        return EnumWrappers.Hand.MAIN_HAND;
+    }
+  }
+
+  /**
+   * Queues an interaction the PacketEvents twins parked, the twin of the bare
+   * {@code interactionMeta.interactionList.add(interaction)} on the ProtocolLib path.
+   * <p>
+   * Parking happens here rather than at construction so that the map only ever holds interactions
+   * that will be drained: an interaction that is neither queued nor cancelled reaches the server as
+   * the packet the client actually sent and never asks to be replayed.
+   */
+  private void queueInteraction(
+    InteractionMeta interactionMeta, Interaction interaction, PacketEventsInteractionPacket parkedPacket
+  ) {
+    interactionMeta.interactionList.add(interaction);
+    interactionMeta.parkedPacketEventsPackets.put(interaction.interactionId(), parkedPacket);
+  }
+
+  /**
+   * ProtocolLib half of the break side of the hold and replay machine documented on
+   * {@link #receiveInteractionAndPlace(PacketEvent)}; {@link #receiveBreak(PacketReceiveEvent)} is
+   * the PacketEvents twin.
+   * <p>
+   * Its one engine neutral side effect, the {@code receivedAnyTickContextPacket} call, also reaches
+   * the PacketEvents engine through {@link #receiveAnyTickContextPacket(PacketReceiveEvent)}, which
+   * subscribes to {@code BLOCK_DIG} as well - exactly as it does here, where the twin at
+   * {@link #receiveAnyTickContextPacket(PacketEvent)} makes the same duplicate call.
+   */
   @PacketSubscription(
     priority = ListenerPriority.NORMAL,
     packetsIn = {
@@ -437,9 +768,234 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     }
   }
 
+  /**
+   * PacketEvents entry point for {@link #receiveBreak(PacketEvent)}.
+   * <p>
+   * Field mapping against the ProtocolLib body:
+   * <ul>
+   *   <li>the block position is the wrapper's, decoded for every version, so the
+   *   {@code Lookup.serverClass("BlockPosition")} structure modifier disappears here;</li>
+   *   <li>the dig type is PacketEvents' {@code DiggingAction} mapped onto ProtocolLib's
+   *   {@code PlayerDigType} by wire id, the mapping
+   *   {@code PacketEventsBlockPositionView#digActionOf} already established for this packet -
+   *   PacketEvents spells the first three and the seventh action differently, but the ids are the
+   *   vanilla ones the ProtocolLib enum is ordered by;</li>
+   *   <li>the clicked face is the wrapper's {@code BlockFace}, mapped back onto ProtocolLib's
+   *   {@code EnumDirection} by name so the pre-1.8 south-facing special case below keeps reading
+   *   the way it does on the other engine;</li>
+   *   <li>the raw sequence handed to {@link #acknowledgeBlockChange} is the wrapper's, which is
+   *   what {@code packet.getIntegers().read(0)} reads on the ProtocolLib side - the 1.19 digging
+   *   packet carries exactly one integer.</li>
+   * </ul>
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.NORMAL,
+    packetsIn = {
+      BLOCK_DIG
+    }
+  )
+  public void receiveBreak(PacketReceiveEvent event) {
+    Object bukkitPlayer = event.getPlayer();
+    if (!(bukkitPlayer instanceof Player)) {
+      return;
+    }
+    Player player = (Player) bukkitPlayer;
+    User user = userOf(player);
+
+    InteractionMeta interactionMeta = metaOf(user);
+    MetadataBundle meta = user.meta();
+    AttackMetadata attack = meta.attack();
+    AbilityMetadata abilityData = meta.abilities();
+    InventoryMetadata inventoryData = meta.inventory();
+    ProtocolMetadata protocol = meta.protocol();
+
+    receivedAnyTickContextPacket(user, false, "BLOCK_DIG");
+
+    WrapperPlayClientPlayerDigging wrapper = new WrapperPlayClientPlayerDigging(event);
+    com.github.retrooper.packetevents.util.Vector3i diggedBlock = wrapper.getBlockPosition();
+
+    if (diggedBlock == null || event.isCancelled()) {
+      if (attack.inBreakProcess) {
+        attack.lastBreak = System.currentTimeMillis();
+      }
+      interactionMeta.isBreakingBlock = attack.inBreakProcess = false;
+      return;
+    }
+    com.comphenix.protocol.wrappers.BlockPosition blockPosition =
+      new com.comphenix.protocol.wrappers.BlockPosition(
+        diggedBlock.getX(), diggedBlock.getY(), diggedBlock.getZ()
+      );
+
+    EnumWrappers.PlayerDigType playerDigType = digTypeOf(wrapper.getAction());
+    boolean blockInteraction = playerDigType == START_DESTROY_BLOCK || playerDigType == STOP_DESTROY_BLOCK || playerDigType == ABORT_DESTROY_BLOCK;
+    ItemStack heldItemStack = inventoryData.heldItem();
+    Material heldItemType = inventoryData.heldItemType();
+    if (blockInteraction && ItemProperties.isSwordItem(heldItemStack) && user.meta().abilities().inGameMode(GameMode.CREATIVE)) {
+      Violation violation = Violation.builderFor(InteractionRaytrace.class)
+        .forPlayer(player)
+        .withVL(0)
+        .withMessage("performed invalid block break")
+        .withDetails("sword in creative mode")
+        .build();
+      Modules.violationProcessor().processViolation(violation);
+      event.setCancelled(true);
+      return;
+    }
+
+    float blockDamage = BlockInteractionAccess.blockDamage(player, inventoryData.heldItem(), blockPosition);
+    boolean instantBreak = blockDamage >= 1.0f || abilityData.inGameMode(CREATIVE);
+    boolean breakBlock = instantBreak || playerDigType == STOP_DESTROY_BLOCK;
+
+    EnumWrappers.Direction direction = directionOf(wrapper.getBlockFace());
+    int enumDirection = direction == null ? 0 : direction.ordinal();
+    boolean nullBlock = blockPosition.getX() == 0 && blockPosition.getY() == 0 && blockPosition.getZ() == 0;
+
+    if (nullBlock && enumDirection == 0) {
+      return;
+    }
+
+    if (protocol.isPreMinecraft8() &&
+      nullBlock &&
+      direction == EnumWrappers.Direction.SOUTH &&
+      playerDigType == RELEASE_USE_ITEM
+    ) {
+      return;
+    }
+
+    InteractionType type = breakBlock ? InteractionType.BREAK : InteractionType.START_BREAK;
+    if (IntaveControl.DEBUG_INTERACTION) {
+      player.sendMessage(type + "@" + user.blockCache().typeAt(blockPosition.getX(), blockPosition.getY(), blockPosition.getZ()) + "/" + blockDamage + " " + heldItemType + " " + playerDigType);
+    }
+
+    Interaction interaction = new Interaction(
+      interactionMeta.nextInteractionId++,
+      // No container to park: the packet lives in the side map instead.
+      null, player.getWorld(), player,
+      blockPosition, enumDirection, type,
+      heldItemType, heldItemStack, EnumWrappers.Hand.MAIN_HAND, playerDigType,
+      Float.NaN, Float.NaN, Float.NaN, -1
+    );
+    PacketEventsInteractionPacket parkedPacket = PacketEventsInteractionPacket.parkDigging(wrapper);
+
+    if (interactionMeta.interactionList.isEmpty()) {
+      interactionMeta.remainingBlockStart = 0;
+    }
+
+    boolean enforceRouting = interactionMeta.remainingBlockStart > 0;
+    PreprocessResult preprocess = enforceRouting ? PreprocessResult.ENFORCE_ROUTING : preprocessInteraction(interaction);
+
+    if (IntaveControl.DEBUG_INTERACTION) {
+      player.sendMessage("receiveBreak " + preprocess + " " + interactionMeta.remainingBlockStart);
+    }
+
+    switch (preprocess) {
+      case OK:
+        interactionEmulator.emulate(interaction);
+        break;
+      case FAILED_MINOR:
+        interactionEmulator.emulate(interaction);
+        interaction.doNotSendPacket();
+        queueInteraction(interactionMeta, interaction, parkedPacket);
+        break;
+      case FAILED_CRITICAL:
+      case ENFORCE_ROUTING:
+        queueInteraction(interactionMeta, interaction, parkedPacket);
+        event.setCancelled(true);
+        if (MinecraftVersions.VER1_19.atOrAbove()) {
+          acknowledgeBlockChange(player, wrapper.getSequence());
+        }
+        if (type == START_BREAK) {
+          interactionMeta.remainingBlockStart++;
+        }
+        break;
+    }
+    if (user.receives(MessageChannel.DEBUG_PACKET_HOLD)) {
+      if (!event.isCancelled()) {
+        Synchronizer.synchronize(user, () -> {
+          player.sendMessage("%PH " + ChatColor.GREEN + "Allowing " + interaction.type().name() + " without hold at " + (System.currentTimeMillis() % 1000));
+        });
+      } else {
+        Synchronizer.synchronize(user, () -> {
+          player.sendMessage("%PH " + ChatColor.RED + "Awaiting " + interaction.type().name() + " packet at " + (System.currentTimeMillis() % 1000) + ": prelim->"+ preprocess);
+        });
+      }
+    }
+    if (breakBlock || playerDigType == ABORT_DESTROY_BLOCK) {
+      interactionMeta.isBreakingBlock = attack.inBreakProcess = false;
+      attack.lastBreak = System.currentTimeMillis();
+    } else if (playerDigType == START_DESTROY_BLOCK) {
+      interactionMeta.isBreakingBlock = attack.inBreakProcess = true;
+    }
+  }
+
+  /**
+   * Maps by wire id rather than by name, the way {@code PacketEventsBlockPositionView#digActionOf}
+   * does for the same packet: PacketEvents calls the first three actions START_DIGGING,
+   * CANCELLED_DIGGING and FINISHED_DIGGING and the seventh SWAP_ITEM_WITH_OFFHAND, but the ids are
+   * the vanilla ones the ProtocolLib enum is ordered by. An id ProtocolLib has no constant for
+   * answers null, which is what {@code getPlayerDigTypes().readSafely(0)} answers there.
+   */
+  private static EnumWrappers.PlayerDigType digTypeOf(
+    com.github.retrooper.packetevents.protocol.player.DiggingAction action
+  ) {
+    if (action == null) {
+      return null;
+    }
+    switch (action.getId()) {
+      case 0:
+        return START_DESTROY_BLOCK;
+      case 1:
+        return ABORT_DESTROY_BLOCK;
+      case 2:
+        return STOP_DESTROY_BLOCK;
+      case 3:
+        return EnumWrappers.PlayerDigType.DROP_ALL_ITEMS;
+      case 4:
+        return EnumWrappers.PlayerDigType.DROP_ITEM;
+      case 5:
+        return RELEASE_USE_ITEM;
+      case 6:
+        return EnumWrappers.PlayerDigType.SWAP_HELD_ITEMS;
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Maps by name. PacketEvents resolves the digging packet's face byte through
+   * {@code BlockFace#getBlockFaceByValue}, which indexes the six cartesian faces the same way the
+   * server does when it turns that byte into the {@code EnumDirection} the ProtocolLib body reads.
+   * {@code OTHER} is the one constant with no ProtocolLib counterpart and answers null, which is
+   * what {@code getDirections().readSafely(0)} answers for a packet without a usable face.
+   */
+  private static EnumWrappers.Direction directionOf(
+    com.github.retrooper.packetevents.protocol.world.BlockFace face
+  ) {
+    if (face == null) {
+      return null;
+    }
+    switch (face) {
+      case DOWN:
+        return EnumWrappers.Direction.DOWN;
+      case UP:
+        return EnumWrappers.Direction.UP;
+      case NORTH:
+        return EnumWrappers.Direction.NORTH;
+      case SOUTH:
+        return EnumWrappers.Direction.SOUTH;
+      case WEST:
+        return EnumWrappers.Direction.WEST;
+      case EAST:
+        return EnumWrappers.Direction.EAST;
+      default:
+        return null;
+    }
+  }
+
   @DispatchTarget
-  public boolean receiveMovement(PacketEvent event) {
-    Player player = event.getPlayer();
+  public boolean receiveMovement(MovementView view) {
+    Player player = view.player();
     World world = player.getWorld();
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();
@@ -458,6 +1014,9 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       processInteraction(interaction, playerLocation.clone(), playerLocationmdf.clone());
     }
     interactionList.clear();
+    // Bounds the parked packets of the PacketEvents twins to the interactions of a single drain;
+    // a no-op on the ProtocolLib path, where the map is never filled.
+    interactionMeta.parkedPacketEventsPackets.clear();
     return true;
   }
 
@@ -481,6 +1040,39 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     Player player = event.getPlayer();
     User user = userOf(player);
     receivedAnyTickContextPacket(user, event.getPacket().getType() == PacketType.Play.Client.ARM_ANIMATION, event.getPacketType().name());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.LOWEST,
+    packetsIn = {
+      ARM_ANIMATION,
+      BLOCK_DIG,
+      BLOCK_PLACE,
+      TRANSACTION,
+      PONG,
+      USE_ITEM,
+      USE_ENTITY,
+      FLYING,
+      POSITION,
+      POSITION_LOOK,
+      LOOK,
+    }
+  )
+  public void receiveAnyTickContextPacket(PacketReceiveEvent event) {
+    Object bukkitPlayer = event.getPlayer();
+    if (!(bukkitPlayer instanceof Player)) {
+      return;
+    }
+    User user = userOf((Player) bukkitPlayer);
+    PacketTypeCommon packetType = event.getPacketType();
+    // The debug string is PacketEvents' own name for the packet (ANIMATION rather than
+    // ARM_ANIMATION, PLAYER_DIGGING rather than BLOCK_DIG); it only ever reaches a debug message.
+    receivedAnyTickContextPacket(
+      user,
+      packetType == com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.ANIMATION,
+      packetType.getName()
+    );
   }
 
   private void receivedAnyTickContextPacket(
@@ -913,10 +1505,11 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
           blockStateAccess.invalidateOverride(targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ());
         }
         if (canBeReceivedAsIsWithoutProblems) {
-          receiveExcludedPacket(player, interaction.thePacket());
+          receiveExcludedPacket(user, interaction);
         }
       } else {
         PacketContainer packet = interaction.thePacket();
+        PacketEventsInteractionPacket parkedPacket = parkedPacketOf(user, interaction);
         if (flag && !canBeReceivedAsIsWithoutProblems) {
           // check if player collides with placement location
           {
@@ -936,16 +1529,25 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
               return;
             }
           }
-          writeEnumDirection(packet, raycastResult.sideHit);
-          com.comphenix.protocol.wrappers.BlockPosition bp =
-            new com.comphenix.protocol.wrappers.BlockPosition(
+          if (parkedPacket == null) {
+            writeEnumDirection(packet, raycastResult.sideHit);
+            com.comphenix.protocol.wrappers.BlockPosition bp =
+              new com.comphenix.protocol.wrappers.BlockPosition(
+                raycastLocation.getBlockX(),
+                raycastLocation.getBlockY(),
+                raycastLocation.getBlockZ()
+              );
+            writeBlockPosition(packet, bp);
+          } else {
+            parkedPacket.patch(
               raycastLocation.getBlockX(),
               raycastLocation.getBlockY(),
-              raycastLocation.getBlockZ()
+              raycastLocation.getBlockZ(),
+              raycastResult.sideHit
             );
-          writeBlockPosition(packet, bp);
+          }
         }
-        receiveExcludedPacket(player, packet);
+        receiveExcludedPacket(user, interaction);
         if (refreshBlocks && flag) {
           refreshBlocksAround(player, targetLocation);
         }
@@ -956,9 +1558,18 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
           refreshBlocksAround(player, targetLocation);
         }
       } else {
-        receiveExcludedPacket(player, interaction.thePacket());
+        receiveExcludedPacket(user, interaction);
       }
     }
+  }
+
+  /**
+   * @return the packet the PacketEvents twins parked for this interaction, or null when it came in
+   * over ProtocolLib and carries its own container.
+   */
+  private PacketEventsInteractionPacket parkedPacketOf(User user, Interaction interaction) {
+    Map<Long, PacketEventsInteractionPacket> parkedPackets = metaOf(user).parkedPacketEventsPackets;
+    return parkedPackets.isEmpty() ? null : parkedPackets.get(interaction.interactionId());
   }
 
   private void refreshBlocksAround(Player player, Location targetLocation) {
@@ -1134,16 +1745,45 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     packetsOut = BLOCK_BREAK_ANIMATION
   )
   public void clearInvalidBreakingUpdates(PacketEvent event) {
-    PacketContainer packet = event.getPacket();
-    EntityReader entityReader = PacketReaders.readerOf(packet);
-    Entity entity = entityReader.entityBy(event);
-    entityReader.release();
+    handleBreakingUpdate(new ProtocolLibEntityGenericView(event));
+  }
 
-    if (entity instanceof Player && UserRepository.hasUser((Player) entity)) {
-      User breakingUser = UserRepository.userOf((Player) entity);
-      if (!metaOf(breakingUser).isBreakingBlock) {
-        packet.getIntegers().write(1, 11);
+  /**
+   * PacketEvents entry point for {@link #clearInvalidBreakingUpdates(PacketEvent)}. The only field
+   * read is the addressed entity and the only field written is the destroy stage, both of which
+   * {@link PacketEventsEntityGenericView} serves.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsOut = BLOCK_BREAK_ANIMATION
+  )
+  public void clearInvalidBreakingUpdates(PacketSendEvent event) {
+    PacketEventsEntityGenericView view = PacketEventsEntityGenericView.of(event);
+    if (view == null) {
+      return;
+    }
+    handleBreakingUpdate(view);
+  }
+
+  /**
+   * Engine independent body; see {@link EntityGenericView}.
+   * <p>
+   * The view is released after the possible destroy stage write rather than straight after the
+   * entity lookup the way the reader used to be: the ProtocolLib release is idempotent and only
+   * hands the pooled reader back, while the PacketEvents one is what flushes a pending write onto
+   * the packet, so it has to come last.
+   */
+  private void handleBreakingUpdate(EntityGenericView view) {
+    try {
+      Entity entity = view.entity();
+      if (entity instanceof Player && UserRepository.hasUser((Player) entity)) {
+        User breakingUser = UserRepository.userOf((Player) entity);
+        if (!metaOf(breakingUser).isBreakingBlock) {
+          view.setDestroyStage(11);
+        }
       }
+    } finally {
+      view.release();
     }
   }
 
@@ -1222,6 +1862,26 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     PacketSender.receiveClientPacketFrom(player, packet);
   }
 
+  /**
+   * Hands a parked interaction back to the server on whichever engine parked it. The ProtocolLib
+   * path is the branch below and is unchanged; an interaction the PacketEvents twins parked has no
+   * container and is replayed from the field values in its {@link PacketEventsInteractionPacket}
+   * instead.
+   */
+  private void receiveExcludedPacket(User user, Interaction interaction) {
+    Player player = interaction.player();
+    PacketEventsInteractionPacket parkedPacket = parkedPacketOf(user, interaction);
+    if (parkedPacket == null) {
+      receiveExcludedPacket(player, interaction.thePacket());
+      return;
+    }
+    if (IntaveControl.DEBUG_INTERACTION_PACKET_ROUTING) {
+      System.out.println("[Intave/DIPR] ROUTED PACKET " + parkedPacket);
+    }
+    user.ignoreNextInboundPacket();
+    parkedPacket.replayTo(player);
+  }
+
   @Override
   public boolean performLinkage() {
     return true;
@@ -1260,6 +1920,15 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
 
   public static class InteractionMeta extends CheckCustomMetadata {
     final List<Interaction> interactionList = new CopyOnWriteArrayList<>();
+    /**
+     * The packets the PacketEvents twins parked, keyed by {@link Interaction#interactionId()}.
+     * <p>
+     * A side map rather than a field on {@link Interaction} because that class stays typed on
+     * ProtocolLib's {@code PacketContainer} for the ProtocolLib path. Filled only by the
+     * PacketEvents twins, cleared with {@link #interactionList} on every drain, and written from
+     * connection threads while the drain reads it, hence the concurrent map.
+     */
+    final Map<Long, PacketEventsInteractionPacket> parkedPacketEventsPackets = new ConcurrentHashMap<>();
     public boolean estimateMouseDelayFix = false;
     public boolean isBreakingBlock = false;
     public long remainingBlockStart = 0;

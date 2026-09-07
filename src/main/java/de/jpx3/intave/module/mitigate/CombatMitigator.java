@@ -12,6 +12,7 @@
 package de.jpx3.intave.module.mitigate;
 
 import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.connect.sibyl.SibylMessageTransmitter;
@@ -19,9 +20,13 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.reader.EntityVelocityReader;
+import de.jpx3.intave.packet.view.EntityVelocityView;
+import de.jpx3.intave.packet.view.PacketEventsEntityVelocityView;
+import de.jpx3.intave.packet.view.ProtocolLibEntityVelocityView;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
 import de.jpx3.intave.user.MessageChannel;
@@ -116,6 +121,26 @@ public final class CombatMitigator extends Module {
   public void onArmAnimationPacket(
     User user, PacketEvent event
   ) {
+    handleArmAnimation(user);
+  }
+
+  /**
+   * PacketEvents entry point. The swing packet carries nothing this module reads, so the player is
+   * the only argument the engine has to supply.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = PacketId.Client.ARM_ANIMATION
+  )
+  public void onArmAnimationPacket(Player player) {
+    if (player == null) {
+      return;
+    }
+    handleArmAnimation(UserRepository.userOf(player));
+  }
+
+  /** Engine independent swing handling. */
+  private void handleArmAnimation(User user) {
     user.meta().punishment().lastSwing = System.currentTimeMillis();
   }
 
@@ -125,8 +150,37 @@ public final class CombatMitigator extends Module {
   public void onVelocityPacket(
     User user, PacketEvent event, EntityVelocityReader reader
   ) {
+    // The reader is not released here: the ProtocolLib path never owned it, the subscription
+    // linker hands in a pooled reader and takes it back once this method returns.
+    handleVelocity(user, new ProtocolLibEntityVelocityView(user.player(), reader));
+  }
+
+  /**
+   * PacketEvents entry point. Mirrors the ProtocolLib subscription above; the view caches the
+   * decoded velocity and only re-encodes the packet in {@link EntityVelocityView#release()}, so an
+   * untouched packet stays untouched.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsOut = PacketId.Server.ENTITY_VELOCITY
+  )
+  public void onVelocityPacket(PacketSendEvent event) {
+    PacketEventsEntityVelocityView view = PacketEventsEntityVelocityView.of(event);
+    if (view == null) {
+      return;
+    }
+    Player player = view.player();
+    if (player == null) {
+      return;
+    }
+    handleVelocity(UserRepository.userOf(player), view);
+    view.release();
+  }
+
+  /** Engine independent knockback nerfing; see {@link EntityVelocityView}. */
+  private void handleVelocity(User user, EntityVelocityView view) {
     int entityId = user.player().getEntityId();
-    if (reader.entityId() != entityId) {
+    if (view.entityId() != entityId) {
       return;
     }
     for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
@@ -152,8 +206,8 @@ public final class CombatMitigator extends Module {
         continue;
       }
 
-      double motionX = reader.motionX();
-      double motionZ = reader.motionZ();
+      double motionX = view.motionX();
+      double motionZ = view.motionZ();
 
       double ratio = 1;
       int reduceTicks = ThreadLocalRandom.current().nextInt(0, 3);
@@ -163,8 +217,8 @@ public final class CombatMitigator extends Module {
       for (int i = 0; i < reduceTicks; i++) {
         ratio *= 0.6;
       }
-      reader.setMotionX(motionX * ratio);
-      reader.setMotionZ(motionZ * ratio);
+      view.setMotionX(motionX * ratio);
+      view.setMotionZ(motionZ * ratio);
       return;
     }
 
@@ -173,8 +227,8 @@ public final class CombatMitigator extends Module {
       punishment.nerferOfType(RECEIVE_MORE_KNOCKBACK).active() &&
       punishment.velocityIncreaseTokens > 0
     ) {
-      double motionX = reader.motionX();
-      double motionZ = reader.motionZ();
+      double motionX = view.motionX();
+      double motionZ = view.motionZ();
 
       double horizontal = Math.sqrt(motionX * motionX + motionZ * motionZ);
       double velocityAdd = polyEval(MathHelper.minmax(0, horizontal, 1));
@@ -183,8 +237,8 @@ public final class CombatMitigator extends Module {
       velocityAdd += ThreadLocalRandom.current().nextGaussian() * 0.333;
 
       double factor = (MathHelper.minmax(0, velocityAdd,0.6) + 1);
-      reader.setMotionX(motionX * factor);
-      reader.setMotionZ(motionZ * factor);
+      view.setMotionX(motionX * factor);
+      view.setMotionZ(motionZ * factor);
       punishment.velocityIncreaseTokens--;
     }
 

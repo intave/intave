@@ -18,5 +18,11 @@ package de.jpx3.intave.module.linker.packet;
 
 public enum Engine {
   PROTOCOLLIB,
-  INTERNAL
+  INTERNAL,
+  /**
+   * Packet delivery through PacketEvents. Subscriber methods bound to this engine receive
+   * PacketEvents types ({@code PacketReceiveEvent} / {@code PacketSendEvent}) instead of
+   * ProtocolLib's {@code PacketEvent}.
+   */
+  PACKETEVENTS
 }

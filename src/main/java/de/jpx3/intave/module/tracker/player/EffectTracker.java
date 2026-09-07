@@ -2,10 +2,16 @@ package de.jpx3.intave.module.tracker.player;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.protocol.potion.PotionType;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityEffect;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerRemoveEntityEffect;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.module.Module;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.reader.EntityEffectReader;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.EffectMetadata;
@@ -43,12 +49,67 @@ public final class EffectTracker extends Module {
     if (entityId != player.getEntityId()) {
       return;
     }
-    PotionEffectOutput effectOutput = new PotionEffectOutput(
+    handleEffect(
+      user, player,
+      entityId,
       reader.effectType(),
       reader.effectAmplifier(),
       reader.effectDuration()
     );
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = HIGH,
+    packetsOut = ENTITY_EFFECT
+  )
+  public void sentEffect(PacketSendEvent event, Player player) {
+    if (player == null) {
+      return;
+    }
+    WrapperPlayServerEntityEffect wrapper = new WrapperPlayServerEntityEffect(event);
+    int entityId = wrapper.getEntityId();
+    if (entityId != player.getEntityId()) {
+      return;
+    }
+    handleEffect(
+      UserRepository.userOf(player), player,
+      entityId,
+      // The reader hands out the legacy numeric effect id; the Bukkit type carries the same one.
+      legacyEffectIdOf(wrapper.getPotionType()),
+      wrapper.getEffectAmplifier(),
+      wrapper.getEffectDurationTicks()
+    );
+  }
+
+  /** Engine independent effect handling; the packet only carries the target and the effect. */
+  private void handleEffect(
+    User user, Player player,
+    int entityId, int effectType, int effectAmplifier, int effectDuration
+  ) {
+    if (entityId != player.getEntityId()) {
+      return;
+    }
+    PotionEffectOutput effectOutput = new PotionEffectOutput(
+      effectType,
+      effectAmplifier,
+      effectDuration
+    );
     user.tickFeedback(() -> receiveEffect(player, effectOutput));
+  }
+
+  /**
+   * @return the numeric effect id the ProtocolLib reader produces, or 0 when the effect cannot be
+   * resolved on this server - 0 is what the reader reports for an unreadable effect too, and it
+   * matches none of the tracked effects.
+   */
+  private int legacyEffectIdOf(PotionType potionType) {
+    if (potionType == null) {
+      return 0;
+    }
+    PotionEffectType bukkitType = SpigotConversionUtil.toBukkitPotionEffectType(potionType);
+    //noinspection deprecation
+    return bukkitType == null ? 0 : bukkitType.getId();
   }
 
   @PacketSubscription(
@@ -65,7 +126,43 @@ public final class EffectTracker extends Module {
     if (entityId != player.getEntityId()) {
       return;
     }
-    PotionEffectType potionEffectType = effectIdOf(packet);
+    handleRemoveEffect(user, player, entityId, effectIdOf(packet));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = HIGH,
+    packetsOut = {
+      REMOVE_ENTITY_EFFECT
+    }
+  )
+  public void sentRemoveEffect(PacketSendEvent event, Player player) {
+    if (player == null) {
+      return;
+    }
+    WrapperPlayServerRemoveEntityEffect wrapper = new WrapperPlayServerRemoveEntityEffect(event);
+    int entityId = wrapper.getEntityId();
+    if (entityId != player.getEntityId()) {
+      return;
+    }
+    PotionType potionType = wrapper.getPotionType();
+    PotionEffectType bukkitType = potionType == null
+      ? null
+      : SpigotConversionUtil.toBukkitPotionEffectType(potionType);
+    if (bukkitType == null) {
+      // Nothing to compare against; the tracked effects are all resolvable, so this is a no-op.
+      return;
+    }
+    handleRemoveEffect(UserRepository.userOf(player), player, entityId, bukkitType);
+  }
+
+  /** Engine independent effect removal handling; the packet only carries target and effect. */
+  private void handleRemoveEffect(
+    User user, Player player, int entityId, PotionEffectType potionEffectType
+  ) {
+    if (entityId != player.getEntityId()) {
+      return;
+    }
     user.tickFeedback(() -> receiveEffectRemoval(player, potionEffectType));
   }
 

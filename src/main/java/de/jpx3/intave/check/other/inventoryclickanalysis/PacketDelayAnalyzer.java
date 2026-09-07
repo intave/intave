@@ -3,6 +3,7 @@ package de.jpx3.intave.check.other.inventoryclickanalysis;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.other.InventoryClickAnalysis;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
@@ -20,7 +21,19 @@ public final class PacketDelayAnalyzer extends MetaCheckPart<InventoryClickAnaly
     packetsIn = {WINDOW_CLICK}
   )
   public void receiveInventoryClick(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleInventoryClick(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {WINDOW_CLICK}
+  )
+  public void receiveInventoryClick(Player player) {
+    handleInventoryClick(player);
+  }
+
+  /** Engine independent body; the subscription only ever needed the player. */
+  private void handleInventoryClick(Player player) {
     User user = userOf(player);
     TimingData meta = metaOf(player);
     long difference = System.currentTimeMillis() - meta.lastMovementTimestamps;
@@ -47,7 +60,14 @@ public final class PacketDelayAnalyzer extends MetaCheckPart<InventoryClickAnaly
     packetsIn = {FLYING, POSITION, LOOK, POSITION_LOOK}
   )
   public void receiveMovement(PacketEvent event) {
-    Player player = event.getPlayer();
+    metaOf(event.getPlayer()).lastMovementTimestamps = System.currentTimeMillis();
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {FLYING, POSITION, LOOK, POSITION_LOOK}
+  )
+  public void receiveMovement(Player player) {
     metaOf(player).lastMovementTimestamps = System.currentTimeMillis();
   }
 

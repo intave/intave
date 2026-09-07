@@ -6,6 +6,7 @@ import de.jpx3.intave.check.Check;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
 import de.jpx3.intave.check.combat.clickpatterns.*;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.user.User;
@@ -44,7 +45,26 @@ public final class ClickPatterns extends Check {
     packetsIn = ARM_ANIMATION
   )
   public void receiveSwing(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleSwing(event.getPlayer());
+  }
+
+  /**
+   * PacketEvents entry point. The swing packet carries nothing this check reads, so the player is
+   * the only argument the engine has to supply.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = ARM_ANIMATION
+  )
+  public void receiveSwing(Player player) {
+    handleSwing(player);
+  }
+
+  /** Engine independent swing handling. */
+  private void handleSwing(Player player) {
+    if (player == null) {
+      return;
+    }
     User user = userOf(player);
     decrementer.decrement(user, (MAX_VL_DEDUCTION_PER_MINUTE / 32) / 60d);
   }

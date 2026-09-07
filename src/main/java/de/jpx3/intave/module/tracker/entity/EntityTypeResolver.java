@@ -15,9 +15,9 @@ import de.jpx3.intave.entity.size.HitboxSizeAccess;
 import de.jpx3.intave.entity.type.EntityTypeData;
 import de.jpx3.intave.entity.type.EntityTypeDataAccessor;
 import de.jpx3.intave.klass.Lookup;
-import de.jpx3.intave.packet.reader.EntityMetadataReader;
 import de.jpx3.intave.packet.reader.EntityReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.packet.view.EntityMetadataView;
 import de.jpx3.intave.reflect.access.ReflectiveHandleAccess;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -131,14 +131,22 @@ public final class EntityTypeResolver {
     }
   }
 
-  public EntityTypeData entityTypeDataOfEntityMetadata(PacketEvent event, int entityTypeId, EntityMetadataReader reader) {
-    PacketContainer packet = event.getPacket();
-    int entityId = packet.getIntegers().read(0);
-    Entity entity = EntityTracker.serverEntityByIdentifier(event.getPlayer(), entityId);
+  /**
+   * Resolves the type of the entity an entity metadata packet describes.
+   * <p>
+   * Takes the engine neutral {@link EntityMetadataView} rather than a ProtocolLib event and reader,
+   * so the PacketEvents backed metadata subscription resolves entity types through exactly this
+   * code. The two inputs it used to pull out of the event - the receiving player and the addressed
+   * entity id - are both on the view: the view's entity id is read from integer slot zero on the
+   * ProtocolLib side, which is the field this method read directly before.
+   */
+  public EntityTypeData entityTypeDataOfEntityMetadata(EntityMetadataView view, int entityTypeId) {
+    int entityId = view.entityId();
+    Entity entity = EntityTracker.serverEntityByIdentifier(view.player(), entityId);
     if (entity != null) {
       return entityTypeDataOfBukkitEntity(entity);
     } else {
-      AgeCategory age = entityAgeByWatchableObjects(reader, entityTypeId);
+      AgeCategory age = entityAgeByWatchableObjects(view, entityTypeId);
       if (age == UNKNOWN) {
         return null;
       } else {
@@ -153,10 +161,10 @@ public final class EntityTypeResolver {
   }
 
   private AgeCategory entityAgeByWatchableObjects(
-    EntityMetadataReader reader, int entityTypeId
+    EntityMetadataView view, int entityTypeId
   ) {
     int correctIndex = hardcodedAgeMetaIndexFor(entityTypeId);
-    Object object = reader.fetchRaw(correctIndex);
+    Object object = view.fetchRaw(correctIndex);
     if (object != null) {
       if (object instanceof Boolean) {
         return (boolean) object ? BABY : ADULT;

@@ -11,7 +11,10 @@
 
 package de.jpx3.intave.check.movement.timer;
 
+import de.jpx3.intave.packet.view.MovementView;
 import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.check.CheckStatistics;
 import de.jpx3.intave.check.CheckViolationLevelDecrementer;
@@ -97,6 +100,42 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
     event.setCancelled(true);
   }
 
+  /**
+   * PacketEvents entry point for {@link #receiveLogin(PacketEvent)}. No packet field is read; the
+   * join packet is only a marker for when the play phase starts.
+   * <p>
+   * What the ProtocolLib body needs the cancel-and-resend dance for is <i>ordering</i>: the
+   * transaction {@link User#tickFeedback} sends must leave after the join packet, so the join
+   * packet is pushed out of the listener chain by hand first and the feedback is armed only
+   * afterwards. PacketEvents has a first class equivalent for exactly that - the tasks a send event
+   * carries are run by the encoder from the write promise, i.e. once the packet has actually gone
+   * to the client - so the packet is left alone here and the feedback is armed from that callback.
+   * <p>
+   * The one thing that is deliberately not reproduced is the side effect of the ProtocolLib route:
+   * because that path resends the packet with listeners disabled, other plugins' ProtocolLib
+   * listeners never see the join packet. Suppressing other listeners was never the goal of this
+   * check, and doing the same in PacketEvents would mean cancelling the event and re-sending its
+   * buffer by hand, so the packet simply travels normally here.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGHEST,
+    packetsOut = {
+      LOGIN
+    }
+  )
+  public void receiveLogin(PacketSendEvent event) {
+    Object rawPlayer = event.getPlayer();
+    if (!(rawPlayer instanceof Player)) {
+      return;
+    }
+    Player player = (Player) rawPlayer;
+    User user = userOf(player);
+    PlayerTimeMeta checkMeta = metaOf(user);
+    playerJoinTimeCache.put(player.getUniqueId(), System.nanoTime());
+    event.getTasksAfterSend().add(() -> user.tickFeedback(() -> checkMeta.gameJoinReceived = true));
+  }
+
   @BukkitEventSubscription
   public void on(PlayerJoinEvent join) {
     Player player = join.getPlayer();
@@ -114,8 +153,8 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
   }
 
   @DispatchTarget
-  public void receiveMovement(PacketEvent event) {
-    Player player = event.getPlayer();
+  public void receiveMovement(MovementView view) {
+    Player player = view.player();
     if (player == null) {
       return;
     }

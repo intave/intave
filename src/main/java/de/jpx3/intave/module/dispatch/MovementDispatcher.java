@@ -26,6 +26,32 @@ import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.util.Vector3f;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientSteerVehicle;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerExplosion;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerUpdateHealth;
+import de.jpx3.intave.module.feedback.EmptyFeedbackCallback;
+import de.jpx3.intave.module.linker.packet.Engine;
+import de.jpx3.intave.packet.view.AnimationView;
+import de.jpx3.intave.packet.view.EntityVelocityView;
+import de.jpx3.intave.packet.view.FeedbackHandle;
+import de.jpx3.intave.packet.view.MovementView;
+import de.jpx3.intave.packet.view.PacketEventsAnimationView;
+import de.jpx3.intave.packet.view.PacketEventsEntityVelocityView;
+import de.jpx3.intave.packet.view.ProtocolLibEntityVelocityView;
+import de.jpx3.intave.packet.view.PacketEventsFeedbackHandle;
+import de.jpx3.intave.packet.view.PacketEventsMovementView;
+import de.jpx3.intave.packet.view.PacketEventsPlayerActionView;
+import de.jpx3.intave.packet.view.PacketEventsWorldBorderView;
+import de.jpx3.intave.packet.view.PlayerActionView;
+import de.jpx3.intave.packet.view.ProtocolLibAnimationView;
+import de.jpx3.intave.packet.view.ProtocolLibFeedbackHandle;
+import de.jpx3.intave.packet.view.ProtocolLibMovementView;
+import de.jpx3.intave.packet.view.ProtocolLibPlayerActionView;
+import de.jpx3.intave.packet.view.ProtocolLibWorldBorderView;
+import de.jpx3.intave.packet.view.WorldBorderView;
 import de.jpx3.intave.block.special.BedWakeupPositionSearch;
 import de.jpx3.intave.block.type.MaterialSearch;
 import de.jpx3.intave.block.variant.BlockVariant;
@@ -335,7 +361,25 @@ public final class MovementDispatcher extends Module {
     }
   )
   public void sentRespawn(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleRespawn(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsOut = {
+      RESPAWN
+    }
+  )
+  public void sentRespawn(Player player) {
+    if (player == null) {
+      return;
+    }
+    handleRespawn(player);
+  }
+
+  /** Engine independent respawn handling; nothing is read off the packet, only the player. */
+  private void handleRespawn(Player player) {
     User user = UserRepository.userOf(player);
     MetadataBundle meta = user.meta();
     ViolationMetadata violationLevelData = meta.violationLevel();
@@ -375,16 +419,34 @@ public final class MovementDispatcher extends Module {
     }
   )
   public void receiveMovement(PacketEvent event) {
+    handleMovement(new ProtocolLibMovementView(event));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.LOW,
+    packetsIn = {
+      FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
+    }
+  )
+  public void receiveMovement(PacketReceiveEvent event) {
+    PacketEventsMovementView view = PacketEventsMovementView.of(event);
+    if (view != null) {
+      handleMovement(view);
+    }
+  }
+
+  /** Engine independent movement handling; see {@link MovementView}. */
+  private void handleMovement(MovementView view) {
     PacketLogging logging = Modules.tracker().packetLogging();
 
-    Player player = event.getPlayer();
-    if (player.isDead() || event.isCancelled()) {
+    Player player = view.player();
+    if (player.isDead() || view.cancelled()) {
       logging.logSystemMessage(UserRepository.userOf(player), () -> "MOVEMENT IGNORED: Player is dead or event is cancelled");
       return;
     }
 
-    PacketContainer packet = event.getPacket();
-    PlayerMoveReader reader = PacketReaders.readerOf(packet);
+    
 
     User user = UserRepository.userOf(player);
     MetadataBundle meta = user.meta();
@@ -395,15 +457,14 @@ public final class MovementDispatcher extends Module {
     ConnectionMetadata connectionData = meta.connection();
     ProtocolMetadata protocol = meta.protocol();
 
-    PacketType packetType = event.getPacketType();
-    boolean vehicleMove = packetType == PacketType.Play.Client.VEHICLE_MOVE;
-	  boolean hasMovement = reader.hasMovement();
-    boolean hasRotation = reader.hasRotation();
+    boolean vehicleMove = view.isVehicleMove();
+	  boolean hasMovement = view.hasMovement();
+    boolean hasRotation = view.hasRotation();
 
     if (movement.isInVehicle() && !vehicleMove && hasRotation && !hasMovement) {
-      movement.setRotation(reader.yaw(), reader.pitch());
+      movement.setRotation(view.yaw(), view.pitch());
       logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: Vehicle rotation only");
-      reader.release();
+      view.release();
       return;
     }
 
@@ -426,7 +487,7 @@ public final class MovementDispatcher extends Module {
       }
     }
 
-    if (reader.anyNaNOrInfiniteValue() && FaultKicks.POSITION_FAULTS) {
+    if (view.anyNaNOrInfiniteValue() && FaultKicks.POSITION_FAULTS) {
       user.kick("NaN/infinite in server-bound movement packet");
       return;
     }
@@ -451,11 +512,11 @@ public final class MovementDispatcher extends Module {
 
     // see MultiPlayerGameMode#useItem
     if (protocol.useItemMovementPacket() && !movement.awaitTeleport
-      && packet.getType() == PacketType.Play.Client.POSITION_LOOK
+      && view.isPositionLook()
     ) {
-      double positionX = reader.positionX();
-      double positionY = reader.positionY();
-      double positionZ = reader.positionZ();
+      double positionX = view.positionX();
+      double positionY = view.positionY();
+      double positionZ = view.positionZ();
       double motionX = positionX - movement.verifiedLastPositionX;
       double motionY = positionY - movement.verifiedLastPositionY;
       double motionZ = positionZ - movement.verifiedLastPositionZ;
@@ -463,8 +524,8 @@ public final class MovementDispatcher extends Module {
 
       if (distance < 0.00001) {
         movement.dropPostTickMotionProcessing = true;
-        Float yaw = packet.getFloat().read(0);
-        Float pitch = packet.getFloat().read(1);
+        Float yaw = view.yaw();
+        Float pitch = view.pitch();
         if (DEBUG_MOVEMENT_IGNORE) {
           double yawDifference = MathHelper.noAbsDistanceInDegrees(movement.lastRotationYaw, yaw);
           double pitchDifference = MathHelper.noAbsDistanceInDegrees(movement.lastRotationPitch, pitch);
@@ -473,11 +534,11 @@ public final class MovementDispatcher extends Module {
         logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: Click movement ignore distance: " + distance);
 
         if (!MinecraftVersions.VER1_9_0.atOrAbove()) {
-          event.setCancelled(true);
+          view.setCancelled(true);
         } else {
-          reader.setPosition(movement.verifiedLastPosition());
+          view.setPosition(movement.verifiedLastPosition());
         }
-        reader.release();
+        view.release();
         return;
       }
     }
@@ -489,8 +550,8 @@ public final class MovementDispatcher extends Module {
 
     connectionData.receiveMovement();
     movement.updateMovement(
-      reader.positionX(), reader.positionY(), reader.positionZ(),
-      reader.yaw(), reader.pitch(),
+      view.positionX(), view.positionY(), view.positionZ(),
+      view.yaw(), view.pitch(),
       hasMovement, hasRotation
     );
     inventoryData.updateSlotSwitch();
@@ -499,7 +560,7 @@ public final class MovementDispatcher extends Module {
       logging.logSystemMessage(user, () -> "MOTION LOGIC: Received motion: " + movement.sentOffsetMotion());
     }
 
-    teleportController.receiveMovement(event);
+    teleportController.receiveMovement(view);
 
     if (IntaveControl.DEBUG_COLLISION_BOXES || user.receives(MessageChannel.DEBUG_COLLISIONS)) {
       BoundingBox box = movement.boundingBox().grow(0.1);
@@ -517,10 +578,10 @@ public final class MovementDispatcher extends Module {
       if (DEBUG_MOVEMENT_IGNORE) {
         System.out.println("[Intave] Teleport movement ignore " + movement.awaitTeleport + " " + movement.awaitOutgoingTeleport);
       }
-      event.setCancelled(true);
+      view.setCancelled(true);
       movement.dropPostTickMotionProcessing = true;
       logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: Teleport movement ignore " + movement.awaitTeleport + " " + movement.awaitOutgoingTeleport);
-      reader.release();
+      view.release();
       return;
     }
 
@@ -532,7 +593,7 @@ public final class MovementDispatcher extends Module {
       }
       logging.logSystemMessage(user, () -> "MOVEMENT REJECTED: Distance over limit: " + distance);
       movement.dropPostTickMotionProcessing = true;
-      event.setCancelled(true);
+      view.setCancelled(true);
       Modules.mitigate().movement().emulationSetBack(player, movement.mutableBaseMotionCopy(), 10, false);
       String message = "sent unsafe position";
       String details = "moved " + MathHelper.formatDouble(distance, 2) + " blocks";
@@ -546,7 +607,7 @@ public final class MovementDispatcher extends Module {
         .forPlayer(player).withMessage(message).withDetails(details)
         .withGranulars(granulars).withVL(25).build();
       Modules.violationProcessor().processViolation(violation);
-      reader.release();
+      view.release();
       return;
     }
 
@@ -585,8 +646,8 @@ public final class MovementDispatcher extends Module {
       }
       logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: Teleport bundle movement ignore");
       movement.dropPostTickMotionProcessing = true;
-      event.setCancelled(true);
-      reader.release();
+      view.setCancelled(true);
+      view.release();
       return;
     }
 
@@ -600,13 +661,13 @@ public final class MovementDispatcher extends Module {
       }
       logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: Movement reset ignore");
       movement.canResetMotion = false;
-      reader.release();
+      view.release();
       return;
     }
 
     if (!movement.isTeleportConfirmationPacket) {
-      timerCheck.receiveMovement(event);
-      if (interactionRaytraceCheck.receiveMovement(event)) {
+      timerCheck.receiveMovement(view);
+      if (interactionRaytraceCheck.receiveMovement(view)) {
         movement.compileSpecialBlocks();
         movement.recheckWebStateFromLastTick();
       }
@@ -623,7 +684,7 @@ public final class MovementDispatcher extends Module {
         logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: No movement or rotation");
       }
 
-      boolean clientOnGround = vehicleMove ? player.isOnGround() : reader.onGround();
+      boolean clientOnGround = vehicleMove ? player.isOnGround() : view.onGround();
       boolean collidedWithBoat = movement.collidedWithBoat();
 
       if (movement.onGround && !clientOnGround && movement.step) {
@@ -651,10 +712,10 @@ public final class MovementDispatcher extends Module {
         movement.outgoingTeleportCountdown = 5;
       }
       movement.awaitOutgoingTeleport = true; // awaiting next teleport
-      event.setCancelled(true);
+      view.setCancelled(true);
     }
 
-    reader.release();
+    view.release();
   }
 
   private void drawDebugBoxes(User user, List<BoundingBox> boxes) {
@@ -738,6 +799,91 @@ public final class MovementDispatcher extends Module {
     PlayerMoveReader reader,
     Cancellable cancellable
   ) {
+    handleFinalMovement(
+      user,
+      reader.isVehicleMove(),
+      reader.hasMovement(),
+      reader.hasRotation(),
+      reader.onGround(),
+      new MovementPacketHandle() {
+        @Override
+        public boolean cancelled() {
+          return cancellable.isCancelled();
+        }
+
+        @Override
+        public void setOnGround(boolean onGround) {
+          reader.setOnGround(onGround);
+        }
+      }
+    );
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      FLYING, LOOK, POSITION, POSITION_LOOK, VEHICLE_MOVE
+    }
+  )
+  public void receiveFinalMovement(PacketReceiveEvent event) {
+    PacketEventsMovementView view = PacketEventsMovementView.of(event);
+    if (view == null) {
+      return;
+    }
+    Player player = view.player();
+    if (player == null) {
+      view.release();
+      return;
+    }
+    try {
+      handleFinalMovement(
+        UserRepository.userOf(player),
+        view.isVehicleMove(),
+        view.hasMovement(),
+        view.hasRotation(),
+        view.onGround(),
+        new MovementPacketHandle() {
+          @Override
+          public boolean cancelled() {
+            return view.cancelled();
+          }
+
+          @Override
+          public void setOnGround(boolean onGround) {
+            view.setOnGround(onGround);
+          }
+        }
+      );
+    } finally {
+      // Pushes a rewritten on ground flag back into the packet; a no-op when nothing was written.
+      view.release();
+    }
+  }
+
+  /**
+   * The only two packet operations {@link #handleFinalMovement} performs. Everything else it needs
+   * is read off the packet up front, so this is the whole seam between the handler and the engine.
+   */
+  private interface MovementPacketHandle {
+    /** @return whether an earlier subscriber cancelled this packet. */
+    boolean cancelled();
+
+    void setOnGround(boolean onGround);
+  }
+
+  /**
+   * Engine independent post movement handling; runs at {@link ListenerPriority#HIGH}, after the
+   * checks have seen the packet.
+   */
+  private void handleFinalMovement(
+    User user,
+    boolean vehicleMove,
+    boolean hasMovement,
+    boolean hasRotation,
+    boolean packetOnGround,
+    MovementPacketHandle packet
+  ) {
     Player player = user.player();
     MetadataBundle meta = user.meta();
     AttackMetadata attack = meta.attack();
@@ -745,10 +891,7 @@ public final class MovementDispatcher extends Module {
     AbilityMetadata abilities = meta.abilities();
     InventoryMetadata inventory = meta.inventory();
 
-    boolean vehicleMove = reader.isVehicleMove();
-	  boolean hasMovement = reader.hasMovement();
-    boolean hasRotation = reader.hasRotation();
-    boolean claimsToBeOnGround = vehicleMove ? player.isOnGround() : reader.onGround();
+    boolean claimsToBeOnGround = vehicleMove ? player.isOnGround() : packetOnGround;
 
     if (player.isDead() || movement.awaitTeleport) {
       return;
@@ -780,12 +923,12 @@ public final class MovementDispatcher extends Module {
           Modules.violationProcessor().processViolation(violation);
         }
         if (movement.artificialFallDistance > requiredFallDistance || Math.abs(movement.offsetMotionY()) > 0.01) {
-          reader.setOnGround(movement.onGround);
+          packet.setOnGround(movement.onGround);
         }
       }
     }
 
-    if (!cancellable.isCancelled() && !movement.isTeleportConfirmationPacket && !movement.dropPostTickMotionProcessing) {
+    if (!packet.cancelled() && !movement.isTeleportConfirmationPacket && !movement.dropPostTickMotionProcessing) {
       physicsCheck.endMovement(user, hasMovement, hasRotation);
       movement.lastOnGround = movement.onGround;
       movement.setVerifiedLastPosition(
@@ -849,18 +992,71 @@ public final class MovementDispatcher extends Module {
         ActionBar.sendActionBar(player, String.valueOf(movementData.input));
       }
     } else {
-      int strafeKey = (int) (packet.getFloat().read(0) / 0.98f);
-      int forwardKey = (int) (packet.getFloat().read(1) / 0.98f);
-      if ((Math.abs(strafeKey) > 1 || Math.abs(forwardKey) > 1) && FaultKicks.INVALID_KEY_INPUT) {
-        user.kick("Invalid key input");
-        return;
-      }
-      Boolean jumping = packet.getBooleans().read(0);
-      movementData.legacyVehicleKeyInput = true;
-      movementData.legacyVehicleStrafeKey = strafeKey;
-      movementData.legacyVehicleForwardKey = forwardKey;
-      movementData.clientPressedJump = jumping;
+      handleLegacyVehicleKeys(
+        user,
+        packet.getFloat().read(0),
+        packet.getFloat().read(1),
+        packet.getBooleans().read(0)
+      );
     }
+  }
+
+  /**
+   * PacketEvents twin of {@link #receiveClientKeys(PacketEvent)}, limited to the legacy steer
+   * vehicle packet.
+   * <p>
+   * The 1.21.2+ half of the ProtocolLib body reads the {@code net.minecraft.world.entity.player.Input}
+   * structure out of the new {@code PLAYER_INPUT} packet. PacketEvents 2.4.0 knows neither that
+   * packet type ({@code PacketType.Play.Client} stops at {@code STEER_VEHICLE}/{@code STEER_BOAT})
+   * nor a wrapper for it, and its newest supported {@code ServerVersion} is {@code V_1_21}, so the
+   * branch is unreachable on every server this engine can attach to. Mirroring the original's
+   * version switch therefore reproduces the ProtocolLib behaviour exactly wherever the PacketEvents
+   * engine actually runs, instead of guessing at a field layout that does not exist here.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      STEER_VEHICLE
+    }
+  )
+  public void receiveClientKeys(PacketReceiveEvent event, Player player) {
+    if (player == null || MinecraftVersions.VER1_21_2.atOrAbove()) {
+      return;
+    }
+    if (event.getPacketType()
+      != com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.STEER_VEHICLE) {
+      return;
+    }
+    WrapperPlayClientSteerVehicle wrapper = new WrapperPlayClientSteerVehicle(event);
+    handleLegacyVehicleKeys(
+      UserRepository.userOf(player),
+      wrapper.getSideways(),
+      wrapper.getForward(),
+      wrapper.isJump()
+    );
+  }
+
+  /**
+   * Engine independent legacy vehicle key handling. The packet carries three values, so this takes
+   * them directly the same way {@link #handleFoodUpdate} does rather than through a view.
+   * <p>
+   * {@code sideways} is the first float of the packet and {@code forward} the second, matching the
+   * ProtocolLib field order the original body read.
+   */
+  private void handleLegacyVehicleKeys(
+    User user, float sideways, float forward, boolean jumping
+  ) {
+    int strafeKey = (int) (sideways / 0.98f);
+    int forwardKey = (int) (forward / 0.98f);
+    if ((Math.abs(strafeKey) > 1 || Math.abs(forwardKey) > 1) && FaultKicks.INVALID_KEY_INPUT) {
+      user.kick("Invalid key input");
+      return;
+    }
+    MovementMetadata movementData = user.meta().movement();
+    movementData.legacyVehicleKeyInput = true;
+    movementData.legacyVehicleStrafeKey = strafeKey;
+    movementData.legacyVehicleForwardKey = forwardKey;
+    movementData.clientPressedJump = jumping;
   }
 
   @PacketSubscription(
@@ -872,7 +1068,30 @@ public final class MovementDispatcher extends Module {
   public void catchFoodUpdate(PacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    Integer originalFoodLevel = event.getPacket().getIntegers().read(0);
+    handleFoodUpdate(user, event.getPacket().getIntegers().read(0));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsOut = {
+      UPDATE_HEALTH
+    }
+  )
+  public void catchFoodUpdate(PacketSendEvent event, Player player) {
+    if (player == null) {
+      return;
+    }
+    handleFoodUpdate(
+      UserRepository.userOf(player),
+      new WrapperPlayServerUpdateHealth(event).getFood()
+    );
+  }
+
+  /**
+   * Engine independent food update handling; the only packet field it needs is the food level, so
+   * this takes the value rather than a view, the same way {@link #handleFinalMovement} does.
+   */
+  private void handleFoodUpdate(User user, int originalFoodLevel) {
     user.tickFeedback(() -> {
       MetadataBundle meta = user.meta();
       if (originalFoodLevel <= 6) {
@@ -894,14 +1113,39 @@ public final class MovementDispatcher extends Module {
   public void sentWorldBorderUpdate(
     User user, PacketEvent event
   ) {
+    handleWorldBorderUpdate(
+      user, new ProtocolLibWorldBorderView(event.getPlayer(), event.getPacket())
+    );
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsOut = {
+      WORLD_BORDER,
+      INITIALIZE_BORDER,
+      SET_BORDER_CENTER,
+      SET_BORDER_SIZE,
+      SET_BORDER_LERP_SIZE,
+    }
+  )
+  public void sentWorldBorderUpdate(PacketSendEvent event) {
+    PacketEventsWorldBorderView view = PacketEventsWorldBorderView.of(event);
+    if (view == null) {
+      return;
+    }
+    Player player = view.player();
+    if (player == null) {
+      return;
+    }
+    handleWorldBorderUpdate(UserRepository.userOf(player), view);
+  }
+
+  /** Engine independent world border handling; see {@link WorldBorderView}. */
+  private void handleWorldBorderUpdate(User user, WorldBorderView view) {
     user.tickFeedback(() -> {
-	    try (
-        WorldBorderReader reader = PacketReaders.readerOf(event.getPacket())
-      ) {
-        MovementMetadata movement = user.meta().movement();
-        WorldBorder newBorder = reader.updated(movement.border());
-        movement.setWorldBorder(newBorder);
-      }
+      MovementMetadata movement = user.meta().movement();
+      WorldBorder newBorder = view.updated(movement.border());
+      movement.setWorldBorder(newBorder);
     });
   }
 
@@ -911,11 +1155,42 @@ public final class MovementDispatcher extends Module {
   public void playerBedUseCommand(
     User user, BedUseReader reader, PacketEvent event
   ) {
-    if (!reader.targetEntityIdIsSameAs(user)) {
+    handleBedUse(
+      user,
+      new ProtocolLibAnimationView(event.getPlayer(), reader),
+      ProtocolLibFeedbackHandle.of(event)
+    );
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsOut = USE_BED
+  )
+  public void playerBedUseCommand(PacketSendEvent event) {
+    PacketEventsAnimationView view = PacketEventsAnimationView.of(event);
+    if (view == null || !view.isBedUse()) {
       return;
     }
-    de.jpx3.intave.share.BlockPosition sleepingBedPosition = reader.bedPosition();
-    user.packetTickFeedback(event, () ->
+    Player player = view.player();
+    if (player == null) {
+      return;
+    }
+    handleBedUse(
+      UserRepository.userOf(player), view, PacketEventsFeedbackHandle.of(event)
+    );
+  }
+
+  /**
+   * Engine independent use bed handling; see {@link AnimationView}. The view is not released here
+   * for the same reason {@link #handleEntityAction} does not release its own: the ProtocolLib
+   * reader is owned by the subscription linker and the PacketEvents view holds nothing.
+   */
+  private void handleBedUse(User user, AnimationView view, FeedbackHandle handle) {
+    if (!view.targetEntityIdIsSameAs(user)) {
+      return;
+    }
+    BlockPosition sleepingBedPosition = view.bedPosition();
+    user.packetTickFeedback(handle, () ->
       user.meta().movement().sleepingBedPosition = sleepingBedPosition
     );
   }
@@ -926,15 +1201,44 @@ public final class MovementDispatcher extends Module {
   public void playerAnimationCommand(
     User user, AnimationReader reader, PacketEvent event
   ) {
-    if (!reader.targetEntityIdIsSameAs(user)) {
+    handleAnimation(
+      user,
+      new ProtocolLibAnimationView(event.getPlayer(), reader),
+      ProtocolLibFeedbackHandle.of(event)
+    );
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsOut = {ANIMATION}
+  )
+  public void playerAnimationCommand(PacketSendEvent event) {
+    PacketEventsAnimationView view = PacketEventsAnimationView.of(event);
+    if (view == null || view.isBedUse()) {
+      // Null covers an animation Intave has no constant for; the WAKEUP test below ignores those
+      // anyway. The bed use test keeps this subscription off the packet its own twin above owns.
       return;
     }
-    if (reader.animation() == AnimationReader.Animation.WAKEUP) {
+    Player player = view.player();
+    if (player == null) {
+      return;
+    }
+    handleAnimation(
+      UserRepository.userOf(player), view, PacketEventsFeedbackHandle.of(event)
+    );
+  }
+
+  /** Engine independent entity animation handling; see {@link AnimationView}. */
+  private void handleAnimation(User user, AnimationView view, FeedbackHandle handle) {
+    if (!view.targetEntityIdIsSameAs(user)) {
+      return;
+    }
+    if (view.animation() == AnimationReader.Animation.WAKEUP) {
       MovementMetadata movement = user.meta().movement();
       BlockPosition sleepingBedPosition = movement.sleepingBedPosition;
       if (sleepingBedPosition != null) {
         Optional<Position> wakeupPosition = BedWakeupPositionSearch.findStandUpPosition(user, sleepingBedPosition, 0);
-        user.packetTickFeedback(event, () -> {
+        user.packetTickFeedback(handle, () -> {
           wakeupPosition.ifPresent(position -> {
 	          movement.setPosition(position);
             movement.setVerifiedLastPosition(position, "Bed wakeup");
@@ -943,6 +1247,22 @@ public final class MovementDispatcher extends Module {
         });
       }
     }
+  }
+
+  /**
+   * The one engine specific operation the two sandwiched subscriptions below need: run a callback,
+   * put the observed packet back on the wire, run a second callback - the whole trio wrapped in the
+   * pair of transaction packets {@code FeedbackSender} sends around it.
+   * <p>
+   * It exists for the same reason {@link MovementPacketHandle} does. Every other packet operation
+   * those handlers perform is covered by an engine neutral view or was read off the packet up
+   * front; only the sandwich has a different call shape per engine, because
+   * {@code User#doubleTickFeedback} takes a ProtocolLib {@code PacketEvent} in one overload and a
+   * PacketEvents {@code PacketSendEvent} in the other. A shared {@link FeedbackHandle} cannot carry
+   * it - see that interface for why - so the seam is a lambda supplied by each entry point.
+   */
+  private interface PacketSandwich {
+    void around(EmptyFeedbackCallback before, EmptyFeedbackCallback after);
   }
 
   @PacketSubscription(
@@ -958,8 +1278,76 @@ public final class MovementDispatcher extends Module {
     Cancellable cancellable,
     PacketEvent event
   ) {
-    if (reader.entityId() == player.getEntityId()) {
-      Motion motion = reader.motion();
+    handleVelocity(
+      user, player,
+      new ProtocolLibEntityVelocityView(player, reader, cancellable, event),
+      (before, after) -> user.doubleTickFeedback(event, before, after)
+    );
+  }
+
+  /**
+   * PacketEvents twin of {@link #sentVelocityPacket(User, Player, EntityVelocityReader, Cancellable, PacketEvent)}.
+   * <p>
+   * The reads and rewrites are the {@link PacketEventsEntityVelocityView} the family already
+   * carries; what used to block this twin was the sandwich, and no longer does:
+   * {@code User#doubleTickFeedback(PacketSendEvent, ...)} re-emits the cancelled packet from its
+   * encoded buffer through {@code ProtocolManager#sendPacketSilently}, which writes past every
+   * PacketEvents listener. See {@link FeedbackHandle} for the corrected account.
+   * <p>
+   * The one thing this call site still owes the sandwich is a flushed view: a knockback rewrite
+   * lives in the view until {@code release()} pushes it into the wrapper, and only what is in the
+   * wrapper reaches the re-emitted bytes. Everything below that - folding the wrapper back into the
+   * event buffer and putting the reader index back where the decode left it - is done centrally by
+   * {@code PacketEventsBuffers#encodeIntoEventBuffer}, which {@code FeedbackSender} runs before it
+   * clones.
+   * <p>
+   * {@code prioritySlot} is deliberately not repeated here: it selects between ProtocolLib's two
+   * listener registration slots and has no meaning for the PacketEvents linkage, which registers
+   * one listener per priority.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.MONITOR,
+    packetsOut = {
+      ENTITY_VELOCITY
+    }
+  )
+  public void sentVelocityPacket(PacketSendEvent event, Player player) {
+    if (player == null) {
+      return;
+    }
+    PacketEventsEntityVelocityView view = PacketEventsEntityVelocityView.of(event);
+    if (view == null) {
+      return;
+    }
+    User user = UserRepository.userOf(player);
+    try {
+      handleVelocity(user, player, view, (before, after) -> {
+        // A pending knockback rewrite lives in the view until this call moves it into the wrapper,
+        // and the sandwich re-emits what the wrapper holds. The finally below repeats it harmlessly.
+        view.release();
+        user.doubleTickFeedback(event, before, after);
+      });
+    } finally {
+      view.release();
+    }
+  }
+
+  /**
+   * Engine independent outbound velocity handling; see
+   * {@link de.jpx3.intave.packet.view.EntityVelocityView}.
+   * <p>
+   * The knockback is registered as an open ended, tick ambiguous motion update between the two
+   * transactions the {@code sandwich} sends, so the physics check accepts a client that applied it
+   * on either side of that tick boundary.
+   */
+  private void handleVelocity(
+    User user, Player player,
+    EntityVelocityView view,
+    PacketSandwich sandwich
+  ) {
+    if (view.entityId() == player.getEntityId()) {
+      Motion motion = view.motion();
       if (IntaveControl.DEBUG_VELOCITY_RECEIVE) {
         player.sendMessage("§a" + MathHelper.formatMotion(motion));
       }
@@ -967,7 +1355,7 @@ public final class MovementDispatcher extends Module {
       MovementMetadata movementData = meta.movement();
       if (movementData.willReceiveSetbackVelocity && motion.length() < 0.001) {
         movementData.willReceiveSetbackVelocity = false;
-        reader.setMotion(movementData.setbackOverrideVelocity);
+        view.setMotion(movementData.setbackOverrideVelocity);
         return;
       }
       /*
@@ -988,9 +1376,9 @@ public final class MovementDispatcher extends Module {
           motion.setMotionX(motion.motionX() / pendingVelocityPackets);
           motion.setMotionY(Math.min(0, motion.motionY()));
           motion.setMotionZ(motion.motionZ() / pendingVelocityPackets);
-          reader.setMotion(motion);
-        } else if (!event.isReadOnly()){
-          cancellable.setCancelled(true);
+          view.setMotion(motion);
+        } else if (!view.readOnly()){
+          view.setCancelled(true);
           return;
         }
       }
@@ -1006,7 +1394,7 @@ public final class MovementDispatcher extends Module {
       AtomicReference<MotionSetUpdate> velocity = new AtomicReference<>(null);
       PhysicsTestRecorder recorder = Modules.physicsTestRecorder();
       AtomicReference<PhysicsTestRecorder.VelocityCapture> recordingVelocity = new AtomicReference<>(null);
-      user.doubleTickFeedback(event,
+      sandwich.around(
         () -> {
           recordingVelocity.set(
             recorder.beginVelocity(user, finalVelocity)
@@ -1043,11 +1431,70 @@ public final class MovementDispatcher extends Module {
     User user, ExplosionReader reader,
     PacketEvent event
   ) {
+    handleExplosion(
+      user,
+      reader.motion(),
+      (before, after) -> user.doubleTickFeedback(event, before, after)
+    );
+  }
+
+  /**
+   * PacketEvents twin of {@link #sentExplosion(User, ExplosionReader, PacketEvent)}.
+   * <p>
+   * The only field either engine reads is the knockback the explosion applies to this player, and
+   * each decodes it for the wire format in front of it: {@code ExplosionReader} switches between
+   * the 1.21.3+ optional vector and the three legacy floats,
+   * {@code WrapperPlayServerExplosion#getPlayerMotion} owns the same choice on its side. Both are
+   * blocks per tick, so the shared handler sees the same number.
+   * <p>
+   * A missing knockback is handled the way the ProtocolLib body has always handled it: null means
+   * "nothing to queue". The reader answers null for an empty optional on 1.21.3+; PacketEvents
+   * answers null only where its own wrapper models the field as absent, and a hypothetical zero
+   * vector in its place would merely queue a zero motion update, which widens the physics
+   * prediction set rather than narrowing it - a leniency difference, never a false positive.
+   * <p>
+   * What used to block this twin was the sandwich, and no longer does; see {@link FeedbackHandle}
+   * for the corrected account. Nothing here rewrites the packet, and the buffer bookkeeping the
+   * decode leaves behind is handled centrally by
+   * {@code PacketEventsBuffers#encodeIntoEventBuffer}, which {@code FeedbackSender} runs before it
+   * clones, so this call site has nothing to flush.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsOut = {
+      EXPLOSION
+    }
+  )
+  public void sentExplosion(PacketSendEvent event, Player player) {
+    if (player == null) {
+      return;
+    }
+    Vector3f knockback = new WrapperPlayServerExplosion(event).getPlayerMotion();
+    User user = UserRepository.userOf(player);
+    handleExplosion(
+      user,
+      knockback == null
+        ? null
+        : new Motion(knockback.getX(), knockback.getY(), knockback.getZ()),
+      (before, after) -> user.doubleTickFeedback(event, before, after)
+    );
+  }
+
+  /**
+   * Engine independent explosion handling.
+   * <p>
+   * Takes the knockback rather than a view, the way {@link #handleFoodUpdate} takes the food level:
+   * it is the only field the body reads and neither engine's handler writes the packet back.
+   *
+   * @param knockback the knockback this explosion applies to the player, or null when the packet
+   * carries none.
+   */
+  private void handleExplosion(User user, Motion knockback, PacketSandwich sandwich) {
     MovementMetadata movement = user.meta().movement();
-    Motion knockback = reader.motion();
     if (knockback != null) {
       AtomicReference<MotionAddUpdate> update = new AtomicReference<>(null);
-      user.doubleTickFeedback(event,
+      sandwich.around(
         () -> {
           update.set(MotionAddUpdate.openEnded(
             knockback,
@@ -1091,6 +1538,41 @@ public final class MovementDispatcher extends Module {
   private static final Set<Material> SHULKER_BOX_MATERIALS = MaterialSearch.materialsThatContain("SHULKER_BOX");
 
   private static final Set<Material> PISTON_MATERIALS = MaterialSearch.materialsThatContain("PISTON");
+
+  /**
+   * ProtocolLib only. The blocker is <em>not</em> the packet sandwich, which is now available on
+   * both engines - {@link #sentVelocityPacket(PacketSendEvent, Player)} and
+   * {@link #sentExplosion(PacketSendEvent, Player)} are twinned through it, and the note in
+   * {@link FeedbackHandle} that once called it impossible has been corrected. What blocks this one
+   * is the very first field the body reads: the block.
+   * <p>
+   * Both branches switch on {@code BlockActionReader.blockType()}, an {@link Material}. ProtocolLib
+   * produces it by converting the packet's native {@code Block} through its block structure
+   * modifier. PacketEvents cannot reach the same value:
+   * <ul>
+   *   <li>{@code WrapperPlayServerBlockAction#getBlockType()} looks the field up with
+   *       {@code WrappedBlockState.getByGlobalId(clientVersion, blockTypeId)}. That is the global
+   *       block <em>state</em> palette; the packet's field is a block <em>type</em> registry id.
+   *       Two different number spaces, so the answer is a real but unrelated block - the worst
+   *       possible failure mode here, because it is silently plausible.</li>
+   *   <li>{@code getBlockTypeId()} does hand out the raw type id, and
+   *       {@code StateTypes.getById(clientVersion, id)} resolves it into a {@code StateType}. But a
+   *       {@code StateType}'s only identity is its namespaced name, and PacketEvents ships no
+   *       {@code StateType} to {@link Material} conversion: {@code SpigotConversionUtil} bridges
+   *       item types to materials and block <em>states</em> to {@code BlockData}, neither of which
+   *       is a block type. Rebuilding the material from the name means guessing Bukkit's enum
+   *       spelling per server version - {@code STICKY_PISTON} on modern servers,
+   *       {@code PISTON_STICKY_BASE} on the legacy ones this dispatcher still supports - and a miss
+   *       returns null rather than failing loudly.</li>
+   *   <li>Reading the block out of the world instead is not a substitute: a PacketEvents listener
+   *       runs on the connection's netty thread, where a Bukkit world lookup is unsafe, and it
+   *       answers with server state rather than with the field the packet carried.</li>
+   * </ul>
+   * A wrong or null material silently skips {@link #queueShulkerBoxAction} and
+   * {@link #queuePistonAction}, dropping the ambiguous motion updates the physics check needs -
+   * which is exactly the gap that turns a legitimate piston push into a violation. This becomes
+   * portable when a verified block type id to {@link Material} mapping exists, not before.
+   */
   @PacketSubscription(
     packetsOut = BLOCK_ACTION
   )
@@ -1354,6 +1836,24 @@ public final class MovementDispatcher extends Module {
   public void receiveUseItem(
     User user, BlockPositionReader reader
   ) {
+    handleUseItem(user);
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      USE_ITEM, BLOCK_DIG
+    }
+  )
+  public void receiveUseItem(Player player) {
+    if (player == null) {
+      return;
+    }
+    handleUseItem(UserRepository.userOf(player));
+  }
+
+  /** Engine independent handling; nothing is read off the packet, only the player's inventory. */
+  private void handleUseItem(User user) {
     Material heldType = user.meta().inventory().heldItemType();
     Material offhandType = user.meta().inventory().offhandItemType();
     if (heldType != Material.AIR || offhandType != Material.AIR) {
@@ -1376,10 +1876,40 @@ public final class MovementDispatcher extends Module {
   public void receiveEntityActionPacket(
     User user, PlayerActionReader reader, Cancellable cancelable
   ) {
+    handleEntityAction(user, new ProtocolLibPlayerActionView(user.player(), reader, cancelable));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      ENTITY_ACTION_IN
+    }
+  )
+  public void receiveEntityActionPacket(PacketReceiveEvent event) {
+    PacketEventsPlayerActionView view = PacketEventsPlayerActionView.of(event);
+    if (view == null) {
+      // Not an entity action packet, or an action Intave has no equivalent for; the switch below
+      // ignores those anyway.
+      return;
+    }
+    Player player = view.player();
+    if (player == null) {
+      return;
+    }
+    handleEntityAction(UserRepository.userOf(player), view);
+  }
+
+  /**
+   * Engine independent entity action handling; see {@link PlayerActionView}. The view is not
+   * released here: on the ProtocolLib path the reader is owned by the subscription linker, and on
+   * the PacketEvents path there is nothing to release.
+   */
+  private void handleEntityAction(User user, PlayerActionView view) {
     MetadataBundle meta = user.meta();
     MovementMetadata movementData = meta.movement();
     ProtocolMetadata protocol = meta.protocol();
-    switch (reader.playerAction()) {
+    switch (view.playerAction()) {
       case START_SPRINTING:
         if (allowSprinting(user)) {
           movementData.setSprinting(true);
@@ -1397,7 +1927,7 @@ public final class MovementDispatcher extends Module {
         break;
       case PRESS_SHIFT_KEY:
       case START_SNEAKING:
-        startSneak(user, cancelable);
+        startSneak(user, view);
         break;
       case RELEASE_SHIFT_KEY:
       case STOP_SNEAKING:
@@ -1416,6 +1946,37 @@ public final class MovementDispatcher extends Module {
     }
   }
 
+  /**
+   * ProtocolLib only on PacketEvents 2.4.0: the exact getter this needs does not exist anywhere in
+   * that jar.
+   * <p>
+   * What this reads is the sneak bit (mask {@code 0x20}) of the input bitmask that 1.21.2 moved
+   * into {@code net.minecraft.world.entity.player.Input}, decoded here through
+   * {@link InputConverter}. On PacketEvents 2.4.0 the only class that can carry a steer vehicle
+   * payload is {@code WrapperPlayClientSteerVehicle}, and its complete getter set is
+   * {@code getSideways()}, {@code getForward()}, {@code getFlags()}, {@code isJump()} and
+   * {@code isUnmount()} - the missing getter is an {@code isShift()}, because the pre 1.21.2 wire
+   * format that wrapper decodes has no sneak bit in it at all ({@code getFlags()} holds only jump
+   * {@code 0x1} and unmount {@code 0x2}). {@code WrapperPlayClientPlayerInput} is not in the 2.4.0
+   * jar, and {@code PacketType.Play.Client} there ends at {@code STEER_VEHICLE} /
+   * {@code STEER_BOAT} with no {@code PLAYER_INPUT} constant. A 2.4.0 twin would therefore be dark
+   * across precisely the range this check exists for: clients on 1.21.2 and above (protocol 768+),
+   * which is the only range in which the sneak bit travels inside this packet. Below that range
+   * sneaking arrives as {@code ENTITY_ACTION} instead and this method does not run.
+   * <p>
+   * Concrete unblock condition, both halves required. First, the runtime floor has to rise to the
+   * build's {@code compileOnly} target, PacketEvents 2.13.0: that version does ship
+   * {@code WrapperPlayClientPlayerInput} with {@code isShift()} - the exact getter named above -
+   * next to {@code isForward()}, {@code isBackward()}, {@code isLeft()}, {@code isRight()},
+   * {@code isJump()} and {@code isSprint()}, plus a {@code PacketType.Play.Client.PLAYER_INPUT}
+   * constant. Second, {@link de.jpx3.intave.module.linker.packet.pe.PacketEventsIdMapper} needs a
+   * separate entry for it: it maps Intave's {@code STEER_VEHICLE} to the candidates
+   * {@code "STEER_VEHICLE"} then {@code "PLAYER_INPUT"} and resolves first match wins, so even on
+   * 2.13.0 it binds {@code STEER_VEHICLE} alone and a {@code PLAYER_INPUT} packet would never be
+   * delivered to a twin. Until both hold, the only way to write this against 2.4.0 would be to
+   * guess a bit position out of a byte that provably does not contain it, which in an anticheat is
+   * a fabricated field read and a false ban.
+   */
   @PacketSubscription(
     packetsIn = {
       STEER_VEHICLE
@@ -1444,10 +2005,19 @@ public final class MovementDispatcher extends Module {
   }
 
   private void startSneak(User user, Cancellable cancelable) {
+    applySneakStart(user, () -> cancelable.setCancelled(true));
+  }
+
+  private void startSneak(User user, PlayerActionView view) {
+    applySneakStart(user, () -> view.setCancelled(true));
+  }
+
+  /** Engine independent sneak start; cancelling the packet is the only thing it needs it for. */
+  private void applySneakStart(User user, Runnable cancelPacket) {
     PunishmentMetadata punishmentData = user.meta().punishment();
     MovementMetadata movementData = user.meta().movement();
     if (System.currentTimeMillis() - punishmentData.timeLastSneakToggleCancel < 2000) {
-      cancelable.setCancelled(true);
+      cancelPacket.run();
     }
     movementData.activeTick(VEHICLE_EXIT);
     if (movementData.isInVehicle()) {

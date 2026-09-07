@@ -42,6 +42,7 @@ import de.jpx3.intave.executor.task.Task;
 import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packet.PacketEngineReport;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.nayoro.Nayoro;
 import de.jpx3.intave.module.nayoro.OperationalMode;
@@ -117,6 +118,18 @@ public final class DiagnosticsStage extends CommandStage {
       singletonInstance = new DiagnosticsStage();
     }
     return singletonInstance;
+  }
+
+  @SubCommand(
+    selectors = "packetengine",
+    usage = "",
+    description = "Reports which packet engine is live and what every subscription bound",
+    permission = "intave.command.diagnostics.performance"
+  )
+  public void packetEngine(CommandSender sender) {
+    for (String line : PacketEngineReport.fullReport()) {
+      sender.sendMessage(line.isEmpty() ? " " : ChatColor.GRAY + line);
+    }
   }
 
   @SubCommand(selectors = "environment", usage = "", description = "Dumps environment infos to a players chat", permission = "intave.command.diagnostics.performance")

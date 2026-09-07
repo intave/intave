@@ -16,6 +16,7 @@ import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AttackMetadata;
@@ -39,8 +40,26 @@ public final class RotationSensitivityHeuristic extends ClassicHeuristic<Rotatio
     }
   )
   public void rotationCheck(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
+    handleRotation(userOf(event.getPlayer()));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      LOOK, POSITION_LOOK
+    }
+  )
+  public void rotationCheck(Player player) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    handleRotation(userOf(player));
+  }
+
+  /** Engine independent sensitivity evaluation; the packet itself is never read. */
+  private void handleRotation(User user) {
+    Player player = user.player();
 
     AttackMetadata attackData = user.meta().attack();
     SimulationEnvironment movementData = user.meta().movement();

@@ -11,15 +11,17 @@
 
 package de.jpx3.intave.check.combat.heuristics.other;
 
-import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.converter.PlayerAction;
 import de.jpx3.intave.packet.converter.PlayerActionResolver;
+import de.jpx3.intave.packet.view.PacketEventsPlayerActionView;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
 import org.bukkit.entity.Player;
@@ -39,7 +41,24 @@ public final class PacketPlayerActionToggleHeuristic extends ClassicHeuristic<Pa
     }
   )
   public void receiveMovementPacket(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleMovementPacket(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      FLYING, POSITION, POSITION_LOOK, LOOK
+    }
+  )
+  public void receiveMovementPacket(Player player) {
+    if (player == null) {
+      return;
+    }
+    handleMovementPacket(player);
+  }
+
+  /** Engine independent handling; the body only resets per tick counters, it never reads the packet. */
+  private void handleMovementPacket(Player player) {
     PacketSprintToggleHeuristicMeta heuristicMeta = metaOf(player);
     heuristicMeta.reset();
   }
@@ -50,7 +69,37 @@ public final class PacketPlayerActionToggleHeuristic extends ClassicHeuristic<Pa
     }
   )
   public void receiveEntityAction(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleEntityAction(
+      event.getPlayer(),
+      PlayerActionResolver.resolveActionFromPacket(event.getPacket())
+    );
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      ENTITY_ACTION_IN
+    }
+  )
+  public void receiveEntityAction(PacketReceiveEvent event) {
+    PacketEventsPlayerActionView view = PacketEventsPlayerActionView.of(event);
+    if (view == null) {
+      // Not an entity action packet, or an action Intave has no equivalent for; neither of those
+      // can be a sprint or sneak toggle, which is all this check looks at.
+      return;
+    }
+    Player player = view.player();
+    if (player == null) {
+      return;
+    }
+    handleEntityAction(player, view.playerAction());
+  }
+
+  /**
+   * Engine independent handling; see {@link de.jpx3.intave.packet.view.PlayerActionView}. The
+   * action is the only thing read off the packet, and both backends normalise it the same way.
+   */
+  private void handleEntityAction(Player player, PlayerAction action) {
     User user = userOf(player);
     MetadataBundle meta = user.meta();
     SimulationEnvironment movementData = meta.movement();
@@ -58,9 +107,6 @@ public final class PacketPlayerActionToggleHeuristic extends ClassicHeuristic<Pa
     ProtocolMetadata clientData = meta.protocol();
     PunishmentMetadata punishmentData = user.meta().punishment();
     PacketSprintToggleHeuristicMeta heuristicMeta = metaOf(user);
-
-    PacketContainer packet = event.getPacket();
-    PlayerAction action = PlayerActionResolver.resolveActionFromPacket(packet);
 
     boolean sprint = action == PlayerAction.START_SPRINTING || action == PlayerAction.STOP_SPRINTING;
     boolean sneak = action.isSneakRelated();

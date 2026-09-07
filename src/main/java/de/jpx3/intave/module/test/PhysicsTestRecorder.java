@@ -11,20 +11,26 @@
 
 package de.jpx3.intave.module.test;
 
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.module.Module;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.test.record.MovementFrameState;
 import de.jpx3.intave.module.test.record.MovementRecording;
 import de.jpx3.intave.packet.reader.PlayerMoveReader;
+import de.jpx3.intave.packet.view.MovementView;
+import de.jpx3.intave.packet.view.PacketEventsMovementView;
 import de.jpx3.intave.player.ActionBar;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
+import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.bukkit.entity.Player;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -43,13 +49,43 @@ public final class PhysicsTestRecorder extends Module {
 
 	@PacketSubscription(packetsIn = {FLYING, LOOK, POSITION, POSITION_LOOK})
 	public void on(User user, PlayerMoveReader reader) {
+		handleMovement(user, reader.position(), reader.rotation());
+	}
+
+	/**
+	 * PacketEvents entry point for the same four packets. Only the position and the rotation of the
+	 * packet are recorded, so the engine neutral {@link MovementView} carries everything the
+	 * recorder needs; a missing component stays null exactly as the ProtocolLib reader reports it.
+	 */
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		packetsIn = {FLYING, LOOK, POSITION, POSITION_LOOK}
+	)
+	public void on(PacketReceiveEvent event) {
+		PacketEventsMovementView view = PacketEventsMovementView.of(event);
+		if (view == null) {
+			return;
+		}
+		Player player = view.player();
+		if (player == null) {
+			return;
+		}
+		Position position = view.hasMovement()
+			? new Position(view.positionX(), view.positionY(), view.positionZ())
+			: null;
+		Rotation rotation = view.hasRotation()
+			? new Rotation(view.yaw(), view.pitch())
+			: null;
+		handleMovement(UserRepository.userOf(player), position, rotation);
+	}
+
+	/** Engine independent recording of one movement frame. */
+	private void handleMovement(User user, @Nullable Position position, @Nullable Rotation rotation) {
 		MovementRecording movementRecording = recordingSessionOf(user);
 		if (movementRecording == null) {
 			return;
 		}
 
-		Position position = reader.position();
-		Rotation rotation = reader.rotation();
 		MovementMetadata movement = user.meta().movement();
 		BoundingBox boundingBox = movement.boundingBox();
 		Input input = Input.none();

@@ -16,6 +16,7 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.module.dispatch.AttackDispatcher;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.player.AbilityTracker;
@@ -45,7 +46,28 @@ public final class AttackReduceIgnoreHeuristic extends MetaCheckPart<Heuristics,
     }
   )
   public void receiveMovement(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleMovement(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      POSITION, POSITION_LOOK
+    }
+  )
+  public void receiveMovement(Player player) {
+    if (player == null) {
+      return;
+    }
+    handleMovement(player);
+  }
+
+  /**
+   * Engine independent handling: the body never touches the packet itself, only the player and the
+   * metadata Intave keeps for them, so both engines can feed it the same way.
+   */
+  private void handleMovement(Player player) {
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();
     InventoryMetadata inventoryData = user.meta().inventory();

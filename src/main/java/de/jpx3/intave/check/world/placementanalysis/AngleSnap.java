@@ -15,6 +15,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
@@ -46,7 +47,29 @@ public class AngleSnap extends PlayerCheckPart<PlacementAnalysis> {
     }
   )
   public void on(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleMovement(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.LOW,
+    packetsIn = {
+      POSITION_LOOK, LOOK, POSITION, FLYING
+    }
+  )
+  public void on(Player player) {
+    if (player == null) {
+      return;
+    }
+    handleMovement(player);
+  }
+
+  /**
+   * Engine independent body: this check only reads the player's rotation metadata, which the
+   * movement dispatcher has already updated by the time the subscription fires, so neither backend
+   * has to hand over any packet field.
+   */
+  private void handleMovement(Player player) {
     User user = userOf(player);
     MovementMetadata movementData = user.meta().movement();
     float mod45 = ((movementData.rotationYaw  % 45) + 45) % 45;

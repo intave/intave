@@ -5,7 +5,6 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
-import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.block.access.BlockInteractionAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
@@ -13,16 +12,19 @@ import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.world.BreakSpeedLimiter;
 import de.jpx3.intave.executor.Synchronizer;
-import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.module.violation.ViolationProcessor;
 import de.jpx3.intave.packet.PacketSender;
-import de.jpx3.intave.packet.converter.BlockPositionConverter;
+import de.jpx3.intave.packet.view.BlockPositionView;
+import de.jpx3.intave.packet.view.PacketEventsBlockPositionView;
+import de.jpx3.intave.packet.view.ProtocolLibBlockPositionView;
 import de.jpx3.intave.reflect.access.ReflectiveEntityAccess;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -47,11 +49,29 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
     }
   )
   public void tickUpdate(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleTickUpdate(event.getPlayer(), event.isCancelled());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.LOW,
+    packetsIn = {
+      POSITION, POSITION_LOOK, LOOK, FLYING, VEHICLE_MOVE
+    }
+  )
+  public void tickUpdate(PacketReceiveEvent event) {
+    Object player = event.getPlayer();
+    if (player instanceof Player) {
+      handleTickUpdate((Player) player, event.isCancelled());
+    }
+  }
+
+  /** Engine independent balance decay; the only packet data read is the cancellation state. */
+  private void handleTickUpdate(Player player, boolean cancelled) {
     User user = userOf(player);
     BreakSpeedFinishMeta meta = metaOf(user);
 
-    if (meta.balance > 0 && !event.isCancelled()) {
+    if (meta.balance > 0 && !cancelled) {
       meta.balance -= 0.005;
     }
   }
@@ -90,22 +110,65 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
     }
   )
   public void receiveBlockAction(PacketEvent event) {
-    Player player = event.getPlayer();
+    ProtocolLibBlockPositionView view = new ProtocolLibBlockPositionView(event);
+    try {
+      handleBlockAction(view);
+    } finally {
+      view.release();
+    }
+  }
+
+  /**
+   * PacketEvents entry point for {@link #receiveBlockAction(PacketEvent)}. The dig action and the
+   * targeted block are the only packet fields the body reads, and both are served by
+   * {@link PacketEventsBlockPositionView}.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.LOW,
+    packetsIn = {
+      BLOCK_DIG
+    }
+  )
+  public void receiveBlockAction(PacketReceiveEvent event) {
+    PacketEventsBlockPositionView view = PacketEventsBlockPositionView.of(event);
+    if (view == null || view.player() == null) {
+      return;
+    }
+    try {
+      handleBlockAction(view);
+    } finally {
+      view.release();
+    }
+  }
+
+  /**
+   * Engine independent break duration accounting; see {@link BlockPositionView}.
+   * <p>
+   * The block position is handed back to {@link BlockInteractionAccess#blockDamage}, which is part
+   * of the block API rather than the packet layer and only speaks the ProtocolLib coordinate
+   * wrapper, so the neutral position the view reports is converted back into that plain value class
+   * here. Both engines therefore feed it the identical coordinates.
+   */
+  private void handleBlockAction(BlockPositionView view) {
+    Player player = view.player();
     User user = userOf(player);
     BreakSpeedFinishMeta meta = metaOf(user);
 //    ProtocolMetadata clientData = user.meta().protocol();
     InventoryMetadata inventoryData = user.meta().inventory();
 
     ItemStack heldItem = inventoryData.heldItem();
-    PacketContainer packet = event.getPacket();
-//    BlockPosition blockPosition = packet.getBlockPositionModifier().read(0);
-    BlockPosition blockPosition = event.getPacket().getModifier()
-      .withType(Lookup.serverClass("BlockPosition"), BlockPositionConverter.threadConverter())
-      .read(0);
-    EnumWrappers.PlayerDigType digType = packet.getPlayerDigTypes().read(0);
+    BlockPosition blockPosition = protocolLibPositionOf(view.blockPosition());
+    BlockPositionView.DigAction digType = view.digAction();
+    if (digType == null) {
+      return;
+    }
 
     switch (digType) {
       case START_DESTROY_BLOCK: {
+        if (blockPosition == null) {
+          return;
+        }
         float blockDamage = BlockInteractionAccess.blockDamage(player, heldItem, blockPosition);
         meta.breakProcess = true;
         meta.breakProcessStartTime = System.currentTimeMillis();
@@ -155,7 +218,7 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
             .withVL(10).build();
           ViolationContext violationContext = violationProcessor.processViolation(violation);
           if (violationContext.shouldCounterThreat()) {
-            event.setCancelled(true);
+            view.setCancelled(true);
             refreshBlocksAround(player, blockPosition.toLocation(player.getWorld()));
           }
         }
@@ -169,6 +232,13 @@ public final class CompletionDurationCheck extends MetaCheckPart<BreakSpeedLimit
         meta.breakProcess = false;
         meta.maximumBlockDamage = Float.MIN_VALUE;
     }
+  }
+
+  /** @return the neutral position as the plain ProtocolLib coordinate wrapper, or null. */
+  private static BlockPosition protocolLibPositionOf(de.jpx3.intave.share.BlockPosition position) {
+    return position == null
+      ? null
+      : new BlockPosition(position.getX(), position.getY(), position.getZ());
   }
 
   private void refreshBlocksAround(Player player, Location targetLocation) {

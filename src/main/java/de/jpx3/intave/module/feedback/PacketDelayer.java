@@ -70,6 +70,31 @@ public final class PacketDelayer extends Module {
 //    }
 //  }
 
+  /**
+   * ProtocolLib only, no PacketEvents twin.
+   * <p>
+   * This subscription is not an observer: it is a packet <em>store and replay</em> buffer. It
+   * cancels an outgoing packet, parks the raw NMS object {@code PacketContainer#getHandle} returns
+   * in {@code ConnectionMetadata#enqueuedPackets()} / {@code delayedPackets()}, and later pushes it
+   * back out through {@link #sendPacket(Player, Object)}, which re-wraps it with
+   * {@code PacketContainer.fromPacket} and sends it with
+   * {@code ProtocolManager#sendServerPacket(player, packet, filters = true)}.
+   * <p>
+   * PacketEvents 2.4.0 offers no equivalent for an already encoded outgoing packet. What a
+   * {@code PacketSendEvent} can hand out is its buffer ({@code getFullBufferClone()}), and the only
+   * way back onto the wire for such a buffer is {@code User#sendPacket(Object)}, which re-enters the
+   * encoder and would re-fire this very subscription; the silent variant
+   * {@code User#sendPacketSilently} accepts a decoded {@code PacketWrapper} only, which would mean
+   * re-decoding and re-encoding every entity, sound and particle packet type listed below - the
+   * exact per-version wire work this buffer avoids by never looking inside the packet.
+   * <p>
+   * The queues are shared state on top of that: {@code enqueuedPackets()} holds NMS packet objects
+   * that the ProtocolLib replay path above consumes, and other modules only ever ask whether it is
+   * empty ({@code FeedbackReceiver#attackHasToBeCancelled}). Filling the same queue with PacketEvents
+   * buffers would make the replay path fail on objects it cannot send. A twin would therefore have to
+   * be a second, separate buffer with its own send path rather than a second entry point into this
+   * body, so this stays ProtocolLib only.
+   */
   @PacketSubscription(
     priority = ListenerPriority.LOWEST,
     packetsOut = {

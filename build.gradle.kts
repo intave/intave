@@ -91,6 +91,12 @@ dependencies {
   compileOnly("org.jetbrains:annotations:23.1.0")
   compileOnly("org.geysermc.floodgate:api:2.0-SNAPSHOT")
   compileOnly("com.github.retrooper:packetevents-spigot:2.13.0")
+  // Adventure is what PacketEvents types its chat components on (window titles, tab list
+  // entries). It is compile only on purpose: PacketEvents itself needs Adventure at runtime,
+  // so wherever the PacketEvents engine runs these classes are already loaded.
+  compileOnly("net.kyori:adventure-api:4.17.0")
+  compileOnly("net.kyori:adventure-text-serializer-gson:4.17.0")
+  compileOnly("net.kyori:adventure-text-serializer-json:4.17.0")
 
   // Test environment.
   testImplementation("org.spigotmc:spigot-api:26.2-R0.1-SNAPSHOT")

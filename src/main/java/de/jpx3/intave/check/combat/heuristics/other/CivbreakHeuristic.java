@@ -1,11 +1,14 @@
 package de.jpx3.intave.check.combat.heuristics.other;
 
-import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.combat.Heuristics;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.packet.view.BlockPositionView;
+import de.jpx3.intave.packet.view.PacketEventsBlockPositionView;
+import de.jpx3.intave.packet.view.ProtocolLibBlockPositionView;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
@@ -31,21 +34,47 @@ public final class CivbreakHeuristic extends MetaCheckPart<Heuristics, CivbreakH
     }
   )
   public void receiveInteractionPacket(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleInteractionPacket(new ProtocolLibBlockPositionView(event));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      BLOCK_DIG
+    }
+  )
+  public void receiveInteractionPacket(PacketReceiveEvent event) {
+    PacketEventsBlockPositionView view = PacketEventsBlockPositionView.of(event);
+    if (view == null) {
+      return;
+    }
+    handleInteractionPacket(view);
+  }
+
+  /**
+   * Engine independent handling; see {@link BlockPositionView}. The packet is only read for its dig
+   * action, and only cancelled - both of which the view exposes on either engine.
+   */
+  private void handleInteractionPacket(BlockPositionView view) {
+    Player player = view.player();
+    if (player == null) {
+      // PacketEvents can deliver a packet before the Bukkit player exists.
+      view.release();
+      return;
+    }
     User user = userOf(player);
     CivbreakMeta meta = metaOf(user);
-    PacketContainer packet = event.getPacket();
-    EnumWrappers.PlayerDigType playerDigType = packet.getPlayerDigTypes().readSafely(0);
+    BlockPositionView.DigAction playerDigType = view.digAction();
     // Note: isMining should set to false on every PlayerDigType except START_DESTROY_BLOCK
 //    player.sendMessage("" + playerDigType);
-    if (playerDigType == EnumWrappers.PlayerDigType.START_DESTROY_BLOCK) {
+    if (playerDigType == BlockPositionView.DigAction.START_DESTROY_BLOCK) {
       meta.isMining = true;
     }
-    if (playerDigType == EnumWrappers.PlayerDigType.STOP_DESTROY_BLOCK) {
+    if (playerDigType == BlockPositionView.DigAction.STOP_DESTROY_BLOCK) {
       if (user.protocolVersion() < ProtocolMetadata.VER_1_14) {
         if (!meta.isMining) {
 //          player.sendMessage("cancel");
-          event.setCancelled(true);
+          view.setCancelled(true);
         }
       } else {
         // TODO: fix civbreak on 1.14+
@@ -53,6 +82,7 @@ public final class CivbreakHeuristic extends MetaCheckPart<Heuristics, CivbreakH
       }
       meta.isMining = false;
     }
+    view.release();
   }
 
   public static final class CivbreakMeta extends CheckCustomMetadata {

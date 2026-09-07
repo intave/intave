@@ -20,11 +20,15 @@ import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.entity.datawatcher.DataWatcherAccess;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import de.jpx3.intave.executor.Synchronizer;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.view.BlockPositionView;
+import de.jpx3.intave.packet.view.PacketEventsBlockPositionView;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
@@ -51,7 +55,36 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
     }
   )
   public void receiveMovementAndSwingPacket(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleMovementAndSwingPacket(
+      event.getPlayer(),
+      event.getPacketType() == PacketType.Play.Client.ARM_ANIMATION
+    );
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      ARM_ANIMATION, FLYING, LOOK, POSITION, POSITION_LOOK
+    }
+  )
+  public void receiveMovementAndSwingPacket(Player player, PacketReceiveEvent event) {
+    if (player == null) {
+      return;
+    }
+    // PacketEvents calls the client's arm swing packet ANIMATION; ProtocolLib calls it
+    // ARM_ANIMATION. Same packet, so the branch below stays the same.
+    handleMovementAndSwingPacket(
+      player,
+      event.getPacketType()
+        == com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.ANIMATION
+    );
+  }
+
+  /**
+   * Engine independent handling. Beyond telling a swing apart from a movement packet the body only
+   * needs the player, so the discriminator is passed in as a boolean instead of the packet.
+   */
+  private void handleMovementAndSwingPacket(Player player, boolean armAnimation) {
     User user = userOf(player);
     BlockingMeta meta = metaOf(user);
     SimulationEnvironment movementData = user.meta().movement();
@@ -60,7 +93,7 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
       return;
     }
 
-    if (event.getPacketType() != PacketType.Play.Client.ARM_ANIMATION) {
+    if (!armAnimation) {
       meta.releasedItemAfterClientTick = false;
       meta.ticksBetweenBlockAndUnblock++;
     }
@@ -82,63 +115,134 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
   )
   public void receiveInteractionPacket(PacketEvent event) {
     Player player = event.getPlayer();
-    User user = userOf(player);
-    PunishmentMetadata punishmentData = user.meta().punishment();
-    BlockingMeta meta = metaOf(user);
     PacketContainer packet = event.getPacket();
 
-    if (!user.meta().protocol().emptyFlyingPacketsAreExplicitlySent() || user.meta().abilities().ignoringMovementPackets() || user.meta().movement().ticksPast(TELEPORT) < 10) {
+    if (!interactionIsRelevantFor(player)) {
       return;
     }
 
     if (packet.getType() == PacketType.Play.Client.BLOCK_DIG) {
       EnumWrappers.PlayerDigType playerDigType = packet.getPlayerDigTypes().readSafely(0);
-      if (playerDigType == EnumWrappers.PlayerDigType.RELEASE_USE_ITEM) {
-        meta.releasedItemAfterClientTick = true;
-        meta.ventosFreundlicherBoolean = true;
-
-        int ticksBetweenBlockAndUnblock = meta.ticksBetweenBlockAndUnblock;
-        if (ticksBetweenBlockAndUnblock == 0) {
-          flag(user, "unblocked too quickly", ticksBetweenBlockAndUnblock + " ticks");
-          //dmc6
-          user.nerf(AttackNerfStrategy.BLOCKING, "block:speed");
-          punishmentData.timeLastBlockCancel = System.currentTimeMillis();
-          Synchronizer.synchronize(user, () -> DataWatcherAccess.setDataWatcherFlag(player, DataWatcherAccess.WATCHER_BLOCKING_ID, false));
-        }
-
-      }
+      handleReleaseUseItem(player, playerDigType == EnumWrappers.PlayerDigType.RELEASE_USE_ITEM);
     } else { // BLOCK_PLACE
-      ItemStack itemInHand = packet.getItemModifier().readSafely(0);
-      boolean sword = itemInHand != null && itemInHand.getType().name().endsWith("_SWORD");
-
-      if (meta.releasedItemAfterClientTick) {
-        String item = itemInHand == null ? "null" : itemInHand.getType().toString();
-        flag(user, "sent multiple blocking interactions per tick", "item: " + item);
-        user.nerf(AttackNerfStrategy.BLOCKING, "block:multiple");
-      }
-
-      int clientTicksBetweenBlockingToggle = meta.clientTicksBetweenBlockingToggle;
       Integer integer = packet.getIntegers().readSafely(0);
-      if (integer == null) {
-        integer = 0;
-      }
-      if (integer == 255 && meta.ventosFreundlicherBoolean && sword) {
-        meta.clientTicksBetweenBlockingToggle = 0;
-        meta.ventosFreundlicherBoolean = false;
-
-        if (clientTicksBetweenBlockingToggle == 0 && meta.acaBlockingVL < 20) {
-          meta.acaBlockingVL++;
-          if (meta.acaBlockingVL > 2) {
-            flag(user, "sent too few packets between block-toggle packets", "vl: " + meta.acaBlockingVL);
-            user.nerf(AttackNerfStrategy.BLOCKING, "block:packets");
-          }
-        } else if (meta.acaBlockingVL > 1) {
-          meta.acaBlockingVL -= 2;
-        }
-      }
-
-      meta.ticksBetweenBlockAndUnblock = 0;
+      handleBlockingInteraction(
+        player,
+        packet.getItemModifier().readSafely(0),
+        integer == null ? 0 : integer
+      );
     }
+  }
+
+  /**
+   * PacketEvents entry point for {@link #receiveInteractionPacket(PacketEvent)}.
+   * <p>
+   * Both packets in this subscription are served by {@link PacketEventsBlockPositionView}: the dig
+   * action for the release branch and the clicked face plus the placement's own item stack for the
+   * placement branch. The gate in {@link #interactionIsRelevantFor(Player)} restricts this check to
+   * a 1.8-or-below server, which is exactly the wire format where the placement packet still
+   * carries the held item and encodes "no block clicked" as face 255, so both fields line up with
+   * what the ProtocolLib body reads out of the packet.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      BLOCK_PLACE, BLOCK_DIG
+    }
+  )
+  public void receiveInteractionPacket(PacketReceiveEvent event) {
+    PacketEventsBlockPositionView view = PacketEventsBlockPositionView.of(event);
+    if (view == null || view.player() == null) {
+      return;
+    }
+    try {
+      Player player = view.player();
+      if (!interactionIsRelevantFor(player)) {
+        return;
+      }
+      if (view.kind() == BlockPositionView.Kind.BLOCK_DIG) {
+        handleReleaseUseItem(player, view.digAction() == BlockPositionView.DigAction.RELEASE_USE_ITEM);
+      } else if (view.kind() == BlockPositionView.Kind.BLOCK_PLACE) {
+        // Spelled out rather than left as a bare else: the bare use item packet is a member of this
+        // view family and reports face 255, which is the marker the placement branch flags on, and
+        // the ProtocolLib subscription can never receive that packet.
+        handleBlockingInteraction(player, view.placementItem(), view.enumDirection());
+      }
+    } finally {
+      view.release();
+    }
+  }
+
+  /**
+   * Engine independent gate shared by both entry points. Kept ahead of every packet field read so
+   * neither engine touches the packet for a player this check does not apply to.
+   */
+  private boolean interactionIsRelevantFor(Player player) {
+    User user = userOf(player);
+    // Touched for its side effect of creating the metadata, exactly like the original body did
+    // before the gate below.
+    metaOf(user);
+    return user.meta().protocol().emptyFlyingPacketsAreExplicitlySent()
+      && !user.meta().abilities().ignoringMovementPackets()
+      && user.meta().movement().ticksPast(TELEPORT) >= 10;
+  }
+
+  /** Engine independent body of the BLOCK_DIG branch; only the dig action is read off the packet. */
+  private void handleReleaseUseItem(Player player, boolean releaseUseItem) {
+    if (!releaseUseItem) {
+      return;
+    }
+    User user = userOf(player);
+    PunishmentMetadata punishmentData = user.meta().punishment();
+    BlockingMeta meta = metaOf(user);
+
+    meta.releasedItemAfterClientTick = true;
+    meta.ventosFreundlicherBoolean = true;
+
+    int ticksBetweenBlockAndUnblock = meta.ticksBetweenBlockAndUnblock;
+    if (ticksBetweenBlockAndUnblock == 0) {
+      flag(user, "unblocked too quickly", ticksBetweenBlockAndUnblock + " ticks");
+      //dmc6
+      user.nerf(AttackNerfStrategy.BLOCKING, "block:speed");
+      punishmentData.timeLastBlockCancel = System.currentTimeMillis();
+      Synchronizer.synchronize(user, () -> DataWatcherAccess.setDataWatcherFlag(player, DataWatcherAccess.WATCHER_BLOCKING_ID, false));
+    }
+  }
+
+  /**
+   * Engine independent body of the BLOCK_PLACE branch. The only packet fields it needs are the item
+   * the placement carries and the clicked face, where 255 is the "empty interaction" marker a 1.8
+   * client sends when it right clicks air - which is what a sword block looks like on the wire.
+   */
+  private void handleBlockingInteraction(Player player, ItemStack itemInHand, int enumDirection) {
+    User user = userOf(player);
+    BlockingMeta meta = metaOf(user);
+
+    boolean sword = itemInHand != null && itemInHand.getType().name().endsWith("_SWORD");
+
+    if (meta.releasedItemAfterClientTick) {
+      String item = itemInHand == null ? "null" : itemInHand.getType().toString();
+      flag(user, "sent multiple blocking interactions per tick", "item: " + item);
+      user.nerf(AttackNerfStrategy.BLOCKING, "block:multiple");
+    }
+
+    int clientTicksBetweenBlockingToggle = meta.clientTicksBetweenBlockingToggle;
+    if (enumDirection == 255 && meta.ventosFreundlicherBoolean && sword) {
+      meta.clientTicksBetweenBlockingToggle = 0;
+      meta.ventosFreundlicherBoolean = false;
+
+      if (clientTicksBetweenBlockingToggle == 0 && meta.acaBlockingVL < 20) {
+        meta.acaBlockingVL++;
+        if (meta.acaBlockingVL > 2) {
+          flag(user, "sent too few packets between block-toggle packets", "vl: " + meta.acaBlockingVL);
+          user.nerf(AttackNerfStrategy.BLOCKING, "block:packets");
+        }
+      } else if (meta.acaBlockingVL > 1) {
+        meta.acaBlockingVL -= 2;
+      }
+    }
+
+    meta.ticksBetweenBlockAndUnblock = 0;
   }
 
   //---------other-check-------------
@@ -150,7 +254,25 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
     }
   )
   public void receiveMovementPacket(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleMovementPacket(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      FLYING, POSITION, POSITION_LOOK, LOOK, VEHICLE_MOVE
+    }
+  )
+  public void receiveMovementPacket(Player player) {
+    if (player == null) {
+      return;
+    }
+    handleMovementPacket(player);
+  }
+
+  /** Engine independent handling; the body only reads Intave's own metadata, not the packet. */
+  private void handleMovementPacket(Player player) {
     User user = userOf(player);
     BlockingMeta meta = metaOf(user);
     SimulationEnvironment movementData = user.meta().movement();
@@ -185,7 +307,24 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
     }
   )
   public void receiveUseItem(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleUseItem(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      USE_ITEM
+    }
+  )
+  public void receiveUseItem(Player player) {
+    if (player == null) {
+      return;
+    }
+    handleUseItem(player);
+  }
+
+  /** Engine independent handling; the body only counts the packet, it never reads it. */
+  private void handleUseItem(Player player) {
     User user = userOf(player);
     ProtocolMetadata clientData = user.meta().protocol();
     BlockingMeta meta = metaOf(player);
@@ -201,7 +340,24 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
     }
   )
   public void receiveBlockPlace(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleBlockPlace(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      BLOCK_PLACE
+    }
+  )
+  public void receiveBlockPlace(Player player) {
+    if (player == null) {
+      return;
+    }
+    handleBlockPlace(player);
+  }
+
+  /** Engine independent handling; the body only counts the packet, it never reads it. */
+  private void handleBlockPlace(Player player) {
     User user = userOf(player);
     BlockingMeta meta = metaOf(player);
     ProtocolMetadata clientData = user.meta().protocol();
@@ -217,7 +373,24 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
     }
   )
   public void receiveHeldItemSlot(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleHeldItemSlot(event.getPlayer());
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      HELD_ITEM_SLOT_IN
+    }
+  )
+  public void receiveHeldItemSlot(Player player) {
+    if (player == null) {
+      return;
+    }
+    handleHeldItemSlot(player);
+  }
+
+  /** Engine independent handling; the body only counts the packet, it never reads the new slot. */
+  private void handleHeldItemSlot(Player player) {
     User user = userOf(player);
     BlockingMeta meta = metaOf(player);
     ProtocolMetadata clientData = user.meta().protocol();

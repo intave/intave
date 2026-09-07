@@ -1,17 +1,21 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.math.MathHelper;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.converter.PlayerAction;
-import de.jpx3.intave.packet.reader.BlockInteractionReader;
-import de.jpx3.intave.packet.reader.PacketReaders;
-import de.jpx3.intave.packet.reader.PlayerActionReader;
+import de.jpx3.intave.packet.view.BlockInteractionView;
+import de.jpx3.intave.packet.view.PacketEventsBlockInteractionView;
+import de.jpx3.intave.packet.view.PacketEventsPlayerActionView;
+import de.jpx3.intave.packet.view.PlayerActionView;
+import de.jpx3.intave.packet.view.ProtocolLibBlockInteractionView;
+import de.jpx3.intave.packet.view.ProtocolLibPlayerActionView;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.Rotation;
@@ -59,14 +63,37 @@ public class SmartSpeed extends PlayerCheckPart<PlacementAnalysis> {
 		}
 	)
 	public void receivePlacementPacket(PacketEvent event) {
-		Player player = event.getPlayer();
-		User user = userOf(player);
-		PacketContainer packet = event.getPacket();
+		handlePlacement(
+			new ProtocolLibBlockInteractionView(event),
+			event.getPacketType() == PacketType.Play.Client.BLOCK_PLACE
+		);
+	}
 
-		BlockInteractionReader reader = PacketReaders.readerOf(packet);
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		packetsIn = {
+			BLOCK_PLACE, USE_ITEM
+		}
+	)
+	public void receivePlacementPacket(PacketReceiveEvent event) {
+		PacketEventsBlockInteractionView view = PacketEventsBlockInteractionView.of(event);
+		if (view == null || view.player() == null) {
+			return;
+		}
+		handlePlacement(
+			view,
+			event.getPacketType() == com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT
+		);
+	}
+
+	/** Engine independent placement handling; see {@link BlockInteractionView}. */
+	private void handlePlacement(BlockInteractionView view, boolean blockPlacePacket) {
+		Player player = view.player();
+		User user = userOf(player);
+
 		try {
-			if (event.getPacketType() == PacketType.Play.Client.BLOCK_PLACE) {
-				int facing = reader.enumDirection();
+			if (blockPlacePacket) {
+				int facing = view.enumDirection();
 				if (facing == 255) {
 					ticksSinceHardFaultClick = 0;
 				} else {
@@ -87,8 +114,8 @@ public class SmartSpeed extends PlayerCheckPart<PlacementAnalysis> {
 					if (placementHistory.size() > 100) {
 						placementHistory.remove(0);
 					}
-					BlockPosition blockPosition = reader.nativeBlockPosition();
-					Direction direction = reader.direction();
+					BlockPosition blockPosition = view.blockPosition();
+					Direction direction = view.direction();
 
 					double diff = blockPosition.getBlockY() - user.meta().movement().positionY;
 					boolean under = diff < 0 && diff > -2.5;
@@ -151,7 +178,7 @@ public class SmartSpeed extends PlayerCheckPart<PlacementAnalysis> {
 				}
 			}
 		} finally {
-			reader.release();
+			view.release();
 		}
 	}
 
@@ -162,7 +189,28 @@ public class SmartSpeed extends PlayerCheckPart<PlacementAnalysis> {
 		}
 	)
 	public void on(PacketEvent event) {
-		Player player = event.getPlayer();
+		handleMovement(event.getPlayer());
+	}
+
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		priority = ListenerPriority.HIGH,
+		packetsIn = {
+			FLYING, POSITION_LOOK, LOOK, POSITION
+		}
+	)
+	public void on(Player player) {
+		if (player == null) {
+			return;
+		}
+		handleMovement(player);
+	}
+
+	/**
+	 * Engine independent body: the movement packet is only a client tick marker here, the rotation
+	 * is read back from the user's metadata.
+	 */
+	private void handleMovement(Player player) {
 		User user = userOf(player);
 		MovementMetadata movementData = user.meta().movement();
 
@@ -255,9 +303,26 @@ public class SmartSpeed extends PlayerCheckPart<PlacementAnalysis> {
 		}
 	)
 	public void receiveEntityActionPacket(PacketEvent event) {
-		PacketContainer packet = event.getPacket();
-		PlayerActionReader reader = PacketReaders.readerOf(packet);
-		PlayerAction action = reader.playerAction();
+		handleEntityAction(new ProtocolLibPlayerActionView(event));
+	}
+
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		priority = ListenerPriority.HIGH,
+		packetsIn = {
+			ENTITY_ACTION_IN
+		}
+	)
+	public void receiveEntityActionPacket(PacketReceiveEvent event) {
+		PacketEventsPlayerActionView view = PacketEventsPlayerActionView.of(event);
+		if (view != null) {
+			handleEntityAction(view);
+		}
+	}
+
+	/** Engine independent body; see {@link PlayerActionView}. */
+	private void handleEntityAction(PlayerActionView view) {
+		PlayerAction action = view.playerAction();
 		if (action.isStartSneak()) {
 			startSneakInThisTick = true;
 			sneakChangedInThisTick = true;
@@ -268,7 +333,7 @@ public class SmartSpeed extends PlayerCheckPart<PlacementAnalysis> {
 			lastSneakDuration = sneakDuration;
 			sneakDuration = 0;
 		}
-		reader.release();
+		view.release();
 	}
 
 	private static class Placement {

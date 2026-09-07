@@ -4,12 +4,19 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketTypeCommon;
+import com.github.retrooper.packetevents.protocol.player.DiggingAction;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerDigging;
 import de.jpx3.intave.check.EventProcessor;
 import de.jpx3.intave.check.combat.clickpatterns.Kurtosis;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.PacketTypes;
+import de.jpx3.intave.packet.view.PacketEventsAttackView;
+import de.jpx3.intave.packet.view.PacketEventsMovementView;
 import de.jpx3.intave.packet.reader.EntityUseReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.user.User;
@@ -39,43 +46,103 @@ public final class ClickFeeder implements EventProcessor {
   public void clientClickUpdate(PacketEvent event) {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
-    ClickBufferData bufferData = this.bufferData.get(user);
     PacketContainer packet = event.getPacket();
     PacketType type = packet.getType();
     if (type == PacketType.Play.Client.USE_ENTITY) {
       EntityUseReader reader = PacketReaders.readerOf(packet);
       EnumWrappers.EntityUseAction entityUseAction = reader.useAction();
       if (entityUseAction == EnumWrappers.EntityUseAction.ATTACK) {
-        bufferData.recordAttack(System.currentTimeMillis());
+        countAttack(user);
       }
       reader.release();
     } else if (type == PacketType.Play.Client.ARM_ANIMATION) {
-      bufferData.recordClick(System.currentTimeMillis());
-      if (System.currentTimeMillis() - bufferData.lastMove > 200) {
-        bufferData.desynchronizedClick = true;
-      }
+      countSwing(user);
     } else if (type == PacketType.Play.Client.BLOCK_DIG) {
-      if (packet.getPlayerDigTypes().read(0) == DROP_ITEM && user.meta().inventory().heldItemType() == Material.AIR) {
-        UUID actionTarget = user.actionTarget();
-        if (actionTarget != null) {
-          User actionTargetUser = UserRepository.userOf(actionTarget);
-          if (actionTargetUser.hasPlayer()) {
-            ClickBufferData otherBufferData = this.bufferData.get(actionTargetUser);
-            otherBufferData.tab++;
-            otherBufferData.tab %= otherBufferData.totalTabs;
-            otherBufferData.frontVisible = 0;
-            otherBufferData.changeDisplayVisible = 0;
-            Arrays.fill(otherBufferData.tabVisibility, 0);
-          }
-        }
-      } else {
-        bufferData.breakingBlock = user.meta().attack().inBreakProcess;
-        bufferData.recordPlace(System.currentTimeMillis());
-      }
+      countDig(user, packet.getPlayerDigTypes().read(0) == DROP_ITEM);
     } else {
-      bufferData.breakingBlock = user.meta().attack().inBreakProcess;
-      bufferData.recordPlace(System.currentTimeMillis());
+      countPlace(user);
     }
+  }
+
+  /**
+   * PacketEvents entry point for the same four packets. PacketEvents folds the separate attack
+   * packet of the newest protocols back into the interact packet, so the attack is told apart by
+   * the action just like the ProtocolLib reader does below 26.1.1.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      USE_ENTITY, ARM_ANIMATION, BLOCK_DIG, USE_ITEM
+    }
+  )
+  public void clientClickUpdate(PacketReceiveEvent event, Player player) {
+    if (player == null) {
+      return;
+    }
+    User user = UserRepository.userOf(player);
+    PacketTypeCommon type = event.getPacketType();
+    if (type == com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.INTERACT_ENTITY) {
+      PacketEventsAttackView view = PacketEventsAttackView.of(event);
+      if (view == null) {
+        return;
+      }
+      if (view.isAttackPacket()) {
+        countAttack(user);
+      }
+      view.release();
+    } else if (type == com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.ANIMATION) {
+      countSwing(user);
+    } else if (type == com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.PLAYER_DIGGING) {
+      DiggingAction digType = new WrapperPlayClientPlayerDigging(event).getAction();
+      countDig(user, digType == DiggingAction.DROP_ITEM);
+    } else {
+      countPlace(user);
+    }
+  }
+
+  /** Engine independent: an attack on an entity happened. */
+  private void countAttack(User user) {
+    this.bufferData.get(user).recordAttack(System.currentTimeMillis());
+  }
+
+  /** Engine independent: a bare arm swing happened. */
+  private void countSwing(User user) {
+    ClickBufferData bufferData = this.bufferData.get(user);
+    bufferData.recordClick(System.currentTimeMillis());
+    if (System.currentTimeMillis() - bufferData.lastMove > 200) {
+      bufferData.desynchronizedClick = true;
+    }
+  }
+
+  /**
+   * Engine independent dig handling. A drop with an empty hand is the display's tab cycle gesture
+   * and never counts as a place, exactly as the ProtocolLib path did.
+   */
+  private void countDig(User user, boolean dropItem) {
+    if (dropItem && user.meta().inventory().heldItemType() == Material.AIR) {
+      UUID actionTarget = user.actionTarget();
+      if (actionTarget != null) {
+        User actionTargetUser = UserRepository.userOf(actionTarget);
+        if (actionTargetUser.hasPlayer()) {
+          ClickBufferData otherBufferData = this.bufferData.get(actionTargetUser);
+          otherBufferData.tab++;
+          otherBufferData.tab %= otherBufferData.totalTabs;
+          otherBufferData.frontVisible = 0;
+          otherBufferData.changeDisplayVisible = 0;
+          Arrays.fill(otherBufferData.tabVisibility, 0);
+        }
+      }
+      return;
+    }
+    countPlace(user);
+  }
+
+  /** Engine independent: a block place or item use happened. */
+  private void countPlace(User user) {
+    ClickBufferData bufferData = this.bufferData.get(user);
+    bufferData.breakingBlock = user.meta().attack().inBreakProcess;
+    bufferData.recordPlace(System.currentTimeMillis());
   }
 
   @PacketSubscription(
@@ -88,19 +155,83 @@ public final class ClickFeeder implements EventProcessor {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
 
-    PacketType packetType = event.getPacketType();
+    MoveKind kind = kindOf(event.getPacketType());
     ProtocolMetadata protocol = user.meta().protocol();
     boolean sendsClientTickEnd = protocol.sendsClientTickEnd();
 
-    boolean notClientTickEnd = !PacketTypes.isClientEndTick(packetType);
-    if (sendsClientTickEnd && notClientTickEnd) {
+    if (sendsClientTickEnd && kind != MoveKind.CLIENT_TICK_END) {
       return;
     }
 
     ClickBufferData bufferData = this.bufferData.get(user);
-    boolean positionReminderPacket = user.protocolVersion() > ProtocolMetadata.VER_1_8
+    boolean positionReminderPacket = false;
+    if (user.protocolVersion() > ProtocolMetadata.VER_1_8
       && !sendsClientTickEnd
-      && isPositionReminderPacket(event, bufferData, protocol);
+      && carriesPosition(kind)
+    ) {
+      positionReminderPacket = recordPositionReminder(
+        bufferData, protocol,
+        event.getPacket().getDoubles().read(0),
+        event.getPacket().getDoubles().read(1),
+        event.getPacket().getDoubles().read(2)
+      );
+    }
+    handleTickUpdate(user, kind, bufferData, sendsClientTickEnd, positionReminderPacket);
+  }
+
+  /**
+   * PacketEvents entry point for the same five packets. The tick update only needs to know which
+   * movement packet arrived and, for the two that carry coordinates, where the player claims to be;
+   * both come off {@link PacketEventsMovementView}, so no engine type reaches the shared body.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      FLYING, LOOK, POSITION, POSITION_LOOK, CLIENT_TICK_END
+    }
+  )
+  public void clientTickUpdate(PacketReceiveEvent event, Player player) {
+    if (player == null) {
+      return;
+    }
+    User user = UserRepository.userOf(player);
+
+    MoveKind kind = kindOf(event.getPacketType());
+    ProtocolMetadata protocol = user.meta().protocol();
+    boolean sendsClientTickEnd = protocol.sendsClientTickEnd();
+
+    if (sendsClientTickEnd && kind != MoveKind.CLIENT_TICK_END) {
+      return;
+    }
+
+    ClickBufferData bufferData = this.bufferData.get(user);
+    boolean positionReminderPacket = false;
+    if (user.protocolVersion() > ProtocolMetadata.VER_1_8
+      && !sendsClientTickEnd
+      && carriesPosition(kind)
+    ) {
+      PacketEventsMovementView view = PacketEventsMovementView.of(event);
+      if (view != null) {
+        positionReminderPacket = recordPositionReminder(
+          bufferData, protocol, view.positionX(), view.positionY(), view.positionZ()
+        );
+      }
+    }
+    handleTickUpdate(user, kind, bufferData, sendsClientTickEnd, positionReminderPacket);
+  }
+
+  /**
+   * Engine independent tick update. {@link MoveKind} stands in for the engine's packet type
+   * constant, which is the only part of the packet this body ever looked at.
+   */
+  private void handleTickUpdate(
+    User user,
+    MoveKind kind,
+    ClickBufferData bufferData,
+    boolean sendsClientTickEnd,
+    boolean positionReminderPacket
+  ) {
     TickSample sample = resolveTickSample(bufferData.clicks, bufferData.attacks, bufferData.places);
     long now = System.currentTimeMillis();
 
@@ -114,8 +245,8 @@ public final class ClickFeeder implements EventProcessor {
         SimulationEnvironment movement = user.meta().movement();
         reconstructTicks = positionReminderPacket
           || movement.receivedFlyingPacketIn(0)
-          || bufferData.lastMovePacketType.name().equals("FLYING")
-          || bufferData.lastMovePacketType == PacketType.Play.Client.LOOK;
+          || bufferData.lastMovePacketType == MoveKind.FLYING
+          || bufferData.lastMovePacketType == MoveKind.LOOK;
         if (reconstructTicks) {
           ticksToAdvance = positionReminderPacket
             ? 20
@@ -182,23 +313,25 @@ public final class ClickFeeder implements EventProcessor {
     bufferData.placeTimestamps.clear();
     bufferData.desynchronizedClick = false;
     bufferData.lastMove = now;
-    bufferData.lastMovePacketType = packetType;
+    bufferData.lastMovePacketType = kind;
     bufferData.lastTickTimeStamp = now;
   }
 
-  private boolean isPositionReminderPacket(
-    PacketEvent event, ClickBufferData bufferData, ProtocolMetadata protocol
-  ) {
-    PacketType packetType = event.getPacketType();
-    if (packetType != PacketType.Play.Client.POSITION
-      && packetType != PacketType.Play.Client.POSITION_LOOK
-    ) {
-      return false;
-    }
+  /** @return true for the two movement packets that carry coordinates. */
+  private static boolean carriesPosition(MoveKind kind) {
+    return kind == MoveKind.POSITION || kind == MoveKind.POSITION_LOOK;
+  }
 
-    double positionX = event.getPacket().getDoubles().read(0);
-    double positionY = event.getPacket().getDoubles().read(1);
-    double positionZ = event.getPacket().getDoubles().read(2);
+  /**
+   * Engine independent half of the former {@code isPositionReminderPacket}: records the reported
+   * position and reports whether it sits close enough to the previous one to be the client's idle
+   * position reminder rather than a real move. Only called for {@link #carriesPosition} kinds, so
+   * the packet type guard that used to open the method now lives at the call sites.
+   */
+  private boolean recordPositionReminder(
+    ClickBufferData bufferData, ProtocolMetadata protocol,
+    double positionX, double positionY, double positionZ
+  ) {
     double offsetX = positionX - bufferData.lastReportedPositionX;
     double offsetY = positionY - bufferData.lastReportedPositionY;
     double offsetZ = positionZ - bufferData.lastReportedPositionZ;
@@ -212,6 +345,53 @@ public final class ClickFeeder implements EventProcessor {
     bufferData.lastReportedPositionY = positionY;
     bufferData.lastReportedPositionZ = positionZ;
     return reminder;
+  }
+
+  /** ProtocolLib packet type to engine neutral kind. */
+  private static MoveKind kindOf(PacketType packetType) {
+    if (PacketTypes.isClientEndTick(packetType)) {
+      return MoveKind.CLIENT_TICK_END;
+    }
+    if (packetType == PacketType.Play.Client.POSITION_LOOK) {
+      return MoveKind.POSITION_LOOK;
+    }
+    if (packetType == PacketType.Play.Client.POSITION) {
+      return MoveKind.POSITION;
+    }
+    if (packetType == PacketType.Play.Client.LOOK) {
+      return MoveKind.LOOK;
+    }
+    return MoveKind.FLYING;
+  }
+
+  /**
+   * PacketEvents packet type to engine neutral kind. The subscription only ever delivers the five
+   * kinds below; the tick end constant is matched by exclusion because it does not exist on every
+   * PacketEvents release Intave has to run against.
+   */
+  private static MoveKind kindOf(PacketTypeCommon packetType) {
+    if (packetType == com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.PLAYER_POSITION_AND_ROTATION) {
+      return MoveKind.POSITION_LOOK;
+    }
+    if (packetType == com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.PLAYER_POSITION) {
+      return MoveKind.POSITION;
+    }
+    if (packetType == com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.PLAYER_ROTATION) {
+      return MoveKind.LOOK;
+    }
+    if (packetType == com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.PLAYER_FLYING) {
+      return MoveKind.FLYING;
+    }
+    return MoveKind.CLIENT_TICK_END;
+  }
+
+  /** The movement packets this feeder tells apart, independent of the packet engine. */
+  private enum MoveKind {
+    FLYING,
+    LOOK,
+    POSITION,
+    POSITION_LOOK,
+    CLIENT_TICK_END
   }
 
   static void appendBufferedTicks(ClickBufferData bufferData, long now, int ticksToAdvance) {
@@ -275,7 +455,7 @@ public final class ClickFeeder implements EventProcessor {
     private final String[] tabNames = {"Basic", "History", "Streak", "Stats"};
     private int tab = 0;
     private long lastMove;
-    private PacketType lastMovePacketType;
+    private MoveKind lastMovePacketType;
     private long lastTickTimeStamp = System.currentTimeMillis();
     private boolean hasReportedPosition;
     private double lastReportedPositionX;

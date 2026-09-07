@@ -15,6 +15,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.user.User;
@@ -39,8 +40,25 @@ public final class RotationModuloResetHeuristic extends ClassicHeuristic<Rotatio
     }
   )
   public void receiveMovementPacket(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
+    handleMovementPacket(userOf(event.getPlayer()));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      LOOK, POSITION_LOOK
+    }
+  )
+  public void receiveMovementPacket(Player player) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    handleMovementPacket(userOf(player));
+  }
+
+  /** Engine independent rotation reset detection; the packet itself is never read. */
+  private void handleMovementPacket(User user) {
     MovementMetadata movementData = user.meta().movement();
     AttackMetadata attackData = user.meta().attack();
     RotationModuloResetHeuristicMeta heuristicMeta = metaOf(user);

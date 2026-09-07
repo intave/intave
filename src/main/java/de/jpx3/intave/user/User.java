@@ -14,6 +14,7 @@ package de.jpx3.intave.user;
 import ac.intave.cloud.protocol.Packet;
 import ac.intave.cloud.protocol.listener.Serverbound;
 import ac.intave.cloud.protocol.packets.ServerboundReport;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.comphenix.protocol.events.PacketEvent;
 import com.google.gson.JsonObject;
 import de.jpx3.intave.access.UnsupportedFallbackOperationException;
@@ -36,6 +37,7 @@ import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.violation.placeholder.Placeholders;
 import de.jpx3.intave.module.violation.placeholder.PlayerContext;
 import de.jpx3.intave.module.violation.placeholder.UserContext;
+import de.jpx3.intave.packet.view.FeedbackHandle;
 import de.jpx3.intave.player.collider.complex.Collider;
 import de.jpx3.intave.player.collider.simple.SimpleCollider;
 import de.jpx3.intave.report.Report;
@@ -165,6 +167,34 @@ public interface User {
   }
 
   /**
+   * Engine neutral form of {@link #packetTickFeedback(PacketEvent, EmptyFeedbackCallback)}.
+   * <p>
+   * Takes a {@link FeedbackHandle} instead of a ProtocolLib event so a PacketEvents subscription
+   * can request bundled tick-feedback too. The {@link PacketEvent} taking signature above stays and
+   * delegates here, so both engines share one body.
+   * <p>
+   * The default implementation drops the bundling attachment and falls back to a plain
+   * {@link #tickFeedback(EmptyFeedbackCallback)}, which is what a {@link User} without a real
+   * connection wants anyway; {@link PlayerUser} overrides it with the bundling aware body.
+   *
+   * @param handle the packet to attach the transaction to, or null for an unattached transaction
+   * @param callback the callback
+   */
+  default void packetTickFeedback(@Nullable FeedbackHandle handle, EmptyFeedbackCallback callback) {
+    tickFeedback(callback);
+  }
+
+  /**
+   * Same as {@link #packetTickFeedback(FeedbackHandle, EmptyFeedbackCallback)}, but with options
+   * @param handle the packet to attach the transaction to, or null for an unattached transaction
+   * @param callback the callback
+   * @param options the options, as defined in {@link FeedbackOptions}
+   */
+  default void packetTickFeedback(@Nullable FeedbackHandle handle, EmptyFeedbackCallback callback, int options) {
+    packetTickFeedback(handle, callback);
+  }
+
+  /**
    * Same as {@link #tickFeedback(EmptyFeedbackCallback)}, but with a {@link FeedbackObserver}
    * Feedback observer is notified when the packet is sent and when the response is received.
    * @param callback the callback
@@ -189,8 +219,42 @@ public interface User {
   }
 
   /**
+   * Engine neutral form of
+   * {@link #tracedPacketTickFeedback(PacketEvent, EmptyFeedbackCallback, FeedbackObserver)}.
+   * See {@link #packetTickFeedback(FeedbackHandle, EmptyFeedbackCallback)} for why the handle
+   * replaces the raw event.
+   *
+   * @param handle the packet to attach the transaction to, or null for an unattached transaction
+   * @param callback the callback
+   * @param tracker a tracker
+   */
+  default void tracedPacketTickFeedback(@Nullable FeedbackHandle handle, EmptyFeedbackCallback callback, FeedbackObserver tracker) {
+    tracedTickFeedback(callback, tracker);
+  }
+
+  /**
+   * Same as {@link #tracedPacketTickFeedback(FeedbackHandle, EmptyFeedbackCallback, FeedbackObserver)},
+   * but with options
+   * @param handle the packet to attach the transaction to, or null for an unattached transaction
+   * @param callback the callback
+   * @param tracker a tracker
+   * @param options the options, as defined in {@link FeedbackOptions}
+   */
+  default void tracedPacketTickFeedback(@Nullable FeedbackHandle handle, EmptyFeedbackCallback callback, FeedbackObserver tracker, int options) {
+    tracedPacketTickFeedback(handle, callback, tracker);
+  }
+
+  /**
    * Double tick-synchronization.
    * Sandwiches a packet between two feedback packets.
+   * <p>
+   * Unlike the single-shot variants above there is deliberately no {@link FeedbackHandle} overload:
+   * sandwiching needs the packet to be cancelled and re-emitted between the two transactions
+   * without re-entering the listener chain, and the two engines reach that through different calls,
+   * so each gets its own overload instead of a shared handle. The PacketEvents one is
+   * {@link #doubleTickFeedback(PacketSendEvent, EmptyFeedbackCallback, EmptyFeedbackCallback)}.
+   * See {@link FeedbackHandle} for the full reasoning.
+   *
    * @param event the packet event
    * @param before first before
    * @param after second before
@@ -227,6 +291,55 @@ public interface User {
    * @param options the options, as defined in {@link FeedbackOptions}
    */
   default void doubleTracedTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker, int options) {
+    doubleTracedTickFeedback(event, callback, callback2, tracker);
+  }
+
+  /**
+   * PacketEvents twin of
+   * {@link #doubleTickFeedback(PacketEvent, EmptyFeedbackCallback, EmptyFeedbackCallback)}.
+   * <p>
+   * Cancels the outbound event and re-emits its {@code getFullBufferClone()} between the two
+   * transactions through {@code ProtocolManager#sendPacketSilently}, which takes an already encoded
+   * buffer and writes it past every PacketEvents listener. The wire order and the "no re-entry"
+   * property are therefore the same ones the ProtocolLib variant establishes; what differs is only
+   * that the middle write is raw bytes rather than a re-serialised container.
+   *
+   * @param event the outbound packet event
+   * @param before first callback
+   * @param after second callback
+   */
+  void doubleTickFeedback(PacketSendEvent event, EmptyFeedbackCallback before, EmptyFeedbackCallback after);
+
+  /**
+   * Same as {@link #doubleTickFeedback(PacketSendEvent, EmptyFeedbackCallback, EmptyFeedbackCallback)}, but with options
+   * @param event the outbound packet event
+   * @param callback first callback
+   * @param callback2 second callback
+   * @param options the options, as defined in {@link FeedbackOptions}
+   */
+  default void doubleTickFeedback(PacketSendEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, int options) {
+    doubleTickFeedback(event, callback, callback2);
+  }
+
+  /**
+   * PacketEvents twin of
+   * {@link #doubleTracedTickFeedback(PacketEvent, EmptyFeedbackCallback, EmptyFeedbackCallback, FeedbackObserver)}.
+   * @param event the outbound packet event
+   * @param callback first callback
+   * @param callback2 second callback
+   * @param tracker a tracker
+   */
+  void doubleTracedTickFeedback(PacketSendEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker);
+
+  /**
+   * Same as {@link #doubleTracedTickFeedback(PacketSendEvent, EmptyFeedbackCallback, EmptyFeedbackCallback, FeedbackObserver)}, but with options
+   * @param event the outbound packet event
+   * @param callback first callback
+   * @param callback2 second callback
+   * @param tracker a tracker
+   * @param options the options, as defined in {@link FeedbackOptions}
+   */
+  default void doubleTracedTickFeedback(PacketSendEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker, int options) {
     doubleTracedTickFeedback(event, callback, callback2, tracker);
   }
 

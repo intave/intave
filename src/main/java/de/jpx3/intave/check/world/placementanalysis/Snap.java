@@ -17,6 +17,7 @@ import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
@@ -55,7 +56,25 @@ public final class Snap extends PlayerCheckPart<PlacementAnalysis> {
 		}
 	)
 	public void receiveMovementPacket(PacketEvent event) {
-		Player player = event.getPlayer();
+		handleMovement(event.getPlayer());
+	}
+
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		priority = ListenerPriority.HIGH,
+		packetsIn = {
+			FLYING, LOOK, POSITION, POSITION_LOOK
+		}
+	)
+	public void receiveMovementPacket(Player player) {
+		if (player == null) {
+			return;
+		}
+		handleMovement(player);
+	}
+
+	/** Engine independent body: only rotation metadata is read, no packet field is needed. */
+	private void handleMovement(Player player) {
 		User user = userOf(player);
 		MovementMetadata movementData = user.meta().movement();
 		if (movementData.ticksPast(TELEPORT) == 0) {

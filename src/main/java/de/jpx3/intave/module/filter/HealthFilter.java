@@ -1,20 +1,20 @@
 package de.jpx3.intave.module.filter;
 
-import com.comphenix.protocol.events.PacketContainer;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.EntityMetadataReader;
-import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.packet.view.EntityHealthView;
+import de.jpx3.intave.packet.view.PacketEventsEntityHealthView;
+import de.jpx3.intave.packet.view.ProtocolLibEntityHealthView;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.Wither;
-
-import java.util.List;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.ENTITY_METADATA;
 
@@ -34,37 +34,40 @@ public final class HealthFilter extends Filter {
     priority = ListenerPriority.NORMAL
   )
   public void depriveHealth(PacketEvent event) {
-    // Rule #3151235: When editing metadata, do a deepClone().
-    // Why? I still don't know after 5 hours of debugging.
-    event.setPacket(event.getPacket().deepClone());
-    PacketContainer packet = event.getPacket();
-    EntityMetadataReader reader = PacketReaders.readerOf(packet);
-    Entity entity = reader.entityBy(event);
-    if (entity == null || entity instanceof EnderDragon || entity instanceof Wither) {
-      reader.release();
-      return;
-    }
-    List<WrappedWatchableObject> watchables = reader.legacyMetadataObjects();
-    if (entity instanceof LivingEntity && entity.getEntityId() != event.getPlayer().getEntityId()) {
-      if (watchables != null) {
-        for (int i = 0; i < watchables.size(); i++) {
-          WrappedWatchableObject watchable = watchables.get(i);
-          if (watchable.getIndex() == 6 && watchable.getValue() instanceof Float) {
-            watchable = new WrappedWatchableObject(watchable.getIndex(), watchable.getRawValue());
-            stripHealthFrom(watchable);
-            watchables.set(i, watchable);
-          }
-        }
-      }
-    }
-    reader.setLegacyMetadataObjects(watchables);
-    reader.release();
+    // The deep clone Rule #3151235 demands happens inside the view's constructor.
+    handleMetadata(new ProtocolLibEntityHealthView(event));
   }
 
-  private void stripHealthFrom(WrappedWatchableObject watchable) {
-    if (watchable != null && watchable.getIndex() == 6 && watchable.getRawValue() instanceof Float && (float) watchable.getRawValue() != 0.0F) {
-      watchable.setValue(createFakeHealth());
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsOut = {
+      ENTITY_METADATA
+    },
+    priority = ListenerPriority.NORMAL
+  )
+  public void depriveHealth(PacketSendEvent event) {
+    PacketEventsEntityHealthView view = PacketEventsEntityHealthView.of(event);
+    if (view == null) {
+      return;
     }
+    handleMetadata(view);
+  }
+
+  /** Engine independent health obscuring; see {@link EntityHealthView}. */
+  private void handleMetadata(EntityHealthView view) {
+    Entity entity = view.entity();
+    if (entity == null || entity instanceof EnderDragon || entity instanceof Wither) {
+      // Boss health drives the client's boss bar, so it has to stay honest.
+      view.discard();
+      return;
+    }
+    Player player = view.player();
+    if (entity instanceof LivingEntity
+      && player != null
+      && entity.getEntityId() != player.getEntityId()) {
+      view.obscureHealth(createFakeHealth());
+    }
+    view.release();
   }
 
   private float createFakeHealth() {

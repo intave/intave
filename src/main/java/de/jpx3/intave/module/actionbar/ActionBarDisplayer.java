@@ -11,15 +11,18 @@
 
 package de.jpx3.intave.module.actionbar;
 
-import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
 import de.jpx3.intave.executor.task.Task;
 import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.packet.view.ChatOutView;
+import de.jpx3.intave.packet.view.PacketEventsChatOutView;
+import de.jpx3.intave.packet.view.ProtocolLibChatOutView;
 import de.jpx3.intave.player.ActionBar;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -50,13 +53,37 @@ public final class ActionBarDisplayer extends Module {
 //    engine = Engine.ASYNC_INTERNAL
   )
   public void clientClickUpdate(PacketEvent event) {
-    Player player = event.getPlayer();
+    handleChatOut(new ProtocolLibChatOutView(event));
+  }
+
+  /**
+   * PacketEvents entry point for the same packet. Which chat slot the packet targets is the only
+   * thing read, so the engine neutral {@link ChatOutView} carries it.
+   */
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsOut = {
+      CHAT_OUT
+    }
+  )
+  public void clientClickUpdate(PacketSendEvent event) {
+    PacketEventsChatOutView view = PacketEventsChatOutView.of(event);
+    if (view == null) {
+      return;
+    }
+    handleChatOut(view);
+  }
+
+  /**
+   * Engine independent handling: foreign action bar text is suppressed while the receiver watches
+   * another player, so the display Intave pushes is not overwritten.
+   */
+  private void handleChatOut(ChatOutView view) {
+    Player player = view.player();
     User user = UserRepository.userOf(player);
-    PacketContainer packet = event.getPacket();
-    Byte read = packet.getBytes().readSafely(0);
-    EnumWrappers.ChatType type = packet.getChatTypes().read(0);
-    if (((read != null && read.intValue() == 2) || (type == EnumWrappers.ChatType.GAME_INFO)) && inSubscription(user)) {
-      event.setCancelled(true);
+    if (view.isActionBar() && inSubscription(user)) {
+      view.setCancelled(true);
     }
   }
 

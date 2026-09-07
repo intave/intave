@@ -18,6 +18,7 @@ import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.math.MathHelper;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
@@ -49,12 +50,30 @@ public final class RotationStandardDeviationHeuristic extends ClassicHeuristic<R
     }
   )
   public void receiveMovement(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
+    handleMovement(userOf(event.getPlayer()));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      LOOK, POSITION_LOOK
+    }
+  )
+  public void receiveMovement(Player player) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    handleMovement(userOf(player));
+  }
+
+  /** Engine independent rotation deviation sampling; the packet itself is never read. */
+  private void handleMovement(User user) {
     MetadataBundle meta = user.meta();
     MovementMetadata movementData = meta.movement();
     AttackMetadata attackData = meta.attack();
-    RotationStandardDeviationMeta heuristicMeta = metaOf(player);
+    RotationStandardDeviationMeta heuristicMeta = metaOf(user);
     Entity entity = attackData.lastAttackedEntity();
 
     if (entity != null && attackData.recentlyAttacked(500) && entity.moving(0.05)) {

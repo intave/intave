@@ -3,14 +3,17 @@ package de.jpx3.intave.check.world.placementanalysis;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
+import de.jpx3.intave.packet.view.PacketEventsBlockInteractionView;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.EffectMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -58,9 +61,36 @@ public final class Speed extends PlayerCheckPart<PlacementAnalysis> {
 			if (facing == null) {
 				facing = 0;
 			}
-			if (facing == 255) {
-				lastHardFaultClick = System.currentTimeMillis();
-			}
+			handlePlacement(facing);
+		}
+	}
+
+	/**
+	 * PacketEvents entry point. The clicked face is taken from
+	 * {@link PacketEventsBlockInteractionView}, which reports the same 255 "empty interaction"
+	 * marker the ProtocolLib body reads out of the packet's first integer.
+	 */
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		packetsIn = {
+			BLOCK_PLACE, USE_ITEM
+		}
+	)
+	public void receivePlacementPacket(PacketReceiveEvent event) {
+		if (event.getPacketType() != com.github.retrooper.packetevents.protocol.packettype.PacketType.Play.Client.PLAYER_BLOCK_PLACEMENT) {
+			return;
+		}
+		PacketEventsBlockInteractionView view = PacketEventsBlockInteractionView.of(event);
+		if (view == null) {
+			return;
+		}
+		handlePlacement(view.enumDirection());
+	}
+
+	/** Engine independent body: a placement without a real face is a hard fault click. */
+	private void handlePlacement(int facing) {
+		if (facing == 255) {
+			lastHardFaultClick = System.currentTimeMillis();
 		}
 	}
 

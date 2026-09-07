@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.check.movement.timer;
 
+import de.jpx3.intave.packet.view.MovementView;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.check.MetaCheckPart;
@@ -18,7 +19,14 @@ import de.jpx3.intave.check.movement.Timer;
 import de.jpx3.intave.math.ContingencyTable;
 import de.jpx3.intave.math.Histogram;
 import de.jpx3.intave.module.Modules;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.packet.view.AttackView;
+import de.jpx3.intave.packet.view.PacketEventsAttackView;
+import de.jpx3.intave.packet.view.ProtocolLibAttackView;
+import de.jpx3.intave.user.UserRepository;
+import org.bukkit.entity.Player;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.packet.reader.EntityUseReader;
@@ -52,7 +60,28 @@ public class MicroBlink extends MetaCheckPart<Timer, MicroBlink.MicroBlinkMeta> 
   public void receiveUseEntity(
     User user, EntityUseReader reader, Cancellable cancellable
   ) {
-    if (reader.useAction() == ATTACK) {
+    handleUseEntity(user, new ProtocolLibAttackView(user.player(), reader, cancellable));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {ATTACK_ENTITY, USE_ENTITY}
+  )
+  public void receiveUseEntity(PacketReceiveEvent event) {
+    PacketEventsAttackView view = PacketEventsAttackView.of(event);
+    if (view == null) {
+      return;
+    }
+    Player player = view.player();
+    if (player == null) {
+      return;
+    }
+    handleUseEntity(UserRepository.userOf(player), view);
+  }
+
+  /** Engine independent attack timestamping; see {@link AttackView}. */
+  private void handleUseEntity(User user, AttackView view) {
+    if (view.isAttackPacket()) {
       MicroBlinkMeta meta = metaOf(user);
       meta.lastAttack = System.currentTimeMillis();
     }
@@ -73,8 +102,8 @@ public class MicroBlink extends MetaCheckPart<Timer, MicroBlink.MicroBlinkMeta> 
   }
 
   @DispatchTarget
-  public void receiveMovement(PacketEvent event) {
-    User user = userOf(event.getPlayer());
+  public void receiveMovement(MovementView view) {
+    User user = userOf(view.player());
     MicroBlinkMeta meta = metaOf(user);
     MovementMetadata movement = user.meta().movement();
     double horizontalDistance = movement.sentOffsetMotion().horizontalLength();

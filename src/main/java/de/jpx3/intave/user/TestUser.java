@@ -13,6 +13,7 @@ package de.jpx3.intave.user;
 
 import ac.intave.cloud.protocol.Packet;
 import ac.intave.cloud.protocol.listener.Serverbound;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.block.cache.BlockCache;
@@ -474,6 +475,16 @@ final class TestUser implements User {
 
   @Override
   public void doubleTracedTickFeedback(PacketEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker) {
+
+  }
+
+  @Override
+  public void doubleTickFeedback(PacketSendEvent event, EmptyFeedbackCallback before, EmptyFeedbackCallback after) {
+
+  }
+
+  @Override
+  public void doubleTracedTickFeedback(PacketSendEvent event, EmptyFeedbackCallback callback, EmptyFeedbackCallback callback2, FeedbackObserver tracker) {
 
   }
 }

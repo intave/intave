@@ -1,15 +1,21 @@
 package de.jpx3.intave.check.other.inventoryclickanalysis;
 
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import de.jpx3.intave.block.type.MaterialSearch;
 import de.jpx3.intave.check.MetaCheckPart;
 import de.jpx3.intave.check.other.InventoryClickAnalysis;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.packet.reader.WindowClickReader;
 import de.jpx3.intave.packet.reader.WindowClickReader.InventoryClickType;
+import de.jpx3.intave.packet.view.PacketEventsWindowClickView;
+import de.jpx3.intave.packet.view.ProtocolLibWindowClickView;
+import de.jpx3.intave.packet.view.WindowClickView;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -34,13 +40,34 @@ public final class AutoTotem extends MetaCheckPart<InventoryClickAnalysis, AutoT
   public void receiveWindowClick(
     User user, WindowClickReader reader, Cancellable cancellable
   ) {
+    handleWindowClick(user, new ProtocolLibWindowClickView(user.player(), reader, cancellable));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {WINDOW_CLICK}
+  )
+  public void receiveWindowClick(PacketReceiveEvent event) {
+    PacketEventsWindowClickView view = PacketEventsWindowClickView.of(event);
+    if (view == null) {
+      return;
+    }
+    Player player = view.player();
+    if (player == null) {
+      return;
+    }
+    handleWindowClick(UserRepository.userOf(player), view);
+  }
+
+  /** Engine independent container click handling; see {@link WindowClickView}. */
+  private void handleWindowClick(User user, WindowClickView view) {
     Player player = user.player();
-    int slot = reader.slot();
-    InventoryClickType type = reader.clickType();
+    int slot = view.slot();
+    InventoryClickType type = view.clickType();
     if (type != PICKUP) {
       return;
     }
-    String item = reader.clickedItemTypeIfPossible(player);
+    String item = view.clickedItemTypeIfPossible(player);
     if ("TOTEM_OF_UNDYING".equalsIgnoreCase(item) || (slot != OFFHAND_SLOT && metaOf(user).vl > 4)) {
       AutoTotemMeta meta = metaOf(user);
       meta.pickupClick = System.currentTimeMillis();
@@ -50,7 +77,7 @@ public final class AutoTotem extends MetaCheckPart<InventoryClickAnalysis, AutoT
         long timeSincePickup = System.currentTimeMillis() - meta.pickupClick;
         if (meta.locked) {
           meta.sus |= timeSincePickup < 100;
-          cancellable.setCancelled(true);
+          view.setCancelled(true);
           return;
         }
         if (timeSincePickup < 100) {

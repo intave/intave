@@ -12,19 +12,21 @@
 package de.jpx3.intave.check.combat.heuristics.combatpatterns.accuracy;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.math.MathHelper;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.packet.reader.EntityUseReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.packet.view.PacketEventsAttackView;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AttackMetadata;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
@@ -46,12 +48,41 @@ public final class AccuracyHitboxCornerHeuristic extends ClassicHeuristic<Accura
     }
   )
   public void evaluateFightAccuracy(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
+    User user = userOf(event.getPlayer());
+    if (event.getPacketType() == PacketType.Play.Client.ARM_ANIMATION) {
+      handleFightAccuracy(user, true, false);
+      return;
+    }
+    boolean isAttack;
+    try (EntityUseReader reader = PacketReaders.readerOf(event.getPacket())) {
+      isAttack = reader.isAttackPacket();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+    handleFightAccuracy(user, false, isAttack);
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      ATTACK_ENTITY, USE_ENTITY, ARM_ANIMATION
+    }
+  )
+  public void evaluateFightAccuracy(Player player, PacketReceiveEvent event) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    // Of the subscribed packets only ATTACK_ENTITY and USE_ENTITY map to INTERACT_ENTITY, so a
+    // view that refuses the packet identifies the arm animation.
+    PacketEventsAttackView view = PacketEventsAttackView.of(event);
+    handleFightAccuracy(userOf(player), view == null, view != null && view.isAttackPacket());
+  }
+
+  /** Engine independent swing versus attack accounting. */
+  private void handleFightAccuracy(User user, boolean swing, boolean attack) {
     AttackMetadata attackData = user.meta().attack();
     PerfectAttackMeta heuristicMeta = metaOf(user);
-    PacketType packetType = event.getPacketType();
-    PacketContainer packet = event.getPacket();
     Entity attackedEntity = attackData.lastAttackedEntity();
 
     if (attackedEntity != null && !attackedEntity.moving(0.05)) {
@@ -61,19 +92,11 @@ public final class AccuracyHitboxCornerHeuristic extends ClassicHeuristic<Accura
       return;
     }
 
-    if (packetType == PacketType.Play.Client.ARM_ANIMATION) {
+    if (swing) {
       heuristicMeta.swings++;
-    } else {
-      boolean isAttack;
-      try (EntityUseReader reader = PacketReaders.readerOf(packet)) {
-        isAttack = reader.isAttackPacket();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-      if (isAttack) {
-        heuristicMeta.attacks++;
-        heuristicMeta.swings--;
-      }
+    } else if (attack) {
+      heuristicMeta.attacks++;
+      heuristicMeta.swings--;
     }
   }
 
@@ -84,8 +107,26 @@ public final class AccuracyHitboxCornerHeuristic extends ClassicHeuristic<Accura
     }
   )
   public void receiveMovement(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
+    handleMovement(userOf(event.getPlayer()));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    priority = ListenerPriority.HIGH,
+    packetsIn = {
+      POSITION_LOOK, LOOK
+    }
+  )
+  public void receiveMovement(Player player) {
+    // PacketEvents can deliver a packet before the Bukkit player exists.
+    if (player == null) {
+      return;
+    }
+    handleMovement(userOf(player));
+  }
+
+  /** Engine independent rotation sampling; the packet itself is never read. */
+  private void handleMovement(User user) {
     AttackMetadata attackData = user.meta().attack();
     MovementMetadata movementData = user.meta().movement();
     PerfectAttackMeta heuristicMeta = metaOf(user);

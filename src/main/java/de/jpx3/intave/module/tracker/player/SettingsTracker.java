@@ -2,10 +2,16 @@ package de.jpx3.intave.module.tracker.player;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientSettings;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.module.Module;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.reader.PayloadInReader;
+import de.jpx3.intave.packet.view.PacketEventsPayloadInView;
+import de.jpx3.intave.packet.view.PayloadInView;
+import de.jpx3.intave.packet.view.ProtocolLibPayloadInView;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.entity.Player;
@@ -22,14 +28,42 @@ public final class SettingsTracker extends Module {
   )
   public void receiveClientOptions(PacketEvent event) {
     Player player = event.getPlayer();
-    User user = userOf(player);
     PacketContainer packet = event.getPacket();
+    // On 1.20.2+ the locale is never read off the packet, so it is not touched here either.
+    handleClientOptions(
+      player,
+      MinecraftVersions.VER1_20_2.atOrAbove() ? null : packet.getStrings().read(0)
+    );
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      SETTINGS
+    }
+  )
+  public void receiveClientOptions(PacketReceiveEvent event, Player player) {
+    if (player == null) {
+      return;
+    }
+    handleClientOptions(
+      player,
+      MinecraftVersions.VER1_20_2.atOrAbove() ? null : new WrapperPlayClientSettings(event).getLocale()
+    );
+  }
+
+  /**
+   * Engine independent client settings handling.
+   *
+   * @param locale the locale the packet carries, or null when the server pins it to {@code en_US}.
+   */
+  private void handleClientOptions(Player player, String locale) {
+    User user = userOf(player);
     ProtocolMetadata clientData = user.meta().protocol();
     if (MinecraftVersions.VER1_20_2.atOrAbove()) {
       clientData.setLocale("en_US");
       return;
     }
-    String locale = packet.getStrings().read(0);
     clientData.setLocale(locale);
   }
 
@@ -39,11 +73,33 @@ public final class SettingsTracker extends Module {
     }
   )
   public void receivePayloadPacket(Player player, PayloadInReader reader) {
-    String tag = reader.tag();
+    handlePayloadPacket(player, new ProtocolLibPayloadInView(player, reader));
+  }
+
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      CUSTOM_PAYLOAD_IN
+    }
+  )
+  public void receivePayloadPacket(PacketReceiveEvent event, Player player) {
+    if (player == null) {
+      return;
+    }
+    PacketEventsPayloadInView view = PacketEventsPayloadInView.of(event);
+    if (view == null) {
+      return;
+    }
+    handlePayloadPacket(player, view);
+  }
+
+  /** Engine independent client brand handling; see {@link PayloadInView}. */
+  private void handlePayloadPacket(Player player, PayloadInView view) {
+    String tag = view.tag();
     if (!tag.equalsIgnoreCase("MC|Brand") && !tag.equalsIgnoreCase("minecraft:brand")) {
       return;
     }
-    String brand = reader.readStringWithExtraByte();
+    String brand = view.readStringWithExtraByte();
     User user = userOf(player);
     ProtocolMetadata clientData = user.meta().protocol();
     clientData.setClientBrand(brand);

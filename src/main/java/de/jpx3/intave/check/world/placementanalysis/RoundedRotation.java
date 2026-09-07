@@ -17,6 +17,7 @@ import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.connect.sibyl.SibylMessageTransmitter;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.user.MessageChannelSubscriptions;
 import de.jpx3.intave.user.User;
@@ -46,7 +47,27 @@ public final class RoundedRotation extends PlayerCheckPart<PlacementAnalysis> {
 		}
 	)
 	public void receiveMovement(PacketEvent event) {
-		Player player = event.getPlayer();
+		handleMovement(event.getPlayer());
+	}
+
+	@PacketSubscription(
+		engine = Engine.PACKETEVENTS,
+		packetsIn = {
+			LOOK, POSITION_LOOK
+		}
+	)
+	public void receiveMovement(Player player) {
+		if (player == null) {
+			return;
+		}
+		handleMovement(player);
+	}
+
+	/**
+	 * Engine independent body: the check reads the already decoded rotation from the user's
+	 * movement metadata, so no packet field crosses the engine boundary.
+	 */
+	private void handleMovement(Player player) {
 		User user = UserRepository.userOf(player);
 
 		SimulationEnvironment movement = user.meta().movement();

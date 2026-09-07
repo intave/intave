@@ -3,12 +3,17 @@ package de.jpx3.intave.module.filter;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.reflect.StructureModifier;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.cleanup.ShutdownTasks;
+import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.reader.EntityIterable;
+import de.jpx3.intave.packet.view.EntityInteractIdView;
+import de.jpx3.intave.packet.view.PacketEventsEntityInteractIdView;
+import de.jpx3.intave.packet.view.PacketEventsEntityNbtQueryIdView;
+import de.jpx3.intave.packet.view.ProtocolLibEntityInteractIdView;
 import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.packet.reader.SubstitutionIterator;
 import de.jpx3.intave.user.User;
@@ -75,14 +80,59 @@ public final class EntityIdFilter extends Filter {
   public void onPacket(
     PacketEvent event
   ) {
-    User user = UserRepository.userOf(event.getPlayer());
-    PacketContainer packet = event.getPacket();
-    StructureModifier<Integer> ints = packet.getIntegers();
-    int localId = ints.read(0);
-    int globalId = user.meta().connection().globalEntityIdFromLocal(localId);
-    ints.write(0, globalId);
+    translateEntityId(new ProtocolLibEntityInteractIdView(event));
   }
 
+  @PacketSubscription(
+    engine = Engine.PACKETEVENTS,
+    packetsIn = {
+      ATTACK_ENTITY,
+      USE_ENTITY,
+      ENTITY_NBT_QUERY
+    },
+    priority = ListenerPriority.LOWEST
+  )
+  public void onPacket(
+    PacketReceiveEvent event
+  ) {
+    // ProtocolLib reaches the target of an interaction and the target of an NBT query through the
+    // same packet field; PacketEvents needs the matching wrapper per packet type, so the view is
+    // picked by whichever one claims the event.
+    EntityInteractIdView view = PacketEventsEntityInteractIdView.of(event);
+    if (view == null) {
+      view = PacketEventsEntityNbtQueryIdView.of(event);
+    }
+    if (view == null) {
+      return;
+    }
+    translateEntityId(view);
+  }
+
+  /** Engine independent local to global id translation; see {@link EntityInteractIdView}. */
+  private void translateEntityId(EntityInteractIdView view) {
+    Player player = view.player();
+    Integer localId = player == null ? null : view.entityId();
+    if (localId == null) {
+      view.release();
+      return;
+    }
+    User user = UserRepository.userOf(player);
+    int globalId = user.meta().connection().globalEntityIdFromLocal(localId);
+    view.setEntityId(globalId);
+    view.release();
+  }
+
+  /**
+   * Not twinned onto PacketEvents. This subscription does not read a field: it hands the packet to
+   * {@link PacketReaders#readerOf(PacketContainer)}, which dispatches on the ProtocolLib packet
+   * type into one of the {@code de.jpx3.intave.packet.reader} readers and returns a mutable
+   * {@link EntityIterable} over however many entity ids that particular packet carries. Every one
+   * of the 34 packet types listed below needs its own reader, several of them - the paintings and
+   * weather spawns, the horse window, the bed packets, the NBT update - have no PacketEvents
+   * wrapper at all on the protocol range Intave supports, and the ENTITY_DESTROY branch below
+   * additionally re-reads the iterable after the substitution. Porting that is a second reader
+   * layer, not a view, so it is left on ProtocolLib.
+   */
   @PacketSubscription(
     packetsOut = {
       ATTACH_ENTITY,
