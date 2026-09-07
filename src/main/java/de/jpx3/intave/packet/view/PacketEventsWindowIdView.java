@@ -32,12 +32,12 @@ import org.bukkit.entity.Player;
  */
 public final class PacketEventsWindowIdView implements WindowIdView {
 
-  private final ProtocolPacketEvent<?> event;
+  private final ProtocolPacketEvent event;
   private final Integer containerId;
   private final InventoryActionEvent.Action heldItemAction;
 
   private PacketEventsWindowIdView(
-    ProtocolPacketEvent<?> event, Integer containerId, InventoryActionEvent.Action heldItemAction
+    ProtocolPacketEvent event, Integer containerId, InventoryActionEvent.Action heldItemAction
   ) {
     this.event = event;
     this.containerId = containerId;

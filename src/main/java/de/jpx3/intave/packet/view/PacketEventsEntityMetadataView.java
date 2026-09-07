@@ -65,10 +65,10 @@ public final class PacketEventsEntityMetadataView implements EntityMetadataView 
       return null;
     }
     WrapperPlayServerEntityMetadata wrapper = new WrapperPlayServerEntityMetadata(event);
-    List<EntityData> metadata = wrapper.getEntityMetadata();
+    List<EntityData<?>> metadata = wrapper.getEntityMetadata();
     Map<Integer, Object> values = new HashMap<>();
     if (metadata != null) {
-      for (EntityData entry : metadata) {
+      for (EntityData<?> entry : metadata) {
         if (entry != null) {
           values.putIfAbsent(entry.getIndex(), entry.getValue());
         }

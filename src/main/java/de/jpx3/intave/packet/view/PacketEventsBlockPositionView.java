@@ -71,7 +71,7 @@ import org.bukkit.inventory.ItemStack;
  */
 public final class PacketEventsBlockPositionView implements BlockPositionView {
 
-  private final ProtocolPacketEvent<?> event;
+  private final ProtocolPacketEvent event;
   private final Kind kind;
   private final BlockPosition blockPosition;
   private final DigAction digAction;
@@ -92,7 +92,7 @@ public final class PacketEventsBlockPositionView implements BlockPositionView {
   private int digFaceIndex = 255;
 
   private PacketEventsBlockPositionView(
-    ProtocolPacketEvent<?> event,
+    ProtocolPacketEvent event,
     Kind kind,
     @Nullable BlockPosition blockPosition,
     @Nullable DigAction digAction,

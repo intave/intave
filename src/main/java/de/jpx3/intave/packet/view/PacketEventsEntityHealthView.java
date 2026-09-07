@@ -42,7 +42,7 @@ public final class PacketEventsEntityHealthView implements EntityHealthView {
   private final PacketSendEvent event;
   private final WrapperPlayServerEntityMetadata wrapper;
   private final int entityId;
-  private final List<EntityData> metadata;
+  private final List<EntityData<?>> metadata;
 
   private boolean dirty;
 
@@ -50,7 +50,7 @@ public final class PacketEventsEntityHealthView implements EntityHealthView {
     PacketSendEvent event,
     WrapperPlayServerEntityMetadata wrapper,
     int entityId,
-    List<EntityData> metadata
+    List<EntityData<?>> metadata
   ) {
     this.event = event;
     this.wrapper = wrapper;
@@ -88,7 +88,7 @@ public final class PacketEventsEntityHealthView implements EntityHealthView {
     if (metadata == null) {
       return;
     }
-    for (EntityData entry : metadata) {
+    for (EntityData<?> entry : metadata) {
       if (entry == null || entry.getIndex() != HEALTH_INDEX) {
         continue;
       }
@@ -96,7 +96,13 @@ public final class PacketEventsEntityHealthView implements EntityHealthView {
       if (!(value instanceof Float) || (Float) value == 0.0F) {
         continue;
       }
-      entry.setValue(health);
+      // EntityData is generic from PacketEvents 2.13.0 on, and a wildcard capture refuses any
+      // concrete write. The raw cast is safe here rather than merely convenient: the two guards
+      // above have already established that this entry is the health index and that it currently
+      // holds a Float, so a float is exactly its element type.
+      @SuppressWarnings({"unchecked", "rawtypes"})
+      EntityData<Object> writable = (EntityData) entry;
+      writable.setValue(health);
       dirty = true;
     }
   }
