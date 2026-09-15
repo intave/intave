@@ -47,12 +47,11 @@ final class InventoryMetadataItemUseTest {
   }
 
   @Test
-  void useAfterSlotSwitchSupersedesPendingReleaseAndRemainsActive() {
+  void useAfterSlotSwitchRemainsActive() {
     User user = activeItemUseUser(Material.GOLDEN_APPLE, Material.DIAMOND_SWORD);
     InventoryMetadata inventory = user.meta().inventory();
 
     inventory.setHeldItemSlot(1);
-    inventory.releaseItemNextTick();
     inventory.activateHand();
     recordSlotSwitch(inventory, 1);
     inventory.updateSlotSwitch();
@@ -61,6 +60,23 @@ final class InventoryMetadataItemUseTest {
     assertEquals(Material.DIAMOND_SWORD, inventory.activeItemType());
     assertFalse(inventory.releaseItemNextTick);
     assertEquals(Material.AIR, inventory.releaseItemType);
+  }
+
+  @Test
+  void useAfterSlotSwitchDoesNotCancelPendingEnforcement() {
+    User user = activeItemUseUser(Material.GOLDEN_APPLE, Material.DIAMOND_SWORD);
+    InventoryMetadata inventory = user.meta().inventory();
+
+    inventory.releaseItemNextTick();
+    inventory.setHeldItemSlot(1);
+    inventory.activateHand();
+    recordSlotSwitch(inventory, 1);
+    inventory.updateSlotSwitch();
+
+    assertTrue(inventory.handActive());
+    assertEquals(Material.DIAMOND_SWORD, inventory.activeItemType());
+    assertTrue(inventory.releaseItemNextTick);
+    assertEquals(Material.GOLDEN_APPLE, inventory.releaseItemType);
   }
 
   @Test
@@ -80,7 +96,6 @@ final class InventoryMetadataItemUseTest {
     InventoryMetadata inventory = user.meta().inventory();
 
     inventory.setHeldItemSlot(1);
-    inventory.releaseItemNextTick();
     inventory.activateHand();
     recordSlotSwitch(inventory, 1);
     inventory.updateSlotSwitch();

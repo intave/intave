@@ -149,10 +149,6 @@ public final class InventoryMetadata {
       if (handActive && !handSlotChangedSinceActivation) {
         return;
       }
-      if (handActive) {
-        releaseItemNextTick = false;
-        releaseItemType = Material.AIR;
-      }
       this.handActive = true;
       this.handSlotChangedSinceActivation = false;
 
