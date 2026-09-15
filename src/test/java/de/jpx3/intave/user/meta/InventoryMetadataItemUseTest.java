@@ -47,14 +47,17 @@ final class InventoryMetadataItemUseTest {
   }
 
   @Test
-  void immediateUseAfterSlotSwitchSupersedesThePendingRelease() {
-    User user = activeItemUseUser(Material.BOW, Material.DIAMOND_SWORD);
+  void useAfterSlotSwitchSupersedesPendingReleaseAndRemainsActive() {
+    User user = activeItemUseUser(Material.GOLDEN_APPLE, Material.DIAMOND_SWORD);
     InventoryMetadata inventory = user.meta().inventory();
 
     inventory.setHeldItemSlot(1);
     inventory.releaseItemNextTick();
     inventory.activateHand();
+    recordSlotSwitch(inventory, 1);
+    inventory.updateSlotSwitch();
 
+    assertTrue(inventory.handActive());
     assertEquals(Material.DIAMOND_SWORD, inventory.activeItemType());
     assertFalse(inventory.releaseItemNextTick);
     assertEquals(Material.AIR, inventory.releaseItemType);
@@ -79,25 +82,26 @@ final class InventoryMetadataItemUseTest {
     inventory.setHeldItemSlot(1);
     inventory.releaseItemNextTick();
     inventory.activateHand();
+    recordSlotSwitch(inventory, 1);
+    inventory.updateSlotSwitch();
 
+    assertTrue(inventory.handActive());
     assertEquals(Material.BOW, inventory.activeItemType());
     assertFalse(inventory.releaseItemNextTick);
   }
 
   @Test
-  void slotSwitchWithoutNewItemUseKeepsThePendingRelease() {
+  void slotSwitchWithoutNewItemUseEndsTrackingWithoutForcingRelease() {
     User user = activeItemUseUser(Material.BOW, Material.DIAMOND_SWORD);
     InventoryMetadata inventory = user.meta().inventory();
 
     inventory.setHeldItemSlot(1);
-    inventory.releaseItemNextTick();
-    inventory.slotSwitchData = new InventoryMetadata.SlotSwitchData(
-      1, user.player().getInventory().getItem(1)
-    );
+    recordSlotSwitch(inventory, 1);
     inventory.updateSlotSwitch();
 
-    assertTrue(inventory.releaseItemNextTick);
-    assertEquals(Material.BOW, inventory.releaseItemType);
+    assertFalse(inventory.handActive());
+    assertFalse(inventory.releaseItemNextTick);
+    assertEquals(Material.AIR, inventory.releaseItemType);
   }
 
   @Test
@@ -110,6 +114,10 @@ final class InventoryMetadataItemUseTest {
 
     assertTrue(inventory.releaseItemNextTick);
     assertEquals(Material.BOW, inventory.releaseItemType);
+  }
+
+  private void recordSlotSwitch(InventoryMetadata inventory, int slot) {
+    inventory.slotSwitchData = new InventoryMetadata.SlotSwitchData(slot);
   }
 
   private User activeItemUseUser(Material firstItem, Material secondItem) {
@@ -126,6 +134,7 @@ final class InventoryMetadataItemUseTest {
     });
     player.getInventory().setItem(0, new ItemStack(firstItem));
     player.getInventory().setItem(1, new ItemStack(secondItem));
+    player.getInventory().setItem(8, new ItemStack(Material.ARROW));
     User user = UserFactory.createTestUserFor(player, 47);
     this.registeredPlayer = player;
     UserRepository.manuallyRegisterUser(player, user);
