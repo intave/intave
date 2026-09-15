@@ -12,6 +12,7 @@
 package de.jpx3.intave.user.meta;
 
 import de.jpx3.intave.adapter.MinecraftVersion;
+import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.test.FakePlayerFactory;
 import de.jpx3.intave.test.FakeWorldFactory;
 import de.jpx3.intave.user.User;
@@ -21,6 +22,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -29,16 +31,25 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class InventoryMetadataItemUseTest {
+  private Player registeredPlayer;
+
   @BeforeEach
   void setServerVersion() {
     MinecraftVersion.setCurrent(new MinecraftVersion("1.8.9"));
   }
 
+  @AfterEach
+  void tearDown() {
+    if (registeredPlayer != null) {
+      UserRepository.unregisterUser(registeredPlayer);
+    }
+    MinecraftVersion.setCurrent(MinecraftVersions.VER1_21_4);
+  }
+
   @Test
   void immediateUseAfterSlotSwitchSupersedesThePendingRelease() {
-    User user = itemUseUser(Material.BOW, Material.DIAMOND_SWORD);
+    User user = activeItemUseUser(Material.BOW, Material.DIAMOND_SWORD);
     InventoryMetadata inventory = user.meta().inventory();
-    restoreActiveItem(inventory, Material.BOW);
 
     inventory.setHeldItemSlot(1);
     inventory.releaseItemNextTick();
@@ -51,9 +62,8 @@ final class InventoryMetadataItemUseTest {
 
   @Test
   void switchingToABowDoesNotRelabelTheOldReleaseAsABowRelease() {
-    User user = itemUseUser(Material.DIAMOND_SWORD, Material.BOW);
+    User user = activeItemUseUser(Material.DIAMOND_SWORD, Material.BOW);
     InventoryMetadata inventory = user.meta().inventory();
-    restoreActiveItem(inventory, Material.DIAMOND_SWORD);
 
     inventory.setHeldItemSlot(1);
     inventory.releaseItemNextTick();
@@ -63,9 +73,8 @@ final class InventoryMetadataItemUseTest {
 
   @Test
   void sameMaterialInAnotherSlotStillStartsANewUseSession() {
-    User user = itemUseUser(Material.BOW, Material.BOW);
+    User user = activeItemUseUser(Material.BOW, Material.BOW);
     InventoryMetadata inventory = user.meta().inventory();
-    restoreActiveItem(inventory, Material.BOW);
 
     inventory.setHeldItemSlot(1);
     inventory.releaseItemNextTick();
@@ -77,9 +86,8 @@ final class InventoryMetadataItemUseTest {
 
   @Test
   void slotSwitchWithoutNewItemUseKeepsThePendingRelease() {
-    User user = itemUseUser(Material.BOW, Material.DIAMOND_SWORD);
+    User user = activeItemUseUser(Material.BOW, Material.DIAMOND_SWORD);
     InventoryMetadata inventory = user.meta().inventory();
-    restoreActiveItem(inventory, Material.BOW);
 
     inventory.setHeldItemSlot(1);
     inventory.releaseItemNextTick();
@@ -94,9 +102,8 @@ final class InventoryMetadataItemUseTest {
 
   @Test
   void repeatedUsePacketForTheSameSessionDoesNotCancelEnforcement() {
-    User user = itemUseUser(Material.BOW, Material.DIAMOND_SWORD);
+    User user = activeItemUseUser(Material.BOW, Material.DIAMOND_SWORD);
     InventoryMetadata inventory = user.meta().inventory();
-    restoreActiveItem(inventory, Material.BOW);
 
     inventory.releaseItemNextTick();
     inventory.activateHand();
@@ -105,7 +112,7 @@ final class InventoryMetadataItemUseTest {
     assertEquals(Material.BOW, inventory.releaseItemType);
   }
 
-  private static User itemUseUser(Material firstItem, Material secondItem) {
+  private User activeItemUseUser(Material firstItem, Material secondItem) {
     var world = FakeWorldFactory.createWorld((method, arguments) -> switch (method) {
       case "isChunkLoaded", "isChunkInUse" -> true;
       case "isThundering", "hasStorm" -> false;
@@ -120,14 +127,9 @@ final class InventoryMetadataItemUseTest {
     player.getInventory().setItem(0, new ItemStack(firstItem));
     player.getInventory().setItem(1, new ItemStack(secondItem));
     User user = UserFactory.createTestUserFor(player, 47);
+    this.registeredPlayer = player;
     UserRepository.manuallyRegisterUser(player, user);
+    user.meta().inventory().activateHand();
     return user;
-  }
-
-  private static void restoreActiveItem(InventoryMetadata inventory, Material material) {
-    inventory.restoreRecordedState(
-      0, true, 4, 0, 0, false, material,
-      false, false, Material.AIR, false, false
-    );
   }
 }
