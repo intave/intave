@@ -55,6 +55,7 @@ public final class InventoryMetadata {
   private boolean inventoryOpen;
   private int handSlot;
   private ItemStack previousSpearThisTick;
+  private boolean handSlotChangedSinceActivation;
   private volatile boolean handActive;
   private final Lock handActiveLock = new ReentrantLock();
   private Material activeItemType;
@@ -160,10 +161,15 @@ public final class InventoryMetadata {
   public void activateHand() {
     handActiveLock.lock();
     try {
-      if (handActive) {
+      if (handActive && !handSlotChangedSinceActivation) {
         return;
       }
+      if (handActive) {
+        releaseItemNextTick = false;
+        releaseItemType = Material.AIR;
+      }
       this.handActive = true;
+      this.handSlotChangedSinceActivation = false;
 
       User user = UserRepository.userOf(player);
       user.meta().movement().handItemSimulationFails = 0;
@@ -208,6 +214,7 @@ public final class InventoryMetadata {
         movementData.onGroundWithRiptide = movementData.onGround;
       }
       this.handActive = false;
+      this.handSlotChangedSinceActivation = false;
       this.pastItemUsageTransition = 0;
       this.handActiveTicks = 0;
       this.deactivatedItemThisTick = true;
@@ -232,7 +239,7 @@ public final class InventoryMetadata {
       user.sendMessage("Forceful item release next tick");
     }
     releaseItemNextTick = true;
-    releaseItemType = heldItemType();
+    releaseItemType = handActive ? activeItemType : heldItemType();
   }
 
   public void updateSlotSwitch() {
@@ -243,9 +250,7 @@ public final class InventoryMetadata {
       boolean primaryItemUsable = ItemProperties.canItemBeUsed(user, item);
       boolean offhandItemUsage = ItemProperties.canItemBeUsed(user, offhandItem());
       boolean handActive = (primaryItemUsable || offhandItemUsage) && handActive();
-      if (handActive) {
-        activateHand();
-      } else {
+      if (!handActive) {
        deactivateHand();
       }
       setHeldItemSlot(slot);
@@ -255,6 +260,9 @@ public final class InventoryMetadata {
   }
 
   public void setHeldItemSlot(int slot) {
+    if (this.handSlot != slot) {
+      this.handSlotChangedSinceActivation = true;
+    }
     this.handSlot = slot;
   }
 
@@ -278,6 +286,7 @@ public final class InventoryMetadata {
     boolean deactivatedItemThisTick
   ) {
     this.handSlot = heldSlot;
+    this.handSlotChangedSinceActivation = false;
     this.handActive = handActive;
     this.handActiveTicks = handActiveTicks;
     this.pastHandActiveTicks = pastHandActiveTicks;
