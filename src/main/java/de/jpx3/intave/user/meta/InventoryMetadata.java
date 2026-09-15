@@ -149,6 +149,10 @@ public final class InventoryMetadata {
       if (handActive && !handSlotChangedSinceActivation) {
         return;
       }
+      if (handActive) {
+        releaseItemNextTick = false;
+        releaseItemType = Material.AIR;
+      }
       this.handActive = true;
       this.handSlotChangedSinceActivation = false;
 
@@ -230,13 +234,15 @@ public final class InventoryMetadata {
   public void updateSlotSwitch() {
     if (slotSwitchData != null) {
       int slot = slotSwitchData.slot();
+      ItemStack item = slotSwitchData.item();
 
-      boolean mainHandUseInterrupted = handSlotChangedSinceActivation && !offhandItemPrimary();
-      if (mainHandUseInterrupted) {
-        deactivateHand();
+      boolean primaryItemUsable = ItemProperties.canItemBeUsed(user, item);
+      boolean offhandItemUsage = ItemProperties.canItemBeUsed(user, offhandItem());
+      boolean handActive = (primaryItemUsable || offhandItemUsage) && handActive();
+      if (!handActive) {
+       deactivateHand();
       }
       setHeldItemSlot(slot);
-      handSlotChangedSinceActivation = false;
       pastHotBarSlotChange = 0;
       slotSwitchData = null;
     }
@@ -349,13 +355,19 @@ public final class InventoryMetadata {
 
   public static class SlotSwitchData {
     private final int slot;
+    private final ItemStack stack;
 
-    public SlotSwitchData(int slot) {
+    public SlotSwitchData(int slot, ItemStack stack) {
       this.slot = slot;
+      this.stack = stack;
     }
 
     public int slot() {
       return slot;
+    }
+
+    public ItemStack item() {
+      return stack;
     }
   }
 }

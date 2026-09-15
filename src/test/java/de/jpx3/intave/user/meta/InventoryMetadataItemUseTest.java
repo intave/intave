@@ -47,36 +47,17 @@ final class InventoryMetadataItemUseTest {
   }
 
   @Test
-  void useAfterSlotSwitchRemainsActive() {
-    User user = activeItemUseUser(Material.GOLDEN_APPLE, Material.DIAMOND_SWORD);
+  void immediateUseAfterSlotSwitchSupersedesThePendingRelease() {
+    User user = activeItemUseUser(Material.BOW, Material.DIAMOND_SWORD);
     InventoryMetadata inventory = user.meta().inventory();
 
     inventory.setHeldItemSlot(1);
+    inventory.releaseItemNextTick();
     inventory.activateHand();
-    recordSlotSwitch(inventory, 1);
-    inventory.updateSlotSwitch();
 
-    assertTrue(inventory.handActive());
     assertEquals(Material.DIAMOND_SWORD, inventory.activeItemType());
     assertFalse(inventory.releaseItemNextTick);
     assertEquals(Material.AIR, inventory.releaseItemType);
-  }
-
-  @Test
-  void useAfterSlotSwitchDoesNotCancelPendingEnforcement() {
-    User user = activeItemUseUser(Material.GOLDEN_APPLE, Material.DIAMOND_SWORD);
-    InventoryMetadata inventory = user.meta().inventory();
-
-    inventory.releaseItemNextTick();
-    inventory.setHeldItemSlot(1);
-    inventory.activateHand();
-    recordSlotSwitch(inventory, 1);
-    inventory.updateSlotSwitch();
-
-    assertTrue(inventory.handActive());
-    assertEquals(Material.DIAMOND_SWORD, inventory.activeItemType());
-    assertTrue(inventory.releaseItemNextTick);
-    assertEquals(Material.GOLDEN_APPLE, inventory.releaseItemType);
   }
 
   @Test
@@ -96,27 +77,27 @@ final class InventoryMetadataItemUseTest {
     InventoryMetadata inventory = user.meta().inventory();
 
     inventory.setHeldItemSlot(1);
+    inventory.releaseItemNextTick();
     inventory.activateHand();
-    recordSlotSwitch(inventory, 1);
-    inventory.updateSlotSwitch();
 
-    assertTrue(inventory.handActive());
     assertEquals(Material.BOW, inventory.activeItemType());
     assertFalse(inventory.releaseItemNextTick);
   }
 
   @Test
-  void slotSwitchWithoutNewItemUseEndsTrackingWithoutForcingRelease() {
+  void slotSwitchWithoutNewItemUseKeepsThePendingRelease() {
     User user = activeItemUseUser(Material.BOW, Material.DIAMOND_SWORD);
     InventoryMetadata inventory = user.meta().inventory();
 
     inventory.setHeldItemSlot(1);
-    recordSlotSwitch(inventory, 1);
+    inventory.releaseItemNextTick();
+    inventory.slotSwitchData = new InventoryMetadata.SlotSwitchData(
+      1, user.player().getInventory().getItem(1)
+    );
     inventory.updateSlotSwitch();
 
-    assertFalse(inventory.handActive());
-    assertFalse(inventory.releaseItemNextTick);
-    assertEquals(Material.AIR, inventory.releaseItemType);
+    assertTrue(inventory.releaseItemNextTick);
+    assertEquals(Material.BOW, inventory.releaseItemType);
   }
 
   @Test
@@ -129,10 +110,6 @@ final class InventoryMetadataItemUseTest {
 
     assertTrue(inventory.releaseItemNextTick);
     assertEquals(Material.BOW, inventory.releaseItemType);
-  }
-
-  private void recordSlotSwitch(InventoryMetadata inventory, int slot) {
-    inventory.slotSwitchData = new InventoryMetadata.SlotSwitchData(slot);
   }
 
   private User activeItemUseUser(Material firstItem, Material secondItem) {

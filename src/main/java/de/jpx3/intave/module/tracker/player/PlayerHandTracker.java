@@ -115,18 +115,20 @@ public class PlayerHandTracker extends Module {
     // apparently required?
     inventoryData.setHeldItemSlot(slot);
 
+    ItemStack item = player.getInventory().getItem(slot);
     inventoryData.pastSlotSwitch = 0;
     if (inventoryData.handActive() && !inventoryData.offhandItemPrimary()) {
+      inventoryData.releaseItemNextTick();
       ItemStack itemStack = inventoryData.heldItem();
       if (!ItemProperties.canItemBeUsed(user, itemStack)) {
         inventoryData.blockNextArrow = true;
         inventoryData.lastBlockArrowRequest = System.currentTimeMillis();
         if (user.receives(MessageChannel.DEBUG_ITEM_RESETS)) {
-          user.player().sendMessage(IntavePlugin.prefix() + " Detected item switch on active item, blocking impending arrow shot");
+          user.player().sendMessage(IntavePlugin.prefix() + " Detected item switch on active item, released hand and blocking impending arrow shot");
         }
       }
     }
-    inventoryData.slotSwitchData = new InventoryMetadata.SlotSwitchData(slot);
+    inventoryData.slotSwitchData = new InventoryMetadata.SlotSwitchData(slot, item);
   }
 
   @PacketSubscription(
