@@ -15,6 +15,7 @@ import de.jpx3.intave.access.IntaveAccess;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.accessbackend.IntaveAccessService;
 import de.jpx3.intave.adapter.ComponentLoader;
+import de.jpx3.intave.adapter.ComponentRestartRequiredException;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.adapter.ViaVersionAdapter;
 import de.jpx3.intave.agent.AgentAccessor;
@@ -354,6 +355,15 @@ public final class IntavePlugin extends JavaPlugin {
       } catch (Exception exception) {
         logger.info("Unable to connect to cloud: " + exception.getMessage());
       }
+    } catch (ComponentRestartRequiredException restart) {
+      // component jar is on disk, the server just needs one restart to pick it up
+      logger.warn("============================================================");
+      logger.warn(restart.componentName() + " was downloaded and needs one server restart to load.");
+      logger.warn("Please restart the server, no further action is needed.");
+      logger.warn("============================================================");
+      bootFailure("Restart required: " + restart.componentName() + " was downloaded, restart the server");
+      performShutdown();
+      return;
     } catch (Exception exception) {
       logger.error("Unable to boot: " + exception.getMessage());
       exception.printStackTrace();
