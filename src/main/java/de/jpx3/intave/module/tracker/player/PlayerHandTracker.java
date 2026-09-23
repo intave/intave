@@ -27,6 +27,7 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.PacketSender;
 import de.jpx3.intave.player.ItemProperties;
+import de.jpx3.intave.player.ItemReleaseValidation;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -247,6 +248,16 @@ public class PlayerHandTracker extends Module {
 
     if (IntaveControl.DEBUG_ITEM_USAGE) {
       user.sendMessage("Digtype: " + digType);
+    }
+
+    if (digType == EnumWrappers.PlayerDigType.RELEASE_USE_ITEM
+      && inventoryData.handActive()
+      && ItemReleaseValidation.isSpoofedRelease(packet.getDirections().readSafely(0))
+    ) {
+      // the facing never occurs on vanilla releases, the packet only exists
+      // to desync the hand state, so the hand stays active here as well in
+      // case the packet survived the protocol scanner
+      return;
     }
 
     switch (digType) {
