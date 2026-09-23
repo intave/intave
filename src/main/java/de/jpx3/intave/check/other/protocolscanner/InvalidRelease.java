@@ -21,6 +21,7 @@ import de.jpx3.intave.check.other.ProtocolScanner;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
+import de.jpx3.intave.player.ItemReleaseValidation;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.InventoryMetadata;
@@ -47,9 +48,15 @@ public final class InvalidRelease extends CheckPart<ProtocolScanner> {
 		}
 		if (digType == EnumWrappers.PlayerDigType.RELEASE_USE_ITEM) {
 			EnumWrappers.Direction face = packet.getDirections().readSafely(0);
-			// Vanilla always sends DOWN
+			// vanilla always sends down, anything else is a spoofed release
+			// used to silently drop the server-side item state while the
+			// item stays in use client-side, which removes the slowdown
 			// Fix https://github.com/Raven-APlus/RavenAPlus/blob/master/src/main/java/keystrokesmod/module/impl/movement/noslow/IntaveNoSlow.java
-			if (face != EnumWrappers.Direction.DOWN) {
+			if (ItemReleaseValidation.isSpoofedRelease(face)) {
+				// drop the packet before it reaches the hand tracker, so the
+				// hand stays active and the movement simulation keeps
+				// expecting the slowdown instead of trusting the desync
+				event.setCancelled(true);
 				Violation violation = Violation.builderFor(ProtocolScanner.class)
 					.forPlayer(player).withMessage("sent invalid release").withDetails("face " + face.name().toLowerCase(Locale.ROOT))
 					.withVL(3)
@@ -57,9 +64,8 @@ public final class InvalidRelease extends CheckPart<ProtocolScanner> {
 				Modules.violationProcessor().processViolation(violation);
 				InventoryMetadata inventory = user.meta().inventory();
 				inventory.lastFoodConsumptionBlockRequest = System.currentTimeMillis();
-				inventory.releaseItemNextTick();
 				if (user.receives(MessageChannel.DEBUG_ITEM_RESETS)) {
-					user.sendMessage(IntavePlugin.prefix() + "Requesting item usage reset because of " + ChatColor.RED + "an invalid release packet");
+					user.sendMessage(IntavePlugin.prefix() + "Blocked spoofed item release because of " + ChatColor.RED + "an invalid release packet");
 				}
 			}
 		}
