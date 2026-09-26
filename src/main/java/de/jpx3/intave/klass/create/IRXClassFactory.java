@@ -1,10 +1,16 @@
 package de.jpx3.intave.klass.create;
 
+import de.jpx3.intave.library.asm.MethodVisitor;
+import net.minecraft.world.level.levelgen.structure.TemplateStructurePiece;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.IntUnaryOperator;
 
 public final class IRXClassFactory {
@@ -26,7 +32,29 @@ public final class IRXClassFactory {
       calledClassName,
       calledMethodName, calledMethodDescription,
       isStatic, interfaceCall,
-      swaps
+      swaps, null
+    );
+  }
+
+  public static <T> Class<T> assembleCallerClass(
+    ClassLoader classLoader,
+    Class<? super T> superClass, String sourceClassName,
+    String callerMethodName, String callerMethodDescription, String castCalledMethodDescription,
+    String calledClassName,
+    String calledMethodName, String calledMethodDescription,
+    boolean isStatic, boolean interfaceCall,
+    IntUnaryOperator swaps, Function<String, BiConsumer<String, MethodVisitor>> additionalParameterInstructions
+  ) {
+    //noinspection unchecked
+    return (Class<T>) IRXClassAssembler.generateCallerClass(
+      classLoader,
+      sourceClassName,
+      findClassName(), superClass,
+      callerMethodName, callerMethodDescription, castCalledMethodDescription,
+      calledClassName,
+      calledMethodName, calledMethodDescription,
+      isStatic, interfaceCall,
+      swaps, additionalParameterInstructions
     );
   }
 
