@@ -18,12 +18,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.IntUnaryOperator;
 
 import static de.jpx3.intave.library.asm.Opcodes.ALOAD;
 import static org.junit.jupiter.api.Assertions.*;
@@ -61,8 +59,8 @@ final class IRXClassFactoryTest {
       "accept",
       "(Ljava/lang/String;)V",
       false,
-      false,
-      index -> index);
+      false
+    );
 
     callerClass.getDeclaredConstructor().newInstance().invoke(new Target(), "forwarded");
 
@@ -91,7 +89,6 @@ final class IRXClassFactoryTest {
       Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(PacketEvent.class)),
       false,
       false,
-      IntUnaryOperator.identity(),
       instructions);
 
     PacketEvent event = null;
@@ -127,7 +124,6 @@ final class IRXClassFactoryTest {
       Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(PacketEvent.class), Type.getType(String.class)),
       false,
       false,
-      index -> index,
       instructions);
 
     callerClass.getDeclaredConstructor().newInstance().invoke(new Target(), null);
@@ -158,7 +154,6 @@ final class IRXClassFactoryTest {
         Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(PacketReader.class)),
         false,
         false,
-        index -> index,
         instructions::get);
 
       callerClass.getDeclaredConstructor().newInstance().invoke(new Target(), event);
@@ -190,7 +185,6 @@ final class IRXClassFactoryTest {
         Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(AnimationReader.class)),
         false,
         false,
-        index -> index,
         instructions::get);
 
       callerClass.getDeclaredConstructor().newInstance().invoke(new Target(), event);
@@ -222,7 +216,6 @@ final class IRXClassFactoryTest {
         Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(PacketReader.class)),
         false,
         false,
-        index -> index,
         instructions::get);
 
       PacketCaller generatedCaller = callerClass.getDeclaredConstructor().newInstance();
@@ -268,7 +261,6 @@ final class IRXClassFactoryTest {
           Type.getType(PacketType.class)),
         false,
         false,
-        index -> index,
         instructions::get);
 
       callerClass.getDeclaredConstructor().newInstance().invoke(new Target(), event);
@@ -314,7 +306,6 @@ final class IRXClassFactoryTest {
           Type.getType(Player.class)),
         false,
         false,
-        index -> index,
         instructions::get);
 
       PacketCaller caller = callerClass.getDeclaredConstructor().newInstance();

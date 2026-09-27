@@ -23,7 +23,6 @@ import de.jpx3.intave.klass.create.IRXClassFactory;
 import de.jpx3.intave.library.asm.Label;
 import de.jpx3.intave.library.asm.MethodVisitor;
 import de.jpx3.intave.library.asm.Type;
-import de.jpx3.intave.library.asm.tree.AbstractInsnNode;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.OneForAll;
 import de.jpx3.intave.module.linker.OneForOne;
@@ -41,7 +40,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.*;
 
 import static de.jpx3.intave.IntaveControl.IGNORE_CHUNK_PACKETS;
@@ -456,8 +454,7 @@ public final class PacketSubscriptionLinker extends Module {
         calledMethod.getName(),
         Type.getMethodDescriptor(calledMethod),
         false,
-        false,
-        IntUnaryOperator.identity()
+        false
       );
     } else {
       executorClass = IRXClassFactory.assembleCallerClass(PacketSubscriptionLinker.class.getClassLoader(),
@@ -469,7 +466,6 @@ public final class PacketSubscriptionLinker extends Module {
         Type.getMethodDescriptor(calledMethod),
         false,
         false,
-        IntUnaryOperator.identity(),
         additionalParameterInstructions::get
       );
     }
