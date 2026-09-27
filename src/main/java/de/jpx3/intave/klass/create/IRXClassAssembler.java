@@ -24,6 +24,7 @@ import java.util.function.*;
 import static de.jpx3.intave.library.asm.Opcodes.*;
 
 final class IRXClassAssembler {
+  private static final String PACKET_READER = Type.getInternalName(PacketReader.class);
   private static final boolean DEBUG_SAVE_GENERATED_CLASSES = false;
   static boolean TEST_MODE = false;
   static Class<?> generateCallerClass(
@@ -211,22 +212,39 @@ final class IRXClassAssembler {
         methodVisitor.visitTypeInsn(CHECKCAST, nestedTypeClassPath);
       }
     }
+    boolean hasPacketReader = containsPacketReaderParameter(calledMethodDescription);
+    Label invocationStart = null;
+    Label invocationEnd = null;
+    Label invocationFinally = null;
+    if (hasPacketReader) {
+      invocationStart = new Label();
+      invocationEnd = new Label();
+      invocationFinally = new Label();
+      methodVisitor.visitLabel(invocationStart);
+    }
     int instructionOpCode = isStatic ? INVOKESTATIC : interfaceCall ? INVOKEINTERFACE : INVOKEVIRTUAL;
-    methodVisitor.visitMethodInsn(
-      instructionOpCode,
-      calledClassName, calledMethodName, calledMethodDescription,
-      false
-    );
-    if (containsPacketReaderParameter(calledMethodDescription)) {
+    methodVisitor.visitMethodInsn(instructionOpCode, calledClassName, calledMethodName, calledMethodDescription, false);
+    if (hasPacketReader) {
+      methodVisitor.visitLabel(invocationEnd);
       methodVisitor.visitVarInsn(ALOAD, 3);
-      methodVisitor.visitMethodInsn(INVOKEINTERFACE, Type.getInternalName(PacketReader.class), "releaseSafe", "()V", true);
+      methodVisitor.visitMethodInsn(INVOKEINTERFACE, PACKET_READER, "releaseSafe", "()V", true);
     }
     methodVisitor.visitInsn(resolveTypeOpcode(callerReturnType, IRETURN));
-    Label label1 = new Label();
-    methodVisitor.visitLabel(label1);
+
+    if (hasPacketReader) {
+      methodVisitor.visitLabel(invocationFinally);
+      methodVisitor.visitVarInsn(ALOAD, 3);
+      methodVisitor.visitMethodInsn(INVOKEINTERFACE, PACKET_READER, "releaseSafe", "()V", true);
+      methodVisitor.visitInsn(ATHROW);
+      methodVisitor.visitTryCatchBlock(invocationStart, invocationEnd, invocationFinally,
+        null); // null = finally / all exceptions
+    }
     int calledParameterAmount = calledParameterTypes.length;
     int callerParameterAmount = resolveTypes(callerMethodDescription).length;
-    methodVisitor.visitMaxs(Math.max(calledParameterAmount, callerParameterAmount) + 5, callerParameterAmount + /* this */ 1 + /* packet reader */ 1);
+    methodVisitor.visitMaxs(
+      Math.max(calledParameterAmount, callerParameterAmount) + 5,
+      callerParameterAmount + /* this */ 1 + /* packet reader */ 1
+    ); // they'll be calculated later on anyway, doesn't matter if they're too high
     methodVisitor.visitEnd();
   }
 
@@ -241,12 +259,12 @@ final class IRXClassAssembler {
   ) {
     if (DEBUG_SAVE_GENERATED_CLASSES) {
       try {
-        String path = "generated_classes/" + className.replace("/", "_") + ".class";
-        File file = new File(path);
+        String pathStr = "generated_classes/" + className.replace("/", "_") + ".class";
+        File file = new File(pathStr);
         file.getParentFile().mkdirs();
-        Path path1 = file.toPath();
-        System.out.println("Writing generated class to " + path1.toAbsolutePath());
-        Files.write(path1, classBytes);
+        Path path = file.toPath();
+        System.out.println("Writing generated class to " + path.toAbsolutePath());
+        Files.write(path, classBytes);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -264,7 +282,8 @@ final class IRXClassAssembler {
         try {
           defineClass.setAccessible(true);
         } catch (Exception exception) {
-          throw new IntaveInternalException("Failed to acquire class-loading permissions from the JVM. If you are running Intave on Java 16, add \"--add-opens java.base/java.lang=ALL-UNNAMED\" to your startup arguments", exception);
+          throw new IntaveInternalException("Failed to acquire class-loading permissions from the JVM. If you are" +
+            " running Intave on Java 16, add \"--add-opens java.base/java.lang=ALL-UNNAMED\" to your startup arguments", exception);
         }
         defineClass.invoke(classLoader, classBytes, 0, classBytes.length);
       } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
