@@ -1,7 +1,6 @@
 package de.jpx3.intave.klass.create;
 
 import de.jpx3.intave.library.asm.MethodVisitor;
-import net.minecraft.world.level.levelgen.structure.TemplateStructurePiece;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,7 +9,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntUnaryOperator;
 
