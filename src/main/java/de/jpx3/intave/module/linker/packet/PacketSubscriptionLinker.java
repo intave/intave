@@ -396,6 +396,7 @@ public final class PacketSubscriptionLinker extends Module {
         Label catchBlock = new Label();
         mv.visitTryCatchBlock(tryStart, tryEnd, catchBlock, Type.getInternalName(Exception.class));
         mv.visitLabel(catchBlock);
+        mv.visitInsn(POP);
         mv.visitVarInsn(ALOAD, 0);
         mv.visitInsn(ICONST_1);
         mv.visitFieldInsn(PUTFIELD, className, "block", "Z");
