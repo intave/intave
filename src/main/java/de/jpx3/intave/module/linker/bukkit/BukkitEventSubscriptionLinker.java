@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.IntUnaryOperator;
 
 public final class BukkitEventSubscriptionLinker extends Module {
   private final IntavePlugin plugin;
@@ -111,8 +110,7 @@ public final class BukkitEventSubscriptionLinker extends Module {
           listenerClassPath,
           method.getName(),
           Type.getMethodDescriptor(method),
-          false, false,
-          IntUnaryOperator.identity()
+          false, false
         );
         EventExecutor executor;
         try {

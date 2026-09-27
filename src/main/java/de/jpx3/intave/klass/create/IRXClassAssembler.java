@@ -36,7 +36,7 @@ final class IRXClassAssembler {
     String calledClassName,
     String calledMethodName, String calledMethodDescription,
     boolean isStatic, boolean interfaceCall,
-    IntUnaryOperator swaps, @Nullable Function<String, BiConsumer<String, MethodVisitor>> additionalParameterInstructions
+    @Nullable Function<String, BiConsumer<String, MethodVisitor>> additionalParameterInstructions
   ) {
     byte[] callerClassBytes = prepareCallerClassBytes(
       className,
@@ -46,7 +46,7 @@ final class IRXClassAssembler {
       calledClassName,
       calledMethodName, calledMethodDescription,
       isStatic, interfaceCall,
-      swaps, additionalParameterInstructions
+      additionalParameterInstructions
     );
     return loadAndGetClass(classLoader, className, callerClassBytes);
   }
@@ -58,7 +58,7 @@ final class IRXClassAssembler {
     String castedCallerMethodDescription, String calledClassName,
     String calledMethodName, String calledMethodDescription,
     boolean isStatic, boolean interfaceCall,
-    IntUnaryOperator swaps, @Nullable Function<String, BiConsumer<String, MethodVisitor>> additionalParameterInstructions
+    @Nullable Function<String, BiConsumer<String, MethodVisitor>> additionalParameterInstructions
   ) {
     ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
     pushClassData(classWriter, className, sourceName, superClass);
@@ -77,7 +77,7 @@ final class IRXClassAssembler {
       calledMethodName,
       calledMethodDescription,
       isStatic, interfaceCall,
-      swaps, additionalParameterInstructions
+      additionalParameterInstructions
     );
     return endAndFetchBytes(classWriter);
   }
@@ -161,7 +161,6 @@ final class IRXClassAssembler {
     String calledMethodName,
     String calledMethodDescription,
     boolean isStatic, boolean interfaceCall,
-    IntUnaryOperator swaps,
     @Nullable Function<String, BiConsumer<String, MethodVisitor>> additionalParameterInstructions
   ) {
     MethodVisitor methodVisitor = classWriter.visitMethod(
@@ -196,20 +195,16 @@ final class IRXClassAssembler {
           additionalInstructions.accept(className, methodVisitor);
           methodVisitor.visitTypeInsn(CHECKCAST, type.getInternalName());
         }
-        continue;
-      }
-      int srcIndex = swaps.applyAsInt(++index);
-      if (srcIndex < 0) {
-        // parameter not used in the called method
-        continue;
-      }
-      Type nestedType = castCallerParameterTypes[index - (isStatic ? 0 : 1)];
-      Type srcType = callerParameterTypes[srcIndex - (isStatic ? 0 : 1)];
-      int typeOpcode = resolveTypeOpcode(type, ILOAD);
-      methodVisitor.visitVarInsn(typeOpcode, srcIndex);
-      if (!nestedType.equals(srcType)) {
-        String nestedTypeClassPath = nestedType.getInternalName();
-        methodVisitor.visitTypeInsn(CHECKCAST, nestedTypeClassPath);
+      } else {
+        int srcIndex = ++index;
+        Type nestedType = castCallerParameterTypes[index - (isStatic ? 0 : 1)];
+        Type srcType = callerParameterTypes[srcIndex - (isStatic ? 0 : 1)];
+        int typeOpcode = resolveTypeOpcode(type, ILOAD);
+        methodVisitor.visitVarInsn(typeOpcode, srcIndex);
+        if (!nestedType.equals(srcType)) {
+          String nestedTypeClassPath = nestedType.getInternalName();
+          methodVisitor.visitTypeInsn(CHECKCAST, nestedTypeClassPath);
+        }
       }
     }
     boolean hasPacketReader = containsPacketReaderParameter(calledMethodDescription);

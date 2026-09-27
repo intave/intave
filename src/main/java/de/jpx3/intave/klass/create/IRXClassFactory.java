@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.IntUnaryOperator;
 
 public final class IRXClassFactory {
   public static <T> Class<T> assembleCallerClass(
@@ -19,8 +18,7 @@ public final class IRXClassFactory {
     String callerMethodName, String callerMethodDescription, String castCalledMethodDescription,
     String calledClassName,
     String calledMethodName, String calledMethodDescription,
-    boolean isStatic, boolean interfaceCall,
-    IntUnaryOperator swaps
+    boolean isStatic, boolean interfaceCall
   ) {
     //noinspection unchecked
     return (Class<T>) IRXClassAssembler.generateCallerClass(
@@ -31,7 +29,7 @@ public final class IRXClassFactory {
       calledClassName,
       calledMethodName, calledMethodDescription,
       isStatic, interfaceCall,
-      swaps, null
+      null
     );
   }
 
@@ -42,7 +40,7 @@ public final class IRXClassFactory {
     String calledClassName,
     String calledMethodName, String calledMethodDescription,
     boolean isStatic, boolean interfaceCall,
-    IntUnaryOperator swaps, Function<String, BiConsumer<String, MethodVisitor>> additionalParameterInstructions
+    Function<String, BiConsumer<String, MethodVisitor>> additionalParameterInstructions
   ) {
     //noinspection unchecked
     return (Class<T>) IRXClassAssembler.generateCallerClass(
@@ -53,7 +51,7 @@ public final class IRXClassFactory {
       calledClassName,
       calledMethodName, calledMethodDescription,
       isStatic, interfaceCall,
-      swaps, additionalParameterInstructions
+      additionalParameterInstructions
     );
   }
 
