@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -29,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 final class IRXClassFactoryTest {
+  public static final String CALLER_METHOD_DESCRIPTION = "(Lde/jpx3/intave/module/linker/packet/PacketEventSubscriber;Lcom/comphenix/protocol/events/PacketEvent;)V";
   private static MockedStatic<IntaveLogger> loggerMock;
 
   @BeforeAll
@@ -149,8 +151,7 @@ final class IRXClassFactoryTest {
       Class<PacketCaller> callerClass = IRXClassFactory.assembleCallerClass(getClass().getClassLoader(),
         PacketCaller.class,
         "srcfile",
-        "invoke",
-        "(Lde/jpx3/intave/module/linker/packet/PacketEventSubscriber;Lcom/comphenix/protocol/events/PacketEvent;)V",
+        "invoke", CALLER_METHOD_DESCRIPTION,
         Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Target.class), Type.getType(PacketEvent.class)),
         Type.getInternalName(Target.class),
         "acceptReader",
@@ -182,8 +183,7 @@ final class IRXClassFactoryTest {
       Class<PacketCaller> callerClass = IRXClassFactory.assembleCallerClass(getClass().getClassLoader(),
         PacketCaller.class,
         "srcfile",
-        "invoke",
-        "(Lde/jpx3/intave/module/linker/packet/PacketEventSubscriber;Lcom/comphenix/protocol/events/PacketEvent;)V",
+        "invoke", CALLER_METHOD_DESCRIPTION,
         Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Target.class), Type.getType(PacketEvent.class)),
         Type.getInternalName(Target.class),
         "acceptReaderSubtype",
@@ -197,7 +197,39 @@ final class IRXClassFactoryTest {
     }
 
     assertEquals(reader, Target.received.get());
-    verify(reader).releaseSafe();
+    verify(reader, times(1)).releaseSafe();
+  }
+
+  @Test
+  void packetReaderIsReleasedWhenCalledMethodThrows() throws Exception {
+    PacketEvent event = mock(PacketEvent.class);
+    PacketReader reader = mock(PacketReader.class);
+    when(event.getPacket()).thenReturn(null);
+
+    @SuppressWarnings("unchecked") Map<String, BiConsumer<String, MethodVisitor>> instructions =
+      (Map<String, BiConsumer<String, MethodVisitor>>) getAdditionalInstructions();
+
+    try (MockedStatic<PacketReaders> readers = mockStatic(PacketReaders.class)) {
+      //noinspection resource,DataFlowIssue
+      readers.when(() -> PacketReaders.readerOf(null)).thenReturn(reader);
+      Class<PacketCaller> callerClass = IRXClassFactory.assembleCallerClass(getClass().getClassLoader(),
+        PacketCaller.class,
+        "srcfile",
+        "invoke", CALLER_METHOD_DESCRIPTION,
+        Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Target.class), Type.getType(PacketEvent.class)),
+        Type.getInternalName(Target.class),
+        "acceptReaderAndThrow",
+        Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(PacketReader.class)),
+        false,
+        false,
+        index -> index,
+        instructions::get);
+
+      PacketCaller generatedCaller = callerClass.getDeclaredConstructor().newInstance();
+      assertThrows(IllegalStateException.class, () -> generatedCaller.invoke(new Target(), event));
+    } finally {
+      verify(reader, times(1)).releaseSafe();
+    }
   }
 
   @Test
@@ -224,8 +256,7 @@ final class IRXClassFactoryTest {
       Class<PacketCaller> callerClass = IRXClassFactory.assembleCallerClass(getClass().getClassLoader(),
         PacketCaller.class,
         "srcfile",
-        "invoke",
-        "(Lde/jpx3/intave/module/linker/packet/PacketEventSubscriber;Lcom/comphenix/protocol/events/PacketEvent;)V",
+        "invoke", CALLER_METHOD_DESCRIPTION,
         Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Target.class), Type.getType(PacketEvent.class)),
         Type.getInternalName(Target.class),
         "acceptMany",
@@ -271,8 +302,7 @@ final class IRXClassFactoryTest {
       Class<PacketCaller> callerClass = IRXClassFactory.assembleCallerClass(getClass().getClassLoader(),
         PacketCaller.class,
         "srcfile",
-        "invoke",
-        "(Lde/jpx3/intave/module/linker/packet/PacketEventSubscriber;Lcom/comphenix/protocol/events/PacketEvent;)V",
+        "invoke", CALLER_METHOD_DESCRIPTION,
         Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Target.class), Type.getType(PacketEvent.class)),
         Type.getInternalName(Target.class),
         "acceptShuffled",
@@ -338,6 +368,10 @@ final class IRXClassFactoryTest {
 
     public void acceptReaderSubtype(AnimationReader reader) {
       received.set(reader);
+    }
+
+    public void acceptReaderAndThrow(PacketReader reader) {
+      throw new IllegalStateException("target failure");
     }
 
     public void acceptMany(Player player, User user, PacketReader reader, PacketEvent event, PacketType type) {
