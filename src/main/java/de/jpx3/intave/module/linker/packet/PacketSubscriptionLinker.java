@@ -372,7 +372,7 @@ public final class PacketSubscriptionLinker extends Module {
     } );
     additionalParameterInstructions.put(PacketReader.class.getName(), (className, mv) -> {
       // IRXClassAssembler injects the field "block" into the generated class
-      // based on "PacketReader" presence in the target method's parameters
+      // based on "PacketReader" (or subtype) presence in the target method's parameters
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, className, "block", "Z");
       mv.visitInsn(ICONST_0);

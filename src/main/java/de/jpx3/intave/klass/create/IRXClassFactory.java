@@ -5,6 +5,7 @@ import net.minecraft.world.level.levelgen.structure.TemplateStructurePiece;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
@@ -95,6 +96,18 @@ public final class IRXClassFactory {
   private static boolean classExists(String className) {
     if (CLASSES_CREATED.contains(className) || CLASSES_FOUND.contains(className)) {
       return true;
+    }
+    if (IRXClassAssembler.TEST_MODE) {
+      try {
+        Method findLoadedClass = java.lang.ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
+        if (!findLoadedClass.isAccessible()) {
+          findLoadedClass.setAccessible(true);
+        }
+        return findLoadedClass.invoke(de.jpx3.classloader.ClassLoader.class.getClassLoader(), className) != null;
+      } catch (Exception ex) {
+        ex.printStackTrace();
+        return true;
+      }
     }
     if (de.jpx3.classloader.ClassLoader.classLoaded("de.jpx3.intave." + className)) {
       CLASSES_FOUND.add(className);
