@@ -1,16 +1,17 @@
 package de.jpx3.intave.klass.create;
 
-import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.PacketType;
-import org.bukkit.entity.Player;
-import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
+import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.library.asm.MethodVisitor;
 import de.jpx3.intave.library.asm.Type;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
+import de.jpx3.intave.packet.reader.AnimationReader;
 import de.jpx3.intave.packet.reader.PacketReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
+import org.bukkit.entity.Player;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -169,41 +170,83 @@ final class IRXClassFactoryTest {
   }
 
   @Test
+  void packetReaderInjectionSupportsDeclaredSubtypes() throws Exception {
+    PacketEvent event = mock(PacketEvent.class);
+    AnimationReader reader = mock(AnimationReader.class);
+    when(event.getPacket()).thenReturn(null);
+    Target.received = new AtomicReference<>();
+
+    @SuppressWarnings("unchecked") Map<String, BiConsumer<String, MethodVisitor>> instructions = (Map<String, BiConsumer<String, MethodVisitor>>) getAdditionalInstructions();
+
+    try (MockedStatic<PacketReaders> readers = mockStatic(PacketReaders.class)) {
+      //noinspection resource,DataFlowIssue
+      readers.when(() -> PacketReaders.readerOf(null)).thenReturn(reader);
+      Class<PacketCaller> callerClass = IRXClassFactory.assembleCallerClass(getClass().getClassLoader(),
+        PacketCaller.class,
+        "srcfile",
+        "invoke",
+        "(Lde/jpx3/intave/module/linker/packet/PacketEventSubscriber;Lcom/comphenix/protocol/events/PacketEvent;)V",
+        Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Target.class), Type.getType(PacketEvent.class)),
+        Type.getInternalName(Target.class),
+        "acceptReaderSubtype",
+        Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(AnimationReader.class)),
+        false,
+        false,
+        index -> index,
+        instructions::get);
+
+      callerClass.getDeclaredConstructor().newInstance().invoke(new Target(), event);
+    }
+
+    assertEquals(reader, Target.received.get());
+    verify(reader).releaseSafe();
+  }
+
+  @Test
   void manyParameters() throws Exception {
     PacketEvent event = mock(PacketEvent.class);
     Player player = mock(Player.class);
-    PacketType packetType = mock(PacketType.class);
+    PacketType type = mock(PacketType.class);
     User user = mock(User.class);
     PacketReader reader = mock(PacketReader.class);
     when(event.getPlayer()).thenReturn(player);
     when(event.getPacket()).thenReturn(null);
-    when(event.getPacketType()).thenReturn(packetType);
+    when(event.getPacketType()).thenReturn(type);
     Target.received = new AtomicReference<>();
 
-    @SuppressWarnings("unchecked") Map<String, BiConsumer<String, MethodVisitor>> instructions =
-      (Map<String, BiConsumer<String, MethodVisitor>>) getAdditionalInstructions();
+    @SuppressWarnings("unchecked") Map<String, BiConsumer<String, MethodVisitor>> instructions = (Map<String, BiConsumer<String, MethodVisitor>>) getAdditionalInstructions();
 
     try (MockedStatic<PacketReaders> readers = mockStatic(PacketReaders.class);
-         MockedStatic<UserRepository> users = mockStatic(UserRepository.class)) {
+         MockedStatic<UserRepository> users = mockStatic(UserRepository.class)
+    ) {
       //noinspection resource,DataFlowIssue
       readers.when(() -> PacketReaders.readerOf(null)).thenReturn(reader);
       users.when(() -> UserRepository.userOf(player)).thenReturn(user);
 
-      Class<PacketCaller> callerClass = IRXClassFactory.assembleCallerClass(
-        getClass().getClassLoader(), PacketCaller.class, "srcfile", "invoke",
+      Class<PacketCaller> callerClass = IRXClassFactory.assembleCallerClass(getClass().getClassLoader(),
+        PacketCaller.class,
+        "srcfile",
+        "invoke",
         "(Lde/jpx3/intave/module/linker/packet/PacketEventSubscriber;Lcom/comphenix/protocol/events/PacketEvent;)V",
         Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Target.class), Type.getType(PacketEvent.class)),
-        Type.getInternalName(Target.class), "acceptMany",
-        Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Player.class), Type.getType(User.class),
-          Type.getType(PacketReader.class), Type.getType(PacketEvent.class), Type.getType(PacketType.class)),
-        false, false, index -> index, instructions::get
-      );
+        Type.getInternalName(Target.class),
+        "acceptMany",
+        Type.getMethodDescriptor(Type.VOID_TYPE,
+          Type.getType(Player.class),
+          Type.getType(User.class),
+          Type.getType(PacketReader.class),
+          Type.getType(PacketEvent.class),
+          Type.getType(PacketType.class)),
+        false,
+        false,
+        index -> index,
+        instructions::get);
 
       callerClass.getDeclaredConstructor().newInstance().invoke(new Target(), event);
     }
 
     Object[] received = (Object[]) Target.received.get();
-    assertArrayEquals(new Object[]{player, user, reader, event, packetType}, received);
+    assertArrayEquals(new Object[]{player, user, reader, event, type}, received);
     verify(reader).releaseSafe();
   }
 
@@ -211,31 +254,40 @@ final class IRXClassFactoryTest {
   void manyParametersBlockAfterReaderFailure() throws Exception {
     PacketEvent event = mock(PacketEvent.class);
     Player player = mock(Player.class);
-    PacketType packetType = mock(PacketType.class);
+    PacketType type = mock(PacketType.class);
     User user = mock(User.class);
     when(event.getPlayer()).thenReturn(player);
     when(event.getPacket()).thenReturn(null);
-    when(event.getPacketType()).thenReturn(packetType);
+    when(event.getPacketType()).thenReturn(type);
     Target.received = new AtomicReference<>();
 
-    @SuppressWarnings("unchecked") Map<String, BiConsumer<String, MethodVisitor>> instructions =
-      (Map<String, BiConsumer<String, MethodVisitor>>) getAdditionalInstructions();
+    @SuppressWarnings("unchecked") Map<String, BiConsumer<String, MethodVisitor>> instructions = (Map<String, BiConsumer<String, MethodVisitor>>) getAdditionalInstructions();
 
     try (MockedStatic<PacketReaders> readers = mockStatic(PacketReaders.class);
-         MockedStatic<UserRepository> users = mockStatic(UserRepository.class)) {
+         MockedStatic<UserRepository> users = mockStatic(UserRepository.class)
+    ) {
       //noinspection resource,DataFlowIssue
       readers.when(() -> PacketReaders.readerOf(null)).thenThrow(new IllegalStateException("missing reader"));
       users.when(() -> UserRepository.userOf(player)).thenReturn(user);
 
-      Class<PacketCaller> callerClass = IRXClassFactory.assembleCallerClass(
-        getClass().getClassLoader(), PacketCaller.class, "srcfile", "invoke",
+      Class<PacketCaller> callerClass = IRXClassFactory.assembleCallerClass(getClass().getClassLoader(),
+        PacketCaller.class,
+        "srcfile",
+        "invoke",
         "(Lde/jpx3/intave/module/linker/packet/PacketEventSubscriber;Lcom/comphenix/protocol/events/PacketEvent;)V",
         Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Target.class), Type.getType(PacketEvent.class)),
-        Type.getInternalName(Target.class), "acceptShuffled",
-        Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(PacketType.class), Type.getType(PacketReader.class),
-          Type.getType(User.class), Type.getType(PacketEvent.class), Type.getType(Player.class)),
-        false, false, index -> index, instructions::get
-      );
+        Type.getInternalName(Target.class),
+        "acceptShuffled",
+        Type.getMethodDescriptor(Type.VOID_TYPE,
+          Type.getType(PacketType.class),
+          Type.getType(PacketReader.class),
+          Type.getType(User.class),
+          Type.getType(PacketEvent.class),
+          Type.getType(Player.class)),
+        false,
+        false,
+        index -> index,
+        instructions::get);
 
       PacketCaller caller = callerClass.getDeclaredConstructor().newInstance();
       caller.invoke(new Target(), event);
@@ -266,6 +318,7 @@ final class IRXClassFactoryTest {
     void invoke(PacketEventSubscriber target, PacketEvent event);
   }
 
+  @SuppressWarnings("unused")
   public static final class Target implements PacketEventSubscriber {
     private static AtomicReference<Object> received;
 
@@ -285,12 +338,16 @@ final class IRXClassFactoryTest {
       received.set(reader);
     }
 
-    public void acceptMany(Player player, User user, PacketReader reader, PacketEvent event, PacketType packetType) {
-      received.set(new Object[]{player, user, reader, event, packetType});
+    public void acceptReaderSubtype(AnimationReader reader) {
+      received.set(reader);
     }
 
-    public void acceptShuffled(PacketType packetType, PacketReader reader, User user, PacketEvent event, Player player) {
-      received.set(new Object[]{packetType, reader, user, event, player});
+    public void acceptMany(Player player, User user, PacketReader reader, PacketEvent event, PacketType type) {
+      received.set(new Object[]{player, user, reader, event, type});
+    }
+
+    public void acceptShuffled(PacketType type, PacketReader reader, User user, PacketEvent event, Player player) {
+      received.set(new Object[]{type, reader, user, event, player});
     }
   }
 }

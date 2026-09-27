@@ -61,7 +61,7 @@ final class IRXClassAssembler {
   ) {
     ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
     pushClassData(classWriter, className, sourceName, superClass);
-    if (calledMethodDescription.contains(PacketReader.class.getSimpleName())) {
+    if (containsPacketReaderParameter(calledMethodDescription)) {
       classWriter.visitField(ACC_PRIVATE | ACC_SYNTHETIC, "block", "Z", null, null)
         .visitEnd();
     }
@@ -217,7 +217,7 @@ final class IRXClassAssembler {
       calledClassName, calledMethodName, calledMethodDescription,
       false
     );
-    if (calledMethodDescription.contains(PacketReader.class.getSimpleName())) {
+    if (containsPacketReaderParameter(calledMethodDescription)) {
       methodVisitor.visitVarInsn(ALOAD, 3);
       methodVisitor.visitMethodInsn(INVOKEINTERFACE, Type.getInternalName(PacketReader.class), "releaseSafe", "()V", true);
     }
@@ -299,6 +299,19 @@ final class IRXClassAssembler {
 
   private static Type resolveReturnType(String methodDescription) {
     return Type.getReturnType(methodDescription);
+  }
+
+  private static boolean containsPacketReaderParameter(String methodDescription) {
+    for (Type parameterType : resolveTypes(methodDescription)) {
+      try {
+        if (PacketReader.class.isAssignableFrom(Class.forName(parameterType.getClassName()))) {
+          return true;
+        }
+      } catch (ClassNotFoundException ignored) {
+        // if a parameter is not found, it should've failed anyway already
+      }
+    }
+    return false;
   }
 
   private static BiConsumer<String, MethodVisitor> resolveAdditionalParameterInstructions(
