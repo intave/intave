@@ -18,9 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.lang.reflect.Field;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -104,7 +102,7 @@ final class IRXClassFactoryTest {
   void additionalParameterInstructionsAreAppliedToEveryCalledParameter() throws Exception {
     AtomicReference<Object> received = new AtomicReference<>();
     Target.received = received;
-    Set<String> requestedTypes = new HashSet<>();
+    List<String> requestedTypes = new ArrayList<>();
     Function<String, BiConsumer<String, MethodVisitor>> instructions = type -> {
       requestedTypes.add(type);
       if (type.equals(PacketEvent.class.getName())) {
@@ -132,8 +130,8 @@ final class IRXClassFactoryTest {
 
     callerClass.getDeclaredConstructor().newInstance().invoke(new Target(), null);
 
-    assertEquals("injected", received.get());
-    assertEquals(Set.of(PacketEvent.class.getName(), String.class.getName()), requestedTypes);
+    assertArrayEquals(new Object[]{null, "injected"}, (Object[]) received.get());
+    assertEquals(List.of(PacketEvent.class.getName(), String.class.getName()), requestedTypes);
   }
 
   @Test
@@ -331,7 +329,7 @@ final class IRXClassFactoryTest {
     }
 
     public void acceptEventAndValue(PacketEvent event, String value) {
-      received.set(value);
+      received.set(new Object[]{event, value});
     }
 
     public void acceptReader(PacketReader reader) {
