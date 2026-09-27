@@ -49,6 +49,11 @@ import static de.jpx3.intave.IntaveControl.IGNORE_CHUNK_PACKETS;
 import static de.jpx3.intave.library.asm.Opcodes.*;
 
 public final class PacketSubscriptionLinker extends Module {
+  private static final String PACKET_EVENT_INTERNAL_NAME = Type.getInternalName(PacketEvent.class);
+  private static final String SUBSCRIBER_METHOD_NAME = PacketSubscriptionMethodExecutor.class.getMethods()[0].getName();
+  private static final String SUBSCRIBER_METHOD_DESC = Type.getMethodDescriptor(PacketSubscriptionMethodExecutor.class.getMethods()[0]);
+  private static final String GENERATED_CLASS_SOURCEFILE = "<irx>";
+
   private static boolean IGNORE_CHAT_PACKETS = false;
   private static boolean IGNORE_SCOREBOARD_TEAM_PACKETS = false;
   private final IntavePlugin plugin;
@@ -396,7 +401,9 @@ public final class PacketSubscriptionLinker extends Module {
         Label catchBlock = new Label();
         mv.visitTryCatchBlock(tryStart, tryEnd, catchBlock, Type.getInternalName(Exception.class));
         mv.visitLabel(catchBlock);
+        // pop the exception off the stack, we don't need it
         mv.visitInsn(POP);
+        // this.block = true;
         mv.visitVarInsn(ALOAD, 0);
         mv.visitInsn(ICONST_1);
         mv.visitFieldInsn(PUTFIELD, className, "block", "Z");
@@ -438,44 +445,35 @@ public final class PacketSubscriptionLinker extends Module {
     Method calledMethod,
     Engine engine
   ) {
+    String packetSubscriberInternalName = Type.getInternalName(targetClass);
+    Class<PacketSubscriptionMethodExecutor> executorClass;
     if (calledMethod.getParameterCount() == 1 && calledMethod.getParameterTypes()[0] == PacketEvent.class) {
-      String packetSubscriberSuperClassPath = Type.getInternalName(PacketEventSubscriber.class);
-      String packetSubscriberClassPath = Type.getInternalName(targetClass);
-      String packetEventClassPath = Type.getInternalName(PacketEvent.class);
-      Class<PacketSubscriptionMethodExecutor> executorClass = IRXClassFactory.assembleCallerClass(
-        PacketSubscriptionLinker.class.getClassLoader(),
+      executorClass = IRXClassFactory.assembleCallerClass(PacketSubscriptionLinker.class.getClassLoader(),
         PacketSubscriptionMethodExecutor.class,
-        "<irx>",
-        "invoke",
-        "(L" + packetSubscriberSuperClassPath + ";L" + packetEventClassPath + ";)V",
-        "(L" + packetSubscriberClassPath + ";L" + packetEventClassPath + ";)V",
-        packetSubscriberClassPath,
+        GENERATED_CLASS_SOURCEFILE, SUBSCRIBER_METHOD_NAME, SUBSCRIBER_METHOD_DESC,
+        "(L" + packetSubscriberInternalName + ";L" + PACKET_EVENT_INTERNAL_NAME + ";)V",
+        packetSubscriberInternalName,
         calledMethod.getName(),
         Type.getMethodDescriptor(calledMethod),
-        false, false,
+        false,
+        false,
         IntUnaryOperator.identity()
       );
-      return instanceOf(executorClass);
     } else {
-      String packetSubscriberSuperClassPath = Type.getInternalName(PacketEventSubscriber.class);
-      String packetSubscriberClassPath = Type.getInternalName(targetClass);
-      String packetEventClassPath = Type.getInternalName(PacketEvent.class);
-      Class<PacketSubscriptionMethodExecutor> executorClass = IRXClassFactory.assembleCallerClass(
-        PacketSubscriptionLinker.class.getClassLoader(),
+      executorClass = IRXClassFactory.assembleCallerClass(PacketSubscriptionLinker.class.getClassLoader(),
         PacketSubscriptionMethodExecutor.class,
-        "<irx>",
-        "invoke",
-        "(L" + packetSubscriberSuperClassPath + ";L" + packetEventClassPath + ";)V",
-        "(L" + packetSubscriberClassPath + ";L" + packetEventClassPath + ";)V",
-        packetSubscriberClassPath,
+        GENERATED_CLASS_SOURCEFILE, SUBSCRIBER_METHOD_NAME, SUBSCRIBER_METHOD_DESC,
+        "(L" + packetSubscriberInternalName + ";L" + PACKET_EVENT_INTERNAL_NAME + ";)V",
+        packetSubscriberInternalName,
         calledMethod.getName(),
         Type.getMethodDescriptor(calledMethod),
-        false, false,
+        false,
+        false,
         IntUnaryOperator.identity(),
         additionalParameterInstructions::get
       );
-      return instanceOf(executorClass);
     }
+    return instanceOf(executorClass);
   }
 
   private <T> T instanceOf(Class<T> clazz) {
