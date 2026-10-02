@@ -1,11 +1,15 @@
 package de.jpx3.intave.klass.create;
 
+import de.jpx3.intave.library.asm.MethodVisitor;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.IntUnaryOperator;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 public final class IRXClassFactory {
   public static <T> Class<T> assembleCallerClass(
@@ -14,8 +18,7 @@ public final class IRXClassFactory {
     String callerMethodName, String callerMethodDescription, String castCalledMethodDescription,
     String calledClassName,
     String calledMethodName, String calledMethodDescription,
-    boolean isStatic, boolean interfaceCall,
-    IntUnaryOperator swaps
+    boolean isStatic, boolean interfaceCall
   ) {
     //noinspection unchecked
     return (Class<T>) IRXClassAssembler.generateCallerClass(
@@ -26,7 +29,29 @@ public final class IRXClassFactory {
       calledClassName,
       calledMethodName, calledMethodDescription,
       isStatic, interfaceCall,
-      swaps
+      null
+    );
+  }
+
+  public static <T> Class<T> assembleCallerClass(
+    ClassLoader classLoader,
+    Class<? super T> superClass, String sourceClassName,
+    String callerMethodName, String callerMethodDescription, String castCalledMethodDescription,
+    String calledClassName,
+    String calledMethodName, String calledMethodDescription,
+    boolean isStatic, boolean interfaceCall,
+    Function<String, BiConsumer<String, MethodVisitor>> additionalParameterInstructions
+  ) {
+    //noinspection unchecked
+    return (Class<T>) IRXClassAssembler.generateCallerClass(
+      classLoader,
+      sourceClassName,
+      findClassName(), superClass,
+      callerMethodName, callerMethodDescription, castCalledMethodDescription,
+      calledClassName,
+      calledMethodName, calledMethodDescription,
+      isStatic, interfaceCall,
+      additionalParameterInstructions
     );
   }
 
@@ -67,6 +92,18 @@ public final class IRXClassFactory {
   private static boolean classExists(String className) {
     if (CLASSES_CREATED.contains(className) || CLASSES_FOUND.contains(className)) {
       return true;
+    }
+    if (IRXClassAssembler.TEST_MODE) {
+      try {
+        Method findLoadedClass = java.lang.ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
+        if (!findLoadedClass.isAccessible()) {
+          findLoadedClass.setAccessible(true);
+        }
+        return findLoadedClass.invoke(de.jpx3.classloader.ClassLoader.class.getClassLoader(), className) != null;
+      } catch (Exception ex) {
+        ex.printStackTrace();
+        return true;
+      }
     }
     if (de.jpx3.classloader.ClassLoader.classLoaded("de.jpx3.intave." + className)) {
       CLASSES_FOUND.add(className);
