@@ -264,12 +264,16 @@ final class IRXClassAssembler {
   }
 
   private static boolean containsPacketReaderParameter(Method method) {
+    boolean containsPacketReader = false;
     for (Class<?> parameterType : method.getParameterTypes()) {
       if (PacketReader.class.isAssignableFrom(parameterType)) {
-        return true;
+        if (containsPacketReader) {
+          throw new IllegalArgumentException("Method must have at most one packet reader parameter: " + method);
+        }
+        containsPacketReader = true;
       }
     }
-    return false;
+    return containsPacketReader;
   }
 
   private static BiConsumer<String, MethodVisitor> findParamInstruction(

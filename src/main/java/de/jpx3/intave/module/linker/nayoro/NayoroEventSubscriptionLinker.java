@@ -93,12 +93,6 @@ public final class NayoroEventSubscriptionLinker extends Module {
         }
         Class<? extends Event> eventClass = checkClass.asSubclass(Event.class);
         List<NayoroRegisteredListener> registeredListeners = ret.computeIfAbsent(eventClass, k -> new ArrayList<>());
-        String eventListenerClassPath = canonicalRepresentation(className(NayoroEventSubscriber.class));
-        String playerClassPath = canonicalRepresentation(className(PlayerContainer.class));
-        String eventClassPath = canonicalRepresentation(className(Event.class));
-        String specifiedListenerClassPath = canonicalRepresentation(className(listenerClass));
-        String specifiedPlayerClassPath = canonicalRepresentation(className(method.getParameterTypes()[0]));
-        String specifiedEventClassPath = canonicalRepresentation(className(eventClass));
         Class<NayoroEventExecutor> executorClass = IRXClassFactory.assembleCallerClass(
           BukkitEventSubscriptionLinker.class.getClassLoader(),
           NayoroEventExecutor.class.getMethods()[0],

@@ -173,13 +173,13 @@ public final class PacketSubscriptionLinker extends Module {
 
     switch (metadata.engine()) {
       case INTERNAL: {
-        PacketSubscriptionMethodExecutor executor = assemblePESubscriptionMethodCaller(instanceProvider.type(), method, metadata.engine());
+        PacketSubscriptionMethodExecutor executor = assemblePESubscriptionMethodCaller(method, metadata.engine());
         PacketType[] packetTypes = translateProtocolLibPacketTypes(metadata.packetsIn(), metadata.packetsOut(), metadata.debug());
         performCustomLinkage(instanceProvider, priority, packetTypes, ignoreCancelled, methodName, executor);
         break;
       }
       case PROTOCOLLIB: {
-        PacketSubscriptionMethodExecutor executor = assemblePESubscriptionMethodCaller(instanceProvider.type(), method, metadata.engine());
+        PacketSubscriptionMethodExecutor executor = assemblePESubscriptionMethodCaller(method, metadata.engine());
         PacketType[] packetTypes = translateProtocolLibPacketTypes(metadata.packetsIn(), metadata.packetsOut(), metadata.debug());
         if (metadata.prioritySlot() == PrioritySlot.INTERNAL) {
           performInternalProtocolLibLinkage(instanceProvider, priority, packetTypes, ignoreCancelled, methodName, executor);
@@ -437,7 +437,6 @@ public final class PacketSubscriptionLinker extends Module {
   }
 
   private PacketSubscriptionMethodExecutor assemblePESubscriptionMethodCaller(
-    Class<? extends PacketEventSubscriber> targetClass,
     Method calledMethod,
     Engine engine
   ) {

@@ -97,8 +97,6 @@ public final class BukkitEventSubscriptionLinker extends Module {
         }
         Class<? extends Event> eventClass = checkClass.asSubclass(Event.class);
         Set<RegisteredListener> registeredListeners = ret.computeIfAbsent(eventClass, k -> new HashSet<>());
-        String listenerClassPath = listenerClass.getCanonicalName().replaceAll("\\.", "/");
-        String eventClassPath = eventClass.getCanonicalName().replaceAll("\\.", "/");
         Class<EventExecutor> executorClass = IRXClassFactory.assembleCallerClass(
           BukkitEventSubscriptionLinker.class.getClassLoader(),
           EventExecutor.class.getMethods()[0],
