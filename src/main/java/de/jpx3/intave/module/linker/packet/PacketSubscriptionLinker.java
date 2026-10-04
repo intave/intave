@@ -47,10 +47,6 @@ import static de.jpx3.intave.IntaveControl.IGNORE_CHUNK_PACKETS;
 import static de.jpx3.intave.library.asm.Opcodes.*;
 
 public final class PacketSubscriptionLinker extends Module {
-  private static final String PACKET_EVENT_INTERNAL_NAME = Type.getInternalName(PacketEvent.class);
-  private static final String SUBSCRIBER_METHOD_NAME = PacketSubscriptionMethodExecutor.class.getMethods()[0].getName();
-  private static final String SUBSCRIBER_METHOD_DESC = Type.getMethodDescriptor(PacketSubscriptionMethodExecutor.class.getMethods()[0]);
-  private static final String GENERATED_CLASS_SOURCEFILE = "<irx>";
 
   private static boolean IGNORE_CHAT_PACKETS = false;
   private static boolean IGNORE_SCOREBOARD_TEAM_PACKETS = false;
@@ -176,20 +172,22 @@ public final class PacketSubscriptionLinker extends Module {
     boolean ignoreCancelled = metadata.ignoreCancelled();
 
     switch (metadata.engine()) {
-      case INTERNAL:
+      case INTERNAL: {
         PacketSubscriptionMethodExecutor executor = assemblePESubscriptionMethodCaller(instanceProvider.type(), method, metadata.engine());
         PacketType[] packetTypes = translateProtocolLibPacketTypes(metadata.packetsIn(), metadata.packetsOut(), metadata.debug());
         performCustomLinkage(instanceProvider, priority, packetTypes, ignoreCancelled, methodName, executor);
         break;
-      case PROTOCOLLIB:
-        executor = assemblePESubscriptionMethodCaller(instanceProvider.type(), method, metadata.engine());
-        packetTypes = translateProtocolLibPacketTypes(metadata.packetsIn(), metadata.packetsOut(), metadata.debug());
+      }
+      case PROTOCOLLIB: {
+        PacketSubscriptionMethodExecutor executor = assemblePESubscriptionMethodCaller(instanceProvider.type(), method, metadata.engine());
+        PacketType[] packetTypes = translateProtocolLibPacketTypes(metadata.packetsIn(), metadata.packetsOut(), metadata.debug());
         if (metadata.prioritySlot() == PrioritySlot.INTERNAL) {
           performInternalProtocolLibLinkage(instanceProvider, priority, packetTypes, ignoreCancelled, methodName, executor);
         } else {
           performExternalProtocolLibLinkage(instanceProvider, priority, packetTypes, ignoreCancelled, methodName, executor);
         }
         break;
+      }
     }
   }
 
@@ -335,7 +333,7 @@ public final class PacketSubscriptionLinker extends Module {
   }
 
   
-  private static final Map<String, BiConsumer<String, MethodVisitor>> additionalParameterInstructions = new HashMap<>();
+  private static final Map<String, BiConsumer<String, MethodVisitor>> extraParamInstructions = new HashMap<>();
 
   private static Method getMethod(Class<?> clazz, String methodName, Class<?>... parameterTypes) {
     try {
@@ -357,23 +355,23 @@ public final class PacketSubscriptionLinker extends Module {
   
   static {
     // locals: 0 - this, 1 - subscriber, 2 - PacketEvent, 3 - PacketReader (if applicable)
-    additionalParameterInstructions.put(Player.class.getName(), (className, mv) -> {
+    extraParamInstructions.put(Player.class.getName(), (className, mv) -> {
       mv.visitVarInsn(ALOAD, 2);
       visitMethodInsn(mv, getMethod(PacketEvent.class, "getPlayer"));
     } );
-    additionalParameterInstructions.put(User.class.getName(), (className, mv) -> {
+    extraParamInstructions.put(User.class.getName(), (className, mv) -> {
       mv.visitVarInsn(ALOAD, 2);
       visitMethodInsn(mv, getMethod(PacketEvent.class, "getPlayer"));
       visitMethodInsn(mv, getMethod(UserRepository.class, "userOf", Player.class));
     } );
-    additionalParameterInstructions.put(Cancellable.class.getName(), (className, mv) -> {
+    extraParamInstructions.put(Cancellable.class.getName(), (className, mv) -> {
       mv.visitVarInsn(ALOAD, 2);
     } );
-    additionalParameterInstructions.put(PacketContainer.class.getName(), (className, mv) -> {
+    extraParamInstructions.put(PacketContainer.class.getName(), (className, mv) -> {
       mv.visitVarInsn(ALOAD, 2);
       visitMethodInsn(mv, getMethod(PacketEvent.class, "getPacket"));
     } );
-    additionalParameterInstructions.put(PacketReader.class.getName(), (className, mv) -> {
+    extraParamInstructions.put(PacketReader.class.getName(), (className, mv) -> {
       // IRXClassAssembler injects the field "block" into the generated class
       // based on "PacketReader" (or subtype) presence in the target method's parameters
       mv.visitVarInsn(ALOAD, 0);
@@ -429,10 +427,10 @@ public final class PacketSubscriptionLinker extends Module {
       mv.visitInsn(DUP);
       mv.visitVarInsn(ASTORE, 3);
     } );
-    additionalParameterInstructions.put(PacketEvent.class.getName(), (className, mv) -> {
+    extraParamInstructions.put(PacketEvent.class.getName(), (className, mv) -> {
       mv.visitVarInsn(ALOAD, 2);
     } );
-    additionalParameterInstructions.put(PacketType.class.getName(), (className, mv) -> {
+    extraParamInstructions.put(PacketType.class.getName(), (className, mv) -> {
       mv.visitVarInsn(ALOAD, 2);
       visitMethodInsn(mv, getMethod(PacketEvent.class, "getPacketType"));
     } );
@@ -443,30 +441,18 @@ public final class PacketSubscriptionLinker extends Module {
     Method calledMethod,
     Engine engine
   ) {
-    String packetSubscriberInternalName = Type.getInternalName(targetClass);
     Class<PacketSubscriptionMethodExecutor> executorClass;
     if (calledMethod.getParameterCount() == 1 && calledMethod.getParameterTypes()[0] == PacketEvent.class) {
       executorClass = IRXClassFactory.assembleCallerClass(PacketSubscriptionLinker.class.getClassLoader(),
-        PacketSubscriptionMethodExecutor.class,
-        GENERATED_CLASS_SOURCEFILE, SUBSCRIBER_METHOD_NAME, SUBSCRIBER_METHOD_DESC,
-        "(L" + packetSubscriberInternalName + ";L" + PACKET_EVENT_INTERNAL_NAME + ";)V",
-        packetSubscriberInternalName,
-        calledMethod.getName(),
-        Type.getMethodDescriptor(calledMethod),
-        false,
-        false
+        PacketSubscriptionMethodExecutor.class.getMethods()[0],
+        calledMethod,
+        null
       );
     } else {
       executorClass = IRXClassFactory.assembleCallerClass(PacketSubscriptionLinker.class.getClassLoader(),
-        PacketSubscriptionMethodExecutor.class,
-        GENERATED_CLASS_SOURCEFILE, SUBSCRIBER_METHOD_NAME, SUBSCRIBER_METHOD_DESC,
-        "(L" + packetSubscriberInternalName + ";L" + PACKET_EVENT_INTERNAL_NAME + ";)V",
-        packetSubscriberInternalName,
-        calledMethod.getName(),
-        Type.getMethodDescriptor(calledMethod),
-        false,
-        false,
-        additionalParameterInstructions::get
+        PacketSubscriptionMethodExecutor.class.getMethods()[0],
+        calledMethod,
+        extraParamInstructions::get
       );
     }
     return instanceOf(executorClass);

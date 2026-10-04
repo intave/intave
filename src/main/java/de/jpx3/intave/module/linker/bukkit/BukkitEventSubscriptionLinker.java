@@ -5,7 +5,6 @@ import com.google.common.collect.Maps;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.klass.create.IRXClassFactory;
-import de.jpx3.intave.library.asm.Type;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.OneForAll;
 import de.jpx3.intave.module.linker.SubscriptionInstanceProvider;
@@ -102,15 +101,9 @@ public final class BukkitEventSubscriptionLinker extends Module {
         String eventClassPath = eventClass.getCanonicalName().replaceAll("\\.", "/");
         Class<EventExecutor> executorClass = IRXClassFactory.assembleCallerClass(
           BukkitEventSubscriptionLinker.class.getClassLoader(),
-          EventExecutor.class,
-          "<irx>",
-          "execute",
-          "(Lorg/bukkit/event/Listener;Lorg/bukkit/event/Event;)V",
-          "(L" + listenerClassPath + ";L" + eventClassPath + ";)V",
-          listenerClassPath,
-          method.getName(),
-          Type.getMethodDescriptor(method),
-          false, false
+          EventExecutor.class.getMethods()[0],
+          method,
+          null
         );
         EventExecutor executor;
         try {

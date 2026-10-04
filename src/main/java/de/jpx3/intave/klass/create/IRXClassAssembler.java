@@ -1,7 +1,7 @@
 package de.jpx3.intave.klass.create;
 
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.IntaveLogger;
+import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.library.asm.ClassWriter;
@@ -14,82 +14,68 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.*;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import static de.jpx3.intave.library.asm.Opcodes.*;
 
 final class IRXClassAssembler {
+  private static final int CLASS_VERSION = V1_8;
+  private static final int CLASS_FLAGS = ACC_PUBLIC | ACC_FINAL | ACC_SUPER | ACC_SYNTHETIC;
+  private static final int METHOD_FLAGS = ACC_PUBLIC | ACC_SYNTHETIC;
+  private static final int CLASS_WRITER_FLAGS = ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS;
+
   private static final String PACKET_READER = Type.getInternalName(PacketReader.class);
+
   private static final boolean DEBUG_SAVE_GENERATED_CLASSES = false;
   static boolean TEST_MODE = false;
+
   static Class<?> generateCallerClass(
     ClassLoader classLoader,
-    String sourceName,
     String className,
-    Class<?> superClass,
-    String callerMethodName, String callerMethodDescription, String castedCallerMethodDescription,
-    String calledClassName,
-    String calledMethodName, String calledMethodDescription,
-    boolean isStatic, boolean interfaceCall,
-    @Nullable Function<String, BiConsumer<String, MethodVisitor>> additionalParameterInstructions
+    Method toImplement,
+    Method target,
+    @Nullable Function<String, BiConsumer<String, MethodVisitor>> extraParamInstructions
   ) {
-    byte[] callerClassBytes = prepareCallerClassBytes(
-      className,
-      sourceName,
-      superClass,
-      callerMethodName, callerMethodDescription, castedCallerMethodDescription,
-      calledClassName,
-      calledMethodName, calledMethodDescription,
-      isStatic, interfaceCall,
-      additionalParameterInstructions
-    );
+    Set<Class<?>> targetParamClasses = new HashSet<>();
+    for (Class<?> paramClass : target.getParameterTypes()) {
+      if (!targetParamClasses.add(paramClass)) {
+        IntaveLogger.logger().warn("Target method '" + target + "' has parameter type "
+          + paramClass.getName() + " multiple times");
+      }
+    }
+    for (Class<?> parameterType : toImplement.getParameterTypes()) {
+      if (parameterType == Object.class) {
+        throw new IllegalArgumentException("toImplement method parameters must be specific types: " + toImplement);
+      }
+    }
+    byte[] callerClassBytes = prepareCallerClassBytes(className, toImplement, target, extraParamInstructions);
     return loadAndGetClass(classLoader, className, callerClassBytes);
   }
 
   private static byte[] prepareCallerClassBytes(
-    String className, String sourceName,
-    Class<?> superClass,
-    String callerMethodName, String callerMethodDescription,
-    String castedCallerMethodDescription, String calledClassName,
-    String calledMethodName, String calledMethodDescription,
-    boolean isStatic, boolean interfaceCall,
-    @Nullable Function<String, BiConsumer<String, MethodVisitor>> additionalParameterInstructions
+    String className,
+    Method toImplement,
+    Method target,
+    @Nullable Function<String, BiConsumer<String, MethodVisitor>> extraParamInstructions
   ) {
-    ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-    pushClassData(classWriter, className, sourceName, superClass);
-    if (containsPacketReaderParameter(calledMethodDescription)) {
-      classWriter.visitField(ACC_PRIVATE | ACC_SYNTHETIC, "block", "Z", null, null)
-        .visitEnd();
+    ClassWriter classWriter = new ClassWriter(CLASS_WRITER_FLAGS);
+    Class<?> superClass = pushClassData(classWriter, className, toImplement.getDeclaringClass());
+    if (containsPacketReaderParameter(target)) {
+      classWriter.visitField(ACC_PRIVATE | ACC_SYNTHETIC, "block", "Z", null, null).visitEnd();
     }
-    pushConstructor(classWriter);
-    pushCallerMethod(
-      className,
-      classWriter,
-      callerMethodName,
-      callerMethodDescription,
-      castedCallerMethodDescription,
-      calledClassName,
-      calledMethodName,
-      calledMethodDescription,
-      isStatic, interfaceCall,
-      additionalParameterInstructions
-    );
+    pushConstructor(classWriter, superClass);
+    pushCallerMethod(className, classWriter, toImplement, target, extraParamInstructions);
     return endAndFetchBytes(classWriter);
   }
 
-  private static void pushClassData(
-    ClassWriter classWriter,
-    String className,
-    String sourceName,
-    Class<?> superClass
-  ) {
-    int classVersion = V1_8;
-    int classFlags = ACC_PUBLIC | ACC_FINAL | ACC_SUPER | ACC_SYNTHETIC;
+  private static Class<?> pushClassData(ClassWriter classWriter, String className, Class<?> superClass) {
     String superClassName;
     boolean superClassIsInterface;
 
@@ -101,49 +87,25 @@ final class IRXClassAssembler {
       superClassIsInterface = superClass.isInterface();
     }
 
+    String[] interfaces;
     if (superClassIsInterface) {
-      classWriter.visit(
-        classVersion,
-        classFlags,
-        className,
-        null,
-        "java/lang/Object",
-        new String[]{superClassName}
-      );
+      interfaces = new String[]{superClassName};
+      superClassName = "java/lang/Object";
     } else {
-      classWriter.visit(
-        classVersion,
-        classFlags,
-        className,
-        null,
-        superClassName,
-        null
-      );
+      interfaces = null;
     }
-    classWriter.visitSource(sourceName, null);
+    classWriter.visit(CLASS_VERSION, CLASS_FLAGS, className, null, superClassName, interfaces);
+    classWriter.visitSource("<irx>", null);
+    return superClassIsInterface ? Object.class : superClass;
   }
 
-  private static void pushConstructor(
-    ClassWriter classWriter
-  ) {
-    MethodVisitor methodVisitor = classWriter.visitMethod(
-      ACC_PUBLIC | ACC_SYNTHETIC,
-      "<init>",
-      "()V",
-      null,
-      null
-    );
+  private static void pushConstructor(ClassWriter classWriter, Class<?> superClass) {
+    MethodVisitor methodVisitor = classWriter.visitMethod(METHOD_FLAGS, "<init>", "()V", null, null);
     methodVisitor.visitCode();
     Label label0 = new Label();
     methodVisitor.visitLabel(label0);
     methodVisitor.visitVarInsn(ALOAD, 0);
-    methodVisitor.visitMethodInsn(
-      INVOKESPECIAL,
-      "java/lang/Object",
-      "<init>",
-      "()V",
-      false
-    );
+    methodVisitor.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(superClass), "<init>", "()V", false);
     methodVisitor.visitInsn(RETURN);
     Label label1 = new Label();
     methodVisitor.visitLabel(label1);
@@ -154,60 +116,54 @@ final class IRXClassAssembler {
   private static void pushCallerMethod(
     String className,
     ClassWriter classWriter,
-    String callerMethodName,
-    String callerMethodDescription,
-    String castCallerMethodDescription,
-    String calledClassName,
-    String calledMethodName,
-    String calledMethodDescription,
-    boolean isStatic, boolean interfaceCall,
-    @Nullable Function<String, BiConsumer<String, MethodVisitor>> additionalParameterInstructions
+    Method toImplement,
+    Method target,
+    @Nullable Function<String, BiConsumer<String, MethodVisitor>> extraParamInstructions
   ) {
     MethodVisitor methodVisitor = classWriter.visitMethod(
-      ACC_PUBLIC | ACC_SYNTHETIC,
-      callerMethodName,
-      callerMethodDescription,
+      METHOD_FLAGS,
+      toImplement.getName(),
+      Type.getMethodDescriptor(toImplement),
       null,
       null
     );
     methodVisitor.visitCode();
     Label label0 = new Label();
     methodVisitor.visitLabel(label0);
-    Type[] callerParameterTypes = resolveTypes(callerMethodDescription);
-    Type[] calledParameterTypes = resolveTypes(calledMethodDescription);
-    Type[] castCallerParameterTypes = resolveTypes(castCallerMethodDescription);
-    Type callerReturnType = resolveReturnType(callerMethodDescription);
-    int index = 0;
-    if (!isStatic) {
-      methodVisitor.visitVarInsn(ALOAD, ++index);
-      methodVisitor.visitTypeInsn(CHECKCAST, castCallerParameterTypes[0].getInternalName());
-    }
-    for (Type type : calledParameterTypes) {
-      if (additionalParameterInstructions != null) {
-        BiConsumer<String, MethodVisitor> additionalInstructions = resolveAdditionalParameterInstructions(
-          type.getClassName(), additionalParameterInstructions
-        );
-        if (additionalInstructions == null) {
-          IntaveLogger.logger().warn("Unsupported generated caller parameter type " + type.getClassName()
-            + " in method " + callerMethodName + " of class " + className + ". Using null");
-          methodVisitor.visitInsn(ACONST_NULL);
-        } else {
-          additionalInstructions.accept(className, methodVisitor);
-          methodVisitor.visitTypeInsn(CHECKCAST, type.getInternalName());
+    Type[] stackArguments = getStackArguments(target);
+    Type[] toImplementArguments = Type.getArgumentTypes(toImplement);
+    int[] toImplementPositions = getParameterLocalPositions(toImplementArguments);
+
+    if (extraParamInstructions == null) {
+      for (Type type : stackArguments) {
+        int src = findSourceParameter(type, toImplementArguments);
+        if (src >= 0) {
+          loadParameter(type, toImplementArguments[src], toImplementPositions[src], methodVisitor);
+          continue;
         }
-      } else {
-        int srcIndex = ++index;
-        Type nestedType = castCallerParameterTypes[index - (isStatic ? 0 : 1)];
-        Type srcType = callerParameterTypes[srcIndex - (isStatic ? 0 : 1)];
-        int typeOpcode = resolveTypeOpcode(type, ILOAD);
-        methodVisitor.visitVarInsn(typeOpcode, srcIndex);
-        if (!nestedType.equals(srcType)) {
-          String nestedTypeClassPath = nestedType.getInternalName();
-          methodVisitor.visitTypeInsn(CHECKCAST, nestedTypeClassPath);
+        IntaveLogger.logger().warn("Did not find matching parameter type '" + type.getClassName() + "' in method '"
+          + toImplement + "' while generating class '" + className + "' to call '" + target + "'. Using null/0");
+        pushDefaultValue(type, methodVisitor);
+      }
+    } else {
+      for (Type type : stackArguments) {
+        int src = findSourceParameter(type, toImplementArguments);
+        if (src >= 0) {
+          loadParameter(type, toImplementArguments[src], toImplementPositions[src], methodVisitor);
+          continue;
         }
+        BiConsumer<String, MethodVisitor> targetParamInstruction = findParamInstruction(type, extraParamInstructions);
+        if (targetParamInstruction == null) {
+          IntaveLogger.logger().warn("Unsupported parameter type '" + type.getClassName() + "' in method '"
+            + toImplement + "' while generating class '" + className + "' to call '" + target + "'. Using null/0");
+          pushDefaultValue(type, methodVisitor);
+          continue;
+        }
+        targetParamInstruction.accept(className, methodVisitor);
+        methodVisitor.visitTypeInsn(CHECKCAST, type.getInternalName());
       }
     }
-    boolean hasPacketReader = containsPacketReaderParameter(calledMethodDescription);
+    boolean hasPacketReader = containsPacketReaderParameter(target);
     Label invocationStart = null;
     Label invocationEnd = null;
     Label invocationFinally = null;
@@ -217,30 +173,100 @@ final class IRXClassAssembler {
       invocationFinally = new Label();
       methodVisitor.visitLabel(invocationStart);
     }
-    int instructionOpCode = isStatic ? INVOKESTATIC : interfaceCall ? INVOKEINTERFACE : INVOKEVIRTUAL;
-    methodVisitor.visitMethodInsn(instructionOpCode, calledClassName, calledMethodName, calledMethodDescription, false);
+    boolean isTargetStatic = Modifier.isStatic(target.getModifiers());
+    boolean interfaceCall = target.getDeclaringClass().isInterface();
+    int instructionOpCode = isTargetStatic ? INVOKESTATIC : interfaceCall ? INVOKEINTERFACE : INVOKEVIRTUAL;
+    methodVisitor.visitMethodInsn(
+      instructionOpCode,
+      Type.getInternalName(target.getDeclaringClass()),
+      target.getName(),
+      Type.getMethodDescriptor(target),
+      interfaceCall
+    );
     if (hasPacketReader) {
       methodVisitor.visitLabel(invocationEnd);
       methodVisitor.visitVarInsn(ALOAD, 3);
       methodVisitor.visitMethodInsn(INVOKEINTERFACE, PACKET_READER, "releaseSafe", "()V", true);
     }
-    methodVisitor.visitInsn(resolveTypeOpcode(callerReturnType, IRETURN));
+    methodVisitor.visitInsn(Type.getReturnType(toImplement).getOpcode(IRETURN));
 
     if (hasPacketReader) {
       methodVisitor.visitLabel(invocationFinally);
       methodVisitor.visitVarInsn(ALOAD, 3);
       methodVisitor.visitMethodInsn(INVOKEINTERFACE, PACKET_READER, "releaseSafe", "()V", true);
       methodVisitor.visitInsn(ATHROW);
-      methodVisitor.visitTryCatchBlock(invocationStart, invocationEnd, invocationFinally,
-        null); // null = finally / all exceptions
+      methodVisitor.visitTryCatchBlock(
+        invocationStart,
+        invocationEnd,
+        invocationFinally,
+        null
+      ); // null = finally / all exceptions
     }
-    int calledParameterAmount = calledParameterTypes.length;
-    int callerParameterAmount = resolveTypes(callerMethodDescription).length;
+    int calledParameterAmount = stackArguments.length;
     methodVisitor.visitMaxs(
-      Math.max(calledParameterAmount, callerParameterAmount) + 5,
-      callerParameterAmount + /* this */ 1 + /* packet reader */ 1
+      calledParameterAmount + 5,
+      toImplementArguments.length + /* this */ 1 + /* packet reader */ 1
     ); // they'll be calculated later on anyway, doesn't matter if they're too high
     methodVisitor.visitEnd();
+  }
+
+  private static void loadParameter(
+    Type type,
+    Type sourceType,
+    int sourceLocalPosition,
+    MethodVisitor methodVisitor
+  ) {
+    methodVisitor.visitVarInsn(sourceType.getOpcode(ILOAD), sourceLocalPosition);
+    if (!type.equals(sourceType)) {
+      methodVisitor.visitTypeInsn(CHECKCAST, type.getInternalName());
+    }
+  }
+
+  private static int[] getParameterLocalPositions(Type[] stackArguments) {
+    int[] parameterLocalPositions = new int[stackArguments.length];
+    int localPosition = 1;
+    for (int parameterIndex = 0; parameterIndex < stackArguments.length; parameterIndex++) {
+      parameterLocalPositions[parameterIndex] = localPosition;
+      localPosition += stackArguments[parameterIndex].getSize();
+    }
+    return parameterLocalPositions;
+  }
+
+  private static int findSourceParameter(Type targetType, Type[] sourceTypes) {
+    for (int index = 0; index < sourceTypes.length; index++) {
+      if (isAssignable(sourceTypes[index], targetType)) {
+        return index;
+      }
+    }
+    return -1;
+  }
+
+  private static Type[] getStackArguments(Method target) {
+    Class<?>[] parameterClasses = target.getParameterTypes();
+    int receiverOffset = Modifier.isStatic(target.getModifiers()) ? 0 : 1;
+    Type[] stackArguments = new Type[parameterClasses.length + receiverOffset];
+    int index = 0;
+    if (receiverOffset != 0) {
+      stackArguments[index++] = Type.getType(target.getDeclaringClass());
+    }
+    for (int parameterIndex = 0; parameterIndex < parameterClasses.length; parameterIndex++) {
+      stackArguments[index++] = Type.getType(parameterClasses[parameterIndex]);
+    }
+    return stackArguments;
+  }
+
+  private static boolean isAssignable(Type sourceType, Type targetType) {
+    if (sourceType.equals(targetType)) {
+      return true;
+    }
+    if (sourceType.getSort() != Type.OBJECT || targetType.getSort() != Type.OBJECT) {
+      return false;
+    }
+    try {
+      return Class.forName(sourceType.getClassName()).isAssignableFrom(Class.forName(targetType.getClassName()));
+    } catch (ClassNotFoundException exception) {
+      return false;
+    }
   }
 
   private static byte[] endAndFetchBytes(ClassWriter classWriter) {
@@ -248,10 +274,7 @@ final class IRXClassAssembler {
     return classWriter.toByteArray();
   }
 
-  private static Class<?> loadAndGetClass(
-    ClassLoader classLoader,
-    String className, byte[] classBytes
-  ) {
+  private static Class<?> loadAndGetClass(ClassLoader classLoader, String className, byte[] classBytes) {
     if (DEBUG_SAVE_GENERATED_CLASSES) {
       try {
         String pathStr = "generated_classes/" + className.replace("/", "_") + ".class";
@@ -268,17 +291,17 @@ final class IRXClassAssembler {
     return fetchClass(className);
   }
 
-  private static void loadClass(
-    ClassLoader classLoader, byte[] classBytes
-  ) {
+  private static void loadClass(ClassLoader classLoader, byte[] classBytes) {
     if (TEST_MODE) {
       try {
         Method defineClass = ClassLoader.class.getDeclaredMethod("defineClass", byte[].class, int.class, int.class);
         try {
           defineClass.setAccessible(true);
         } catch (Exception exception) {
-          throw new IntaveInternalException("Failed to acquire class-loading permissions from the JVM. If you are" +
-            " running Intave on Java 16, add \"--add-opens java.base/java.lang=ALL-UNNAMED\" to your startup arguments", exception);
+          throw new IntaveInternalException(
+            "Failed to acquire class-loading permissions from the JVM. If you are" + " running Intave on Java 16, add \"--add-opens java.base/java.lang=ALL-UNNAMED\" to your startup arguments",
+            exception
+          );
         }
         defineClass.invoke(classLoader, classBytes, 0, classBytes.length);
       } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
@@ -301,41 +324,23 @@ final class IRXClassAssembler {
     return IntavePlugin.class.getClassLoader();
   }
 
-  private static int resolveTypeOpcode(
-    Type type, int startOpCode
-  ) {
-    return type.getOpcode(startOpCode);
-  }
-
-  private static Type[] resolveTypes(String methodDescription) {
-    return Type.getArgumentTypes(methodDescription);
-  }
-
-  private static Type resolveReturnType(String methodDescription) {
-    return Type.getReturnType(methodDescription);
-  }
-
-  private static boolean containsPacketReaderParameter(String methodDescription) {
-    for (Type parameterType : resolveTypes(methodDescription)) {
-      try {
-        if (PacketReader.class.isAssignableFrom(Class.forName(parameterType.getClassName()))) {
-          return true;
-        }
-      } catch (ClassNotFoundException ignored) {
-        // if a parameter is not found, it should've failed anyway already
+  private static boolean containsPacketReaderParameter(Method method) {
+    for (Class<?> parameterType : method.getParameterTypes()) {
+      if (PacketReader.class.isAssignableFrom(parameterType)) {
+        return true;
       }
     }
     return false;
   }
 
-  private static BiConsumer<String, MethodVisitor> resolveAdditionalParameterInstructions(
-    String parameterTypeName,
+  private static BiConsumer<String, MethodVisitor> findParamInstruction(
+    Type parameterType,
     Function<String, BiConsumer<String, MethodVisitor>> instructions
   ) {
     ArrayDeque<Class<?>> pending = new ArrayDeque<>();
     Set<Class<?>> visited = new HashSet<>();
     try {
-      pending.add(Class.forName(parameterTypeName));
+      pending.add(Class.forName(parameterType.getClassName()));
     } catch (ClassNotFoundException ignored) {
       return null;
     }
@@ -360,5 +365,34 @@ final class IRXClassAssembler {
       }
     }
     return null;
+  }
+
+  private static void pushDefaultValue(Type type, MethodVisitor methodVisitor) {
+    int opcode;
+    switch (type.getSort()) {
+      case Type.BOOLEAN:
+      case Type.BYTE:
+      case Type.CHAR:
+      case Type.SHORT:
+      case Type.INT:
+        opcode = ICONST_0;
+        break;
+      case Type.LONG:
+        opcode = LCONST_0;
+        break;
+      case Type.FLOAT:
+        opcode = FCONST_0;
+        break;
+      case Type.DOUBLE:
+        opcode = DCONST_0;
+        break;
+      case Type.OBJECT:
+      case Type.ARRAY:
+        opcode = ACONST_NULL;
+        break;
+      default:
+        throw new IllegalArgumentException("Cannot push a default value for type " + type);
+    }
+    methodVisitor.visitInsn(opcode);
   }
 }

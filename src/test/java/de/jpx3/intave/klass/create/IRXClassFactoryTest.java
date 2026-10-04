@@ -4,7 +4,6 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.library.asm.MethodVisitor;
-import de.jpx3.intave.library.asm.Type;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
 import de.jpx3.intave.packet.reader.AnimationReader;
 import de.jpx3.intave.packet.reader.PacketReader;
@@ -15,10 +14,16 @@ import org.bukkit.entity.Player;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockMakers;
 import org.mockito.MockedStatic;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -28,7 +33,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 final class IRXClassFactoryTest {
-  public static final String CALLER_METHOD_DESCRIPTION = "(Lde/jpx3/intave/module/linker/packet/PacketEventSubscriber;Lcom/comphenix/protocol/events/PacketEvent;)V";
   private static MockedStatic<IntaveLogger> loggerMock;
 
   @BeforeAll
@@ -45,30 +49,19 @@ final class IRXClassFactoryTest {
   }
 
   @Test
-  void generatedCallerCastsAndForwardsArguments() throws Exception {
+  void generatedClassCastsAndForwardsArguments() throws Exception {
     AtomicReference<Object> received = new AtomicReference<>();
     Target.received = received;
 
-    Class<Caller> callerClass = IRXClassFactory.assembleCallerClass(getClass().getClassLoader(),
-      Caller.class,
-      "srcfile",
-      "invoke",
-      "(Ljava/lang/Object;Ljava/lang/Object;)V",
-      Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Target.class), Type.getType(String.class)),
-      Type.getInternalName(Target.class),
-      "accept",
-      "(Ljava/lang/String;)V",
-      false,
-      false
-    );
+    Class<Caller> generated = assemble(methodOf(Caller.class, "invoke"), methodOf(Target.class, "accept"));
 
-    callerClass.getDeclaredConstructor().newInstance().invoke(new Target(), "forwarded");
+    generated.getDeclaredConstructor().newInstance().invoke(new Target(), "forwarded");
 
     assertEquals("forwarded", received.get());
   }
 
   @Test
-  void generatedCallerCanInjectParametersFromTheEventSlot() throws Exception {
+  void generatedClassCanInjectParametersFromTheEventSlot() throws Exception {
     AtomicReference<Object> received = new AtomicReference<>();
     Target.received = received;
     Function<String, BiConsumer<String, MethodVisitor>> instructions = type -> {
@@ -78,29 +71,21 @@ final class IRXClassFactoryTest {
       return null;
     };
 
-    Class<EventCaller> callerClass = IRXClassFactory.assembleCallerClass(getClass().getClassLoader(),
-      EventCaller.class,
-      "srcfile",
-      "invoke",
-      "(Ljava/lang/Object;Lcom/comphenix/protocol/events/PacketEvent;)V",
-      Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Target.class), Type.getType(PacketEvent.class)),
-      Type.getInternalName(Target.class),
-      "acceptEvent",
-      Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(PacketEvent.class)),
-      false,
-      false,
-      instructions);
+    Class<EventCaller> generated = assemble(
+      methodOf(EventCaller.class, "invoke"),
+      methodOf(Target.class, "acceptEvent"),
+      instructions
+    );
 
     PacketEvent event = null;
-    callerClass.getDeclaredConstructor().newInstance().invoke(new Target(), event);
+    generated.getDeclaredConstructor().newInstance().invoke(new Target(), event);
 
     assertEquals(event, received.get());
   }
 
   @Test
-  void additionalParameterInstructionsAreAppliedToEveryCalledParameter() throws Exception {
-    AtomicReference<Object> received = new AtomicReference<>();
-    Target.received = received;
+  void additionalParameterInstructionsAreAppliedToEveryTargetParameter() throws Exception {
+    Target.received = new AtomicReference<>(new Object[0]);
     List<String> requestedTypes = new ArrayList<>();
     Function<String, BiConsumer<String, MethodVisitor>> instructions = type -> {
       requestedTypes.add(type);
@@ -113,23 +98,16 @@ final class IRXClassFactoryTest {
       return null;
     };
 
-    Class<EventCaller> callerClass = IRXClassFactory.assembleCallerClass(getClass().getClassLoader(),
-      EventCaller.class,
-      "srcfile",
-      "invoke",
-      "(Ljava/lang/Object;Lcom/comphenix/protocol/events/PacketEvent;)V",
-      Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Target.class), Type.getType(PacketEvent.class)),
-      Type.getInternalName(Target.class),
-      "acceptEventAndValue",
-      Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(PacketEvent.class), Type.getType(String.class)),
-      false,
-      false,
-      instructions);
+    Class<EventCaller> generated = assemble(
+      methodOf(EventCaller.class, "invoke"),
+      methodOf(Target.class, "acceptEventAndValue"),
+      instructions
+    );
 
-    callerClass.getDeclaredConstructor().newInstance().invoke(new Target(), null);
+    generated.getDeclaredConstructor().newInstance().invoke(new Target(), null);
 
-    assertArrayEquals(new Object[]{null, "injected"}, (Object[]) received.get());
-    assertEquals(List.of(PacketEvent.class.getName(), String.class.getName()), requestedTypes);
+    assertArrayEquals(new Object[]{null, "injected"}, (Object[]) Target.received.get());
+    assertEquals(List.of(String.class.getName()), requestedTypes);
   }
 
   @Test
@@ -139,22 +117,14 @@ final class IRXClassFactoryTest {
     when(event.getPacket()).thenReturn(null);
     Target.received = new AtomicReference<>();
 
-    @SuppressWarnings("unchecked") Map<String, BiConsumer<String, MethodVisitor>> instructions = (Map<String, BiConsumer<String, MethodVisitor>>) getAdditionalInstructions();
+    Map<String, BiConsumer<String, MethodVisitor>> extraInstructions = getAdditionalInstructions();
 
     try (MockedStatic<PacketReaders> readers = mockStatic(PacketReaders.class)) {
       //noinspection resource,DataFlowIssue
       readers.when(() -> PacketReaders.readerOf(null)).thenReturn(reader);
-      Class<PacketCaller> callerClass = IRXClassFactory.assembleCallerClass(getClass().getClassLoader(),
-        PacketCaller.class,
-        "srcfile",
-        "invoke", CALLER_METHOD_DESCRIPTION,
-        Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Target.class), Type.getType(PacketEvent.class)),
-        Type.getInternalName(Target.class),
-        "acceptReader",
-        Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(PacketReader.class)),
-        false,
-        false,
-        instructions::get);
+      Class<PacketCaller> callerClass = assemble(
+        methodOf(PacketCaller.class, "invoke"), methodOf(Target.class, "acceptReader"), extraInstructions::get
+      );
 
       callerClass.getDeclaredConstructor().newInstance().invoke(new Target(), event);
     }
@@ -170,22 +140,14 @@ final class IRXClassFactoryTest {
     when(event.getPacket()).thenReturn(null);
     Target.received = new AtomicReference<>();
 
-    @SuppressWarnings("unchecked") Map<String, BiConsumer<String, MethodVisitor>> instructions = (Map<String, BiConsumer<String, MethodVisitor>>) getAdditionalInstructions();
+    Map<String, BiConsumer<String, MethodVisitor>> instructions = getAdditionalInstructions();
 
     try (MockedStatic<PacketReaders> readers = mockStatic(PacketReaders.class)) {
       //noinspection resource,DataFlowIssue
       readers.when(() -> PacketReaders.readerOf(null)).thenReturn(reader);
-      Class<PacketCaller> callerClass = IRXClassFactory.assembleCallerClass(getClass().getClassLoader(),
-        PacketCaller.class,
-        "srcfile",
-        "invoke", CALLER_METHOD_DESCRIPTION,
-        Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Target.class), Type.getType(PacketEvent.class)),
-        Type.getInternalName(Target.class),
-        "acceptReaderSubtype",
-        Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(AnimationReader.class)),
-        false,
-        false,
-        instructions::get);
+      Class<PacketCaller> callerClass = assemble(
+        methodOf(PacketCaller.class, "invoke"), methodOf(Target.class, "acceptReaderSubtype"), instructions::get
+      );
 
       callerClass.getDeclaredConstructor().newInstance().invoke(new Target(), event);
     }
@@ -195,31 +157,22 @@ final class IRXClassFactoryTest {
   }
 
   @Test
-  void packetReaderIsReleasedWhenCalledMethodThrows() throws Exception {
+  void packetReaderIsReleasedWhenTargetMethodThrows() throws Exception {
     PacketEvent event = mock(PacketEvent.class);
     PacketReader reader = mock(PacketReader.class);
     when(event.getPacket()).thenReturn(null);
 
-    @SuppressWarnings("unchecked") Map<String, BiConsumer<String, MethodVisitor>> instructions =
-      (Map<String, BiConsumer<String, MethodVisitor>>) getAdditionalInstructions();
+    Map<String, BiConsumer<String, MethodVisitor>> instructions = getAdditionalInstructions();
 
     try (MockedStatic<PacketReaders> readers = mockStatic(PacketReaders.class)) {
       //noinspection resource,DataFlowIssue
       readers.when(() -> PacketReaders.readerOf(null)).thenReturn(reader);
-      Class<PacketCaller> callerClass = IRXClassFactory.assembleCallerClass(getClass().getClassLoader(),
-        PacketCaller.class,
-        "srcfile",
-        "invoke", CALLER_METHOD_DESCRIPTION,
-        Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Target.class), Type.getType(PacketEvent.class)),
-        Type.getInternalName(Target.class),
-        "acceptReaderAndThrow",
-        Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(PacketReader.class)),
-        false,
-        false,
-        instructions::get);
+      Class<PacketCaller> callerClass = assemble(
+        methodOf(PacketCaller.class, "invoke"), methodOf(Target.class, "acceptReaderAndThrow"), instructions::get
+      );
 
-      PacketCaller generatedCaller = callerClass.getDeclaredConstructor().newInstance();
-      assertThrows(IllegalStateException.class, () -> generatedCaller.invoke(new Target(), event));
+      PacketCaller generatedInstance = callerClass.getDeclaredConstructor().newInstance();
+      assertThrows(IllegalStateException.class, () -> generatedInstance.invoke(new Target(), event));
     } finally {
       verify(reader, times(1)).releaseSafe();
     }
@@ -235,9 +188,9 @@ final class IRXClassFactoryTest {
     when(event.getPlayer()).thenReturn(player);
     when(event.getPacket()).thenReturn(null);
     when(event.getPacketType()).thenReturn(type);
-    Target.received = new AtomicReference<>();
+    Target.received = new AtomicReference<>(new Object[0]);
 
-    @SuppressWarnings("unchecked") Map<String, BiConsumer<String, MethodVisitor>> instructions = (Map<String, BiConsumer<String, MethodVisitor>>) getAdditionalInstructions();
+    Map<String, BiConsumer<String, MethodVisitor>> instructions = getAdditionalInstructions();
 
     try (MockedStatic<PacketReaders> readers = mockStatic(PacketReaders.class);
          MockedStatic<UserRepository> users = mockStatic(UserRepository.class)
@@ -246,24 +199,12 @@ final class IRXClassFactoryTest {
       readers.when(() -> PacketReaders.readerOf(null)).thenReturn(reader);
       users.when(() -> UserRepository.userOf(player)).thenReturn(user);
 
-      Class<PacketCaller> callerClass = IRXClassFactory.assembleCallerClass(getClass().getClassLoader(),
-        PacketCaller.class,
-        "srcfile",
-        "invoke", CALLER_METHOD_DESCRIPTION,
-        Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Target.class), Type.getType(PacketEvent.class)),
-        Type.getInternalName(Target.class),
-        "acceptMany",
-        Type.getMethodDescriptor(Type.VOID_TYPE,
-          Type.getType(Player.class),
-          Type.getType(User.class),
-          Type.getType(PacketReader.class),
-          Type.getType(PacketEvent.class),
-          Type.getType(PacketType.class)),
-        false,
-        false,
-        instructions::get);
+      Class<PacketCaller> generatedInstance = assemble(
+        methodOf(PacketCaller.class, "invoke"), methodOf(Target.class, "acceptMany"),
+        instructions::get
+      );
 
-      callerClass.getDeclaredConstructor().newInstance().invoke(new Target(), event);
+      generatedInstance.getDeclaredConstructor().newInstance().invoke(new Target(), event);
     }
 
     Object[] received = (Object[]) Target.received.get();
@@ -280,57 +221,72 @@ final class IRXClassFactoryTest {
     when(event.getPlayer()).thenReturn(player);
     when(event.getPacket()).thenReturn(null);
     when(event.getPacketType()).thenReturn(type);
-    Target.received = new AtomicReference<>();
+    Object[] initialObj = new Object[0];
+    Target.received = new AtomicReference<>(initialObj);
 
-    @SuppressWarnings("unchecked") Map<String, BiConsumer<String, MethodVisitor>> instructions = (Map<String, BiConsumer<String, MethodVisitor>>) getAdditionalInstructions();
+    Map<String, BiConsumer<String, MethodVisitor>> instructions = getAdditionalInstructions();
 
     try (MockedStatic<PacketReaders> readers = mockStatic(PacketReaders.class);
          MockedStatic<UserRepository> users = mockStatic(UserRepository.class)
     ) {
       //noinspection resource,DataFlowIssue
-      readers.when(() -> PacketReaders.readerOf(null)).thenThrow(new IllegalStateException("missing reader"));
+      readers.when(() -> PacketReaders.readerOf(null)).thenThrow(new RuntimeException("test missing reader"));
       users.when(() -> UserRepository.userOf(player)).thenReturn(user);
 
-      Class<PacketCaller> callerClass = IRXClassFactory.assembleCallerClass(getClass().getClassLoader(),
-        PacketCaller.class,
-        "srcfile",
-        "invoke", CALLER_METHOD_DESCRIPTION,
-        Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Target.class), Type.getType(PacketEvent.class)),
-        Type.getInternalName(Target.class),
-        "acceptShuffled",
-        Type.getMethodDescriptor(Type.VOID_TYPE,
-          Type.getType(PacketType.class),
-          Type.getType(PacketReader.class),
-          Type.getType(User.class),
-          Type.getType(PacketEvent.class),
-          Type.getType(Player.class)),
-        false,
-        false,
-        instructions::get);
+      Class<PacketCaller> generatedInstance = assemble(
+        methodOf(PacketCaller.class, "invoke"), methodOf(Target.class, "acceptShuffled"),
+        instructions::get
+      );
 
-      PacketCaller caller = callerClass.getDeclaredConstructor().newInstance();
+      PacketCaller caller = generatedInstance.getDeclaredConstructor().newInstance();
       caller.invoke(new Target(), event);
       caller.invoke(new Target(), event);
       //noinspection resource,DataFlowIssue
       readers.verify(() -> PacketReaders.readerOf(null), times(1));
     }
 
-    assertNull(Target.received.get());
+    assertSame(initialObj, Target.received.get());
+    assertArrayEquals(initialObj, (Object[]) Target.received.get());
   }
 
-  private static Object getAdditionalInstructions() throws Exception {
-    Field field = Class.forName("de.jpx3.intave.module.linker.packet.PacketSubscriptionLinker").getDeclaredField(
-      "additionalParameterInstructions");
+  @SuppressWarnings("unchecked")
+  private static Map<String, BiConsumer<String, MethodVisitor>> getAdditionalInstructions() throws Exception {
+    Field field = Class.forName("de.jpx3.intave.module.linker.packet.PacketSubscriptionLinker")
+      .getDeclaredField("extraParamInstructions");
     field.setAccessible(true);
-    return field.get(null);
+    return (Map<String, BiConsumer<String, MethodVisitor>>) field.get(null);
+  }
+
+  private static Method methodOf(Class<?> type, String name) {
+    return Arrays.stream(type.getMethods())
+      .filter(method -> method.getName().equals(name))
+      .findFirst()
+      .orElseThrow(() -> new NoSuchMethodError(type.getName() + "#" + name));
+  }
+
+  private static <T> Class<T> assemble(Method toImplement, Method targetMethod) {
+    return assemble(toImplement, targetMethod, null);
+  }
+
+  private static <T> Class<T> assemble(
+    Method toImplement,
+    Method targetMethod,
+    Function<String, BiConsumer<String, MethodVisitor>> extraInstructions
+  ) {
+    return IRXClassFactory.assembleCallerClass(
+      IRXClassFactoryTest.class.getClassLoader(),
+      toImplement,
+      targetMethod,
+      extraInstructions
+    );
   }
 
   public interface Caller {
-    void invoke(Object target, Object value);
+    void invoke(Target target, String value);
   }
 
   public interface EventCaller {
-    void invoke(Object target, PacketEvent event);
+    void invoke(Target target, PacketEvent event);
   }
 
   public interface PacketCaller {

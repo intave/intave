@@ -1,5 +1,6 @@
 package de.jpx3.intave.klass.create;
 
+import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.library.asm.MethodVisitor;
 
 import java.io.IOException;
@@ -12,45 +13,16 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public final class IRXClassFactory {
+  @SuppressWarnings("unchecked")
   public static <T> Class<T> assembleCallerClass(
     ClassLoader classLoader,
-    Class<? super T> superClass, String sourceClassName,
-    String callerMethodName, String callerMethodDescription, String castCalledMethodDescription,
-    String calledClassName,
-    String calledMethodName, String calledMethodDescription,
-    boolean isStatic, boolean interfaceCall
+    Method toImplement,
+    Method target,
+    @Nullable Function<String, BiConsumer<String, MethodVisitor>> additionalParameterInstructions
   ) {
-    //noinspection unchecked
     return (Class<T>) IRXClassAssembler.generateCallerClass(
       classLoader,
-      sourceClassName,
-      findClassName(), superClass,
-      callerMethodName, callerMethodDescription, castCalledMethodDescription,
-      calledClassName,
-      calledMethodName, calledMethodDescription,
-      isStatic, interfaceCall,
-      null
-    );
-  }
-
-  public static <T> Class<T> assembleCallerClass(
-    ClassLoader classLoader,
-    Class<? super T> superClass, String sourceClassName,
-    String callerMethodName, String callerMethodDescription, String castCalledMethodDescription,
-    String calledClassName,
-    String calledMethodName, String calledMethodDescription,
-    boolean isStatic, boolean interfaceCall,
-    Function<String, BiConsumer<String, MethodVisitor>> additionalParameterInstructions
-  ) {
-    //noinspection unchecked
-    return (Class<T>) IRXClassAssembler.generateCallerClass(
-      classLoader,
-      sourceClassName,
-      findClassName(), superClass,
-      callerMethodName, callerMethodDescription, castCalledMethodDescription,
-      calledClassName,
-      calledMethodName, calledMethodDescription,
-      isStatic, interfaceCall,
+      findClassName(), toImplement, target,
       additionalParameterInstructions
     );
   }
@@ -84,7 +56,7 @@ public final class IRXClassFactory {
       }
     } while (classExists(randomClassName.toString()));
     CLASSES_CREATED.add(randomClassName.toString());
-    return "de/jpx3/intave/" + randomClassName;
+    return "de/jpx3/intave/generated/" + randomClassName;
   }
 
   private static final Set<String> CLASSES_FOUND = new HashSet<>();
@@ -99,25 +71,29 @@ public final class IRXClassFactory {
         if (!findLoadedClass.isAccessible()) {
           findLoadedClass.setAccessible(true);
         }
-        return findLoadedClass.invoke(de.jpx3.classloader.ClassLoader.class.getClassLoader(), className) != null;
+        return findLoadedClass.invoke(
+          de.jpx3.classloader.ClassLoader.class.getClassLoader(),
+          "de.jpx3.intave.generated." + className
+        ) != null;
       } catch (Exception ex) {
         ex.printStackTrace();
         return true;
       }
     }
-    if (de.jpx3.classloader.ClassLoader.classLoaded("de.jpx3.intave." + className)) {
+    if (de.jpx3.classloader.ClassLoader.classLoaded("de.jpx3.intave.generated." + className)) {
       CLASSES_FOUND.add(className);
       return true;
     }
     ClassLoader classLoader = IRXClassFactory.class.getClassLoader();
     try (
-      InputStream stream = classLoader.getResourceAsStream(String.format("de/jpx3/intave/%s.class", className));
+      InputStream stream = classLoader.getResourceAsStream(String.format("de/jpx3/intave/generated/%s.class", className));
     ) {
       if (stream != null) {
         CLASSES_FOUND.add(className);
         return true;
       }
-    } catch (IOException ignored) {}
+    } catch (IOException ignored) {
+    }
     return false;
   }
 }
