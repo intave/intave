@@ -1,8 +1,6 @@
 package de.jpx3.intave.klass.create;
 
 import de.jpx3.intave.IntaveLogger;
-import de.jpx3.intave.IntavePlugin;
-import de.jpx3.intave.access.IntaveInternalException;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.library.asm.ClassWriter;
 import de.jpx3.intave.library.asm.Label;
@@ -10,13 +8,8 @@ import de.jpx3.intave.library.asm.MethodVisitor;
 import de.jpx3.intave.library.asm.Type;
 import de.jpx3.intave.packet.reader.PacketReader;
 
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Set;
@@ -33,11 +26,7 @@ final class IRXClassAssembler {
 
   private static final String PACKET_READER = Type.getInternalName(PacketReader.class);
 
-  private static final boolean DEBUG_SAVE_GENERATED_CLASSES = false;
-  static boolean TEST_MODE = false;
-
-  static Class<?> generateCallerClass(
-    ClassLoader classLoader,
+  static byte[] generateCallerClass(
     String className,
     Method toImplement,
     Method target,
@@ -55,8 +44,7 @@ final class IRXClassAssembler {
         throw new IllegalArgumentException("toImplement method parameters must be specific types: " + toImplement);
       }
     }
-    byte[] callerClassBytes = prepareCallerClassBytes(className, toImplement, target, extraParamInstructions);
-    return loadAndGetClass(classLoader, className, callerClassBytes);
+    return prepareCallerClassBytes(className, toImplement, target, extraParamInstructions);
   }
 
   private static byte[] prepareCallerClassBytes(
@@ -272,56 +260,6 @@ final class IRXClassAssembler {
   private static byte[] endAndFetchBytes(ClassWriter classWriter) {
     classWriter.visitEnd();
     return classWriter.toByteArray();
-  }
-
-  private static Class<?> loadAndGetClass(ClassLoader classLoader, String className, byte[] classBytes) {
-    if (DEBUG_SAVE_GENERATED_CLASSES) {
-      try {
-        String pathStr = "generated_classes/" + className.replace("/", "_") + ".class";
-        File file = new File(pathStr);
-        file.getParentFile().mkdirs();
-        Path path = file.toPath();
-        System.out.println("Writing generated class to " + path.toAbsolutePath());
-        Files.write(path, classBytes);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
-    loadClass(classLoader, classBytes);
-    return fetchClass(className);
-  }
-
-  private static void loadClass(ClassLoader classLoader, byte[] classBytes) {
-    if (TEST_MODE) {
-      try {
-        Method defineClass = ClassLoader.class.getDeclaredMethod("defineClass", byte[].class, int.class, int.class);
-        try {
-          defineClass.setAccessible(true);
-        } catch (Exception exception) {
-          throw new IntaveInternalException(
-            "Failed to acquire class-loading permissions from the JVM. If you are" + " running Intave on Java 16, add \"--add-opens java.base/java.lang=ALL-UNNAMED\" to your startup arguments",
-            exception
-          );
-        }
-        defineClass.invoke(classLoader, classBytes, 0, classBytes.length);
-      } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-        throw new IntaveInternalException(e);
-      }
-      return;
-    }
-    de.jpx3.classloader.ClassLoader.classLoad(classBytes);
-  }
-
-  private static Class<?> fetchClass(String name) {
-    try {
-      return Class.forName(name.replace("/", "."), false, pluginClassLoader());
-    } catch (ClassNotFoundException exception) {
-      throw new IntaveInternalException(exception);
-    }
-  }
-
-  private static ClassLoader pluginClassLoader() {
-    return IntavePlugin.class.getClassLoader();
   }
 
   private static boolean containsPacketReaderParameter(Method method) {

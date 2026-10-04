@@ -37,14 +37,14 @@ final class IRXClassFactoryTest {
 
   @BeforeAll
   static void setup() {
-    IRXClassAssembler.TEST_MODE = true;
+    IRXClassFactory.TEST_MODE = true;
     loggerMock = mockStatic(IntaveLogger.class);
     loggerMock.when(IntaveLogger::logger).thenReturn(mock(IntaveLogger.class));
   }
 
   @AfterAll
   static void teardown() {
-    IRXClassAssembler.TEST_MODE = false;
+    IRXClassFactory.TEST_MODE = false;
     loggerMock.close();
   }
 
