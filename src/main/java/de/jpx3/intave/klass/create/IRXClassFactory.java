@@ -26,11 +26,11 @@ public final class IRXClassFactory {
     ClassLoader classLoader,
     Method toImplement,
     Method target,
-    @Nullable Function<String, BiConsumer<String, MethodVisitor>> additionalParameterInstructions
+    @Nullable Function<String, BiConsumer<String, MethodVisitor>> extraParamInstructions
   ) {
     String className = findClassName();
     byte[] classBytes = IRXClassAssembler.generateCallerClass(
-      className, toImplement, target, additionalParameterInstructions
+      className, toImplement, target, extraParamInstructions
     );
     loadClass(classLoader, className, classBytes);
     try {

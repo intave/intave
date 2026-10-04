@@ -23,6 +23,7 @@ final class IRXClassAssembler {
   private static final int CLASS_FLAGS = ACC_PUBLIC | ACC_FINAL | ACC_SUPER | ACC_SYNTHETIC;
   private static final int METHOD_FLAGS = ACC_PUBLIC | ACC_SYNTHETIC;
   private static final int CLASS_WRITER_FLAGS = ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS;
+  private static final String SOURCE_FILE_STR = "<irx>";
 
   private static final String PACKET_READER = Type.getInternalName(PacketReader.class);
 
@@ -83,7 +84,7 @@ final class IRXClassAssembler {
       interfaces = null;
     }
     classWriter.visit(CLASS_VERSION, CLASS_FLAGS, className, null, superClassName, interfaces);
-    classWriter.visitSource("<irx>", null);
+    classWriter.visitSource(SOURCE_FILE_STR, null);
     return superClassIsInterface ? Object.class : superClass;
   }
 
