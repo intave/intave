@@ -98,6 +98,7 @@ dependencies {
   testCompileOnly("org.jetbrains:annotations:23.1.0")
   testImplementation("io.netty:netty-all:4.2.15.Final")
   testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
+  testImplementation("org.mockito:mockito-core:5.12.0")
   testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -944,6 +945,8 @@ tasks {
           ?: throw GradleException("test.maxParallelForks must be a positive integer, got: $value")
       }
       .getOrElse(minOf(4, maxOf(1, Runtime.getRuntime().availableProcessors() / 2), gradle.startParameter.maxWorkerCount))
+    jvmArgs("--add-opens=java.base/java.lang=ALL-UNNAMED")
+    jvmArgs("-XX:+EnableDynamicAgentLoading")
   }
 
   jacocoTestReport {

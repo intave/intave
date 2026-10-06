@@ -1,33 +1,43 @@
 package de.jpx3.intave.klass.create;
 
+import de.jpx3.intave.access.IntaveInternalException;
+import de.jpx3.intave.annotate.Nullable;
+import de.jpx3.intave.library.asm.MethodVisitor;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.IntUnaryOperator;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 public final class IRXClassFactory {
+  private static final boolean DEBUG_SAVE_GENERATED_CLASSES = false;
+  static boolean TEST_MODE = false;
+
+  @SuppressWarnings("unchecked")
   public static <T> Class<T> assembleCallerClass(
     ClassLoader classLoader,
-    Class<? super T> superClass, String sourceClassName,
-    String callerMethodName, String callerMethodDescription, String castCalledMethodDescription,
-    String calledClassName,
-    String calledMethodName, String calledMethodDescription,
-    boolean isStatic, boolean interfaceCall,
-    IntUnaryOperator swaps
+    Method toImplement,
+    Method target,
+    @Nullable Function<String, BiConsumer<String, MethodVisitor>> extraParamInstructions
   ) {
-    //noinspection unchecked
-    return (Class<T>) IRXClassAssembler.generateCallerClass(
-      classLoader,
-      sourceClassName,
-      findClassName(), superClass,
-      callerMethodName, callerMethodDescription, castCalledMethodDescription,
-      calledClassName,
-      calledMethodName, calledMethodDescription,
-      isStatic, interfaceCall,
-      swaps
+    String className = findClassName();
+    byte[] classBytes = IRXClassAssembler.generateCallerClass(
+      className, toImplement, target, extraParamInstructions
     );
+    loadClass(classLoader, className, classBytes);
+    try {
+      return (Class<T>) Class.forName(className.replace('/', '.'), false, classLoader);
+    } catch (ClassNotFoundException exception) {
+      throw new IntaveInternalException(exception);
+    }
   }
 
   private static final Set<String> CLASSES_CREATED = new HashSet<>();
@@ -59,7 +69,7 @@ public final class IRXClassFactory {
       }
     } while (classExists(randomClassName.toString()));
     CLASSES_CREATED.add(randomClassName.toString());
-    return "de/jpx3/intave/" + randomClassName;
+    return "de/jpx3/intave/generated/" + randomClassName;
   }
 
   private static final Set<String> CLASSES_FOUND = new HashSet<>();
@@ -68,19 +78,69 @@ public final class IRXClassFactory {
     if (CLASSES_CREATED.contains(className) || CLASSES_FOUND.contains(className)) {
       return true;
     }
-    if (de.jpx3.classloader.ClassLoader.classLoaded("de.jpx3.intave." + className)) {
+    if (TEST_MODE) {
+      try {
+        Method findLoadedClass = java.lang.ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
+        if (!findLoadedClass.isAccessible()) {
+          findLoadedClass.setAccessible(true);
+        }
+        return findLoadedClass.invoke(
+          de.jpx3.classloader.ClassLoader.class.getClassLoader(),
+          "de.jpx3.intave.generated." + className
+        ) != null;
+      } catch (Exception ex) {
+        ex.printStackTrace();
+        return true;
+      }
+    }
+    if (de.jpx3.classloader.ClassLoader.classLoaded("de.jpx3.intave.generated." + className)) {
       CLASSES_FOUND.add(className);
       return true;
     }
     ClassLoader classLoader = IRXClassFactory.class.getClassLoader();
     try (
-      InputStream stream = classLoader.getResourceAsStream(String.format("de/jpx3/intave/%s.class", className));
+      InputStream stream = classLoader.getResourceAsStream("de/jpx3/intave/generated/" + className + ".class");
     ) {
       if (stream != null) {
         CLASSES_FOUND.add(className);
         return true;
       }
-    } catch (IOException ignored) {}
+    } catch (IOException ignored) {
+    }
     return false;
   }
+
+  private static void loadClass(ClassLoader classLoader, String className, byte[] classBytes) {
+    if (DEBUG_SAVE_GENERATED_CLASSES) {
+      try {
+        File file = new File("generated_classes/" + className.replace('/', '_') + ".class");
+        file.getParentFile().mkdirs();
+        Path path = file.toPath();
+        System.out.println("Writing generated class to " + path.toAbsolutePath());
+        Files.write(path, classBytes);
+      } catch (IOException exception) {
+        throw new RuntimeException(exception);
+      }
+    }
+    if (TEST_MODE) {
+      try {
+        Method defineClass = ClassLoader.class.getDeclaredMethod("defineClass", byte[].class, int.class, int.class);
+        try {
+          defineClass.setAccessible(true);
+        } catch (Exception exception) {
+          throw new IntaveInternalException(
+            "Failed to acquire class-loading permissions from the JVM. If you are running Intave on Java 16, add" +
+              " \"--add-opens java.base/java.lang=ALL-UNNAMED\" to your startup arguments",
+            exception
+          );
+        }
+        defineClass.invoke(classLoader, classBytes, 0, classBytes.length);
+      } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException exception) {
+        throw new IntaveInternalException(exception);
+      }
+      return;
+    }
+    de.jpx3.classloader.ClassLoader.classLoad(classBytes);
+  }
+
 }

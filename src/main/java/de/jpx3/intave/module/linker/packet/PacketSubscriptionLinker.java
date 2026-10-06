@@ -20,6 +20,8 @@ import com.comphenix.protocol.injector.packet.PacketRegistry;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.klass.create.IRXClassFactory;
+import de.jpx3.intave.library.asm.Label;
+import de.jpx3.intave.library.asm.MethodVisitor;
 import de.jpx3.intave.library.asm.Type;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.OneForAll;
@@ -38,13 +40,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.IntFunction;
-import java.util.function.IntUnaryOperator;
+import java.util.function.*;
 
 import static de.jpx3.intave.IntaveControl.IGNORE_CHUNK_PACKETS;
 
+import static de.jpx3.intave.library.asm.Opcodes.*;
+
 public final class PacketSubscriptionLinker extends Module {
+
   private static boolean IGNORE_CHAT_PACKETS = false;
   private static boolean IGNORE_SCOREBOARD_TEAM_PACKETS = false;
   private final IntavePlugin plugin;
@@ -169,20 +172,22 @@ public final class PacketSubscriptionLinker extends Module {
     boolean ignoreCancelled = metadata.ignoreCancelled();
 
     switch (metadata.engine()) {
-      case INTERNAL:
-        PacketSubscriptionMethodExecutor executor = assemblePESubscriptionMethodCaller(instanceProvider.type(), method, metadata.engine());
+      case INTERNAL: {
+        PacketSubscriptionMethodExecutor executor = assemblePESubscriptionMethodCaller(method, metadata.engine());
         PacketType[] packetTypes = translateProtocolLibPacketTypes(metadata.packetsIn(), metadata.packetsOut(), metadata.debug());
         performCustomLinkage(instanceProvider, priority, packetTypes, ignoreCancelled, methodName, executor);
         break;
-      case PROTOCOLLIB:
-        executor = assemblePESubscriptionMethodCaller(instanceProvider.type(), method, metadata.engine());
-        packetTypes = translateProtocolLibPacketTypes(metadata.packetsIn(), metadata.packetsOut(), metadata.debug());
+      }
+      case PROTOCOLLIB: {
+        PacketSubscriptionMethodExecutor executor = assemblePESubscriptionMethodCaller(method, metadata.engine());
+        PacketType[] packetTypes = translateProtocolLibPacketTypes(metadata.packetsIn(), metadata.packetsOut(), metadata.debug());
         if (metadata.prioritySlot() == PrioritySlot.INTERNAL) {
           performInternalProtocolLibLinkage(instanceProvider, priority, packetTypes, ignoreCancelled, methodName, executor);
         } else {
           performExternalProtocolLibLinkage(instanceProvider, priority, packetTypes, ignoreCancelled, methodName, executor);
         }
         break;
+      }
     }
   }
 
@@ -327,122 +332,129 @@ public final class PacketSubscriptionLinker extends Module {
     return packetType.name() != null && packetType.name().equalsIgnoreCase(name);
   }
 
-  private static final ThreadLocal<Map<Integer, Object[]>> argumentCache = ThreadLocal.withInitial(HashMap::new);
-  private static final ThreadLocal<Map<Integer, Boolean>> argumentLocks = ThreadLocal.withInitial(HashMap::new);
+  
+  private static final Map<String, BiConsumer<String, MethodVisitor>> extraParamInstructions = new HashMap<>();
+
+  private static Method getMethod(Class<?> clazz, String methodName, Class<?>... parameterTypes) {
+    try {
+      return clazz.getMethod(methodName, parameterTypes);
+    } catch (NoSuchMethodException e) {
+      throw new RuntimeException("Failed to find method " + methodName + " in class " + clazz.getCanonicalName(), e);
+    }
+  }
+  
+  private static void visitMethodInsn(MethodVisitor mv, Method method) {
+    mv.visitMethodInsn(
+      Modifier.isStatic(method.getModifiers()) ? INVOKESTATIC : INVOKEVIRTUAL,
+      Type.getInternalName(method.getDeclaringClass()),
+      method.getName(),
+      Type.getMethodDescriptor(method),
+      false
+    );
+  }
+  
+  static {
+    // locals: 0 - this, 1 - subscriber, 2 - PacketEvent, 3 - PacketReader (if applicable)
+    extraParamInstructions.put(Player.class.getName(), (className, mv) -> {
+      mv.visitVarInsn(ALOAD, 2);
+      visitMethodInsn(mv, getMethod(PacketEvent.class, "getPlayer"));
+    } );
+    extraParamInstructions.put(User.class.getName(), (className, mv) -> {
+      mv.visitVarInsn(ALOAD, 2);
+      visitMethodInsn(mv, getMethod(PacketEvent.class, "getPlayer"));
+      visitMethodInsn(mv, getMethod(UserRepository.class, "userOf", Player.class));
+    } );
+    extraParamInstructions.put(Cancellable.class.getName(), (className, mv) -> {
+      mv.visitVarInsn(ALOAD, 2);
+    } );
+    extraParamInstructions.put(PacketContainer.class.getName(), (className, mv) -> {
+      mv.visitVarInsn(ALOAD, 2);
+      visitMethodInsn(mv, getMethod(PacketEvent.class, "getPacket"));
+    } );
+    extraParamInstructions.put(PacketReader.class.getName(), (className, mv) -> {
+      // IRXClassAssembler injects the field "block" into the generated class
+      // based on "PacketReader" (or subtype) presence in the target method's parameters
+      mv.visitVarInsn(ALOAD, 0);
+      mv.visitFieldInsn(GETFIELD, className, "block", "Z");
+      mv.visitInsn(ICONST_0);
+      Label startLabel = new Label();
+      mv.visitJumpInsn(IF_ICMPEQ, startLabel);
+      mv.visitInsn(RETURN);
+      mv.visitLabel(startLabel);
+      
+      mv.visitVarInsn(ALOAD, 2);
+      visitMethodInsn(mv, getMethod(PacketEvent.class, "getPacket"));
+      
+      Label tryStart = new Label();
+      mv.visitLabel(tryStart);
+      visitMethodInsn(mv, getMethod(PacketReaders.class, "readerOf", PacketContainer.class));
+      Label continueLabel = new Label();
+      mv.visitJumpInsn(GOTO, continueLabel);
+      Label tryEnd = new Label();
+      mv.visitLabel(tryEnd);
+      {
+        // catch
+        Label catchBlock = new Label();
+        mv.visitTryCatchBlock(tryStart, tryEnd, catchBlock, Type.getInternalName(Exception.class));
+        mv.visitLabel(catchBlock);
+        // pop the exception off the stack, we don't need it
+        mv.visitInsn(POP);
+        // this.block = true;
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitInsn(ICONST_1);
+        mv.visitFieldInsn(PUTFIELD, className, "block", "Z");
+        // IntaveLogger.logger().info(subscriber.getClass().getCanonicalName() + " skipped packet type due to ProtocolLib missing packet " + event.getPacketType().name());
+        visitMethodInsn(mv, getMethod(IntaveLogger.class, "logger"));
+        mv.visitTypeInsn(NEW, Type.getInternalName(StringBuilder.class));
+        mv.visitInsn(DUP);
+        mv.visitMethodInsn(INVOKESPECIAL, Type.getInternalName(StringBuilder.class), "<init>", "()V", false);
+        mv.visitVarInsn(ALOAD, 1);
+        visitMethodInsn(mv, getMethod(Object.class, "getClass"));
+        visitMethodInsn(mv, getMethod(Class.class, "getCanonicalName"));
+        visitMethodInsn(mv, getMethod(StringBuilder.class, "append", String.class));
+        mv.visitLdcInsn(" skipped packet type due to ProtocolLib missing packet ");
+        visitMethodInsn(mv, getMethod(StringBuilder.class, "append", String.class));
+        mv.visitVarInsn(ALOAD, 2);
+        visitMethodInsn(mv, getMethod(PacketEvent.class, "getPacketType"));
+        visitMethodInsn(mv, getMethod(PacketType.class, "name"));
+        visitMethodInsn(mv, getMethod(StringBuilder.class, "append", String.class));
+        visitMethodInsn(mv, getMethod(StringBuilder.class, "toString"));
+        visitMethodInsn(mv, getMethod(IntaveLogger.class, "info", String.class));
+        mv.visitInsn(RETURN);
+        //end catch
+      }
+      mv.visitLabel(continueLabel);
+      mv.visitInsn(DUP);
+      mv.visitVarInsn(ASTORE, 3);
+    } );
+    extraParamInstructions.put(PacketEvent.class.getName(), (className, mv) -> {
+      mv.visitVarInsn(ALOAD, 2);
+    } );
+    extraParamInstructions.put(PacketType.class.getName(), (className, mv) -> {
+      mv.visitVarInsn(ALOAD, 2);
+      visitMethodInsn(mv, getMethod(PacketEvent.class, "getPacketType"));
+    } );
+  }
 
   private PacketSubscriptionMethodExecutor assemblePESubscriptionMethodCaller(
-    Class<? extends PacketEventSubscriber> targetClass,
     Method calledMethod,
     Engine engine
   ) {
+    Class<PacketSubscriptionMethodExecutor> executorClass;
     if (calledMethod.getParameterCount() == 1 && calledMethod.getParameterTypes()[0] == PacketEvent.class) {
-      String packetSubscriberSuperClassPath = canonicalRepresentation(className(PacketEventSubscriber.class));
-      String packetSubscriberClassPath = canonicalRepresentation(className(targetClass));
-      String packetEventClassPath = canonicalRepresentation(className(PacketEvent.class));
-      Class<PacketSubscriptionMethodExecutor> executorClass = IRXClassFactory.assembleCallerClass(
-        PacketSubscriptionLinker.class.getClassLoader(),
-        PacketSubscriptionMethodExecutor.class,
-        "<irx>",
-        "invoke",
-        "(L" + packetSubscriberSuperClassPath + ";L" + packetEventClassPath + ";)V",
-        "(L" + packetSubscriberClassPath + ";L" + packetEventClassPath + ";)V",
-        packetSubscriberClassPath,
-        calledMethod.getName(),
-        Type.getMethodDescriptor(calledMethod),
-        false, false,
-        IntUnaryOperator.identity()
+      executorClass = IRXClassFactory.assembleCallerClass(PacketSubscriptionLinker.class.getClassLoader(),
+        PacketSubscriptionMethodExecutor.class.getMethods()[0],
+        calledMethod,
+        null
       );
-      return instanceOf(executorClass);
     } else {
-      Class<?>[] parameterTypes = calledMethod.getParameterTypes();
-      int length = parameterTypes.length;
-
-      int playerParameterIndex = findParameterPosition(parameterTypes, Player.class);
-      int userParameterPosition = findParameterPosition(parameterTypes, User.class);
-      int cancelableParameterPosition = findParameterPosition(parameterTypes, Cancellable.class);
-      int packetContainerParameterPosition = findParameterPosition(parameterTypes, PacketContainer.class);
-      int packetReaderParameterPosition = findParameterPosition(parameterTypes, PacketReader.class);
-      int packetEventParameterPosition = findParameterPosition(parameterTypes, PacketEvent.class);
-      int packetTypeParameterPosition = findParameterPosition(parameterTypes, PacketType.class);
-
-      AtomicBoolean block = new AtomicBoolean(false);
-
-      return (subscriber, event) -> {
-        if (block.get()) {
-          return;
-        }
-        Player player = event.getPlayer();
-
-        Map<Integer, Boolean> locks = argumentLocks.get();
-        Boolean isLocked = locks.get(length);
-        if (isLocked == null) {
-          locks.put(length, true);
-          isLocked = false;
-        }
-
-        Object[] arguments = isLocked ? new Object[length] : argumentCache.get().computeIfAbsent(length, x -> new Object[length]);
-
-        if (playerParameterIndex != -1) {
-          arguments[playerParameterIndex] = player;
-        }
-        if (userParameterPosition != -1) {
-          arguments[userParameterPosition] = UserRepository.userOf(player);
-        }
-        if (cancelableParameterPosition != -1) {
-          arguments[cancelableParameterPosition] = event;
-        }
-        if (packetContainerParameterPosition != -1) {
-          arguments[packetContainerParameterPosition] = event.getPacket();
-        }
-        PacketReader packetReader = null;
-        if (packetReaderParameterPosition != -1) {
-          try {
-            packetReader = PacketReaders.readerOf(event.getPacket());
-            arguments[packetReaderParameterPosition] = packetReader;
-          } catch (Exception e) {
-//            throw new RuntimeException("Failed to create packet reader for packet " + event.getPacketType() + " in " + subscriber.getClass().getCanonicalName(), e);
-            block.set(true);
-//            IntaveLogger.logger().error("Failed to create packet reader for packet " + event.getPacketType() + " in " + subscriber.getClass().getCanonicalName());
-            IntaveLogger.logger().info(subscriber.getClass().getCanonicalName() + " skipped packet type due to ProtocolLib missing packet " + event.getPacketType().name());
-            return;
-          }
-        }
-        if (packetEventParameterPosition != -1) {
-          arguments[packetEventParameterPosition] = event;
-        }
-        if (packetTypeParameterPosition != -1) {
-          arguments[packetTypeParameterPosition] = event.getPacketType();
-        }
-
-        try {
-          calledMethod.invoke(subscriber, arguments);
-        } catch (Exception e) {
-          throw new RuntimeException("Failed to invoke packet subscription method " + calledMethod + " in " + subscriber.getClass().getCanonicalName(), e);
-        }
-
-        if (packetReader != null) {
-          packetReader.releaseSafe();
-        }
-
-        if (!isLocked) {
-          locks.put(length, false);
-          Arrays.fill(arguments, null);
-        }
-      };
+      executorClass = IRXClassFactory.assembleCallerClass(PacketSubscriptionLinker.class.getClassLoader(),
+        PacketSubscriptionMethodExecutor.class.getMethods()[0],
+        calledMethod,
+        extraParamInstructions::get
+      );
     }
-  }
-
-  private static int findParameterPosition(Class<?>[] parameterTypes, Class<?> parameterType) {
-    for (int i = 0; i < parameterTypes.length; i++) {
-      if (parameterTypes[i] == parameterType) {
-        return i;
-      }
-      // or is a subclass of the parameter type
-      if (parameterType.isAssignableFrom(parameterTypes[i])) {
-        return i;
-      }
-    }
-    return -1;
+    return instanceOf(executorClass);
   }
 
   private <T> T instanceOf(Class<T> clazz) {
@@ -451,14 +463,6 @@ public final class PacketSubscriptionLinker extends Module {
     } catch (InstantiationException | IllegalAccessException exception) {
       throw new Error(exception);
     }
-  }
-
-  private String className(Class<?> clazz) {
-    return clazz.getCanonicalName();
-  }
-
-  private String canonicalRepresentation(String input) {
-    return input.replaceAll("\\.", "/");
   }
 
   private static <T> T[] merge(T[] array1, T[] array2) {
