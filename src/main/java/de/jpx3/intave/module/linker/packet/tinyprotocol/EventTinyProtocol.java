@@ -6,6 +6,8 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.injector.packet.PacketRegistry;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.module.linker.packet.FilteringPacketAdapter;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import io.netty.channel.Channel;
 import org.bukkit.entity.Player;
 
@@ -26,7 +28,9 @@ final class EventTinyProtocol extends TinyProtocol {
       Collection<FilteringPacketAdapter> subscriptions = injectionService.subscriptionsOf(packetType);
       if (subscriptions != null && !subscriptions.isEmpty()) {
         PacketEvent packetEvent = PacketEvent.fromServer(packet, PacketContainer.fromPacket(packet), receiver);
-        subscriptions.forEach(subscription -> subscription.onPacketSending(packetEvent));
+        // There will not be a user on login packet send, so the filtering adapters resolve it themselves
+        User user = packetType != PacketType.Play.Server.LOGIN && receiver != null ? UserRepository.userOf(receiver) : null;
+        subscriptions.forEach(subscription -> subscription.onPacketSending(packetEvent, user));
         packet = packetEvent.getPacket().getHandle();
         if (packetEvent.isCancelled()) {
           return null;

@@ -157,7 +157,7 @@ public final class EntityTracker extends Module {
     if (duplicatedEntityIds.contains(entityId)) {
       return;
     }
-    Entity entity = processEntitySpawn(player, event);
+    Entity entity = processEntitySpawn(user, player, event);
     if (entity == null) {
       return;
     }
@@ -250,8 +250,7 @@ public final class EntityTracker extends Module {
     }
   }
 
-  private Entity processEntitySpawn(Player player, PacketEvent event) {
-    User user = UserRepository.userOf(player);
+  private Entity processEntitySpawn(User user, Player player, PacketEvent event) {
     AttackMetadata attackData = user.meta().attack();
     PacketType packetType = event.getPacketType();
     PacketContainer packet = event.getPacket();
@@ -298,28 +297,27 @@ public final class EntityTracker extends Module {
     ignoreCancelled = false
   )
   public void receiveEntityDestroy(PacketEvent event, Player player, EntityIterable iterable) {
+    User user = UserRepository.userOf(player);
     iterable.forEach(entityId ->
-      enterEntityDestroy(event, player, entityId)
+      enterEntityDestroy(event, user, player, entityId)
     );
   }
 
-  private void enterEntityDestroy(PacketEvent event, Player player, int entityID) {
+  private void enterEntityDestroy(PacketEvent event, User user, Player player, int entityID) {
     // Entity destroy packets are NEVER to be synchronized
     /*
     Important: When the destroy entity packet is synchronised the spawn entity packet needs also be synchronized because:
     When you respawn the server sends a destroy entity packet and a spawn entity packet pretty fast one after another and if the
     destroy entity packet gets executed after the spawn packet the entity will be destroyed right after it gets spawned
      */
-    User user = UserRepository.userOf(player);
     ConnectionMetadata connection = user.meta().connection();
     if (connection.duplicatedEntityIds.contains(entityID)) {
       return;
     }
-    processEntityDestroy(event, player, entityID);
+    processEntityDestroy(event, user, player, entityID);
   }
 
-  private void processEntityDestroy(PacketEvent event, Player player, int entityId) {
-    User user = UserRepository.userOf(player);
+  private void processEntityDestroy(PacketEvent event, User user, Player player, int entityId) {
     AttackMetadata attackData = user.meta().attack();
     ConnectionMetadata connection = user.meta().connection();
     MovementMetadata movementData = user.meta().movement();
@@ -403,7 +401,7 @@ public final class EntityTracker extends Module {
       int ticksAfterPositionChange = entity.position.newPosRotationIncrements;
       entity.onUpdate();
       if (entity.tracingEnabled() && ticksAfterPositionChange > 0) {
-        nayoroEntityPositionUpdate(player, entity);
+        nayoroEntityPositionUpdate(user, entity);
       }
 
       if (user.receives(MessageChannel.DEBUG_HITBOXES)) {
@@ -441,7 +439,7 @@ public final class EntityTracker extends Module {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
-    Entity entity = wrappedEntityByEntityTeleportPacket(event);
+    Entity entity = wrappedEntityByEntityTeleportPacket(user, event);
     if (entity == null) {
       return;
     }
@@ -462,7 +460,7 @@ public final class EntityTracker extends Module {
         entity.verifiedPosition = false;
         entity.handleEntityPositionSync(user, packet);
         entity.clientSynchronized = true;
-        nayoroEntityPositionUpdate(player, entity);
+        nayoroEntityPositionUpdate(user, entity);
       };
       FeedbackObserver observer = entity.feedbackTracker();
       int options = entity.distanceToPlayerCache < 6 ? TRACER_ENTITY_IS_NEAR : TRACER_ENTITY_IS_FAR;
@@ -487,7 +485,7 @@ public final class EntityTracker extends Module {
     Player player = event.getPlayer();
     User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
-    Entity entity = wrappedEntityByEntityTeleportPacket(event);
+    Entity entity = wrappedEntityByEntityTeleportPacket(user, event);
     if (entity == null) {
       return;
     }
@@ -509,7 +507,7 @@ public final class EntityTracker extends Module {
         entity.verifiedPosition = false;
         entity.handleEntityTeleport(user, packet);
         entity.clientSynchronized = true;
-        nayoroEntityPositionUpdate(player, entity);
+        nayoroEntityPositionUpdate(user, entity);
       };
       FeedbackObserver observer = entity.feedbackTracker();
       int options = entity.distanceToPlayerCache < 6 ? TRACER_ENTITY_IS_NEAR : TRACER_ENTITY_IS_FAR;
@@ -527,9 +525,8 @@ public final class EntityTracker extends Module {
     }
   }
 
-  private Entity wrappedEntityByEntityTeleportPacket(PacketEvent event) {
+  private Entity wrappedEntityByEntityTeleportPacket(User user, PacketEvent event) {
     Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
     PacketContainer packet = event.getPacket();
     Integer entityIdBoxed = packet.getIntegers().readSafely(0);
     if (entityIdBoxed == null) {
@@ -590,7 +587,7 @@ public final class EntityTracker extends Module {
       EmptyFeedbackCallback task = () -> {
         entity.verifiedPosition = false;
         entity.applyRelativeMove(dx, dy, dz, divisor);
-        nayoroEntityPositionUpdate(player, entity);
+        nayoroEntityPositionUpdate(user, entity);
       };
       FeedbackObserver tracker = entity.feedbackTracker();
       int options = entity.distanceToPlayerCache < 6 ? TRACER_ENTITY_IS_NEAR : TRACER_ENTITY_IS_FAR;
@@ -628,9 +625,9 @@ public final class EntityTracker extends Module {
     nayoro.emit(user, event);
   }
 
-  private void nayoroEntityPositionUpdate(Player player, Entity entity) {
+  private void nayoroEntityPositionUpdate(User user, Entity entity) {
     Nayoro nayoro = Modules.nayoro();
-    if (!nayoro.recordingActiveFor(UserRepository.userOf(player))) {
+    if (!nayoro.recordingActiveFor(user)) {
       return;
     }
     Entity.EntityPositionContext position = entity.position;
@@ -641,7 +638,7 @@ public final class EntityTracker extends Module {
       new ac.intave.samples.share.Rotation(0, 0),
       new ac.intave.samples.share.Rotation(0, 0)
     );
-    nayoro.emit(UserRepository.userOf(player), event);
+    nayoro.emit(user, event);
   }
 
   private Entity spawnMobByBukkitEntity(User user, org.bukkit.entity.Entity bukkitEntity) {
@@ -862,7 +859,7 @@ public final class EntityTracker extends Module {
     int entityId = reader.entityId();
 
     if (player.getEntityId() == entityId) {
-      synchronizePlayerHealth(player, reader);
+      synchronizePlayerHealth(user, reader);
       reader.release();
       return;
     }
@@ -928,10 +925,10 @@ public final class EntityTracker extends Module {
 
     // Firework
     if (isFireworkRocket) {
-      handleFirework(event, player, entityId, reader);
+      handleFirework(event, user, player, entityId, reader);
     } else if (isLivingEntity) {
       // Health
-      processHealthMetadata(player, entity, reader);
+      processHealthMetadata(user, entity, reader);
 
       // Entity Size
       EntityTypeData entityTypedata = entityTypeResolver.entityTypeDataOfEntityMetadata(event, entityTypeId, reader);
@@ -946,22 +943,21 @@ public final class EntityTracker extends Module {
     return type != null && type.name() != null && type.name().contains("Firework");
   }
 
-  private void handleFirework(PacketEvent event, Player player, int fireworkEntityId, EntityMetadataReader reader) {
+  private void handleFirework(PacketEvent event, User user, Player player, int fireworkEntityId, EntityMetadataReader reader) {
     if (!MinecraftVersions.VER1_11_0.atOrAbove()) {
       return;
     }
     if (MinecraftVersions.VER1_14_0.atOrAbove()) {
-      processFireworkModern(event, player, fireworkEntityId, reader);
+      processFireworkModern(event, user, player, fireworkEntityId, reader);
     } else {
-      processFireworkLegacy(event, player, fireworkEntityId, reader);
+      processFireworkLegacy(event, user, player, fireworkEntityId, reader);
     }
   }
 
   private void processFireworkLegacy(
-    PacketEvent event, Player player,
+    PacketEvent event, User user, Player player,
     int fireworkEntityId, EntityMetadataReader reader
   ) {
-    User user = UserRepository.userOf(player);
     Object value = reader.fetchRaw(7);
     if (!(value instanceof Integer)) {
       return;
@@ -994,10 +990,9 @@ public final class EntityTracker extends Module {
   private static final int MODERN_ENTITY_ID_ACCESS_INDEX = MinecraftVersions.VER1_17_0.atOrAbove() ? 9 : 8;
 
   private void processFireworkModern(
-    PacketEvent event, Player player,
+    PacketEvent event, User user, Player player,
     int fireworkEntityId, EntityMetadataReader reader
   ) {
-    User user = UserRepository.userOf(player);
     Object value = reader.fetchRaw(MODERN_ENTITY_ID_ACCESS_INDEX);
     if (!(value instanceof OptionalInt)) {
       return;
@@ -1045,7 +1040,7 @@ public final class EntityTracker extends Module {
   private static final String FIREWORK_IDENTIFIER = "FIREWORK";
 
   private void processHealthMetadata(
-    Player player, Entity entity,
+    User user, Entity entity,
     EntityMetadataReader reader
   ) {
     Object raw = reader.fetchRaw(HEALTH_INDEX);
@@ -1056,7 +1051,6 @@ public final class EntityTracker extends Module {
     if (health != null) {
       boolean synchronize = entity.clientSynchronized && entity.tracingEnabled();
       if (synchronize) {
-        User user = UserRepository.userOf(player);
         user.tracedTickFeedback(() -> updateHealthState(entity, health), entity.feedbackTracker());
       } else {
         updateHealthState(entity, health);
@@ -1065,7 +1059,7 @@ public final class EntityTracker extends Module {
   }
 
   private void synchronizePlayerHealth(
-    Player player, EntityMetadataReader reader
+    User user, EntityMetadataReader reader
   ) {
     Object raw = reader.fetchRaw(HEALTH_INDEX);
     if (raw == null) {
@@ -1073,7 +1067,6 @@ public final class EntityTracker extends Module {
     }
     Float health = readHealthFromRaw(raw);
     if (health != null) {
-      User user = UserRepository.userOf(player);
       AbilityMetadata abilityData = user.meta().abilities();
       abilityData.unsynchronizedHealth = health;
       user.tickFeedback(() -> {
