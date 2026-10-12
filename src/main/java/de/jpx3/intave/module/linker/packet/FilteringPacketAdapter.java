@@ -60,6 +60,13 @@ public final class FilteringPacketAdapter extends WeakReferencePacketAdapter imp
 
   @Override
   public void onPacketReceiving(PacketEvent event) {
+    onPacketReceiving(event, null);
+  }
+
+  /**
+   * @param user the already resolved user of the event's player, or null to resolve it here
+   */
+  public void onPacketReceiving(PacketEvent event, User user) {
     if (!validateEvent(event)) {
       return;
     }
@@ -67,7 +74,9 @@ public final class FilteringPacketAdapter extends WeakReferencePacketAdapter imp
     try {
       Timings.EXE_NETTY.start();
       timing.start();
-      User user = UserRepository.userOf(event.getPlayer());
+      if (user == null) {
+        user = UserRepository.userOf(event.getPlayer());
+      }
       if (user.shouldIgnoreNextInboundPacket()) {
         return;
       }
@@ -90,11 +99,20 @@ public final class FilteringPacketAdapter extends WeakReferencePacketAdapter imp
 
   @Override
   public void onPacketSending(PacketEvent event) {
+    onPacketSending(event, null);
+  }
+
+  /**
+   * @param user the already resolved user of the event's player, or null to resolve it here
+   */
+  public void onPacketSending(PacketEvent event, User user) {
     if (!validateEvent(event)) {
       return;
     }
     try {
-      User user = UserRepository.userOf(event.getPlayer());
+      if (user == null) {
+        user = UserRepository.userOf(event.getPlayer());
+      }
       if (user.shouldIgnoreNextOutboundPacket()) {
         return;
       }

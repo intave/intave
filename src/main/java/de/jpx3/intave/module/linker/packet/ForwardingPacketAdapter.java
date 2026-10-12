@@ -2,7 +2,6 @@ package de.jpx3.intave.module.linker.packet;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerPriority;
-import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.user.User;
@@ -43,16 +42,17 @@ public final class ForwardingPacketAdapter extends WeakReferencePacketAdapter {
     if (player == null) {
       return;
     }
-    // There will not be a user on login packet send
+    // There will not be a user on login packet send, so the filtering adapters resolve it themselves
+    User user = null;
     if (event.getPacketType() != PacketType.Play.Server.LOGIN) {
-      User user = UserRepository.userOf(player);
+      user = UserRepository.userOf(player);
       if (user.shouldIgnoreNextOutboundPacket()) {
 //      user.receiveNextOutboundPacketAgain();
         return;
       }
     }
-    for (PacketAdapter filteringPacketAdapter : targetList) {
-      filteringPacketAdapter.onPacketSending(event);
+    for (FilteringPacketAdapter filteringPacketAdapter : targetList) {
+      filteringPacketAdapter.onPacketSending(event, user);
     }
   }
 
@@ -70,8 +70,8 @@ public final class ForwardingPacketAdapter extends WeakReferencePacketAdapter {
       user.receiveNextInboundPacketAgain();
       return;
     }
-    for (PacketAdapter filteringPacketAdapter : targetList) {
-      filteringPacketAdapter.onPacketReceiving(event);
+    for (FilteringPacketAdapter filteringPacketAdapter : targetList) {
+      filteringPacketAdapter.onPacketReceiving(event, user);
     }
   }
 
