@@ -22,6 +22,7 @@ import de.jpx3.intave.diagnostic.timings.Timings;
 import de.jpx3.intave.module.linker.SubscriptionInstanceProvider;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -60,13 +61,13 @@ public final class FilteringPacketAdapter extends WeakReferencePacketAdapter imp
 
   @Override
   public void onPacketReceiving(PacketEvent event) {
-    onPacketReceiving(event, null);
+    onPacketReceiving(event, UserRepository.userOf(event.getPlayer()));
   }
 
   /**
-   * @param user the already resolved user of the event's player, or null to resolve it here
+   * @param user the already resolved user of the event's player
    */
-  public void onPacketReceiving(PacketEvent event, User user) {
+  public void onPacketReceiving(PacketEvent event, @NotNull User user) {
     if (!validateEvent(event)) {
       return;
     }
@@ -74,9 +75,6 @@ public final class FilteringPacketAdapter extends WeakReferencePacketAdapter imp
     try {
       Timings.EXE_NETTY.start();
       timing.start();
-      if (user == null) {
-        user = UserRepository.userOf(event.getPlayer());
-      }
       if (user.shouldIgnoreNextInboundPacket()) {
         return;
       }
@@ -99,20 +97,17 @@ public final class FilteringPacketAdapter extends WeakReferencePacketAdapter imp
 
   @Override
   public void onPacketSending(PacketEvent event) {
-    onPacketSending(event, null);
+    onPacketSending(event, UserRepository.userOf(event.getPlayer()));
   }
 
   /**
-   * @param user the already resolved user of the event's player, or null to resolve it here
+   * @param user the already resolved user of the event's player
    */
-  public void onPacketSending(PacketEvent event, User user) {
+  public void onPacketSending(PacketEvent event, @NotNull User user) {
     if (!validateEvent(event)) {
       return;
     }
     try {
-      if (user == null) {
-        user = UserRepository.userOf(event.getPlayer());
-      }
       if (user.shouldIgnoreNextOutboundPacket()) {
         return;
       }

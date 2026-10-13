@@ -28,9 +28,13 @@ final class EventTinyProtocol extends TinyProtocol {
       Collection<FilteringPacketAdapter> subscriptions = injectionService.subscriptionsOf(packetType);
       if (subscriptions != null && !subscriptions.isEmpty()) {
         PacketEvent packetEvent = PacketEvent.fromServer(packet, PacketContainer.fromPacket(packet), receiver);
-        // There will not be a user on login packet send, so the filtering adapters resolve it themselves
-        User user = packetType != PacketType.Play.Server.LOGIN && receiver != null ? UserRepository.userOf(receiver) : null;
-        subscriptions.forEach(subscription -> subscription.onPacketSending(packetEvent, user));
+        // The user is registered while the login packet is being sent, so the filtering adapters resolve it themselves
+        if (packetType == PacketType.Play.Server.LOGIN) {
+          subscriptions.forEach(subscription -> subscription.onPacketSending(packetEvent));
+        } else {
+          User user = UserRepository.userOf(receiver);
+          subscriptions.forEach(subscription -> subscription.onPacketSending(packetEvent, user));
+        }
         packet = packetEvent.getPacket().getHandle();
         if (packetEvent.isCancelled()) {
           return null;
