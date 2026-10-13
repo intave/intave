@@ -11,7 +11,7 @@ import de.jpx3.intave.executor.task.Task;
 import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
-import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.plib.PacketSender;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.storage.PlayerStorage;

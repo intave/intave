@@ -15,7 +15,7 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.plib.PacketSender;
 import de.jpx3.intave.packet.reader.PayloadInReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;

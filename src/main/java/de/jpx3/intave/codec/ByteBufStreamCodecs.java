@@ -21,10 +21,12 @@ public final class ByteBufStreamCodecs {
     buf -> (int) buf.readUnsignedByte()
   );
   public static final StreamCodec<ByteBuf, ByteBuf, Integer> INTEGER = StreamCodec.of(ByteBuf::writeInt, ByteBuf::readInt);
+  public static final StreamCodec<ByteBuf, ByteBuf, Integer> VARINT = VarIntCodec.INSTANCE;
   public static final StreamCodec<ByteBuf, ByteBuf, Long> LONG = StreamCodec.of(ByteBuf::writeLong, ByteBuf::readLong);
+  public static final StreamCodec<ByteBuf, ByteBuf, Long> VARLONG = VarLongCodec.INSTANCE;
   public static final StreamCodec<ByteBuf, ByteBuf, Float> FLOAT = StreamCodec.of(ByteBuf::writeFloat, ByteBuf::readFloat);
   public static final StreamCodec<ByteBuf, ByteBuf, Double> DOUBLE = StreamCodec.of(ByteBuf::writeDouble, ByteBuf::readDouble);
-  public static final StreamCodec<ByteBuf, ByteBuf, byte[]> BYTE_ARRAY = StreamCodec.of(
+  public static final StreamCodec<ByteBuf, ByteBuf, byte[]> BYTES = StreamCodec.of(
     (buf, arr) -> {
       INTEGER.encode(buf, arr.length);
       buf.writeBytes(arr);
@@ -36,7 +38,7 @@ public final class ByteBufStreamCodecs {
       return arr;
     }
   );
-  public static final StreamCodec<ByteBuf, ByteBuf, String> STRING = BYTE_ARRAY.beforeAndAfter(String::new, String::getBytes);
+  public static final StreamCodec<ByteBuf, ByteBuf, String> STRING = BYTES.beforeAndAfter(String::new, String::getBytes);
   public static final StreamCodec<ByteBuf, ByteBuf, Material> MATERIAL = STRING.beforeAndAfter(ByteBufStreamCodecs::findOrThrow, Material::name);
   public static final StreamCodec<ByteBuf, ByteBuf, UUID> UUID = StreamCodec.of(
     (buf, uuid) -> {
@@ -66,11 +68,55 @@ public final class ByteBufStreamCodecs {
     return StreamCodec.mapCodec(keyCodec, valueCodec, ByteBufStreamCodecs.INTEGER);
   }
 
+  public static StreamCodec<ByteBuf, ByteBuf, byte[]> limitedByteArray(int maxLength) {
+    return StreamCodec.of(
+      (buf, arr) -> {
+        if (arr.length > maxLength) {
+          throw new IllegalArgumentException("Byte array length exceeds maximum length of " + maxLength);
+        }
+        INTEGER.encode(buf, arr.length);
+        buf.writeBytes(arr);
+      },
+      buf -> {
+        int length = INTEGER.decode(buf);
+        if (length > maxLength) {
+          throw new IllegalArgumentException("Byte array length exceeds maximum length of " + maxLength);
+        }
+        byte[] arr = new byte[length];
+        buf.readBytes(arr);
+        return arr;
+      }
+    );
+  }
+
+  // optional
+  public static <T> StreamCodec<ByteBuf, ByteBuf, T> optionalCodecOf(
+    StreamCodec<ByteBuf, ByteBuf, T> elementCodec
+  ) {
+    return StreamCodec.of(
+      (buf, value) -> {
+        if (value == null) {
+          buf.writeBoolean(false);
+        } else {
+          buf.writeBoolean(true);
+          elementCodec.encode(buf, value);
+        }
+      },
+      buf -> {
+        boolean present = buf.readBoolean();
+        if (!present) {
+          return null;
+        }
+        return elementCodec.decode(buf);
+      }
+    );
+  }
+
   public static <T> SmartCodecBuilder<ByteBuf, ByteBuf, T> smartCodec() {
     return StreamCodec.smartCodec(
       INTEGER,
       STRING,
-      BYTE_ARRAY,
+      BYTES,
       Unpooled::buffer,
       ByteBufStreamCodecs::copyAndRelease,
       Unpooled::wrappedBuffer,

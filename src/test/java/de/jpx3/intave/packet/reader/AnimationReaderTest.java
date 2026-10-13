@@ -2,7 +2,7 @@ package de.jpx3.intave.packet.reader;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import static de.jpx3.intave.packet.reader.AnimationReader.Animation.*;
+import static de.jpx3.intave.share.EntityAnimation.*;
 
 class AnimationReaderTest {
   @Test

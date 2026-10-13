@@ -6,7 +6,7 @@ import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.PositionAndRotation;
-import de.jpx3.intave.packet.converter.PositionAndRotationConverter;
+import de.jpx3.intave.packet.plib.converter.PositionAndRotationConverter;
 import de.jpx3.intave.share.Rotation;
 
 public final class PlayerMoveReader extends AbstractPacketReader {

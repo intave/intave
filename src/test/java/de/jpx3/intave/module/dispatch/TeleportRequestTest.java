@@ -2,7 +2,7 @@ package de.jpx3.intave.module.dispatch;
 
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.packet.Relative;
+import de.jpx3.intave.share.Relative;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.PositionMoveRotation;

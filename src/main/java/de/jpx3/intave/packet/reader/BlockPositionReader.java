@@ -16,7 +16,7 @@ import com.comphenix.protocol.wrappers.MovingObjectPositionBlock;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.klass.Lookup;
-import de.jpx3.intave.packet.converter.BlockPositionConverter;
+import de.jpx3.intave.packet.plib.converter.BlockPositionConverter;
 
 public class BlockPositionReader extends AbstractPacketReader {
   private final boolean MODERN_RESOLVE = MinecraftVersions.VER1_14_0.atOrAbove();

@@ -16,7 +16,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
-import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.block.cache.BlockCache;
@@ -35,6 +34,7 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
+import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -47,7 +47,7 @@ import org.bukkit.util.Vector;
 import java.util.Collection;
 import java.util.List;
 
-import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.*;
+import static de.jpx3.intave.share.PlayerDigAction.*;
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.NEARBY_COLLISION_INACCURACY;
 import static de.jpx3.intave.module.feedback.FeedbackOptions.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
@@ -155,7 +155,7 @@ public final class BlockUpdateTracker extends Module {
     boolean check = true;
 
     if (packetType == PacketType.Play.Client.BLOCK_DIG) {
-      EnumWrappers.PlayerDigType playerDigType = ((BlockDigReader) reader).action();
+      PlayerDigAction playerDigType = ((BlockDigReader) reader).action();
       if (playerDigType == null) return;
       check = playerDigType == START_DESTROY_BLOCK || playerDigType == STOP_DESTROY_BLOCK || playerDigType == ABORT_DESTROY_BLOCK;
     } else if (packetType == PacketType.Play.Client.BLOCK_PLACE) {

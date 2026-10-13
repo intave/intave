@@ -11,29 +11,67 @@
 
 package de.jpx3.intave.packet.reader;
 
+import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.share.PlayerInfoAction;
 
 import java.util.*;
 
 public final class PlayerInfoReader extends AbstractPacketReader {
   private static final boolean MULTIPLE_ACTIONS = MinecraftVersions.VER1_19_3.atOrAbove();
 
-  public Set<EnumWrappers.PlayerInfoAction> playerInfoActions() {
+  public Set<PlayerInfoAction> playerInfoActions() {
     try {
       if (MULTIPLE_ACTIONS) {
         Set<EnumWrappers.PlayerInfoAction> actions = packet().getPlayerInfoActions().readSafely(0);
-        return actions != null ? actions : Collections.emptySet();
+        if (actions == null || actions.isEmpty()) {
+          return Collections.emptySet();
+        }
+        Set<PlayerInfoAction> converted = EnumSet.noneOf(PlayerInfoAction.class);
+        for (EnumWrappers.PlayerInfoAction action : actions) {
+          try {
+            converted.add(PlayerInfoAction.valueOf(action.name()));
+          } catch (IllegalArgumentException ignored) {
+          }
+        }
+        return converted;
       }
       EnumWrappers.PlayerInfoAction action = packet().getPlayerInfoAction().readSafely(0);
-      return action != null ? Collections.singleton(action) : Collections.emptySet();
+      return action != null
+        ? Collections.singleton(PlayerInfoAction.valueOf(action.name()))
+        : Collections.emptySet();
     } catch (RuntimeException ignored) {
       return Collections.emptySet();
     }
+  }
+
+  public void setPlayerInfoActions(Set<PlayerInfoAction> actions) {
+    setPlayerInfoActions(packet(), actions);
+  }
+
+  public static void setPlayerInfoAction(PacketContainer packet, PlayerInfoAction action) {
+    packet.getPlayerInfoAction().writeSafely(0, EnumWrappers.PlayerInfoAction.valueOf(action.name()));
+  }
+
+  public static void setPlayerInfoActions(PacketContainer packet, Set<PlayerInfoAction> actions) {
+    if (MULTIPLE_ACTIONS) {
+      Set<EnumWrappers.PlayerInfoAction> converted = EnumSet.noneOf(EnumWrappers.PlayerInfoAction.class);
+      for (PlayerInfoAction action : actions) {
+        converted.add(EnumWrappers.PlayerInfoAction.valueOf(action.name()));
+      }
+      packet.getPlayerInfoActions().writeSafely(0, converted);
+      return;
+    }
+    if (actions.size() != 1) {
+      throw new IllegalArgumentException("Legacy player info packets require exactly one action");
+    }
+    PlayerInfoAction action = actions.iterator().next();
+    packet.getPlayerInfoAction().writeSafely(0, EnumWrappers.PlayerInfoAction.valueOf(action.name()));
   }
 
   // Null means the packet cannot be inspected safely; the caller must leave it unchanged.

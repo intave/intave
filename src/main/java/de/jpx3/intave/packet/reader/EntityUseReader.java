@@ -15,30 +15,35 @@ import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedEnumEntityUseAction;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.module.linker.packet.PacketId;
+import de.jpx3.intave.share.EntityUseAction;
+import de.jpx3.intave.share.PlayerHand;
 import de.jpx3.intave.share.RawVector3d;
 import org.bukkit.util.Vector;
 
 public final class EntityUseReader extends EntityReader {
 
   public boolean isAttackPacket() {
-    return useAction() == EnumWrappers.EntityUseAction.ATTACK;
+    return useAction() == EntityUseAction.ATTACK;
   }
 
   public boolean isSecondary() {
-    return useAction() == EnumWrappers.EntityUseAction.INTERACT_AT;
+    return useAction() == EntityUseAction.INTERACT_AT;
   }
 
-  public EnumWrappers.Hand hand() {
+  public PlayerHand hand() {
     if (MinecraftVersions.VER1_9_0.below()) {
-      return EnumWrappers.Hand.MAIN_HAND;
+      return PlayerHand.MAIN_HAND;
     }
+    EnumWrappers.Hand hand;
     if (MinecraftVersions.VER26_1_1.atOrAbove()) {
-      return packet().getHands().readSafely(0);
+      hand = packet().getHands().readSafely(0);
+    } else {
+      WrappedEnumEntityUseAction wrappedAction = wrappedAction();
+      hand = wrappedAction == null
+        ? packet().getHands().readSafely(0)
+        : wrappedAction.getHand();
     }
-    WrappedEnumEntityUseAction wrappedAction = wrappedAction();
-    return wrappedAction == null
-      ? packet().getHands().readSafely(0)
-      : wrappedAction.getHand();
+    return hand == null ? null : PlayerHand.valueOf(hand.name());
   }
 
   public RawVector3d hitPosition() {
@@ -62,21 +67,21 @@ public final class EntityUseReader extends EntityReader {
     return packet().getEnumEntityUseActions().readSafely(0);
   }
 
-  public EnumWrappers.EntityUseAction useAction() {
+  public EntityUseAction useAction() {
     if (MinecraftVersions.VER26_1_1.atOrAbove()) {
       if (PacketId.Client.ATTACK_ENTITY.lookupName().equalsIgnoreCase(
         packet().getType().name()
       )) {
-        return EnumWrappers.EntityUseAction.ATTACK;
+        return EntityUseAction.ATTACK;
       }
       boolean isSecondary = packet().getBooleans().read(0);
-      return isSecondary ? EnumWrappers.EntityUseAction.INTERACT_AT : EnumWrappers.EntityUseAction.INTERACT;
+      return isSecondary ? EntityUseAction.INTERACT_AT : EntityUseAction.INTERACT;
     } else {
       EnumWrappers.EntityUseAction action = packet().getEntityUseActions().readSafely(0);
       if (action == null) {
         action = packet().getEnumEntityUseActions().read(0).getAction();
       }
-      return action;
+      return EntityUseAction.valueOf(action.name());
     }
   }
 }

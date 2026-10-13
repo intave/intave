@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction.ATTACK;
+import static de.jpx3.intave.share.EntityUseAction.ATTACK;
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.ATTACK_ENTITY;

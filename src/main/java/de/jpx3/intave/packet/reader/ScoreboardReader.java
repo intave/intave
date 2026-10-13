@@ -16,6 +16,8 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.share.ScoreboardObjectiveAction;
+import de.jpx3.intave.share.ScoreboardTeamAction;
 import de.jpx3.intave.user.meta.ClientScoreboard;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
@@ -35,9 +37,11 @@ public final class ScoreboardReader extends AbstractPacketReader {
 
   public Objective objective() {
     String name = packet().getStrings().readSafely(0);
-    int action = packet().getIntegers().read(0);
+    ScoreboardObjectiveAction action = ScoreboardObjectiveAction.byId(
+      packet().getIntegers().read(0)
+    );
     String title = null;
-    if (action != 1) {
+    if (action != ScoreboardObjectiveAction.REMOVE) {
       title = component(packet().getChatComponents().readSafely(0));
       if (title == null) {
         title = packet().getStrings().readSafely(1);
@@ -78,9 +82,9 @@ public final class ScoreboardReader extends AbstractPacketReader {
 
   public Team team() {
     String name = packet().getStrings().read(0);
-    int action = teamAction();
+    ScoreboardTeamAction action = ScoreboardTeamAction.byId(teamAction());
     List<String> entries = entries();
-    if (action != 0 && action != 2) {
+    if (action != ScoreboardTeamAction.CREATE && action != ScoreboardTeamAction.UPDATE) {
       return new Team(name, action, null, null, null, entries);
     }
 
@@ -209,9 +213,9 @@ public final class ScoreboardReader extends AbstractPacketReader {
   public static final class Objective {
     public final String name;
     public final String title;
-    public final int action;
+    public final ScoreboardObjectiveAction action;
 
-    private Objective(String name, String title, int action) {
+    private Objective(String name, String title, ScoreboardObjectiveAction action) {
       this.name = name;
       this.title = title;
       this.action = action;
@@ -249,14 +253,14 @@ public final class ScoreboardReader extends AbstractPacketReader {
 
   public static final class Team {
     public final String name;
-    public final int action;
+    public final ScoreboardTeamAction action;
     public final String prefix;
     public final String suffix;
     public final String color;
     public final List<String> entries;
 
     private Team(
-      String name, int action, String prefix, String suffix,
+      String name, ScoreboardTeamAction action, String prefix, String suffix,
       String color, List<String> entries
     ) {
       this.name = name;

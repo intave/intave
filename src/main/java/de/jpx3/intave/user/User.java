@@ -36,7 +36,7 @@ import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.violation.placeholder.Placeholders;
 import de.jpx3.intave.module.violation.placeholder.PlayerContext;
 import de.jpx3.intave.module.violation.placeholder.UserContext;
-import de.jpx3.intave.packet.Relative;
+import de.jpx3.intave.share.Relative;
 import de.jpx3.intave.player.collider.complex.Collider;
 import de.jpx3.intave.player.collider.simple.SimpleCollider;
 import de.jpx3.intave.report.Report;

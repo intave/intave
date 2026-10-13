@@ -13,7 +13,6 @@ package de.jpx3.intave.check.combat.heuristics.other;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.packet.reader.BlockDigReader;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
@@ -24,6 +23,7 @@ import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
+import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
@@ -54,14 +54,14 @@ public class ToolSwitchHeuristic extends ClassicHeuristic<ToolSwitchHeuristic.To
   )
   public void receiveBlockBreakAction(PacketEvent event, BlockDigReader reader) {
     Player player = event.getPlayer();
-    EnumWrappers.PlayerDigType digType = reader.action();
+    PlayerDigAction digType = reader.action();
     if (digType == null) return;
     ToolSwitchHeuristicMeta meta = metaOf(player);
 
     // Update breaking state ticks
-    if (digType == EnumWrappers.PlayerDigType.START_DESTROY_BLOCK) {
+    if (digType == PlayerDigAction.START_DESTROY_BLOCK) {
       meta.ticksSinceLastBreak = 0;
-    } else if (digType == EnumWrappers.PlayerDigType.STOP_DESTROY_BLOCK) {
+    } else if (digType == PlayerDigAction.STOP_DESTROY_BLOCK) {
       meta.ticksSinceLastStop = 0;
     }
   }

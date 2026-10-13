@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Minecraft Java Edition packet IDs and partial wire layouts",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "minecraftVersion", "protocolVersion", "sourceRoot", "registrationSources", "layoutCoverage", "states"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "minecraftVersion": { "type": "string", "minLength": 1 },
+    "protocolVersion": { "type": "integer", "minimum": 0 },
+    "sourceRoot": { "type": "string", "minLength": 1 },
+    "registrationSources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    },
+    "layoutCoverage": { "const": "partial" },
+    "states": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["handshaking", "status", "login", "play"],
+      "properties": {
+        "handshaking": { "$ref": "#/$defs/state" },
+        "status": { "$ref": "#/$defs/state" },
+        "login": { "$ref": "#/$defs/state" },
+        "configuration": { "$ref": "#/$defs/state" },
+        "play": { "$ref": "#/$defs/state" }
+      }
+    }
+  },
+  "$defs": {
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["serverbound", "clientbound"],
+      "properties": {
+        "serverbound": { "$ref": "#/$defs/direction" },
+        "clientbound": { "$ref": "#/$defs/direction" }
+      }
+    },
+    "direction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ids", "layouts"],
+      "properties": {
+        "ids": {
+          "description": "Mapped Java packet class name to decimal wire ID in this state and direction.",
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "layouts": {
+          "description": "Only fully extracted payload layouts. An absent entry is unresolved, not empty.",
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/layout" }
+        }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fields"],
+      "properties": {
+        "source": { "type": "string", "minLength": 1 },
+        "fields": {
+          "description": "Entire payload in wire order, excluding packet ID and transport framing.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "type"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "type": { "enum": ["boolean", "byte", "short", "int", "long", "float", "double", "varint", "varlong", "uuid", "utf8"] },
+              "maxLength": { "type": "integer", "minimum": 0 }
+            },
+            "if": { "required": ["maxLength"] },
+            "then": { "properties": { "type": { "const": "utf8" } } }
+          }
+        }
+      }
+    }
+  }
+}

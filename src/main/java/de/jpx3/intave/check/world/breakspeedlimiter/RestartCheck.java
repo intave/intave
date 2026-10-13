@@ -5,7 +5,6 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.share.BlockPosition;
-import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.packet.reader.BlockDigReader;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
@@ -20,11 +19,12 @@ import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.module.violation.ViolationProcessor;
-import de.jpx3.intave.packet.PacketSender;
-import de.jpx3.intave.packet.PacketTypes;
+import de.jpx3.intave.packet.plib.PacketSender;
+import de.jpx3.intave.packet.plib.PacketTypes;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
+import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -68,7 +68,7 @@ public final class RestartCheck extends MetaCheckPart<BreakSpeedLimiter, Restart
 		RestartCheck.BreakSpeedStartMeta meta = metaOf(user);
 		ProtocolMetadata clientData = user.meta().protocol();
 
-		EnumWrappers.PlayerDigType digType = reader.action();
+		PlayerDigAction digType = reader.action();
 		if (digType == null) return;
 
 		switch (digType) {

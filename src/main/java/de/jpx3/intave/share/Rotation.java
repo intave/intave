@@ -15,7 +15,6 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.math.MathHelper;
-import de.jpx3.intave.packet.Relative;
 import io.netty.buffer.ByteBuf;
 
 import java.io.Serializable;

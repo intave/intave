@@ -9,7 +9,7 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
-import de.jpx3.intave.packet.converter.PlayerAction;
+import de.jpx3.intave.share.PlayerAction;
 import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.packet.reader.PlayerActionReader;
 import de.jpx3.intave.user.User;

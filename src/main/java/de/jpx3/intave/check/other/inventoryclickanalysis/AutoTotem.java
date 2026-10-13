@@ -8,7 +8,7 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.packet.reader.WindowClickReader;
-import de.jpx3.intave.packet.reader.WindowClickReader.InventoryClickType;
+import de.jpx3.intave.share.WindowClickType;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import org.bukkit.Material;
@@ -18,7 +18,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.WINDOW_CLICK;
-import static de.jpx3.intave.packet.reader.WindowClickReader.InventoryClickType.PICKUP;
+import static de.jpx3.intave.share.WindowClickType.PICKUP;
 
 public final class AutoTotem extends MetaCheckPart<InventoryClickAnalysis, AutoTotem.AutoTotemMeta> {
   private static final int OFFHAND_SLOT = 45;
@@ -36,7 +36,7 @@ public final class AutoTotem extends MetaCheckPart<InventoryClickAnalysis, AutoT
   ) {
     Player player = user.player();
     int slot = reader.slot();
-    InventoryClickType type = reader.clickType();
+    WindowClickType type = reader.clickType();
     if (type != PICKUP) {
       return;
     }

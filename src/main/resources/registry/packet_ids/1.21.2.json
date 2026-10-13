@@ -1,0 +1,1219 @@
+{
+  "schemaVersion": 1,
+  "minecraftVersion": "1.21.2",
+  "protocolVersion": 768,
+  "sourceRoot": "client/1.21.2/src/main/java",
+  "registrationSources": [
+    {
+      "path": "net/minecraft/network/protocol/handshake/HandshakeProtocols.java",
+      "sha256": "e2cdfba470554e0c0092323c0ef203e0fae97f0d76229bc486ef77ffa9c446f5"
+    },
+    {
+      "path": "net/minecraft/network/protocol/status/StatusProtocols.java",
+      "sha256": "0b34404cf2933f66cb69de77d42bfe74c3a3a478ce202db43291c474259da81e"
+    },
+    {
+      "path": "net/minecraft/network/protocol/login/LoginProtocols.java",
+      "sha256": "62d18a3cfbb8055d1de28209169d26b95fc891f003edaf2f0abd669951505a8c"
+    },
+    {
+      "path": "net/minecraft/network/protocol/configuration/ConfigurationProtocols.java",
+      "sha256": "c86742e0c8f2b90cf92a592cf24ef12dd8cad92e52d69d890ba0fae61f3432ae"
+    },
+    {
+      "path": "net/minecraft/network/protocol/game/GameProtocols.java",
+      "sha256": "d26353cd8a06c972a55e08baa43e65818387ffb3784e8f1712c23db75704cd57"
+    }
+  ],
+  "layoutCoverage": "partial",
+  "states": {
+    "handshaking": {
+      "serverbound": {
+        "ids": {
+          "ClientIntentionPacket": 0
+        },
+        "layouts": {}
+      },
+      "clientbound": {
+        "ids": {},
+        "layouts": {}
+      }
+    },
+    "status": {
+      "serverbound": {
+        "ids": {
+          "ServerboundStatusRequestPacket": 0,
+          "ServerboundPingRequestPacket": 1
+        },
+        "layouts": {
+          "ServerboundStatusRequestPacket": {
+            "source": "net/minecraft/network/protocol/status/ServerboundStatusRequestPacket.java",
+            "fields": []
+          },
+          "ServerboundPingRequestPacket": {
+            "source": "net/minecraft/network/protocol/ping/ServerboundPingRequestPacket.java",
+            "fields": [
+              {
+                "name": "time",
+                "type": "long"
+              }
+            ]
+          }
+        }
+      },
+      "clientbound": {
+        "ids": {
+          "ClientboundStatusResponsePacket": 0,
+          "ClientboundPongResponsePacket": 1
+        },
+        "layouts": {
+          "ClientboundPongResponsePacket": {
+            "source": "net/minecraft/network/protocol/ping/ClientboundPongResponsePacket.java",
+            "fields": [
+              {
+                "name": "time",
+                "type": "long"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "login": {
+      "serverbound": {
+        "ids": {
+          "ServerboundHelloPacket": 0,
+          "ServerboundKeyPacket": 1,
+          "ServerboundCustomQueryAnswerPacket": 2,
+          "ServerboundLoginAcknowledgedPacket": 3,
+          "ServerboundCookieResponsePacket": 4
+        },
+        "layouts": {
+          "ServerboundLoginAcknowledgedPacket": {
+            "source": "net/minecraft/network/protocol/login/ServerboundLoginAcknowledgedPacket.java",
+            "fields": []
+          }
+        }
+      },
+      "clientbound": {
+        "ids": {
+          "ClientboundLoginDisconnectPacket": 0,
+          "ClientboundHelloPacket": 1,
+          "ClientboundLoginFinishedPacket": 2,
+          "ClientboundLoginCompressionPacket": 3,
+          "ClientboundCustomQueryPacket": 4,
+          "ClientboundCookieRequestPacket": 5
+        },
+        "layouts": {
+          "ClientboundLoginCompressionPacket": {
+            "source": "net/minecraft/network/protocol/login/ClientboundLoginCompressionPacket.java",
+            "fields": [
+              {
+                "name": "compressionThreshold",
+                "type": "varint"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "configuration": {
+      "serverbound": {
+        "ids": {
+          "ServerboundClientInformationPacket": 0,
+          "ServerboundCookieResponsePacket": 1,
+          "ServerboundCustomPayloadPacket": 2,
+          "ServerboundFinishConfigurationPacket": 3,
+          "ServerboundKeepAlivePacket": 4,
+          "ServerboundPongPacket": 5,
+          "ServerboundResourcePackPacket": 6,
+          "ServerboundSelectKnownPacks": 7
+        },
+        "layouts": {
+          "ServerboundFinishConfigurationPacket": {
+            "source": "net/minecraft/network/protocol/configuration/ServerboundFinishConfigurationPacket.java",
+            "fields": []
+          },
+          "ServerboundKeepAlivePacket": {
+            "source": "net/minecraft/network/protocol/common/ServerboundKeepAlivePacket.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "long"
+              }
+            ]
+          },
+          "ServerboundPongPacket": {
+            "source": "net/minecraft/network/protocol/common/ServerboundPongPacket.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "int"
+              }
+            ]
+          }
+        }
+      },
+      "clientbound": {
+        "ids": {
+          "ClientboundCookieRequestPacket": 0,
+          "ClientboundCustomPayloadPacket": 1,
+          "ClientboundDisconnectPacket": 2,
+          "ClientboundFinishConfigurationPacket": 3,
+          "ClientboundKeepAlivePacket": 4,
+          "ClientboundPingPacket": 5,
+          "ClientboundResetChatPacket": 6,
+          "ClientboundRegistryDataPacket": 7,
+          "ClientboundResourcePackPopPacket": 8,
+          "ClientboundResourcePackPushPacket": 9,
+          "ClientboundStoreCookiePacket": 10,
+          "ClientboundTransferPacket": 11,
+          "ClientboundUpdateEnabledFeaturesPacket": 12,
+          "ClientboundUpdateTagsPacket": 13,
+          "ClientboundSelectKnownPacks": 14,
+          "ClientboundCustomReportDetailsPacket": 15,
+          "ClientboundServerLinksPacket": 16
+        },
+        "layouts": {
+          "ClientboundFinishConfigurationPacket": {
+            "source": "net/minecraft/network/protocol/configuration/ClientboundFinishConfigurationPacket.java",
+            "fields": []
+          },
+          "ClientboundKeepAlivePacket": {
+            "source": "net/minecraft/network/protocol/common/ClientboundKeepAlivePacket.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "long"
+              }
+            ]
+          },
+          "ClientboundPingPacket": {
+            "source": "net/minecraft/network/protocol/common/ClientboundPingPacket.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "int"
+              }
+            ]
+          },
+          "ClientboundResetChatPacket": {
+            "source": "net/minecraft/network/protocol/configuration/ClientboundResetChatPacket.java",
+            "fields": []
+          },
+          "ClientboundTransferPacket": {
+            "source": "net/minecraft/network/protocol/common/ClientboundTransferPacket.java",
+            "fields": [
+              {
+                "name": "host",
+                "type": "utf8"
+              },
+              {
+                "name": "port",
+                "type": "varint"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "play": {
+      "serverbound": {
+        "ids": {
+          "ServerboundAcceptTeleportationPacket": 0,
+          "ServerboundBlockEntityTagQueryPacket": 1,
+          "ServerboundSelectBundleItemPacket": 2,
+          "ServerboundChangeDifficultyPacket": 3,
+          "ServerboundChatAckPacket": 4,
+          "ServerboundChatCommandPacket": 5,
+          "ServerboundChatCommandSignedPacket": 6,
+          "ServerboundChatPacket": 7,
+          "ServerboundChatSessionUpdatePacket": 8,
+          "ServerboundChunkBatchReceivedPacket": 9,
+          "ServerboundClientCommandPacket": 10,
+          "ServerboundClientTickEndPacket": 11,
+          "ServerboundClientInformationPacket": 12,
+          "ServerboundCommandSuggestionPacket": 13,
+          "ServerboundConfigurationAcknowledgedPacket": 14,
+          "ServerboundContainerButtonClickPacket": 15,
+          "ServerboundContainerClickPacket": 16,
+          "ServerboundContainerClosePacket": 17,
+          "ServerboundContainerSlotStateChangedPacket": 18,
+          "ServerboundCookieResponsePacket": 19,
+          "ServerboundCustomPayloadPacket": 20,
+          "ServerboundDebugSampleSubscriptionPacket": 21,
+          "ServerboundEditBookPacket": 22,
+          "ServerboundEntityTagQueryPacket": 23,
+          "ServerboundInteractPacket": 24,
+          "ServerboundJigsawGeneratePacket": 25,
+          "ServerboundKeepAlivePacket": 26,
+          "ServerboundLockDifficultyPacket": 27,
+          "ServerboundMovePlayerPacket.Pos": 28,
+          "ServerboundMovePlayerPacket.PosRot": 29,
+          "ServerboundMovePlayerPacket.Rot": 30,
+          "ServerboundMovePlayerPacket.StatusOnly": 31,
+          "ServerboundMoveVehiclePacket": 32,
+          "ServerboundPaddleBoatPacket": 33,
+          "ServerboundPickItemPacket": 34,
+          "ServerboundPingRequestPacket": 35,
+          "ServerboundPlaceRecipePacket": 36,
+          "ServerboundPlayerAbilitiesPacket": 37,
+          "ServerboundPlayerActionPacket": 38,
+          "ServerboundPlayerCommandPacket": 39,
+          "ServerboundPlayerInputPacket": 40,
+          "ServerboundPongPacket": 41,
+          "ServerboundRecipeBookChangeSettingsPacket": 42,
+          "ServerboundRecipeBookSeenRecipePacket": 43,
+          "ServerboundRenameItemPacket": 44,
+          "ServerboundResourcePackPacket": 45,
+          "ServerboundSeenAdvancementsPacket": 46,
+          "ServerboundSelectTradePacket": 47,
+          "ServerboundSetBeaconPacket": 48,
+          "ServerboundSetCarriedItemPacket": 49,
+          "ServerboundSetCommandBlockPacket": 50,
+          "ServerboundSetCommandMinecartPacket": 51,
+          "ServerboundSetCreativeModeSlotPacket": 52,
+          "ServerboundSetJigsawBlockPacket": 53,
+          "ServerboundSetStructureBlockPacket": 54,
+          "ServerboundSignUpdatePacket": 55,
+          "ServerboundSwingPacket": 56,
+          "ServerboundTeleportToEntityPacket": 57,
+          "ServerboundUseItemOnPacket": 58,
+          "ServerboundUseItemPacket": 59
+        },
+        "layouts": {
+          "ServerboundAcceptTeleportationPacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundAcceptTeleportationPacket.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "varint"
+              }
+            ]
+          },
+          "ServerboundSelectBundleItemPacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundSelectBundleItemPacket.java",
+            "fields": [
+              {
+                "name": "slotId",
+                "type": "varint"
+              },
+              {
+                "name": "selectedItemIndex",
+                "type": "varint"
+              }
+            ]
+          },
+          "ServerboundChatAckPacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundChatAckPacket.java",
+            "fields": [
+              {
+                "name": "offset",
+                "type": "varint"
+              }
+            ]
+          },
+          "ServerboundChatCommandPacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundChatCommandPacket.java",
+            "fields": [
+              {
+                "name": "command",
+                "type": "utf8"
+              }
+            ]
+          },
+          "ServerboundChunkBatchReceivedPacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundChunkBatchReceivedPacket.java",
+            "fields": [
+              {
+                "name": "desiredChunksPerTick",
+                "type": "float"
+              }
+            ]
+          },
+          "ServerboundClientTickEndPacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundClientTickEndPacket.java",
+            "fields": []
+          },
+          "ServerboundCommandSuggestionPacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundCommandSuggestionPacket.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "varint"
+              },
+              {
+                "name": "command",
+                "type": "utf8",
+                "maxLength": 32500
+              }
+            ]
+          },
+          "ServerboundConfigurationAcknowledgedPacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundConfigurationAcknowledgedPacket.java",
+            "fields": []
+          },
+          "ServerboundEntityTagQueryPacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundEntityTagQueryPacket.java",
+            "fields": [
+              {
+                "name": "transactionId",
+                "type": "varint"
+              },
+              {
+                "name": "entityId",
+                "type": "varint"
+              }
+            ]
+          },
+          "ServerboundKeepAlivePacket": {
+            "source": "net/minecraft/network/protocol/common/ServerboundKeepAlivePacket.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "long"
+              }
+            ]
+          },
+          "ServerboundLockDifficultyPacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundLockDifficultyPacket.java",
+            "fields": [
+              {
+                "name": "locked",
+                "type": "boolean"
+              }
+            ]
+          },
+          "ServerboundMoveVehiclePacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundMoveVehiclePacket.java",
+            "fields": [
+              {
+                "name": "x",
+                "type": "double"
+              },
+              {
+                "name": "y",
+                "type": "double"
+              },
+              {
+                "name": "z",
+                "type": "double"
+              },
+              {
+                "name": "yRot",
+                "type": "float"
+              },
+              {
+                "name": "xRot",
+                "type": "float"
+              }
+            ]
+          },
+          "ServerboundPaddleBoatPacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundPaddleBoatPacket.java",
+            "fields": [
+              {
+                "name": "left",
+                "type": "boolean"
+              },
+              {
+                "name": "right",
+                "type": "boolean"
+              }
+            ]
+          },
+          "ServerboundPickItemPacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundPickItemPacket.java",
+            "fields": [
+              {
+                "name": "slot",
+                "type": "varint"
+              }
+            ]
+          },
+          "ServerboundPingRequestPacket": {
+            "source": "net/minecraft/network/protocol/ping/ServerboundPingRequestPacket.java",
+            "fields": [
+              {
+                "name": "time",
+                "type": "long"
+              }
+            ]
+          },
+          "ServerboundPongPacket": {
+            "source": "net/minecraft/network/protocol/common/ServerboundPongPacket.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "int"
+              }
+            ]
+          },
+          "ServerboundRenameItemPacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundRenameItemPacket.java",
+            "fields": [
+              {
+                "name": "name",
+                "type": "utf8"
+              }
+            ]
+          },
+          "ServerboundSelectTradePacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundSelectTradePacket.java",
+            "fields": [
+              {
+                "name": "item",
+                "type": "varint"
+              }
+            ]
+          },
+          "ServerboundSetCarriedItemPacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundSetCarriedItemPacket.java",
+            "fields": [
+              {
+                "name": "slot",
+                "type": "short"
+              }
+            ]
+          },
+          "ServerboundSetCommandMinecartPacket": {
+            "source": "net/minecraft/network/protocol/game/ServerboundSetCommandMinecartPacket.java",
+            "fields": [
+              {
+                "name": "entity",
+                "type": "varint"
+              },
+              {
+                "name": "command",
+                "type": "utf8"
+              },
+              {
+                "name": "trackOutput",
+                "type": "boolean"
+              }
+            ]
+          }
+        }
+      },
+      "clientbound": {
+        "ids": {
+          "ClientboundBundleDelimiterPacket": 0,
+          "ClientboundAddEntityPacket": 1,
+          "ClientboundAddExperienceOrbPacket": 2,
+          "ClientboundAnimatePacket": 3,
+          "ClientboundAwardStatsPacket": 4,
+          "ClientboundBlockChangedAckPacket": 5,
+          "ClientboundBlockDestructionPacket": 6,
+          "ClientboundBlockEntityDataPacket": 7,
+          "ClientboundBlockEventPacket": 8,
+          "ClientboundBlockUpdatePacket": 9,
+          "ClientboundBossEventPacket": 10,
+          "ClientboundChangeDifficultyPacket": 11,
+          "ClientboundChunkBatchFinishedPacket": 12,
+          "ClientboundChunkBatchStartPacket": 13,
+          "ClientboundChunksBiomesPacket": 14,
+          "ClientboundClearTitlesPacket": 15,
+          "ClientboundCommandSuggestionsPacket": 16,
+          "ClientboundCommandsPacket": 17,
+          "ClientboundContainerClosePacket": 18,
+          "ClientboundContainerSetContentPacket": 19,
+          "ClientboundContainerSetDataPacket": 20,
+          "ClientboundContainerSetSlotPacket": 21,
+          "ClientboundCookieRequestPacket": 22,
+          "ClientboundCooldownPacket": 23,
+          "ClientboundCustomChatCompletionsPacket": 24,
+          "ClientboundCustomPayloadPacket": 25,
+          "ClientboundDamageEventPacket": 26,
+          "ClientboundDebugSamplePacket": 27,
+          "ClientboundDeleteChatPacket": 28,
+          "ClientboundDisconnectPacket": 29,
+          "ClientboundDisguisedChatPacket": 30,
+          "ClientboundEntityEventPacket": 31,
+          "ClientboundEntityPositionSyncPacket": 32,
+          "ClientboundExplodePacket": 33,
+          "ClientboundForgetLevelChunkPacket": 34,
+          "ClientboundGameEventPacket": 35,
+          "ClientboundHorseScreenOpenPacket": 36,
+          "ClientboundHurtAnimationPacket": 37,
+          "ClientboundInitializeBorderPacket": 38,
+          "ClientboundKeepAlivePacket": 39,
+          "ClientboundLevelChunkWithLightPacket": 40,
+          "ClientboundLevelEventPacket": 41,
+          "ClientboundLevelParticlesPacket": 42,
+          "ClientboundLightUpdatePacket": 43,
+          "ClientboundLoginPacket": 44,
+          "ClientboundMapItemDataPacket": 45,
+          "ClientboundMerchantOffersPacket": 46,
+          "ClientboundMoveEntityPacket.Pos": 47,
+          "ClientboundMoveEntityPacket.PosRot": 48,
+          "ClientboundMoveMinecartPacket": 49,
+          "ClientboundMoveEntityPacket.Rot": 50,
+          "ClientboundMoveVehiclePacket": 51,
+          "ClientboundOpenBookPacket": 52,
+          "ClientboundOpenScreenPacket": 53,
+          "ClientboundOpenSignEditorPacket": 54,
+          "ClientboundPingPacket": 55,
+          "ClientboundPongResponsePacket": 56,
+          "ClientboundPlaceGhostRecipePacket": 57,
+          "ClientboundPlayerAbilitiesPacket": 58,
+          "ClientboundPlayerChatPacket": 59,
+          "ClientboundPlayerCombatEndPacket": 60,
+          "ClientboundPlayerCombatEnterPacket": 61,
+          "ClientboundPlayerCombatKillPacket": 62,
+          "ClientboundPlayerInfoRemovePacket": 63,
+          "ClientboundPlayerInfoUpdatePacket": 64,
+          "ClientboundPlayerLookAtPacket": 65,
+          "ClientboundPlayerPositionPacket": 66,
+          "ClientboundPlayerRotationPacket": 67,
+          "ClientboundRecipeBookAddPacket": 68,
+          "ClientboundRecipeBookRemovePacket": 69,
+          "ClientboundRecipeBookSettingsPacket": 70,
+          "ClientboundRemoveEntitiesPacket": 71,
+          "ClientboundRemoveMobEffectPacket": 72,
+          "ClientboundResetScorePacket": 73,
+          "ClientboundResourcePackPopPacket": 74,
+          "ClientboundResourcePackPushPacket": 75,
+          "ClientboundRespawnPacket": 76,
+          "ClientboundRotateHeadPacket": 77,
+          "ClientboundSectionBlocksUpdatePacket": 78,
+          "ClientboundSelectAdvancementsTabPacket": 79,
+          "ClientboundServerDataPacket": 80,
+          "ClientboundSetActionBarTextPacket": 81,
+          "ClientboundSetBorderCenterPacket": 82,
+          "ClientboundSetBorderLerpSizePacket": 83,
+          "ClientboundSetBorderSizePacket": 84,
+          "ClientboundSetBorderWarningDelayPacket": 85,
+          "ClientboundSetBorderWarningDistancePacket": 86,
+          "ClientboundSetCameraPacket": 87,
+          "ClientboundSetChunkCacheCenterPacket": 88,
+          "ClientboundSetChunkCacheRadiusPacket": 89,
+          "ClientboundSetCursorItemPacket": 90,
+          "ClientboundSetDefaultSpawnPositionPacket": 91,
+          "ClientboundSetDisplayObjectivePacket": 92,
+          "ClientboundSetEntityDataPacket": 93,
+          "ClientboundSetEntityLinkPacket": 94,
+          "ClientboundSetEntityMotionPacket": 95,
+          "ClientboundSetEquipmentPacket": 96,
+          "ClientboundSetExperiencePacket": 97,
+          "ClientboundSetHealthPacket": 98,
+          "ClientboundSetHeldSlotPacket": 99,
+          "ClientboundSetObjectivePacket": 100,
+          "ClientboundSetPassengersPacket": 101,
+          "ClientboundSetPlayerInventoryPacket": 102,
+          "ClientboundSetPlayerTeamPacket": 103,
+          "ClientboundSetScorePacket": 104,
+          "ClientboundSetSimulationDistancePacket": 105,
+          "ClientboundSetSubtitleTextPacket": 106,
+          "ClientboundSetTimePacket": 107,
+          "ClientboundSetTitleTextPacket": 108,
+          "ClientboundSetTitlesAnimationPacket": 109,
+          "ClientboundSoundEntityPacket": 110,
+          "ClientboundSoundPacket": 111,
+          "ClientboundStartConfigurationPacket": 112,
+          "ClientboundStopSoundPacket": 113,
+          "ClientboundStoreCookiePacket": 114,
+          "ClientboundSystemChatPacket": 115,
+          "ClientboundTabListPacket": 116,
+          "ClientboundTagQueryPacket": 117,
+          "ClientboundTakeItemEntityPacket": 118,
+          "ClientboundTeleportEntityPacket": 119,
+          "ClientboundTickingStatePacket": 120,
+          "ClientboundTickingStepPacket": 121,
+          "ClientboundTransferPacket": 122,
+          "ClientboundUpdateAdvancementsPacket": 123,
+          "ClientboundUpdateAttributesPacket": 124,
+          "ClientboundUpdateMobEffectPacket": 125,
+          "ClientboundUpdateRecipesPacket": 126,
+          "ClientboundUpdateTagsPacket": 127,
+          "ClientboundProjectilePowerPacket": 128,
+          "ClientboundCustomReportDetailsPacket": 129,
+          "ClientboundServerLinksPacket": 130
+        },
+        "layouts": {
+          "ClientboundBundleDelimiterPacket": {
+            "fields": []
+          },
+          "ClientboundAddExperienceOrbPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundAddExperienceOrbPacket.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "varint"
+              },
+              {
+                "name": "x",
+                "type": "double"
+              },
+              {
+                "name": "y",
+                "type": "double"
+              },
+              {
+                "name": "z",
+                "type": "double"
+              },
+              {
+                "name": "value",
+                "type": "short"
+              }
+            ]
+          },
+          "ClientboundAnimatePacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundAnimatePacket.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "varint"
+              },
+              {
+                "name": "action",
+                "type": "byte"
+              }
+            ]
+          },
+          "ClientboundBlockChangedAckPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundBlockChangedAckPacket.java",
+            "fields": [
+              {
+                "name": "sequence",
+                "type": "varint"
+              }
+            ]
+          },
+          "ClientboundChunkBatchFinishedPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundChunkBatchFinishedPacket.java",
+            "fields": [
+              {
+                "name": "batchSize",
+                "type": "varint"
+              }
+            ]
+          },
+          "ClientboundChunkBatchStartPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundChunkBatchStartPacket.java",
+            "fields": []
+          },
+          "ClientboundClearTitlesPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundClearTitlesPacket.java",
+            "fields": [
+              {
+                "name": "resetTimes",
+                "type": "boolean"
+              }
+            ]
+          },
+          "ClientboundEntityEventPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundEntityEventPacket.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "int"
+              },
+              {
+                "name": "eventId",
+                "type": "byte"
+              }
+            ]
+          },
+          "ClientboundHurtAnimationPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundHurtAnimationPacket.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "varint"
+              },
+              {
+                "name": "yaw",
+                "type": "float"
+              }
+            ]
+          },
+          "ClientboundInitializeBorderPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundInitializeBorderPacket.java",
+            "fields": [
+              {
+                "name": "newCenterX",
+                "type": "double"
+              },
+              {
+                "name": "newCenterZ",
+                "type": "double"
+              },
+              {
+                "name": "oldSize",
+                "type": "double"
+              },
+              {
+                "name": "newSize",
+                "type": "double"
+              },
+              {
+                "name": "lerpTime",
+                "type": "varlong"
+              },
+              {
+                "name": "newAbsoluteMaxSize",
+                "type": "varint"
+              },
+              {
+                "name": "warningBlocks",
+                "type": "varint"
+              },
+              {
+                "name": "warningTime",
+                "type": "varint"
+              }
+            ]
+          },
+          "ClientboundKeepAlivePacket": {
+            "source": "net/minecraft/network/protocol/common/ClientboundKeepAlivePacket.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "long"
+              }
+            ]
+          },
+          "ClientboundMoveEntityPacket.Pos": {
+            "source": "net/minecraft/network/protocol/game/ClientboundMoveEntityPacket.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "varint"
+              },
+              {
+                "name": "xa",
+                "type": "short"
+              },
+              {
+                "name": "ya",
+                "type": "short"
+              },
+              {
+                "name": "za",
+                "type": "short"
+              },
+              {
+                "name": "onGround",
+                "type": "boolean"
+              }
+            ]
+          },
+          "ClientboundMoveEntityPacket.PosRot": {
+            "source": "net/minecraft/network/protocol/game/ClientboundMoveEntityPacket.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "varint"
+              },
+              {
+                "name": "xa",
+                "type": "short"
+              },
+              {
+                "name": "ya",
+                "type": "short"
+              },
+              {
+                "name": "za",
+                "type": "short"
+              },
+              {
+                "name": "yRot",
+                "type": "byte"
+              },
+              {
+                "name": "xRot",
+                "type": "byte"
+              },
+              {
+                "name": "onGround",
+                "type": "boolean"
+              }
+            ]
+          },
+          "ClientboundMoveEntityPacket.Rot": {
+            "source": "net/minecraft/network/protocol/game/ClientboundMoveEntityPacket.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "varint"
+              },
+              {
+                "name": "yRot",
+                "type": "byte"
+              },
+              {
+                "name": "xRot",
+                "type": "byte"
+              },
+              {
+                "name": "onGround",
+                "type": "boolean"
+              }
+            ]
+          },
+          "ClientboundMoveVehiclePacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundMoveVehiclePacket.java",
+            "fields": [
+              {
+                "name": "x",
+                "type": "double"
+              },
+              {
+                "name": "y",
+                "type": "double"
+              },
+              {
+                "name": "z",
+                "type": "double"
+              },
+              {
+                "name": "yRot",
+                "type": "float"
+              },
+              {
+                "name": "xRot",
+                "type": "float"
+              }
+            ]
+          },
+          "ClientboundPingPacket": {
+            "source": "net/minecraft/network/protocol/common/ClientboundPingPacket.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "int"
+              }
+            ]
+          },
+          "ClientboundPongResponsePacket": {
+            "source": "net/minecraft/network/protocol/ping/ClientboundPongResponsePacket.java",
+            "fields": [
+              {
+                "name": "time",
+                "type": "long"
+              }
+            ]
+          },
+          "ClientboundPlayerCombatEndPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundPlayerCombatEndPacket.java",
+            "fields": [
+              {
+                "name": "duration",
+                "type": "varint"
+              }
+            ]
+          },
+          "ClientboundPlayerCombatEnterPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundPlayerCombatEnterPacket.java",
+            "fields": []
+          },
+          "ClientboundPlayerRotationPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundPlayerRotationPacket.java",
+            "fields": [
+              {
+                "name": "yRot",
+                "type": "float"
+              },
+              {
+                "name": "xRot",
+                "type": "float"
+              }
+            ]
+          },
+          "ClientboundRotateHeadPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundRotateHeadPacket.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "varint"
+              },
+              {
+                "name": "yHeadRot",
+                "type": "byte"
+              }
+            ]
+          },
+          "ClientboundSetBorderCenterPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundSetBorderCenterPacket.java",
+            "fields": [
+              {
+                "name": "newCenterX",
+                "type": "double"
+              },
+              {
+                "name": "newCenterZ",
+                "type": "double"
+              }
+            ]
+          },
+          "ClientboundSetBorderLerpSizePacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundSetBorderLerpSizePacket.java",
+            "fields": [
+              {
+                "name": "oldSize",
+                "type": "double"
+              },
+              {
+                "name": "newSize",
+                "type": "double"
+              },
+              {
+                "name": "lerpTime",
+                "type": "varlong"
+              }
+            ]
+          },
+          "ClientboundSetBorderSizePacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundSetBorderSizePacket.java",
+            "fields": [
+              {
+                "name": "size",
+                "type": "double"
+              }
+            ]
+          },
+          "ClientboundSetBorderWarningDelayPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundSetBorderWarningDelayPacket.java",
+            "fields": [
+              {
+                "name": "warningDelay",
+                "type": "varint"
+              }
+            ]
+          },
+          "ClientboundSetBorderWarningDistancePacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundSetBorderWarningDistancePacket.java",
+            "fields": [
+              {
+                "name": "warningBlocks",
+                "type": "varint"
+              }
+            ]
+          },
+          "ClientboundSetCameraPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundSetCameraPacket.java",
+            "fields": [
+              {
+                "name": "cameraId",
+                "type": "varint"
+              }
+            ]
+          },
+          "ClientboundSetChunkCacheCenterPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundSetChunkCacheCenterPacket.java",
+            "fields": [
+              {
+                "name": "x",
+                "type": "varint"
+              },
+              {
+                "name": "z",
+                "type": "varint"
+              }
+            ]
+          },
+          "ClientboundSetChunkCacheRadiusPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundSetChunkCacheRadiusPacket.java",
+            "fields": [
+              {
+                "name": "radius",
+                "type": "varint"
+              }
+            ]
+          },
+          "ClientboundSetEntityLinkPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundSetEntityLinkPacket.java",
+            "fields": [
+              {
+                "name": "sourceId",
+                "type": "int"
+              },
+              {
+                "name": "destId",
+                "type": "int"
+              }
+            ]
+          },
+          "ClientboundSetEntityMotionPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundSetEntityMotionPacket.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "varint"
+              },
+              {
+                "name": "xa",
+                "type": "short"
+              },
+              {
+                "name": "ya",
+                "type": "short"
+              },
+              {
+                "name": "za",
+                "type": "short"
+              }
+            ]
+          },
+          "ClientboundSetExperiencePacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundSetExperiencePacket.java",
+            "fields": [
+              {
+                "name": "experienceProgress",
+                "type": "float"
+              },
+              {
+                "name": "experienceLevel",
+                "type": "varint"
+              },
+              {
+                "name": "totalExperience",
+                "type": "varint"
+              }
+            ]
+          },
+          "ClientboundSetHealthPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundSetHealthPacket.java",
+            "fields": [
+              {
+                "name": "health",
+                "type": "float"
+              },
+              {
+                "name": "food",
+                "type": "varint"
+              },
+              {
+                "name": "saturation",
+                "type": "float"
+              }
+            ]
+          },
+          "ClientboundSetHeldSlotPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundSetHeldSlotPacket.java",
+            "fields": [
+              {
+                "name": "slot",
+                "type": "byte"
+              }
+            ]
+          },
+          "ClientboundSetSimulationDistancePacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundSetSimulationDistancePacket.java",
+            "fields": [
+              {
+                "name": "simulationDistance",
+                "type": "varint"
+              }
+            ]
+          },
+          "ClientboundSetTimePacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundSetTimePacket.java",
+            "fields": [
+              {
+                "name": "gameTime",
+                "type": "long"
+              },
+              {
+                "name": "dayTime",
+                "type": "long"
+              },
+              {
+                "name": "tickDayTime",
+                "type": "boolean"
+              }
+            ]
+          },
+          "ClientboundSetTitlesAnimationPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundSetTitlesAnimationPacket.java",
+            "fields": [
+              {
+                "name": "fadeIn",
+                "type": "int"
+              },
+              {
+                "name": "stay",
+                "type": "int"
+              },
+              {
+                "name": "fadeOut",
+                "type": "int"
+              }
+            ]
+          },
+          "ClientboundStartConfigurationPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundStartConfigurationPacket.java",
+            "fields": []
+          },
+          "ClientboundTakeItemEntityPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundTakeItemEntityPacket.java",
+            "fields": [
+              {
+                "name": "itemId",
+                "type": "varint"
+              },
+              {
+                "name": "playerId",
+                "type": "varint"
+              },
+              {
+                "name": "amount",
+                "type": "varint"
+              }
+            ]
+          },
+          "ClientboundTickingStatePacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundTickingStatePacket.java",
+            "fields": [
+              {
+                "name": "tickRate",
+                "type": "float"
+              },
+              {
+                "name": "isFrozen",
+                "type": "boolean"
+              }
+            ]
+          },
+          "ClientboundTickingStepPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundTickingStepPacket.java",
+            "fields": [
+              {
+                "name": "tickSteps",
+                "type": "varint"
+              }
+            ]
+          },
+          "ClientboundTransferPacket": {
+            "source": "net/minecraft/network/protocol/common/ClientboundTransferPacket.java",
+            "fields": [
+              {
+                "name": "host",
+                "type": "utf8"
+              },
+              {
+                "name": "port",
+                "type": "varint"
+              }
+            ]
+          },
+          "ClientboundProjectilePowerPacket": {
+            "source": "net/minecraft/network/protocol/game/ClientboundProjectilePowerPacket.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "varint"
+              },
+              {
+                "name": "accelerationPower",
+                "type": "double"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

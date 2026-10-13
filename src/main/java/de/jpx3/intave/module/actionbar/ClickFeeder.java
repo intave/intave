@@ -1,15 +1,16 @@
 package de.jpx3.intave.module.actionbar;
 
+import de.jpx3.intave.share.EntityUseAction;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.check.EventProcessor;
 import de.jpx3.intave.check.combat.clickpatterns.Kurtosis;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.PacketTypes;
+import de.jpx3.intave.packet.plib.PacketTypes;
 import de.jpx3.intave.packet.reader.BlockDigReader;
 import de.jpx3.intave.packet.reader.EntityUseReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
@@ -17,13 +18,14 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
+import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import java.util.*;
 
-import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.DROP_ITEM;
+import static de.jpx3.intave.share.PlayerDigAction.DROP_ITEM;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static java.lang.Math.pow;
@@ -45,8 +47,8 @@ public final class ClickFeeder implements EventProcessor {
     PacketType type = packet.getType();
     if (type == PacketType.Play.Client.USE_ENTITY) {
       EntityUseReader reader = PacketReaders.readerOf(packet);
-      EnumWrappers.EntityUseAction entityUseAction = reader.useAction();
-      if (entityUseAction == EnumWrappers.EntityUseAction.ATTACK) {
+      EntityUseAction entityUseAction = reader.useAction();
+      if (entityUseAction == EntityUseAction.ATTACK) {
         bufferData.recordAttack(System.currentTimeMillis());
       }
       reader.release();
@@ -56,7 +58,7 @@ public final class ClickFeeder implements EventProcessor {
         bufferData.desynchronizedClick = true;
       }
     } else if (type == PacketType.Play.Client.BLOCK_DIG) {
-      EnumWrappers.PlayerDigType digType;
+      PlayerDigAction digType;
       try (BlockDigReader reader = PacketReaders.readerOf(packet)) {
         digType = reader.action();
       }

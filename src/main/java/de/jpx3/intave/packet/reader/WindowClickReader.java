@@ -17,6 +17,7 @@ import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.klass.Lookup;
+import de.jpx3.intave.share.WindowClickType;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.Player;
@@ -34,16 +35,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class WindowClickReader extends AbstractPacketReader {
   private static final Map<Class<?>, HashedStackAccess> HASHED_STACK_ACCESS =
     new ConcurrentHashMap<>();
-  private static Class<?> nativeInventoryClickTypeClass;
+  private static Class<?> nativeWindowClickTypeClass;
 
-  public InventoryClickType clickType() {
+  public WindowClickType clickType() {
     if (MinecraftVersions.VER1_9_0.atOrAbove()) {
       return packet().getEnumModifier(
-        InventoryClickType.class, nativeInventoryClickTypeClass()
+        WindowClickType.class, nativeWindowClickTypeClass()
       ).read(0);
     } else {
       Integer manualSlot = packet().getIntegers().readSafely(3);
-      return InventoryClickType.values()[manualSlot];
+      return WindowClickType.values()[manualSlot];
     }
   }
 
@@ -80,11 +81,11 @@ public final class WindowClickReader extends AbstractPacketReader {
     return integer;
   }
 
-  private static Class<?> nativeInventoryClickTypeClass() {
-    if (nativeInventoryClickTypeClass == null) {
-      nativeInventoryClickTypeClass = Lookup.serverClass("InventoryClickType");
+  private static Class<?> nativeWindowClickTypeClass() {
+    if (nativeWindowClickTypeClass == null) {
+      nativeWindowClickTypeClass = Lookup.serverClass("WindowClickType");
     }
-    return nativeInventoryClickTypeClass;
+    return nativeWindowClickTypeClass;
   }
 
   public InventoryActionEvent.Action action() {
@@ -92,7 +93,7 @@ public final class WindowClickReader extends AbstractPacketReader {
   }
 
   static InventoryActionEvent.Action actionOf(
-    InventoryClickType clickType, int slot, int button
+    WindowClickType clickType, int slot, int button
   ) {
     switch (clickType) {
       case PICKUP:
@@ -308,7 +309,7 @@ public final class WindowClickReader extends AbstractPacketReader {
 
   public boolean isDrop() {
     if (MinecraftVersions.VER1_9_0.atOrAbove()) {
-      return clickType() == InventoryClickType.THROW && slot() != -999;
+      return clickType() == WindowClickType.THROW && slot() != -999;
     } else {
       return packet().getIntegers().read(3) == 4 && slot() != -999;
     }
@@ -323,15 +324,5 @@ public final class WindowClickReader extends AbstractPacketReader {
       default:
         return false;
     }
-  }
-
-  public enum InventoryClickType {
-    PICKUP,
-    QUICK_MOVE,
-    SWAP,
-    CLONE,
-    THROW,
-    QUICK_CRAFT,
-    PICKUP_ALL
   }
 }

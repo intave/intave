@@ -27,7 +27,7 @@ import de.jpx3.intave.module.feedback.FeedbackQueue;
 import de.jpx3.intave.module.feedback.FeedbackRequest;
 import de.jpx3.intave.module.feedback.PendingCountingFeedbackObserver;
 import de.jpx3.intave.module.tracker.entity.Entity;
-import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.plib.PacketSender;
 import org.bukkit.entity.Player;
 
 import java.util.*;

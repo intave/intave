@@ -21,7 +21,7 @@ import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.linker.packet.PrioritySlot;
 import de.jpx3.intave.packet.reader.GameStateChangeReader;
-import de.jpx3.intave.packet.reader.GameStateChangeReader.GameState;
+import de.jpx3.intave.share.GameStateChangeType;
 import de.jpx3.intave.packet.reader.TimeUpdateReader;
 import de.jpx3.intave.packet.reader.TimeUpdateReader.Update;
 import de.jpx3.intave.user.User;
@@ -48,7 +48,7 @@ public final class PlayerEnvironmentRecorder implements PacketEventSubscriber {
     if (packet.isCancelled()) {
       return;
     }
-    GameState type = reader.type();
+    GameStateChangeType type = reader.type();
     if (!State.isWeather(type)) {
       return;
     }
@@ -106,12 +106,12 @@ public final class PlayerEnvironmentRecorder implements PacketEventSubscriber {
     private TimeEvent time;
     private Long lastGameTime;
 
-    static boolean isWeather(GameState type) {
-      return type == GameState.END_RAIN || type == GameState.BEGIN_RAIN
-        || type == GameState.RAIN_LEVEL_CHANGE || type == GameState.THUNDER_LEVEL_CHANGE;
+    static boolean isWeather(GameStateChangeType type) {
+      return type == GameStateChangeType.END_RAIN || type == GameStateChangeType.BEGIN_RAIN
+        || type == GameStateChangeType.RAIN_LEVEL_CHANGE || type == GameStateChangeType.THUNDER_LEVEL_CHANGE;
     }
 
-    WeatherEvent weather(GameState type, float value) {
+    WeatherEvent weather(GameStateChangeType type, float value) {
       switch (type) {
         case END_RAIN:
           raining = false;

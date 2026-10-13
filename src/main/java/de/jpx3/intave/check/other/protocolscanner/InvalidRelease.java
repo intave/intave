@@ -24,6 +24,7 @@ import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.InventoryMetadata;
+import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
@@ -41,11 +42,11 @@ public final class InvalidRelease extends CheckPart<ProtocolScanner> {
 		PacketContainer packet = event.getPacket();
 		Player player = event.getPlayer();
 		User user = userOf(player);
-		EnumWrappers.PlayerDigType digType = reader.action();
+		PlayerDigAction digType = reader.action();
 		if (digType == null || user.protocolVersion() < 47) {
 			return;
 		}
-		if (digType == EnumWrappers.PlayerDigType.RELEASE_USE_ITEM) {
+		if (digType == PlayerDigAction.RELEASE_USE_ITEM) {
 			EnumWrappers.Direction face = packet.getDirections().readSafely(0);
 			// Vanilla always sends DOWN
 			// Fix https://github.com/Raven-APlus/RavenAPlus/blob/master/src/main/java/keystrokesmod/module/impl/movement/noslow/IntaveNoSlow.java

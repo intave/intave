@@ -11,6 +11,11 @@
 
 package de.jpx3.intave.module.nayoro;
 
+import de.jpx3.intave.share.PlayerHand;
+
+import de.jpx3.intave.share.EntityUseAction;
+import de.jpx3.intave.share.ClientCommand;
+
 import ac.intave.samples.event.*;
 import ac.intave.samples.share.Position;
 import ac.intave.samples.share.Rotation;
@@ -28,6 +33,7 @@ import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.InventoryMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -71,8 +77,8 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
   public void onUse(
     Player player, User user, EntityUseReader reader
   ) {
-    EnumWrappers.EntityUseAction useAction = reader.useAction();
-    if (useAction == EnumWrappers.EntityUseAction.ATTACK) {
+    EntityUseAction useAction = reader.useAction();
+    if (useAction == EntityUseAction.ATTACK) {
       int attackerId = player.getEntityId();
       int targetId = reader.entityId();
       AttackEvent attackEvent = AttackEvent.create(
@@ -80,9 +86,9 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       );
       eventEmitter.accept(user, attackEvent);
     } else {
-      EntityInteractEvent.Action action = useAction == EnumWrappers.EntityUseAction.INTERACT_AT
+      EntityInteractEvent.Action action = useAction == EntityUseAction.INTERACT_AT
         ? EntityInteractEvent.Action.INTERACT_AT
-        : useAction == EnumWrappers.EntityUseAction.INTERACT
+        : useAction == EntityUseAction.INTERACT
           ? EntityInteractEvent.Action.INTERACT
           : EntityInteractEvent.Action.UNKNOWN;
       eventEmitter.accept(user, new EntityInteractEvent(
@@ -107,7 +113,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       return;
     }
     InventoryMetadata inventory = user.meta().inventory();
-    EnumWrappers.Hand hand = reader.hand();
+    PlayerHand hand = reader.hand();
     if (hand == null) {
       hand = inventory.activeHand();
     }
@@ -129,7 +135,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
   ) {
     InventoryMetadata inventory = user.meta().inventory();
     if (reader.isStab()) {
-      EnumWrappers.Hand hand = EnumWrappers.Hand.MAIN_HAND;
+      PlayerHand hand = PlayerHand.MAIN_HAND;
       eventEmitter.accept(user, new ItemActionEvent(
         ItemActionEvent.Action.STAB,
         SampleTypes.hand(hand),
@@ -138,10 +144,10 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       ));
       return;
     }
-    if (reader.action() != EnumWrappers.PlayerDigType.RELEASE_USE_ITEM) {
+    if (reader.action() != PlayerDigAction.RELEASE_USE_ITEM) {
       return;
     }
-    EnumWrappers.Hand hand = inventory.activeHand();
+    PlayerHand hand = inventory.activeHand();
     eventEmitter.accept(user, new ItemActionEvent(
       ItemActionEvent.Action.RELEASE_USE,
       SampleTypes.hand(hand),
@@ -150,9 +156,9 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
   }
 
   private static ItemStack itemInHand(
-    InventoryMetadata inventory, EnumWrappers.Hand hand
+    InventoryMetadata inventory, PlayerHand hand
   ) {
-    return hand == EnumWrappers.Hand.OFF_HAND
+    return hand == PlayerHand.OFF_HAND
       ? inventory.offhandItem()
       : inventory.heldItem();
   }
@@ -294,9 +300,8 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       CLIENT_COMMAND
     }
   )
-  public void receiveClientInventoryOpen(User user, PacketContainer packet) {
-    EnumWrappers.ClientCommand command = packet.getClientCommands().readSafely(0);
-    if (command != EnumWrappers.ClientCommand.OPEN_INVENTORY_ACHIEVEMENT
+  public void receiveClientInventoryOpen(User user, ClientCommandReader reader) {
+    if (reader.command() != ClientCommand.OPEN_INVENTORY
       || user.meta().connection().assumeWindowOpen) {
       return;
     }
@@ -413,12 +418,12 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
   )
   public void receiveHeldItemAction(User user, BlockDigReader reader) {
     InventoryActionEvent.Action action;
-    EnumWrappers.PlayerDigType digType = reader.action();
-    if (digType == EnumWrappers.PlayerDigType.DROP_ITEM) {
+    PlayerDigAction digType = reader.action();
+    if (digType == PlayerDigAction.DROP_ITEM) {
       action = InventoryActionEvent.Action.DROP_HELD_ONE;
-    } else if (digType == EnumWrappers.PlayerDigType.DROP_ALL_ITEMS) {
+    } else if (digType == PlayerDigAction.DROP_ALL_ITEMS) {
       action = InventoryActionEvent.Action.DROP_HELD_STACK;
-    } else if (digType == EnumWrappers.PlayerDigType.SWAP_HELD_ITEMS) {
+    } else if (digType == PlayerDigAction.SWAP_HELD_ITEMS) {
       action = InventoryActionEvent.Action.SWAP_HANDS;
     } else {
       return;

@@ -25,6 +25,7 @@ import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.module.violation.ViolationProcessor;
 import de.jpx3.intave.packet.reader.WindowClickReader;
+import de.jpx3.intave.share.WindowClickType;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import org.bukkit.GameMode;
@@ -83,8 +84,8 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
     boolean isDrop = windowClick.isDrop();
     if (slot != -999 && meta.lastSlot != -999) {
       if ((clickedItemType != meta.lastClickedItemType || isDrop || windowClick.missingItemStack()) && clickedItemType != Material.AIR && meta.lastClickedTimestamp != 0) {
-        if (windowClick.clickType() != WindowClickReader.InventoryClickType.SWAP &&
-          windowClick.clickType() != WindowClickReader.InventoryClickType.QUICK_CRAFT) {
+        if (windowClick.clickType() != WindowClickType.SWAP &&
+          windowClick.clickType() != WindowClickType.QUICK_CRAFT) {
           checkWindowClick(player, meta, slot);
         }
       }

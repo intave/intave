@@ -47,7 +47,7 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
-import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.plib.PacketSender;
 import de.jpx3.intave.packet.reader.BlockDigReader;
 import de.jpx3.intave.packet.reader.BlockInteractionReader;
 import de.jpx3.intave.packet.reader.EntityReader;
@@ -74,7 +74,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
-import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.*;
+import static de.jpx3.intave.share.PlayerDigAction.*;
 import static de.jpx3.intave.check.world.interaction.InteractionType.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.BLOCK_BREAK_ANIMATION;
@@ -147,13 +147,13 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
         return;
       }
 
-      EnumWrappers.Hand handSlot = packet.getHands().readSafely(0);
-      handSlot = handSlot == null ? EnumWrappers.Hand.MAIN_HAND : handSlot;
+      PlayerHand handSlot = reader.hand();
+      handSlot = handSlot == null ? PlayerHand.MAIN_HAND : handSlot;
 
       ItemStack heldItem = inventory.heldItem();
       Material heldItemType = heldItem == null ? Material.AIR : heldItem.getType();
       Material offHandItemType = inventory.offhandItemType();
-      Material typeUsedInHand = handSlot == EnumWrappers.Hand.MAIN_HAND ? heldItemType : offHandItemType;
+      Material typeUsedInHand = handSlot == PlayerHand.MAIN_HAND ? heldItemType : offHandItemType;
       if (typeUsedInHand == null) {
         typeUsedInHand = Material.AIR;
       }
@@ -206,7 +206,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
           world, player,
           blockPosition, enumDirection, type,
           typeUsedInHand,
-          handSlot == EnumWrappers.Hand.MAIN_HAND
+          handSlot == PlayerHand.MAIN_HAND
             ? heldItem
             : inventory.offhandItem(),
           handSlot, null, facingX, facingY, facingZ,
@@ -329,7 +329,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       return;
     }
 
-    EnumWrappers.PlayerDigType playerDigType = reader.action();
+    PlayerDigAction playerDigType = reader.action();
     if (playerDigType == null) return;
     boolean blockInteraction = playerDigType == START_DESTROY_BLOCK || playerDigType == STOP_DESTROY_BLOCK || playerDigType == ABORT_DESTROY_BLOCK;
     ItemStack heldItemStack = inventoryData.heldItem();
@@ -375,7 +375,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       interactionMeta.nextInteractionId++,
       packet.shallowClone(), player.getWorld(), player,
       blockPosition, enumDirection, type,
-      heldItemType, heldItemStack, EnumWrappers.Hand.MAIN_HAND, playerDigType,
+      heldItemType, heldItemStack, PlayerHand.MAIN_HAND, playerDigType,
       Float.NaN, Float.NaN, Float.NaN, -1
     );
 

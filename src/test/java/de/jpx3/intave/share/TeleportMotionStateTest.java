@@ -4,7 +4,6 @@ import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.check.movement.physics.environment.MockSimulationEnvironment;
 import de.jpx3.intave.check.movement.physics.environment.PostTickSimulation;
-import de.jpx3.intave.packet.Relative;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserFactory;
 import org.junit.jupiter.api.Test;

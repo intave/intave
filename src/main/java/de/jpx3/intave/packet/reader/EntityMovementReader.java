@@ -4,8 +4,10 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.StructureModifier;
 import de.jpx3.intave.share.Motion;
+import de.jpx3.intave.share.EntityRelativeMoveStep;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.PositionMoveRotation;
+import de.jpx3.intave.share.RawVector3d;
 import de.jpx3.intave.share.Rotation;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 
@@ -21,7 +23,8 @@ public final class EntityMovementReader {
 
   public static Delta read(PacketContainer packet, int serverProtocol) {
     if (packet.getType() == PacketType.Play.Server.ENTITY_LOOK) {
-      return new Delta(Collections.singletonList(new Step(0, 0, 0, 0)), false, serverProtocol < 107 ? 32 : 4096);
+      int divisor = serverProtocol < 107 ? 32 : 4096;
+      return new Delta(Collections.singletonList(new Step(0, 0, 0, 0, divisor)), false, divisor);
     }
     if (serverProtocol >= ProtocolMetadata.VER_26_3) {
       return Native263.read(packet);
@@ -39,7 +42,7 @@ public final class EntityMovementReader {
   }
 
   private static Delta linear(int x, int y, int z, int divisor) {
-    return new Delta(Collections.singletonList(new Step(x, y, z, 0)), false, divisor);
+    return new Delta(Collections.singletonList(new Step(x, y, z, 0, divisor)), false, divisor);
   }
 
   public static void writeLinear263(PacketContainer packet, short x, short y, short z) {
@@ -82,14 +85,26 @@ public final class EntityMovementReader {
     public long z() { long value = 0; for (Step step : steps) value += step.z; return value; }
   }
 
-  public static final class Step {
+  public static final class Step implements EntityRelativeMoveStep {
     public final int x, y, z, ticks;
+    private final int divisor;
 
-    private Step(int x, int y, int z, int ticks) {
+    private Step(int x, int y, int z, int ticks, int divisor) {
       this.x = x;
       this.y = y;
       this.z = z;
       this.ticks = ticks;
+      this.divisor = divisor;
+    }
+
+    @Override
+    public RawVector3d delta() {
+      return new RawVector3d((double) x / divisor, (double) y / divisor, (double) z / divisor);
+    }
+
+    @Override
+    public int delayTicks() {
+      return ticks;
     }
   }
 
@@ -134,7 +149,11 @@ public final class EntityMovementReader {
     private static Step step(Object value, boolean stepped) {
       StructureModifier<Object> fields = new StructureModifier<>(value.getClass()).withTarget(value);
       StructureModifier<Short> axes = fields.withType(short.class);
-      return new Step(axes.read(0), axes.read(1), axes.read(2), stepped ? fields.<Integer>withType(int.class).read(0) : 0);
+      return new Step(
+        axes.read(0), axes.read(1), axes.read(2),
+        stepped ? fields.<Integer>withType(int.class).read(0) : 0,
+        4096
+      );
     }
   }
 }

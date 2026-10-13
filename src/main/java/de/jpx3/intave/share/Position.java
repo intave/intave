@@ -14,7 +14,6 @@ package de.jpx3.intave.share;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.packet.Relative;
 import io.netty.buffer.ByteBuf;
 import org.bukkit.Location;
 import org.bukkit.World;

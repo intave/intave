@@ -19,7 +19,7 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.packet.reader.WindowClickReader;
-import de.jpx3.intave.packet.reader.WindowClickReader.InventoryClickType;
+import de.jpx3.intave.share.WindowClickType;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.InventoryMetadata;
 import org.bukkit.entity.Player;
@@ -46,7 +46,7 @@ public final class NotOpenCheck extends CheckPart<InventoryClickAnalysis> {
   ) {
     Player player = user.player();
     InventoryMetadata inventory = user.meta().inventory();
-    InventoryClickType clickType = reader.clickType();
+    WindowClickType clickType = reader.clickType();
 
 //    player.sendMessage(clickType.name() + "/"+reader.clickedItemTypeIfPossible(player)+" " + inventory.inventoryOpen() + " " + reader.containerId() + " " + reader.slot() + " " + reader.button());
 

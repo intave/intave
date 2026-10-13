@@ -1,0 +1,857 @@
+{
+  "schemaVersion": 1,
+  "minecraftVersion": "1.8.9",
+  "protocolVersion": 47,
+  "sourceRoot": "client/1.8.9/src/minecraft",
+  "registrationSources": [
+    {
+      "path": "net/minecraft/network/EnumConnectionState.java",
+      "sha256": "69d57faaa13646ca75e5362eb31eae9725c2b8f35610f08c5044cb3f9ed6bcf6"
+    }
+  ],
+  "layoutCoverage": "partial",
+  "states": {
+    "handshaking": {
+      "serverbound": {
+        "ids": {
+          "C00Handshake": 0
+        },
+        "layouts": {}
+      },
+      "clientbound": {
+        "ids": {},
+        "layouts": {}
+      }
+    },
+    "status": {
+      "serverbound": {
+        "ids": {
+          "C00PacketServerQuery": 0,
+          "C01PacketPing": 1
+        },
+        "layouts": {
+          "C00PacketServerQuery": {
+            "source": "net/minecraft/network/status/client/C00PacketServerQuery.java",
+            "fields": []
+          },
+          "C01PacketPing": {
+            "source": "net/minecraft/network/status/client/C01PacketPing.java",
+            "fields": [
+              {
+                "name": "clientTime",
+                "type": "long"
+              }
+            ]
+          }
+        }
+      },
+      "clientbound": {
+        "ids": {
+          "S00PacketServerInfo": 0,
+          "S01PacketPong": 1
+        },
+        "layouts": {
+          "S01PacketPong": {
+            "source": "net/minecraft/network/status/server/S01PacketPong.java",
+            "fields": [
+              {
+                "name": "clientTime",
+                "type": "long"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "login": {
+      "serverbound": {
+        "ids": {
+          "C00PacketLoginStart": 0,
+          "C01PacketEncryptionResponse": 1
+        },
+        "layouts": {}
+      },
+      "clientbound": {
+        "ids": {
+          "S00PacketDisconnect": 0,
+          "S01PacketEncryptionRequest": 1,
+          "S02PacketLoginSuccess": 2,
+          "S03PacketEnableCompression": 3
+        },
+        "layouts": {
+          "S03PacketEnableCompression": {
+            "source": "net/minecraft/network/login/server/S03PacketEnableCompression.java",
+            "fields": [
+              {
+                "name": "compressionTreshold",
+                "type": "varint"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "play": {
+      "serverbound": {
+        "ids": {
+          "C00PacketKeepAlive": 0,
+          "C01PacketChatMessage": 1,
+          "C02PacketUseEntity": 2,
+          "C03PacketPlayer": 3,
+          "C03PacketPlayer.C04PacketPlayerPosition": 4,
+          "C03PacketPlayer.C05PacketPlayerLook": 5,
+          "C03PacketPlayer.C06PacketPlayerPosLook": 6,
+          "C07PacketPlayerDigging": 7,
+          "C08PacketPlayerBlockPlacement": 8,
+          "C09PacketHeldItemChange": 9,
+          "C0APacketAnimation": 10,
+          "C0BPacketEntityAction": 11,
+          "C0CPacketInput": 12,
+          "C0DPacketCloseWindow": 13,
+          "C0EPacketClickWindow": 14,
+          "C0FPacketConfirmTransaction": 15,
+          "C10PacketCreativeInventoryAction": 16,
+          "C11PacketEnchantItem": 17,
+          "C12PacketUpdateSign": 18,
+          "C13PacketPlayerAbilities": 19,
+          "C14PacketTabComplete": 20,
+          "C15PacketClientSettings": 21,
+          "C16PacketClientStatus": 22,
+          "C17PacketCustomPayload": 23,
+          "C18PacketSpectate": 24,
+          "C19PacketResourcePackStatus": 25
+        },
+        "layouts": {
+          "C00PacketKeepAlive": {
+            "source": "net/minecraft/network/play/client/C00PacketKeepAlive.java",
+            "fields": [
+              {
+                "name": "key",
+                "type": "varint"
+              }
+            ]
+          },
+          "C01PacketChatMessage": {
+            "source": "net/minecraft/network/play/client/C01PacketChatMessage.java",
+            "fields": [
+              {
+                "name": "message",
+                "type": "utf8"
+              }
+            ]
+          },
+          "C03PacketPlayer": {
+            "source": "net/minecraft/network/play/client/C03PacketPlayer.java",
+            "fields": [
+              {
+                "name": "onGround",
+                "type": "boolean"
+              }
+            ]
+          },
+          "C03PacketPlayer.C04PacketPlayerPosition": {
+            "source": "net/minecraft/network/play/client/C03PacketPlayer.java",
+            "fields": [
+              {
+                "name": "x",
+                "type": "double"
+              },
+              {
+                "name": "y",
+                "type": "double"
+              },
+              {
+                "name": "z",
+                "type": "double"
+              },
+              {
+                "name": "onGround",
+                "type": "boolean"
+              }
+            ]
+          },
+          "C03PacketPlayer.C05PacketPlayerLook": {
+            "source": "net/minecraft/network/play/client/C03PacketPlayer.java",
+            "fields": [
+              {
+                "name": "yaw",
+                "type": "float"
+              },
+              {
+                "name": "pitch",
+                "type": "float"
+              },
+              {
+                "name": "onGround",
+                "type": "boolean"
+              }
+            ]
+          },
+          "C03PacketPlayer.C06PacketPlayerPosLook": {
+            "source": "net/minecraft/network/play/client/C03PacketPlayer.java",
+            "fields": [
+              {
+                "name": "x",
+                "type": "double"
+              },
+              {
+                "name": "y",
+                "type": "double"
+              },
+              {
+                "name": "z",
+                "type": "double"
+              },
+              {
+                "name": "yaw",
+                "type": "float"
+              },
+              {
+                "name": "pitch",
+                "type": "float"
+              },
+              {
+                "name": "onGround",
+                "type": "boolean"
+              }
+            ]
+          },
+          "C09PacketHeldItemChange": {
+            "source": "net/minecraft/network/play/client/C09PacketHeldItemChange.java",
+            "fields": [
+              {
+                "name": "slotId",
+                "type": "short"
+              }
+            ]
+          },
+          "C0APacketAnimation": {
+            "source": "net/minecraft/network/play/client/C0APacketAnimation.java",
+            "fields": []
+          },
+          "C0DPacketCloseWindow": {
+            "source": "net/minecraft/network/play/client/C0DPacketCloseWindow.java",
+            "fields": [
+              {
+                "name": "windowId",
+                "type": "byte"
+              }
+            ]
+          },
+          "C0FPacketConfirmTransaction": {
+            "source": "net/minecraft/network/play/client/C0FPacketConfirmTransaction.java",
+            "fields": [
+              {
+                "name": "windowId",
+                "type": "byte"
+              },
+              {
+                "name": "uid",
+                "type": "short"
+              },
+              {
+                "name": "accepted",
+                "type": "boolean"
+              }
+            ]
+          },
+          "C11PacketEnchantItem": {
+            "source": "net/minecraft/network/play/client/C11PacketEnchantItem.java",
+            "fields": [
+              {
+                "name": "windowId",
+                "type": "byte"
+              },
+              {
+                "name": "button",
+                "type": "byte"
+              }
+            ]
+          },
+          "C18PacketSpectate": {
+            "source": "net/minecraft/network/play/client/C18PacketSpectate.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "uuid"
+              }
+            ]
+          }
+        }
+      },
+      "clientbound": {
+        "ids": {
+          "S00PacketKeepAlive": 0,
+          "S01PacketJoinGame": 1,
+          "S02PacketChat": 2,
+          "S03PacketTimeUpdate": 3,
+          "S04PacketEntityEquipment": 4,
+          "S05PacketSpawnPosition": 5,
+          "S06PacketUpdateHealth": 6,
+          "S07PacketRespawn": 7,
+          "S08PacketPlayerPosLook": 8,
+          "S09PacketHeldItemChange": 9,
+          "S0APacketUseBed": 10,
+          "S0BPacketAnimation": 11,
+          "S0CPacketSpawnPlayer": 12,
+          "S0DPacketCollectItem": 13,
+          "S0EPacketSpawnObject": 14,
+          "S0FPacketSpawnMob": 15,
+          "S10PacketSpawnPainting": 16,
+          "S11PacketSpawnExperienceOrb": 17,
+          "S12PacketEntityVelocity": 18,
+          "S13PacketDestroyEntities": 19,
+          "S14PacketEntity": 20,
+          "S14PacketEntity.S15PacketEntityRelMove": 21,
+          "S14PacketEntity.S16PacketEntityLook": 22,
+          "S14PacketEntity.S17PacketEntityLookMove": 23,
+          "S18PacketEntityTeleport": 24,
+          "S19PacketEntityHeadLook": 25,
+          "S19PacketEntityStatus": 26,
+          "S1BPacketEntityAttach": 27,
+          "S1CPacketEntityMetadata": 28,
+          "S1DPacketEntityEffect": 29,
+          "S1EPacketRemoveEntityEffect": 30,
+          "S1FPacketSetExperience": 31,
+          "S20PacketEntityProperties": 32,
+          "S21PacketChunkData": 33,
+          "S22PacketMultiBlockChange": 34,
+          "S23PacketBlockChange": 35,
+          "S24PacketBlockAction": 36,
+          "S25PacketBlockBreakAnim": 37,
+          "S26PacketMapChunkBulk": 38,
+          "S27PacketExplosion": 39,
+          "S28PacketEffect": 40,
+          "S29PacketSoundEffect": 41,
+          "S2APacketParticles": 42,
+          "S2BPacketChangeGameState": 43,
+          "S2CPacketSpawnGlobalEntity": 44,
+          "S2DPacketOpenWindow": 45,
+          "S2EPacketCloseWindow": 46,
+          "S2FPacketSetSlot": 47,
+          "S30PacketWindowItems": 48,
+          "S31PacketWindowProperty": 49,
+          "S32PacketConfirmTransaction": 50,
+          "S33PacketUpdateSign": 51,
+          "S34PacketMaps": 52,
+          "S35PacketUpdateTileEntity": 53,
+          "S36PacketSignEditorOpen": 54,
+          "S37PacketStatistics": 55,
+          "S38PacketPlayerListItem": 56,
+          "S39PacketPlayerAbilities": 57,
+          "S3APacketTabComplete": 58,
+          "S3BPacketScoreboardObjective": 59,
+          "S3CPacketUpdateScore": 60,
+          "S3DPacketDisplayScoreboard": 61,
+          "S3EPacketTeams": 62,
+          "S3FPacketCustomPayload": 63,
+          "S40PacketDisconnect": 64,
+          "S41PacketServerDifficulty": 65,
+          "S42PacketCombatEvent": 66,
+          "S43PacketCamera": 67,
+          "S44PacketWorldBorder": 68,
+          "S45PacketTitle": 69,
+          "S46PacketSetCompressionLevel": 70,
+          "S47PacketPlayerListHeaderFooter": 71,
+          "S48PacketResourcePackSend": 72,
+          "S49PacketUpdateEntityNBT": 73
+        },
+        "layouts": {
+          "S00PacketKeepAlive": {
+            "source": "net/minecraft/network/play/server/S00PacketKeepAlive.java",
+            "fields": [
+              {
+                "name": "id",
+                "type": "varint"
+              }
+            ]
+          },
+          "S03PacketTimeUpdate": {
+            "source": "net/minecraft/network/play/server/S03PacketTimeUpdate.java",
+            "fields": [
+              {
+                "name": "totalWorldTime",
+                "type": "long"
+              },
+              {
+                "name": "worldTime",
+                "type": "long"
+              }
+            ]
+          },
+          "S06PacketUpdateHealth": {
+            "source": "net/minecraft/network/play/server/S06PacketUpdateHealth.java",
+            "fields": [
+              {
+                "name": "health",
+                "type": "float"
+              },
+              {
+                "name": "foodLevel",
+                "type": "varint"
+              },
+              {
+                "name": "saturationLevel",
+                "type": "float"
+              }
+            ]
+          },
+          "S09PacketHeldItemChange": {
+            "source": "net/minecraft/network/play/server/S09PacketHeldItemChange.java",
+            "fields": [
+              {
+                "name": "heldItemHotbarIndex",
+                "type": "byte"
+              }
+            ]
+          },
+          "S0BPacketAnimation": {
+            "source": "net/minecraft/network/play/server/S0BPacketAnimation.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "varint"
+              },
+              {
+                "name": "type",
+                "type": "byte"
+              }
+            ]
+          },
+          "S0DPacketCollectItem": {
+            "source": "net/minecraft/network/play/server/S0DPacketCollectItem.java",
+            "fields": [
+              {
+                "name": "collectedItemEntityId",
+                "type": "varint"
+              },
+              {
+                "name": "entityId",
+                "type": "varint"
+              }
+            ]
+          },
+          "S11PacketSpawnExperienceOrb": {
+            "source": "net/minecraft/network/play/server/S11PacketSpawnExperienceOrb.java",
+            "fields": [
+              {
+                "name": "entityID",
+                "type": "varint"
+              },
+              {
+                "name": "posX",
+                "type": "int"
+              },
+              {
+                "name": "posY",
+                "type": "int"
+              },
+              {
+                "name": "posZ",
+                "type": "int"
+              },
+              {
+                "name": "xpValue",
+                "type": "short"
+              }
+            ]
+          },
+          "S12PacketEntityVelocity": {
+            "source": "net/minecraft/network/play/server/S12PacketEntityVelocity.java",
+            "fields": [
+              {
+                "name": "entityID",
+                "type": "varint"
+              },
+              {
+                "name": "motionX",
+                "type": "short"
+              },
+              {
+                "name": "motionY",
+                "type": "short"
+              },
+              {
+                "name": "motionZ",
+                "type": "short"
+              }
+            ]
+          },
+          "S14PacketEntity": {
+            "source": "net/minecraft/network/play/server/S14PacketEntity.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "varint"
+              }
+            ]
+          },
+          "S14PacketEntity.S15PacketEntityRelMove": {
+            "source": "net/minecraft/network/play/server/S14PacketEntity.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "varint"
+              },
+              {
+                "name": "posX",
+                "type": "byte"
+              },
+              {
+                "name": "posY",
+                "type": "byte"
+              },
+              {
+                "name": "posZ",
+                "type": "byte"
+              },
+              {
+                "name": "onGround",
+                "type": "boolean"
+              }
+            ]
+          },
+          "S14PacketEntity.S16PacketEntityLook": {
+            "source": "net/minecraft/network/play/server/S14PacketEntity.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "varint"
+              },
+              {
+                "name": "yaw",
+                "type": "byte"
+              },
+              {
+                "name": "pitch",
+                "type": "byte"
+              },
+              {
+                "name": "onGround",
+                "type": "boolean"
+              }
+            ]
+          },
+          "S14PacketEntity.S17PacketEntityLookMove": {
+            "source": "net/minecraft/network/play/server/S14PacketEntity.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "varint"
+              },
+              {
+                "name": "posX",
+                "type": "byte"
+              },
+              {
+                "name": "posY",
+                "type": "byte"
+              },
+              {
+                "name": "posZ",
+                "type": "byte"
+              },
+              {
+                "name": "yaw",
+                "type": "byte"
+              },
+              {
+                "name": "pitch",
+                "type": "byte"
+              },
+              {
+                "name": "onGround",
+                "type": "boolean"
+              }
+            ]
+          },
+          "S18PacketEntityTeleport": {
+            "source": "net/minecraft/network/play/server/S18PacketEntityTeleport.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "varint"
+              },
+              {
+                "name": "posX",
+                "type": "int"
+              },
+              {
+                "name": "posY",
+                "type": "int"
+              },
+              {
+                "name": "posZ",
+                "type": "int"
+              },
+              {
+                "name": "yaw",
+                "type": "byte"
+              },
+              {
+                "name": "pitch",
+                "type": "byte"
+              },
+              {
+                "name": "onGround",
+                "type": "boolean"
+              }
+            ]
+          },
+          "S19PacketEntityHeadLook": {
+            "source": "net/minecraft/network/play/server/S19PacketEntityHeadLook.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "varint"
+              },
+              {
+                "name": "yaw",
+                "type": "byte"
+              }
+            ]
+          },
+          "S19PacketEntityStatus": {
+            "source": "net/minecraft/network/play/server/S19PacketEntityStatus.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "int"
+              },
+              {
+                "name": "logicOpcode",
+                "type": "byte"
+              }
+            ]
+          },
+          "S1BPacketEntityAttach": {
+            "source": "net/minecraft/network/play/server/S1BPacketEntityAttach.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "int"
+              },
+              {
+                "name": "vehicleEntityId",
+                "type": "int"
+              },
+              {
+                "name": "leash",
+                "type": "byte"
+              }
+            ]
+          },
+          "S1DPacketEntityEffect": {
+            "source": "net/minecraft/network/play/server/S1DPacketEntityEffect.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "varint"
+              },
+              {
+                "name": "effectId",
+                "type": "byte"
+              },
+              {
+                "name": "amplifier",
+                "type": "byte"
+              },
+              {
+                "name": "duration",
+                "type": "varint"
+              },
+              {
+                "name": "hideParticles",
+                "type": "byte"
+              }
+            ]
+          },
+          "S1EPacketRemoveEntityEffect": {
+            "source": "net/minecraft/network/play/server/S1EPacketRemoveEntityEffect.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "varint"
+              },
+              {
+                "name": "effectId",
+                "type": "byte"
+              }
+            ]
+          },
+          "S1FPacketSetExperience": {
+            "source": "net/minecraft/network/play/server/S1FPacketSetExperience.java",
+            "fields": [
+              {
+                "name": "field_149401_a",
+                "type": "float"
+              },
+              {
+                "name": "level",
+                "type": "varint"
+              },
+              {
+                "name": "totalExperience",
+                "type": "varint"
+              }
+            ]
+          },
+          "S29PacketSoundEffect": {
+            "source": "net/minecraft/network/play/server/S29PacketSoundEffect.java",
+            "fields": [
+              {
+                "name": "soundName",
+                "type": "utf8"
+              },
+              {
+                "name": "posX",
+                "type": "int"
+              },
+              {
+                "name": "posY",
+                "type": "int"
+              },
+              {
+                "name": "posZ",
+                "type": "int"
+              },
+              {
+                "name": "soundVolume",
+                "type": "float"
+              },
+              {
+                "name": "soundPitch",
+                "type": "byte"
+              }
+            ]
+          },
+          "S2BPacketChangeGameState": {
+            "source": "net/minecraft/network/play/server/S2BPacketChangeGameState.java",
+            "fields": [
+              {
+                "name": "state",
+                "type": "byte"
+              },
+              {
+                "name": "field_149141_c",
+                "type": "float"
+              }
+            ]
+          },
+          "S2CPacketSpawnGlobalEntity": {
+            "source": "net/minecraft/network/play/server/S2CPacketSpawnGlobalEntity.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "varint"
+              },
+              {
+                "name": "type",
+                "type": "byte"
+              },
+              {
+                "name": "x",
+                "type": "int"
+              },
+              {
+                "name": "y",
+                "type": "int"
+              },
+              {
+                "name": "z",
+                "type": "int"
+              }
+            ]
+          },
+          "S2EPacketCloseWindow": {
+            "source": "net/minecraft/network/play/server/S2EPacketCloseWindow.java",
+            "fields": [
+              {
+                "name": "windowId",
+                "type": "byte"
+              }
+            ]
+          },
+          "S31PacketWindowProperty": {
+            "source": "net/minecraft/network/play/server/S31PacketWindowProperty.java",
+            "fields": [
+              {
+                "name": "windowId",
+                "type": "byte"
+              },
+              {
+                "name": "varIndex",
+                "type": "short"
+              },
+              {
+                "name": "varValue",
+                "type": "short"
+              }
+            ]
+          },
+          "S32PacketConfirmTransaction": {
+            "source": "net/minecraft/network/play/server/S32PacketConfirmTransaction.java",
+            "fields": [
+              {
+                "name": "windowId",
+                "type": "byte"
+              },
+              {
+                "name": "actionNumber",
+                "type": "short"
+              },
+              {
+                "name": "field_148893_c",
+                "type": "boolean"
+              }
+            ]
+          },
+          "S3DPacketDisplayScoreboard": {
+            "source": "net/minecraft/network/play/server/S3DPacketDisplayScoreboard.java",
+            "fields": [
+              {
+                "name": "position",
+                "type": "byte"
+              },
+              {
+                "name": "scoreName",
+                "type": "utf8"
+              }
+            ]
+          },
+          "S43PacketCamera": {
+            "source": "net/minecraft/network/play/server/S43PacketCamera.java",
+            "fields": [
+              {
+                "name": "entityId",
+                "type": "varint"
+              }
+            ]
+          },
+          "S46PacketSetCompressionLevel": {
+            "source": "net/minecraft/network/play/server/S46PacketSetCompressionLevel.java",
+            "fields": [
+              {
+                "name": "threshold",
+                "type": "varint"
+              }
+            ]
+          },
+          "S48PacketResourcePackSend": {
+            "source": "net/minecraft/network/play/server/S48PacketResourcePackSend.java",
+            "fields": [
+              {
+                "name": "url",
+                "type": "utf8"
+              },
+              {
+                "name": "hash",
+                "type": "utf8"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

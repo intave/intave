@@ -4,7 +4,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.plib.PacketSender;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 

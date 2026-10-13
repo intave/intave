@@ -2,7 +2,6 @@ package de.jpx3.intave.module.tracker.player;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.type.BlockTypeAccess;
@@ -12,6 +11,8 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.reader.WindowItemReader;
+import de.jpx3.intave.packet.reader.ClientCommandReader;
+import de.jpx3.intave.share.ClientCommand;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.InventoryMetadata;
@@ -76,10 +77,8 @@ public final class InventoryTracker extends Module {
       CLIENT_COMMAND
     }
   )
-  public void receiveClientCommand(PacketEvent event) {
-    Player player = event.getPlayer();
-    EnumWrappers.ClientCommand clientCommand = event.getPacket().getClientCommands().read(0);
-    if (clientCommand == EnumWrappers.ClientCommand.OPEN_INVENTORY_ACHIEVEMENT) {
+  public void receiveClientCommand(Player player, ClientCommandReader reader) {
+    if (reader.command() == ClientCommand.OPEN_INVENTORY) {
       openInventory(player);
     }
   }

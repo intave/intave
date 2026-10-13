@@ -1,9 +1,10 @@
 package de.jpx3.intave.check.combat.clickpatterns;
 
+import de.jpx3.intave.share.EntityUseAction;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.check.Blueprint;
 import de.jpx3.intave.check.combat.ClickPatterns;
 import de.jpx3.intave.module.Modules;
@@ -15,10 +16,11 @@ import de.jpx3.intave.packet.reader.EntityUseReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
+import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
-import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.DROP_ITEM;
+import static de.jpx3.intave.share.PlayerDigAction.DROP_ITEM;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
 
@@ -45,15 +47,15 @@ public abstract class TickAlignedHistoryBlueprint<E extends TickAlignedMeta> ext
     PacketType type = packet.getType();
     if (type == PacketType.Play.Client.USE_ENTITY) {
       EntityUseReader reader = PacketReaders.readerOf(packet);
-      EnumWrappers.EntityUseAction entityUseAction = reader.useAction();
-      if (entityUseAction == EnumWrappers.EntityUseAction.ATTACK) {
+      EntityUseAction entityUseAction = reader.useAction();
+      if (entityUseAction == EntityUseAction.ATTACK) {
         meta.attacks++;
       }
       reader.release();
     } else if (type == PacketType.Play.Client.ARM_ANIMATION) {
       meta.clicks++;
     } else if (type == PacketType.Play.Client.BLOCK_DIG) {
-      EnumWrappers.PlayerDigType digType;
+      PlayerDigAction digType;
       try (BlockDigReader reader = PacketReaders.readerOf(packet)) {
         digType = reader.action();
       }

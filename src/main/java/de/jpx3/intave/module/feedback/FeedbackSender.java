@@ -24,7 +24,7 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.trace.Caller;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
-import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.plib.PacketSender;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;

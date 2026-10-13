@@ -11,6 +11,12 @@
 
 package de.jpx3.intave.packet.reader;
 
+import de.jpx3.intave.share.GameStateChangeType;
+import de.jpx3.intave.share.EntityUseAction;
+import de.jpx3.intave.share.PlayerHand;
+import de.jpx3.intave.share.ScoreboardObjectiveAction;
+import de.jpx3.intave.share.ScoreboardTeamAction;
+
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
@@ -33,9 +39,9 @@ import de.jpx3.intave.module.dispatch.AttackDispatcher;
 import de.jpx3.intave.module.feedback.EmptyFeedbackCallback;
 import de.jpx3.intave.module.linker.packet.ForwardingPacketAdapter;
 import de.jpx3.intave.module.tracker.entity.Entity;
-import de.jpx3.intave.packet.Relative;
-import de.jpx3.intave.packet.converter.PosMoveRotConverter;
-import de.jpx3.intave.packet.converter.PositionAndRotationConverter;
+import de.jpx3.intave.share.Relative;
+import de.jpx3.intave.packet.plib.converter.PosMoveRotConverter;
+import de.jpx3.intave.packet.plib.converter.PositionAndRotationConverter;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.PositionAndRotation;
@@ -50,6 +56,7 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserFactory;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.version.ServerProtocolVersion;
+import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -76,7 +83,7 @@ public final class ReaderTests extends IntegrationTests {
         PacketContainer swing = new PacketContainer(PacketType.Play.Client.ARM_ANIMATION);
         if (MinecraftVersions.VER1_9_0.atOrAbove()) swing.getHands().write(0, hand);
         try (ArmAnimationReader reader = PacketReaders.readerOf(swing)) {
-          assertEquals(hand, reader.hand());
+          assertEquals(PlayerHand.valueOf(hand.name()), reader.hand());
         }
       }
       PacketContainer use = new PacketContainer(PacketType.Play.Client.BLOCK_PLACE);
@@ -86,7 +93,7 @@ public final class ReaderTests extends IntegrationTests {
         use.getIntegers().write(0, 255);
       }
       try (BlockInteractionReader reader = PacketReaders.readerOf(use)) {
-        assertEquals(hand, reader.hand());
+        assertEquals(PlayerHand.valueOf(hand.name()), reader.hand());
         assertTrue(reader.isItemUseRequest());
       }
       if (MinecraftVersions.VER1_9_0.below()) {
@@ -137,8 +144,8 @@ public final class ReaderTests extends IntegrationTests {
         }
         packet.getVectors().write(0, action == EnumWrappers.EntityUseAction.INTERACT_AT ? hitPosition : null);
         try (EntityUseReader reader = PacketReaders.readerOf(packet)) {
-          assertEquals(action, reader.useAction());
-          assertEquals(hand, reader.hand());
+          assertEquals(EntityUseAction.valueOf(action.name()), reader.useAction());
+          assertEquals(PlayerHand.valueOf(hand.name()), reader.hand());
           if (action == EnumWrappers.EntityUseAction.INTERACT_AT) {
             assertEquals(hitPosition, reader.hitPosition().convertToBukkitVec());
           } else {
@@ -179,9 +186,9 @@ public final class ReaderTests extends IntegrationTests {
   @Test(testCode = "world-weather", severity = Severity.ERROR)
   public void testNativeWeather() {
     PacketContainer packet = new PacketContainer(PacketType.Play.Server.GAME_STATE_CHANGE);
-    for (GameStateChangeReader.GameState state : Arrays.asList(
-      GameStateChangeReader.GameState.END_RAIN, GameStateChangeReader.GameState.BEGIN_RAIN,
-      GameStateChangeReader.GameState.RAIN_LEVEL_CHANGE, GameStateChangeReader.GameState.THUNDER_LEVEL_CHANGE
+    for (GameStateChangeType state : Arrays.asList(
+      GameStateChangeType.END_RAIN, GameStateChangeType.BEGIN_RAIN,
+      GameStateChangeType.RAIN_LEVEL_CHANGE, GameStateChangeType.THUNDER_LEVEL_CHANGE
     )) {
       if (packet.getIntegers().size() > 0) {
         packet.getIntegers().write(0, state.id());
@@ -209,7 +216,7 @@ public final class ReaderTests extends IntegrationTests {
       try (ScoreboardReader reader = PacketReaders.readerOf(new PacketContainer(PacketType.Play.Server.SCOREBOARD_OBJECTIVE, handle))) {
         ScoreboardReader.Objective decoded = reader.objective();
         assertEquals("reader", decoded.name);
-        assertEquals(action, decoded.action);
+        assertEquals(ScoreboardObjectiveAction.byId(action), decoded.action);
         if (action == 1) {
           assertNull(decoded.title);
         } else {
@@ -266,7 +273,7 @@ public final class ReaderTests extends IntegrationTests {
       try (ScoreboardReader reader = PacketReaders.readerOf(new PacketContainer(PacketType.Play.Server.SCOREBOARD_TEAM, handle))) {
         ScoreboardReader.Team decoded = reader.team();
         assertEquals("readers", decoded.name);
-        assertEquals(action, decoded.action);
+        assertEquals(ScoreboardTeamAction.byId(action), decoded.action);
         if (action != 1) {
           assertEquals("pre ", plainScoreboardText(decoded.prefix));
           assertEquals(" post", plainScoreboardText(decoded.suffix));
@@ -511,7 +518,7 @@ public final class ReaderTests extends IntegrationTests {
       cache.setClientSpeculationValue(world, 0, 64, 0, Material.AIR, 0, 37);
       Interaction placement = new Interaction(0, null, world, player, null, 1,
         InteractionType.PLACE, Material.STONE, new ItemStack(Material.STONE),
-        EnumWrappers.Hand.MAIN_HAND, null, 0.5F, 1F, 0.5F, 37);
+        PlayerHand.MAIN_HAND, null, 0.5F, 1F, 0.5F, 37);
       placement.setEmulated();
       placement.markPlacementEmulated();
       placement.setEmulationPosition(new BlockPosition(0, 64, 0));
@@ -549,7 +556,7 @@ public final class ReaderTests extends IntegrationTests {
 
       Interaction deferredPlacement = new Interaction(1, null, world, player, null, 1,
         InteractionType.PLACE, Material.STONE, new ItemStack(Material.STONE),
-        EnumWrappers.Hand.MAIN_HAND, null, 0.5F, 1F, 0.5F, 39);
+        PlayerHand.MAIN_HAND, null, 0.5F, 1F, 0.5F, 39);
       interactionMeta.speculativeInteraction = deferredPlacement;
       check.receiveAnyTickContextPacket(PacketEvent.fromClient(this,
         new PacketContainer(PacketType.Play.Client.PONG), player));
@@ -1015,9 +1022,9 @@ public final class ReaderTests extends IntegrationTests {
       packet.getModifier().withType(actionType).write(0, value);
       String name = ((Enum<?>) value).name();
       if ("SWAP_ITEM_WITH_OFFHAND".equals(name)) name = "SWAP_HELD_ITEMS";
-      EnumWrappers.PlayerDigType expected;
+      PlayerDigAction expected;
       try {
-        expected = EnumWrappers.PlayerDigType.valueOf(name);
+        expected = PlayerDigAction.valueOf(name);
       } catch (IllegalArgumentException ignored) {
         expected = null;
       }
@@ -1027,6 +1034,10 @@ public final class ReaderTests extends IntegrationTests {
         assertEquals(position, reader.blockPosition());
         assertEquals(new de.jpx3.intave.share.BlockPosition(-17, 64, 33), reader.nativeBlockPosition());
       }
+    }
+    BlockDigReader.setAction(packet, PlayerDigAction.RELEASE_USE_ITEM);
+    try (BlockDigReader reader = PacketReaders.readerOf(packet)) {
+      assertEquals(PlayerDigAction.RELEASE_USE_ITEM, reader.action());
     }
   }
 

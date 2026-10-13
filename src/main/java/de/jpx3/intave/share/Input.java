@@ -130,6 +130,16 @@ public final class Input {
     return sprint;
   }
 
+  public Input withKeysSetTo(
+    float forward, float strafe, boolean jump, boolean shift, boolean sprint
+  ) {
+    return new Input(
+      forward > 0, forward < 0,
+      strafe > 0, strafe < 0,
+      jump, shift, sprint
+    );
+  }
+
   @Override
   public boolean equals(Object obj) {
     if (this == obj) return true;

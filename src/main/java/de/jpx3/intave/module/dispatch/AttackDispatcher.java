@@ -28,7 +28,7 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.Entity;
-import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.plib.PacketSender;
 import de.jpx3.intave.packet.reader.EntityUseReader;
 import de.jpx3.intave.player.DamageModify;
 import de.jpx3.intave.player.fake.FakePlayer;

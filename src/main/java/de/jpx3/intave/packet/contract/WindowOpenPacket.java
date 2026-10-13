@@ -1,0 +1,36 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
+package de.jpx3.intave.packet.contract;
+
+import java.util.OptionalInt;
+
+public interface WindowOpenPacket extends Packet, WindowAddressed, EntityAddressed {
+
+	String menuType();
+
+	int slots();
+
+	OptionalInt optionalEntityId();
+
+	@Override
+	default int entityCount() {
+		return optionalEntityId().isPresent() ? 1 : 0;
+	}
+
+	@Override
+	default int entityId(int index) {
+		if (index != 0 || !optionalEntityId().isPresent()) {
+			throw new IndexOutOfBoundsException("Entity index: " + index);
+		}
+		return optionalEntityId().getAsInt();
+	}
+}

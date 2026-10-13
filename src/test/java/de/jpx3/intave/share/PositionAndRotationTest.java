@@ -1,6 +1,6 @@
 package de.jpx3.intave.share;
 
-import de.jpx3.intave.packet.converter.PositionAndRotationConverter;
+import de.jpx3.intave.packet.plib.converter.PositionAndRotationConverter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;

@@ -2,7 +2,7 @@ package de.jpx3.intave.module.dispatch;
 
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.packet.Relative;
+import de.jpx3.intave.share.Relative;
 import de.jpx3.intave.block.cache.MockFullBlockStaticPlane;
 import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.simulator.Simulation;

@@ -2,7 +2,6 @@ package de.jpx3.intave.player.fake.event;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
@@ -10,7 +9,9 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.packet.reader.PlayerInfoReader;
 import de.jpx3.intave.player.fake.FakePlayer;
+import de.jpx3.intave.share.PlayerInfoAction;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.Player;
@@ -31,7 +32,7 @@ public final class PlayerPingPacketDispatcher implements PacketEventSubscriber {
       PLAYER_INFO
     }
   )
-  public void onPacketSending(PacketEvent event) {
+  public void onPacketSending(PacketEvent event, PlayerInfoReader reader) {
     Player player = event.getPlayer();
     PacketContainer packet = event.getPacket();
     User user = UserRepository.userOf(player);
@@ -39,12 +40,11 @@ public final class PlayerPingPacketDispatcher implements PacketEventSubscriber {
     if (fakePlayer == null) {
       return;
     }
-    tryAppendFakePlayerToPing(fakePlayer, packet);
+    tryAppendFakePlayerToPing(fakePlayer, packet, reader);
   }
 
-  private void tryAppendFakePlayerToPing(FakePlayer fakePlayer, PacketContainer packet) {
-    EnumWrappers.PlayerInfoAction action = packet.getPlayerInfoAction().read(0);
-    if (action != EnumWrappers.PlayerInfoAction.UPDATE_LATENCY) {
+  private void tryAppendFakePlayerToPing(FakePlayer fakePlayer, PacketContainer packet, PlayerInfoReader reader) {
+    if (!reader.playerInfoActions().contains(PlayerInfoAction.UPDATE_LATENCY)) {
       return;
     }
     if (System.currentTimeMillis() - fakePlayer.lastPingPacketSent >= MIN_TIME_BETWEEN_PLAYER_INFO_UPDATE) {

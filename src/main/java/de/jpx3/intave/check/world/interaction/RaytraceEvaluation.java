@@ -19,12 +19,13 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
+import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 import java.util.Objects;
 
-import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.ABORT_DESTROY_BLOCK;
+import static de.jpx3.intave.share.PlayerDigAction.ABORT_DESTROY_BLOCK;
 import static de.jpx3.intave.check.world.interaction.InteractionType.EMPTY_INTERACT;
 
 public class RaytraceEvaluation {
@@ -88,7 +89,6 @@ public class RaytraceEvaluation {
     byte b = (byte) (int) (f * 16.0F);
     return (float) (b & 0xFF) / 16.0F;
   }
-
 
   public boolean hitMiss() {
     return raycastResult == null || raycastResult.hitVec == RawVector3d.ZERO;

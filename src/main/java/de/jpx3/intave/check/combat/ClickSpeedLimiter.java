@@ -22,7 +22,7 @@ import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.player.AbilityTracker;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
-import de.jpx3.intave.packet.PacketTypes;
+import de.jpx3.intave.packet.plib.PacketTypes;
 import de.jpx3.intave.packet.reader.EntityUseReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;

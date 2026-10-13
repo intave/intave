@@ -14,7 +14,6 @@ package de.jpx3.intave.check.combat.heuristics.other;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.packet.reader.BlockDigReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -26,11 +25,12 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
-import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.plib.PacketSender;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.user.meta.PunishmentMetadata;
+import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -94,12 +94,12 @@ public final class BlockingHeuristic extends ClassicHeuristic<BlockingHeuristic.
     }
 
     if (packet.getType() == PacketType.Play.Client.BLOCK_DIG) {
-      EnumWrappers.PlayerDigType playerDigType;
+      PlayerDigAction playerDigType;
       try (BlockDigReader reader = PacketReaders.readerOf(packet)) {
         playerDigType = reader.action();
       }
       if (playerDigType == null) return;
-      if (playerDigType == EnumWrappers.PlayerDigType.RELEASE_USE_ITEM) {
+      if (playerDigType == PlayerDigAction.RELEASE_USE_ITEM) {
         meta.releasedItemAfterClientTick = true;
         meta.ventosFreundlicherBoolean = true;
 

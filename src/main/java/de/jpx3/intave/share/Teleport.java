@@ -11,8 +11,6 @@
 
 package de.jpx3.intave.share;
 
-import de.jpx3.intave.packet.Relative;
-
 import java.util.EnumSet;
 import java.util.OptionalInt;
 import java.util.Set;

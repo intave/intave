@@ -20,6 +20,7 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.linker.packet.PrioritySlot;
 import de.jpx3.intave.packet.reader.PlayerInfoReader;
+import de.jpx3.intave.share.PlayerInfoAction;
 import de.jpx3.intave.packet.reader.PlayerInfoReader.PlayerInfoEntry;
 import de.jpx3.intave.packet.reader.PlayerInfoRemoveReader;
 import de.jpx3.intave.user.User;
@@ -53,7 +54,7 @@ public final class VanishFilter extends Filter {
     ProtocolMetadata protocol = user.meta().protocol();
     Set<UUID> shownPlayers = protocol.shownPlayers;
 
-    Set<EnumWrappers.PlayerInfoAction> actions = reader.playerInfoActions();
+    Set<PlayerInfoAction> actions = reader.playerInfoActions();
     if (actions.isEmpty() || actions.contains(null)) {
       return;
     }
@@ -65,7 +66,7 @@ public final class VanishFilter extends Filter {
     synchronized (protocol) {
       Set<UUID> updatedShownPlayers = new HashSet<>(shownPlayers);
 
-      for (EnumWrappers.PlayerInfoAction action : actions) {
+      for (PlayerInfoAction action : actions) {
         switch (action) {
           case ADD_PLAYER:
             playerInfos.forEach(data -> updatedShownPlayers.add(data.profileId()));

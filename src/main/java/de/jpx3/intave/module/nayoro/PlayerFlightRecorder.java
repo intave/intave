@@ -38,7 +38,7 @@ import java.util.function.BiConsumer;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.ABILITIES_IN;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.ABILITIES_OUT;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.GAME_STATE_CHANGE;
-import static de.jpx3.intave.packet.reader.GameStateChangeReader.GameState.CHANGE_GAME_MODE;
+import static de.jpx3.intave.share.GameStateChangeType.CHANGE_GAME_MODE;
 
 /** Keeps client observations independent of the server's flight permission and state. */
 public final class PlayerFlightRecorder implements PacketEventSubscriber, BukkitEventSubscriber {

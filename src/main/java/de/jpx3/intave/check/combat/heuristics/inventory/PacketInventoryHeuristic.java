@@ -13,7 +13,6 @@ package de.jpx3.intave.check.combat.heuristics.inventory;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
@@ -21,6 +20,8 @@ import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
+import de.jpx3.intave.packet.reader.ClientCommandReader;
+import de.jpx3.intave.share.ClientCommand;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
@@ -45,11 +46,9 @@ public final class PacketInventoryHeuristic extends ClassicHeuristic<PacketInven
       CLIENT_COMMAND
     }
   )
-  public void receiveInventoryOpen(PacketEvent event) {
-    Player player = event.getPlayer();
+  public void receiveInventoryOpen(Player player, ClientCommandReader reader) {
     User user = userOf(player);
-    EnumWrappers.ClientCommand clientCommand = event.getPacket().getClientCommands().read(0);
-    if (clientCommand == EnumWrappers.ClientCommand.OPEN_INVENTORY_ACHIEVEMENT) {
+    if (reader.command() == ClientCommand.OPEN_INVENTORY) {
       PacketInventoryMeta meta = metaOf(user);
       meta.performedInventoryOpenOperation = true;
       meta.inventoryTicks = 0;

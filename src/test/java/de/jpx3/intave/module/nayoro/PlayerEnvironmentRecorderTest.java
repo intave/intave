@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static de.jpx3.intave.packet.reader.GameStateChangeReader.GameState.*;
+import static de.jpx3.intave.share.GameStateChangeType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class PlayerEnvironmentRecorderTest {

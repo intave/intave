@@ -19,7 +19,7 @@ import de.jpx3.intave.entity.type.EntityTypeData;
 import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.module.feedback.FeedbackObserver;
 import de.jpx3.intave.module.feedback.PendingCountingFeedbackObserver;
-import de.jpx3.intave.packet.Relative;
+import de.jpx3.intave.share.Relative;
 import de.jpx3.intave.packet.reader.EntityMovementReader;
 import de.jpx3.intave.version.ServerProtocolVersion;
 import de.jpx3.intave.share.*;

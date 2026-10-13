@@ -104,6 +104,7 @@ public final class PacketReaders {
     setup(ATTACK_ENTITY, EntityUseReader::new);
     setup(BLOCK_DIG, BlockDigReader::new);
     setup(BLOCK_PLACE, BlockInteractionReader::new);
+    setup(CLIENT_COMMAND, ClientCommandReader::new);
     setup(Client.CLOSE_WINDOW, WindowIdReader::new);
     setup(CUSTOM_PAYLOAD_IN, PayloadInReader::new);
     setup(ENCHANT_ITEM, WindowIdReader::new);

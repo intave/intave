@@ -3,7 +3,7 @@ package de.jpx3.intave.module.dispatch;
 import ac.intave.samples.event.TeleportEvent;
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.packet.Relative;
+import de.jpx3.intave.share.Relative;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserFactory;

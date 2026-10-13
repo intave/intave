@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.user.meta;
 
+import de.jpx3.intave.share.PlayerHand;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
@@ -57,7 +58,7 @@ public final class InventoryMetadata {
   private int handSlot;
   private ItemStack previousSpearThisTick;
   private volatile boolean handActive;
-  private volatile EnumWrappers.Hand activeHand;
+  private volatile PlayerHand activeHand;
   private final Lock handActiveLock = new ReentrantLock();
   private Material activeItemType;
   private List<String> items = new ArrayList<>();
@@ -86,11 +87,11 @@ public final class InventoryMetadata {
     itemUsePermissionDebug = permission;
   }
 
-  public EnumWrappers.Hand activeHand() {
+  public PlayerHand activeHand() {
     if (activeHand != null) {
       return activeHand;
     }
-    return offhandItemPrimary() ? EnumWrappers.Hand.OFF_HAND : EnumWrappers.Hand.MAIN_HAND;
+    return offhandItemPrimary() ? PlayerHand.OFF_HAND : PlayerHand.MAIN_HAND;
   }
 
   public void registerSkullRequest(String name) {
@@ -179,7 +180,7 @@ public final class InventoryMetadata {
     activateHand(null);
   }
 
-  public void activateHand(@Nullable EnumWrappers.Hand hand) {
+  public void activateHand(@Nullable PlayerHand hand) {
     handActiveLock.lock();
     try {
       if (handActive) {
@@ -190,12 +191,12 @@ public final class InventoryMetadata {
       }
       this.handActive = true;
       this.activeHand = hand != null ? hand
-        : offhandItemPrimary() ? EnumWrappers.Hand.OFF_HAND : EnumWrappers.Hand.MAIN_HAND;
+        : offhandItemPrimary() ? PlayerHand.OFF_HAND : PlayerHand.MAIN_HAND;
 
       User user = UserRepository.userOf(player);
       user.meta().movement().handItemSimulationFails = 0;
 
-      if (activeHand == EnumWrappers.Hand.OFF_HAND) {
+      if (activeHand == PlayerHand.OFF_HAND) {
         this.foodItem = ItemProperties.foodConsumable(user, offhandItemType());
         this.activeItemType = offhandItemType();
       } else {

@@ -54,8 +54,8 @@ import de.jpx3.intave.module.test.record.action.ShulkerBoxAction;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.tracker.player.PacketLogging;
 import de.jpx3.intave.module.violation.Violation;
-import de.jpx3.intave.packet.PacketSender;
-import de.jpx3.intave.packet.converter.InputConverter;
+import de.jpx3.intave.packet.plib.PacketSender;
+import de.jpx3.intave.packet.plib.converter.InputConverter;
 import de.jpx3.intave.packet.reader.*;
 import de.jpx3.intave.player.ActionBar;
 import de.jpx3.intave.player.FaultKicks;
@@ -650,7 +650,7 @@ public final class MovementDispatcher extends Module {
     PacketContainer packet = protocolManager.createPacket(PacketType.Play.Client.BLOCK_DIG);
     packet.getBlockPositionModifier().write(0, new com.comphenix.protocol.wrappers.BlockPosition(0, 0, 0));
     packet.getDirections().write(0, EnumWrappers.Direction.DOWN);
-    packet.getPlayerDigTypes().write(0, EnumWrappers.PlayerDigType.RELEASE_USE_ITEM);
+    BlockDigReader.setAction(packet, PlayerDigAction.RELEASE_USE_ITEM);
     user.ignoreNextInboundPacket();
     PacketSender.receiveClientPacketFrom(player, packet);
     updatePlayerHandItem(player);
@@ -849,7 +849,7 @@ public final class MovementDispatcher extends Module {
     if (!reader.targetEntityIdIsSameAs(user)) {
       return;
     }
-    if (reader.animation() == AnimationReader.Animation.WAKEUP) {
+    if (reader.animation() == EntityAnimation.WAKEUP) {
       MovementMetadata movement = user.meta().movement();
       BlockPosition sleepingBedPosition = movement.sleepingBedPosition;
       if (sleepingBedPosition != null) {

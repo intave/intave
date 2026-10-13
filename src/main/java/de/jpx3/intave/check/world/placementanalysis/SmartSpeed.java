@@ -8,7 +8,7 @@ import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.converter.PlayerAction;
+import de.jpx3.intave.share.PlayerAction;
 import de.jpx3.intave.packet.reader.BlockInteractionReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.packet.reader.PlayerActionReader;

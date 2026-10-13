@@ -17,6 +17,7 @@ import com.comphenix.protocol.wrappers.MovingObjectPositionBlock;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.share.Direction;
+import de.jpx3.intave.share.PlayerHand;
 import de.jpx3.intave.user.User;
 import org.bukkit.util.Vector;
 
@@ -26,11 +27,12 @@ public final class BlockInteractionReader extends BlockPositionReader {
   private final boolean SEPARATE_USE_ITEM_PACKET = MinecraftVersions.VER1_9_0.atOrAbove();
 
   @Nullable
-  public EnumWrappers.Hand hand() {
+  public PlayerHand hand() {
     if (!SEPARATE_USE_ITEM_PACKET) {
-      return EnumWrappers.Hand.MAIN_HAND;
+      return PlayerHand.MAIN_HAND;
     }
-    return packet().getHands().readSafely(0);
+    EnumWrappers.Hand hand = packet().getHands().readSafely(0);
+    return hand == null ? null : PlayerHand.valueOf(hand.name());
   }
 
   public boolean isItemUseRequest() {

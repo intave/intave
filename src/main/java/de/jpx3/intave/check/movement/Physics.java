@@ -62,7 +62,7 @@ import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.tracker.player.PacketLogging;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
-import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.plib.PacketSender;
 import de.jpx3.intave.player.ActionBar;
 import de.jpx3.intave.player.FaultKicks;
 import de.jpx3.intave.player.ItemProperties;

@@ -4,7 +4,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import de.jpx3.intave.executor.Synchronizer;
-import de.jpx3.intave.packet.PacketSender;
+import de.jpx3.intave.packet.plib.PacketSender;
 import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;

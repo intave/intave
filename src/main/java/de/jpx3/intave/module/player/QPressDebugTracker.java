@@ -33,6 +33,7 @@ import de.jpx3.intave.share.PositionMoveRotation;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
+import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -43,7 +44,7 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Optional;
 
-import static com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType.DROP_ITEM;
+import static de.jpx3.intave.share.PlayerDigAction.DROP_ITEM;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.BLOCK_DIG;
 
 public final class QPressDebugTracker extends Module {

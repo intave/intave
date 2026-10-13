@@ -28,7 +28,7 @@ import org.bukkit.event.Cancellable;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
-import static de.jpx3.intave.packet.reader.GameStateChangeReader.GameState.CHANGE_GAME_MODE;
+import static de.jpx3.intave.share.GameStateChangeType.CHANGE_GAME_MODE;
 
 public final class AbilityTracker extends Module {
   @PacketSubscription(priority = ListenerPriority.MONITOR, packetsIn = ABILITIES_IN)

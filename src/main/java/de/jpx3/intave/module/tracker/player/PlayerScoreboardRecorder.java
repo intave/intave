@@ -26,6 +26,7 @@ import de.jpx3.intave.packet.reader.ScoreboardReader.Display;
 import de.jpx3.intave.packet.reader.ScoreboardReader.Objective;
 import de.jpx3.intave.packet.reader.ScoreboardReader.Score;
 import de.jpx3.intave.packet.reader.ScoreboardReader.Team;
+import de.jpx3.intave.share.ScoreboardObjectiveAction;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
 import de.jpx3.intave.user.UserRepository;
@@ -84,7 +85,7 @@ public final class PlayerScoreboardRecorder extends Module {
     switch (reader.kind()) {
       case SCOREBOARD_OBJECTIVE:
         Objective objective = reader.objective();
-        if (objective.action == 1) {
+        if (objective.action == ScoreboardObjectiveAction.REMOVE) {
           scoreboard.removeObjective(objective.name);
         } else {
           scoreboard.setObjective(objective.name, objective.title);
@@ -140,19 +141,19 @@ public final class PlayerScoreboardRecorder extends Module {
 
   private static void applyTeam(ClientScoreboard scoreboard, Team team) {
     switch (team.action) {
-      case 0:
+      case CREATE:
         scoreboard.createTeam(team.name, team.prefix, team.suffix, team.color, team.entries);
         break;
-      case 1:
+      case REMOVE:
         scoreboard.removeTeam(team.name);
         break;
-      case 2:
+      case UPDATE:
         scoreboard.updateTeam(team.name, team.prefix, team.suffix, team.color);
         break;
-      case 3:
+      case ADD_ENTRIES:
         scoreboard.addTeamEntries(team.name, team.entries);
         break;
-      case 4:
+      case REMOVE_ENTRIES:
         scoreboard.removeTeamEntries(team.name, team.entries);
         break;
       default:

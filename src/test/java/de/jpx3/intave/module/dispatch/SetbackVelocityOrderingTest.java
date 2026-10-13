@@ -5,7 +5,7 @@ import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.check.movement.physics.branch.*;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.check.movement.physics.update.*;
-import de.jpx3.intave.packet.Relative;
+import de.jpx3.intave.share.Relative;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserFactory;

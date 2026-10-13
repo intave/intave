@@ -2,8 +2,8 @@ package de.jpx3.intave.packet.reader;
 
 import com.comphenix.protocol.reflect.StructureModifier;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.packet.Relative;
-import de.jpx3.intave.packet.converter.PosMoveRotConverter;
+import de.jpx3.intave.share.Relative;
+import de.jpx3.intave.packet.plib.converter.PosMoveRotConverter;
 import de.jpx3.intave.share.*;
 
 import java.util.OptionalInt;
