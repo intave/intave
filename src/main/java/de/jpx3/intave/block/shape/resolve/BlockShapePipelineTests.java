@@ -6,6 +6,8 @@ import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.test.*;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -18,7 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 public final class BlockShapePipelineTests extends IntegrationTests {
-  private Player player;
+  private User user;
   private SimpleDrill drill;
   private ShapeResolverPipeline head;
   private World world;
@@ -34,7 +36,8 @@ public final class BlockShapePipelineTests extends IntegrationTests {
     world = Bukkit.getWorlds().get(0);
     block = world.getBlockAt(0, 0, 0);
     previousMaterialData = BlockStorage.store(block);
-    player = FakePlayerFactory.createPlayer();
+    Player player = FakePlayerFactory.createPlayer();
+    user = UserRepository.userOf(player);
   }
 
   @Test(
@@ -46,8 +49,8 @@ public final class BlockShapePipelineTests extends IntegrationTests {
     head = ShapeResolver.createPipelineFor(drill);
     List<Material> types = Arrays.asList(Material.DIAMOND_BLOCK, Material.AIR, Material.BEDROCK, Material.WATER, Material.DIAMOND_BLOCK);
     for (Material type : types) {
-      head.collisionShapeOf(world, player, type, 0, 0, 0, 0);
-      head.outlineShapeOf(world, player, type, 0, 0, 0, 0);
+      head.collisionShapeOf(world, user, type, 0, 0, 0, 0);
+      head.outlineShapeOf(world, user, type, 0, 0, 0, 0);
     }
     drill.verifyEnd();
   }
@@ -65,7 +68,7 @@ public final class BlockShapePipelineTests extends IntegrationTests {
     private final Set<Material> forbiddenMaterials = ImmutableSet.of(Material.AIR, Material.WATER);
 
     @Override
-    public BlockShape collisionShapeOf(World world, Player player, Material material, int variantIndex, int posX, int posY, int posZ) {
+    public BlockShape collisionShapeOf(World world, User user, Material material, int variantIndex, int posX, int posY, int posZ) {
       if (forbiddenMaterials.contains(material)) {
         throw new IllegalArgumentException("Material " + material + " is forbidden");
       }
@@ -90,7 +93,7 @@ public final class BlockShapePipelineTests extends IntegrationTests {
     }
 
     @Override
-    public BlockShape outlineShapeOf(World world, Player player, Material type, int variantIndex, int posX, int posY, int posZ) {
+    public BlockShape outlineShapeOf(World world, User user, Material type, int variantIndex, int posX, int posY, int posZ) {
       if (forbiddenMaterials.contains(type)) {
         throw new IllegalArgumentException("Material " + type + " is forbidden");
       }

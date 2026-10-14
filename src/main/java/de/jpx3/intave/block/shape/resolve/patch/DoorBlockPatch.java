@@ -17,10 +17,8 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.share.BlockState;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 final class DoorBlockPatch extends BlockShapePatch {
   private static final float THICKNESS = 0.1875F;
@@ -29,30 +27,29 @@ final class DoorBlockPatch extends BlockShapePatch {
 
   @Override
   protected BlockShape collisionPatch(
-    World world, Player player,
+    World world, User user,
     int posX, int posY, int posZ,
     Material type, int blockState,
     BlockShape shape
   ) {
-    return resolveDoorShape(player, posX, posY, posZ, type, blockState);
+    return resolveDoorShape(user, posX, posY, posZ, type, blockState);
   }
 
   @Override
   protected BlockShape outlinePatch(
-    World world, Player player,
+    World world, User user,
     int posX, int posY, int posZ,
     Material type, int blockState,
     BlockShape shape
   ) {
-    return resolveDoorShape(player, posX, posY, posZ, type, blockState);
+    return resolveDoorShape(user, posX, posY, posZ, type, blockState);
   }
 
   private BlockShape resolveDoorShape(
-    Player player,
+    User user,
     int posX, int posY, int posZ,
     Material type, int blockState
   ) {
-    User user = UserRepository.userOf(player);
     BlockCache blockCache = user.blockCache();
     boolean upperHalf = (blockState & HALF_BIT) != 0;
     int otherY = upperHalf ? posY - 1 : posY + 1;

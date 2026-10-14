@@ -7,6 +7,7 @@ import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.player.collider.simple.SimpleColliderResult;
 import de.jpx3.intave.share.BoundingBox;
+import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -155,7 +156,9 @@ public abstract class Movement extends HeadRotationMovement {
                 Block block = VolatileBlockAccess.blockAccess(world, x, y, z);
                 Material type = BlockTypeAccess.typeAccess(block);
                 int variant = BlockVariantNativeAccess.variantAccess(block);
-                List<BoundingBox> resolve = boundingBoxResolver.collisionShapeOf(world, null, type, variant, x, y, z).elementaryBoxes();
+                List<BoundingBox> resolve = boundingBoxResolver.collisionShapeOf(
+                  world, UserRepository.fallback(), type, variant, x, y, z
+                ).elementaryBoxes();
                 if ((resolve != null && !resolve.isEmpty())) {
                   if (resolvedBoundingBoxes == null) {
                     resolvedBoundingBoxes = new ArrayList<>(resolve);

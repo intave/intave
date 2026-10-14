@@ -24,7 +24,6 @@ import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.module.Module;
-import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
@@ -93,7 +92,6 @@ public class PlayerHandTracker extends Module {
     }
   )
   public void receiveSlotSwitch(User user, HeldItemSlotReader reader) {
-    Player player = user.player();
     InventoryMetadata inventoryData = user.meta().inventory();
 
     int slot = reader.slot();
@@ -101,14 +99,6 @@ public class PlayerHandTracker extends Module {
     if (isInvalidSlot(slot)) {
       return;
     }
-
-//    if (IntaveControl.DEBUG_ITEM_USAGE) {
-//      ItemStack item = player.getInventory().getItem(slot);
-//      String typeName = item == null ? "AIR" : item.getType().name();
-////      Synchronizer.synchronize(() -> {
-//        player.sendMessage("(async) Slot changed to " + slot + ", type: " + typeName);
-////      });
-//    }
 
     if (slot != inventoryData.handSlot() && user.meta().protocol().sendsClientTickEnd()) {
       inventoryData.recordPreviousHeldItemForReach(inventoryData.heldItem());
@@ -121,7 +111,7 @@ public class PlayerHandTracker extends Module {
     // apparently required?
     inventoryData.setHeldItemSlot(slot);
 
-    ItemStack item = player.getInventory().getItem(slot);
+    ItemStack item = user.player().getInventory().getItem(slot);
     inventoryData.pastSlotSwitch = 0;
     if (inventoryData.handActive() && !inventoryData.offhandItemPrimary()) {
       inventoryData.releaseItemNextTick();
@@ -147,17 +137,14 @@ public class PlayerHandTracker extends Module {
       HELD_ITEM_SLOT_OUT
     }
   )
-  public void sentSlotSwitch(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
-    PacketContainer packet = event.getPacket();
-    int slot = packet.getIntegers().read(0);
+  public void sentSlotSwitch(User user, HeldItemSlotReader reader) {
+    int slot = reader.slot();
 
     if (isInvalidSlot(slot)) {
       return;
     }
 
-    Modules.feedback().synchronize(player, slot, (player1, slot1) -> {
+    user.tickFeedback(() -> {
       if (slot != user.meta().inventory().handSlot()) {
         user.meta().attack().attackCooldown().reset();
       }

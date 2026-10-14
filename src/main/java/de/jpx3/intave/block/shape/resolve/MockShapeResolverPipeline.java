@@ -3,9 +3,9 @@ package de.jpx3.intave.block.shape.resolve;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,14 +15,14 @@ public final class MockShapeResolverPipeline implements ShapeResolverPipeline {
 	private final Map<Material, Map<Integer, BlockShape>> outlineShape = new HashMap<>();
 
 	@Override
-	public BlockShape collisionShapeOf(World world, Player player, Material type, int variantIndex, int posX, int posY, int posZ) {
+	public BlockShape collisionShapeOf(World world, User user, Material type, int variantIndex, int posX, int posY, int posZ) {
 		return collisionShape.computeIfAbsent(type, t -> new HashMap<>())
 			.computeIfAbsent(variantIndex, i -> BlockShapes.emptyShape())
 			.contextualized(posX, posY, posZ);
 	}
 
 	@Override
-	public BlockShape outlineShapeOf(World world, Player player, Material type, int variantIndex, int posX, int posY, int posZ) {
+	public BlockShape outlineShapeOf(World world, User user, Material type, int variantIndex, int posX, int posY, int posZ) {
 		return outlineShape.computeIfAbsent(type, t -> new HashMap<>())
 			.computeIfAbsent(variantIndex, i -> BlockShapes.emptyShape())
 			.contextualized(posX, posY, posZ);

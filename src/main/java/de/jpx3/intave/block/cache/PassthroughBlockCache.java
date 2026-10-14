@@ -4,6 +4,8 @@ import de.jpx3.intave.block.access.BlockAccess;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -24,9 +26,10 @@ final class PassthroughBlockCache implements BlockCache {
     Block block = VolatileBlockAccess.blockAccess(player.getWorld(), posX, posY, posZ);
     Material type = block.getType();
     int variant = BlockAccess.global().variantIndexOf(block);
+    User user = UserRepository.userOf(player);
 
     return resolver.outlineShapeOf(
-      player.getWorld(), player, type, variant, posX, posY, posZ
+      player.getWorld(), user, type, variant, posX, posY, posZ
     );
   }
 
@@ -35,9 +38,10 @@ final class PassthroughBlockCache implements BlockCache {
     Block block = VolatileBlockAccess.blockAccess(player.getWorld(), posX, posY, posZ);
     Material type = block.getType();
     int variant = BlockAccess.global().variantIndexOf(block);
+    User user = UserRepository.userOf(player);
 
     return resolver.collisionShapeOf(
-      player.getWorld(), player, type, variant, posX, posY, posZ
+      player.getWorld(), user, type, variant, posX, posY, posZ
     );
   }
 

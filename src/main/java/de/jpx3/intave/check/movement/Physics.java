@@ -644,7 +644,7 @@ public final class Physics extends Check {
     boolean boundingBoxIntersectionCurrent = Collision.present(user, movementData, currentBoundingBox);
     boolean movedIntoBlock = !boundingBoxIntersectionLast && boundingBoxIntersectionCurrent;
     if (boundingBoxIntersectionCurrent && !spectator) {
-      List<BoundingBox> intersectionBoundingBoxesCurrent = Collision.__INVALID__resolveBoxes__OnlyForBoxIntersectionChecks__(player, currentBoundingBox);
+      List<BoundingBox> intersectionBoundingBoxesCurrent = Collision.__INVALID__resolveBoxes__OnlyForBoxIntersectionChecks__(user, currentBoundingBox);
       if (movedIntoBlock && !intersectionBoundingBoxesCurrent.isEmpty()) {
         movementData.invalidMovement = true;
         BoundingBox boundingBox = intersectionBoundingBoxesCurrent.get(0);
@@ -1280,7 +1280,7 @@ public final class Physics extends Check {
     }
     BoundingBox box = BoundingBox.fromPosition(user, user.meta().movement(), x, y, z).grow(1.2);
     Player player = user.player();
-    List<Position> positions = Collision.collectCollidingPositions(player, box, 16, Collectors.toList());
+    List<Position> positions = Collision.collectCollidingPositions(user, box, 16, Collectors.toList());
     Synchronizer.synchronize(user, () -> {
       for (Position position : positions) {
         refreshBlock(player, position.toLocation(player.getWorld()));

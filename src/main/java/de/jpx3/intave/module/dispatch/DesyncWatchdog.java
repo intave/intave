@@ -108,7 +108,7 @@ public final class DesyncWatchdog extends Module {
             if (teleportPending(user) || user.meta().movement().inRecovery) return;
             Player player = user.player();
             Location location = player.getLocation().clone();
-            while (BlockTypeAccess.typeAccess(location.getBlock(), player) != Material.AIR) {
+            while (BlockTypeAccess.typeAccess(location.getBlock(), user) != Material.AIR) {
               location.add(0, 1, 0);
             }
             if (user.receives(MessageChannel.DEBUG_TELEPORT)) {

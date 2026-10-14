@@ -1,19 +1,18 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.reflect.StructureModifier;
 import de.jpx3.intave.check.CheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
+import de.jpx3.intave.packet.reader.BlockInteractionReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.ViolationMetadata;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.util.Vector;
 
 import static de.jpx3.intave.check.world.PlacementAnalysis.COMMON_FLAG_MESSAGE;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.BLOCK_PLACE;
@@ -29,22 +28,20 @@ public final class Facing extends CheckPart<PlacementAnalysis> {
 			BLOCK_PLACE
 		}
 	)
-	public void checkPlacementVector(PacketEvent event) {
-		Player player = event.getPlayer();
-		PacketContainer packet = event.getPacket();
-		if (blockingPlacementPacket(packet)) {
+	public void checkPlacementVector(User user, BlockInteractionReader reader) {
+		if (reader.enumDirection() == 255) {
 			return;
 		}
-		StructureModifier<Float> floatStructureModifier = packet.getFloat();
-		if (floatStructureModifier.size() < 3) {
+		Vector facing = reader.facingVector();
+		if (facing == null) {
 			return;
 		}
-		float f1 = floatStructureModifier.read(0);
-		float f2 = floatStructureModifier.read(1);
-		float f3 = floatStructureModifier.read(2);
+		double f1 = facing.getX();
+		double f2 = facing.getY();
+		double f3 = facing.getZ();
 		if (f1 < 0 || f2 < 0 || f3 < 0 || f1 > 1 || f2 > 1 || f3 > 1) {
 			Violation violation = Violation.builderFor(PlacementAnalysis.class)
-				.forPlayer(player).withMessage(COMMON_FLAG_MESSAGE)
+				.forUser(user).withMessage(COMMON_FLAG_MESSAGE)
 				.withDefaultThreshold()
 				.withVL(5).build();
 			Modules.violationProcessor().processViolation(violation);
@@ -52,11 +49,6 @@ public final class Facing extends CheckPart<PlacementAnalysis> {
 //      user.nerf(AttackNerfStrategy.CANCEL_FIRST_HIT, "14");
 //      user.nerf(AttackNerfStrategy.DMG_LIGHT, "14");
 		}
-	}
-
-	private boolean blockingPlacementPacket(PacketContainer packet) {
-		Integer integer = packet.getIntegers().readSafely(0);
-		return integer != null && integer == 255;
 	}
 
 	@BukkitEventSubscription(

@@ -17,10 +17,8 @@ import de.jpx3.intave.block.variant.BlockVariant;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,22 +29,21 @@ final class EnderPortalFramePatch extends BlockShapePatch {
   private final BoundingBox eye13 = BoundingBox.originFromX16(4, 13, 4, 12, 16, 12);
 
   @Override
-  protected BlockShape collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int variantIndex, BlockShape shape) {
-    return patch(player, type, variantIndex);
+  protected BlockShape collisionPatch(World world, User user, int posX, int posY, int posZ, Material type, int variantIndex, BlockShape shape) {
+    return patch(user, type, variantIndex);
   }
 
   @Override
-  protected BlockShape outlinePatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
-    return patch(player, type, blockState);
+  protected BlockShape outlinePatch(World world, User user, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
+    return patch(user, type, blockState);
   }
 
-  private BlockShape patch(Player player, Material type, int blockState) {
+  private BlockShape patch(User user, Material type, int blockState) {
     BlockVariant variant = BlockVariantRegister.variantOf(type, blockState);
     boolean eye = variant.propertyOf("eye");
     List<BoundingBox> boundingBoxes = new ArrayList<>();
     boundingBoxes.add(baseShape);
     if (eye) {
-      User user = UserRepository.userOf(player);
       if (user.meta().protocol().aquaticUpdate()) {
         boundingBoxes.add(eye13);
       } else {

@@ -31,13 +31,11 @@ import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.MutableBlockPosition;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.world.WorldHeight;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -215,7 +213,7 @@ public final class Collision {
   }
 
   public static <C, R> R collectCollidingPositions(
-    Player player,
+    User user,
     BoundingBox playerBox,
     int collisionLimit,
     Collector<Position, C, R> collector
@@ -230,7 +228,6 @@ public final class Collision {
     int minZ = floor(playerBox.minZ);
     int maxZ = floor(playerBox.maxZ);
     int ystart = Math.max(minY - 1, WorldHeight.LOWER_WORLD_LIMIT);
-    User user = UserRepository.userOf(player);
     BlockCache stateAccess = user.blockCache();
     int collisionLimitAdjusted = scaleAdjustedCollisionLimitOf(user);
     int blocksRemaining = collisionLimitAdjusted;
@@ -264,12 +261,12 @@ public final class Collision {
   }
 
   @Deprecated
-  public static boolean unsafePresent(World world, Player player, BoundingBox playerBox) {
-    return !unsafeNonePresent(world, player, playerBox);
+  public static boolean unsafePresent(World world, User user, BoundingBox playerBox) {
+    return !unsafeNonePresent(world, user, playerBox);
   }
 
   @Deprecated
-  public static boolean unsafeNonePresent(World world, Player player, BoundingBox playerBox) {
+  public static boolean unsafeNonePresent(World world, User user, BoundingBox playerBox) {
     int minX = floor(playerBox.minX);
     int maxX = floor(playerBox.maxX);
     int minY = floor(playerBox.minY);
@@ -277,7 +274,6 @@ public final class Collision {
     int minZ = floor(playerBox.minZ);
     int maxZ = floor(playerBox.maxZ);
     int ystart = Math.max(minY - 1, WorldHeight.LOWER_WORLD_LIMIT);
-    User user = UserRepository.userOf(player);
     int blockRemaining = scaleAdjustedCollisionLimitOf(user);
     exit:
     for (int x = minX; x <= maxX; ++x) {
@@ -287,9 +283,9 @@ public final class Collision {
             break exit;
           }
           Block block = VolatileBlockAccess.blockAccess(world, x, y, z);
-          Material type = BlockTypeAccess.typeAccess(block, player);
+          Material type = BlockTypeAccess.typeAccess(block, user);
           int variant = BlockVariantNativeAccess.variantAccess(block);
-          BlockShape shape = SHAPE_RESOLVER.collisionShapeOf(world, player, type, variant, x, y, z);
+          BlockShape shape = SHAPE_RESOLVER.collisionShapeOf(world, user, type, variant, x, y, z);
           if (shape.intersectsWith(playerBox)) {
             return false;
           }
@@ -314,7 +310,7 @@ public final class Collision {
   @Deprecated
   // I suck, please remove
   public static List<BoundingBox> __INVALID__resolveBoxes__OnlyForBoxIntersectionChecks__(
-    Player player, BoundingBox playerBoundingBox
+    User user, BoundingBox playerBoundingBox
   ) {
     int minX = floor(playerBoundingBox.minX);
     int maxX = floor(playerBoundingBox.maxX + 1.0D);
@@ -324,7 +320,6 @@ public final class Collision {
     int maxZ = floor(playerBoundingBox.maxZ + 1.0D);
     int ystart = Math.max(minY - 1, WorldHeight.LOWER_WORLD_LIMIT);
     List<BoundingBox> resolvedBoundingBoxes = null;
-    User user = UserRepository.userOf(player);
     MovementMetadata movementData = user.meta().movement();
     boolean outsideBorderLast = movementData.outsideBorder;
     boolean outsideBorderCurrent = playerOutsideBorder(movementData);
@@ -334,7 +329,7 @@ public final class Collision {
       movementData.outsideBorder = true;
     }
     BlockCache stateAccess = user.blockCache();
-    World world = player.getWorld();
+    World world = user.player().getWorld();
     int blockRemaining = scaleAdjustedCollisionLimitOf(user);
     exit:
     // this looks 1000x slower than it actually is
@@ -410,7 +405,7 @@ public final class Collision {
     User user, SimulationEnvironment environment, World world,
     int posX, int posY, int posZ, Material type, int variant
   ) {
-    BlockShape boundingBoxes = SHAPE_RESOLVER.collisionShapeOf(world, user.player(), type, variant, posX, posY, posZ);
+    BlockShape boundingBoxes = SHAPE_RESOLVER.collisionShapeOf(world, user, type, variant, posX, posY, posZ);
     if (CollisionModifiers.isModified(type)) {
       BlockShape customShape = CollisionModifiers.imaginaryBlockShape(
         type, user, environment, posX, posY, posZ, variant

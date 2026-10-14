@@ -4,9 +4,9 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.diagnostic.ShapeAccessFlowStudy;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import java.util.Set;
 
@@ -31,13 +31,13 @@ final class CubeMemoryPipe implements ShapeResolverPipeline {
   }
 
   @Override
-  public BlockShape collisionShapeOf(World world, Player player, Material type, int variantIndex, int posX, int posY, int posZ) {
+  public BlockShape collisionShapeOf(World world, User user, Material type, int variantIndex, int posX, int posY, int posZ) {
     CubeMemory memory = collisionCubeMemory;
     if (memory.knownToBeCubic(type)) {
       ShapeAccessFlowStudy.incremDynamic();
       return BlockShapes.cubeAt(posX, posY, posZ);
     }
-    BlockShape shape = forward.collisionShapeOf(world, player, type, variantIndex, posX, posY, posZ);
+    BlockShape shape = forward.collisionShapeOf(world, user, type, variantIndex, posX, posY, posZ);
     if (!memory.knownToBeNonCubic(type) && isInLoadedChunk(world, posX, posZ)) {
       if (shape.isCubic()) {
         forward.downstreamTypeReset(type); // flush downstream type
@@ -50,13 +50,13 @@ final class CubeMemoryPipe implements ShapeResolverPipeline {
   }
 
   @Override
-  public BlockShape outlineShapeOf(World world, Player player, Material type, int variantIndex, int posX, int posY, int posZ) {
+  public BlockShape outlineShapeOf(World world, User user, Material type, int variantIndex, int posX, int posY, int posZ) {
     CubeMemory memory = outlineCubeMemory;
     if (memory.knownToBeCubic(type)) {
       ShapeAccessFlowStudy.incremDynamic();
       return BlockShapes.cubeAt(posX, posY, posZ);
     }
-    BlockShape shape = forward.outlineShapeOf(world, player, type, variantIndex, posX, posY, posZ);
+    BlockShape shape = forward.outlineShapeOf(world, user, type, variantIndex, posX, posY, posZ);
     if (!memory.knownToBeNonCubic(type) && isInLoadedChunk(world, posX, posZ)) {
       if (shape.isCubic()) {
         forward.downstreamTypeReset(type); // flush downstream type

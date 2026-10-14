@@ -44,6 +44,7 @@ import de.jpx3.intave.packet.reader.MountEntityReader;
 import de.jpx3.intave.packet.reader.EntityIterable;
 import de.jpx3.intave.packet.reader.EntityMovementReader;
 import de.jpx3.intave.packet.reader.EntityMetadataReader;
+import de.jpx3.intave.packet.reader.EntityStatusReader;
 import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.player.fake.IdentifierReserve;
@@ -831,20 +832,13 @@ public final class EntityTracker extends Module {
     },
     ignoreCancelled = false
   )
-  public void receiveEntityStatus(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
+  public void receiveEntityStatus(User user, EntityStatusReader reader) {
     if (!user.hasPlayer()) {
       return;
     }
-    PacketContainer packet = event.getPacket();
-    Integer entityID = packet.getIntegers().read(0);
-    if (entityID == null) {
-      return;
-    }
-    Byte type = packet.getBytes().read(0);
-    Entity entity = entityByIdentifier(user, entityID);
-    if (entity == null || type != 3) {
+    Byte status = reader.status();
+    Entity entity = entityByIdentifier(user, reader.entityId());
+    if (entity == null || status == null || status != 3) {
       return;
     }
     boolean synchronize = entity.clientSynchronized && entity.tracingEnabled();

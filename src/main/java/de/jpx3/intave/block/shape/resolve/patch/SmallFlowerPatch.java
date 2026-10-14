@@ -3,9 +3,9 @@ package de.jpx3.intave.block.shape.resolve.patch;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.share.BoundingBox;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import java.util.Collections;
 import java.util.Set;
@@ -17,7 +17,7 @@ final class SmallFlowerPatch extends BlockShapePatch {
   private static final BlockShape[][] CACHE = new BlockShape[16][16];
 
   @Override
-  protected BlockShape outlinePatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
+  protected BlockShape outlinePatch(World world, User user, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
     if (shape.isEmpty()) {
       return shape;
     }

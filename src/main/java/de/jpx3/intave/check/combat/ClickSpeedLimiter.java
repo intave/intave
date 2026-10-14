@@ -12,7 +12,7 @@
 package de.jpx3.intave.check.combat;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketEvent;
+import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.MetaCheck;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
@@ -22,13 +22,12 @@ import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.player.AbilityTracker;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
-import de.jpx3.intave.packet.plib.PacketTypes;
 import de.jpx3.intave.packet.reader.EntityUseReader;
+import de.jpx3.intave.packet.reader.PlayerMoveReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
-import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
 import java.util.ArrayList;
@@ -70,19 +69,24 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsIn = {
-      FLYING, LOOK, POSITION, POSITION_LOOK, CLIENT_TICK_END
+      FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void clientTickUpdate(PacketEvent event) {
+  public void clientMovementUpdate(User user, PacketType packetType, PlayerMoveReader reader) {
+    clientTickUpdate(user, packetType, reader);
+  }
+
+  @PacketSubscription(priority = ListenerPriority.HIGH, packetsIn = CLIENT_TICK_END)
+  public void clientTickEnd(User user, PacketType packetType) {
+    clientTickUpdate(user, packetType, null);
+  }
+
+  private void clientTickUpdate(User user, PacketType pt, @Nullable PlayerMoveReader reader) {
     // TODO: Check rod right click spam
-    Player player = event.getPlayer();
-    User user = userOf(player);
     ClickSpeedLimiterMeta meta = metaOf(user);
-    PacketType pt = event.getPacketType();
     ProtocolMetadata protocol = user.meta().protocol();
     boolean sendsClientTickEnd = protocol.sendsClientTickEnd();
-    boolean clientTickEnd = PacketTypes.isClientEndTick(pt);
-    if (sendsClientTickEnd && !clientTickEnd) {
+    if (sendsClientTickEnd && reader != null) {
       return;
     }
 
@@ -94,7 +98,8 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
 
     boolean positionReminderPacket = user.protocolVersion() > ProtocolMetadata.VER_1_8
       && !sendsClientTickEnd
-      && isPositionReminderPacket(event, meta, protocol);
+      && reader != null
+      && isPositionReminderPacket(reader, meta, protocol);
 
     if (user.protocolVersion() <= ProtocolMetadata.VER_1_8) {
       // 1.8
@@ -134,7 +139,7 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
       }
 
       Violation violation = Violation.builderFor(ClickSpeedLimiter.class)
-        .forPlayer(player)
+        .forUser(user)
         .withMessage("attacked too quickly")
         .withDetails(sum + " c/s")
         .withVL(addedVL)
@@ -145,23 +150,19 @@ public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSp
       }
     }
 
-//    player.sendMessage("" + sum);
     prepareNextTick(meta, pt);
   }
 
   private boolean isPositionReminderPacket(
-    PacketEvent event, ClickSpeedLimiterMeta meta, ProtocolMetadata protocol
+    PlayerMoveReader reader, ClickSpeedLimiterMeta meta, ProtocolMetadata protocol
   ) {
-    PacketType packetType = event.getPacketType();
-    if (packetType != PacketType.Play.Client.POSITION
-      && packetType != PacketType.Play.Client.POSITION_LOOK
-    ) {
+    if (!reader.hasMovement()) {
       return false;
     }
 
-    double positionX = event.getPacket().getDoubles().read(0);
-    double positionY = event.getPacket().getDoubles().read(1);
-    double positionZ = event.getPacket().getDoubles().read(2);
+    double positionX = reader.positionX();
+    double positionY = reader.positionY();
+    double positionZ = reader.positionZ();
     boolean reminder = meta.hasReportedPosition && isWithinPositionReminderThreshold(
       protocol.protocolVersion(),
       positionX - meta.lastReportedPositionX,

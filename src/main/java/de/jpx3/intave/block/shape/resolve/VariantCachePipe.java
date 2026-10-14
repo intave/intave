@@ -5,9 +5,9 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.cleanup.ReferenceMap;
 import de.jpx3.intave.diagnostic.MemoryWatchdog;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,18 +29,18 @@ final class VariantCachePipe implements ShapeResolverPipeline {
   }
 
   @Override
-  public BlockShape collisionShapeOf(World world, Player player, Material type, int variantIndex, int posX, int posY, int posZ) {
+  public BlockShape collisionShapeOf(World world, User user, Material type, int variantIndex, int posX, int posY, int posZ) {
     Map<Integer, BlockShape> variantCache = collisionShapeCache.computeIfAbsent(type, material -> ReferenceMap.soft(new ConcurrentHashMap<>()));
     return variantCache.computeIfAbsent(variantIndex, integer ->
-      forward.collisionShapeOf(world, player, type, variantIndex, posX, posY, posZ).normalized(posX, posY, posZ)
+      forward.collisionShapeOf(world, user, type, variantIndex, posX, posY, posZ).normalized(posX, posY, posZ)
     ).contextualized(posX, posY, posZ);
   }
 
   @Override
-  public BlockShape outlineShapeOf(World world, Player player, Material type, int variantIndex, int posX, int posY, int posZ) {
+  public BlockShape outlineShapeOf(World world, User user, Material type, int variantIndex, int posX, int posY, int posZ) {
     Map<Integer, BlockShape> variantCache = outlineShapeCache.computeIfAbsent(type, material -> ReferenceMap.soft(new ConcurrentHashMap<>()));
     return variantCache.computeIfAbsent(variantIndex, integer ->
-      forward.outlineShapeOf(world, player, type, variantIndex, posX, posY, posZ).normalized(posX, posY, posZ)
+      forward.outlineShapeOf(world, user, type, variantIndex, posX, posY, posZ).normalized(posX, posY, posZ)
     ).contextualized(posX, posY, posZ);
   }
 

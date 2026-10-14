@@ -20,9 +20,9 @@ import de.jpx3.intave.block.store.BlockStore;
 import de.jpx3.intave.block.store.CopyOnWriteArrayLocalBlockStore;
 import de.jpx3.intave.share.BlockState;
 import de.jpx3.intave.test.FakePlayerFactory;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
@@ -40,16 +40,16 @@ class MultiChunkKeyBlockCacheTest {
   private static final ShapeResolverPipeline SHAPE_RESOLVER = new ShapeResolverPipeline() {
     @Override
     public BlockShape collisionShapeOf(
-      World world, Player player, Material type, int variant, int x, int y, int z
+      World world, User user, Material type, int variant, int x, int y, int z
     ) {
       return BlockShapes.originCube().contextualized(x, y, z);
     }
 
     @Override
     public BlockShape outlineShapeOf(
-      World world, Player player, Material type, int variant, int x, int y, int z
+      World world, User user, Material type, int variant, int x, int y, int z
     ) {
-      return collisionShapeOf(world, player, type, variant, x, y, z);
+      return collisionShapeOf(world, user, type, variant, x, y, z);
     }
   };
 

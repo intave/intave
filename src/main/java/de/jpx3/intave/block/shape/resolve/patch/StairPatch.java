@@ -7,10 +7,10 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.share.BoundingBox;
+import de.jpx3.intave.user.User;
 import net.minecraft.server.v1_12_R1.*;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
-import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +55,7 @@ class StairPatch extends BlockShapePatch {
   @Override
   protected BlockShape collisionPatch(
     org.bukkit.World world,
-    Player player,
+    User user,
     int posX,
     int posY,
     int posZ,

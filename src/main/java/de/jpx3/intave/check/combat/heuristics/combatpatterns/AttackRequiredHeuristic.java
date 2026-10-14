@@ -11,7 +11,6 @@
 
 package de.jpx3.intave.check.combat.heuristics.combatpatterns;
 
-import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
@@ -21,6 +20,7 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.packet.reader.EntityUseReader;
+import de.jpx3.intave.packet.reader.HeldItemSlotReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
 import de.jpx3.intave.world.raytrace.Raytrace;
@@ -70,13 +70,11 @@ public final class AttackRequiredHeuristic extends ClassicHeuristic<AttackRequir
       HELD_ITEM_SLOT_IN
     }
   )
-  public void receiveSlotSwitch(PacketEvent event) {
-    Player player = event.getPlayer();
-    AttackRequiredMeta meta = metaOf(player);
-    PacketContainer packet = event.getPacket();
-    Integer slot = packet.getIntegers().read(0);
+  public void receiveSlotSwitch(User user, HeldItemSlotReader reader) {
+    AttackRequiredMeta meta = metaOf(user);
+    int slot = reader.slot();
 
-    ItemStack item = player.getInventory().getItem(slot);
+    ItemStack item = user.player().getInventory().getItem(slot);
     if (item == null) {
       return;
     }

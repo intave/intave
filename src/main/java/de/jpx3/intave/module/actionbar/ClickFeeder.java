@@ -1,27 +1,21 @@
 package de.jpx3.intave.module.actionbar;
 
-import de.jpx3.intave.share.EntityUseAction;
-
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
+import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.check.EventProcessor;
 import de.jpx3.intave.check.combat.clickpatterns.Kurtosis;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.plib.PacketTypes;
 import de.jpx3.intave.packet.reader.BlockDigReader;
 import de.jpx3.intave.packet.reader.EntityUseReader;
-import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.packet.reader.PlayerMoveReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
-import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
 
 import java.util.*;
 
@@ -33,51 +27,38 @@ import static java.lang.Math.pow;
 public final class ClickFeeder implements EventProcessor {
   private final UserLocal<ClickBufferData> bufferData = UserLocal.withInitial(ClickBufferData::new);
 
-  @PacketSubscription(
-    priority = ListenerPriority.HIGH,
-    packetsIn = {
-      USE_ENTITY, ARM_ANIMATION, BLOCK_DIG, USE_ITEM
-    }
-  )
-  public void clientClickUpdate(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
+  @PacketSubscription(priority = ListenerPriority.HIGH, packetsIn = USE_ENTITY)
+  public void clientAttackUpdate(User user, EntityUseReader reader) {
     ClickBufferData bufferData = this.bufferData.get(user);
-    PacketContainer packet = event.getPacket();
-    PacketType type = packet.getType();
-    if (type == PacketType.Play.Client.USE_ENTITY) {
-      EntityUseReader reader = PacketReaders.readerOf(packet);
-      EntityUseAction entityUseAction = reader.useAction();
-      if (entityUseAction == EntityUseAction.ATTACK) {
-        bufferData.recordAttack(System.currentTimeMillis());
-      }
-      reader.release();
-    } else if (type == PacketType.Play.Client.ARM_ANIMATION) {
-      bufferData.recordClick(System.currentTimeMillis());
-      if (System.currentTimeMillis() - bufferData.lastMove > 200) {
-        bufferData.desynchronizedClick = true;
-      }
-    } else if (type == PacketType.Play.Client.BLOCK_DIG) {
-      PlayerDigAction digType;
-      try (BlockDigReader reader = PacketReaders.readerOf(packet)) {
-        digType = reader.action();
-      }
-      if (digType == DROP_ITEM && user.meta().inventory().heldItemType() == Material.AIR) {
-        UUID actionTarget = user.actionTarget();
-        if (actionTarget != null) {
-          User actionTargetUser = UserRepository.userOf(actionTarget);
-          if (actionTargetUser.hasPlayer()) {
-            ClickBufferData otherBufferData = this.bufferData.get(actionTargetUser);
-            otherBufferData.tab++;
-            otherBufferData.tab %= otherBufferData.totalTabs;
-            otherBufferData.frontVisible = 0;
-            otherBufferData.changeDisplayVisible = 0;
-            Arrays.fill(otherBufferData.tabVisibility, 0);
-          }
+    if (reader.isAttackPacket()) {
+      bufferData.recordAttack(System.currentTimeMillis());
+    }
+  }
+
+  @PacketSubscription(priority = ListenerPriority.HIGH, packetsIn = ARM_ANIMATION)
+  public void clientSwingUpdate(User user) {
+    ClickBufferData bufferData = this.bufferData.get(user);
+    bufferData.recordClick(System.currentTimeMillis());
+    if (System.currentTimeMillis() - bufferData.lastMove > 200) {
+      bufferData.desynchronizedClick = true;
+    }
+  }
+
+  @PacketSubscription(priority = ListenerPriority.HIGH, packetsIn = BLOCK_DIG)
+  public void clientDigUpdate(User user, BlockDigReader reader) {
+    ClickBufferData bufferData = this.bufferData.get(user);
+    if (reader.action() == DROP_ITEM && user.meta().inventory().heldItemType() == Material.AIR) {
+      UUID actionTarget = user.actionTarget();
+      if (actionTarget != null) {
+        User actionTargetUser = UserRepository.userOf(actionTarget);
+        if (actionTargetUser.hasPlayer()) {
+          ClickBufferData otherBufferData = this.bufferData.get(actionTargetUser);
+          otherBufferData.tab++;
+          otherBufferData.tab %= otherBufferData.totalTabs;
+          otherBufferData.frontVisible = 0;
+          otherBufferData.changeDisplayVisible = 0;
+          Arrays.fill(otherBufferData.tabVisibility, 0);
         }
-      } else {
-        bufferData.breakingBlock = user.meta().attack().inBreakProcess;
-        bufferData.recordPlace(System.currentTimeMillis());
       }
     } else {
       bufferData.breakingBlock = user.meta().attack().inBreakProcess;
@@ -85,29 +66,41 @@ public final class ClickFeeder implements EventProcessor {
     }
   }
 
+  @PacketSubscription(priority = ListenerPriority.HIGH, packetsIn = USE_ITEM)
+  public void clientUseItemUpdate(User user) {
+    ClickBufferData bufferData = this.bufferData.get(user);
+    bufferData.breakingBlock = user.meta().attack().inBreakProcess;
+    bufferData.recordPlace(System.currentTimeMillis());
+  }
+
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsIn = {
-      FLYING, LOOK, POSITION, POSITION_LOOK, CLIENT_TICK_END
+      FLYING, LOOK, POSITION, POSITION_LOOK
     }
   )
-  public void clientTickUpdate(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
+  public void clientMovementUpdate(User user, PacketType packetType, PlayerMoveReader reader) {
+    clientTickUpdate(user, packetType, reader);
+  }
 
-    PacketType packetType = event.getPacketType();
+  @PacketSubscription(priority = ListenerPriority.HIGH, packetsIn = CLIENT_TICK_END)
+  public void clientTickEnd(User user, PacketType packetType) {
+    clientTickUpdate(user, packetType, null);
+  }
+
+  private void clientTickUpdate(User user, PacketType packetType, @Nullable PlayerMoveReader reader) {
     ProtocolMetadata protocol = user.meta().protocol();
     boolean sendsClientTickEnd = protocol.sendsClientTickEnd();
 
-    boolean notClientTickEnd = !PacketTypes.isClientEndTick(packetType);
-    if (sendsClientTickEnd && notClientTickEnd) {
+    if (sendsClientTickEnd && reader != null) {
       return;
     }
 
     ClickBufferData bufferData = this.bufferData.get(user);
     boolean positionReminderPacket = user.protocolVersion() > ProtocolMetadata.VER_1_8
       && !sendsClientTickEnd
-      && isPositionReminderPacket(event, bufferData, protocol);
+      && reader != null
+      && isPositionReminderPacket(reader, bufferData, protocol);
     TickSample sample = resolveTickSample(bufferData.clicks, bufferData.attacks, bufferData.places);
     long now = System.currentTimeMillis();
 
@@ -194,18 +187,15 @@ public final class ClickFeeder implements EventProcessor {
   }
 
   private boolean isPositionReminderPacket(
-    PacketEvent event, ClickBufferData bufferData, ProtocolMetadata protocol
+    PlayerMoveReader reader, ClickBufferData bufferData, ProtocolMetadata protocol
   ) {
-    PacketType packetType = event.getPacketType();
-    if (packetType != PacketType.Play.Client.POSITION
-      && packetType != PacketType.Play.Client.POSITION_LOOK
-    ) {
+    if (!reader.hasMovement()) {
       return false;
     }
 
-    double positionX = event.getPacket().getDoubles().read(0);
-    double positionY = event.getPacket().getDoubles().read(1);
-    double positionZ = event.getPacket().getDoubles().read(2);
+    double positionX = reader.positionX();
+    double positionY = reader.positionY();
+    double positionZ = reader.positionZ();
     double offsetX = positionX - bufferData.lastReportedPositionX;
     double offsetY = positionY - bufferData.lastReportedPositionY;
     double offsetZ = positionZ - bufferData.lastReportedPositionZ;

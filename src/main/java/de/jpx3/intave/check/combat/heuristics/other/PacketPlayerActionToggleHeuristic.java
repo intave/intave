@@ -11,18 +11,15 @@
 
 package de.jpx3.intave.check.combat.heuristics.other;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.share.PlayerAction;
-import de.jpx3.intave.packet.plib.converter.PlayerActionResolver;
+import de.jpx3.intave.packet.reader.PlayerActionReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
-import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.FLYING_PACKET_ACCURATE;
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
@@ -38,9 +35,8 @@ public final class PacketPlayerActionToggleHeuristic extends ClassicHeuristic<Pa
       FLYING, POSITION, POSITION_LOOK, LOOK
     }
   )
-  public void receiveMovementPacket(PacketEvent event) {
-    Player player = event.getPlayer();
-    PacketSprintToggleHeuristicMeta heuristicMeta = metaOf(player);
+  public void receiveMovementPacket(User user) {
+    PacketSprintToggleHeuristicMeta heuristicMeta = metaOf(user);
     heuristicMeta.reset();
   }
 
@@ -49,9 +45,7 @@ public final class PacketPlayerActionToggleHeuristic extends ClassicHeuristic<Pa
       ENTITY_ACTION_IN
     }
   )
-  public void receiveEntityAction(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
+  public void receiveEntityAction(User user, PlayerActionReader reader) {
     MetadataBundle meta = user.meta();
     SimulationEnvironment movementData = meta.movement();
     AbilityMetadata abilityData = meta.abilities();
@@ -59,8 +53,7 @@ public final class PacketPlayerActionToggleHeuristic extends ClassicHeuristic<Pa
     PunishmentMetadata punishmentData = user.meta().punishment();
     PacketSprintToggleHeuristicMeta heuristicMeta = metaOf(user);
 
-    PacketContainer packet = event.getPacket();
-    PlayerAction action = PlayerActionResolver.resolveActionFromPacket(packet);
+    PlayerAction action = reader.playerAction();
 
     boolean sprint = action == PlayerAction.START_SPRINTING || action == PlayerAction.STOP_SPRINTING;
     boolean sneak = action.isSneakRelated();

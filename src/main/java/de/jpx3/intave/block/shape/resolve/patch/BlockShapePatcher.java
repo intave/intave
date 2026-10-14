@@ -2,9 +2,9 @@ package de.jpx3.intave.block.shape.resolve.patch;
 
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.block.shape.BlockShape;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -53,24 +53,24 @@ public final class BlockShapePatcher {
     materials.forEach(type -> patches.put(type, patch));
   }
 
-  public static BlockShape patchCollision(World world, Player player, int blockX, int blockY, int blockZ, Material type, int blockState, BlockShape shape) {
+  public static BlockShape patchCollision(World world, User user, int blockX, int blockY, int blockZ, Material type, int blockState, BlockShape shape) {
     BlockShapePatch blockPatch = patches.get(type);
     if (blockPatch == null) {
       return shape;
     } else {
       BlockShape normalized = normalize(blockPatch, shape, blockX, blockY, blockZ);
-      BlockShape patched = blockPatch.collisionPatch(world, player, blockX, blockY, blockZ, type, blockState, normalized);
+      BlockShape patched = blockPatch.collisionPatch(world, user, blockX, blockY, blockZ, type, blockState, normalized);
       return contextualize(patched, blockX, blockY, blockZ);
     }
   }
 
-  public static BlockShape patchOutline(World world, Player player, int blockX, int blockY, int blockZ, Material type, int blockState, BlockShape shape) {
+  public static BlockShape patchOutline(World world, User user, int blockX, int blockY, int blockZ, Material type, int blockState, BlockShape shape) {
     BlockShapePatch blockPatch = patches.get(type);
     if (blockPatch == null) {
       return shape;
     } else {
       BlockShape normalized = normalize(blockPatch, shape, blockX, blockY, blockZ);
-      BlockShape patched = blockPatch.outlinePatch(world, player, blockX, blockY, blockZ, type, blockState, normalized);
+      BlockShape patched = blockPatch.outlinePatch(world, user, blockX, blockY, blockZ, type, blockState, normalized);
       return contextualize(patched, blockX, blockY, blockZ);
     }
   }

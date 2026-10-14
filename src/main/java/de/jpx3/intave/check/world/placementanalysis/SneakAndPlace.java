@@ -1,6 +1,5 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
@@ -10,8 +9,8 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.share.PlayerAction;
-import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.packet.reader.PlayerActionReader;
+import de.jpx3.intave.packet.reader.BlockInteractionReader;
 import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -100,18 +99,10 @@ public final class SneakAndPlace extends PlayerCheckPart<PlacementAnalysis> {
 			BLOCK_PLACE
 		}
 	)
-	public void receivePlacementPacket(PacketEvent event) {
-		PacketContainer packet = event.getPacket();
-		Player player = event.getPlayer();
-
-		Integer facing = packet.getIntegers().readSafely(0);
-		if (facing == null) {
-			facing = 0;
-		}
-		if (facing == 255) {
+	public void receivePlacementPacket(User user, BlockInteractionReader reader) {
+		if (reader.enumDirection() == 255) {
 			return;
 		}
-		User user = userOf(player);
 		Material material = user.meta().inventory().heldItemType();
 		boolean hasPlaceable = material.isBlock() && material.isSolid();
 		if (!hasPlaceable) {
@@ -126,10 +117,7 @@ public final class SneakAndPlace extends PlayerCheckPart<PlacementAnalysis> {
 			ENTITY_ACTION_IN
 		}
 	)
-	public void receiveEntityActionPacket(PacketEvent event) {
-		Player player = event.getPlayer();
-		PacketContainer packet = event.getPacket();
-		PlayerActionReader reader = PacketReaders.readerOf(packet);
+	public void receiveEntityActionPacket(PlayerActionReader reader) {
 
 		PlayerAction action = reader.playerAction();
 		if (action.isStartSneak()) {
@@ -144,8 +132,6 @@ public final class SneakAndPlace extends PlayerCheckPart<PlacementAnalysis> {
 			lastSneakDuration = sneakDuration;
 			sneakDuration = 0;
 		}
-
-		reader.release();
 	}
 
 	@BukkitEventSubscription

@@ -1,8 +1,6 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.math.MathHelper;
@@ -10,7 +8,6 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.share.PlayerAction;
 import de.jpx3.intave.packet.reader.BlockInteractionReader;
-import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.packet.reader.PlayerActionReader;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Direction;
@@ -19,7 +16,6 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 import java.util.LinkedList;
@@ -58,100 +54,95 @@ public class SmartSpeed extends PlayerCheckPart<PlacementAnalysis> {
 			BLOCK_PLACE, USE_ITEM
 		}
 	)
-	public void receivePlacementPacket(PacketEvent event) {
-		Player player = event.getPlayer();
-		User user = userOf(player);
-		PacketContainer packet = event.getPacket();
-
-		BlockInteractionReader reader = PacketReaders.readerOf(packet);
-		try {
-			if (event.getPacketType() == PacketType.Play.Client.BLOCK_PLACE) {
-				int facing = reader.enumDirection();
-				if (facing == 255) {
-					ticksSinceHardFaultClick = 0;
-				} else {
-					Material material = user.meta().inventory().heldItemType();
-					boolean hasPlaceable = material.isBlock() && material.isSolid();
-					if (!hasPlaceable) {
-						return;
-					}
-
-					// placement logic
-					List<Integer> placementSpeedHistory = this.placementSpeedHistory;
-					if (placementSpeedHistory.size() > 100) {
-						placementSpeedHistory.remove(0);
-					}
-					placementSpeedHistory.add(ticksSinceBlockPlacement);
-
-					List<Placement> placementHistory = this.placementHistory;
-					if (placementHistory.size() > 100) {
-						placementHistory.remove(0);
-					}
-					BlockPosition blockPosition = reader.nativeBlockPosition();
-					Direction direction = reader.direction();
-
-					double diff = blockPosition.getBlockY() - user.meta().movement().positionY;
-					boolean under = diff < 0 && diff > -2.5;
-					boolean highRotationSinceLastPlacement = false;
-
-					boolean near = placementHistory.stream().anyMatch(placement -> placement.position.distanceTo(blockPosition) < 1.1);
-
-					long currentTick = tickCount;
-					long lastPlacement = lastPlacementTick;
-					int duration = (int) (currentTick - lastPlacement);
-
-					float rotationSinceLastPlacement = 0;
-					float highestPitch = 0;
-					if (lastPlacement != -1) {
-						List<Rotation> pastRotations = this.pastRotations;
-						if (pastRotations.size() > 2) {
-							for (int i = pastRotations.size() - 1; i >= Math.max(1, pastRotations.size() - duration); i--) {
-								Rotation rotation = pastRotations.get(i);
-								rotationSinceLastPlacement += rotation.distanceTo(pastRotations.get(i - 1));
-								highestPitch = Math.max(highestPitch, rotation.pitch());
-							}
-						}
-					}
-					if (rotationSinceLastPlacement > 180) {
-						highRotationSinceLastPlacement = true;
-					}
-
-					placementHistory.add(new Placement(blockPosition, direction, ticksSinceBlockPlacement, tickCount, near));
-
-					double average = 0;
-					int size = 3;
-					if (placementSpeedHistory.size() >= size) {
-						int requiredElements = size;
-						for (int i = placementSpeedHistory.size() - 1; i >= Math.max(0, placementSpeedHistory.size() - requiredElements); i--) {
-							Direction placementDirection = placementHistory.get(i) == null ? Direction.UP : placementHistory.get(i).direction();
-							if (placementDirection != null && placementDirection.axis().isVertical()) {
-								//              System.out.println("Skipping placement because it is on the y axis: " + placementDirection);
-								requiredElements++;
-								continue;
-							}
-							average += placementSpeedHistory.get(i);
-						}
-						average /= size;
-					}
-
-					int minimumTicks = 50;
-
-
-					double finalSpeedAverageOfLastTwo = average;
-					//        boolean finalHighRotationSinceLastPlacement = highRotationSinceLastPlacement;
-					float finalRotationSinceLastPlacement = rotationSinceLastPlacement;
-					float finalLowestPitch = highestPitch;
-					//        Synchronizer.synchronize(() -> {
-					//          player.sendMessage((under && near ? ChatColor.GRAY : ChatColor.DARK_GRAY) + MathHelper.formatDouble(finalSpeedAverageOfLastTwo, 2) + "b/t, rot:" + finalRotationSinceLastPlacement + ", pitch:"+ finalLowestPitch);
-					//        });
-
-					ticksSinceBlockPlacement = 0;
-					lastPlacementTick = tickCount;
-					placedInThisTick = true;
+	public void receivePlacementPacket(User user, PacketType packetType, BlockInteractionReader reader) {
+		if (packetType == PacketType.Play.Client.BLOCK_PLACE) {
+			int facing = reader.enumDirection();
+			if (facing == 255) {
+				ticksSinceHardFaultClick = 0;
+			} else {
+				Material material = user.meta().inventory().heldItemType();
+				boolean hasPlaceable = material.isBlock() && material.isSolid();
+				if (!hasPlaceable) {
+					return;
 				}
+
+				BlockPosition blockPosition = reader.nativeBlockPosition();
+				if (blockPosition == null) {
+					return;
+				}
+
+				// placement logic
+				List<Integer> placementSpeedHistory = this.placementSpeedHistory;
+				if (placementSpeedHistory.size() > 100) {
+					placementSpeedHistory.remove(0);
+				}
+				placementSpeedHistory.add(ticksSinceBlockPlacement);
+
+				List<Placement> placementHistory = this.placementHistory;
+				if (placementHistory.size() > 100) {
+					placementHistory.remove(0);
+				}
+				Direction direction = reader.direction();
+
+				double diff = blockPosition.getBlockY() - user.meta().movement().positionY;
+				boolean under = diff < 0 && diff > -2.5;
+				boolean highRotationSinceLastPlacement = false;
+
+				boolean near = placementHistory.stream().anyMatch(placement -> placement.position.distanceTo(blockPosition) < 1.1);
+
+				long currentTick = tickCount;
+				long lastPlacement = lastPlacementTick;
+				int duration = (int) (currentTick - lastPlacement);
+
+				float rotationSinceLastPlacement = 0;
+				float highestPitch = 0;
+				if (lastPlacement != -1) {
+					List<Rotation> pastRotations = this.pastRotations;
+					if (pastRotations.size() > 2) {
+						for (int i = pastRotations.size() - 1; i >= Math.max(1, pastRotations.size() - duration); i--) {
+							Rotation rotation = pastRotations.get(i);
+							rotationSinceLastPlacement += rotation.distanceTo(pastRotations.get(i - 1));
+							highestPitch = Math.max(highestPitch, rotation.pitch());
+						}
+					}
+				}
+				if (rotationSinceLastPlacement > 180) {
+					highRotationSinceLastPlacement = true;
+				}
+
+				placementHistory.add(new Placement(blockPosition, direction, ticksSinceBlockPlacement, tickCount, near));
+
+				double average = 0;
+				int size = 3;
+				if (placementSpeedHistory.size() >= size) {
+					int requiredElements = size;
+					for (int i = placementSpeedHistory.size() - 1; i >= Math.max(0, placementSpeedHistory.size() - requiredElements); i--) {
+						Direction placementDirection = placementHistory.get(i) == null ? Direction.UP : placementHistory.get(i).direction();
+						if (placementDirection != null && placementDirection.axis().isVertical()) {
+							//              System.out.println("Skipping placement because it is on the y axis: " + placementDirection);
+							requiredElements++;
+							continue;
+						}
+						average += placementSpeedHistory.get(i);
+					}
+					average /= size;
+				}
+
+				int minimumTicks = 50;
+
+
+				double finalSpeedAverageOfLastTwo = average;
+				//        boolean finalHighRotationSinceLastPlacement = highRotationSinceLastPlacement;
+				float finalRotationSinceLastPlacement = rotationSinceLastPlacement;
+				float finalLowestPitch = highestPitch;
+				//        Synchronizer.synchronize(() -> {
+				//          player.sendMessage((under && near ? ChatColor.GRAY : ChatColor.DARK_GRAY) + MathHelper.formatDouble(finalSpeedAverageOfLastTwo, 2) + "b/t, rot:" + finalRotationSinceLastPlacement + ", pitch:"+ finalLowestPitch);
+				//        });
+
+				ticksSinceBlockPlacement = 0;
+				lastPlacementTick = tickCount;
+				placedInThisTick = true;
 			}
-		} finally {
-			reader.release();
 		}
 	}
 
@@ -161,9 +152,7 @@ public class SmartSpeed extends PlayerCheckPart<PlacementAnalysis> {
 			FLYING, POSITION_LOOK, LOOK, POSITION
 		}
 	)
-	public void on(PacketEvent event) {
-		Player player = event.getPlayer();
-		User user = userOf(player);
+	public void on(User user) {
 		MovementMetadata movementData = user.meta().movement();
 
 		float rotationMovement = Math.min(MathHelper.distanceInDegrees(movementData.rotationYaw, movementData.lastRotationYaw), 360);
@@ -254,9 +243,7 @@ public class SmartSpeed extends PlayerCheckPart<PlacementAnalysis> {
 			ENTITY_ACTION_IN
 		}
 	)
-	public void receiveEntityActionPacket(PacketEvent event) {
-		PacketContainer packet = event.getPacket();
-		PlayerActionReader reader = PacketReaders.readerOf(packet);
+	public void receiveEntityActionPacket(PlayerActionReader reader) {
 		PlayerAction action = reader.playerAction();
 		if (action.isStartSneak()) {
 			startSneakInThisTick = true;
@@ -268,7 +255,6 @@ public class SmartSpeed extends PlayerCheckPart<PlacementAnalysis> {
 			lastSneakDuration = sneakDuration;
 			sneakDuration = 0;
 		}
-		reader.release();
 	}
 
 	private static class Placement {

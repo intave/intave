@@ -271,11 +271,9 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       HELD_ITEM_SLOT_IN
     }
   )
-  public void receiveHeldItemSlot(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
-    int slot = event.getPacket().getIntegers().read(0);
-    ItemStack item = player.getInventory().getItem(slot);
+  public void receiveHeldItemSlot(User user, HeldItemSlotReader reader) {
+    int slot = reader.slot();
+    ItemStack item = user.player().getInventory().getItem(slot);
     Material type;
     int amount;
     if (item != null) {
@@ -342,9 +340,8 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
       PacketId.Client.CLOSE_WINDOW
     }
   )
-  public void receiveWindowClose(PacketEvent event) {
-    User user = UserRepository.userOf(event.getPlayer());
-    int containerId = event.getPacket().getIntegers().readSafely(0);
+  public void receiveWindowClose(User user, WindowIdReader reader) {
+    int containerId = reader.containerId();
     eventEmitter.accept(user, new InventoryCloseEvent(
       containerId, InventoryCloseEvent.Source.CLIENT
     ));

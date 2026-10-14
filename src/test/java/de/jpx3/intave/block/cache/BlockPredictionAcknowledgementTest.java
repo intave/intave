@@ -6,9 +6,9 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.test.FakePlayerFactory;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -23,13 +23,13 @@ class BlockPredictionAcknowledgementTest {
     MinecraftVersion.setCurrent(MinecraftVersions.VER26_3);
     cache = new MultiChunkKeyBlockCache(FakePlayerFactory.createPlayer(), new ShapeResolverPipeline() {
       @Override
-      public BlockShape collisionShapeOf(World world, Player player, Material type, int variant, int x, int y, int z) {
+      public BlockShape collisionShapeOf(World world, User user, Material type, int variant, int x, int y, int z) {
         return BlockShapes.originCube().contextualized(x, y, z);
       }
 
       @Override
-      public BlockShape outlineShapeOf(World world, Player player, Material type, int variant, int x, int y, int z) {
-        return collisionShapeOf(world, player, type, variant, x, y, z);
+      public BlockShape outlineShapeOf(World world, User user, Material type, int variant, int x, int y, int z) {
+        return collisionShapeOf(world, user, type, variant, x, y, z);
       }
     });
   }

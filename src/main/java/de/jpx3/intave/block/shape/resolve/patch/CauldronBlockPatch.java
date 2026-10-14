@@ -17,10 +17,8 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import java.util.Locale;
 
@@ -49,8 +47,7 @@ final class CauldronBlockPatch extends BlockShapePatch {
   private static final boolean SERVER_IS_1_13 = MinecraftVersions.VER1_13_0.atOrAbove();
 
   @Override
-  protected BlockShape collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
-    User user = UserRepository.userOf(player);
+  protected BlockShape collisionPatch(World world, User user, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
     if (user.meta().protocol().aquaticUpdate()) {
       if (SERVER_IS_1_13) {
         return shape;

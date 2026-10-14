@@ -18,11 +18,9 @@ import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 
 import java.util.Arrays;
 
@@ -90,9 +88,9 @@ public final class BlockTypeAccess {
    * providing fast performance, a robust cache implementation and stable fallback
    */
   @Deprecated
-  public static Material typeAccess(Block block, Player player) {
+  public static Material typeAccess(Block block, User user) {
     Material type = typeAccess(block);
-    return player == null ? type : translate(UserRepository.userOf(player), type);
+    return translate(user, type);
   }
 
   public static boolean hasTranslation(User user, Material origin) {

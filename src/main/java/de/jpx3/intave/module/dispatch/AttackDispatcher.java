@@ -14,7 +14,6 @@ package de.jpx3.intave.module.dispatch;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.WrappedAttribute;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.adapter.MinecraftVersions;
@@ -30,6 +29,7 @@ import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.packet.plib.PacketSender;
 import de.jpx3.intave.packet.reader.EntityUseReader;
+import de.jpx3.intave.packet.reader.WindowSingleItemReader;
 import de.jpx3.intave.player.DamageModify;
 import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.user.User;
@@ -201,9 +201,8 @@ public final class AttackDispatcher extends Module {
       RESPAWN
     }
   )
-  public void sentRespawn(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
+  public void sentRespawn(User user) {
+    Player player = user.player();
     Synchronizer.synchronizeDelayed(user, () -> disableReducing(player), 4);
   }
 
@@ -213,9 +212,8 @@ public final class AttackDispatcher extends Module {
       SET_SLOT
     }
   )
-  public void filterSharpness(PacketEvent event) {
-    PacketContainer packet = event.getPacket();
-    ItemStack item = packet.getItemModifier().read(0).clone();
+  public void filterSharpness(WindowSingleItemReader reader) {
+    ItemStack item = reader.item().clone();
     if (REDUCING_DISABLED) {
       if (item.containsEnchantment(Enchantment.DAMAGE_ALL)) {
         int level = item.getEnchantmentLevel(Enchantment.DAMAGE_ALL);
@@ -250,7 +248,7 @@ public final class AttackDispatcher extends Module {
 //        item.setItemMeta(itemMeta);
 //      }
 //    }
-    packet.getItemModifier().write(0, item);
+    reader.setItem(item);
   }
 
   private static final int[] ROMAN_STEPS = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};

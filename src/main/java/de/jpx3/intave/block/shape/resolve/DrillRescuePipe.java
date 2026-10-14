@@ -3,9 +3,9 @@ package de.jpx3.intave.block.shape.resolve;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.share.BoundingBox;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 final class DrillRescuePipe implements ShapeResolverPipeline {
   private final ShapeResolverPipeline next;
@@ -15,9 +15,9 @@ final class DrillRescuePipe implements ShapeResolverPipeline {
   }
 
   @Override
-  public BlockShape collisionShapeOf(World world, Player player, Material type, int variantIndex, int posX, int posY, int posZ) {
+  public BlockShape collisionShapeOf(World world, User user, Material type, int variantIndex, int posX, int posY, int posZ) {
     try {
-      return next.collisionShapeOf(world, player, type, variantIndex, posX, posY, posZ);
+      return next.collisionShapeOf(world, user, type, variantIndex, posX, posY, posZ);
     } catch (Exception exception) {
       // we catch irregularities here elsewhere
       return BoundingBox
@@ -28,9 +28,9 @@ final class DrillRescuePipe implements ShapeResolverPipeline {
   }
 
   @Override
-  public BlockShape outlineShapeOf(World world, Player player, Material type, int variantIndex, int posX, int posY, int posZ) {
+  public BlockShape outlineShapeOf(World world, User user, Material type, int variantIndex, int posX, int posY, int posZ) {
     try {
-      return next.outlineShapeOf(world, player, type, variantIndex, posX, posY, posZ);
+      return next.outlineShapeOf(world, user, type, variantIndex, posX, posY, posZ);
     } catch (Exception exception) {
       // we catch irregularities here elsewhere
       return BoundingBox

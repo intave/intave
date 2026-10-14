@@ -78,7 +78,7 @@ public final class BlockShapeDrillTests extends IntegrationTests {
   )
   public void testSolidCollision() {
     block.setType(Material.DIAMOND_BLOCK);
-    BlockShape blockShape = drill.collisionShapeOf(block.getWorld(), player, block.getType(), 0, 0, 0, 0);
+    BlockShape blockShape = drill.collisionShapeOf(block.getWorld(), user, block.getType(), 0, 0, 0, 0);
     assertTrue(blockShape.isCubic());
   }
 
@@ -88,7 +88,7 @@ public final class BlockShapeDrillTests extends IntegrationTests {
   )
   public void testSolidOutline() {
     block.setType(Material.DIAMOND_BLOCK);
-    BlockShape blockShape = drill.outlineShapeOf(block.getWorld(), player, block.getType(), 0, 0, 0, 0);
+    BlockShape blockShape = drill.outlineShapeOf(block.getWorld(), user, block.getType(), 0, 0, 0, 0);
     assertTrue(blockShape.isCubic());
   }
 
@@ -98,7 +98,7 @@ public final class BlockShapeDrillTests extends IntegrationTests {
   )
   public void testTransparentCollision() {
     block.setType(Material.AIR, false);
-    BlockShape blockShape = drill.collisionShapeOf(block.getWorld(), player, block.getType(), 0, 0, 0, 0);
+    BlockShape blockShape = drill.collisionShapeOf(block.getWorld(), user, block.getType(), 0, 0, 0, 0);
     assertTrue(blockShape.isEmpty());
   }
 
@@ -110,7 +110,7 @@ public final class BlockShapeDrillTests extends IntegrationTests {
 //  public void testTransparentOutline() {
 //    block.setType(Material.AIR, false);
 //    Material type = block.getType();
-//    BlockShape blockShape = drill.outlineShapeOf(block.getWorld(), player, type, 0, 0, 0, 0);
+//    BlockShape blockShape = drill.outlineShapeOf(block.getWorld(), user, type, 0, 0, 0, 0);
 //    if (!blockShape.isEmpty() && IntaveControl.DEBUG_OUTPUT_FOR_TESTS) {
 //      System.out.println(type);
 //      System.out.println(blockShape);
@@ -124,7 +124,7 @@ public final class BlockShapeDrillTests extends IntegrationTests {
   )
   public void testDeviationFromActualCollision() {
     block.setType(Material.AIR, false);
-    BlockShape blockShape = drill.collisionShapeOf(block.getWorld(), player, Material.DIAMOND_BLOCK, 0, 0, 0, 0);
+    BlockShape blockShape = drill.collisionShapeOf(block.getWorld(), user, Material.DIAMOND_BLOCK, 0, 0, 0, 0);
     assertTrue(blockShape.isCubic());
   }
 
@@ -134,7 +134,7 @@ public final class BlockShapeDrillTests extends IntegrationTests {
   )
   public void testDeviationFromActualOutline() {
     block.setType(Material.AIR, false);
-    BlockShape blockShape = drill.outlineShapeOf(block.getWorld(), player, Material.DIAMOND_BLOCK, 0, 0, 0, 0);
+    BlockShape blockShape = drill.outlineShapeOf(block.getWorld(), user, Material.DIAMOND_BLOCK, 0, 0, 0, 0);
     assertTrue(blockShape.isCubic());
   }
 
@@ -145,7 +145,7 @@ public final class BlockShapeDrillTests extends IntegrationTests {
   public void testComplexCollisionShape() {
     block.setType(Material.ANVIL, false);
     Material type = block.getType();
-    BlockShape blockShape = drill.collisionShapeOf(block.getWorld(), player, type, 0, 0, 0, 0);
+    BlockShape blockShape = drill.collisionShapeOf(block.getWorld(), user, type, 0, 0, 0, 0);
     assertFalse(blockShape.isCubic());
   }
 
@@ -216,7 +216,7 @@ public final class BlockShapeDrillTests extends IntegrationTests {
       for (int variant : BlockVariantRegister.variantIdsOf(material)) {
         for (ShapeResolverPipeline resolver : new ShapeResolverPipeline[]{drill, pipeline}) {
           for (int y : new int[]{-32, 0, 64}) {
-            BlockShape shape = resolver.collisionShapeOf(block.getWorld(), player, material, variant, 0, y, 0);
+            BlockShape shape = resolver.collisionShapeOf(block.getWorld(), user, material, variant, 0, y, 0);
             if (solid) {
               assertEquals(List.of(new BoundingBox(0, y, 0, 1, y + 1, 1)), shape.elementaryBoxes());
               BoundingBox standing = new BoundingBox(0.2, y + 1, 0.2, 0.8, y + 2.8, 0.8);
@@ -290,7 +290,7 @@ public final class BlockShapeDrillTests extends IntegrationTests {
     World world = block.getWorld();
     Material material = block.getType();
     BlockShape shape = CompletableFuture.supplyAsync(() -> drill.collisionShapeOf(
-      world, player, material, 0, 0, 0, 0)).get(5, TimeUnit.SECONDS);
+      world, user, material, 0, 0, 0, 0)).get(5, TimeUnit.SECONDS);
     assertEquals(material, CompletableFuture.supplyAsync(() -> BlockAccess.global().typeOf(block)).get(5, TimeUnit.SECONDS));
     if (!shape.isCubic()) {
       fail("Loaded grass block has no solid collision shape off the server thread: " + shape.elementaryBoxes());

@@ -132,12 +132,13 @@ final class MultiChunkKeyBlockCache implements BlockCache {
 
   @Override
   public void setClientSpeculationValue(World world, int posX, int posY, int posZ, Material type, int variant, int seq) {
+    User user = UserRepository.userOf(player);
     BlockState blockState;
     if (type == Material.AIR || posY < WorldHeight.LOWER_WORLD_LIMIT) {
       blockState = BlockState.empty();
     } else {
-      BlockShape outlineShape = shapeResolver.outlineShapeOf(world, player, type, variant, posX, posY, posZ);
-      BlockShape collisionShape = shapeResolver.collisionShapeOf(world, player, type, variant, posX, posY, posZ);
+      BlockShape outlineShape = shapeResolver.outlineShapeOf(world, user, type, variant, posX, posY, posZ);
+      BlockShape collisionShape = shapeResolver.collisionShapeOf(world, user, type, variant, posX, posY, posZ);
       blockState = new BlockState(outlineShape, collisionShape, type, variant);
     }
     BlockPosition position = BlockPosition.of(posX, posY, posZ);
@@ -145,7 +146,6 @@ final class MultiChunkKeyBlockCache implements BlockCache {
     // ClientLevel retains the old state only for the first prediction at this position.
     speculativeHeads.putIfAbsent(position, blockState);
     speculationKeys.add(bigKey(posX, posY, posZ));
-    User user = UserRepository.userOf(player);
     if (IntaveControl.BLOCK_CACHE_DEBUG || user.receives(MessageChannel.DEBUG_BLOCK_CACHE)) {
       user.sendMessage(ChatColor.LIGHT_PURPLE + "SPECULATING " + ChatColor.AQUA+ type + ChatColor.LIGHT_PURPLE + " at " + ChatColor.GRAY + position + " sequence=" + seq);
     }
@@ -153,6 +153,7 @@ final class MultiChunkKeyBlockCache implements BlockCache {
 
   @Override
   public boolean updateClientSpeculationValue(World world, int posX, int posY, int posZ, Material type, int variant) {
+    User user = UserRepository.userOf(player);
     BlockPosition position = BlockPosition.of(posX, posY, posZ);
     if (!speculativeHeads.containsKey(position)) {
       return false;
@@ -161,8 +162,8 @@ final class MultiChunkKeyBlockCache implements BlockCache {
     if (type == Material.AIR || posY < WorldHeight.LOWER_WORLD_LIMIT) {
       blockState = BlockState.empty();
     } else {
-      BlockShape outlineShape = shapeResolver.outlineShapeOf(world, player, type, variant, posX, posY, posZ);
-      BlockShape collisionShape = shapeResolver.collisionShapeOf(world, player, type, variant, posX, posY, posZ);
+      BlockShape outlineShape = shapeResolver.outlineShapeOf(world, user, type, variant, posX, posY, posZ);
+      BlockShape collisionShape = shapeResolver.collisionShapeOf(world, user, type, variant, posX, posY, posZ);
       blockState = new BlockState(outlineShape, collisionShape, type, variant);
     }
     // Server block updates change the retained state, never the prediction's sequence.
@@ -206,14 +207,15 @@ final class MultiChunkKeyBlockCache implements BlockCache {
     if (block.getY() < WorldHeight.LOWER_WORLD_LIMIT) {
       return BlockState.empty();
     }
-    Material type = BlockTypeAccess.typeAccess(block, player);
+    User user = UserRepository.userOf(player);
+    Material type = BlockTypeAccess.typeAccess(block, user);
     if (type == Material.AIR) {
       return BlockState.empty();
     } else {
       ShapeAccessFlowStudy.incremLookups();
       int variant = BlockVariantNativeAccess.variantAccess(block);
-      BlockShape outlineShape = shapeResolver.outlineShapeOf(world, player, type, variant, posX, posY, posZ);
-      BlockShape collisionShape = shapeResolver.collisionShapeOf(world, player, type, variant, posX, posY, posZ);
+      BlockShape outlineShape = shapeResolver.outlineShapeOf(world, user, type, variant, posX, posY, posZ);
+      BlockShape collisionShape = shapeResolver.collisionShapeOf(world, user, type, variant, posX, posY, posZ);
       return new BlockState(outlineShape, collisionShape, type, variant);
     }
   }
@@ -239,19 +241,19 @@ final class MultiChunkKeyBlockCache implements BlockCache {
 
   @Override
   public void override(World world, int posX, int posY, int posZ, Material type, int variant, String reason) {
+    User user = UserRepository.userOf(player);
     long key = bigKey(posX, posY, posZ);
     replacementCache.remove(key);
     BlockState blockState;
     if (type == Material.AIR || posY < WorldHeight.LOWER_WORLD_LIMIT) {
       blockState = BlockState.empty();
     } else {
-      BlockShape outlineShape = shapeResolver.outlineShapeOf(world, player, type, variant, posX, posY, posZ);
-      BlockShape collisionShape = shapeResolver.collisionShapeOf(world, player, type, variant, posX, posY, posZ);
+      BlockShape outlineShape = shapeResolver.outlineShapeOf(world, user, type, variant, posX, posY, posZ);
+      BlockShape collisionShape = shapeResolver.collisionShapeOf(world, user, type, variant, posX, posY, posZ);
       blockState = new BlockState(outlineShape, collisionShape, type, variant);
     }
     Position position = new Position(posX, posY, posZ);
     replacementCache.insert(position, blockState);
-    User user = UserRepository.userOf(player);
     if (IntaveControl.BLOCK_CACHE_DEBUG || user.receives(MessageChannel.DEBUG_BLOCK_CACHE)) {
       user.sendMessage(ChatColor.LIGHT_PURPLE + "OVERRIDE " + ChatColor.AQUA  + type + ChatColor.LIGHT_PURPLE + " at " + ChatColor.GRAY + position + ChatColor.LIGHT_PURPLE + " for " + ChatColor.RED + reason);
     }

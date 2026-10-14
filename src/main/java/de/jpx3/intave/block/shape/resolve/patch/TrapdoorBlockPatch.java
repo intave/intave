@@ -4,9 +4,9 @@ import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.variant.BlockVariant;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.block.shape.resolve.patch.TrapdoorBlockPatch.EnumTrapdoorHalf.TOP;
 
@@ -16,7 +16,7 @@ final class TrapdoorBlockPatch extends BlockShapePatch {
    makes variant-control constraint redundant
    */
   @Override
-  public BlockShape collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
+  public BlockShape collisionPatch(World world, User user, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
     BoundingBoxBuilder boundingBoxBuilder = BoundingBoxBuilder.create();
     BlockVariant variant = BlockVariantRegister.variantOf(type, blockState);
     boolean isTop = variant.enumProperty(EnumTrapdoorHalf.class, "half") == TOP;

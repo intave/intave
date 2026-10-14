@@ -6,11 +6,9 @@ import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 final class AnvilBlockPatch extends BlockShapePatch {
   public AnvilBlockPatch() {
@@ -18,8 +16,7 @@ final class AnvilBlockPatch extends BlockShapePatch {
   }
 
   @Override
-  public BlockShape collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockVariant, BlockShape shape) {
-    User user = UserRepository.userOf(player);
+  public BlockShape collisionPatch(World world, User user, int posX, int posY, int posZ, Material type, int blockVariant, BlockShape shape) {
     boolean legacy = user.protocolVersion() < ProtocolMetadata.VER_1_13;
     Direction.Axis axis = axisOf(blockVariant);
     return legacy ? legacyPatch(axis) : modernPatch(axis);

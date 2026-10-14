@@ -11,7 +11,6 @@
 
 package de.jpx3.intave.check.combat;
 
-import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.utility.MinecraftReflection;
@@ -41,14 +40,13 @@ import de.jpx3.intave.module.tracker.player.AbilityTracker;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.packet.plib.PacketSender;
-import de.jpx3.intave.packet.plib.PacketTypes;
 import de.jpx3.intave.packet.reader.BlockDigReader;
 import de.jpx3.intave.packet.reader.EntityUseReader;
-import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.share.FriendlyByteBuf;
 import de.jpx3.intave.share.HistoryWindow;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.MessageChannel;
+import de.jpx3.intave.packet.reader.PlayerMoveReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
 import de.jpx3.intave.world.raytrace.Raytrace;
@@ -100,22 +98,19 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     priority = LOW,
     packetsIn = {ATTACK_ENTITY, USE_ENTITY}
   )
-  public void receiveUseEntityPacket(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
+  public void receiveUseEntityPacket(User user, PacketEvent event, EntityUseReader reader) {
     AttackRaytraceMeta meta = metaOf(user);
     AbilityMetadata abilities = user.meta().abilities();
     MovementMetadata movement = user.meta().movement();
     ViolationMetadata violationMeta = user.meta().violationLevel();
 
     PacketContainer packet = event.getPacket();
-    EntityUseReader reader = PacketReaders.readerOf(packet);
     EntityUseAction action = reader.useAction();
 
     // Only process attacks, interactions should not be checked
     if (action == ATTACK) {
       List<Action> pendingActions = meta.queuedActions;
-      int entityId = packet.getIntegers().read(0);
+      int entityId = reader.entityId();
       Entity entity = EntityTracker.entityByIdentifier(user, entityId);
       Attack attack = null;
       if (user.receives(MessageChannel.DEBUG_REACH)) {
@@ -139,7 +134,6 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
           : abilities.unsynchronizedHealth <= 0 ? "player not alive"
           : "spectator mode";
         debugReachSkipped(user, entityId, reason);
-        reader.release();
         return;
       }
 
@@ -152,7 +146,6 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       }
       if (!attack.reachKnown()) {
         debugReachSkipped(user, entityId, "item attack range unavailable");
-        reader.release();
         return;
       }
 
@@ -225,7 +218,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       } else {
         debugReachSkipped(user, entityId, "attack queue full");
         Violation violation = Violation.builderFor(AttackRaytrace.class)
-          .forPlayer(player).withMessage("attacked too many entities at once")
+          .forUser(user).withMessage("attacked too many entities at once")
           .withDetails("queued " + pendingActions.size() + " attacks")
           .withVL(0)
           .appendFlags(DISPLAY_IN_ALL_VERBOSE_MODES)
@@ -233,7 +226,6 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         Modules.violationProcessor().processViolation(violation);
       }
     }
-    reader.release();
   }
 
   @PacketSubscription(packetsIn = BLOCK_DIG)
@@ -322,24 +314,26 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 
   @PacketSubscription(
     priority = NORMAL,
-    packetsIn = {FLYING, LOOK, POSITION, POSITION_LOOK, CLIENT_TICK_END}
+    packetsIn = {FLYING, LOOK, POSITION, POSITION_LOOK}
   )
-  public void receiveMovementPacket(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
-    PacketType packetType = event.getPacketType();
-
-    boolean isClientTickEnd = PacketTypes.isClientEndTick(packetType);
-    if (user.meta().protocol().sendsClientTickEnd() && !isClientTickEnd) {
-      return;
+  public void receiveMovementPacket(User user, PlayerMoveReader reader) {
+    if (!user.meta().protocol().sendsClientTickEnd()) {
+      processQueuedAttacks(user, !reader.hasMovement());
     }
+  }
+
+  @PacketSubscription(priority = NORMAL, packetsIn = CLIENT_TICK_END)
+  public void receiveClientTickEnd(User user) {
+    processQueuedAttacks(user, false);
+  }
+
+  private void processQueuedAttacks(User user, boolean flyingWithoutPosition) {
 
     AttackRaytraceMeta meta = metaOf(user);
     AbilityMetadata abilities = user.meta().abilities();
     MovementMetadata movement = user.meta().movement();
     ProtocolMetadata protocol = user.meta().protocol();
     List<Action> pendingAttacks = meta.queuedActions;
-    PacketContainer packet = event.getPacket();
     // Clear attacks if recently teleported
     if (movement.ticksPast(TELEPORT) <= 1 || movement.awaitTeleport) {
       for (Action pendingAction : pendingAttacks) {
@@ -349,8 +343,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       }
       pendingAttacks.clear();
     }
-    // Apply flying packets (first boolean)
-    if (!isClientTickEnd && !packet.getBooleans().read(1)) {
+    if (flyingWithoutPosition) {
       meta.flyingPacketCounter++;
     } else {
       meta.flyingPacketCounter = 0;
@@ -379,7 +372,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
             : attackedEntity instanceof Entity.Destroyed ? "target destroyed"
             : "fireball target";
           debugReachSkipped(user, pendingAttack.entityId(), reason);
-          redirectValidPacket(player, pendingAction.packet());
+          redirectValidPacket(user, pendingAction.packet());
           continue;
         }
 
@@ -404,7 +397,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
           }
         }
       } else if (pendingAction instanceof ArmAnimation) {
-        redirectValidPacket(player, pendingAction.packet());
+        redirectValidPacket(user, pendingAction.packet());
       }
     }
     pendingAttacks.clear();
@@ -799,7 +792,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         }
         // Redirect if resend is allowed
         if (resendAllowed) {
-          redirectValidPacket(player, attack.packet());
+          redirectValidPacket(user, attack.packet());
         }
         return;
       }
@@ -829,7 +822,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     // Only allow attack if player has bypass trust-factor
     if (user.trustFactor().atLeast(TrustFactor.BYPASS)) {
       if (resendAllowed) {
-        redirectValidPacket(player, attack.packet());
+        redirectValidPacket(user, attack.packet());
       }
       statisticApply(user, CheckStatistics::increasePasses);
     }
@@ -838,14 +831,14 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
   /**
    * Redirects a validated attack to the server
    *
-   * @param player The player to redirect the packet for
+   * @param user The user to redirect the packet for
    * @param packet The packet to redirect
    * @since 14.6.0
    */
-  private void redirectValidPacket(Player player, PacketContainer packet) {
-    userOf(player).ignoreNextInboundPacket();
-    PacketSender.receiveClientPacketFrom(player, packet);
-    userOf(player).receiveNextInboundPacketAgain();
+  private void redirectValidPacket(User user, PacketContainer packet) {
+    user.ignoreNextInboundPacket();
+    PacketSender.receiveClientPacketFrom(user.player(), packet);
+    user.receiveNextInboundPacketAgain();
   }
 
   /**

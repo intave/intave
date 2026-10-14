@@ -7,9 +7,9 @@ import de.jpx3.intave.block.shape.resolve.patch.ApplyOnShapeBoundingBoxBuilder;
 import de.jpx3.intave.block.shape.resolve.patch.BoundingBoxBuilder;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.share.BoundingBox;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import java.util.List;
 
@@ -21,14 +21,14 @@ final class CorruptedFilteringPipe implements ShapeResolverPipeline {
   }
 
   @Override
-  public BlockShape collisionShapeOf(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
+  public BlockShape collisionShapeOf(World world, User user, Material type, int blockState, int posX, int posY, int posZ) {
     List<BoundingBox> corrupted = resolveCorrupted(type, blockState);
-    return corrupted != null ? BlockShapes.optimizedMerge(corrupted).contextualized(posX, posY, posZ) : forward.collisionShapeOf(world, player, type, blockState, posX, posY, posZ);
+    return corrupted != null ? BlockShapes.optimizedMerge(corrupted).contextualized(posX, posY, posZ) : forward.collisionShapeOf(world, user, type, blockState, posX, posY, posZ);
   }
 
   @Override
-  public BlockShape outlineShapeOf(World world, Player player, Material type, int variantIndex, int posX, int posY, int posZ) {
-    return forward.outlineShapeOf(world, player, type, variantIndex, posX, posY, posZ);
+  public BlockShape outlineShapeOf(World world, User user, Material type, int variantIndex, int posX, int posY, int posZ) {
+    return forward.outlineShapeOf(world, user, type, variantIndex, posX, posY, posZ);
   }
 
   @Override

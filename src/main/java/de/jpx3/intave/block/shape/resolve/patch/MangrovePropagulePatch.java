@@ -5,9 +5,9 @@ import de.jpx3.intave.block.variant.BlockVariant;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.share.BoundingBox;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.share.ClientMath.coordinateRandom;
 
@@ -23,7 +23,7 @@ final class MangrovePropagulePatch extends BlockShapePatch {
   private static final BlockShape[][][] CACHE = new BlockShape[SHAPE_PER_AGE.length][16][16];
 
   @Override
-  protected BlockShape outlinePatch(World world, Player player, int posX, int posY, int posZ, Material type, int variantIndex, BlockShape shape) {
+  protected BlockShape outlinePatch(World world, User user, int posX, int posY, int posZ, Material type, int variantIndex, BlockShape shape) {
     if (shape.isEmpty()) {
       return shape;
     }

@@ -8,10 +8,8 @@ import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 final class LadderBlockPatch extends BlockShapePatch {
   private static final boolean MODERN_PATCH_REDUNDANT = MinecraftVersions.VER1_13_0.atOrAbove();
@@ -21,8 +19,7 @@ final class LadderBlockPatch extends BlockShapePatch {
   }
 
   @Override
-  public BlockShape collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int variantIndex, BlockShape originalShape) {
-    User user = UserRepository.userOf(player);
+  public BlockShape collisionPatch(World world, User user, int posX, int posY, int posZ, Material type, int variantIndex, BlockShape originalShape) {
     BlockVariant variant = BlockVariantRegister.variantOf(type, variantIndex);
     Direction direction = variant.enumProperty(Direction.class, "facing");
     boolean modern = user.meta().protocol().combatUpdate();
@@ -34,8 +31,7 @@ final class LadderBlockPatch extends BlockShapePatch {
   }
 
   @Override
-  protected BlockShape outlinePatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
-    User user = UserRepository.userOf(player);
+  protected BlockShape outlinePatch(World world, User user, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
     BlockVariant variant = BlockVariantRegister.variantOf(type, blockState);
     Direction direction = variant.enumProperty(Direction.class, "facing");
     boolean modern = user.meta().protocol().combatUpdate();

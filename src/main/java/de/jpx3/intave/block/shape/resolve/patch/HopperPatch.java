@@ -8,10 +8,8 @@ import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_13;
 
@@ -37,12 +35,11 @@ final class HopperPatch extends BlockShapePatch {
 
   @Override
   protected BlockShape collisionPatch(
-    World world, Player player,
+    World world, User user,
     int posX, int posY, int posZ,
     Material type, int blockState,
     BlockShape originalShape
   ) {
-    User user = UserRepository.userOf(player);
     if (user.protocolVersion() >= VER_1_13) {
       if (MinecraftVersions.VER1_13_0.atOrAbove()) {
         return originalShape;
@@ -84,8 +81,7 @@ final class HopperPatch extends BlockShapePatch {
   }
 
   @Override
-  protected BlockShape outlinePatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape originalShape) {
-    User user = UserRepository.userOf(player);
+  protected BlockShape outlinePatch(World world, User user, int posX, int posY, int posZ, Material type, int blockState, BlockShape originalShape) {
     if (user.protocolVersion() >= VER_1_13) {
       BlockVariant variant = BlockVariantRegister.variantOf(Material.HOPPER, blockState);
       Direction direction = variant.enumProperty(Direction.class, "facing");

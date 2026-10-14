@@ -11,10 +11,8 @@
 
 package de.jpx3.intave.check.combat.heuristics.combatpatterns.accuracy;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
 import com.google.common.collect.Lists;
+import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
@@ -24,12 +22,10 @@ import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.packet.reader.EntityUseReader;
-import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AttackMetadata;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import org.bukkit.entity.Player;
 
 import java.util.List;
 
@@ -42,16 +38,21 @@ public final class AccuracyHitboxCornerHeuristic extends ClassicHeuristic<Accura
 
   @PacketSubscription(
     packetsIn = {
-      ATTACK_ENTITY, USE_ENTITY, ARM_ANIMATION
+      ATTACK_ENTITY, USE_ENTITY
     }
   )
-  public void evaluateFightAccuracy(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
+  public void evaluateFightAccuracy(User user, EntityUseReader reader) {
+    evaluateAccuracy(user, reader);
+  }
+
+  @PacketSubscription(packetsIn = ARM_ANIMATION)
+  public void evaluateSwingAccuracy(User user) {
+    evaluateAccuracy(user, null);
+  }
+
+  private void evaluateAccuracy(User user, @Nullable EntityUseReader reader) {
     AttackMetadata attackData = user.meta().attack();
     PerfectAttackMeta heuristicMeta = metaOf(user);
-    PacketType packetType = event.getPacketType();
-    PacketContainer packet = event.getPacket();
     Entity attackedEntity = attackData.lastAttackedEntity();
 
     if (attackedEntity != null && !attackedEntity.moving(0.05)) {
@@ -61,19 +62,11 @@ public final class AccuracyHitboxCornerHeuristic extends ClassicHeuristic<Accura
       return;
     }
 
-    if (packetType == PacketType.Play.Client.ARM_ANIMATION) {
+    if (reader == null) {
       heuristicMeta.swings++;
-    } else {
-      boolean isAttack;
-      try (EntityUseReader reader = PacketReaders.readerOf(packet)) {
-        isAttack = reader.isAttackPacket();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-      if (isAttack) {
-        heuristicMeta.attacks++;
-        heuristicMeta.swings--;
-      }
+    } else if (reader.isAttackPacket()) {
+      heuristicMeta.attacks++;
+      heuristicMeta.swings--;
     }
   }
 
@@ -83,9 +76,7 @@ public final class AccuracyHitboxCornerHeuristic extends ClassicHeuristic<Accura
       POSITION_LOOK, LOOK
     }
   )
-  public void receiveMovement(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
+  public void receiveMovement(User user) {
     if (!user.meta().protocol().sendsAttackSwingPackets()) return;
     AttackMetadata attackData = user.meta().attack();
     MovementMetadata movementData = user.meta().movement();

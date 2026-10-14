@@ -5,9 +5,9 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.diagnostic.ShapeAccessFlowStudy;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 final class EmptyPrefetchPipe implements ShapeResolverPipeline {
   private final ShapeResolverPipeline forward;
@@ -17,21 +17,21 @@ final class EmptyPrefetchPipe implements ShapeResolverPipeline {
   }
 
   @Override
-  public BlockShape collisionShapeOf(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
+  public BlockShape collisionShapeOf(World world, User user, Material type, int blockState, int posX, int posY, int posZ) {
     if (isEmpty(type)) {
       ShapeAccessFlowStudy.incremDynamic();
       return BlockShapes.emptyShape();
     }
-    return forward.collisionShapeOf(world, player, type, blockState, posX, posY, posZ);
+    return forward.collisionShapeOf(world, user, type, blockState, posX, posY, posZ);
   }
 
   @Override
-  public BlockShape outlineShapeOf(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
+  public BlockShape outlineShapeOf(World world, User user, Material type, int blockState, int posX, int posY, int posZ) {
     if (isEmpty(type)) {
       ShapeAccessFlowStudy.incremDynamic();
       return BlockShapes.emptyShape();
     }
-    return forward.outlineShapeOf(world, player, type, blockState, posX, posY, posZ);
+    return forward.outlineShapeOf(world, user, type, blockState, posX, posY, posZ);
   }
 
   @Override

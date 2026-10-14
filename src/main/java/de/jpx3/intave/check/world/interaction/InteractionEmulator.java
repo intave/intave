@@ -642,7 +642,7 @@ public final class InteractionEmulator implements EventProcessor {
   private void emulatePhysicalInteract(Player player, Block block) {
     User user = userOf(player);
     BlockCache blockStateAccess = user.blockCache();
-    Material clickedType = BlockTypeAccess.typeAccess(block, player);
+    Material clickedType = BlockTypeAccess.typeAccess(block, user);
 
     if (DUMP_BLOCK_HITBOX_ON_RIGHT_CLICK) {
       Material type = blockStateAccess.typeAt(block.getX(), block.getY(), block.getZ());

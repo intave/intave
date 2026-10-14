@@ -7,9 +7,9 @@ import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.ClientMath;
 import de.jpx3.intave.share.Direction;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 final class PointedDripstoneBlockPatch extends BlockShapePatch {
   private final BoundingBox TIP_MERGE_SHAPE = BoundingBox.originFromX16(5.0D, 0.0D, 5.0D, 11.0D, 16.0D, 11.0D);
@@ -21,12 +21,12 @@ final class PointedDripstoneBlockPatch extends BlockShapePatch {
   private final BoundingBox DEF_SHAPE = BoundingBox.originFromX16(6.0D, 0.0D, 6.0D, 10.0D, 16.0D, 10.0D);
 
   @Override
-  public BlockShape collisionPatch(World world, Player player, int x, int y, int z, Material type, int variantIndex, BlockShape shape) {
+  public BlockShape collisionPatch(World world, User user, int x, int y, int z, Material type, int variantIndex, BlockShape shape) {
     return shapePatch(x, z, type, variantIndex);
   }
 
   @Override
-  public BlockShape outlinePatch(World world, Player player, int x, int y, int z, Material type, int variantIndex, BlockShape shape) {
+  public BlockShape outlinePatch(World world, User user, int x, int y, int z, Material type, int variantIndex, BlockShape shape) {
     return shapePatch(x, z, type, variantIndex);
   }
 

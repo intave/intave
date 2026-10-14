@@ -22,10 +22,10 @@ import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.RawVector3d;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -96,7 +96,7 @@ class CobbleStoneWallPatch extends BlockShapePatch {
   @Override
   protected BlockShape collisionPatch(
       World world,
-      Player player,
+      User user,
       int posX,
       int posY,
       int posZ,

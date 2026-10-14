@@ -23,9 +23,17 @@ public final class WindowSingleItemReader extends AbstractPacketReader implement
     return packet().getIntegers().read(0);
   }
 
+  public ItemStack item() {
+    return packet().getItemModifier().read(0);
+  }
+
+  public void setItem(ItemStack item) {
+    packet().getItemModifier().write(0, item);
+  }
+
   @Override
   public Map<Integer, ItemStack> itemMap() {
-    ItemStack item = packet().getItemModifier().read(0);
+    ItemStack item = item();
     int slot = slot();
     Map<Integer, ItemStack> map = new HashMap<>();
     if (slot != -1) {

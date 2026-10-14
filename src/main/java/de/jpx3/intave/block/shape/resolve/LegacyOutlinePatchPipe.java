@@ -5,9 +5,9 @@ import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.block.type.MaterialSearch;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Direction;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import java.util.Set;
 
@@ -19,18 +19,18 @@ public final class LegacyOutlinePatchPipe implements ShapeResolverPipeline {
   }
 
   @Override
-  public BlockShape collisionShapeOf(World world, Player player, Material type, int variantIndex, int posX, int posY, int posZ) {
-    return forward.collisionShapeOf(world, player, type, variantIndex, posX, posY, posZ);
+  public BlockShape collisionShapeOf(World world, User user, Material type, int variantIndex, int posX, int posY, int posZ) {
+    return forward.collisionShapeOf(world, user, type, variantIndex, posX, posY, posZ);
   }
 
   @Override
-  public BlockShape outlineShapeOf(World world, Player player, Material type, int variantIndex, int posX, int posY, int posZ) {
+  public BlockShape outlineShapeOf(World world, User user, Material type, int variantIndex, int posX, int posY, int posZ) {
     BlockShape outputBox;
     if (affected(type)) {
       // use collision shape for outline
-      outputBox = forward.collisionShapeOf(world, player, type, variantIndex, posX, posY, posZ);
+      outputBox = forward.collisionShapeOf(world, user, type, variantIndex, posX, posY, posZ);
     } else {
-      outputBox = forward.outlineShapeOf(world, player, type, variantIndex, posX, posY, posZ);
+      outputBox = forward.outlineShapeOf(world, user, type, variantIndex, posX, posY, posZ);
     }
 
     double xMidpoint = (outputBox.min(Direction.Axis.X_AXIS) + outputBox.max(Direction.Axis.X_AXIS)) / 2;

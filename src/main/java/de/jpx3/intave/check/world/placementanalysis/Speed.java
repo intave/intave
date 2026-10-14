@@ -1,8 +1,6 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
 import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.cleanup.GarbageCollector;
@@ -11,6 +9,7 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
+import de.jpx3.intave.packet.reader.BlockInteractionReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.EffectMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -48,19 +47,9 @@ public final class Speed extends PlayerCheckPart<PlacementAnalysis> {
 			BLOCK_PLACE, USE_ITEM
 		}
 	)
-	public void receivePlacementPacket(PacketEvent event) {
-		Player player = event.getPlayer();
-		User user = userOf(player);
-		PacketContainer packet = event.getPacket();
-
-		if (event.getPacketType() == PacketType.Play.Client.BLOCK_PLACE) {
-			Integer facing = packet.getIntegers().readSafely(0);
-			if (facing == null) {
-				facing = 0;
-			}
-			if (facing == 255) {
-				lastHardFaultClick = System.currentTimeMillis();
-			}
+	public void receivePlacementPacket(PacketType type, BlockInteractionReader reader) {
+		if (type == PacketType.Play.Client.BLOCK_PLACE && reader.enumDirection() == 255) {
+			lastHardFaultClick = System.currentTimeMillis();
 		}
 	}
 

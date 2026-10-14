@@ -866,16 +866,17 @@ public final class ReaderTests extends IntegrationTests {
     PacketContainer slot = new PacketContainer(PacketType.Play.Server.SET_SLOT);
     slot.getIntegers().write(0, 0).write(1, 4).write(2, 12);
     slot.getItemModifier().write(0, item);
-    new AttackDispatcher().filterSharpness(PacketEvent.fromServer(this, slot, null));
-    assertEquals(item, slot.getItemModifier().read(0));
-    WindowSingleItemReader singleReader = new WindowSingleItemReader();
-    singleReader.enter(slot);
-    assertEquals(item, singleReader.itemMap().get(12));
-    ItemStack copy = slot.getItemModifier().read(0).clone();
-    copy.setAmount(3);
-    slot.getItemModifier().write(0, copy);
-    assertEquals(3, slot.getItemModifier().read(0).getAmount());
-    assertEquals(7, item.getAmount());
+    ItemStack copy;
+    try (WindowSingleItemReader singleReader = PacketReaders.readerOf(slot)) {
+      new AttackDispatcher().filterSharpness(singleReader);
+      assertEquals(item, slot.getItemModifier().read(0));
+      assertEquals(item, singleReader.itemMap().get(12));
+      copy = singleReader.item().clone();
+      copy.setAmount(3);
+      singleReader.setItem(copy);
+      assertEquals(3, slot.getItemModifier().read(0).getAmount());
+      assertEquals(7, item.getAmount());
+    }
 
     ItemStack empty = new ItemStack(Material.AIR);
     PacketContainer contents = new PacketContainer(PacketType.Play.Server.WINDOW_ITEMS);

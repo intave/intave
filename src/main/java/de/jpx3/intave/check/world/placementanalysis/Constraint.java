@@ -11,18 +11,13 @@
 
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
-import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.reader.BlockInteractionReader;
-import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
@@ -43,9 +38,7 @@ public final class Constraint extends PlayerCheckPart<PlacementAnalysis> {
 			FLYING, LOOK, POSITION, POSITION_LOOK
 		}
 	)
-	public void receiveMovementPacket(PacketEvent event) {
-		Player player = event.getPlayer();
-		User user = userOf(player);
+	public void receiveMovementPacket(User user) {
 		MovementMetadata movement = user.meta().movement();
 
 		if (movement.ticksPast(TELEPORT) == 0) {
@@ -86,22 +79,10 @@ public final class Constraint extends PlayerCheckPart<PlacementAnalysis> {
 		packetsIn = {USE_ITEM, BLOCK_PLACE},
 		priority = ListenerPriority.LOW
 	)
-	public void rightClick(
-		User user, PacketContainer packet, BlockInteractionReader reader
-	) {
-		Player player = user.player();
-		String name = packet.getType().name();
-
-		Direction direction = reader.direction();
-		String k = MathHelper.formatMotion(reader.facingVector());
+	public void rightClick(BlockInteractionReader reader) {
 		if (reader.direction() == null) {
 			blockClicks++;
 		}
-//    Synchronizer.synchronize(() -> {
-//      player.sendMessage(name + " " + direction + " " + k);
-//    });
-
-//    if ()
 	}
 
 	private static String resolveKeysFromInput(int forward, int strafe) {

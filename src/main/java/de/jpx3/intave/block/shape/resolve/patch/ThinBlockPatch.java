@@ -17,10 +17,8 @@ import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.share.BlockState;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,8 +48,7 @@ final class ThinBlockPatch extends BlockShapePatch {
   };
 
   @Override
-  protected List<BoundingBox> collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, List<BoundingBox> bbs) {
-    User user = UserRepository.userOf(player);
+  protected List<BoundingBox> collisionPatch(World world, User user, int posX, int posY, int posZ, Material type, int blockState, List<BoundingBox> bbs) {
     if (MinecraftVersions.VER1_9_0.atOrAbove()) {
       if (!user.meta().protocol().combatUpdate()) {
         // update 1.9 to 1.8

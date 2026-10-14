@@ -1,6 +1,5 @@
 package de.jpx3.intave.check.world.placementanalysis;
 
-import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
@@ -9,6 +8,7 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
+import de.jpx3.intave.packet.reader.BlockInteractionReader;
 import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -98,18 +98,10 @@ public final class JumpAndPlace extends PlayerCheckPart<PlacementAnalysis> {
 			BLOCK_PLACE
 		}
 	)
-	public void receivePlacementPacket(PacketEvent event) {
-		PacketContainer packet = event.getPacket();
-		Player player = event.getPlayer();
-
-		Integer facing = packet.getIntegers().readSafely(0);
-		if (facing == null) {
-			facing = 0;
-		}
-		if (facing == 255) {
+	public void receivePlacementPacket(User user, BlockInteractionReader reader) {
+		if (reader.enumDirection() == 255) {
 			return;
 		}
-		User user = userOf(player);
 		Material material = user.meta().inventory().heldItemType();
 		boolean hasPlaceable = material.isBlock() && material.isSolid();
 		if (!hasPlaceable) {

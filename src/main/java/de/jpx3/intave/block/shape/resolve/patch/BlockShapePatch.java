@@ -3,9 +3,9 @@ package de.jpx3.intave.block.shape.resolve.patch;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.share.BoundingBox;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import java.util.List;
 
@@ -16,12 +16,12 @@ abstract class BlockShapePatch {
     this.materials = materials;
   }
 
-  protected BlockShape collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
+  protected BlockShape collisionPatch(World world, User user, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
     // this method should be overridden
     // calls bb collision patch function if not
 
     List<BoundingBox> input = shape.elementaryBoxes();
-    List<BoundingBox> output = collisionPatch(world, player, posX, posY, posZ, type, blockState, input);
+    List<BoundingBox> output = collisionPatch(world, user, posX, posY, posZ, type, blockState, input);
 
     if (input.equals(output)) {
       return shape;
@@ -31,16 +31,16 @@ abstract class BlockShapePatch {
   }
 
   @Deprecated
-  protected List<BoundingBox> collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, List<BoundingBox> bbs) {
+  protected List<BoundingBox> collisionPatch(World world, User user, int posX, int posY, int posZ, Material type, int blockState, List<BoundingBox> bbs) {
     return bbs;
   }
 
-  protected BlockShape outlinePatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
+  protected BlockShape outlinePatch(World world, User user, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
     // this method should be overridden
     // calls bb outline patch function if not
 
     List<BoundingBox> input = shape.elementaryBoxes();
-    List<BoundingBox> output = outlinePatch(world, player, posX, posY, posZ, type, blockState, input);
+    List<BoundingBox> output = outlinePatch(world, user, posX, posY, posZ, type, blockState, input);
 
     if (input.equals(output)) {
       return shape;
@@ -50,7 +50,7 @@ abstract class BlockShapePatch {
   }
 
   @Deprecated
-  protected List<BoundingBox> outlinePatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, List<BoundingBox> bbs) {
+  protected List<BoundingBox> outlinePatch(World world, User user, int posX, int posY, int posZ, Material type, int blockState, List<BoundingBox> bbs) {
     return bbs;
   }
 

@@ -56,6 +56,7 @@ public final class PacketReaders {
     setup(EXPERIENCE, ExperienceReader::new);
     setup(EXPLOSION, ExplosionReader::new);
     setup(GAME_STATE_CHANGE, GameStateChangeReader::new);
+    setup(HELD_ITEM_SLOT_OUT, HeldItemSlotReader::new);
     setup(LOGIN, EntityReader::new);
     setup(LOOK_AT, EntityReader::new);
     setup(MAP_CHUNK, MapChunkReader::new);

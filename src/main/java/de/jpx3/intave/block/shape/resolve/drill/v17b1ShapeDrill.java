@@ -5,6 +5,7 @@ import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.klass.rewrite.PatchyAutoTranslation;
 import de.jpx3.intave.klass.rewrite.PatchyTranslateParameters;
+import de.jpx3.intave.user.User;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.level.IBlockAccess;
@@ -14,13 +15,12 @@ import net.minecraft.world.phys.shapes.VoxelShapes;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_17_R1.CraftWorld;
-import org.bukkit.entity.Player;
 
 @PatchyAutoTranslation
 public final class v17b1ShapeDrill extends AbstractShapeDrill {
   @Override
   @PatchyAutoTranslation
-  public BlockShape collisionShapeOf(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
+  public BlockShape collisionShapeOf(World world, User user, Material type, int blockState, int posX, int posY, int posZ) {
     IBlockData blockData = (IBlockData) BlockVariantRegister.rawVariantOf(type, blockState);
     IBlockAccess blockAccess = chunkAccessOf(world, posX, posZ);
     if (blockData == null || blockAccess == null) {
@@ -32,7 +32,7 @@ public final class v17b1ShapeDrill extends AbstractShapeDrill {
 
   @Override
   @PatchyAutoTranslation
-  public BlockShape outlineShapeOf(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
+  public BlockShape outlineShapeOf(World world, User user, Material type, int blockState, int posX, int posY, int posZ) {
     IBlockData blockData = (IBlockData) BlockVariantRegister.rawVariantOf(type, blockState);
     IBlockAccess blockAccess = chunkAccessOf(world, posX, posZ);
     if (blockData == null || blockAccess == null) {

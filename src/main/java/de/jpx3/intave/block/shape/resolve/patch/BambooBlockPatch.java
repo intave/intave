@@ -3,9 +3,9 @@ package de.jpx3.intave.block.shape.resolve.patch;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.share.BoundingBox;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.share.ClientMath.coordinateRandom;
 
@@ -14,16 +14,16 @@ final class BambooBlockPatch extends BlockShapePatch {
   private static final BlockShape[][] CACHE = new BlockShape[16][16];
 
   @Override
-  public BlockShape collisionPatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
-    return shapePatch(world, player, posX, posY, posZ, type, blockState, shape);
+  public BlockShape collisionPatch(World world, User user, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
+    return shapePatch(world, user, posX, posY, posZ, type, blockState, shape);
   }
 
   @Override
-  public BlockShape outlinePatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
-    return shapePatch(world, player, posX, posY, posZ, type, blockState, shape);
+  public BlockShape outlinePatch(World world, User user, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
+    return shapePatch(world, user, posX, posY, posZ, type, blockState, shape);
   }
 
-  private BlockShape shapePatch(World world, Player player, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
+  private BlockShape shapePatch(World world, User user, int posX, int posY, int posZ, Material type, int blockState, BlockShape shape) {
     // Small Bamboo Leaves
     if (shape.isEmpty()) {
       return shape;

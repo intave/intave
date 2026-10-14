@@ -11,7 +11,6 @@
 
 package de.jpx3.intave.check.combat.heuristics.other;
 
-import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.packet.reader.BlockDigReader;
 import de.jpx3.intave.check.combat.Heuristics;
@@ -21,6 +20,7 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
+import de.jpx3.intave.packet.reader.HeldItemSlotReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.share.PlayerDigAction;
@@ -72,13 +72,10 @@ public class ToolSwitchHeuristic extends ClassicHeuristic<ToolSwitchHeuristic.To
       PacketId.Client.HELD_ITEM_SLOT_IN
     }
   )
-  public void receiveHeldItemSlotChange(PacketEvent event) {
-    Player player = event.getPlayer();
-    PacketContainer packet = event.getPacket();
-    User user = userOf(player);
+  public void receiveHeldItemSlotChange(User user, HeldItemSlotReader reader) {
     int currentSlot = user.meta().inventory().handSlot();
-    Integer slot = packet.getIntegers().read(0);
-    ToolSwitchHeuristicMeta meta = metaOf(player);
+    int slot = reader.slot();
+    ToolSwitchHeuristicMeta meta = metaOf(user);
 
     // If a block break was recently started something is suspicious
     if (meta.ticksSinceLastBreak <= 1) {

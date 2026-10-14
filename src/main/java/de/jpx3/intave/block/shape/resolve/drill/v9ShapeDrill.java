@@ -6,11 +6,11 @@ import de.jpx3.intave.block.shape.resolve.drill.acbbs.v9AlwaysCollidingBoundingB
 import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.klass.rewrite.PatchyAutoTranslation;
 import de.jpx3.intave.share.link.WrapperConverter;
+import de.jpx3.intave.user.User;
 import net.minecraft.server.v1_9_R2.*;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.v1_9_R2.CraftWorld;
-import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +21,7 @@ public final class v9ShapeDrill extends AbstractShapeDrill {
 
   @Override
   @PatchyAutoTranslation
-  public BlockShape collisionShapeOf(World world, Player player, Material type, int variant, int posX, int posY, int posZ) {
+  public BlockShape collisionShapeOf(World world, User user, Material type, int variant, int posX, int posY, int posZ) {
     BlockPosition blockposition = new BlockPosition(posX, posY, posZ);
     IBlockData blockData = (IBlockData) BlockVariantRegister.rawVariantOf(type, variant);
     if (blockData == null) {
@@ -35,7 +35,7 @@ public final class v9ShapeDrill extends AbstractShapeDrill {
 
   @Override
   @PatchyAutoTranslation
-  public BlockShape outlineShapeOf(World world, Player player, Material type, int blockState, int posX, int posY, int posZ) {
+  public BlockShape outlineShapeOf(World world, User user, Material type, int blockState, int posX, int posY, int posZ) {
     IBlockData blockData = (IBlockData) BlockVariantRegister.rawVariantOf(type, blockState);
     if (blockData == null) {
       return BlockShapes.emptyShape();
