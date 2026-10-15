@@ -16,6 +16,7 @@ import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.linker.packet.PrioritySlot;
 import de.jpx3.intave.packet.reader.AbilityInReader;
 import de.jpx3.intave.packet.reader.AbilityOutReader;
 import de.jpx3.intave.packet.reader.EntityReader;
@@ -101,6 +102,15 @@ public final class AbilityTracker extends Module {
         movement.criticalFlyingBlockMovementStacks = 0;
       }
     });
+  }
+
+  @PacketSubscription(priority = ListenerPriority.MONITOR, prioritySlot = PrioritySlot.EXTERNAL, packetsOut = RESPAWN)
+  public void sentRespawn(User user, Cancellable packet) {
+    if (packet.isCancelled()) {
+      return;
+    }
+    // Respawn creates fresh abilities, including when the packet keeps entity data or changes dimension.
+    user.tickFeedback(() -> user.meta().abilities().setFlySpeed(0.05F));
   }
 
   @PacketSubscription(
