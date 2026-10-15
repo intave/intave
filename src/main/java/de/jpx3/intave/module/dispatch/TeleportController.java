@@ -59,6 +59,7 @@ import java.util.function.BiConsumer;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.LONG_TELEPORT;
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
+import static de.jpx3.intave.module.feedback.FeedbackOptions.SELF_SYNCHRONIZATION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.TELEPORT_ACCEPT;
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.POSITION;
 
@@ -149,7 +150,8 @@ public final class TeleportController implements PacketEventSubscriber {
 				user.doubleTickFeedback(
 					event,
 					() -> beforeTeleportTransactionReceive(user, teleport),
-					() -> afterTeleportTransactionReceive(user, teleport)
+					() -> afterTeleportTransactionReceive(user, teleport),
+					SELF_SYNCHRONIZATION
 				);
 			} else {
 				teleport.allow();

@@ -93,6 +93,7 @@ import java.util.stream.Collectors;
 import static de.jpx3.intave.IntaveControl.DEBUG_MOVEMENT_IGNORE;
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.*;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
+import static de.jpx3.intave.module.feedback.FeedbackOptions.SELF_SYNCHRONIZATION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION;
 import static de.jpx3.intave.module.linker.packet.PacketId.Client.VEHICLE_MOVE;
@@ -927,7 +928,8 @@ public final class MovementDispatcher extends Module {
             recorder.completeVelocity(recordingVelocity.get());
             velocity.canNotRunAfterThisTick(movementData);
             movementData.pendingVelocityPackets.decrementAndGet();
-          }
+          },
+          SELF_SYNCHRONIZATION
         );
       } finally {
         movementData.teleportLock.unlock();
