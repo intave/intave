@@ -4,8 +4,36 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
+  should-run:
+    runs-on: ubuntu-latest
+    outputs:
+      run-tests: ${{ steps.check.outputs.run-tests }}
+    steps:
+      - name: Skip push when the commit has an open pull request
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != "push" ]; then
+            echo "run-tests=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          open_prs=$(gh api \
+            -H 'Accept: application/vnd.github+json' \
+            "/repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" \
+            --jq '[.[] | select(.state == "open")] | length')
+
+          echo "run-tests=$([ "$open_prs" -eq 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
   versions:
+    needs: should-run
+    if: needs.should-run.outputs.run-tests == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -27,7 +55,8 @@ jobs:
           echo "matrix=$(cat build/paper-test-matrix.json)" >> "$GITHUB_OUTPUT"
 
   test:
-    needs: versions
+    needs: [should-run, versions]
+    if: needs.should-run.outputs.run-tests == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
