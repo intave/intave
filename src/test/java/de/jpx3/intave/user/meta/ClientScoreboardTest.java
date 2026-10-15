@@ -29,7 +29,7 @@ final class ClientScoreboardTest {
     scoreboard.setScore("deaths", "match", 2, "\u00a7cDeaths: 2");
     scoreboard.setScore("assists", "match", 5, null);
     scoreboard.createTeam(
-      "kills-line", "\u00a7aKills: ", "!", "green",
+      "kills-line", "Kills: ", "!", "green",
       Collections.singletonList("kills")
     );
 
@@ -40,6 +40,23 @@ final class ClientScoreboardTest {
       Arrays.asList("\u00a7aKills: \u00a7akills!", "assists", "\u00a7cDeaths: 2"),
       snapshot.lines()
     );
+  }
+
+  @Test
+  void omitsClientHiddenScoresBeforeApplyingTheFifteenLineLimit() {
+    ClientScoreboard scoreboard = new ClientScoreboard();
+    scoreboard.setObjective("board", "Title");
+    scoreboard.setDisplayObjective("sidebar", "board");
+    for (int score = 1; score <= 15; score++) {
+      scoreboard.setScore("line-" + score, "board", score, null);
+    }
+    scoreboard.setScore("#hidden", "board", 100, null);
+
+    ClientScoreboard.Snapshot snapshot = scoreboard.snapshot("Player");
+
+    assertEquals(15, snapshot.lines().size());
+    assertEquals("line-15", snapshot.lines().get(0));
+    assertEquals("line-1", snapshot.lines().get(14));
   }
 
   @Test

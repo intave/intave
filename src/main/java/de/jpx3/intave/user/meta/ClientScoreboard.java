@@ -158,6 +158,9 @@ public final class ClientScoreboard {
     );
     List<String> lines = new ArrayList<>(Math.min(ordered.size(), MAX_SIDEBAR_LINES));
     for (Score score : ordered) {
+      if (score.owner.startsWith("#")) {
+        continue;
+      }
       lines.add(render(score));
       if (lines.size() == MAX_SIDEBAR_LINES) {
         break;
@@ -187,7 +190,8 @@ public final class ClientScoreboard {
     if (team == null) {
       return score.owner;
     }
-    return team.prefix + colorCode(team.color) + score.owner + team.suffix;
+    String teamColor = colorCode(team.color);
+    return teamColor + team.prefix + teamColor + score.owner + team.suffix;
   }
 
   private static String normalizeColor(String color) {
