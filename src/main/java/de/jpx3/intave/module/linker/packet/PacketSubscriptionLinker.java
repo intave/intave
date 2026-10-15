@@ -62,7 +62,7 @@ public final class PacketSubscriptionLinker extends Module {
   public void enable() {
     this.customInjector = new InjectionService(plugin);
     boolean protocolLib4 = ProtocolLibrary.getPlugin().getDescription().getVersion().startsWith("4");
-    IGNORE_CHAT_PACKETS = IGNORE_SCOREBOARD_TEAM_PACKETS = plugin.getConfig().getBoolean("compatibility.ignore-scoreboard-packets", !protocolLib4);
+    IGNORE_CHAT_PACKETS = IGNORE_SCOREBOARD_TEAM_PACKETS = plugin.settings().getBoolean("compatibility.ignore-scoreboard-packets", !protocolLib4);
   }
 
   @Override
