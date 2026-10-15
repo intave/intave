@@ -17,7 +17,7 @@ import de.jpx3.intave.cleanup.ShutdownTasks;
 import de.jpx3.intave.diagnostic.MemoryWatchdog;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.mitigate.HurttimeModifier;
-import de.jpx3.intave.share.CopyOnWriteHashMap;
+import de.jpx3.intave.share.opt.CopyOnWriteHashMap;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;

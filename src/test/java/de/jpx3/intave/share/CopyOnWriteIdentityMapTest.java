@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.share;
 
+import de.jpx3.intave.share.opt.CopyOnWriteIdentityMap;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

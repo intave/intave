@@ -2,7 +2,7 @@ package de.jpx3.intave.diagnostic;
 
 import de.jpx3.intave.agent.AgentAccessor;
 import de.jpx3.intave.executor.BackgroundExecutors;
-import de.jpx3.intave.share.CopyOnWriteMap;
+import de.jpx3.intave.share.opt.CopyOnWriteMap;
 
 import java.lang.reflect.Field;
 import java.util.*;

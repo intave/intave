@@ -1,7 +1,7 @@
 package de.jpx3.intave.world;
 
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.share.CopyOnWriteIdentityMap;
+import de.jpx3.intave.share.opt.CopyOnWriteIdentityMap;
 import org.bukkit.World;
 
 import java.lang.invoke.MethodHandle;

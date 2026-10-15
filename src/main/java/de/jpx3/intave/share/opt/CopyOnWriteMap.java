@@ -9,7 +9,7 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
-package de.jpx3.intave.share;
+package de.jpx3.intave.share.opt;
 
 import java.util.Objects;
 import java.util.function.BiConsumer;

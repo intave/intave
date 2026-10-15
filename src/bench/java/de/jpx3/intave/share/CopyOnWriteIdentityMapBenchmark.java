@@ -11,6 +11,8 @@
 
 package de.jpx3.intave.share;
 
+import de.jpx3.intave.share.opt.CopyOnWriteIdentityMap;
+
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 

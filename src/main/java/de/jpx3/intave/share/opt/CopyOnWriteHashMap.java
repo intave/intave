@@ -9,19 +9,20 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
-package de.jpx3.intave.share;
+package de.jpx3.intave.share.opt;
 
 /**
- * A read-optimized copy-on-write map using reference identity for its keys.
+ * A read-optimized copy-on-write map using standard {@link Object#equals(Object)} and
+ * {@link Object#hashCode()} key semantics.
  */
-public final class CopyOnWriteIdentityMap<K, V> extends CopyOnWriteMap<K, V> {
+public final class CopyOnWriteHashMap<K, V> extends CopyOnWriteMap<K, V> {
   @Override
   protected int hashOf(Object key) {
-    return System.identityHashCode(key);
+    return key.hashCode();
   }
 
   @Override
   protected boolean keysEqual(Object queried, Object stored) {
-    return queried == stored;
+    return queried.equals(stored);
   }
 }

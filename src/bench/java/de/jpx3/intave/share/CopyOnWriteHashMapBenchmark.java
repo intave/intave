@@ -11,6 +11,8 @@
 
 package de.jpx3.intave.share;
 
+import de.jpx3.intave.share.opt.CopyOnWriteHashMap;
+
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
