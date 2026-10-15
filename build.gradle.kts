@@ -9,9 +9,11 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
+import groovy.json.JsonSlurper
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription.Permission.Default.FALSE
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription.Permission.Default.OP
 import xyz.jpenilla.runpaper.task.RunServer
+import java.net.HttpURLConnection
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -43,6 +45,11 @@ val gitCommitHash by lazy {
 }
 
 val simpleName = "Intave"
+val githubToken = providers.environmentVariable("GITHUB_TOKEN")
+  .orElse(providers.environmentVariable("GH_TOKEN"))
+val githubAuthors = providers.provider {
+  fetchGitHubContributors("intave/intave", githubToken.orNull)
+}
 group = "de.jpx3"
 version = "$gitTag-$gitCommitHash"
 description = "Automated cheat detection and prevention"
@@ -183,7 +190,6 @@ registerBenchmarkTask(
 bukkit {
   name = simpleName
   foliaSupported = true
-  authors = listOf("DarkAndBlue", "Jpx3", "vento", "vxcus", "lennoxlotl", "NotLucky", "Trattue")
   version = "${rootProject.version}"
   description = "${rootProject.description}"
 
@@ -238,6 +244,72 @@ bukkit {
     register("intave.command.internals.collectivekick") { default = FALSE }
     register("intave.command.internals.bot") { default = FALSE }
   }
+}
+
+val bukkitPluginDescription = extensions.getByType<net.minecrell.pluginyml.bukkit.BukkitPluginDescription>()
+
+tasks.named("generateBukkitPluginDescription") {
+  inputs.property("githubAuthors", githubAuthors)
+  doFirst {
+    bukkitPluginDescription.authors = githubAuthors.get()
+  }
+}
+
+fun fetchGitHubContributors(repository: String, token: String?): List<String> {
+  val contributors = mutableListOf<Pair<String, Long>>()
+  val pageSize = 100
+  var page = 1
+
+  do {
+    val connection = URI(
+      "https://api.github.com/repos/$repository/contributors?per_page=$pageSize&page=$page"
+    ).toURL().openConnection() as HttpURLConnection
+
+    val entries = try {
+      connection.requestMethod = "GET"
+      connection.connectTimeout = 30_000
+      connection.readTimeout = 30_000
+      connection.setRequestProperty("Accept", "application/vnd.github+json")
+      connection.setRequestProperty("User-Agent", "intave/intave Gradle build")
+      token?.takeIf(String::isNotBlank)?.let {
+        connection.setRequestProperty("Authorization", "Bearer $it")
+      }
+
+      when (val responseCode = connection.responseCode) {
+        HttpURLConnection.HTTP_OK -> connection.inputStream.bufferedReader().use { reader ->
+          JsonSlurper().parse(reader) as? List<*>
+            ?: throw GradleException("GitHub returned an invalid contributor list for $repository")
+        }
+        HttpURLConnection.HTTP_NO_CONTENT -> emptyList<Any>()
+        else -> throw GradleException(
+          "GitHub contributor lookup failed for $repository (HTTP $responseCode)"
+        )
+      }
+    } finally {
+      connection.disconnect()
+    }
+
+    contributors += entries.mapNotNull { entry ->
+      val contributor = entry as? Map<*, *> ?: return@mapNotNull null
+      val login = contributor["login"] as? String ?: return@mapNotNull null
+      val contributions = (contributor["contributions"] as? Number)?.toLong()
+        ?: throw GradleException("GitHub returned an invalid contribution count for $login")
+      if (contributor["type"] == "Bot" || login.endsWith("[bot]", ignoreCase = true)) {
+        null
+      } else {
+        login to contributions
+      }
+    }
+    page++
+  } while (entries.size == pageSize)
+
+  return contributors
+    .distinctBy { it.first.lowercase() }
+    .sortedWith(
+      compareByDescending<Pair<String, Long>> { it.second }
+        .thenBy(String.CASE_INSENSITIVE_ORDER) { it.first }
+    )
+    .map(Pair<String, Long>::first)
 }
 
 /*
