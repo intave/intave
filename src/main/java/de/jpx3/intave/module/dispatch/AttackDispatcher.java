@@ -86,7 +86,7 @@ public final class AttackDispatcher extends Module {
   )
   public void receiveMovementForAttackCooldown(User user) {
     if (!user.meta().protocol().sendsClientTickEnd()) {
-      user.meta().attack().attackCooldown().tick();
+      tickAttackCooldown(user);
     }
   }
 
@@ -96,9 +96,16 @@ public final class AttackDispatcher extends Module {
   )
   public void receiveClientTickEndForAttackCooldown(User user) {
     if (user.meta().protocol().sendsClientTickEnd()) {
-      user.meta().attack().attackCooldown().tick();
+      tickAttackCooldown(user);
       user.meta().movement().inactiveTick(ATTACK_REDUCE);
     }
+  }
+
+  private static void tickAttackCooldown(User user) {
+    MetadataBundle meta = user.meta();
+    AttackCooldown attackCooldown = meta.attack().attackCooldown();
+    attackCooldown.observeHeldItem(meta.inventory().heldItem());
+    attackCooldown.tick();
   }
 
   @PacketSubscription(
