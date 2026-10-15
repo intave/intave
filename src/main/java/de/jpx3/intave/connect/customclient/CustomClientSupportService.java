@@ -10,7 +10,6 @@ import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.check.EventProcessor;
-import de.jpx3.intave.connect.customclient.LabyModChannelHelper;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.module.Modules;

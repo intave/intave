@@ -140,10 +140,6 @@ public final class FeedbackSender extends Module {
           IntaveLogger.logger().info("It is highly recommended to only send packets on the main thread.");
           Thread.dumpStack();
         }
-//        Thread.dumpStack();
-//        firstCallback.success(player, target);
-//        secondCallback.success(player, target);
-//        return;
       }
     }
     ReentrantLock lock = userLock(user);

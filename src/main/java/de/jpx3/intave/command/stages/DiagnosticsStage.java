@@ -11,6 +11,8 @@
 
 package de.jpx3.intave.command.stages;
 
+import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
+
 import ac.intave.samples.event.AttackEvent;
 import ac.intave.samples.event.BlockPlaceEvent;
 import ac.intave.samples.event.EventSink;
@@ -373,7 +375,7 @@ public final class DiagnosticsStage extends CommandStage implements BukkitEventS
 //
 //      PacketContainer packet = new PacketContainer(PacketType.Play.Client.USE_ENTITY);
 //      packet.getIntegers().write(0, 0);
-//      packet.getEntityUseActions().write(0, EnumWrappers.EntityUseAction.ATTACK);
+//      packet.getEntityUseActions().write(0, EntityUseAction.ATTACK);
 //
 //      PacketEvent event = PacketEvent.fromClient(packet.getHandle(), packet, player);
 //      Collection<PrioritizedListener<PacketListener>> listeners = sortedPacketListenerList.getListener(PacketType.Play.Client.USE_ENTITY);
