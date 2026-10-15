@@ -48,7 +48,6 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
-import de.jpx3.intave.user.meta.ViolationMetadata;
 import org.bukkit.*;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -275,7 +274,6 @@ public final class TeleportController implements PacketEventSubscriber {
 	boolean confirmTeleport(User user, Position sentPosition, Rotation sentRotation) {
 		MovementMetadata movementData = user.meta().movement();
 		ProtocolMetadata protocol = user.meta().protocol();
-		ViolationMetadata violationMetadata = user.meta().violationLevel();
 
 		if (protocol.supportsTeleportAccepts() && !movementData.sentTeleportIdBefore) {
 			return false;
@@ -338,10 +336,7 @@ public final class TeleportController implements PacketEventSubscriber {
 					movementData.onGround = first.simulatedOnGround();
 					movementData.setLastOnGround(first.simulatedOnGround());
 				}
-				if (movementData.completeRecovery(first)) {
-					violationMetadata.isInActiveTeleportBundle = false;
-					violationMetadata.disableActiveTeleportBundleNextTeleportAccept = false;
-				}
+				movementData.completeRecovery(first);
 				if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
 					user.sendMessage(IntavePlugin.prefix() + "Movement matched the teleport request to " + expected);
 				}

@@ -102,7 +102,6 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     AttackRaytraceMeta meta = metaOf(user);
     AbilityMetadata abilities = user.meta().abilities();
     MovementMetadata movement = user.meta().movement();
-    ViolationMetadata violationMeta = user.meta().violationLevel();
 
     PacketContainer packet = event.getPacket();
     EntityUseAction action = reader.useAction();
@@ -182,7 +181,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
         user.sendMessage(ChatColor.RED + "Distance " + formatDouble(distance, 12));
       }
 
-      boolean inTeleport = movement.ticksPast(TELEPORT) == 0 || violationMeta.isInActiveTeleportBundle;
+      boolean inTeleport = movement.ticksPast(TELEPORT) == 0;
       boolean firstRaytraceSuccessful = false;
       if (!inTeleport && !entityInTimeout(user, entity, entity.pendingFeedbackPackets())) {
         // Make a first attempt at ray-tracing to enhance player experience
@@ -702,7 +701,6 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
   ) {
     Player player = user.player();
     MetadataBundle meta = user.meta();
-    ViolationMetadata violationMeta = meta.violationLevel();
     String entityName = attacked.entityName();
     double maximumReach = attack.maximumReach();
     meta.attack().setLastReach(raytrace.reach());
@@ -723,7 +721,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
     String estimationSuffix = estimated ? " (estimated)" : "";
     String message, details, thresholdKey, sibyl;
     double reach;
-    boolean resendAllowed = attack.shouldResend() && !violationMeta.isInActiveTeleportBundle;
+    boolean resendAllowed = attack.shouldResend();
 
     Map<String, String> granular = new LinkedHashMap<>();
     granular.put("name", attacked.entityName());

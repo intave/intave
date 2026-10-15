@@ -244,7 +244,6 @@ public final class Physics extends Check {
   @DispatchTarget
   public void endMovement(User user, boolean hasMovement, boolean hasRotation) {
 	  MovementMetadata movementData = user.meta().movement();
-    ViolationMetadata violationMetadata = user.meta().violationLevel();
 
     Motion usedMotion = movementData.sentOffsetMotion();
 //    SimulationResult lastSimulationResult = movementData.simulationResult();
@@ -276,7 +275,6 @@ public final class Physics extends Check {
 //        usedMotion
 //      );
 
-      Motion beforeBaseMotion = movementData.mutableBaseMotionCopy();
       Motion afterBaseMotion;
 
       try {
@@ -293,14 +291,8 @@ public final class Physics extends Check {
         return;
       }
 
-      if (!violationMetadata.isInActiveTeleportBundle) {
-        PacketLogging logging = Modules.tracker().packetLogging();
-	      logging.logSystemMessage(user, () -> "MOTION LOGIC: Base afterTickMotion override: " + afterBaseMotion.motionX + " " + afterBaseMotion.motionY + " " + afterBaseMotion.motionZ);
-//        movementData.setBaseMotion(afterBaseMotion);
-      } else {
-        movementData.setBaseMotion(beforeBaseMotion);
-        movementData.clearPostTickMotionCandidates();
-      }
+      PacketLogging logging = Modules.tracker().packetLogging();
+      logging.logSystemMessage(user, () -> "MOTION LOGIC: Base afterTickMotion override: " + afterBaseMotion.motionX + " " + afterBaseMotion.motionY + " " + afterBaseMotion.motionZ);
       movementData.inactiveTick(
         FLYING_PACKET_ACCURATE,
         FLYING_PACKET_CLIENT,
@@ -1170,9 +1162,6 @@ public final class Physics extends Check {
 //      tags.add("d:" + (movementData.recentlyEncounteredFlyingPacket(1) ? "~" + formatDouble(distance, 6) : formatDouble(distance, 6)));
 //      if (collidedWithBoat) {
 //        tags.add("boat");
-//      }
-//      if (violationLevelData.isInActiveTeleportBundle) {
-//        tags.add("atb");
 //      }
 //      if (movedIntoBlock) {
 //        tags.add("bb-intersection");

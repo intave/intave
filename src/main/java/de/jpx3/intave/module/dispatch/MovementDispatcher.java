@@ -513,16 +513,6 @@ public final class MovementDispatcher extends Module {
     inventoryData.activatedItemThisTick = false;
     inventoryData.deactivatedItemThisTick = false;
 
-//    if (violationLevelData.isInActiveTeleportBundle) {
-//      if (DEBUG_MOVEMENT_IGNORE) {
-//        System.out.println("[Intave] Teleport bundle movement ignore");
-//      }
-//      logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: Teleport bundle movement ignore");
-//      movement.dropPostTickMotionProcessing = true;
-//      event.setCancelled(true);
-//      reader.release();
-//      return;
-//    }
 
     if (!movement.isTeleportConfirmationPacket &&
       movement.canResetMotion &&

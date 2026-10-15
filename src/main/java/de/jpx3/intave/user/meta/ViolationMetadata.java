@@ -22,8 +22,6 @@ public final class ViolationMetadata {
   public double physicsVelocityVL;
   public double physicsVehicleVL;
   public double physicsInvalidMovementsInRow;
-  public volatile boolean isInActiveTeleportBundle;
-  public volatile boolean disableActiveTeleportBundleNextTeleportAccept;
 
   public long lastMovementDebugRequest;
 

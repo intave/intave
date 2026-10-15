@@ -85,7 +85,7 @@ final class PhysicsReportTest {
     assertFalse(configuration.has("reducing"));
 
     JsonObject evaluationState = movement.getAsJsonObject("evaluationState");
-    assertEquals(6, evaluationState.entrySet().size());
+    assertEquals(5, evaluationState.entrySet().size());
     assertEquals(0.75, evaluationState.get("physicsOffset").getAsDouble());
     assertEquals(42, evaluationState.get("physicsViolationLevel").getAsDouble());
     assertEquals(3, evaluationState.get("invalidMovementsInRow").getAsDouble());

@@ -227,7 +227,6 @@ public final class PhysicsReport implements Report {
     addNumber(evaluationState, "insignificantBuffer", physicsState.physicsInsignificantBufferVL);
     addNumber(evaluationState, "velocityViolationLevel", physicsState.physicsVelocityVL);
     addNumber(evaluationState, "invalidMovementsInRow", physicsState.physicsInvalidMovementsInRow);
-    evaluationState.addProperty("activeTeleportBundle", physicsState.isInActiveTeleportBundle);
     json.add("evaluationState", evaluationState);
     return json;
   }
