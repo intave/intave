@@ -32,9 +32,16 @@ import org.bukkit.event.world.WorldInitEvent;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Locale;
 
 public final class ChunkAccessPatcher extends Module {
-  private static final boolean ENABLED = !MinecraftVersions.VER1_14_0.atOrAbove();
+  // Preserve Imanity's own chunk unload queue implementation.
+  private static final boolean ENABLED = !MinecraftVersions.VER1_14_0.atOrAbove() && !isImanitySpigot();
+
+  private static boolean isImanitySpigot() {
+    String serverBrand = (Bukkit.getName() + " " + Bukkit.getVersion()).toLowerCase(Locale.ROOT);
+    return serverBrand.contains("imanity") || serverBrand.contains("ispigot");
+  }
 
   static {
     if (ENABLED) {
