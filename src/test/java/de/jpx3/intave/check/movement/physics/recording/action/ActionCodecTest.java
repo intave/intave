@@ -11,16 +11,23 @@
 
 package de.jpx3.intave.check.movement.physics.recording.action;
 
+
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.module.test.record.TickRange;
 import de.jpx3.intave.module.test.record.action.Action;
 import de.jpx3.intave.module.test.record.action.AttackReduction;
+import de.jpx3.intave.module.test.record.action.PistonSlimeAction;
 import de.jpx3.intave.module.test.record.action.ReceiveVelocity;
+import de.jpx3.intave.module.test.record.action.ShulkerBoxAction;
+import de.jpx3.intave.share.BlockPosition;
+import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.Motion;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -28,6 +35,74 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class ActionCodecTest {
+	@Test
+	void readsPackedBlockPositionsFromUnversionedActionLists() {
+		PistonSlimeAction piston = new PistonSlimeAction(
+			Direction.UP,
+			List.of(new BlockPosition(-214, 65, 220)),
+			TickRange.betweenInclusive(3, 5)
+		);
+		ShulkerBoxAction shulker = new ShulkerBoxAction(
+			new BlockPosition(7, -64, -9),
+			Direction.EAST,
+			true,
+			TickRange.betweenInclusive(6, 8)
+		);
+		ByteBuf buffer = Unpooled.buffer();
+		try {
+			ByteBufStreamCodecs.INTEGER.encode(buffer, 2);
+			encodeLegacyPistonAction(buffer, piston);
+			encodeLegacyShulkerAction(buffer, shulker);
+
+			assertEquals(List.of(piston, shulker), Action.LIST_STREAM_CODEC.decode(buffer));
+			assertEquals(0, buffer.readableBytes());
+		} finally {
+			buffer.release();
+		}
+	}
+
+	@Test
+	void writesVersionedActionLists() {
+		ShulkerBoxAction expected = new ShulkerBoxAction(
+			new BlockPosition(-214, 65, 220),
+			Direction.NORTH,
+			false,
+			TickRange.betweenInclusive(9, 11)
+		);
+		ByteBuf buffer = Unpooled.buffer();
+		try {
+			Action.LIST_STREAM_CODEC.encode(buffer, List.of(expected));
+
+			assertEquals(Integer.MIN_VALUE, buffer.readInt());
+			assertEquals(2, buffer.readInt());
+			assertEquals(1, buffer.readInt());
+			buffer.readerIndex(0);
+			assertEquals(List.of(expected), Action.LIST_STREAM_CODEC.decode(buffer));
+			assertEquals(0, buffer.readableBytes());
+		} finally {
+			buffer.release();
+		}
+	}
+
+	private static void encodeLegacyPistonAction(ByteBuf buffer, PistonSlimeAction action) {
+		ByteBufStreamCodecs.STRING.encode(buffer, "PISTON_SLIME");
+		ByteBufStreamCodecs.INTEGER.encode(buffer, action.direction().getIndex());
+		ByteBufStreamCodecs.INTEGER.encode(buffer, action.slimeSources().size());
+		for (BlockPosition position : action.slimeSources()) {
+			BlockPosition.LEGACY_STREAM_CODEC.encode(buffer, position);
+		}
+		TickRange.STREAM_CODEC.encode(buffer, action.tickRange());
+	}
+
+	private static void encodeLegacyShulkerAction(ByteBuf buffer, ShulkerBoxAction action) {
+		ByteBufStreamCodecs.STRING.encode(buffer, "SHULKER_BOX");
+		BlockPosition.LEGACY_STREAM_CODEC.encode(buffer, action.position());
+		ByteBufStreamCodecs.INTEGER.encode(buffer, action.direction().getIndex());
+		ByteBufStreamCodecs.BOOLEAN.encode(buffer, action.opening());
+		TickRange.STREAM_CODEC.encode(buffer, action.tickRange());
+	}
+
+
 
 	@Test
 	void readsLegacyAttackPayloadWithoutConsumingTheNextAction() {

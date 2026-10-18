@@ -32,8 +32,15 @@ public final class BlockPosition extends RawVector3d {
   private static final long Y_MASK = (1L << NUM_Y_BITS) - 1L;
   private static final long Z_MASK = (1L << NUM_Z_BITS) - 1L;
 
-  public static final StreamCodec<ByteBuf, ByteBuf, BlockPosition> STREAM_CODEC = ByteBufStreamCodecs.LONG.beforeAndAfter(
+  /** Packed Minecraft position format retained for decoding previously serialized data. */
+  public static final StreamCodec<ByteBuf, ByteBuf, BlockPosition> LEGACY_STREAM_CODEC = ByteBufStreamCodecs.LONG.beforeAndAfter(
     BlockPosition::fromLong, BlockPosition::toLong
+  );
+  public static final StreamCodec<ByteBuf, ByteBuf, BlockPosition> STREAM_CODEC = StreamCodec.compound(
+    ByteBufStreamCodecs.INTEGER, BlockPosition::getX,
+    ByteBufStreamCodecs.INTEGER, BlockPosition::getY,
+    ByteBufStreamCodecs.INTEGER, BlockPosition::getZ,
+    BlockPosition::new
   );
   public static final StreamCodec<JsonReader, JsonWriter, BlockPosition> JSON_CODEC = object(
     integerField("x", BlockPosition::getX),

@@ -26,13 +26,14 @@ import static de.jpx3.intave.codec.ByteBufStreamCodecs.*;
 
 public final class MoveFrame {
 	private static final int VERSIONED_LIST_MARKER = Integer.MIN_VALUE;
-	private static final int CURRENT_FORMAT_VERSION = 4;
+	private static final int CURRENT_FORMAT_VERSION = 5;
 	private static final int MAX_FRAME_COUNT = 1_048_576;
 	private static final StreamCodec<ByteBuf, ByteBuf, Position> POSITION_CODEC = Position.STREAM_CODEC.nullable(BOOLEAN);
 	private static final StreamCodec<ByteBuf, ByteBuf, Rotation> ROTATION_CODEC = Rotation.STREAM_CODEC.nullable(BOOLEAN);
 	private static final StreamCodec<ByteBuf, ByteBuf, Pose> POSE_CODEC = STRING.beforeAndAfter(Pose::valueOf, Pose::name).nullable(BOOLEAN);
 	private static final StreamCodec<ByteBuf, ByteBuf, MovementFrameState> MOVEMENT_STATE_CODEC = MovementFrameState.STREAM_CODEC.nullable(BOOLEAN);
 	private static final StreamCodec<ByteBuf, ByteBuf, Boolean> CLIENT_GROUND_CODEC = BOOLEAN.nullable(BOOLEAN);
+	private static final StreamCodec<ByteBuf, ByteBuf, Map<BlockPosition, MaterialVariantStore>> LEGACY_BLOCKS_CODEC = StreamCodec.mapCodec(BlockPosition.LEGACY_STREAM_CODEC, MaterialVariantStore.STREAM_CODEC, INTEGER);
 	private static final StreamCodec<ByteBuf, ByteBuf, Map<BlockPosition, MaterialVariantStore>> BLOCKS_CODEC = StreamCodec.mapCodec(BlockPosition.STREAM_CODEC, MaterialVariantStore.STREAM_CODEC, INTEGER);
 
 	private final Map<BlockPosition, MaterialVariantStore> dirtyBlocks = new HashMap<>();
@@ -44,50 +45,17 @@ public final class MoveFrame {
 	private final @Nullable MovementFrameState movementState;
 	private final @Nullable Boolean clientOnGround;
 
-	private static final StreamCodec<ByteBuf, ByteBuf, MoveFrame> BASE_STREAM_CODEC = StreamCodec.compound(
-		POSITION_CODEC, MoveFrame::moveTo,
-		ROTATION_CODEC, MoveFrame::rotateTo,
-		BLOCKS_CODEC, MoveFrame::blocks,
-		Input.STREAM_CODEC, MoveFrame::input,
-		(moveTo, rotateTo, blocks, input) -> new MoveFrame(
-			moveTo, rotateTo, blocks, input, false, null
-		)
+	private static final StreamCodec<ByteBuf, ByteBuf, MoveFrame> LEGACY_BASE_STREAM_CODEC =
+		baseStreamCodec(LEGACY_BLOCKS_CODEC);
+	private static final StreamCodec<ByteBuf, ByteBuf, MoveFrame> VERSION_2_STREAM_CODEC =
+		version2StreamCodec(LEGACY_BASE_STREAM_CODEC);
+	private static final StreamCodec<ByteBuf, ByteBuf, MoveFrame> VERSION_3_STREAM_CODEC =
+		version3StreamCodec(VERSION_2_STREAM_CODEC);
+	private static final StreamCodec<ByteBuf, ByteBuf, MoveFrame> VERSION_4_STREAM_CODEC =
+		version4StreamCodec(VERSION_3_STREAM_CODEC);
+	private static final StreamCodec<ByteBuf, ByteBuf, MoveFrame> CURRENT_STREAM_CODEC = version4StreamCodec(
+		version3StreamCodec(version2StreamCodec(baseStreamCodec(BLOCKS_CODEC)))
 	);
-
-	private static final StreamCodec<ByteBuf, ByteBuf, MoveFrame> VERSION_2_STREAM_CODEC = StreamCodec.of((buffer, frame) -> {
-		BASE_STREAM_CODEC.encode(buffer, frame);
-		BOOLEAN.encode(buffer, frame.gliding());
-		POSE_CODEC.encode(buffer, frame.physicalPose());
-	}, buffer -> {
-		MoveFrame frame = BASE_STREAM_CODEC.decode(buffer);
-		return new MoveFrame(
-			frame.moveTo, frame.rotateTo, frame.dirtyBlocks, frame.input,
-			BOOLEAN.decode(buffer), POSE_CODEC.decode(buffer)
-		);
-	});
-
-	private static final StreamCodec<ByteBuf, ByteBuf, MoveFrame> VERSION_3_STREAM_CODEC = StreamCodec.of((buffer, frame) -> {
-		VERSION_2_STREAM_CODEC.encode(buffer, frame);
-		MOVEMENT_STATE_CODEC.encode(buffer, frame.movementState());
-	}, buffer -> {
-		MoveFrame frame = VERSION_2_STREAM_CODEC.decode(buffer);
-		return new MoveFrame(
-			frame.moveTo, frame.rotateTo, frame.dirtyBlocks, frame.input,
-			frame.gliding, frame.physicalPose, MOVEMENT_STATE_CODEC.decode(buffer)
-		);
-	});
-
-	private static final StreamCodec<ByteBuf, ByteBuf, MoveFrame> CURRENT_STREAM_CODEC = StreamCodec.of((buffer, frame) -> {
-		VERSION_3_STREAM_CODEC.encode(buffer, frame);
-		CLIENT_GROUND_CODEC.encode(buffer, frame.clientOnGround());
-	}, buffer -> {
-		MoveFrame frame = VERSION_3_STREAM_CODEC.decode(buffer);
-		return new MoveFrame(
-			frame.moveTo, frame.rotateTo, frame.dirtyBlocks, frame.input,
-			frame.gliding, frame.physicalPose, frame.movementState,
-			CLIENT_GROUND_CODEC.decode(buffer)
-		);
-	});
 
 	public static final StreamCodec<ByteBuf, ByteBuf, List<MoveFrame>> LIST_STREAM_CODEC = StreamCodec.of((buffer, frames) -> {
 		INTEGER.encode(buffer, VERSIONED_LIST_MARKER);
@@ -99,7 +67,7 @@ public final class MoveFrame {
 	}, buffer -> {
 		int markerOrLegacySize = INTEGER.decode(buffer);
 		if (markerOrLegacySize >= 0) {
-			return decodeFrames(buffer, markerOrLegacySize, BASE_STREAM_CODEC);
+			return decodeFrames(buffer, markerOrLegacySize, LEGACY_BASE_STREAM_CODEC);
 		}
 		if (markerOrLegacySize != VERSIONED_LIST_MARKER) {
 			throw new IllegalStateException("Unknown movement frame list marker: " + markerOrLegacySize);
@@ -111,6 +79,9 @@ public final class MoveFrame {
 		}
 		if (version == 3) {
 			return decodeFrames(buffer, size, VERSION_3_STREAM_CODEC);
+		}
+		if (version == 4) {
+			return decodeFrames(buffer, size, VERSION_4_STREAM_CODEC);
 		}
 		if (version == CURRENT_FORMAT_VERSION) {
 			return decodeFrames(buffer, size, CURRENT_STREAM_CODEC);
@@ -163,6 +134,67 @@ public final class MoveFrame {
 
 	public @Nullable MovementFrameState movementState() {
 		return movementState;
+	}
+
+	private static StreamCodec<ByteBuf, ByteBuf, MoveFrame> baseStreamCodec(
+		StreamCodec<ByteBuf, ByteBuf, Map<BlockPosition, MaterialVariantStore>> blocksCodec
+	) {
+		return StreamCodec.compound(
+			POSITION_CODEC, MoveFrame::moveTo,
+			ROTATION_CODEC, MoveFrame::rotateTo,
+			blocksCodec, MoveFrame::blocks,
+			Input.STREAM_CODEC, MoveFrame::input,
+			(moveTo, rotateTo, blocks, input) -> new MoveFrame(
+				moveTo, rotateTo, blocks, input, false, null
+			)
+		);
+	}
+
+	private static StreamCodec<ByteBuf, ByteBuf, MoveFrame> version2StreamCodec(
+		StreamCodec<ByteBuf, ByteBuf, MoveFrame> baseCodec
+	) {
+		return StreamCodec.of((buffer, frame) -> {
+			baseCodec.encode(buffer, frame);
+			BOOLEAN.encode(buffer, frame.gliding());
+			POSE_CODEC.encode(buffer, frame.physicalPose());
+		}, buffer -> {
+			MoveFrame frame = baseCodec.decode(buffer);
+			return new MoveFrame(
+				frame.moveTo, frame.rotateTo, frame.dirtyBlocks, frame.input,
+				BOOLEAN.decode(buffer), POSE_CODEC.decode(buffer)
+			);
+		});
+	}
+
+	private static StreamCodec<ByteBuf, ByteBuf, MoveFrame> version3StreamCodec(
+		StreamCodec<ByteBuf, ByteBuf, MoveFrame> version2Codec
+	) {
+		return StreamCodec.of((buffer, frame) -> {
+			version2Codec.encode(buffer, frame);
+			MOVEMENT_STATE_CODEC.encode(buffer, frame.movementState());
+		}, buffer -> {
+			MoveFrame frame = version2Codec.decode(buffer);
+			return new MoveFrame(
+				frame.moveTo, frame.rotateTo, frame.dirtyBlocks, frame.input,
+				frame.gliding, frame.physicalPose, MOVEMENT_STATE_CODEC.decode(buffer)
+			);
+		});
+	}
+
+	private static StreamCodec<ByteBuf, ByteBuf, MoveFrame> version4StreamCodec(
+		StreamCodec<ByteBuf, ByteBuf, MoveFrame> version3Codec
+	) {
+		return StreamCodec.of((buffer, frame) -> {
+			version3Codec.encode(buffer, frame);
+			CLIENT_GROUND_CODEC.encode(buffer, frame.clientOnGround());
+		}, buffer -> {
+			MoveFrame frame = version3Codec.decode(buffer);
+			return new MoveFrame(
+				frame.moveTo, frame.rotateTo, frame.dirtyBlocks, frame.input,
+				frame.gliding, frame.physicalPose, frame.movementState,
+				CLIENT_GROUND_CODEC.decode(buffer)
+			);
+		});
 	}
 
 	public @Nullable Boolean clientOnGround() {

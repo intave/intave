@@ -24,19 +24,27 @@ import java.util.Objects;
 public final class ShulkerBoxAction extends Action {
 	private static final StreamCodec<ByteBuf, ByteBuf, Direction> DIRECTION_CODEC =
 		ByteBufStreamCodecs.INTEGER.beforeAndAfter(Direction::getFront, Direction::getIndex);
-
-	public static final StreamCodec<ByteBuf, ByteBuf, ShulkerBoxAction> STREAM_CODEC = StreamCodec.compound(
-		BlockPosition.STREAM_CODEC, ShulkerBoxAction::position,
-		DIRECTION_CODEC, ShulkerBoxAction::direction,
-		ByteBufStreamCodecs.BOOLEAN, ShulkerBoxAction::opening,
-		TickRange.STREAM_CODEC, ShulkerBoxAction::tickRange,
-		ShulkerBoxAction::new
-	);
+	static final StreamCodec<ByteBuf, ByteBuf, ShulkerBoxAction> LEGACY_STREAM_CODEC =
+		streamCodec(BlockPosition.LEGACY_STREAM_CODEC);
+	public static final StreamCodec<ByteBuf, ByteBuf, ShulkerBoxAction> STREAM_CODEC =
+		streamCodec(BlockPosition.STREAM_CODEC);
 
 	private final BlockPosition position;
 	private final Direction direction;
 	private final boolean opening;
 	private final TickRange tickRange;
+
+	private static StreamCodec<ByteBuf, ByteBuf, ShulkerBoxAction> streamCodec(
+		StreamCodec<ByteBuf, ByteBuf, BlockPosition> positionCodec
+	) {
+		return StreamCodec.compound(
+			positionCodec, ShulkerBoxAction::position,
+			DIRECTION_CODEC, ShulkerBoxAction::direction,
+			ByteBufStreamCodecs.BOOLEAN, ShulkerBoxAction::opening,
+			TickRange.STREAM_CODEC, ShulkerBoxAction::tickRange,
+			ShulkerBoxAction::new
+		);
+	}
 
 	public ShulkerBoxAction(
 		BlockPosition position,

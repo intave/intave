@@ -27,19 +27,25 @@ import java.util.Objects;
 public final class PistonSlimeAction extends Action {
 	private static final StreamCodec<ByteBuf, ByteBuf, Direction> DIRECTION_CODEC =
 		ByteBufStreamCodecs.INTEGER.beforeAndAfter(Direction::getFront, Direction::getIndex);
-	private static final StreamCodec<ByteBuf, ByteBuf, List<BlockPosition>> POSITIONS_CODEC =
-		ByteBufStreamCodecs.listCodecOf(BlockPosition.STREAM_CODEC);
-
-	public static final StreamCodec<ByteBuf, ByteBuf, PistonSlimeAction> STREAM_CODEC = StreamCodec.compound(
-		DIRECTION_CODEC, PistonSlimeAction::direction,
-		POSITIONS_CODEC, PistonSlimeAction::slimeSources,
-		TickRange.STREAM_CODEC, PistonSlimeAction::tickRange,
-		PistonSlimeAction::new
-	);
+	static final StreamCodec<ByteBuf, ByteBuf, PistonSlimeAction> LEGACY_STREAM_CODEC =
+		streamCodec(BlockPosition.LEGACY_STREAM_CODEC);
+	public static final StreamCodec<ByteBuf, ByteBuf, PistonSlimeAction> STREAM_CODEC =
+		streamCodec(BlockPosition.STREAM_CODEC);
 
 	private final Direction direction;
 	private final List<BlockPosition> slimeSources;
 	private final TickRange tickRange;
+
+	private static StreamCodec<ByteBuf, ByteBuf, PistonSlimeAction> streamCodec(
+		StreamCodec<ByteBuf, ByteBuf, BlockPosition> positionCodec
+	) {
+		return StreamCodec.compound(
+			DIRECTION_CODEC, PistonSlimeAction::direction,
+			ByteBufStreamCodecs.listCodecOf(positionCodec), PistonSlimeAction::slimeSources,
+			TickRange.STREAM_CODEC, PistonSlimeAction::tickRange,
+			PistonSlimeAction::new
+		);
+	}
 
 	public PistonSlimeAction(
 		Direction direction,

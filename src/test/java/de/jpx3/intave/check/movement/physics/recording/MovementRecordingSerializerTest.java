@@ -51,11 +51,12 @@ final class MovementRecordingSerializerTest {
 	private static final StreamCodec<ByteBuf, ByteBuf, Rotation> NULLABLE_ROTATION_CODEC = Rotation.STREAM_CODEC.nullable(ByteBufStreamCodecs.BOOLEAN);
 	private static final StreamCodec<ByteBuf, ByteBuf, Pose> NULLABLE_POSE_CODEC = ByteBufStreamCodecs.STRING.beforeAndAfter(Pose::valueOf, Pose::name).nullable(ByteBufStreamCodecs.BOOLEAN);
 	private static final StreamCodec<ByteBuf, ByteBuf, MovementFrameState> NULLABLE_MOVEMENT_STATE_CODEC = MovementFrameState.STREAM_CODEC.nullable(ByteBufStreamCodecs.BOOLEAN);
-	private static final StreamCodec<ByteBuf, ByteBuf, Map<BlockPosition, MaterialVariantStore>> BLOCKS_CODEC = ByteBufStreamCodecs.mapCodec(BlockPosition.STREAM_CODEC, MaterialVariantStore.STREAM_CODEC);
+	private static final StreamCodec<ByteBuf, ByteBuf, Boolean> NULLABLE_CLIENT_GROUND_CODEC = ByteBufStreamCodecs.BOOLEAN.nullable(ByteBufStreamCodecs.BOOLEAN);
+	private static final StreamCodec<ByteBuf, ByteBuf, Map<BlockPosition, MaterialVariantStore>> LEGACY_BLOCKS_CODEC = ByteBufStreamCodecs.mapCodec(BlockPosition.LEGACY_STREAM_CODEC, MaterialVariantStore.STREAM_CODEC);
 	private static final StreamCodec<ByteBuf, ByteBuf, MoveFrame> UNVERSIONED_FRAME_CODEC = StreamCodec.of((buffer, frame) -> {
 		NULLABLE_POSITION_CODEC.encode(buffer, frame.moveTo());
 		NULLABLE_ROTATION_CODEC.encode(buffer, frame.rotateTo());
-		BLOCKS_CODEC.encode(buffer, frame.blocks());
+		LEGACY_BLOCKS_CODEC.encode(buffer, frame.blocks());
 		Input.STREAM_CODEC.encode(buffer, frame.input());
 	}, _ -> {
 		throw new UnsupportedOperationException("This codec is used for encoding test payloads only");
@@ -82,6 +83,20 @@ final class MovementRecordingSerializerTest {
 			ByteBufStreamCodecs.BOOLEAN.encode(buffer, frame.gliding());
 			NULLABLE_POSE_CODEC.encode(buffer, frame.physicalPose());
 			NULLABLE_MOVEMENT_STATE_CODEC.encode(buffer, frame.movementState());
+		}
+	}, _ -> {
+		throw new UnsupportedOperationException("This codec is used for encoding test payloads only");
+	});
+	private static final StreamCodec<ByteBuf, ByteBuf, List<MoveFrame>> VERSION_4_FRAMES_CODEC = StreamCodec.of((buffer, frames) -> {
+		ByteBufStreamCodecs.INTEGER.encode(buffer, Integer.MIN_VALUE);
+		ByteBufStreamCodecs.INTEGER.encode(buffer, 4);
+		ByteBufStreamCodecs.INTEGER.encode(buffer, frames.size());
+		for (MoveFrame frame : frames) {
+			UNVERSIONED_FRAME_CODEC.encode(buffer, frame);
+			ByteBufStreamCodecs.BOOLEAN.encode(buffer, frame.gliding());
+			NULLABLE_POSE_CODEC.encode(buffer, frame.physicalPose());
+			NULLABLE_MOVEMENT_STATE_CODEC.encode(buffer, frame.movementState());
+			NULLABLE_CLIENT_GROUND_CODEC.encode(buffer, frame.clientOnGround());
 		}
 	}, _ -> {
 		throw new UnsupportedOperationException("This codec is used for encoding test payloads only");
@@ -410,6 +425,27 @@ final class MovementRecordingSerializerTest {
 
 			assertEquals(MovementFrameState.empty(), decoded.frames().get(0).movementState());
 			assertNull(decoded.frames().get(0).clientOnGround());
+		} finally {
+			buffer.release();
+		}
+	}
+
+	@Test
+	void deserializeVersion4FrameWithPackedBlockPositions() {
+		BlockPosition position = new BlockPosition(-214, 65, 220);
+		MoveFrame frame = new MoveFrame(
+			null, null,
+			Map.of(position, MaterialVariantStore.of(Material.STONE, 3)),
+			Input.none(), true, Pose.STANDING, MovementFrameState.empty(), false
+		);
+		ByteBuf buffer = Unpooled.buffer();
+		try {
+			VERSION_4_FRAMES_CODEC.encode(buffer, List.of(frame));
+
+			List<MoveFrame> decoded = MoveFrame.LIST_STREAM_CODEC.decode(buffer);
+
+			assertEquals(List.of(frame), decoded);
+			assertEquals(MaterialVariantStore.of(Material.STONE, 3), decoded.get(0).blocks().get(position));
 		} finally {
 			buffer.release();
 		}
