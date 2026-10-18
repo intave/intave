@@ -9,9 +9,9 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
-package de.jpx3.intave.packet;
+package de.jpx3.intave.packet.injection.pipeline;
 
-public interface Injector {
+public interface PipelineInjector {
 	void inject();
 	void uninject();
 }

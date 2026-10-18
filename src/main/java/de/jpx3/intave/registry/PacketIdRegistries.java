@@ -9,30 +9,22 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
-package de.jpx3.intave.packet;
+package de.jpx3.intave.registry;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import de.jpx3.intave.access.IntaveInternalException;
+import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
 
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
 
-/**
- * Exact wire IDs by master packet name, for every release in {@code protocolversions}.
- * Direction is selected once because the same master name can occur in both directions.
- * All bundled ID tables and class-name translations are loaded together on first use.
- */
-public final class PacketIdRegistry {
+public final class PacketIdRegistries {
   private static final String DIRECTORY = "registry/packet_ids/";
   private static final PacketIdRegistry SERVERBOUND;
   private static final PacketIdRegistry CLIENTBOUND;
@@ -60,43 +52,19 @@ public final class PacketIdRegistry {
     CLIENTBOUND = new PacketIdRegistry(clientbound);
   }
 
-  private final Map<Integer, Map<ConnectionState, Map<String, Integer>>> protocols;
-  private final Set<Integer> supportedProtocolVersions;
-
-  private PacketIdRegistry(Map<Integer, Map<ConnectionState, Map<String, Integer>>> protocols) {
-    this.protocols = Collections.unmodifiableMap(protocols);
-    this.supportedProtocolVersions = Collections.unmodifiableSet(new TreeSet<>(protocols.keySet()));
+  public static void setup() {
+    // intentionally left blank
   }
 
-  /** Client to server packets. The returned registry is shared and immutable. */
+  private PacketIdRegistries() {
+  }
+
   public static PacketIdRegistry serverbound() {
     return SERVERBOUND;
   }
 
-  /** Server to client packets. The returned registry is shared and immutable. */
   public static PacketIdRegistry clientbound() {
     return CLIENTBOUND;
-  }
-
-  /**
-   * Returns the wire ID, or {@code -1} if this master name/state has no packet in
-   * the requested release. Names are case-sensitive, for example {@code ROTATION}.
-   *
-   * @throws IllegalArgumentException if the exact protocol version is unsupported;
-   *         snapshots, unknown versions and gaps are never rounded to a release
-   */
-  public int id(ConnectionState connectionState, String typeName, int protocolVersion) {
-    Objects.requireNonNull(connectionState, "connectionState");
-    Objects.requireNonNull(typeName, "typeName");
-    Map<ConnectionState, Map<String, Integer>> states = protocols.get(protocolVersion);
-    if (states == null) {
-      throw new IllegalArgumentException("Unsupported packet protocol version " + protocolVersion);
-    }
-    return states.getOrDefault(connectionState, Collections.emptyMap()).getOrDefault(typeName, -1);
-  }
-
-  public Set<Integer> supportedProtocolVersions() {
-    return supportedProtocolVersions;
   }
 
   private static Map<ConnectionState, Map<String, Integer>> readStates(
@@ -121,9 +89,9 @@ public final class PacketIdRegistry {
           }
         }
       }
-      states.put(connectionState, Collections.unmodifiableMap(ids));
+      states.put(connectionState, ids);
     }
-    return Collections.unmodifiableMap(states);
+    return states;
   }
 
   private static JsonObject readVersionedObject(String file) {

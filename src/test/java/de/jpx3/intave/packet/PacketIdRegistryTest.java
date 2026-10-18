@@ -14,6 +14,8 @@ package de.jpx3.intave.packet;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import de.jpx3.intave.registry.PacketIdRegistries;
+import de.jpx3.intave.registry.PacketIdRegistry;
 import de.jpx3.intave.resource.Resources;
 import org.junit.jupiter.api.Test;
 
@@ -36,18 +38,18 @@ final class PacketIdRegistryTest {
         expected.add(Integer.parseInt(line.split(" ")[1]));
       }
     }
-    assertEquals(expected, PacketIdRegistry.serverbound().supportedProtocolVersions());
-    assertEquals(expected, PacketIdRegistry.clientbound().supportedProtocolVersions());
+    assertEquals(expected, PacketIdRegistries.serverbound().supportedProtocolVersions());
+    assertEquals(expected, PacketIdRegistries.clientbound().supportedProtocolVersions());
     for (int protocol : expected) {
-      PacketIdRegistry outgoing = PacketIdRegistry.serverbound();
-      PacketIdRegistry incoming = PacketIdRegistry.clientbound();
-      assertEquals(0, outgoing.id(HANDSHAKING, "SET_PROTOCOL", protocol));
-      assertEquals(-1, incoming.id(HANDSHAKING, "SET_PROTOCOL", protocol));
-      assertEquals(0, outgoing.id(LOGIN, "START", protocol));
-      assertEquals(1, outgoing.id(STATUS, "PING", protocol));
-      assertEquals(1, incoming.id(STATUS, "PONG", protocol));
-      assertTrue(outgoing.id(PLAY, "ROTATION", protocol) >= 0, "Missing rotation for " + protocol);
-      assertTrue(incoming.id(PLAY, "KEEP_ALIVE", protocol) >= 0, "Missing keep alive for " + protocol);
+      PacketIdRegistry outgoing = PacketIdRegistries.serverbound();
+      PacketIdRegistry incoming = PacketIdRegistries.clientbound();
+      assertEquals(0, outgoing.idOf(HANDSHAKING, "SET_PROTOCOL", protocol));
+      assertEquals(-1, incoming.idOf(HANDSHAKING, "SET_PROTOCOL", protocol));
+      assertEquals(0, outgoing.idOf(LOGIN, "START", protocol));
+      assertEquals(1, outgoing.idOf(STATUS, "PING", protocol));
+      assertEquals(1, incoming.idOf(STATUS, "PONG", protocol));
+      assertTrue(outgoing.idOf(PLAY, "ROTATION", protocol) >= 0, "Missing rotation for " + protocol);
+      assertTrue(incoming.idOf(PLAY, "KEEP_ALIVE", protocol) >= 0, "Missing keep alive for " + protocol);
     }
   }
 
@@ -68,9 +70,12 @@ final class PacketIdRegistryTest {
             JsonElement className = translation.getValue().getAsJsonObject().get(name);
             if (className != null) {
               assertTrue(resolved.add(className.getAsString()), "Duplicate translation " + translation.getKey());
-              assertEquals(ids.get(className.getAsString()).getAsInt(),
-                registry(direction.getKey()).id(connectionState, translation.getKey(), protocol),
+              int packetId = ids.get(className.getAsString()).getAsInt();
+              PacketIdRegistry registry = registry(direction.getKey());
+              assertEquals(packetId,
+                registry.idOf(connectionState, translation.getKey(), protocol),
                 name + "/" + state.getKey() + "/" + direction.getKey() + "/" + translation.getKey());
+              assertEquals(translation.getKey(), registry.typeNameOf(connectionState, packetId, protocol));
             }
           }
           assertEquals(ids.entrySet().size(), resolved.size(), "Unmapped classes in " + name);
@@ -88,9 +93,12 @@ final class PacketIdRegistryTest {
         ConnectionState connectionState = ConnectionState.valueOf(state.getKey().toUpperCase(Locale.ROOT));
         for (Map.Entry<String, JsonElement> direction : state.getValue().getAsJsonObject().entrySet()) {
           for (Map.Entry<String, JsonElement> packet : direction.getValue().getAsJsonObject().entrySet()) {
-            assertEquals(packet.getValue().getAsInt(),
-              registry(direction.getKey()).id(connectionState, packet.getKey(), protocolVersion),
+            int packetId = packet.getValue().getAsInt();
+            PacketIdRegistry registry = registry(direction.getKey());
+            assertEquals(packetId,
+              registry.idOf(connectionState, packet.getKey(), protocolVersion),
               protocolVersion + "/" + state.getKey() + "/" + direction.getKey() + "/" + packet.getKey());
+            assertEquals(packet.getKey(), registry.typeNameOf(connectionState, packetId, protocolVersion));
           }
         }
       }
@@ -99,69 +107,73 @@ final class PacketIdRegistryTest {
 
   @Test
   void retainsExactIdsAcrossReleaseBoundariesAndPacketReplacements() {
-    PacketIdRegistry serverbound = PacketIdRegistry.serverbound();
-    assertEquals(0x05, serverbound.id(PLAY, "ROTATION", 47));
-    assertEquals(0x0e, serverbound.id(PLAY, "ROTATION", 107));
-    assertEquals(0x10, serverbound.id(PLAY, "ROTATION", 335));
-    assertEquals(0x0f, serverbound.id(PLAY, "ROTATION", 338));
-    assertEquals(0x20, serverbound.id(PLAY, "ROTATION", 777));
-    assertEquals(1, serverbound.id(PLAY, "RECIPE_PLACEMENT", 335));
-    assertEquals(-1, serverbound.id(PLAY, "RECIPE_PLACEMENT", 338));
-    assertEquals(-1, serverbound.id(PLAY, "AUTO_RECIPE", 335));
-    assertEquals(0x12, serverbound.id(PLAY, "AUTO_RECIPE", 338));
-    assertEquals(0x1e, serverbound.id(PLAY, "RECIPE_BOOK_DATA", 736));
-    assertEquals(-1, serverbound.id(PLAY, "RECIPE_BOOK_DATA", 751));
-    assertEquals(0x1e, serverbound.id(PLAY, "RECIPE_SETTINGS", 751));
-    assertEquals(5, serverbound.id(PLAY, "CHAT_PREVIEW", 759));
-    assertEquals(6, serverbound.id(PLAY, "CHAT_PREVIEW", 760));
-    assertEquals(-1, serverbound.id(PLAY, "CHAT_PREVIEW", 761));
+    PacketIdRegistry serverbound = PacketIdRegistries.serverbound();
+    assertEquals(0x05, serverbound.idOf(PLAY, "ROTATION", 47));
+    assertEquals(0x0e, serverbound.idOf(PLAY, "ROTATION", 107));
+    assertEquals(0x10, serverbound.idOf(PLAY, "ROTATION", 335));
+    assertEquals(0x0f, serverbound.idOf(PLAY, "ROTATION", 338));
+    assertEquals(0x20, serverbound.idOf(PLAY, "ROTATION", 777));
+    assertEquals(1, serverbound.idOf(PLAY, "RECIPE_PLACEMENT", 335));
+    assertEquals(-1, serverbound.idOf(PLAY, "RECIPE_PLACEMENT", 338));
+    assertEquals(-1, serverbound.idOf(PLAY, "AUTO_RECIPE", 335));
+    assertEquals(0x12, serverbound.idOf(PLAY, "AUTO_RECIPE", 338));
+    assertEquals(0x1e, serverbound.idOf(PLAY, "RECIPE_BOOK_DATA", 736));
+    assertEquals(-1, serverbound.idOf(PLAY, "RECIPE_BOOK_DATA", 751));
+    assertEquals(0x1e, serverbound.idOf(PLAY, "RECIPE_SETTINGS", 751));
+    assertEquals(5, serverbound.idOf(PLAY, "CHAT_PREVIEW", 759));
+    assertEquals(6, serverbound.idOf(PLAY, "CHAT_PREVIEW", 760));
+    assertEquals(-1, serverbound.idOf(PLAY, "CHAT_PREVIEW", 761));
 
-    PacketIdRegistry clientbound = PacketIdRegistry.clientbound();
-    assertEquals(0x0c, clientbound.id(PLAY, "BOSS", 107));
-    assertEquals(-1, clientbound.id(PLAY, "UPDATE_ENTITY_NBT", 107));
-    assertEquals(0x46, clientbound.id(PLAY, "UPDATE_SIGN", 109));
-    assertEquals(-1, clientbound.id(PLAY, "UPDATE_SIGN", 110));
-    assertEquals(0x47, clientbound.id(PLAY, "NAMED_SOUND_EFFECT", 109));
-    assertEquals(0x46, clientbound.id(PLAY, "NAMED_SOUND_EFFECT", 110));
-    assertEquals(-1, clientbound.id(PLAY, "BLOCK_BREAK_ACK", 490));
-    assertEquals(0x5c, clientbound.id(PLAY, "BLOCK_BREAK_ACK", 498));
-    assertEquals(0x05, clientbound.id(PLAY, "BLOCK_CHANGED_ACK", 759));
-    assertEquals(-1, clientbound.id(PLAY, "BLOCK_BREAK_ACK", 759));
-    assertEquals(0x32, clientbound.id(PLAY, "PLAYER_CHAT_HEADER", 760));
+    PacketIdRegistry clientbound = PacketIdRegistries.clientbound();
+    assertEquals(0x0c, clientbound.idOf(PLAY, "BOSS", 107));
+    assertEquals(-1, clientbound.idOf(PLAY, "UPDATE_ENTITY_NBT", 107));
+    assertEquals(0x46, clientbound.idOf(PLAY, "UPDATE_SIGN", 109));
+    assertEquals(-1, clientbound.idOf(PLAY, "UPDATE_SIGN", 110));
+    assertEquals(0x47, clientbound.idOf(PLAY, "NAMED_SOUND_EFFECT", 109));
+    assertEquals(0x46, clientbound.idOf(PLAY, "NAMED_SOUND_EFFECT", 110));
+    assertEquals(-1, clientbound.idOf(PLAY, "BLOCK_BREAK_ACK", 490));
+    assertEquals(0x5c, clientbound.idOf(PLAY, "BLOCK_BREAK_ACK", 498));
+    assertEquals(0x05, clientbound.idOf(PLAY, "BLOCK_CHANGED_ACK", 759));
+    assertEquals(-1, clientbound.idOf(PLAY, "BLOCK_BREAK_ACK", 759));
+    assertEquals(0x32, clientbound.idOf(PLAY, "PLAYER_CHAT_HEADER", 760));
   }
 
   @Test
   void scopesNamesByDirectionAndConnectionState() {
-    assertEquals(0x04, PacketIdRegistry.serverbound().id(PLAY, "POSITION", 47));
-    assertEquals(0x08, PacketIdRegistry.clientbound().id(PLAY, "POSITION", 47));
-    assertEquals(0x0b, PacketIdRegistry.serverbound().id(PLAY, "KEEP_ALIVE", 107));
-    assertEquals(0x1f, PacketIdRegistry.clientbound().id(PLAY, "KEEP_ALIVE", 107));
-    assertEquals(-1, PacketIdRegistry.serverbound().id(STATUS, "KEEP_ALIVE", 777));
-    assertEquals(-1, PacketIdRegistry.serverbound().id(CONFIGURATION, "KEEP_ALIVE", 763));
-    assertEquals(3, PacketIdRegistry.serverbound().id(CONFIGURATION, "KEEP_ALIVE", 764));
+    assertEquals(0x04, PacketIdRegistries.serverbound().idOf(PLAY, "POSITION", 47));
+    assertEquals(0x08, PacketIdRegistries.clientbound().idOf(PLAY, "POSITION", 47));
+    assertEquals(0x0b, PacketIdRegistries.serverbound().idOf(PLAY, "KEEP_ALIVE", 107));
+    assertEquals(0x1f, PacketIdRegistries.clientbound().idOf(PLAY, "KEEP_ALIVE", 107));
+    assertEquals(-1, PacketIdRegistries.serverbound().idOf(STATUS, "KEEP_ALIVE", 777));
+    assertEquals(-1, PacketIdRegistries.serverbound().idOf(CONFIGURATION, "KEEP_ALIVE", 763));
+    assertEquals(3, PacketIdRegistries.serverbound().idOf(CONFIGURATION, "KEEP_ALIVE", 764));
   }
 
   @Test
   void distinguishesMissingPacketsFromUnsupportedProtocols() {
-    PacketIdRegistry registry = PacketIdRegistry.serverbound();
-    assertEquals(-1, registry.id(PLAY, "NOT_A_PACKET", 777));
-    assertEquals(-1, registry.id(PLAY, "rotation", 47));
+    PacketIdRegistry registry = PacketIdRegistries.serverbound();
+    assertEquals(-1, registry.idOf(PLAY, "NOT_A_PACKET", 777));
+    assertEquals(-1, registry.idOf(PLAY, "rotation", 47));
+    assertNull(registry.typeNameOf(PLAY, -1, 777));
+    assertNull(registry.typeNameOf(PLAY, Integer.MAX_VALUE, 777));
     for (int unsupported : new int[]{-1, 0, 5, 48, 111, 778, 1073742165}) {
-      assertThrows(IllegalArgumentException.class, () -> registry.id(PLAY, "ROTATION", unsupported));
+      assertThrows(IllegalArgumentException.class, () -> registry.idOf(PLAY, "ROTATION", unsupported));
+      assertThrows(IllegalArgumentException.class, () -> registry.typeNameOf(PLAY, 0, unsupported));
     }
-    assertThrows(NullPointerException.class, () -> registry.id(null, "ROTATION", 47));
-    assertThrows(NullPointerException.class, () -> registry.id(PLAY, null, 47));
+    assertThrows(NullPointerException.class, () -> registry.idOf(null, "ROTATION", 47));
+    assertThrows(NullPointerException.class, () -> registry.idOf(PLAY, null, 47));
+    assertThrows(NullPointerException.class, () -> registry.typeNameOf(null, 0, 47));
   }
 
   @Test
   void sharesImmutableRegistries() {
-    assertSame(PacketIdRegistry.serverbound(), PacketIdRegistry.serverbound());
-    assertSame(PacketIdRegistry.clientbound(), PacketIdRegistry.clientbound());
-    assertThrows(UnsupportedOperationException.class, () -> PacketIdRegistry.serverbound().supportedProtocolVersions().clear());
+    assertSame(PacketIdRegistries.serverbound(), PacketIdRegistries.serverbound());
+    assertSame(PacketIdRegistries.clientbound(), PacketIdRegistries.clientbound());
+    assertThrows(UnsupportedOperationException.class, () -> PacketIdRegistries.serverbound().supportedProtocolVersions().clear());
   }
 
   private static PacketIdRegistry registry(String direction) {
-    return direction.equals("serverbound") ? PacketIdRegistry.serverbound() : PacketIdRegistry.clientbound();
+    return direction.equals("serverbound") ? PacketIdRegistries.serverbound() : PacketIdRegistries.clientbound();
   }
 
   private static JsonElement readJson(String file) {

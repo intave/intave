@@ -116,6 +116,25 @@ public final class IntaveLogger extends PluginLogger {
     logToFile("(ERR) " + message);
   }
 
+  public void error(String message, Throwable throwable) {
+    String fullMessage = IntavePlugin.prefix() + ChatColor.DARK_RED + ChatColor.BOLD + "ERROR" + IntavePlugin.defaultColor() + ": " + ChatColor.RED + message;
+    for (PrintStream outputStream : outputStreams) {
+      outputStream.print(ChatColor.stripColor(fullMessage));
+      throwable.printStackTrace(outputStream);
+    }
+    if (DISABLE_COLOR_OUTPUT) {
+      Bukkit.getLogger().warning(ChatColor.stripColor(fullMessage));
+      throwable.printStackTrace();
+    } else {
+      Bukkit.getConsoleSender().sendMessage(fullMessage);
+      StringWriter stringWriter = new StringWriter();
+      PrintWriter printWriter = new PrintWriter(stringWriter);
+      throwable.printStackTrace(printWriter);
+      Bukkit.getConsoleSender().sendMessage(stringWriter.toString());
+    }
+    logToFile("(ERR) " + message);
+  }
+
   public void warn(String message) {
     String fullMessage = IntavePlugin.prefix() + ChatColor.YELLOW + ChatColor.BOLD + "WARNING" + IntavePlugin.defaultColor() + ": " + ChatColor.RED + message;
     for (PrintStream outputStream : outputStreams) {

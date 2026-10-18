@@ -58,6 +58,11 @@ public final class MiscBukkitEvents extends Module {
       sendPrefixedMessage(ChatColor.RED + "Check the console for the exact error, fix the file and restart the server", player);
       return;
     }
+    if (Bukkit.getPluginManager().isPluginEnabled("GrimAC")) {
+      sendPrefixedMessage(ChatColor.RED + "GrimAC is known to be incompatible with Intave", player);
+      sendPrefixedMessage(ChatColor.RED + "Please remove it from your server to avoid problems", player);
+    }
+
     if (BukkitPermissionCheck.permissionCheck(player, "intave.command.noupdate")) {
       return;
     }

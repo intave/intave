@@ -11,8 +11,6 @@
 
 package de.jpx3.intave.command.stages;
 
-import com.comphenix.protocol.wrappers.EnumWrappers.EntityUseAction;
-
 import ac.intave.samples.event.AttackEvent;
 import ac.intave.samples.event.BlockPlaceEvent;
 import ac.intave.samples.event.EventSink;
@@ -52,6 +50,7 @@ import de.jpx3.intave.module.nayoro.OperationalMode;
 import de.jpx3.intave.module.test.ChestLootProvider;
 import de.jpx3.intave.module.tracker.player.PacketLogging;
 import de.jpx3.intave.player.DamageModify;
+import de.jpx3.intave.reflect.PlayerChannel;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.ResourceRegistry;
 import de.jpx3.intave.security.HashAccess;
@@ -64,6 +63,9 @@ import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.user.meta.PunishmentMetadata;
 import de.jpx3.intave.user.storage.PlaytimeStorage;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelPipeline;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -873,6 +875,75 @@ public final class DiagnosticsStage extends CommandStage implements BukkitEventS
     Synchronizer.synchronize(() -> {
       Modules.find(PacketLogging.class).togglePacketLogging(sender, target);
     });
+  }
+
+  @SubCommand(
+    selectors = {"pipeline", "nettypipeline"},
+    usage = "[<target>]",
+    permission = "intave.command.diagnostics.performance",
+    description = "View a player's Netty pipeline"
+  )
+  public void nettyPipeline(CommandSender sender, @Optional Player target) {
+    Player inspectedPlayer = target;
+    if (inspectedPlayer == null && sender instanceof Player) {
+      inspectedPlayer = (Player) sender;
+    }
+    if (inspectedPlayer == null) {
+      sendCommandMessage(sender, IntavePlugin.prefix() + ChatColor.RED + "Specify an online player");
+      return;
+    }
+
+    final List<String> pipelineEntries;
+    try {
+      Channel channel = PlayerChannel.channelOf(inspectedPlayer);
+      pipelineEntries = pipelineEntries(channel);
+    } catch (RuntimeException failure) {
+      sendCommandMessage(
+        sender,
+        IntavePlugin.prefix() + ChatColor.RED + "Could not access " + inspectedPlayer.getName() + "'s Netty channel"
+      );
+      return;
+    }
+
+    sendCommandMessage(
+      sender,
+      IntavePlugin.prefix() + "Netty pipeline for " + ChatColor.RED + inspectedPlayer.getName()
+        + IntavePlugin.defaultColor() + " (" + pipelineEntries.size() + " handlers)"
+    );
+    for (int index = 0; index < pipelineEntries.size(); index++) {
+      sendCommandMessage(
+        sender,
+        ChatColor.GRAY + "[" + index + "] " + ChatColor.WHITE + pipelineEntries.get(index)
+      );
+    }
+  }
+
+  private static List<String> pipelineEntries(Channel channel) {
+    if (channel.eventLoop().inEventLoop()) {
+      return pipelineEntries(channel.pipeline());
+    }
+    return channel.eventLoop()
+      .submit(() -> pipelineEntries(channel.pipeline()))
+      .syncUninterruptibly()
+      .getNow();
+  }
+
+  private static List<String> pipelineEntries(ChannelPipeline pipeline) {
+    List<String> entries = new ArrayList<>();
+    for (String name : pipeline.names()) {
+      ChannelHandler handler = pipeline.get(name);
+      String handlerType = handler == null ? "<removed>" : handler.getClass().getName();
+      entries.add(name + ChatColor.DARK_GRAY + " -> " + ChatColor.GRAY + handlerType);
+    }
+    return entries;
+  }
+
+  private static void sendCommandMessage(CommandSender sender, String message) {
+    if (sender instanceof Player) {
+      UserRepository.userOf((Player) sender).sendMessage(message);
+    } else {
+      sender.sendMessage(message);
+    }
   }
 
 //  @SubCommand(selectors = "packetlogupload", usage = "", permission = "intave.command.diagnostics.statistics", description = "Upload packet logs")

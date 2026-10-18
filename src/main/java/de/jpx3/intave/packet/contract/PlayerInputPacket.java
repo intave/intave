@@ -43,6 +43,6 @@ public interface PlayerInputPacket extends Packet {
 
 	@Override
 	default boolean appliesTo(ConnectionState state, String name) {
-		return state == ConnectionState.PLAY && name.equals("PlayerInput");
+		return state == ConnectionState.PLAY && name.equals("PLAYER_INPUT");
 	}
 }

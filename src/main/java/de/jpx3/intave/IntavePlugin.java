@@ -24,6 +24,7 @@ import de.jpx3.intave.block.access.BlockWrapper;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.block.collision.modifier.CollisionModifiers;
 import de.jpx3.intave.block.fluid.Fluids;
+import de.jpx3.intave.block.interact.BlockInteractionPatches;
 import de.jpx3.intave.block.physics.BlockPhysics;
 import de.jpx3.intave.block.shape.resolve.DrillResolver;
 import de.jpx3.intave.block.shape.resolve.patch.BlockShapePatcher;
@@ -31,7 +32,6 @@ import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
 import de.jpx3.intave.check.CheckService;
-import de.jpx3.intave.block.interact.BlockInteractionPatches;
 import de.jpx3.intave.cleanup.GarbageCollector;
 import de.jpx3.intave.cleanup.ShutdownTasks;
 import de.jpx3.intave.cleanup.StartupTasks;
@@ -58,12 +58,14 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
 import de.jpx3.intave.module.nayoro.Inventory;
 import de.jpx3.intave.module.tracker.entity.Entity;
+import de.jpx3.intave.packet.injection.InjectionService;
 import de.jpx3.intave.packet.reader.PacketReaders;
 import de.jpx3.intave.player.FaultKicks;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.player.fake.IdentifierReserve;
 import de.jpx3.intave.player.fake.event.FakePlayerEventService;
 import de.jpx3.intave.reflect.access.ReflectiveAccess;
+import de.jpx3.intave.registry.PacketIdRegistries;
 import de.jpx3.intave.resource.Resources;
 import de.jpx3.intave.resource.legacy.EncryptedLegacyResource;
 import de.jpx3.intave.security.PlayerListService;
@@ -129,6 +131,7 @@ public final class IntavePlugin extends JavaPlugin {
   private PlayerListService blackListService; // module candidate
   private Metrics metrics;
   private IntegrationTestService integrationTestService;
+  private InjectionService clientPacketInjection;
   // only the first shutdown pass runs, repeats are ignored quietly
   private final AtomicBoolean shutdownStarted = new AtomicBoolean(false);
   private boolean viaBackwardsPingAcknowledgementsMisconfigured;
@@ -183,6 +186,7 @@ public final class IntavePlugin extends JavaPlugin {
       logger.info("Using agent :{~-~}:");
     }
 
+    PacketIdRegistries.setup();
     DrillResolver.serverInit();
 
     IntaveDomains.setup();
@@ -226,6 +230,8 @@ public final class IntavePlugin extends JavaPlugin {
       blackListService = new PlayerListService(this);
       cloud = new Cloud();
       cloud.init();
+
+      clientPacketInjection = new InjectionService();
 
       // stage 6
       Modules.proceedBoot(BootSegment.STAGE_6);
