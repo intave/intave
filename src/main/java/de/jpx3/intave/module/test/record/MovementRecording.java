@@ -56,7 +56,7 @@ public final class MovementRecording {
 	private static final StreamCodec<ByteBuf, ByteBuf, Map<String, Attribute>> ATTRIBUTES_CODEC = ByteBufStreamCodecs.mapCodec(ByteBufStreamCodecs.STRING, Attribute.STREAM_CODEC);
 	private static final StreamCodec<ByteBuf, ByteBuf, List<Map<String, Attribute>>> FRAME_ATTRIBUTES_CODEC = ByteBufStreamCodecs.listCodecOf(ATTRIBUTES_CODEC);
 
-	public static final StreamCodec<ByteBuf, ByteBuf, MovementRecording> STREAM_CODEC = ByteBufStreamCodecs.smartReflectionCodecBuilder(MovementRecording.class).field("internalId", ByteBufStreamCodecs.UUID).field("clientProtocolVersion", ByteBufStreamCodecs.INTEGER, () -> 47).field("serverVersion", MinecraftVersion.STREAM_CODEC, () -> MinecraftVersions.VER1_21_4).field("frames", MoveFrame.LIST_STREAM_CODEC).field("frameAttributes", FRAME_ATTRIBUTES_CODEC, LinkedList::new).field("actions", Action.LIST_STREAM_CODEC, LinkedList::new).field("collisionShapes", COLLISION_SHAPES_CODEC, HashMap::new).field("fluids", FLUIDS_CODEC, HashMap::new).field("blockVariants", BLOCK_VARIANTS_CODEC, HashMap::new).build();
+	public static final StreamCodec<ByteBuf, ByteBuf, MovementRecording> STREAM_CODEC = ByteBufStreamCodecs.smartReflectionCodecBuilder(MovementRecording.class).field("internalId", ByteBufStreamCodecs.UUID).field("clientProtocolVersion", ByteBufStreamCodecs.INTEGER, () -> 47).field("serverVersion", MinecraftVersion.STREAM_CODEC, () -> MinecraftVersions.VER1_21_4).field("frames", MoveFrame.LIST_STREAM_CODEC).field("frameAttributes", FRAME_ATTRIBUTES_CODEC, LinkedList::new).field("actions", Action.LIST_STREAM_CODEC, LinkedList::new).field("collisionShapes", COLLISION_SHAPES_CODEC, HashMap::new).field("fluids", FLUIDS_CODEC, HashMap::new).field("blockVariants", BLOCK_VARIANTS_CODEC, HashMap::new).field("packetDrivenItemUse", ByteBufStreamCodecs.BOOLEAN, () -> false).build();
 
 	private final UUID internalId;
 	private final int clientProtocolVersion;
@@ -69,9 +69,10 @@ public final class MovementRecording {
 	private final Map<Material, Map<Integer, BlockShape>> collisionShapes;
 	private final Map<Material, Map<Integer, Fluid>> fluids;
 	private final Map<Material, Map<Integer, BlockVariant>> blockVariants;
+	private final boolean packetDrivenItemUse;
 	private final Set<MaterialVariantStore> recordedMetadata = Collections.newSetFromMap(new IdentityHashMap<>());
 
-	MovementRecording(UUID internalId, int clientProtocolVersion, MinecraftVersion serverVersion, List<MoveFrame> frames, List<Map<String, Attribute>> frameAttributes, List<Action> actions, Map<Material, Map<Integer, BlockShape>> collisionShapes, Map<Material, Map<Integer, Fluid>> fluids, Map<Material, Map<Integer, BlockVariant>> blockVariants) {
+	MovementRecording(UUID internalId, int clientProtocolVersion, MinecraftVersion serverVersion, List<MoveFrame> frames, List<Map<String, Attribute>> frameAttributes, List<Action> actions, Map<Material, Map<Integer, BlockShape>> collisionShapes, Map<Material, Map<Integer, Fluid>> fluids, Map<Material, Map<Integer, BlockVariant>> blockVariants, boolean packetDrivenItemUse) {
 		this.internalId = Objects.requireNonNull(internalId, "internalId cannot be null");
 		this.clientProtocolVersion = clientProtocolVersion;
 		this.serverVersion = Objects.requireNonNull(serverVersion, "serverVersion cannot be null");
@@ -81,6 +82,7 @@ public final class MovementRecording {
 		this.collisionShapes = Objects.requireNonNull(collisionShapes, "collisionShapes cannot be null");
 		this.fluids = Objects.requireNonNull(fluids, "fluids cannot be null");
 		this.blockVariants = Objects.requireNonNull(blockVariants, "blockVariants cannot be null");
+		this.packetDrivenItemUse = packetDrivenItemUse;
 	}
 
 	private void appendFrame(MoveFrame frame) {
@@ -134,7 +136,7 @@ public final class MovementRecording {
 		frameAttributes.add(new HashMap<>(attributes));
 	}
 
-	public void insertAction(Action action) {
+	public synchronized void insertAction(Action action) {
 		actions.add(action);
 	}
 
@@ -371,9 +373,13 @@ public final class MovementRecording {
 		return blockVariants;
 	}
 
+	public boolean packetDrivenItemUse() {
+		return packetDrivenItemUse;
+	}
+
 	@Override
 	public String toString() {
-		return "MovementRecording{" + "internalId=" + internalId + ", clientProtocolVersion=" + clientProtocolVersion + ", serverVersion='" + serverVersion + '\'' + ", frames=" + frames + ", actions=" + actions + ", collisionShapes=" + collisionShapes + ", fluids=" + fluids + ", blockVariants=" + blockVariants + '}';
+		return "MovementRecording{" + "internalId=" + internalId + ", clientProtocolVersion=" + clientProtocolVersion + ", serverVersion='" + serverVersion + '\'' + ", frames=" + frames + ", actions=" + actions + ", collisionShapes=" + collisionShapes + ", fluids=" + fluids + ", blockVariants=" + blockVariants + ", packetDrivenItemUse=" + packetDrivenItemUse + '}';
 	}
 
 	@Override
@@ -381,7 +387,7 @@ public final class MovementRecording {
 		if (this == obj) return true;
 		if (obj == null || getClass() != obj.getClass()) return false;
 		MovementRecording that = (MovementRecording) obj;
-		return Objects.equals(internalId, that.internalId) && clientProtocolVersion == that.clientProtocolVersion && Objects.equals(serverVersion, that.serverVersion) && Objects.equals(frames, that.frames) && frameAttributesEqual(frameAttributes, that.frameAttributes) && Objects.equals(collisionShapes, that.collisionShapes) && Objects.equals(actions, that.actions) && Objects.equals(fluids, that.fluids) && Objects.equals(blockVariants, that.blockVariants);
+		return Objects.equals(internalId, that.internalId) && clientProtocolVersion == that.clientProtocolVersion && packetDrivenItemUse == that.packetDrivenItemUse && Objects.equals(serverVersion, that.serverVersion) && Objects.equals(frames, that.frames) && frameAttributesEqual(frameAttributes, that.frameAttributes) && Objects.equals(collisionShapes, that.collisionShapes) && Objects.equals(actions, that.actions) && Objects.equals(fluids, that.fluids) && Objects.equals(blockVariants, that.blockVariants);
 	}
 
 	@Override
@@ -414,7 +420,7 @@ public final class MovementRecording {
 	}
 
 	public static MovementRecording create(int clientProtocolVersion, MinecraftVersion serverVersion) {
-		return new MovementRecording(UUID.randomUUID(), clientProtocolVersion, serverVersion, new LinkedList<>(), new LinkedList<>(), new ArrayList<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
+		return new MovementRecording(UUID.randomUUID(), clientProtocolVersion, serverVersion, new LinkedList<>(), new LinkedList<>(), new ArrayList<>(), new HashMap<>(), new HashMap<>(), new HashMap<>(), true);
 	}
 
 	public static MovementRecording loadFrom(Resource resource) throws RuntimeException {

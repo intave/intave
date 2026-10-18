@@ -88,6 +88,24 @@ final class TickSearchTest {
 	}
 
 	@Test
+	void detectsImpossiblePacketRequiredItemUseWithoutAnInactiveBranch() {
+		MovementConfiguration inactive = MovementConfiguration.blank();
+		MovementConfiguration active = inactive.withHandActive(true);
+		Map<MovementConfiguration, Double> distances = new HashMap<>();
+		distances.put(active, 0.5);
+
+		TickSearch search = new TickSearch(Simulation.invalid(), 1, 0, distances);
+
+		assertTrue(search.requiredItemUseImpossible(0.1));
+		assertFalse(search.requiredItemUseImpossible(0.5));
+
+		distances.clear();
+		distances.put(inactive, 0.01);
+		TickSearch inactiveOnly = new TickSearch(Simulation.invalid(), 1, 0, distances);
+		assertFalse(inactiveOnly.requiredItemUseImpossible(0.1));
+	}
+
+	@Test
 	void ambiguousItemUseIsNeitherRequiredNorImpossible() {
 		MovementConfiguration inactive = MovementConfiguration.blank();
 		MovementConfiguration active = inactive.withHandActive(true);

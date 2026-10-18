@@ -56,10 +56,13 @@ public final class MockSimulationEnvironment implements SimulationEnvironment {
   private float friction = 0.91F;
   private float gravity = 0.08F;
   private float stepHeight = 0.6F;
-  private boolean inWater, inLava;
+  private boolean inWater, inLava, eyesInWater;
   private double lavaDepth;
   private boolean sprinting, sneaking, swimming;
   private Boolean flying, flyingDisablePending;
+  private boolean legacyItemUseSlotSwitchPending;
+  private boolean legacyItemUseReleaseUncertain;
+  private boolean legacyItemUseForcedReleaseApplied;
   private boolean lastSprinting, lastSneaking;
   private boolean collidedHorizontally, collidedVertically;
   private boolean motionXReset, motionZReset;
@@ -225,6 +228,10 @@ public final class MockSimulationEnvironment implements SimulationEnvironment {
     this.sneaking = sneaking;
   }
 
+  public void setSprinting(boolean sprinting) {
+    this.sprinting = sprinting;
+  }
+
   @Override
   public void setLastSprinting(boolean lastSprinting) {
     this.lastSprinting = lastSprinting;
@@ -262,6 +269,36 @@ public final class MockSimulationEnvironment implements SimulationEnvironment {
   @Override
   public void setFlyingDisablePending(boolean pending) {
     flyingDisablePending = pending;
+  }
+
+  @Override
+  public boolean legacyItemUseSlotSwitchPending() {
+    return legacyItemUseSlotSwitchPending;
+  }
+
+  @Override
+  public void setLegacyItemUseSlotSwitchPending(boolean pending) {
+    legacyItemUseSlotSwitchPending = pending;
+  }
+
+  @Override
+  public boolean legacyItemUseReleaseUncertain() {
+    return legacyItemUseReleaseUncertain;
+  }
+
+  @Override
+  public void setLegacyItemUseReleaseUncertain(boolean uncertain) {
+    legacyItemUseReleaseUncertain = uncertain;
+  }
+
+  @Override
+  public boolean legacyItemUseForcedReleaseApplied() {
+    return legacyItemUseForcedReleaseApplied;
+  }
+
+  @Override
+  public void setLegacyItemUseForcedReleaseApplied(boolean applied) {
+    legacyItemUseForcedReleaseApplied = applied;
   }
 
   @Override
@@ -856,12 +893,12 @@ public final class MockSimulationEnvironment implements SimulationEnvironment {
 
   @Override
   public void setEyesInWater(boolean eyesInWater) {
-
+    this.eyesInWater = eyesInWater;
   }
 
   @Override
   public boolean areEyesInWater() {
-    return false;
+    return eyesInWater;
   }
 
   @Override

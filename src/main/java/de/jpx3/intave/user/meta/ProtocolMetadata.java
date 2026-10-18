@@ -43,6 +43,7 @@ public final class ProtocolMetadata {
   public static int VER_1_19_4 = 762; // 1.19.4
   public static int VER_1_19_3 = 761; // 1.19.3
   public static int VER_1_19_2 = 760; // 1.19.1 - 1.19.2
+  public static int VER_1_19 = 759; // 1.19
   public static int VER_1_18_2 = 758; // 1.18.2
   public static int VER_1_17 = 755; // 1.17
   public static int VER_1_16_4 = 754; // 1.16.4 - 1.16.5
@@ -225,7 +226,20 @@ public final class ProtocolMetadata {
   }
 
   public boolean sprintWhenHandActive() {
-    return protocolVersion >= VER_1_9;
+    return protocolVersion >= VER_1_14 && protocolVersion != VER_1_21_4;
+  }
+
+  public boolean sprintCompatibleWithHandActive(
+    boolean alreadySprinting, boolean underwater, boolean itemAllowsSprinting
+  ) {
+    if (protocolVersion >= VER_1_21_11 && itemAllowsSprinting) {
+      return true;
+    }
+    if (!alreadySprinting) {
+      return false;
+    }
+    return sprintWhenHandActive()
+      || protocolVersion == VER_1_21_4 && underwater;
   }
 
   public boolean isPreMinecraft8() {

@@ -13,6 +13,8 @@ package de.jpx3.intave.packet.reader;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.StructureModifier;
+import de.jpx3.intave.share.Direction;
+import de.jpx3.intave.share.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.share.PlayerDigAction;
@@ -100,4 +102,22 @@ public final class BlockDigReader extends BlockPositionReader {
     }
     throw new IllegalArgumentException("Unsupported player dig action " + action);
   }
+  public @Nullable Direction direction() {
+    EnumWrappers.Direction direction = packet().getDirections().readSafely(0);
+    if (direction == null || direction.ordinal() >= Direction.values().length) {
+      return null;
+    }
+    return Direction.values()[direction.ordinal()];
+  }
+
+  public boolean isCanonicalItemUseRelease() {
+    return isCanonicalItemUseRelease(nativeBlockPosition(), direction());
+  }
+
+  static boolean isCanonicalItemUseRelease(
+    @Nullable BlockPosition blockPosition, @Nullable Direction direction
+  ) {
+    return BlockPosition.ORIGIN.equals(blockPosition) && direction == Direction.DOWN;
+  }
+
 }

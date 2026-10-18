@@ -29,6 +29,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class MovementSearchBranchEnvironmentCacheTest {
   @Test
+  void itemUseProfileOverridesTheBranchLocalSpeedMultiplier() {
+    MockSimulationEnvironment environment = new MockSimulationEnvironment();
+    MovementSearchBranch branch = MovementSearchBranch.blank(null)
+      .withHandActive(true, 0.65F);
+
+    SimulationEnvironment modified = branch.modifiedMutableView(environment);
+
+    assertTrue(branch.moveConfig().isHandActive());
+    assertEquals(0.65F, modified.itemUseSpeedMultiplier());
+    assertEquals(0.65F, modified.immutableView().itemUseSpeedMultiplier());
+    assertEquals(0.65F, modified.immutableCopy().itemUseSpeedMultiplier());
+    assertEquals(0.2F, environment.itemUseSpeedMultiplier());
+  }
+
+  @Test
   void configurationVariantsShareOneModifiedImmutableEnvironment() {
     MockSimulationEnvironment environment = new MockSimulationEnvironment();
     MovementSearchInput input = MovementSearchInput.forTick(

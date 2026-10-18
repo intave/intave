@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Proxy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class SimulationTest {
@@ -101,6 +102,32 @@ final class SimulationTest {
     assertTrue(Double.isFinite(finite.select(nonFinite).offsetDifference()));
   }
 
+  @Test
+  void packetConfirmedItemUseWinsAnEqualSlotSwitchPrediction() {
+    Simulation active = itemUseSimulation(true, false, Motion.newEmpty());
+    Simulation unconfirmedSwitch = itemUseSimulation(
+      false, true, Motion.newEmpty()
+    );
+
+    assertTrue(active.select(unconfirmedSwitch).configuration().isHandActive());
+    assertTrue(unconfirmedSwitch.select(active).configuration().isHandActive());
+  }
+
+  @Test
+  void unconfirmedSlotSwitchWinsWhenItExplainsMovementBetter() {
+    Simulation active = itemUseSimulation(
+      true, false, new Motion((double) (0.98F * 0.02F), 0.0D, 0.0D)
+    );
+    Simulation unconfirmedSwitch = itemUseSimulation(
+      false, true, Motion.newEmpty()
+    );
+
+    Simulation selected = active.select(unconfirmedSwitch);
+
+    assertFalse(selected.configuration().isHandActive());
+    assertTrue(selected.environment().legacyItemUseSlotSwitchPending());
+  }
+
   private Simulation simulation() {
     return simulationWith(Motion.newEmpty());
   }
@@ -111,6 +138,19 @@ final class SimulationTest {
       MovementConfiguration.blank(),
       new MockSimulationEnvironment(),
       SimulationResult.untouched(motion)
+    );
+  }
+
+  private Simulation itemUseSimulation(
+    boolean handActive, boolean slotSwitchPending, Motion predictedMotion
+  ) {
+    MockSimulationEnvironment environment = new MockSimulationEnvironment();
+    environment.setLegacyItemUseSlotSwitchPending(slotSwitchPending);
+    return Simulation.of(
+      userWithoutPlayer(),
+      MovementConfiguration.blank().withHandActive(handActive),
+      environment,
+      SimulationResult.untouched(predictedMotion)
     );
   }
 

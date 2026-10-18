@@ -442,6 +442,36 @@ final class ImmutableSimulationEnvironmentView implements SimulationEnvironment 
 	}
 
 	@Override
+	public boolean legacyItemUseSlotSwitchPending() {
+		return delegate.legacyItemUseSlotSwitchPending();
+	}
+
+	@Override
+	public void setLegacyItemUseSlotSwitchPending(boolean pending) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public boolean legacyItemUseReleaseUncertain() {
+		return delegate.legacyItemUseReleaseUncertain();
+	}
+
+	@Override
+	public void setLegacyItemUseReleaseUncertain(boolean uncertain) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
+	public boolean legacyItemUseForcedReleaseApplied() {
+		return delegate.legacyItemUseForcedReleaseApplied();
+	}
+
+	@Override
+	public void setLegacyItemUseForcedReleaseApplied(boolean applied) {
+		throw new UnsupportedOperationException("Cannot modify unmodifiable view");
+	}
+
+	@Override
 	public boolean isSleeping() {
 		return delegate.isSleeping();
 	}
@@ -878,6 +908,16 @@ final class ImmutableSimulationEnvironmentView implements SimulationEnvironment 
 
 	@Override
 	public void overrideCrouchingInputSlowdown(boolean slowdown) {
+		throw new UnsupportedOperationException("This environment view is unmodifiable");
+	}
+
+	@Override
+	public float itemUseSpeedMultiplier() {
+		return delegate.itemUseSpeedMultiplier();
+	}
+
+	@Override
+	public void overrideItemUseSpeedMultiplier(float multiplier) {
 		throw new UnsupportedOperationException("This environment view is unmodifiable");
 	}
 

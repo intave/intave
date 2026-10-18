@@ -616,9 +616,13 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 		Timings.CHECK_PHYSICS_PROC_ITR.start();
 		Timings.CHECK_PHYSICS_PROC_ITR_BUILD_CONFIGS.start();
 		Set<MovementSearchBranch> possibleConfigs = TICK_SEARCHER.searchConfigurationsFor(
-			MovementSearchInput.forTick(user, simulator, environment.immutableView(), detectNoSlowdown)
+			MovementSearchInput.forTick(
+				user, simulator, environment.immutableView(), detectNoSlowdown
+			)
 		);
-		List<MovementSearchBranch> sortedConfigs = sortByFrequency(user, possibleConfigs);
+		List<MovementSearchBranch> sortedConfigs = sortByFrequency(
+			user, environment, possibleConfigs
+		);
 		Timings.CHECK_PHYSICS_PROC_ITR_BUILD_CONFIGS.stop();
 
 		C container = collector.supplier().get();
@@ -666,7 +670,9 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 	}
 
 	private static List<MovementSearchBranch> sortByFrequency(
-		User user, Set<MovementSearchBranch> branches
+		User user,
+		SimulationEnvironment environment,
+		Set<MovementSearchBranch> branches
 	) {
 		MovementMetadata movement = user.meta().movement();
 		MovementSearchBranch[] sorted = branches.toArray(new MovementSearchBranch[0]);
@@ -675,6 +681,17 @@ public final class ThreeTickSimulationSearch implements SimulationSearch {
 			return Arrays.asList(sorted);
 		}
 		FREQUENCY_SORTER.get().sort(sorted, movement.branchFrequency);
+		if (!user.meta().protocol().combatUpdate()
+			&& user.meta().inventory().handActive()
+			&& !environment.legacyItemUseSlotSwitchPending()) {
+			preferPacketConfirmedItemUse(sorted);
+		}
 		return Arrays.asList(sorted);
+	}
+
+	static void preferPacketConfirmedItemUse(MovementSearchBranch[] branches) {
+		Arrays.sort(branches, Comparator.comparing(
+			branch -> !branch.moveConfig().isHandActive()
+		));
 	}
 }

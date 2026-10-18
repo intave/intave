@@ -19,7 +19,9 @@ import java.util.Arrays;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class BranchFrequencySorterTest {
   @Test
@@ -84,5 +86,19 @@ final class BranchFrequencySorterTest {
     sorter.sort(branches, frequencies);
     assertEquals(4, frequencies.reads);
     assertSame(first, branches[0]);
+  }
+
+  @Test
+  void packetConfirmedItemUseIsTriedBeforeUnconfirmedSlotSwitch() {
+    MovementSearchBranch inactive = MovementSearchBranch.blank(null)
+      .withHandActive(false);
+    MovementSearchBranch active = MovementSearchBranch.blank(null)
+      .withHandActive(true);
+    MovementSearchBranch[] branches = {inactive, active};
+
+    ThreeTickSimulationSearch.preferPacketConfirmedItemUse(branches);
+
+    assertTrue(branches[0].moveConfig().isHandActive());
+    assertFalse(branches[1].moveConfig().isHandActive());
   }
 }

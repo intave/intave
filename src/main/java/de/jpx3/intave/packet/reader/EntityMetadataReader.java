@@ -16,6 +16,7 @@ import com.comphenix.protocol.wrappers.WrappedDataValue;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher.WrappedDataWatcherObject;
 import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.share.BlockPosition;
 
 import java.util.*;
@@ -25,6 +26,20 @@ import java.util.stream.Collectors;
 // See https://pastebin.com/EuprZGHe for the blueprint
 public final class EntityMetadataReader extends EntityReader {
   private static final boolean LEGACY_MODE = !MinecraftVersions.VER1_19_3.atOrAbove();
+
+  public @Nullable Byte livingFlags() {
+    if (!MinecraftVersions.VER1_9_0.atOrAbove()) {
+      return null;
+    }
+    Object value = fetchRaw(livingFlagsIndex());
+    return value instanceof Number ? ((Number) value).byteValue() : null;
+  }
+
+  static int livingFlagsIndex() {
+    return MinecraftVersions.VER1_17_0.atOrAbove() ? 8
+      : MinecraftVersions.VER1_14_0.atOrAbove() ? 7
+      : MinecraftVersions.VER1_10_0.atOrAbove() ? 6 : 5;
+  }
 
   public Optional<BlockPosition> bedPosition() {
     // on versions below 1.14 the bed position is not stored in metadata, it arrives in a separate use_bed packet

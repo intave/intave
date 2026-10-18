@@ -59,6 +59,9 @@ final class ImmutableSimulationEnvironmentCopy implements SimulationEnvironment 
 	private final boolean swimming;
 	private final boolean flying;
 	private final boolean flyingDisablePending;
+	private final boolean legacyItemUseSlotSwitchPending;
+	private final boolean legacyItemUseReleaseUncertain;
+	private final boolean legacyItemUseForcedReleaseApplied;
 	private final boolean inWater, inLava, inWeb;
 	private final double lavaDepth;
 	private final boolean onGround, lastOnGround, collidedHorizontally, collidedVertically;
@@ -99,6 +102,7 @@ final class ImmutableSimulationEnvironmentCopy implements SimulationEnvironment 
 	private final int physicsPacketRelinkFlyVL;
 	private final boolean lastSneaking, currentlyInBlock;
 	private final boolean crouchingInputSlowdownWhenFalse, crouchingInputSlowdownWhenTrue;
+	private final float itemUseSpeedMultiplier;
 	private final int highestLocalRiptideLevel;
 	private final boolean onGroundWithRiptide;
 	private final double baseMoveSpeed;
@@ -155,6 +159,9 @@ final class ImmutableSimulationEnvironmentCopy implements SimulationEnvironment 
 		this.swimming = source.isSwimming();
 		this.flying = source.flying();
 		this.flyingDisablePending = source.flyingDisablePending();
+		this.legacyItemUseSlotSwitchPending = source.legacyItemUseSlotSwitchPending();
+		this.legacyItemUseReleaseUncertain = source.legacyItemUseReleaseUncertain();
+		this.legacyItemUseForcedReleaseApplied = source.legacyItemUseForcedReleaseApplied();
 		this.areEyesInWater = source.areEyesInWater();
 		this.hasSprintSpeed = source.hasSprintSpeed();
 		this.sprintingAllowed = source.sprintingAllowed();
@@ -216,6 +223,7 @@ final class ImmutableSimulationEnvironmentCopy implements SimulationEnvironment 
 		this.lastSneaking = source.lastSneaking();
 		this.crouchingInputSlowdownWhenFalse = source.resolveCrouchingInputSlowdown(false);
 		this.crouchingInputSlowdownWhenTrue = source.resolveCrouchingInputSlowdown(true);
+		this.itemUseSpeedMultiplier = source.itemUseSpeedMultiplier();
 		this.currentlyInBlock = source.currentlyInBlock();
 		this.highestLocalRiptideLevel = source.highestLocalRiptideLevel();
 		this.onGroundWithRiptide = source.onGroundWithRiptide();
@@ -599,6 +607,36 @@ final class ImmutableSimulationEnvironmentCopy implements SimulationEnvironment 
 
 	@Override
 	public void setFlyingDisablePending(boolean pending) {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public boolean legacyItemUseSlotSwitchPending() {
+		return legacyItemUseSlotSwitchPending;
+	}
+
+	@Override
+	public void setLegacyItemUseSlotSwitchPending(boolean pending) {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public boolean legacyItemUseReleaseUncertain() {
+		return legacyItemUseReleaseUncertain;
+	}
+
+	@Override
+	public void setLegacyItemUseReleaseUncertain(boolean uncertain) {
+		throw immutableCopyException();
+	}
+
+	@Override
+	public boolean legacyItemUseForcedReleaseApplied() {
+		return legacyItemUseForcedReleaseApplied;
+	}
+
+	@Override
+	public void setLegacyItemUseForcedReleaseApplied(boolean applied) {
 		throw immutableCopyException();
 	}
 
@@ -1051,6 +1089,16 @@ final class ImmutableSimulationEnvironmentCopy implements SimulationEnvironment 
 	}
 
 	@Override
+	public float itemUseSpeedMultiplier() {
+		return itemUseSpeedMultiplier;
+	}
+
+	@Override
+	public void overrideItemUseSpeedMultiplier(float multiplier) {
+		throw immutableCopyException();
+	}
+
+	@Override
 	public boolean currentlyInBlock() {
 		return currentlyInBlock;
 	}
@@ -1191,6 +1239,9 @@ final class ImmutableSimulationEnvironmentCopy implements SimulationEnvironment 
 		other.setSwimming(swimming);
 		other.setFlying(flying);
 		other.setFlyingDisablePending(flyingDisablePending);
+		other.setLegacyItemUseSlotSwitchPending(legacyItemUseSlotSwitchPending);
+		other.setLegacyItemUseReleaseUncertain(legacyItemUseReleaseUncertain);
+		other.setLegacyItemUseForcedReleaseApplied(legacyItemUseForcedReleaseApplied);
 		other.setInWater(inWater);
 		other.setInLava(inLava);
 		other.setLavaDepth(lavaDepth);

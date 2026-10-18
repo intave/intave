@@ -333,6 +333,15 @@ public interface SimulationEnvironment {
   boolean flyingDisablePending();
   void setFlyingDisablePending(boolean pending);
 
+  boolean legacyItemUseSlotSwitchPending();
+  void setLegacyItemUseSlotSwitchPending(boolean pending);
+
+  boolean legacyItemUseReleaseUncertain();
+  void setLegacyItemUseReleaseUncertain(boolean uncertain);
+
+  boolean legacyItemUseForcedReleaseApplied();
+  void setLegacyItemUseForcedReleaseApplied(boolean applied);
+
   boolean isSleeping();
   void setSleeping(boolean sleeping);
 
@@ -682,6 +691,14 @@ public interface SimulationEnvironment {
 
   default void overrideCrouchingInputSlowdown(boolean slowdown) {
     throw new UnsupportedOperationException("Crouching input slowdown cannot be overridden");
+  }
+
+  default float itemUseSpeedMultiplier() {
+    return 0.2F;
+  }
+
+  default void overrideItemUseSpeedMultiplier(float multiplier) {
+    throw new UnsupportedOperationException("Item use speed multiplier cannot be overridden");
   }
 
   default boolean currentlyInBlock() {

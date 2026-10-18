@@ -376,8 +376,9 @@ class BaseSimulator extends Simulator {
       strafe = (float) ((double) strafe * sneakingModifier);
     }
     if (handActive) {
-      forward *= 0.2f;
-      strafe *= 0.2f;
+      float itemUseSpeedMultiplier = environment.itemUseSpeedMultiplier();
+      forward *= itemUseSpeedMultiplier;
+      strafe *= itemUseSpeedMultiplier;
     }
     if (undoFlightSneakSlowdown) {
       // 1.9-1.14 first apply the ordinary 0.3 sneak slowdown in the input

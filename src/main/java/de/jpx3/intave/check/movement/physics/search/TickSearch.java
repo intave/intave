@@ -109,6 +109,24 @@ public final class TickSearch {
 		);
 	}
 
+	public boolean requiredItemUseImpossible(double maximumDistance) {
+		if (maximumDistance < 0 || Double.isNaN(maximumDistance)) {
+			throw new IllegalArgumentException("maximumDistance must not be negative or NaN");
+		}
+
+		boolean activeEvaluated = false;
+		for (Map.Entry<MovementConfiguration, Double> entry : configurationDistances.entrySet()) {
+			if (!entry.getKey().isHandActive()) {
+				continue;
+			}
+			activeEvaluated = true;
+			if (entry.getValue() <= maximumDistance) {
+				return false;
+			}
+		}
+		return activeEvaluated;
+	}
+
 	public boolean itemUseRequired(double maximumDistance) {
 		return onlyPlausibleBranch(
 			MovementConfiguration::isHandActive, true, maximumDistance

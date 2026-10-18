@@ -401,6 +401,15 @@ public final class MovementDispatcher extends Module {
       }
       double distance = position.distance(movement.verifiedLastPosition());
       if (distance < 0.00001) {
+        // MultiPlayerGameMode#useItem emits this sync immediately before the
+        // hand-bearing use packet. Protocol translation may consume that
+        // second packet (notably ViaVersion's 1.8 shield replacement), so the
+        // client's item-use state remains ambiguous until an explicit release.
+        user.meta().inventory().noteUseItemMovementSync();
+        Rotation rotation = reader.rotation();
+        if (rotation != null) {
+          movement.setRotation(rotation.yaw(), rotation.pitch());
+        }
         movement.dropPostTickMotionProcessing = true;
         logging.logSystemMessage(user, () -> "MOVEMENT IGNORED: Click movement ignore distance: " + distance);
         if (!MinecraftVersions.VER1_9_0.atOrAbove()) {
@@ -492,7 +501,10 @@ public final class MovementDispatcher extends Module {
     }
 
     double distanceMoved = Hypot.fast(movement.offsetMotionX(), movement.offsetMotionZ());
-    if (inventoryData.activatedItemThisTick && inventoryData.deactivatedItemThisTick && distanceMoved > 0.1) {
+    boolean wrappedItemUse = inventoryData.activatedItemThisTick
+      && inventoryData.deactivatedItemThisTick;
+    boolean repeatedItemUse = inventoryData.repeatedItemUseRequestThisTick();
+    if ((wrappedItemUse || repeatedItemUse) && distanceMoved > 0.1) {
       if (violationLevelData.wrappedNoSlowdownVL++ > 5) {
         user.nerfPermanently(AttackNerfStrategy.DMG_HIGH, "No slowdown");
         user.nerfPermanently(AttackNerfStrategy.BLOCKING, "No slowdown");
@@ -505,15 +517,13 @@ public final class MovementDispatcher extends Module {
       violationLevelData.wrappedNoSlowdownVL = Math.max(0, violationLevelData.wrappedNoSlowdownVL - 0.08);
     }
 
-    if (inventoryData.releaseItemNextTick) {
-      releaseItem(user);
-      inventoryData.releaseItemNextTick = false;
-      inventoryData.releaseItemType = Material.AIR;
+    Material scheduledItemRelease =
+      inventoryData.deferScheduledItemReleaseUntilTickEnd(hasMovement);
+    if (scheduledItemRelease != null) {
+      releaseItem(user, scheduledItemRelease);
     }
 
-    inventoryData.activatedItemThisTick = false;
-    inventoryData.deactivatedItemThisTick = false;
-
+    inventoryData.clearItemUseTickTransitions();
 
     if (!movement.isTeleportConfirmationPacket &&
       movement.canResetMotion &&
@@ -623,14 +633,14 @@ public final class MovementDispatcher extends Module {
     }
   }
 
-  private void releaseItem(User user) {
+  private void releaseItem(User user, Material scheduledItemType) {
     if (user.receives(MessageChannel.DEBUG_ITEM_USE)) {
       user.sendMessage(IntavePlugin.prefix() + "Applying item usage reset as requested");
     }
     Player player = user.player();
     ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
     InventoryMetadata inventory = user.meta().inventory();
-    if (ItemProperties.isBow(inventory.releaseItemType) || ItemProperties.isBow(inventory.activeItemType())) {
+    if (ItemProperties.isBow(scheduledItemType) || ItemProperties.isBow(inventory.activeItemType())) {
       inventory.blockNextArrow = true;
       inventory.lastBlockArrowRequest = System.currentTimeMillis();
       if (user.receives(MessageChannel.DEBUG_ITEM_USE)) {
@@ -644,17 +654,10 @@ public final class MovementDispatcher extends Module {
     BlockDigReader.setAction(packet, PlayerDigAction.RELEASE_USE_ITEM);
     user.ignoreNextInboundPacket();
     PacketSender.receiveClientPacketFrom(player, packet);
-    updatePlayerHandItem(player);
     Synchronizer.synchronize(user, player::updateInventory);
     if (IntaveControl.DEBUG_ITEM_USAGE) {
       user.sendMessage(ChatColor.DARK_PURPLE + "Release item");
     }
-  }
-
-  private void updatePlayerHandItem(Player player) {
-    User user = UserRepository.userOf(player);
-    InventoryMetadata inventoryData = user.meta().inventory();
-    inventoryData.deactivateHand();
   }
 
   @PacketSubscription(

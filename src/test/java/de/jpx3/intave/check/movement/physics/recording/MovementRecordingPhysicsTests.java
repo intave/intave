@@ -37,12 +37,15 @@ import de.jpx3.intave.module.test.record.MoveFrame;
 import de.jpx3.intave.module.test.record.MovementFrameState;
 import de.jpx3.intave.module.test.record.MovementRecording;
 import de.jpx3.intave.module.test.record.TickRange;
+import de.jpx3.intave.module.test.record.action.ActiveItemReplacementAction;
 import de.jpx3.intave.module.test.record.action.Action;
 import de.jpx3.intave.module.test.record.action.AttackReduction;
+import de.jpx3.intave.module.test.record.action.ItemUsePacketAction;
 import de.jpx3.intave.module.test.record.action.PistonSlimeAction;
 import de.jpx3.intave.module.test.record.action.ReceiveVelocity;
 import de.jpx3.intave.module.test.record.action.ShulkerBoxAction;
 import de.jpx3.intave.player.attribute.Attribute;
+import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.player.collider.Colliders;
 import de.jpx3.intave.resource.Resources;
 import de.jpx3.intave.share.*;
@@ -53,7 +56,11 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserFactory;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.AbilityMetadata;
+import de.jpx3.intave.user.meta.InventoryMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
+import de.jpx3.intave.user.meta.ProtocolMetadata;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -137,6 +144,31 @@ final class MovementRecordingPhysicsTests {
 	}
 
 	@Test
+	void woodenSwordBlockingRecording() throws IOException {
+		processRecordingResource(
+			"physics_test_runs/use/sword_1.8on1.8.ptr"
+		);
+		processRecordingResource(
+			"physics_test_runs/use/sword_1.8on1.8_2.ptr"
+		);
+	}
+
+	@Test
+	void legacyEatThenSwordNoSlowRecordingIsRejected() {
+		AssertionError failure = assertThrows(
+			AssertionError.class,
+			() -> processRecordingResource(
+				"physics_test_runs/use/_no_slow_eat_then_sword_1.8on1.8.ptr"
+			)
+		);
+		assertTrue(
+			failure.getMessage().contains("tick 25"),
+			"Expected the first no-slow divergence at tick 25, got: "
+				+ failure.getMessage()
+		);
+	}
+
+	@Test
 	void recordedGlidingStateSelectsElytra() {
 		MovementRecording recording = MovementRecording.create(
 			VER_1_21_2,
@@ -210,7 +242,8 @@ final class MovementRecordingPhysicsTests {
 				List.of(new MovementFrameState.ItemState(org.bukkit.Material.BOW, 1, 0, Map.of())),
 				Arrays.asList(null, null, elytra, null),
 				null, 0, true, 5, 0, 2, false, org.bukkit.Material.BOW,
-				false, false, org.bukkit.Material.AIR, true, false
+				false, false, org.bukkit.Material.AIR, true, false,
+				PlayerHand.MAIN_HAND, false, 0.2F
 			),
 			3, 2,
 			new MovementFrameState.EntityState(
@@ -236,6 +269,9 @@ final class MovementRecordingPhysicsTests {
 		assertEquals(1, user.meta().connection().tracedEntities().size());
 		assertEquals(2, user.meta().potions().potionEffectSpeedAmplifier());
 		assertTrue(user.meta().inventory().handActive());
+		assertEquals(PlayerHand.MAIN_HAND, user.meta().inventory().activeHand());
+		assertFalse(user.meta().inventory().activeItemAllowsSprinting());
+		assertEquals(0.2F, user.meta().inventory().activeItemUseSpeedMultiplier());
 		assertEquals(org.bukkit.Material.BOW, user.meta().inventory().heldItemType());
 		assertEquals(2, user.meta().movement().reduceTicks());
 		assertEquals(0, user.meta().movement().ticksPast(ATTACK_REDUCE));
@@ -256,18 +292,19 @@ final class MovementRecordingPhysicsTests {
 		AtomicReference<Location> currentLocation = new AtomicReference<>(
 			locationOf(world, position, rotation)
 		);
-		MovementMetadata metadata = createReplayUser(
+		User user = createReplayUser(
 			recording,
 			new PlaybackBlockCacheView(recording),
 			world,
 			currentLocation
-		).meta().movement();
+		);
+		MovementMetadata metadata = user.meta().movement();
 		TickRange nextFrame = TickRange.betweenExclusive(0, 1);
 
 		applyActionsForTick(List.of(
 			new AttackReduction(true, true, nextFrame),
 			new AttackReduction(true, false, nextFrame)
-		), metadata, 0);
+		), user, 0);
 
 		assertEquals(2, metadata.allTickAmbiguousUpdates().size());
 		Reduce first = assertInstanceOf(Reduce.class, metadata.allTickAmbiguousUpdates().get(0));
@@ -276,6 +313,150 @@ final class MovementRecordingPhysicsTests {
 		assertTrue(second.lastActiveInTick());
 		assertTrue(first.mandatory());
 		assertFalse(second.mandatory());
+	}
+
+	@Test
+	void recordedMinecraft18SlotPacketStopsUseWithoutSyntheticReset() {
+		MovementRecording recording = MovementRecording.create(
+			47,
+			MinecraftVersions.VER1_21_4
+		);
+		preparePhysicsTestRuntime(recording);
+
+		Position position = new Position(0, 64, 0);
+		Rotation rotation = Rotation.zero();
+		World world = createReplayWorld();
+		AtomicReference<Location> currentLocation = new AtomicReference<>(
+			locationOf(world, position, rotation)
+		);
+		User user = createReplayUser(
+			recording,
+			new PlaybackBlockCacheView(recording),
+			world,
+			currentLocation
+		);
+		user.player().getInventory().setItem(0, new ItemStack(Material.DIAMOND_SWORD));
+		user.player().getInventory().setItem(1, new ItemStack(Material.IRON_SWORD));
+		user.meta().inventory().setHeldItemSlot(0);
+
+		List<Action> actions = List.of(
+			ItemUsePacketAction.useItem(PlayerHand.MAIN_HAND, 0),
+			ItemUsePacketAction.heldItemSlot(1, 2)
+		);
+		applyActionsForTick(actions, user, 0);
+		applyPacketDrivenItemUseBeforePhysics(user, true);
+
+		assertTrue(user.meta().inventory().handActive());
+
+		applyActionsForTick(actions, user, 1);
+		applyPacketDrivenItemUseBeforePhysics(user, true);
+
+		assertEquals(0, user.meta().inventory().handSlot());
+		assertTrue(user.meta().inventory().handActive());
+
+		applyActionsForTick(actions, user, 2);
+		applyPacketDrivenItemUseBeforePhysics(user, false);
+
+		assertEquals(1, user.meta().inventory().handSlot());
+		assertFalse(user.meta().inventory().releaseItemNextTick);
+		assertFalse(user.meta().inventory().handActive());
+	}
+
+	@Test
+	void recordedMinecraft18ActiveStackReplacementEndsSwordUse() {
+		MovementRecording recording = MovementRecording.create(
+			47,
+			MinecraftVersions.VER1_21_4
+		);
+		preparePhysicsTestRuntime(recording);
+		World world = createReplayWorld();
+		User user = createReplayUser(
+			recording,
+			new PlaybackBlockCacheView(recording),
+			world,
+			new AtomicReference<>(new Location(world, 0.0D, 64.0D, 0.0D))
+		);
+		user.player().getInventory().setItem(0, new ItemStack(Material.DIAMOND_SWORD));
+		user.meta().inventory().setHeldItemSlot(0);
+		List<Action> actions = List.of(
+			ItemUsePacketAction.useItem(PlayerHand.MAIN_HAND, 0),
+			ActiveItemReplacementAction.at(Material.DIAMOND_SWORD, 1)
+		);
+
+		applyActionsForTick(actions, user, 0);
+		applyPacketDrivenItemUseBeforePhysics(user, true);
+		assertTrue(user.meta().inventory().handActive());
+
+		applyActionsForTick(actions, user, 1);
+		applyPacketDrivenItemUseBeforePhysics(user, true);
+		assertFalse(user.meta().inventory().handActive());
+	}
+
+	@Test
+	void recordedMinecraft19MainHandUseEndsAtTheSlotPacket() {
+		MovementRecording recording = MovementRecording.create(
+			ProtocolMetadata.VER_1_9,
+			MinecraftVersions.VER1_21_4
+		);
+		preparePhysicsTestRuntime(recording);
+		World world = createReplayWorld();
+		User user = createReplayUser(
+			recording,
+			new PlaybackBlockCacheView(recording),
+			world,
+			new AtomicReference<>(new Location(world, 0.0D, 64.0D, 0.0D))
+		);
+		user.player().getInventory().setItem(0, new ItemStack(Material.BOW));
+		user.player().getInventory().setItem(1, new ItemStack(Material.SHIELD));
+		user.player().getInventory().setItem(2, new ItemStack(Material.ARROW));
+		user.meta().inventory().setHeldItemSlot(0);
+		List<Action> actions = List.of(
+			ItemUsePacketAction.useItem(PlayerHand.MAIN_HAND, 0),
+			ItemUsePacketAction.heldItemSlot(1, 2)
+		);
+
+		applyActionsForTick(actions, user, 0);
+		applyPacketDrivenItemUseBeforePhysics(user, true);
+		assertTrue(user.meta().inventory().handActive());
+
+		applyActionsForTick(actions, user, 2);
+		applyPacketDrivenItemUseBeforePhysics(user, true);
+		assertFalse(user.meta().inventory().handActive());
+		assertEquals(1, user.meta().inventory().handSlot());
+	}
+
+	@Test
+	void recordedMinecraft19OffhandUseSurvivesMainHandSlotPacket() {
+		MovementRecording recording = MovementRecording.create(
+			ProtocolMetadata.VER_1_9,
+			MinecraftVersions.VER1_21_4
+		);
+		preparePhysicsTestRuntime(recording);
+		World world = createReplayWorld();
+		User user = createReplayUser(
+			recording,
+			new PlaybackBlockCacheView(recording),
+			world,
+			new AtomicReference<>(new Location(world, 0.0D, 64.0D, 0.0D))
+		);
+		user.player().getInventory().setItem(0, new ItemStack(Material.BOW));
+		user.player().getInventory().setItem(1, new ItemStack(Material.BOW));
+		user.player().getInventory().setItem(2, new ItemStack(Material.ARROW));
+		user.player().getInventory().setItemInOffHand(new ItemStack(Material.SHIELD));
+		user.meta().inventory().setHeldItemSlot(0);
+		List<Action> actions = List.of(
+			ItemUsePacketAction.useItem(PlayerHand.OFF_HAND, 0),
+			ItemUsePacketAction.heldItemSlot(1, 2)
+		);
+
+		applyActionsForTick(actions, user, 0);
+		applyPacketDrivenItemUseBeforePhysics(user, true);
+		applyActionsForTick(actions, user, 2);
+		applyPacketDrivenItemUseBeforePhysics(user, true);
+
+		assertTrue(user.meta().inventory().handActive());
+		assertEquals(PlayerHand.OFF_HAND, user.meta().inventory().activeHand());
+		assertEquals(1, user.meta().inventory().handSlot());
 	}
 
 	@Test
@@ -377,13 +558,18 @@ final class MovementRecordingPhysicsTests {
 		currentLocation.set(locationOf(world, initialPosition, initialRotation));
 
 		MovementFrameState initialFrameState = firstFrame.movementState();
+		boolean packetDrivenItemUse = recording.packetDrivenItemUse();
+		boolean recordsActiveItemReplacements = recording.actions().stream()
+			.anyMatch(ActiveItemReplacementAction.class::isInstance);
 		ReplayPlayerState replayPlayerState = new ReplayPlayerState(
-			initialFrameState == null ? MovementFrameState.empty() : initialFrameState
+			initialFrameState == null ? MovementFrameState.empty() : initialFrameState,
+			packetDrivenItemUse,
+			packetDrivenItemUse && !recordsActiveItemReplacements
 		);
 		User user = createReplayUser(recording, blockCache, world, currentLocation, replayPlayerState);
 		MovementMetadata metadata = user.meta().movement();
 		if (initialFrameState != null) {
-			replayPlayerState.apply(user, initialFrameState);
+			replayPlayerState.applyInitial(user, initialFrameState);
 		}
 		applyAttributesForTick(recording, user, firstPositionFrame);
 		metadata.gliding = firstFrame.gliding();
@@ -393,7 +579,8 @@ final class MovementRecordingPhysicsTests {
 			metadata.setPose(firstFrame.physicalPose());
 		}
 
-		ThreeTickSimulationSearch processor = new ThreeTickSimulationSearch(false);
+		// Replays validate item-use physics, including rejection of NoSlow recordings.
+		ThreeTickSimulationSearch processor = new ThreeTickSimulationSearch(true);
 		List<String> lastMessages = new LinkedList<>();
 
 		for (int tick = firstPositionFrame + 1; tick < frames.size(); tick++) {
@@ -406,8 +593,14 @@ final class MovementRecordingPhysicsTests {
 			}
 			applyAttributesForTick(recording, user, tick);
 			applyInputsForTick(user, input);
-			applyActionsForTick(recording.actions(), metadata, tick);
+			applyActionsForTick(recording.actions(), user, tick);
 			blockCache.updateBlocks(frame.blocks());
+			if (isUseItemMovementSync(user, metadata, frame)) {
+				user.meta().inventory().noteUseItemMovementSync();
+				Rotation rotation = frame.rotateTo();
+				metadata.setRotation(rotation.yaw(), rotation.pitch());
+				continue;
+			}
 
 			Position position = frame.moveTo();
 			Rotation rotation = frame.rotateTo();
@@ -427,6 +620,9 @@ final class MovementRecordingPhysicsTests {
 				location.getYaw(), location.getPitch(),
 				hasMovement, hasRotation
 			);
+			if (packetDrivenItemUse) {
+				applyPacketDrivenItemUseBeforePhysics(user, hasMovement);
+			}
 			// The packet bit is the client state after its movement. The previous
 			// frame is therefore the state entering this client tick.
 			applyRecordedGroundBeforeTick(
@@ -438,18 +634,30 @@ final class MovementRecordingPhysicsTests {
 			metadata.treatThisFlyPacketAsMovePacket = false;
 			if (!hasMovement && (!hasPerFramePhysicalState
 				|| framesUntilNextPosition(frames, tick) <= 2)) {
+				if (packetDrivenItemUse) {
+					replayPlayerState.applyInferredActiveItemReplacement(user);
+					user.meta().inventory().tickComplete();
+				}
 				continue;
 			}
 
 			Motion previousBaseMotion = metadata.mutableBaseMotionCopy();
 
+			int precedingFlyingPackets = hasMovement && hasPerFramePhysicalState
+				? Math.min(2, positionlessFramesBefore(frames, tick))
+				: 0;
+			if (precedingFlyingPackets > 0) {
+				// An exact replay starts before the first omitted-position tick. Its
+				// ground bit is the result of that tick, not the state entering it.
+				applyRecordedGroundBeforeTick(
+					metadata,
+					frames.get(tick - precedingFlyingPackets - 1).clientOnGround()
+				);
+			}
 			SimulationEnvironment searchEnvironment = metadata.mutableView();
 			if (!hasMovement) {
 				searchEnvironment.updateMovement(metadata.position(), metadata.rotation());
 			}
-			int precedingFlyingPackets = hasMovement && hasPerFramePhysicalState
-				? Math.min(2, positionlessFramesBefore(frames, tick))
-				: 0;
 			Simulation simulation;
 			if (!hasPerFramePhysicalState) {
 				simulation = processor.greedyFullTickSearch(user, searchEnvironment, simulator).simulation();
@@ -481,7 +689,8 @@ final class MovementRecordingPhysicsTests {
 			if (!hasMovement) {
 				finishPositionlessTick(
 					user, processor, simulator, metadata, simulation,
-					previousBaseMotion, hasRotation, frame.clientOnGround()
+					previousBaseMotion, hasRotation, frame.clientOnGround(),
+					packetDrivenItemUse, replayPlayerState
 				);
 				continue;
 			}
@@ -527,7 +736,10 @@ final class MovementRecordingPhysicsTests {
 			metadata.assumeOccurred(simulation);
 			// Apply this packet's post-move state before deriving after-tick motion.
 			applyRecordedGroundAfterMove(metadata, frame.clientOnGround());
-			finishTick(user, processor, simulator, metadata, hasMovement, hasRotation);
+			finishTick(
+				user, processor, simulator, metadata,
+				hasMovement, hasRotation, packetDrivenItemUse, replayPlayerState
+			);
 
 			if (lastMessages.size() > 16) {
 				lastMessages.removeFirst();
@@ -565,7 +777,9 @@ final class MovementRecordingPhysicsTests {
 		Simulation simulation,
 		Motion previousBaseMotion,
 		boolean hasRotation,
-		Boolean clientOnGround
+		Boolean clientOnGround,
+		boolean packetDrivenItemUse,
+		ReplayPlayerState replayPlayerState
 	) {
 		boolean reinterpretedAsMove = simulation.environment().tryMoveReinterpretation(
 			simulation,
@@ -590,7 +804,10 @@ final class MovementRecordingPhysicsTests {
 			updateOnGroundIfFlying(user, metadata);
 		}
 		applyRecordedGroundAfterMove(metadata, clientOnGround);
-		finishTick(user, processor, simulator, metadata, false, hasRotation);
+		finishTick(
+			user, processor, simulator, metadata,
+			false, hasRotation, packetDrivenItemUse, replayPlayerState
+		);
 		if (reinterpretedAsMove) {
 			metadata.setPosition(recordedPosition);
 			metadata.setLastPosition(recordedPosition);
@@ -836,6 +1053,7 @@ final class MovementRecordingPhysicsTests {
 		ReplayPotionRegistry.initialize();
 		MinecraftVersion serverVersion = recording.serverVersion();
 		MinecraftVersion.setCurrent(serverVersion);
+		ItemProperties.setup();
 		DrillResolver.manualInit(DenyShapeResolverPipeline.create());
 		Fluids.overrideFluids(recording.fluids());
 		BlockVariantRegister.overrideVariants(recording.blockVariants());
@@ -894,9 +1112,29 @@ final class MovementRecordingPhysicsTests {
 	private static final class ReplayPlayerState {
 		private final AtomicReference<MovementFrameState> state;
 		private final MockEmptyInventory inventory = new MockEmptyInventory();
+		private final boolean packetDrivenItemUse;
+		private final boolean inferActiveItemReplacements;
+		private Material inferredActiveItemReplacement;
+		private boolean initialStateApplied;
 
 		private ReplayPlayerState(MovementFrameState initialState) {
+			this(initialState, false, false);
+		}
+
+		private ReplayPlayerState(
+			MovementFrameState initialState, boolean packetDrivenItemUse
+		) {
+			this(initialState, packetDrivenItemUse, false);
+		}
+
+		private ReplayPlayerState(
+			MovementFrameState initialState,
+			boolean packetDrivenItemUse,
+			boolean inferActiveItemReplacements
+		) {
 			this.state = new AtomicReference<>(initialState);
+			this.packetDrivenItemUse = packetDrivenItemUse;
+			this.inferActiveItemReplacements = inferActiveItemReplacements;
 		}
 
 		private MovementFrameState state() {
@@ -908,8 +1146,45 @@ final class MovementRecordingPhysicsTests {
 		}
 
 		private void apply(User user, MovementFrameState nextState) {
+			MovementFrameState previousState = state.get();
+			if (inferActiveItemReplacements && initialStateApplied
+				&& nextState.inventory().selectedMainHandItemChangedFrom(
+					previousState.inventory()
+				)) {
+				MovementFrameState.ItemState replacement = nextState.inventory().heldItem();
+				inferredActiveItemReplacement = replacement == null
+					? Material.AIR : replacement.material();
+			}
+			state.set(nextState);
+			if (packetDrivenItemUse && initialStateApplied) {
+				nextState.applyToPreservingItemUsePackets(user, inventory);
+			} else {
+				nextState.applyTo(user, inventory);
+			}
+			initialStateApplied = true;
+		}
+
+		private void applyInferredActiveItemReplacement(User user) {
+			Material replacementType = inferredActiveItemReplacement;
+			inferredActiveItemReplacement = null;
+			InventoryMetadata inventoryMetadata = user.meta().inventory();
+			if (replacementType == null || !inventoryMetadata.handActive()
+				|| inventoryMetadata.activeHand() != PlayerHand.MAIN_HAND) {
+				return;
+			}
+			inventoryMetadata.applyClientActiveItemReplacement(
+				inventoryMetadata.activeItemUseSequence(), replacementType
+			);
+		}
+
+		private void applyInitial(User user, MovementFrameState nextState) {
 			state.set(nextState);
 			nextState.applyTo(user, inventory);
+			initialStateApplied = true;
+		}
+
+		private boolean packetDrivenItemUse() {
+			return packetDrivenItemUse;
 		}
 	}
 
@@ -949,7 +1224,9 @@ final class MovementRecordingPhysicsTests {
 		Simulator simulator,
 		MovementMetadata metadata,
 		boolean hasMovement,
-		boolean hasRotation
+		boolean hasRotation,
+		boolean packetDrivenItemUse,
+		ReplayPlayerState replayPlayerState
 	) {
 		if (hasMovement) {
 			metadata.setPostTickMotionCandidates(
@@ -976,6 +1253,10 @@ final class MovementRecordingPhysicsTests {
 		}
 
 		metadata.tickComplete(hasMovement, hasRotation, true);
+		if (packetDrivenItemUse) {
+			replayPlayerState.applyInferredActiveItemReplacement(user);
+			user.meta().inventory().tickComplete();
+		}
 
 		metadata.lastKeyStrafe = metadata.keyStrafe;
 		metadata.lastKeyForward = metadata.keyForward;
@@ -1187,9 +1468,10 @@ final class MovementRecordingPhysicsTests {
 
 	private static void applyActionsForTick(
 		List<Action> actions,
-		MovementMetadata metadata,
+		User user,
 		int tick
 	) {
+		MovementMetadata metadata = user.meta().movement();
 		int recordedAttackReductions = 0;
 		for (Action action : actions) {
 			if (action instanceof ReceiveVelocity velocity) {
@@ -1250,6 +1532,15 @@ final class MovementRecordingPhysicsTests {
 					metadata.activeTick(ATTACK_REDUCE);
 					recordedAttackReductions++;
 				}
+			} else if (action instanceof ItemUsePacketAction itemUse
+				&& itemUse.tickRange().start() == tick) {
+				applyItemUsePacket(user, itemUse);
+			} else if (action instanceof ActiveItemReplacementAction replacement
+				&& replacement.tickRange().start() == tick) {
+				InventoryMetadata inventory = user.meta().inventory();
+				inventory.applyClientActiveItemReplacement(
+					inventory.activeItemUseSequence(), replacement.replacementType()
+				);
 			}
 		}
 		if (recordedAttackReductions > 0) {
@@ -1278,6 +1569,55 @@ final class MovementRecordingPhysicsTests {
 		movement.lastSneaking = movement.sneaking;
 		movement.sneaking = input.sneakKey();
 		movement.sprinting = sprinting;
+	}
+
+	private static boolean isUseItemMovementSync(
+		User user,
+		MovementMetadata metadata,
+		MoveFrame frame
+	) {
+		Position position = frame.moveTo();
+		// MultiPlayerGameMode#useItem sends the player's current position and rotation
+		// immediately before the use-item packet. ViaVersion can cancel the paired
+		// use packet while forwarding this synchronization packet. MovementDispatcher
+		// drops every such duplicate, so it must not advance replay physics either.
+		return user.meta().protocol().useItemMovementPacket()
+			&& position != null
+			&& frame.rotateTo() != null
+			&& position.distance(metadata.verifiedLastPosition()) < 0.00001D;
+	}
+
+	private static void applyItemUsePacket(
+		User user, ItemUsePacketAction action
+	) {
+		InventoryMetadata inventory = user.meta().inventory();
+		switch (action.packet()) {
+			case USE_MAIN_HAND:
+				inventory.activateHandIfUsable(PlayerHand.MAIN_HAND);
+				break;
+			case USE_OFF_HAND:
+				inventory.activateHandIfUsable(PlayerHand.OFF_HAND);
+				break;
+			case RELEASE_USE_ITEM:
+				inventory.clearViaVersionItemUseStateUncertainty();
+				inventory.deactivateHand();
+				break;
+			case HELD_ITEM_SLOT:
+				int slot = action.slot();
+				inventory.receiveHeldItemSlot(
+					slot, user.player().getInventory().getItem(slot)
+				);
+				break;
+		}
+	}
+
+	private static void applyPacketDrivenItemUseBeforePhysics(
+		User user, boolean hasMovement
+	) {
+		InventoryMetadata inventory = user.meta().inventory();
+		inventory.updateSlotSwitch();
+		inventory.deferScheduledItemReleaseUntilTickEnd(hasMovement);
+		inventory.clearItemUseTickTransitions();
 	}
 
 	private static void applyRecordedPoseBeforeTick(

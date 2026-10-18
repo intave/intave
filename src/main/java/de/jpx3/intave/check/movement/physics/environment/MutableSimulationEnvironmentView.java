@@ -78,10 +78,18 @@ final class MutableSimulationEnvironmentView implements SimulationEnvironment {
   private boolean lastOnGroundOverridden, lastOnGround;
   private boolean sneakingOverridden, sneaking;
   private boolean crouchingInputSlowdownOverridden, crouchingInputSlowdown;
+  private boolean itemUseSpeedMultiplierOverridden;
+  private float itemUseSpeedMultiplier;
   private boolean lastSprintingOverridden, lastSprinting;
   private boolean swimmingOverridden, swimming;
   private boolean flyingOverridden, flying;
   private boolean flyingDisablePendingOverridden, flyingDisablePending;
+  private boolean legacyItemUseSlotSwitchPendingOverridden;
+  private boolean legacyItemUseSlotSwitchPending;
+  private boolean legacyItemUseReleaseUncertainOverridden;
+  private boolean legacyItemUseReleaseUncertain;
+  private boolean legacyItemUseForcedReleaseAppliedOverridden;
+  private boolean legacyItemUseForcedReleaseApplied;
   private boolean collidedHorizontallyOverridden, collidedHorizontally;
   private boolean collidedVerticallyOverridden, collidedVertically;
   private boolean fallDistanceOverridden;
@@ -608,6 +616,48 @@ final class MutableSimulationEnvironmentView implements SimulationEnvironment {
   }
 
   @Override
+  public boolean legacyItemUseSlotSwitchPending() {
+    return legacyItemUseSlotSwitchPendingOverridden
+      ? legacyItemUseSlotSwitchPending
+      : delegate.legacyItemUseSlotSwitchPending();
+  }
+
+  @Override
+  public void setLegacyItemUseSlotSwitchPending(boolean pending) {
+    legacyItemUseSlotSwitchPendingOverridden = true;
+    legacyItemUseSlotSwitchPending = pending;
+    defer(environment -> environment.setLegacyItemUseSlotSwitchPending(pending));
+  }
+
+  @Override
+  public boolean legacyItemUseReleaseUncertain() {
+    return legacyItemUseReleaseUncertainOverridden
+      ? legacyItemUseReleaseUncertain
+      : delegate.legacyItemUseReleaseUncertain();
+  }
+
+  @Override
+  public void setLegacyItemUseReleaseUncertain(boolean uncertain) {
+    legacyItemUseReleaseUncertainOverridden = true;
+    legacyItemUseReleaseUncertain = uncertain;
+    defer(environment -> environment.setLegacyItemUseReleaseUncertain(uncertain));
+  }
+
+  @Override
+  public boolean legacyItemUseForcedReleaseApplied() {
+    return legacyItemUseForcedReleaseAppliedOverridden
+      ? legacyItemUseForcedReleaseApplied
+      : delegate.legacyItemUseForcedReleaseApplied();
+  }
+
+  @Override
+  public void setLegacyItemUseForcedReleaseApplied(boolean applied) {
+    legacyItemUseForcedReleaseAppliedOverridden = true;
+    legacyItemUseForcedReleaseApplied = applied;
+    defer(environment -> environment.setLegacyItemUseForcedReleaseApplied(applied));
+  }
+
+  @Override
   public boolean hasSprintSpeed() {
     return delegate.hasSprintSpeed();
   }
@@ -1125,6 +1175,18 @@ final class MutableSimulationEnvironmentView implements SimulationEnvironment {
   public void overrideCrouchingInputSlowdown(boolean slowdown) {
     crouchingInputSlowdownOverridden = true;
     crouchingInputSlowdown = slowdown;
+  }
+
+  @Override
+  public float itemUseSpeedMultiplier() {
+    return itemUseSpeedMultiplierOverridden
+      ? itemUseSpeedMultiplier : delegate.itemUseSpeedMultiplier();
+  }
+
+  @Override
+  public void overrideItemUseSpeedMultiplier(float multiplier) {
+    itemUseSpeedMultiplierOverridden = true;
+    itemUseSpeedMultiplier = multiplier;
   }
 
   @Override

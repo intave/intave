@@ -14,17 +14,26 @@ package de.jpx3.intave.module.test;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.module.Module;
+import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.test.record.MovementFrameState;
 import de.jpx3.intave.module.test.record.MovementRecording;
+import de.jpx3.intave.module.test.record.action.ActiveItemReplacementAction;
+import de.jpx3.intave.module.test.record.action.ItemUsePacketAction;
+import de.jpx3.intave.packet.reader.BlockDigReader;
+import de.jpx3.intave.packet.reader.BlockInteractionReader;
+import de.jpx3.intave.packet.reader.HeldItemSlotReader;
 import de.jpx3.intave.packet.reader.PlayerMoveReader;
 import de.jpx3.intave.player.ActionBar;
+import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.bukkit.Material;
+import org.bukkit.event.Cancellable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -78,6 +87,54 @@ public final class PhysicsTestRecorder extends Module {
 		ActionBar.sendActionBar(user.player(), movementRecording.frameCount() + " frames, " + movementRecording.actions().size() + " actions, " + movementRecording.collisionShapes().size() + " block-types");
 	}
 
+	@PacketSubscription(
+		priority = ListenerPriority.MONITOR,
+		packetsIn = {BLOCK_PLACE, USE_ITEM, USE_ITEM_ON}
+	)
+	public void recordItemUse(
+		User user, Cancellable cancellable, BlockInteractionReader reader
+	) {
+		MovementRecording recording = recordingSessionOf(user);
+		if (recording == null || cancellable.isCancelled() || !reader.isItemUseRequest()) {
+			return;
+		}
+		PlayerHand hand = reader.hand();
+		if (reader.isItemUseOnBlockRequest()
+			&& !ItemProperties.startsUsingOnBlock(
+				user, user.meta().inventory().itemInHand(hand)
+			)) {
+			return;
+		}
+		recording.insertAction(ItemUsePacketAction.useItem(
+			hand == null ? PlayerHand.MAIN_HAND : hand,
+			recording.ticks()
+		));
+	}
+
+	@PacketSubscription(priority = ListenerPriority.MONITOR, packetsIn = BLOCK_DIG)
+	public void recordItemRelease(
+		User user, Cancellable cancellable, BlockDigReader reader
+	) {
+		MovementRecording recording = recordingSessionOf(user);
+		if (recording == null || cancellable.isCancelled()
+			|| reader.action() != PlayerDigAction.RELEASE_USE_ITEM) {
+			return;
+		}
+		recording.insertAction(ItemUsePacketAction.releaseUseItem(recording.ticks()));
+	}
+
+	@PacketSubscription(priority = ListenerPriority.MONITOR, packetsIn = HELD_ITEM_SLOT_IN)
+	public void recordHeldItemSlot(
+		User user, Cancellable cancellable, HeldItemSlotReader reader
+	) {
+		MovementRecording recording = recordingSessionOf(user);
+		int slot = reader.slot();
+		if (recording == null || cancellable.isCancelled() || slot < 0 || slot > 8) {
+			return;
+		}
+		recording.insertAction(ItemUsePacketAction.heldItemSlot(slot, recording.ticks()));
+	}
+
 	public void saveRecordingDataTo(User user, File file) throws IOException {
 		MovementRecording movementRecording = recordingData.get(user);
 		movementRecording.materializeVelocities();
@@ -117,6 +174,16 @@ public final class PhysicsTestRecorder extends Module {
 		MovementRecording movementRecording = recordingSessionOf(user);
 		if (movementRecording != null) {
 			movementRecording.recordAttackReduction(lastActiveInTick, mandatory);
+		}
+	}
+
+	/** Captures an acknowledged clientbound replacement of the actively used stack. */
+	public void recordActiveItemReplacement(User user, Material replacementType) {
+		MovementRecording movementRecording = recordingSessionOf(user);
+		if (movementRecording != null) {
+			movementRecording.insertAction(ActiveItemReplacementAction.at(
+				replacementType, movementRecording.ticks()
+			));
 		}
 	}
 

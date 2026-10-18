@@ -21,7 +21,9 @@ public enum ActionType {
 	PISTON_SLIME,
 	SHULKER_BOX,
 	ATTACK_REDUCTION,
-	ATTACK_REDUCTION_V2
+	ATTACK_REDUCTION_V2,
+	ITEM_USE_PACKET,
+	ACTIVE_ITEM_REPLACEMENT
 
 	;
 	public final static StreamCodec<ByteBuf, ByteBuf, @NotNull ActionType> STREAM_CODEC = ByteBufStreamCodecs.STRING.beforeAndAfter(

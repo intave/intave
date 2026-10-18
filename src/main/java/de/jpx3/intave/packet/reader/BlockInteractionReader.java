@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.packet.reader;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.MovingObjectPositionBlock;
@@ -37,6 +38,22 @@ public final class BlockInteractionReader extends BlockPositionReader {
 
   public boolean isItemUseRequest() {
     return SEPARATE_USE_ITEM_PACKET || enumDirection() == 255;
+  }
+
+  /**
+   * Returns whether this packet invokes Item#use rather than Item#useOn.
+   * Since 1.9 the client sends a separate USE_ITEM packet after a block
+   * interaction only when the interaction did not consume the click.
+   */
+  public boolean isDirectItemUseRequest() {
+    if (!SEPARATE_USE_ITEM_PACKET) {
+      return enumDirection() == 255;
+    }
+    return packet().getType().equals(PacketType.Play.Client.USE_ITEM);
+  }
+
+  public boolean isItemUseOnBlockRequest() {
+    return SEPARATE_USE_ITEM_PACKET && !isDirectItemUseRequest();
   }
 
   @Nullable

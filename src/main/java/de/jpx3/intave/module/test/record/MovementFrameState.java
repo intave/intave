@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.module.test.record;
 
+
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.check.movement.physics.environment.MoveMetric;
@@ -21,6 +22,7 @@ import de.jpx3.intave.entity.size.HitboxSize;
 import de.jpx3.intave.entity.type.EntityTypeData;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.tracker.player.AbilityTracker;
+import de.jpx3.intave.share.PlayerHand;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.EffectMetadata;
@@ -153,9 +155,24 @@ public final class MovementFrameState {
 
 	/** Applies the snapshot to the mutable state used by the recording replay. */
 	public void applyTo(User user, PlayerInventory playerInventory) {
+		applyTo(user, playerInventory, true);
+	}
+
+	/** Applies stable frame state while retaining item-use state reconstructed from packets. */
+	public void applyToPreservingItemUsePackets(
+		User user, PlayerInventory playerInventory
+	) {
+		applyTo(user, playerInventory, false);
+	}
+
+	private void applyTo(
+		User user, PlayerInventory playerInventory, boolean restoreItemUseState
+	) {
 		abilities.applyTo(user.meta().abilities());
 		effects.applyTo(user.meta().potions());
-		inventory.applyTo(playerInventory, user.meta().inventory());
+		inventory.applyTo(
+			playerInventory, user.meta().inventory(), restoreItemUseState
+		);
 
 		MovementMetadata movement = user.meta().movement();
 		movement.restoreRecordedFireworkState(fireworkRocketsPower, activeFireworkRockets);
@@ -486,6 +503,11 @@ public final class MovementFrameState {
 			ByteBufStreamCodecs.listCodecOf(NULLABLE_ITEM_CODEC);
 		private static final StreamCodec<ByteBuf, ByteBuf, ItemState> NULLABLE_SINGLE_ITEM_CODEC =
 			ItemState.STREAM_CODEC.nullable(ByteBufStreamCodecs.BOOLEAN);
+		private static final StreamCodec<ByteBuf, ByteBuf, PlayerHand> NULLABLE_HAND_CODEC =
+			ByteBufStreamCodecs.INTEGER.beforeAndAfter(
+				ordinal -> ordinal < 0 ? null : PlayerHand.values()[ordinal],
+				hand -> hand == null ? -1 : hand.ordinal()
+			);
 
 		public static final StreamCodec<ByteBuf, ByteBuf, InventoryState> STREAM_CODEC =
 			ByteBufStreamCodecs.smartReflectionCodecBuilder(InventoryState.class)
@@ -504,6 +526,9 @@ public final class MovementFrameState {
 				.field("releaseItemType", ByteBufStreamCodecs.MATERIAL, () -> Material.AIR)
 				.field("activatedItemThisTick", ByteBufStreamCodecs.BOOLEAN, () -> false)
 				.field("deactivatedItemThisTick", ByteBufStreamCodecs.BOOLEAN, () -> false)
+				.field("activeHand", NULLABLE_HAND_CODEC, () -> null)
+				.field("activeItemAllowsSprinting", ByteBufStreamCodecs.BOOLEAN, () -> false)
+				.field("activeItemUseSpeedMultiplier", ByteBufStreamCodecs.FLOAT, () -> 0.2F)
 				.build();
 
 		private final List<ItemState> storage;
@@ -521,13 +546,18 @@ public final class MovementFrameState {
 		private final Material releaseItemType;
 		private final boolean activatedItemThisTick;
 		private final boolean deactivatedItemThisTick;
+		private final @Nullable PlayerHand activeHand;
+		private final boolean activeItemAllowsSprinting;
+		private final float activeItemUseSpeedMultiplier;
 
 		public InventoryState(
 			List<ItemState> storage, List<ItemState> armor, @Nullable ItemState offhand,
 			int heldSlot, boolean handActive, int handActiveTicks, int pastHandActiveTicks,
 			int pastItemUsageTransition, boolean inventoryOpen, Material activeItemType,
 			boolean foodItem, boolean releaseItemNextTick, Material releaseItemType,
-			boolean activatedItemThisTick, boolean deactivatedItemThisTick
+			boolean activatedItemThisTick, boolean deactivatedItemThisTick,
+			@Nullable PlayerHand activeHand, boolean activeItemAllowsSprinting,
+			float activeItemUseSpeedMultiplier
 		) {
 			this.storage = new ArrayList<>(Objects.requireNonNull(storage, "storage"));
 			this.armor = new ArrayList<>(Objects.requireNonNull(armor, "armor"));
@@ -544,6 +574,9 @@ public final class MovementFrameState {
 			this.releaseItemType = Objects.requireNonNull(releaseItemType, "releaseItemType");
 			this.activatedItemThisTick = activatedItemThisTick;
 			this.deactivatedItemThisTick = deactivatedItemThisTick;
+			this.activeHand = activeHand;
+			this.activeItemAllowsSprinting = activeItemAllowsSprinting;
+			this.activeItemUseSpeedMultiplier = activeItemUseSpeedMultiplier;
 		}
 
 		static InventoryState capture(User user) {
@@ -557,7 +590,10 @@ public final class MovementFrameState {
 				metadata.pastHandActiveTicks, metadata.pastItemUsageTransition,
 				metadata.inventoryOpen(), metadata.activeItemType(), metadata.foodItem(),
 				metadata.releaseItemNextTick, metadata.releaseItemType,
-				metadata.activatedItemThisTick, metadata.deactivatedItemThisTick
+				metadata.activatedItemThisTick, metadata.deactivatedItemThisTick,
+				metadata.handActive() ? metadata.activeHand() : null,
+				metadata.activeItemAllowsSprinting(),
+				metadata.activeItemUseSpeedMultiplier()
 			);
 		}
 
@@ -575,7 +611,8 @@ public final class MovementFrameState {
 			return new InventoryState(
 				Collections.emptyList(), Collections.emptyList(), null,
 				0, false, 0, 100, 0, false, Material.AIR,
-				false, false, Material.AIR, false, false
+				false, false, Material.AIR, false, false,
+				null, false, 0.2F
 			);
 		}
 
@@ -587,16 +624,24 @@ public final class MovementFrameState {
 			return result;
 		}
 
-		void applyTo(PlayerInventory inventory, InventoryMetadata metadata) {
+		void applyTo(
+			PlayerInventory inventory,
+			InventoryMetadata metadata,
+			boolean restoreItemUseState
+		) {
 			inventory.setStorageContents(toItems(storage));
 			inventory.setArmorContents(toItems(armor));
 			inventory.setItemInOffHand(offhand == null ? null : offhand.toItemStack());
+			if (!restoreItemUseState) {
+				return;
+			}
 			inventory.setHeldItemSlot(heldSlot);
 			metadata.restoreRecordedState(
 				heldSlot, handActive, handActiveTicks, pastHandActiveTicks,
 				pastItemUsageTransition, inventoryOpen, activeItemType, foodItem,
 				releaseItemNextTick, releaseItemType,
-				activatedItemThisTick, deactivatedItemThisTick
+				activatedItemThisTick, deactivatedItemThisTick,
+				activeHand, activeItemAllowsSprinting, activeItemUseSpeedMultiplier
 			);
 		}
 
@@ -607,6 +652,17 @@ public final class MovementFrameState {
 				result[index] = item == null ? null : item.toItemStack();
 			}
 			return result;
+		}
+
+		public boolean selectedMainHandItemChangedFrom(InventoryState previous) {
+			Objects.requireNonNull(previous, "previous");
+			return heldSlot == previous.heldSlot
+				&& !Objects.equals(heldItem(), previous.heldItem());
+		}
+
+		public @Nullable ItemState heldItem() {
+			return heldSlot >= 0 && heldSlot < storage.size()
+				? storage.get(heldSlot) : null;
 		}
 
 		@Override
@@ -622,6 +678,11 @@ public final class MovementFrameState {
 				&& releaseItemNextTick == other.releaseItemNextTick
 				&& activatedItemThisTick == other.activatedItemThisTick
 				&& deactivatedItemThisTick == other.deactivatedItemThisTick
+				&& activeHand == other.activeHand
+				&& activeItemAllowsSprinting == other.activeItemAllowsSprinting
+				&& Float.compare(
+					activeItemUseSpeedMultiplier, other.activeItemUseSpeedMultiplier
+				) == 0
 				&& storage.equals(other.storage) && armor.equals(other.armor)
 				&& Objects.equals(offhand, other.offhand)
 				&& activeItemType == other.activeItemType && releaseItemType == other.releaseItemType;
@@ -633,7 +694,8 @@ public final class MovementFrameState {
 				storage, armor, offhand, heldSlot, handActive, handActiveTicks,
 				pastHandActiveTicks, pastItemUsageTransition, inventoryOpen, activeItemType,
 				foodItem, releaseItemNextTick, releaseItemType,
-				activatedItemThisTick, deactivatedItemThisTick
+				activatedItemThisTick, deactivatedItemThisTick,
+				activeHand, activeItemAllowsSprinting, activeItemUseSpeedMultiplier
 			);
 		}
 	}
@@ -674,10 +736,13 @@ public final class MovementFrameState {
 		}
 
 		ItemStack toItemStack() {
-			ItemStack item = new ItemStack(material, Math.max(1, amount));
+			int itemAmount = Math.max(1, amount);
 			if (Bukkit.getServer() == null) {
+				ItemStack item = new ItemStack(Material.AIR, itemAmount);
+				item.setType(material);
 				return item;
 			}
+			ItemStack item = new ItemStack(material, itemAmount);
 			if (durability != 0) {
 				item.setDurability((short) durability);
 			}
@@ -688,6 +753,10 @@ public final class MovementFrameState {
 				}
 			}
 			return item;
+		}
+
+		public Material material() {
+			return material;
 		}
 
 		private static @Nullable Enchantment enchantmentOf(String value) {

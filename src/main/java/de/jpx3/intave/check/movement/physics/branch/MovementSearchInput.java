@@ -31,8 +31,6 @@ public final class MovementSearchInput {
   private final boolean detectNoSlowdown;
   private final @Nullable TraceImmutableMovementConfiguration tracedAfterTickMovementConfig;
   private Map<UnaryOperator<SimulationEnvironment>, SimulationEnvironment> modifiedEnvironmentCache;
-  private @Nullable Boolean usableItemInEitherHandOrHotbar;
-  private @Nullable Boolean couldChargeCrossbow;
   private @Nullable List<TickAmbiguousUpdate> sortedPossibleTickAmbiguousUpdates;
   private boolean itemUseDebugUpdated;
 
@@ -49,7 +47,9 @@ public final class MovementSearchInput {
   }
 
   public static MovementSearchInput forAfterTick(User user, Simulator simulator, SimulationEnvironment environment, boolean detectNoSlowdown, TraceImmutableMovementConfiguration tracedAfterTickMovementConfig) {
-    return new MovementSearchInput(user, simulator, environment, detectNoSlowdown, tracedAfterTickMovementConfig);
+    return new MovementSearchInput(
+      user, simulator, environment, detectNoSlowdown, tracedAfterTickMovementConfig
+    );
   }
 
   User user() {
@@ -92,20 +92,6 @@ public final class MovementSearchInput {
       sortedPossibleTickAmbiguousUpdates = updates;
     }
     return sortedPossibleTickAmbiguousUpdates;
-  }
-
-  boolean usableItemInEitherHandOrHotbar() {
-    if (usableItemInEitherHandOrHotbar == null) {
-      usableItemInEitherHandOrHotbar = user.meta().inventory().usableItemInEitherHandOrHotbar();
-    }
-    return usableItemInEitherHandOrHotbar;
-  }
-
-  boolean couldChargeCrossbow() {
-    if (couldChargeCrossbow == null) {
-      couldChargeCrossbow = user.meta().inventory().couldChargeCrossbow();
-    }
-    return couldChargeCrossbow;
   }
 
   boolean shouldUpdateItemUseDebug() {

@@ -90,6 +90,9 @@ public final class MovementMetadata implements SimulationEnvironment {
   public volatile boolean gliding;
   private @Nullable Boolean simulatedFlying;
   private @Nullable Boolean simulatedFlyingDisablePending;
+  private volatile boolean legacyItemUseSlotSwitchPending;
+  private volatile boolean legacyItemUseReleaseUncertain;
+  private volatile boolean legacyItemUseForcedReleaseApplied;
   public volatile @Nullable BlockPosition sleepingBedPosition;
   public int fireworkRocketsPower = 1;
   public boolean onGround, lastOnGround, step, onGroundWithRiptide;
@@ -1519,6 +1522,36 @@ public final class MovementMetadata implements SimulationEnvironment {
   @Override
   public void setFlyingDisablePending(boolean pending) {
     simulatedFlyingDisablePending = pending;
+  }
+
+  @Override
+  public boolean legacyItemUseSlotSwitchPending() {
+    return legacyItemUseSlotSwitchPending;
+  }
+
+  @Override
+  public void setLegacyItemUseSlotSwitchPending(boolean pending) {
+    legacyItemUseSlotSwitchPending = pending;
+  }
+
+  @Override
+  public boolean legacyItemUseReleaseUncertain() {
+    return legacyItemUseReleaseUncertain;
+  }
+
+  @Override
+  public void setLegacyItemUseReleaseUncertain(boolean uncertain) {
+    legacyItemUseReleaseUncertain = uncertain;
+  }
+
+  @Override
+  public boolean legacyItemUseForcedReleaseApplied() {
+    return legacyItemUseForcedReleaseApplied;
+  }
+
+  @Override
+  public void setLegacyItemUseForcedReleaseApplied(boolean applied) {
+    legacyItemUseForcedReleaseApplied = applied;
   }
 
   @Override

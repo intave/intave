@@ -187,7 +187,9 @@ final class MovementRecordingSerializerTest {
 				List.of(new MovementFrameState.ItemState(Material.BOW, 1, 0, Map.of())),
 				Arrays.asList(null, null, elytra, null),
 				null, 0, true, 7, 0, 2, false, Material.BOW,
-				false, false, Material.AIR, true, false
+				false, false, Material.AIR, true, false,
+				PlayerHand.MAIN_HAND,
+				false, 0.2F
 			),
 			3, 2,
 			new MovementFrameState.EntityState(
@@ -382,7 +384,8 @@ final class MovementRecordingSerializerTest {
 			assertEquals(1.0D, replayAbilities.airDragModifier());
 			assertEquals(0.0D, replayAbilities.bounciness());
 			assertEquals(1.0D, replayAbilities.frictionModifier());
-			deepEqualsCheck(recording, decoded);
+			assertFalse(decoded.packetDrivenItemUse());
+			deepEqualsCheck(recording, decoded, false);
 		} finally {
 			buf.release();
 		}
@@ -460,7 +463,8 @@ final class MovementRecordingSerializerTest {
 
 			MovementRecording decoded = MovementRecording.STREAM_CODEC.decode(buf);
 
-			deepEqualsCheck(recording, decoded);
+			assertFalse(decoded.packetDrivenItemUse());
+			deepEqualsCheck(recording, decoded, false);
 		} finally {
 			buf.release();
 		}
@@ -476,6 +480,14 @@ final class MovementRecordingSerializerTest {
 	}
 
 	private static void deepEqualsCheck(MovementRecording first, MovementRecording second) {
+		deepEqualsCheck(first, second, true);
+	}
+
+	private static void deepEqualsCheck(
+		MovementRecording first,
+		MovementRecording second,
+		boolean comparePacketDrivenItemUse
+	) {
 		assertEquals(first.internalId(), second.internalId());
 		assertEquals(first.clientProtocolVersion(), second.clientProtocolVersion());
 		assertEquals(first.serverVersion(), second.serverVersion());
@@ -527,7 +539,10 @@ final class MovementRecordingSerializerTest {
 			}
 		}
 
-		assertEquals(first, second);
+		if (comparePacketDrivenItemUse) {
+			assertEquals(first.packetDrivenItemUse(), second.packetDrivenItemUse());
+			assertEquals(first, second);
+		}
 	}
 
 	@Test

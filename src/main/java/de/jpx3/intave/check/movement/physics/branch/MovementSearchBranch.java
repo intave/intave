@@ -39,6 +39,9 @@ public final class MovementSearchBranch {
 	private static final int SPRINTING = 16;
 	private static final int USE_LAST_MOVEMENT_CONFIG = 17;
 	private static final int FLYING = 18;
+	private static final int ITEM_USE_SPEED_MULTIPLIER = 19;
+	private static final int LEGACY_ITEM_USE_SLOT_SWITCH = 20;
+	private static final int LEGACY_ITEM_USE_RELEASE_RESOLUTION = 21;
 
 	private final static MovementSearchBranch BLANK = new MovementSearchBranch(
 		MovementConfiguration.blank(), UnaryOperator.identity(), false, true, INITIAL_FREQUENCY_KEY
@@ -124,6 +127,41 @@ public final class MovementSearchBranch {
 			configuration.withHandActive(handActive),
 			HAND_ACTIVE, booleanValue(handActive)
 		);
+	}
+
+	public MovementSearchBranch withHandActive(boolean handActive, float speedMultiplier) {
+		MovementSearchBranch branch = withHandActive(handActive);
+		if (!handActive) {
+			return branch;
+		}
+		return branch.modifyAfter(environment -> {
+			environment.overrideItemUseSpeedMultiplier(speedMultiplier);
+			return environment;
+		}, ITEM_USE_SPEED_MULTIPLIER, Float.floatToIntBits(speedMultiplier));
+	}
+
+	MovementSearchBranch withLegacyItemUseSlotSwitch() {
+		MovementSearchBranch branch = withHandActive(false);
+		return branch.modifyAfter(environment -> {
+			environment.setLegacyItemUseSlotSwitchPending(true);
+			return environment;
+		}, LEGACY_ITEM_USE_SLOT_SWITCH, 1);
+	}
+
+	MovementSearchBranch withLegacyItemUseSlotSwitchResolved() {
+		return modifyAfter(environment -> {
+			environment.setLegacyItemUseSlotSwitchPending(false);
+			return environment;
+		}, LEGACY_ITEM_USE_SLOT_SWITCH, 0);
+	}
+
+	MovementSearchBranch withLegacyItemUseReleaseResolved() {
+		return modifyAfter(environment -> {
+			environment.setLegacyItemUseReleaseUncertain(false);
+			environment.setLegacyItemUseForcedReleaseApplied(true);
+			environment.setLegacyItemUseSlotSwitchPending(false);
+			return environment;
+		}, LEGACY_ITEM_USE_RELEASE_RESOLUTION, 0);
 	}
 
 	public MovementSearchBranch withAlternativeBlockInsideCheck(boolean alternate) {

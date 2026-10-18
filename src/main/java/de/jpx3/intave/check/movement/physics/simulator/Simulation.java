@@ -257,13 +257,7 @@ public final class Simulation {
     } else if (!this.canFinishExplicitTick && other.canFinishExplicitTick) {
       return other.reusableCopy();
     }
-    double thisDistance = offsetDifference();
-    double otherDistance = other.offsetDifference();
-    Simulation selectedSimulation = finiteDistance(thisDistance) < finiteDistance(otherDistance) ? this : other;
-    if (selectedSimulation.mustBeCopied) {
-      selectedSimulation = selectedSimulation.reusableCopy();
-    }
-    return selectedSimulation;
+    return selectByDistance(other, offsetDifference(), other.offsetDifference());
   }
 
   public Simulation select(Simulation other, Position sentPosition) {
@@ -278,13 +272,36 @@ public final class Simulation {
     } else if (!this.canFinishExplicitTick && other.canFinishExplicitTick) {
       return other.reusableCopy();
     }
-    double thisDistance = positionDifference(sentPosition);
-    double otherDistance = other.positionDifference(sentPosition);
-    Simulation selectedSimulation = finiteDistance(thisDistance) < finiteDistance(otherDistance) ? this : other;
+    return selectByDistance(
+      other, positionDifference(sentPosition), other.positionDifference(sentPosition)
+    );
+  }
+
+  private Simulation selectByDistance(
+    Simulation other, double thisDistance, double otherDistance
+  ) {
+    double finiteThisDistance = finiteDistance(thisDistance);
+    double finiteOtherDistance = finiteDistance(otherDistance);
+    boolean thisIsUnconfirmedSlotSwitch = unconfirmedLegacyItemUseSlotSwitch();
+    boolean otherIsUnconfirmedSlotSwitch = other.unconfirmedLegacyItemUseSlotSwitch();
+
+    Simulation selectedSimulation;
+    if (thisIsUnconfirmedSlotSwitch && !otherIsUnconfirmedSlotSwitch) {
+      selectedSimulation = finiteThisDistance < finiteOtherDistance ? this : other;
+    } else if (!thisIsUnconfirmedSlotSwitch && otherIsUnconfirmedSlotSwitch) {
+      selectedSimulation = finiteOtherDistance < finiteThisDistance ? other : this;
+    } else {
+      selectedSimulation = finiteThisDistance < finiteOtherDistance ? this : other;
+    }
     if (selectedSimulation.mustBeCopied) {
       selectedSimulation = selectedSimulation.reusableCopy();
     }
     return selectedSimulation;
+  }
+
+  private boolean unconfirmedLegacyItemUseSlotSwitch() {
+    return !configuration.isHandActive()
+      && environment.legacyItemUseSlotSwitchPending();
   }
 
   private static double finiteDistance(double distance) {

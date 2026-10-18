@@ -23,6 +23,7 @@ import de.jpx3.intave.packet.reader.EntityMetadataReader;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.meta.InventoryMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.Material;
@@ -46,9 +47,12 @@ public final class MetadataTracker extends Module {
 		@Nullable BlockPosition sleepingBedPosition = sleepingBedPosition(reader);
 		@Nullable Boolean newGliding = newGlidingStatus(user, reader);
 		@Nullable Pose newPose = newPoseStatus(user, reader);
+		@Nullable Byte livingFlags = reader.livingFlags();
+		long itemUseSequence = user.meta().inventory().activeItemUseSequence();
 
 		user.packetTickFeedback(event, () -> {
 			MovementMetadata movement = user.meta().movement();
+			InventoryMetadata inventory = user.meta().inventory();
 			movement.sleepingBedPosition = sleepingBedPosition;
 			if (sleepingBedPosition != null) {
 				Material bed = VolatileBlockAccess.typeAccess(user, sleepingBedPosition);
@@ -61,6 +65,11 @@ public final class MetadataTracker extends Module {
 			}
 			if (newPose != null) {
 				movement.setPose(newPose);
+			}
+			if (livingFlags != null) {
+				inventory.applyClientItemUseFlags(
+					itemUseSequence, (livingFlags & 1) != 0
+				);
 			}
 		});
 	}

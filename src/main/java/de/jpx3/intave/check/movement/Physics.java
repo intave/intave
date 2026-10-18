@@ -205,6 +205,15 @@ public final class Physics extends Check {
       // distinguish histories, retained motions follow that selected state branch.
       movementData.setFlying(simulationEnvironment.flying());
       movementData.setFlyingDisablePending(simulationEnvironment.flyingDisablePending());
+      movementData.setLegacyItemUseSlotSwitchPending(
+        simulationEnvironment.legacyItemUseSlotSwitchPending()
+      );
+      movementData.setLegacyItemUseReleaseUncertain(
+        simulationEnvironment.legacyItemUseReleaseUncertain()
+      );
+      movementData.setLegacyItemUseForcedReleaseApplied(
+        simulationEnvironment.legacyItemUseForcedReleaseApplied()
+      );
       movementData.setSwimming(simulationEnvironment.isSwimming());
       movementData.setLastMovementConfiguration(simulation.configuration());
       List<PostTickSimulation> advancedCandidates = new ArrayList<>();
@@ -224,8 +233,8 @@ public final class Physics extends Check {
     movementData.assumeOccurred(simulation);
     Timings.CHECK_PHYSICS_EVAL.start();
     // evaluation
-    evaluateBestSimulation(user, tickSearch);
-    checkNoSlowdownState(user, tickSearch);
+    boolean physicsFlag = evaluateBestSimulation(user, tickSearch);
+    checkNoSlowdownState(user, tickSearch, physicsFlag);
     Timings.CHECK_PHYSICS_EVAL.stop();
     Timings.CHECK_PHYSICS_PROC.stop();
     if (withRotation) {
@@ -363,7 +372,7 @@ public final class Physics extends Check {
   /**
    * This method is too big, please refactor
    */
-  private void evaluateBestSimulation(User user, TickSearch tickSearch) {
+  private boolean evaluateBestSimulation(User user, TickSearch tickSearch) {
     Simulation simulation = tickSearch.simulation();
     Player player = user.player();
     MetadataBundle meta = user.meta();
@@ -1236,6 +1245,7 @@ public final class Physics extends Check {
       string += " " + formatDouble(distance1, 6);
       user.sendMessage(string);
     }
+    return physicsFlag;
   }
 
   private String evalTagsToString(Set<EvaluationTag> horizontalTags) {
@@ -1277,18 +1287,26 @@ public final class Physics extends Check {
     });
   }
 
-  private void checkNoSlowdownState(User user, TickSearch search) {
+  private void checkNoSlowdownState(User user, TickSearch search, boolean physicsFlag) {
     boolean debugItemUse = user.receives(MessageChannel.DEBUG_ITEM_USE);
-    if (!resetItemUsage && !debugItemUse) {
+    InventoryMetadata inventoryData = user.meta().inventory();
+    boolean suspiciousPacketPattern =
+      inventoryData.suspiciousNoSlowdownPacketPatternThisTick();
+    if (!resetItemUsage && !debugItemUse && !suspiciousPacketPattern) {
       return;
     }
 
     MetadataBundle meta = user.meta();
     MovementMetadata movementData = meta.movement();
-    InventoryMetadata inventoryData = meta.inventory();
 
-    boolean movementProvesHandIsInactive = search.itemUseImpossible(0.001);
     boolean packetsSuggestsHandIsActive = inventoryData.handActive();
+    boolean selectedDelayedLegacySlotSwitch = !meta.protocol().combatUpdate()
+      && !search.simulation().configuration().isHandActive()
+      && search.simulation().environment().legacyItemUseSlotSwitchPending();
+    boolean movementProvesHandIsInactive = meta.protocol().combatUpdate()
+      ? search.itemUseImpossible(0.001)
+      : !selectedDelayedLegacySlotSwitch
+        && search.requiredItemUseImpossible(0.001);
     if (packetsSuggestsHandIsActive && movementProvesHandIsInactive) {
       double horizontalSpeed = Hypot.fast(movementData.offsetMotionX(), movementData.offsetMotionZ());
       int ticksSinceTeleport = movementData.ticksPast(TELEPORT);
@@ -1296,9 +1314,16 @@ public final class Physics extends Check {
       boolean itemIsBow = ItemProperties.isBow(meta.inventory().activeItemType()) || ItemProperties.isBow(meta.inventory().offhandItemType());
       boolean viaVersionBlockReplacement = meta.protocol().viaVersionShieldBlockReplacement();
       boolean ignoredSlowdown = releaseHandConditions && (!itemIsBow || (inventoryData.handActiveTicks > 3 && !viaVersionBlockReplacement));
+      boolean noSlowdownFlag = shouldFlagNoSlowdown(
+        suspiciousPacketPattern, ignoredSlowdown, movementData.handItemSimulationFails
+      );
+      boolean requestsReset = resetItemUsage && shouldRequestItemUseReset(
+        physicsFlag || noSlowdownFlag,
+        ignoredSlowdown,
+        movementData.handItemSimulationFails
+      ) && horizontalSpeed > 0.1;
 
       if (debugItemUse && user.hasPlayer()) {
-        boolean requestsReset = resetItemUsage && ignoredSlowdown && movementData.handItemSimulationFails > 1;
         ActionBar.sendActionBar(user.player(), ChatColor.GOLD + "IU " + ChatColor.GRAY
           + "p:" + coloredPermission(inventoryData.itemUsePermissionDebug())
           + " a:" + bit(true) + " x:" + bit(true)
@@ -1307,11 +1332,17 @@ public final class Physics extends Check {
           + " b:" + bit(itemIsBow) + " t:" + inventoryData.handActiveTicks
           + " vs:" + bit(viaVersionBlockReplacement) + " rel:" + bit(releaseHandConditions)
           + " ign:" + bit(ignoredSlowdown) + " f:" + coloredCount(movementData.handItemSimulationFails)
-          + " rst:" + bit(requestsReset));
+          + " pkt:" + bit(suspiciousPacketPattern) + " ns:" + bit(noSlowdownFlag)
+          + " phy:" + bit(physicsFlag) + " rst:" + bit(requestsReset));
       }
 
-      if (resetItemUsage && ignoredSlowdown && movementData.handItemSimulationFails++ > 1) {
+      if (ignoredSlowdown) {
+        movementData.handItemSimulationFails++;
+      }
+      if (requestsReset) {
+        meta.inventory().lastFoodConsumptionBlockRequest = System.currentTimeMillis();
         meta.inventory().releaseItemNextTick();
+        user.refreshSprintState();
 
         if (debugItemUse) {
           user.sendMessage(IntavePlugin.prefix() + "Requesting item usage reset as " + ChatColor.RED + "movement/state discrepancy ");
@@ -1325,6 +1356,23 @@ public final class Physics extends Check {
         + " t:" + inventoryData.handActiveTicks
         + " f:" + coloredCount(movementData.handItemSimulationFails));
     }
+  }
+
+  private static boolean shouldRequestItemUseReset(
+    boolean physicsFlag,
+    boolean ignoredSlowdown,
+    int itemUseSimulationFailures
+  ) {
+    return physicsFlag && ignoredSlowdown && itemUseSimulationFailures > 1;
+  }
+
+  private static boolean shouldFlagNoSlowdown(
+    boolean suspiciousPacketPattern,
+    boolean ignoredSlowdown,
+    int itemUseSimulationFailures
+  ) {
+    return suspiciousPacketPattern && ignoredSlowdown
+      && itemUseSimulationFailures > 1;
   }
 
   private static String bit(boolean value) {

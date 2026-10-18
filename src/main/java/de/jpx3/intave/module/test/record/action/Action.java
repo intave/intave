@@ -29,12 +29,16 @@ public abstract class Action {
 		.subtype(ActionType.PISTON_SLIME, PistonSlimeAction.class, () -> PistonSlimeAction.STREAM_CODEC)
 		.subtype(ActionType.SHULKER_BOX, ShulkerBoxAction.class, () -> ShulkerBoxAction.STREAM_CODEC)
 		.subtype(ActionType.ATTACK_REDUCTION_V2, AttackReduction.class, () -> AttackReduction.STREAM_CODEC)
+		.subtype(ActionType.ITEM_USE_PACKET, ItemUsePacketAction.class, () -> ItemUsePacketAction.STREAM_CODEC)
+		.subtype(ActionType.ACTIVE_ITEM_REPLACEMENT, ActiveItemReplacementAction.class, () -> ActiveItemReplacementAction.STREAM_CODEC)
 		.build();
 	private static final StreamCodec<ByteBuf, ByteBuf, Action> LEGACY_CODEC = StreamCodec.dispatchBuilder(Action.class, ActionType.STREAM_CODEC)
 		.subtype(ActionType.RECEIVE_VELOCITY, ReceiveVelocity.class, () -> ReceiveVelocity.STREAM_CODEC)
 		.subtype(ActionType.PISTON_SLIME, PistonSlimeAction.class, () -> PistonSlimeAction.LEGACY_STREAM_CODEC)
 		.subtype(ActionType.SHULKER_BOX, ShulkerBoxAction.class, () -> ShulkerBoxAction.LEGACY_STREAM_CODEC)
 		.subtype(ActionType.ATTACK_REDUCTION_V2, AttackReduction.class, () -> AttackReduction.STREAM_CODEC)
+		.subtype(ActionType.ITEM_USE_PACKET, ItemUsePacketAction.class, () -> ItemUsePacketAction.STREAM_CODEC)
+		.subtype(ActionType.ACTIVE_ITEM_REPLACEMENT, ActiveItemReplacementAction.class, () -> ActiveItemReplacementAction.STREAM_CODEC)
 		.build();
 	private static final StreamCodec<ByteBuf, ByteBuf, Action> LEGACY_STREAM_CODEC =
 		withLegacyAttackReduction(LEGACY_CODEC);

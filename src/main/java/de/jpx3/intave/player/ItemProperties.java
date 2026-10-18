@@ -11,9 +11,6 @@
 
 package de.jpx3.intave.player;
 
-import com.google.common.collect.Lists;
-import de.jpx3.intave.adapter.MinecraftVersion;
-import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.module.tracker.player.AbilityTracker;
@@ -31,26 +28,21 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static de.jpx3.intave.adapter.MinecraftVersions.VER1_13_0;
-import static de.jpx3.intave.adapter.MinecraftVersions.VER1_9_0;
 import static de.jpx3.intave.player.Enchantments.tridentRiptideEnchanted;
 
 public final class ItemProperties {
+  private static final ItemUseProfile DEFAULT_USE_PROFILE = new ItemUseProfile(false, 0.2F);
   public static final Material ITEM_TRIDENT = materialByName("TRIDENT");
   public static final Material CROSSBOW = materialByName("CROSSBOW");
-  private static final Set<Material> materialUseItems = EnumSet.noneOf(Material.class);
   private static final Set<Material> materialSwordItems = EnumSet.noneOf(Material.class);
   private static final Set<Material> materialTrapdoorItems = EnumSet.noneOf(Material.class);
-  private static final Set<Material> materialPotionItems = EnumSet.noneOf(Material.class);
   private static final Set<Material> foodLevelConstraintFoodItems = EnumSet.noneOf(Material.class);
   private static final Set<Material> nonFoodLevelConstraintFoodItems = EnumSet.noneOf(Material.class);
   private static final Set<Material> arrowItems = EnumSet.noneOf(Material.class);
 
   public static void setup() {
     try {
-      MinecraftVersion serverVersion = ProtocolLibraryAdapter.serverVersion();
-      loadDefaultUseItems(serverVersion);
-      loadPotions();
+      loadDefaultUseItems();
       loadFoodItems();
       loadArrows();
     } catch (Exception exception) {
@@ -59,17 +51,20 @@ public final class ItemProperties {
   }
 
   private static void loadFoodItems() {
-    List<String> foodLevelConstraintFoodItemNames = Lists.newArrayList(
+    List<String> foodLevelConstraintFoodItemNames = Arrays.asList(
       "apple", "bread", "porkchop", "cooked_porkchop",
       "pork", "grilled_pork", "cookie", "melon", "beef", "raw_beef",
       "cooked_beef", "chicken", "cooked_chicken", "rotten_flesh",
       "spider_eye", "baked_potato", "poisonous_potato", "golden_carrot",
       "pumpkin_pie", "rabbit", "cooked_rabbit", "mutton", "cooked_mutton",
       "mushroom_soup", "raw_fish", "cooked_fish", "raw_chicken",
-      "carrot_item", "potato_item", "rabbit_stew"
+      "carrot_item", "potato_item", "rabbit_stew", "beetroot", "beetroot_soup",
+      "carrot", "cod", "cooked_cod", "cooked_salmon", "dried_kelp", "glow_berries",
+      "melon_slice", "mushroom_stew", "potato", "pufferfish", "salmon", "sweet_berries",
+      "tropical_fish"
     );
     List<String> nonFoodLevelConstraintFoodItemNames =
-      Lists.newArrayList("golden_apple", "enchanted_golden_apple");
+      Arrays.asList("golden_apple", "enchanted_golden_apple", "chorus_fruit");
     materialListConvert(foodLevelConstraintFoodItemNames, foodLevelConstraintFoodItems);
     materialListConvert(nonFoodLevelConstraintFoodItemNames, nonFoodLevelConstraintFoodItems);
   }
@@ -79,53 +74,70 @@ public final class ItemProperties {
   }
 
   private static void loadArrows() {
-    arrowItems.addAll(materialsMatching("ARROW"));
+    materialListConvert(Arrays.asList("arrow", "spectral_arrow", "tipped_arrow"), arrowItems);
   }
 
-  private static void loadDefaultUseItems(MinecraftVersion serverVersion) {
-    if (serverVersion.isAtLeast(VER1_13_0)) {
-      materialUseItems.add(materialByName("TRIDENT"));
-    }
-    if (serverVersion.isAtLeast(VER1_9_0)) {
-      materialUseItems.add(materialByName("SHIELD"));
-    }
+  private static void loadDefaultUseItems() {
     materialTrapdoorItems.addAll(materialsMatching("TRAP_DOOR"));
     materialTrapdoorItems.addAll(materialsMatching("TRAPDOOR"));
     materialSwordItems.addAll(materialsMatching("SWORD"));
-    materialUseItems.add(Material.BOW);
-    if (CROSSBOW != null) {
-      materialUseItems.add(CROSSBOW);
-    }
-  }
-
-  private static void loadPotions() {
-    materialPotionItems.add(Material.POTION);
-    Material splashPotion = materialByName("SPLASH_POTION");
-    if (splashPotion != null) {
-      materialPotionItems.add(splashPotion);
-    }
   }
 
   public static boolean canItemBeUsed(User user, @Nullable ItemStack itemStack) {
+    return itemUseProfile(user, itemStack) != null;
+  }
+
+  public static boolean startsUsingOnBlock(
+    User user, @Nullable ItemStack itemStack
+  ) {
+    return itemStack != null
+      && itemStack.getType().name().equals("BRUSH")
+      && user.meta().protocol().protocolVersion() >= ProtocolMetadata.VER_1_19_4;
+  }
+
+  @Nullable
+  public static ItemUseProfile itemUseProfile(User user, @Nullable ItemStack itemStack) {
+    if (!isUsableItem(user, itemStack)) {
+      return null;
+    }
+    if (user.meta().protocol().protocolVersion() < ProtocolMetadata.VER_1_21_11) {
+      return DEFAULT_USE_PROFILE;
+    }
+    return componentUseProfile(itemStack);
+  }
+
+  private static boolean isUsableItem(User user, @Nullable ItemStack itemStack) {
     Material type = itemStack == null ? Material.AIR : itemStack.getType();
+    int protocolVersion = user.meta().protocol().protocolVersion();
     if (/*ITEM_TRIDENT != null && */type == ITEM_TRIDENT) {
-      return tridentUsable(user, itemStack);
+      return protocolVersion >= ProtocolMetadata.VER_1_13 && tridentUsable(user, itemStack);
     }
 
-    // Bow check
     if (type == Material.BOW) {
-      boolean hasArrows = inventoryContains(user.player(), arrowItems);
-      if (!hasArrows) {
-        return false;
-      }
+      return projectileAvailable(user, false);
     }
     if (type == CROSSBOW) {
-      return crossbowLoaded(itemStack);
+      return canChargeCrossbow(user, itemStack);
     }
-    boolean useItem = materialUseItems.contains(type);
-    boolean potion = materialPotionItems.contains(type);
+    boolean useItem = isDefaultUseItem(type, protocolVersion);
+    boolean potion = drinkablePotion(itemStack);
     boolean sword = materialSwordItems.contains(type) && swordBlockable(user.player());
-    return sword || useItem || potion || foodConsumable(user, type);
+    boolean kineticWeapon = itemStack != null
+      && protocolVersion >= ProtocolMetadata.VER_1_21_11
+      && itemMetaComponent(itemStack, "hasKineticWeapon", "getKineticWeapon") != null;
+    return sword || useItem || potion || kineticWeapon || consumableItem(user, itemStack);
+  }
+
+  public static boolean canChargeCrossbow(User user, @Nullable ItemStack itemStack) {
+    if (user.meta().protocol().protocolVersion() < ProtocolMetadata.VER_1_14
+      || itemStack == null || itemStack.getType() != CROSSBOW) {
+      return false;
+    }
+    return crossbowCanStartUsing(crossbowLoaded(itemStack), projectileAvailable(user, true));
+  }
+
+  static boolean crossbowCanStartUsing(boolean charged, boolean projectileAvailable) {
+    return !charged && projectileAvailable;
   }
 
   public static boolean crossbowLoaded(ItemStack itemStack) {
@@ -136,6 +148,9 @@ public final class ItemProperties {
       return false;
     }
     ItemMeta meta = itemStack.getItemMeta();
+    if (meta == null) {
+      return false;
+    }
     Class<?> clazz = meta.getClass();
     try {
       return (boolean) clazz.getMethod("hasChargedProjectiles").invoke(meta);
@@ -149,7 +164,7 @@ public final class ItemProperties {
   }
 
   public static boolean isPotion(Material type) {
-    return materialPotionItems.contains(type);
+    return type == Material.POTION;
   }
 
   public static boolean swordBlockable(Player player) {
@@ -159,15 +174,43 @@ public final class ItemProperties {
   }
 
   public static boolean foodConsumable(User user, Material type) {
-    AbilityMetadata abilityData = user.meta().abilities();
-    boolean creative = abilityData.inGameMode(AbilityTracker.GameMode.CREATIVE);
-    if (creative) {
+    return isFood(type) && foodAllowed(user, alwaysEdible(type, user.meta().protocol().protocolVersion()));
+  }
+
+  public static boolean foodConsumable(User user, @Nullable ItemStack itemStack) {
+    if (itemStack == null) {
       return false;
     }
-    if (foodLevelConstraintFoodItems.contains(type)) {
-      return user.player().getFoodLevel() < 20;
+    if (!hasItemMeta(itemStack)) {
+      return foodConsumable(user, itemStack.getType());
     }
-    return nonFoodLevelConstraintFoodItems.contains(type);
+    int protocolVersion = user.meta().protocol().protocolVersion();
+    Object foodComponent = protocolVersion >= ProtocolMetadata.VER_1_20_5
+      ? itemMetaComponent(itemStack, "hasFood", "getFood") : null;
+    if (foodComponent != null) {
+      return componentUsePossible(user, itemStack, foodComponent);
+    }
+    return foodConsumable(user, itemStack.getType());
+  }
+
+  private static boolean foodAllowed(User user, boolean alwaysEdible) {
+    AbilityMetadata abilityData = user.meta().abilities();
+    boolean creative = abilityData.inGameMode(AbilityTracker.GameMode.CREATIVE);
+    int protocolVersion = user.meta().protocol().protocolVersion();
+    if (creative && protocolVersion < ProtocolMetadata.VER_1_15) {
+      return false;
+    }
+    if (alwaysEdible || creative) {
+      return true;
+    }
+    Player player = user.player();
+    return player != null && player.getFoodLevel() < 20;
+  }
+
+  static boolean alwaysEdible(Material type, int protocolVersion) {
+    return nonFoodLevelConstraintFoodItems.contains(type)
+      || type != null && type.name().equals("SUSPICIOUS_STEW")
+      && protocolVersion >= ProtocolMetadata.VER_1_17;
   }
 
   public static boolean isSwordItem(@Nullable ItemStack itemStack) {
@@ -209,6 +252,9 @@ public final class ItemProperties {
   }
 
   private static boolean inventoryContains(Player player, Collection<Material> items) {
+    if (player == null) {
+      return false;
+    }
     PlayerInventory inventory = player.getInventory();
     for (ItemStack content : inventory.getContents()) {
       if (content != null && items.contains(content.getType())) {
@@ -218,13 +264,251 @@ public final class ItemProperties {
     return false;
   }
 
-  private static boolean inventoryContains(Player player, Material item) {
-    PlayerInventory inventory = player.getInventory();
-    for (ItemStack content : inventory.getContents()) {
-      if (content != null && content.getType() == item) {
+  private static boolean projectileAvailable(User user, boolean crossbow) {
+    if (user.meta().abilities().inGameMode(AbilityTracker.GameMode.CREATIVE)) {
+      return true;
+    }
+    Player player = user.player();
+    if (player == null) {
+      return false;
+    }
+    if (crossbow) {
+      PlayerInventory inventory = player.getInventory();
+      if (crossbowHeldProjectile(inventory.getItemInMainHand())
+        || crossbowHeldProjectile(inventory.getItemInOffHand())) {
         return true;
       }
     }
-    return false;
+    return inventoryContains(player, arrowItems);
+  }
+
+  private static boolean crossbowHeldProjectile(@Nullable ItemStack itemStack) {
+    return itemStack != null && crossbowProjectile(itemStack.getType(), true);
+  }
+
+  static boolean crossbowProjectile(Material type, boolean held) {
+    return type != null && (arrowItems.contains(type)
+      || held && type.name().equals("FIREWORK_ROCKET"));
+  }
+
+  static boolean isDefaultUseItem(Material type, int protocolVersion) {
+    if (type == null) {
+      return false;
+    }
+    String name = type.name();
+    if (name.equals("BUNDLE") || name.endsWith("_BUNDLE")) {
+      return protocolVersion >= ProtocolMetadata.VER_1_21_2;
+    }
+    switch (name) {
+      case "MILK_BUCKET":
+        return protocolVersion >= ProtocolMetadata.VER_1_8;
+      case "SHIELD":
+        return protocolVersion >= ProtocolMetadata.VER_1_9;
+      case "HONEY_BOTTLE":
+        return protocolVersion >= ProtocolMetadata.VER_1_15;
+      case "SPYGLASS":
+        return protocolVersion >= ProtocolMetadata.VER_1_17;
+      case "GOAT_HORN":
+        return protocolVersion >= ProtocolMetadata.VER_1_19;
+      case "BRUSH":
+        return protocolVersion >= ProtocolMetadata.VER_1_19_4;
+      case "OMINOUS_BOTTLE":
+        return protocolVersion >= ProtocolMetadata.VER_1_21;
+      default:
+        return name.endsWith("_SPEAR")
+          && protocolVersion >= ProtocolMetadata.VER_1_21_11;
+    }
+  }
+
+  static boolean isFood(Material type) {
+    return type != null && (foodLevelConstraintFoodItems.contains(type)
+      || nonFoodLevelConstraintFoodItems.contains(type));
+  }
+
+  static boolean drinkablePotion(@Nullable ItemStack itemStack) {
+    if (itemStack == null || itemStack.getType() != Material.POTION) {
+      return false;
+    }
+    return drinkablePotion(itemStack.getType(), itemStack.getDurability());
+  }
+
+  static boolean drinkablePotion(Material type, int durability) {
+    return type == Material.POTION && (durability & 0x4000) == 0;
+  }
+
+  private static boolean consumableItem(User user, @Nullable ItemStack itemStack) {
+    if (itemStack == null) {
+      return false;
+    }
+    if (!hasItemMeta(itemStack)) {
+      return foodConsumable(user, itemStack.getType());
+    }
+    int protocolVersion = user.meta().protocol().protocolVersion();
+    Object foodComponent = protocolVersion >= ProtocolMetadata.VER_1_20_5
+      ? itemMetaComponent(itemStack, "hasFood", "getFood") : null;
+    if (foodComponent != null) {
+      return componentUsePossible(user, itemStack, foodComponent);
+    }
+    return foodConsumable(user, itemStack.getType())
+      || protocolVersion >= ProtocolMetadata.VER_1_21_2
+      && componentUsePossible(user, itemStack, null);
+  }
+
+  private static boolean componentUsePossible(
+    User user, ItemStack itemStack, @Nullable Object foodComponent
+  ) {
+    int protocolVersion = user.meta().protocol().protocolVersion();
+    if (protocolVersion < ProtocolMetadata.VER_1_20_5) {
+      return false;
+    }
+    Number useSeconds;
+    if (protocolVersion < ProtocolMetadata.VER_1_21_2) {
+      useSeconds = componentValue(
+        foodComponent,
+        "org.bukkit.inventory.meta.components.FoodComponent",
+        "getEatSeconds",
+        Number.class
+      );
+      if (useSeconds == null) {
+        useSeconds = consumableDuration(itemStack);
+      }
+    } else {
+      useSeconds = consumableDuration(itemStack);
+      if (useSeconds == null && foodComponent != null) {
+        useSeconds = componentValue(
+          foodComponent,
+          "org.bukkit.inventory.meta.components.FoodComponent",
+          "getEatSeconds",
+          Number.class
+        );
+      }
+    }
+    if (useSeconds == null || useSeconds.floatValue() <= 0.0F) {
+      return false;
+    }
+    if (foodComponent == null) {
+      return true;
+    }
+    Boolean alwaysEdible = componentValue(
+      foodComponent,
+      "org.bukkit.inventory.meta.components.FoodComponent",
+      "canAlwaysEat",
+      Boolean.class
+    );
+    return alwaysEdible != null && foodAllowed(user, alwaysEdible);
+  }
+
+  @Nullable
+  private static Number consumableDuration(ItemStack itemStack) {
+    Object consumable = itemMetaComponent(itemStack, "hasConsumable", "getConsumable");
+    return componentValue(
+      consumable,
+      "org.bukkit.inventory.meta.components.consumable.ConsumableComponent",
+      "getConsumeSeconds",
+      Number.class
+    );
+  }
+
+  private static ItemUseProfile componentUseProfile(@Nullable ItemStack itemStack) {
+    if (itemStack == null) {
+      return DEFAULT_USE_PROFILE;
+    }
+    Object useEffects = itemMetaComponent(itemStack, "hasUseEffects", "getUseEffects");
+    if (useEffects == null) {
+      return DEFAULT_USE_PROFILE;
+    }
+    Boolean canSprint = componentValue(
+      useEffects,
+      "org.bukkit.inventory.meta.components.UseEffectsComponent",
+      "canSprint",
+      Boolean.class
+    );
+    Number speedMultiplier = componentValue(
+      useEffects,
+      "org.bukkit.inventory.meta.components.UseEffectsComponent",
+      "getSpeedMultiplier",
+      Number.class
+    );
+    if (canSprint == null || speedMultiplier == null) {
+      return DEFAULT_USE_PROFILE;
+    }
+    float multiplier = speedMultiplier.floatValue();
+    if (!Float.isFinite(multiplier) || multiplier < 0.0F || multiplier > 1.0F) {
+      return DEFAULT_USE_PROFILE;
+    }
+    return new ItemUseProfile(canSprint, multiplier);
+  }
+
+  @Nullable
+  private static Object itemMetaComponent(ItemStack itemStack, String hasMethod, String getMethod) {
+    try {
+      ItemMeta meta = itemStack.getItemMeta();
+      if (meta == null || !(boolean) ItemMeta.class.getMethod(hasMethod).invoke(meta)) {
+        return null;
+      }
+      return ItemMeta.class.getMethod(getMethod).invoke(meta);
+    } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
+      return null;
+    }
+  }
+
+  private static boolean hasItemMeta(ItemStack itemStack) {
+    try {
+      return itemStack.hasItemMeta();
+    } catch (RuntimeException | LinkageError ignored) {
+      return false;
+    }
+  }
+
+  @Nullable
+  private static <T> T componentValue(
+    @Nullable Object component, String componentType, String methodName, Class<T> returnType
+  ) {
+    if (component == null) {
+      return null;
+    }
+    try {
+      Class<?> type = Class.forName(componentType);
+      Object value = type.getMethod(methodName).invoke(component);
+      return returnType.isInstance(value) ? returnType.cast(value) : null;
+    } catch (ReflectiveOperationException | LinkageError ignored) {
+      return null;
+    }
+  }
+
+  public static final class ItemUseProfile {
+    private final boolean canSprint;
+    private final float speedMultiplier;
+
+    private ItemUseProfile(boolean canSprint, float speedMultiplier) {
+      this.canSprint = canSprint;
+      this.speedMultiplier = speedMultiplier;
+    }
+
+    public boolean canSprint() {
+      return canSprint;
+    }
+
+    public float speedMultiplier() {
+      return speedMultiplier;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      if (this == object) {
+        return true;
+      }
+      if (!(object instanceof ItemUseProfile)) {
+        return false;
+      }
+      ItemUseProfile that = (ItemUseProfile) object;
+      return canSprint == that.canSprint
+        && Float.compare(speedMultiplier, that.speedMultiplier) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(canSprint, speedMultiplier);
+    }
   }
 }

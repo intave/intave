@@ -16,15 +16,19 @@ import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.module.test.record.TickRange;
 import de.jpx3.intave.module.test.record.action.Action;
+import de.jpx3.intave.module.test.record.action.ActiveItemReplacementAction;
 import de.jpx3.intave.module.test.record.action.AttackReduction;
+import de.jpx3.intave.module.test.record.action.ItemUsePacketAction;
 import de.jpx3.intave.module.test.record.action.PistonSlimeAction;
 import de.jpx3.intave.module.test.record.action.ReceiveVelocity;
 import de.jpx3.intave.module.test.record.action.ShulkerBoxAction;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.Motion;
+import de.jpx3.intave.share.PlayerHand;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.bukkit.Material;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -102,7 +106,40 @@ class ActionCodecTest {
 		TickRange.STREAM_CODEC.encode(buffer, action.tickRange());
 	}
 
+	@Test
+	void preservesItemUsePacketActions() {
+		ItemUsePacketAction[] actions = {
+			ItemUsePacketAction.useItem(PlayerHand.MAIN_HAND, 4),
+			ItemUsePacketAction.useItem(PlayerHand.OFF_HAND, 5),
+			ItemUsePacketAction.releaseUseItem(6),
+			ItemUsePacketAction.heldItemSlot(7, 7)
+		};
+		for (ItemUsePacketAction action : actions) {
+			ByteBuf buffer = Unpooled.buffer();
+			try {
+				Action.STREAM_CODEC.encode(buffer, action);
+				assertEquals(action, Action.STREAM_CODEC.decode(buffer));
+				assertEquals(0, buffer.readableBytes());
+			} finally {
+				buffer.release();
+			}
+		}
+	}
 
+	@Test
+	void preservesActiveItemReplacementActions() {
+		ActiveItemReplacementAction action = ActiveItemReplacementAction.at(
+			Material.WOODEN_SWORD, 8
+		);
+		ByteBuf buffer = Unpooled.buffer();
+		try {
+			Action.STREAM_CODEC.encode(buffer, action);
+			assertEquals(action, Action.STREAM_CODEC.decode(buffer));
+			assertEquals(0, buffer.readableBytes());
+		} finally {
+			buffer.release();
+		}
+	}
 
 	@Test
 	void readsLegacyAttackPayloadWithoutConsumingTheNextAction() {

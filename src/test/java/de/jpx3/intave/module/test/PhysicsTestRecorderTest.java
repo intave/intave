@@ -18,11 +18,13 @@ import de.jpx3.intave.module.test.record.MovementFrameState;
 import de.jpx3.intave.module.test.record.MovementRecording;
 import de.jpx3.intave.module.test.record.TickRange;
 import de.jpx3.intave.module.test.record.action.AttackReduction;
+import de.jpx3.intave.module.test.record.action.ActiveItemReplacementAction;
 import de.jpx3.intave.module.test.record.action.ReceiveVelocity;
 import de.jpx3.intave.resource.Resources;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.User;
 import org.bukkit.entity.Player;
+import org.bukkit.Material;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -54,9 +56,28 @@ final class PhysicsTestRecorderTest {
 		// No packet or movement state may be accessed while recording is disabled.
 		recorder.on(user, null);
 		recorder.recordAttackReduction(user, true, true);
+		recorder.recordActiveItemReplacement(user, Material.WOODEN_SWORD);
 		assertNull(recorder.beginVelocity(user, new Motion(1, 2, 3)));
 		recorder.completeVelocity(null);
 		assertNull(recorder.recordingSessionOf(user));
+	}
+
+	@Test
+	void recordsAcknowledgedActiveItemReplacementAtTheCurrentTick() {
+		PhysicsTestRecorder recorder = new PhysicsTestRecorder();
+		User user = user();
+		recorder.setRecordingStatus(user, true);
+		MovementRecording recording = recorder.recordingSessionOf(user);
+		assertNotNull(recording);
+		insert(recording, 0);
+
+		recorder.recordActiveItemReplacement(user, Material.WOODEN_SWORD);
+
+		ActiveItemReplacementAction replacement = assertInstanceOf(
+			ActiveItemReplacementAction.class, recording.actions().getFirst()
+		);
+		assertEquals(Material.WOODEN_SWORD, replacement.replacementType());
+		assertEquals(TickRange.betweenExclusive(1, 2), replacement.tickRange());
 	}
 
 	@Test
@@ -106,6 +127,7 @@ final class PhysicsTestRecorderTest {
 		assertEquals(new Position(1, 64, 0), saved.frames().get(1).moveTo());
 		assertEquals(47, saved.clientProtocolVersion());
 		assertEquals(MinecraftVersions.VER1_21_4, saved.serverVersion());
+		assertTrue(saved.packetDrivenItemUse());
 		assertEquals(2, saved.actions().size());
 		AttackReduction attack = assertInstanceOf(AttackReduction.class, saved.actions().get(0));
 		assertEquals(TickRange.betweenExclusive(1, 2), attack.tickRange());
