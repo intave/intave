@@ -15,6 +15,7 @@ import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.MovingObjectPositionBlock;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.packet.plib.converter.PlayerHandConverter;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.PlayerHand;
@@ -31,8 +32,7 @@ public final class BlockInteractionReader extends BlockPositionReader {
     if (!SEPARATE_USE_ITEM_PACKET) {
       return PlayerHand.MAIN_HAND;
     }
-    EnumWrappers.Hand hand = packet().getHands().readSafely(0);
-    return hand == null ? null : PlayerHand.valueOf(hand.name());
+    return PlayerHandConverter.fromProtocolLib(packet().getHands().readSafely(0));
   }
 
   public boolean isItemUseRequest() {

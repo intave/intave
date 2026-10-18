@@ -27,6 +27,7 @@ import com.comphenix.protocol.wrappers.Pair;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.packet.plib.converter.PlayerHandConverter;
 import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.block.cache.BlockCaches;
@@ -76,24 +77,24 @@ public final class ReaderTests extends IntegrationTests {
 
   @Test(testCode = "recorded-packet-actions", severity = Severity.ERROR)
   public void testRecordedPacketActions() {
-    for (EnumWrappers.Hand hand : EnumWrappers.Hand.values()) {
-      if (MinecraftVersions.VER1_9_0.below() && hand == EnumWrappers.Hand.OFF_HAND) continue;
+    for (PlayerHand hand : PlayerHand.values()) {
+      if (MinecraftVersions.VER1_9_0.below() && hand == PlayerHand.OFF_HAND) continue;
       // 26.3 removed the serverbound swing packet; the other action packets still exist.
       if (MinecraftVersions.VER26_3.below()) {
         PacketContainer swing = new PacketContainer(PacketType.Play.Client.ARM_ANIMATION);
-        if (MinecraftVersions.VER1_9_0.atOrAbove()) swing.getHands().write(0, hand);
+        if (MinecraftVersions.VER1_9_0.atOrAbove()) swing.getHands().write(0, PlayerHandConverter.toProtocolLib(hand));
         try (ArmAnimationReader reader = PacketReaders.readerOf(swing)) {
-          assertEquals(PlayerHand.valueOf(hand.name()), reader.hand());
+          assertEquals(hand, reader.hand());
         }
       }
       PacketContainer use = new PacketContainer(PacketType.Play.Client.BLOCK_PLACE);
       if (MinecraftVersions.VER1_9_0.atOrAbove()) {
-        use.getHands().write(0, hand);
+        use.getHands().write(0, PlayerHandConverter.toProtocolLib(hand));
       } else {
         use.getIntegers().write(0, 255);
       }
       try (BlockInteractionReader reader = PacketReaders.readerOf(use)) {
-        assertEquals(PlayerHand.valueOf(hand.name()), reader.hand());
+        assertEquals(hand, reader.hand());
         assertTrue(reader.isItemUseRequest());
       }
       if (MinecraftVersions.VER1_9_0.below()) {
@@ -134,18 +135,18 @@ public final class ReaderTests extends IntegrationTests {
     for (EnumWrappers.EntityUseAction action : Arrays.asList(
       EnumWrappers.EntityUseAction.INTERACT, EnumWrappers.EntityUseAction.INTERACT_AT
     )) {
-      for (EnumWrappers.Hand hand : EnumWrappers.Hand.values()) {
-        if (MinecraftVersions.VER1_9_0.below() && hand == EnumWrappers.Hand.OFF_HAND) continue;
+      for (PlayerHand hand : PlayerHand.values()) {
+        if (MinecraftVersions.VER1_9_0.below() && hand == PlayerHand.OFF_HAND) continue;
 
         PacketContainer packet = new PacketContainer(PacketType.Play.Client.USE_ENTITY);
         packet.getEntityUseActions().write(0, action);
         if (MinecraftVersions.VER1_9_0.atOrAbove()) {
-          packet.getHands().write(0, hand);
+          packet.getHands().write(0, PlayerHandConverter.toProtocolLib(hand));
         }
         packet.getVectors().write(0, action == EnumWrappers.EntityUseAction.INTERACT_AT ? hitPosition : null);
         try (EntityUseReader reader = PacketReaders.readerOf(packet)) {
           assertEquals(EntityUseAction.valueOf(action.name()), reader.useAction());
-          assertEquals(PlayerHand.valueOf(hand.name()), reader.hand());
+          assertEquals(hand, reader.hand());
           if (action == EnumWrappers.EntityUseAction.INTERACT_AT) {
             assertEquals(hitPosition, reader.hitPosition().convertToBukkitVec());
           } else {

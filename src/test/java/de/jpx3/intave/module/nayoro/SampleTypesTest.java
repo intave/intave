@@ -18,6 +18,7 @@ import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.BlockState;
 import de.jpx3.intave.share.BoundingBox;
+import de.jpx3.intave.share.PlayerHand;
 import de.jpx3.intave.share.Position;
 import org.bukkit.Material;
 import org.bukkit.util.Vector;
@@ -42,6 +43,13 @@ import static de.jpx3.intave.share.ClientMath.floor;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class SampleTypesTest {
+  @Test
+  void convertsInternalHandsAtTheSamplesBoundary() {
+    assertEquals(ac.intave.samples.share.Hand.MAIN_HAND, SampleTypes.hand(PlayerHand.MAIN_HAND));
+    assertEquals(ac.intave.samples.share.Hand.OFF_HAND, SampleTypes.hand(PlayerHand.OFF_HAND));
+    assertNull(SampleTypes.hand(null));
+  }
+
   @Test
   void blockIncludesNamePropertiesAndNormalizedCollisionShape() throws Exception {
     BlockState state = blockState("north");

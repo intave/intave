@@ -14,6 +14,7 @@ package de.jpx3.intave.packet.reader;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedEnumEntityUseAction;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.packet.plib.converter.PlayerHandConverter;
 import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.share.EntityUseAction;
 import de.jpx3.intave.share.PlayerHand;
@@ -34,16 +35,13 @@ public final class EntityUseReader extends EntityReader {
     if (MinecraftVersions.VER1_9_0.below()) {
       return PlayerHand.MAIN_HAND;
     }
-    EnumWrappers.Hand hand;
     if (MinecraftVersions.VER26_1_1.atOrAbove()) {
-      hand = packet().getHands().readSafely(0);
-    } else {
-      WrappedEnumEntityUseAction wrappedAction = wrappedAction();
-      hand = wrappedAction == null
-        ? packet().getHands().readSafely(0)
-        : wrappedAction.getHand();
+      return PlayerHandConverter.fromProtocolLib(packet().getHands().readSafely(0));
     }
-    return hand == null ? null : PlayerHand.valueOf(hand.name());
+    WrappedEnumEntityUseAction wrappedAction = wrappedAction();
+    return PlayerHandConverter.fromProtocolLib(wrappedAction == null
+      ? packet().getHands().readSafely(0)
+      : wrappedAction.getHand());
   }
 
   public RawVector3d hitPosition() {
