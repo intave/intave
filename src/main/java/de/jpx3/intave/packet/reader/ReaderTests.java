@@ -19,8 +19,10 @@ import de.jpx3.intave.share.ScoreboardTeamAction;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.events.InternalStructure;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.Pair;
@@ -40,6 +42,7 @@ import de.jpx3.intave.module.dispatch.AttackDispatcher;
 import de.jpx3.intave.module.feedback.EmptyFeedbackCallback;
 import de.jpx3.intave.module.linker.packet.ForwardingPacketAdapter;
 import de.jpx3.intave.module.tracker.entity.Entity;
+import de.jpx3.intave.module.tracker.entity.EntityCollisionDisabler;
 import de.jpx3.intave.share.Relative;
 import de.jpx3.intave.packet.plib.converter.PosMoveRotConverter;
 import de.jpx3.intave.packet.plib.converter.PositionAndRotationConverter;
@@ -254,10 +257,13 @@ public final class ReaderTests extends IntegrationTests {
     }
     Object nativeTeam = scoreboardHandle(team);
     Class<?> teamType = PacketType.Play.Server.SCOREBOARD_TEAM.getPacketClass();
-    for (int action : new int[]{0, 1, 2}) {
+    for (int action : new int[]{0, 1, 2, 3, 4}) {
       Object handle = null;
       if (MinecraftVersions.VER1_17_0.below()) {
-        handle = teamType.getConstructor(nativeTeam.getClass(), int.class).newInstance(nativeTeam, action);
+        handle = action <= 2
+          ? teamType.getConstructor(nativeTeam.getClass(), int.class).newInstance(nativeTeam, action)
+          : teamType.getConstructor(nativeTeam.getClass(), Collection.class, int.class)
+            .newInstance(nativeTeam, Collections.singletonList("Entry"), action);
       } else {
         for (java.lang.reflect.Method method : teamType.getDeclaredMethods()) {
           Class<?>[] parameters = method.getParameterTypes();
@@ -265,22 +271,25 @@ public final class ReaderTests extends IntegrationTests {
             || parameters.length == 0 || !parameters[0].isInstance(nativeTeam)) continue;
           if (action == 1 && parameters.length == 1) {
             handle = method.invoke(null, nativeTeam);
-          } else if (action != 1 && parameters.length == 2 && parameters[1] == boolean.class) {
+          } else if ((action == 0 || action == 2) && parameters.length == 2 && parameters[1] == boolean.class) {
             handle = method.invoke(null, nativeTeam, action == 0);
+          } else if (action >= 3 && parameters.length == 3 && parameters[1] == String.class && parameters[2].isEnum()) {
+            handle = method.invoke(null, nativeTeam, "Entry", parameters[2].getEnumConstants()[action - 3]);
           }
         }
       }
       assertTrue(handle != null);
       try (ScoreboardReader reader = PacketReaders.readerOf(new PacketContainer(PacketType.Play.Server.SCOREBOARD_TEAM, handle))) {
+        assertTeamCollisionUpdate(reader, action);
         ScoreboardReader.Team decoded = reader.team();
         assertEquals("readers", decoded.name);
         assertEquals(ScoreboardTeamAction.byId(action), decoded.action);
-        if (action != 1) {
+        if (action == 0 || action == 2) {
           assertEquals("pre ", plainScoreboardText(decoded.prefix));
           assertEquals(" post", plainScoreboardText(decoded.suffix));
           assertEquals(MinecraftVersions.VER1_13_0.atOrAbove() ? "red" : "reset", decoded.color);
         }
-        if (action == 0) assertEquals(Collections.singletonList("Entry"), decoded.entries);
+        if (action == 0 || action >= 3) assertEquals(Collections.singletonList("Entry"), decoded.entries);
       }
     }
 
@@ -329,6 +338,36 @@ public final class ReaderTests extends IntegrationTests {
         assertTrue(reader.score().remove);
       }
     }
+  }
+
+  private void assertTeamCollisionUpdate(ScoreboardReader reader, int action) {
+    StructureModifier<Object> fields = reader.packet().getModifier();
+    List<Object> packetBefore = new ArrayList<>(fields.getValues());
+    if (MinecraftVersions.VER1_17_0.atOrAbove()) {
+      Optional<InternalStructure> parameters = reader.packet().getOptionalStructures().read(0);
+      if (parameters.isPresent()) fields = parameters.get().getModifier();
+    }
+    List<Object> before = new ArrayList<>(fields.getValues());
+    new EntityCollisionDisabler().receiveScoreboardUpdate(reader);
+    List<Object> after = fields.getValues();
+    int changed = 0;
+    for (int i = 0; i < before.size(); i++) {
+      if (!Objects.equals(before.get(i), after.get(i))) {
+        changed++;
+        // Check the only mutation, independently of the reader's field indexes.
+        Object rule = after.get(i);
+        assertEquals("never", rule instanceof Enum ? ((Enum<?>) rule).name().toLowerCase(Locale.ROOT) : rule);
+        Object previous = before.get(i);
+        assertEquals("always", previous instanceof Enum ? ((Enum<?>) previous).name().toLowerCase(Locale.ROOT) : previous);
+      }
+    }
+    assertEquals(MinecraftVersions.VER1_9_0.atOrAbove() && (action == 0 || action == 2) ? 1 : 0, changed);
+    if (MinecraftVersions.VER1_17_0.atOrAbove()) {
+      assertEquals(packetBefore, reader.packet().getModifier().getValues());
+    }
+    // Repeated updates must be harmless.
+    new EntityCollisionDisabler().receiveScoreboardUpdate(reader);
+    assertEquals(after, fields.getValues());
   }
 
   private static PacketContainer nativeScorePacket(String displayName) throws ReflectiveOperationException {

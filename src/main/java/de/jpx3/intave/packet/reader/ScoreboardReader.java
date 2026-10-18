@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.reader;
 
 import com.comphenix.protocol.events.InternalStructure;
 import com.comphenix.protocol.reflect.StructureModifier;
+import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import de.jpx3.intave.adapter.MinecraftVersions;
@@ -31,6 +32,38 @@ import java.util.Optional;
 
 /** Decodes the scoreboard packets which mutate the client's local scoreboard. */
 public final class ScoreboardReader extends AbstractPacketReader {
+  public void disableTeamCollisions() {
+    if (MinecraftVersions.VER1_9_0.below()) {
+      return;
+    }
+    int action = teamAction();
+    if (action != 0 && action != 2) {
+      return;
+    }
+    if (MinecraftVersions.VER1_17_0.atOrAbove()) {
+      Optional<InternalStructure> optional = packet().getOptionalStructures().readSafely(0);
+      if (optional == null || !optional.isPresent()) {
+        return;
+      }
+      InternalStructure parameters = optional.get();
+      if (MinecraftVersions.VER1_21_5.atOrAbove()) {
+        // 1.21.5 replaced the serialized rule names with native enums.
+        Class<?> nativeRule = MinecraftReflection.getMinecraftClass(
+          "world.scores.Team$CollisionRule", "world.scores.ScoreboardTeamBase$EnumTeamPush"
+        );
+        parameters.getEnumModifier(CollisionRule.class, nativeRule).write(0, CollisionRule.NEVER);
+      } else {
+        parameters.getStrings().write(1, "never");
+      }
+    } else {
+      packet().getStrings().write(MinecraftVersions.VER1_13_0.atOrAbove() ? 2 : 5, "never");
+    }
+  }
+
+  private enum CollisionRule {
+    ALWAYS, NEVER, PUSH_OTHER_TEAMS, PUSH_OWN_TEAM
+  }
+
   public Kind kind() {
     return Kind.valueOf(packet().getType().name());
   }
