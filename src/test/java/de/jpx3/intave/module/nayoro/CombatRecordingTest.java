@@ -110,6 +110,7 @@ final class CombatRecordingTest {
         case "version" -> 769;
         case "position" -> new Position(0, 64, 0);
         case "rotation" -> new Rotation(0, 0);
+        case "flying" -> false;
         case "applyIfUserPresent" -> null;
         default -> throw new UnsupportedOperationException(method.getName());
       }
