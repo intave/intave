@@ -36,6 +36,7 @@ final class RecordEventSink extends EventSink {
   private final OutputStream output;
   private JsonWriter writer;
   private final Set<Integer> entities = new HashSet<>();
+  private final Map<String, Boolean> recordedProperties = new HashMap<>();
   private final NearbyBlockTracker nearbyBlocks = new NearbyBlockTracker();
   private boolean setup = false;
   // Guarded by writeLock so an in-flight event either finishes before close or observes closure.
@@ -152,12 +153,27 @@ final class RecordEventSink extends EventSink {
         return;
       }
       long now = System.currentTimeMillis();
-      event.withOffset(Math.max(0, now - lastEventAt));
-      lastEventAt = now;
-      writer.visitAny(event);
+      if (event instanceof PropertiesEvent) {
+        recordedProperties.putAll(((PropertiesEvent) event).properties());
+      } else if (!(event instanceof PlayerInitEvent) && environment != null) {
+        Map<String, Boolean> properties = environment.properties();
+        if (!properties.equals(recordedProperties)) {
+          // The state must precede the first sample event to which it applies.
+          writeEvent(new PropertiesEvent(properties), now);
+          recordedProperties.clear();
+          recordedProperties.putAll(properties);
+        }
+      }
+      writeEvent(event, now);
     } finally {
       writeLock.unlock();
     }
+  }
+
+  private void writeEvent(Event event, long now) {
+    event.withOffset(Math.max(0, now - lastEventAt));
+    lastEventAt = now;
+    writer.visitAny(event);
   }
 
   @Override

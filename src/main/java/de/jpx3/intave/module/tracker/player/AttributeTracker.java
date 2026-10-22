@@ -12,6 +12,7 @@ import de.jpx3.intave.player.attribute.AttributeModifier;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.AbilityMetadata;
+import de.jpx3.intave.user.meta.CombatMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.entity.Player;
 
@@ -20,8 +21,39 @@ import java.util.List;
 import java.util.Set;
 
 import static de.jpx3.intave.module.linker.packet.PacketId.Server.UPDATE_ATTRIBUTES;
+import static de.jpx3.intave.module.linker.packet.PacketId.Server.RESPAWN;
 
 public final class AttributeTracker extends Module {
+  @PacketSubscription(
+    priority = ListenerPriority.MONITOR,
+    packetsOut = UPDATE_ATTRIBUTES,
+    ignoreCancelled = false
+  )
+  public void sentCombatAttributes(User user, PacketEvent event) {
+    if (event.isCancelled() || event.getPacket().getIntegers().read(0) != user.player().getEntityId()) {
+      return;
+    }
+    for (WrappedAttribute attribute : event.getPacket().getAttributeCollectionModifier().read(0)) {
+      if (CombatMetadata.isAttackSpeed(attribute.getAttributeKey())) {
+        // Copy before deferring: ProtocolLib wrappers retain the mutable packet handle.
+        Attribute snapshot = Attribute.fromProtocolLib(attribute);
+        user.tickFeedback(() -> user.meta().combat().receiveAttribute(snapshot));
+      }
+    }
+  }
+
+  @PacketSubscription(
+    priority = ListenerPriority.MONITOR,
+    packetsOut = RESPAWN,
+    ignoreCancelled = false
+  )
+  public void resetCombatAttributes(User user, PacketEvent event) {
+    if (!event.isCancelled()) {
+      // Do not carry a previous world's or player entity's combat rules into a new one.
+      user.tickFeedback(() -> user.meta().combat().reset());
+    }
+  }
+
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsOut = {

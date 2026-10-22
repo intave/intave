@@ -11,12 +11,14 @@
 
 package de.jpx3.intave.user.meta;
 
+import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.user.User;
 import org.bukkit.entity.Player;
 
 public final class MetadataBundle {
   private final AbilityMetadata ability;
   private final AttackMetadata attack;
+  private final CombatMetadata combat;
   private final ConnectionMetadata connection;
   private final EffectMetadata effect;
   private final InventoryMetadata inventory;
@@ -28,6 +30,7 @@ public final class MetadataBundle {
   public MetadataBundle(Player player, User user) {
     this.ability = new AbilityMetadata(player);
     this.attack = new AttackMetadata(player);
+    this.combat = new CombatMetadata(MinecraftVersions.VER1_9_0.atOrAbove());
     this.connection = new ConnectionMetadata(player);
     this.effect = new EffectMetadata(player);
     this.inventory = new InventoryMetadata(player, user);
@@ -43,6 +46,10 @@ public final class MetadataBundle {
 
   public AttackMetadata attack() {
     return attack;
+  }
+
+  public CombatMetadata combat() {
+    return combat;
   }
 
   public ConnectionMetadata connection() {
