@@ -45,7 +45,8 @@ public final class PacketIdRegistry {
 		if (states == null) {
 			throw new IllegalArgumentException("Unsupported packet protocol version " + protocolVersion);
 		}
-		return states.getOrDefault(connectionState, Collections.emptyMap()).getOrDefault(typeName, -1);
+		return states.getOrDefault(connectionState, Collections.emptyMap())
+			.getOrDefault(typeName, -1);
 	}
 
 	public String typeNameOf(ConnectionState connectionState, int packetId, int protocolVersion) {

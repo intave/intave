@@ -13,6 +13,7 @@ package de.jpx3.intave.share;
 
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.math.MathHelper;
 import io.netty.buffer.ByteBuf;
@@ -25,6 +26,13 @@ import static de.jpx3.intave.codec.JsonStreamCodecs.floatField;
 import static de.jpx3.intave.codec.JsonStreamCodecs.object;
 
 public final class Rotation implements Serializable {
+	private static final StreamCodec<ByteBuf, ByteBuf, Float> BYTE_ANGLE =
+		ByteBufStreamCodecs.BYTE.beforeAndAfter(value -> value * (360.0f / 256), value -> (byte) (int) (value * (256.0f / 360)));
+	public static final StreamCodec<ByteBuf, ByteBuf, Rotation> BYTE_STREAM_CODEC = StreamCodec.compound(
+		BYTE_ANGLE, Rotation::yaw,
+		BYTE_ANGLE, Rotation::pitch,
+		Rotation::new
+	);
 	public static final StreamCodec<JsonReader, JsonWriter, Rotation> JSON_CODEC = object(
 		floatField("yaw", Rotation::yaw),
 		floatField("pitch", Rotation::pitch),
@@ -122,8 +130,6 @@ public final class Rotation implements Serializable {
 		result = 31 * result + Float.hashCode(pitch);
 		return result;
 	}
-
-	private static final Rotation ZERO = new Rotation(0, 0);
 
 	public static Rotation zero() {
 		return new Rotation(0, 0);

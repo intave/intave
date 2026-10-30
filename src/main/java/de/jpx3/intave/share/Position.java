@@ -13,6 +13,7 @@ package de.jpx3.intave.share;
 
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import io.netty.buffer.ByteBuf;
 import org.bukkit.Location;
@@ -29,6 +30,14 @@ import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.share.ClientMath.floor;
 
 public final class Position implements Serializable, Cloneable {
+	private static final StreamCodec<ByteBuf, ByteBuf, Double> FIXED_POINT_COORDINATE =
+		ByteBufStreamCodecs.INTEGER.beforeAndAfter(value -> value / 32.0, value -> (int) Math.floor(value * 32));
+	public static final StreamCodec<ByteBuf, ByteBuf, Position> FIXED_POINT_STREAM_CODEC = StreamCodec.compound(
+		FIXED_POINT_COORDINATE, Position::getX,
+		FIXED_POINT_COORDINATE, Position::getY,
+		FIXED_POINT_COORDINATE, Position::getZ,
+		Position::new
+	);
 	public static final StreamCodec<JsonReader, JsonWriter, Position> JSON_CODEC = object(
 		doubleField("x", Position::getX),
 		doubleField("y", Position::getY),

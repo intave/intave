@@ -18,7 +18,6 @@ import de.jpx3.intave.share.PositionAndRotation;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-/** Native 26.3 conversion. Loading this converter alone is safe on older servers. */
 public final class PositionAndRotationConverter implements EquivalentConverter<PositionAndRotation> {
   public static final PositionAndRotationConverter INSTANCE = new PositionAndRotationConverter();
 

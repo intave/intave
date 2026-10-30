@@ -1,6 +1,18 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.codec;
 
 import de.jpx3.intave.cleanup.ReferenceMap;
+import io.netty.buffer.ByteBuf;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -11,8 +23,10 @@ public final class CodecTranslator {
   private final static Map<String, StreamCodec<?, ?, ?>> translatedCodecs = ReferenceMap.soft(new ConcurrentHashMap<>());
   private final static Map<String, Object> streamCodecs = ReferenceMap.soft(new ConcurrentHashMap<>());
 
-  public static StreamCodec<?, ?, ?> translatedCodecOf(Class<?> clazz) {
-    return translatedCodecs.computeIfAbsent(clazz.getName(), clazzName -> translateCodecOf(clazz));
+  public static <T> StreamCodec<ByteBuf, ByteBuf, T> translatedCodecOf(Class<? extends T> clazz) {
+	  //noinspection unchecked
+	  return (StreamCodec<ByteBuf, ByteBuf, T>)
+      translatedCodecs.computeIfAbsent(clazz.getName(), clazzName -> translateCodecOf(clazz));
   }
 
   private static StreamCodec<?, ?, ?> translateCodecOf(Class<?> clazz) {
@@ -51,8 +65,9 @@ public final class CodecTranslator {
 
   private static Object findRawStreamCodecIn(Class<?> clazz) {
     for (Field declaredField : clazz.getDeclaredFields()) {
-      if (declaredField.getType().getName().endsWith("StreamCodec")) {
+      if (declaredField.getType().getName().endsWith("StreamCodec") || declaredField.getType().isAssignableFrom(StreamCodec.class)) {
         try {
+          declaredField.setAccessible(true);
           return declaredField.get(null);
         } catch (IllegalAccessException e) {
           throw new IllegalStateException("Cannot access codec field", e);

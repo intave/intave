@@ -11,12 +11,13 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import ac.intave.samples.event.TimeEvent;
 import de.jpx3.intave.packet.contract.TimeUpdatePacket;
 
 public interface MutableTimeUpdatePacket extends TimeUpdatePacket {
 
 	void setGameTime(long gameTime);
 
-	void setTimeUpdate(TimeEvent update);
+	void setDayTime(long dayTime);
+
+	void setTicking(boolean ticking);
 }

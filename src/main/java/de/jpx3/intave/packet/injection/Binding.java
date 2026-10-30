@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.injection;
 
-import de.jpx3.intave.codec.VarIntCodec;
+import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.HandshakePacket;
 import de.jpx3.intave.packet.contract.Packet;
@@ -67,16 +67,15 @@ public final class Binding implements AutoCloseable {
 
 	boolean onPacketReceive(ByteBuf message) {
 		if (this.connectionState == ConnectionState.HANDSHAKING) {
-			Packet packet;
+			HandshakePacket handshake;
 			try {
-				packet = WirePackets.decodePacket(ConnectionState.HANDSHAKING, message);
+				handshake = WirePackets.createVersionIndependentPacket(ConnectionState.HANDSHAKING, message);
 			} catch (RuntimeException ignored) {
 				return true;
 			}
-			if (!(packet instanceof HandshakePacket)) {
+			if (handshake == null) {
 				return true;
 			}
-			HandshakePacket handshake = (HandshakePacket) packet;
 			if (!supports(handshake.protocolVersion())) {
 				return false;
 			}
@@ -85,28 +84,25 @@ public final class Binding implements AutoCloseable {
 			return true;
 		}
 
-		int packetId = readPacketId(message);
+		int packetId = packetIdFromHeader(message);
 		ConnectionState nextState = nextStateAfterReceivedPacket(packetId);
-		String packetName = PacketIdRegistries.serverbound().typeNameOf(this.connectionState, packetId, this.protocolVersion);
+//		String packetName = PacketIdRegistries.serverbound().typeNameOf(this.connectionState, packetId, this.protocolVersion);
 
 		if (WirePackets.packetIdKnown(this.connectionState, packetId, this.protocolVersion)) {
 			Packet packet = WirePackets.decodePacket(this.connectionState, this.protocolVersion, message);
-			System.out.println("Decoded packet " + packetName + " in state " + this.connectionState + " for protocol version " + this.protocolVersion);
-
+//			System.out.println("Decoded packet " + packetName + " in state " + this.connectionState + " for protocol version " + this.protocolVersion);
 			if (packet instanceof PlayerInputPacket) {
 				PlayerInputPacket inputPacket = (PlayerInputPacket) packet;
 				System.out.println(inputPacket.input());
 			}
 		}
-
 		this.connectionState = nextState;
 		return true;
 	}
 
 	void onPacketSend(ByteBuf message) {
-		int packetId = readPacketId(message);
-		ConnectionState nextState = nextStateAfterSentPacket(packetId);
-		this.connectionState = nextState;
+		int packetId = packetIdFromHeader(message);
+		this.connectionState = nextStateAfterSentPacket(packetId);
 	}
 
 	public ConnectionState connectionState() {
@@ -163,12 +159,10 @@ public final class Binding implements AutoCloseable {
 		if (this.connectionState != ConnectionState.LOGIN) {
 			return this.connectionState;
 		}
-
 		PacketIdRegistry clientbound = PacketIdRegistries.clientbound();
 		if (packetId != clientbound.idOf(ConnectionState.LOGIN, "SUCCESS", this.protocolVersion)) {
 			return this.connectionState;
 		}
-
 		return PacketIdRegistries.serverbound().idOf(
 			ConnectionState.LOGIN,
 			"LOGIN_ACK",
@@ -178,12 +172,11 @@ public final class Binding implements AutoCloseable {
 			: ConnectionState.LOGIN;
 	}
 
-	private static int readPacketId(ByteBuf message) {
-		return VarIntCodec.INSTANCE.decode(message.duplicate());
+	private static int packetIdFromHeader(ByteBuf message) {
+		return ByteBufStreamCodecs.VARINT.decode(message.duplicate());
 	}
 
 	private static boolean supports(int protocolVersion) {
 		return PacketIdRegistries.serverbound().supportedProtocolVersions().contains(protocolVersion);
 	}
-
 }

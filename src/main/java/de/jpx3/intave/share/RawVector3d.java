@@ -13,9 +13,11 @@ package de.jpx3.intave.share;
 
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.math.MathHelper;
+import io.netty.buffer.ByteBuf;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.util.Vector;
@@ -26,6 +28,102 @@ import static de.jpx3.intave.codec.JsonStreamCodecs.doubleField;
 import static de.jpx3.intave.codec.JsonStreamCodecs.object;
 
 public class RawVector3d {
+  /** The packed, scaled vector introduced in 1.21.9 (network/LpVec3). */
+  public static final StreamCodec<ByteBuf, ByteBuf, RawVector3d> LOW_PRECISION_STREAM_CODEC = StreamCodec.of(
+    (output, value) -> {
+      double x = sanitizeVector(value.x),
+          y = sanitizeVector(value.y),
+          z = sanitizeVector(value.z);
+      double maximum = Math.max(Math.abs(x), Math.max(Math.abs(y), Math.abs(z)));
+      if (maximum < 3.051944088384301E-5) {
+        output.writeByte(0);
+        return;
+      }
+      long scale = (long) Math.ceil(maximum);
+      boolean extended = (scale & 3) != scale;
+      long packed =
+          (extended ? scale & 3 | 4 : scale)
+              | packVector(x / scale) << 3
+              | packVector(y / scale) << 18
+              | packVector(z / scale) << 33;
+      output.writeByte((int) packed);
+      output.writeByte((int) (packed >> 8));
+      output.writeInt((int) (packed >> 16));
+      if (extended) ByteBufStreamCodecs.VARINT.encode(output, (int) (scale >> 2));
+    },
+    input -> {
+      int first = input.readUnsignedByte();
+      if (first == 0) return new RawVector3d(0, 0, 0);
+      int second = input.readUnsignedByte();
+      long packed = input.readUnsignedInt() << 16 | (long) second << 8 | first;
+      long scale = first & 3;
+      if ((first & 4) != 0) scale |= (ByteBufStreamCodecs.VARINT.decode(input) & 0xffffffffL) << 2;
+      return new RawVector3d(
+          unpackVector(packed >> 3) * scale,
+          unpackVector(packed >> 18) * scale,
+          unpackVector(packed >> 33) * scale);
+    }
+  );
+
+  private static final StreamCodec<ByteBuf, ByteBuf, Double> BYTE_DELTA =
+    ByteBufStreamCodecs.BYTE.beforeAndAfter(
+      value -> value / 32.0,
+      value -> (byte) quantizedDelta(value, 32.0, Byte.MIN_VALUE, Byte.MAX_VALUE)
+    );
+  private static final StreamCodec<ByteBuf, ByteBuf, Double> SHORT_DELTA =
+    ByteBufStreamCodecs.SHORT.beforeAndAfter(
+      value -> value / 4096.0,
+      value -> (short) quantizedDelta(value, 4096.0, Short.MIN_VALUE, Short.MAX_VALUE)
+    );
+  private static final StreamCodec<ByteBuf, ByteBuf, Double> BYTE_HIT_COORDINATE =
+    ByteBufStreamCodecs.UNSIGNED_BYTE.beforeAndAfter(value -> value / 16.0, value -> (int) (value * 16));
+  public static final StreamCodec<ByteBuf, ByteBuf, RawVector3d> BYTE_DELTA_STREAM_CODEC = StreamCodec.compound(
+    BYTE_DELTA, RawVector3d::x,
+    BYTE_DELTA, RawVector3d::y,
+    BYTE_DELTA, RawVector3d::z,
+    RawVector3d::new
+  );
+  public static final StreamCodec<ByteBuf, ByteBuf, RawVector3d> SHORT_DELTA_STREAM_CODEC = StreamCodec.compound(
+    SHORT_DELTA, RawVector3d::x,
+    SHORT_DELTA, RawVector3d::y,
+    SHORT_DELTA, RawVector3d::z,
+    RawVector3d::new
+  );
+  public static final StreamCodec<ByteBuf, ByteBuf, RawVector3d> FLOAT_STREAM_CODEC = StreamCodec.compound(
+    ByteBufStreamCodecs.FLOAT_AS_DOUBLE, RawVector3d::x,
+    ByteBufStreamCodecs.FLOAT_AS_DOUBLE, RawVector3d::y,
+    ByteBufStreamCodecs.FLOAT_AS_DOUBLE, RawVector3d::z,
+    RawVector3d::new
+  );
+  public static final StreamCodec<ByteBuf, ByteBuf, RawVector3d> BYTE_HIT_POSITION_STREAM_CODEC = StreamCodec.compound(
+    BYTE_HIT_COORDINATE, RawVector3d::x,
+    BYTE_HIT_COORDINATE, RawVector3d::y,
+    BYTE_HIT_COORDINATE, RawVector3d::z,
+    RawVector3d::new
+  );
+
+  private static double sanitizeVector(double value) {
+    return Double.isNaN(value)
+        ? 0
+        : Math.max(-1.7179869183E10, Math.min(1.7179869183E10, value));
+  }
+
+  private static long packVector(double value) {
+    return Math.round((value * 0.5 + 0.5) * 32766);
+  }
+
+  private static double unpackVector(long value) {
+    return Math.min(value & 32767, 32766) * 2.0 / 32766.0 - 1.0;
+  }
+
+  private static int quantizedDelta(double value, double divisor, int minimum, int maximum) {
+    double scaled = Math.rint(value * divisor);
+    if (!Double.isFinite(scaled) || scaled < minimum || scaled > maximum) {
+      throw new IllegalArgumentException("Movement delta is out of range");
+    }
+    return (int) scaled;
+  }
+
   public static final StreamCodec<JsonReader, JsonWriter, RawVector3d> JSON_CODEC = object(
     doubleField("x", RawVector3d::x),
     doubleField("y", RawVector3d::y),
@@ -53,7 +151,7 @@ public class RawVector3d {
     this.z = z;
   }
 
-  public Position toPosition() {
+	public Position toPosition() {
     return new Position(x, y, z);
   }
 
@@ -258,6 +356,10 @@ public class RawVector3d {
 
   public static RawVector3d fromBukkit(Vector subtract) {
     return new RawVector3d(subtract.getX(), subtract.getY(), subtract.getZ());
+  }
+
+  public static RawVector3d zero() {
+    return new RawVector3d(0.0D, 0.0D, 0.0D);
   }
 
   public String toString() {

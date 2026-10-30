@@ -12,6 +12,7 @@
 package de.jpx3.intave.packet.contract;
 
 public interface AbilityInPacket extends Packet {
-
 	boolean requestedFlying();
+	float flyingSpeed();
+	float walkingSpeed();
 }

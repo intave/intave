@@ -15,7 +15,6 @@ import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.share.PlayerHand;
 
 public interface Handed {
-
 	@Nullable
 	PlayerHand hand();
 

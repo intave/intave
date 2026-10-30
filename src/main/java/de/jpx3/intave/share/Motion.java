@@ -30,6 +30,15 @@ import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.math.MathHelper.hypot3d;
 
 public final class Motion {
+	public static final StreamCodec<ByteBuf, ByteBuf, Motion> FLOAT_STREAM_CODEC = StreamCodec.compound(
+		ByteBufStreamCodecs.FLOAT_AS_DOUBLE, Motion::motionX,
+		ByteBufStreamCodecs.FLOAT_AS_DOUBLE, Motion::motionY,
+		ByteBufStreamCodecs.FLOAT_AS_DOUBLE, Motion::motionZ,
+		Motion::new
+	);
+	public static final StreamCodec<ByteBuf, ByteBuf, Motion> LOW_PRECISION_STREAM_CODEC =
+		RawVector3d.LOW_PRECISION_STREAM_CODEC.beforeAndAfter(RawVector3d::toMotion, Motion::toRawVector3d);
+
 	public static final StreamCodec<JsonReader, JsonWriter, Motion> JSON_CODEC = object(
 		doubleField("x", Motion::motionX),
 		doubleField("y", Motion::motionY),
@@ -221,7 +230,6 @@ public final class Motion {
 			Math.abs(motionY - other.motionY) < 1E-10 &&
 			Math.abs(motionZ - other.motionZ) < 1E-10;
 	}
-
 
 	public Motion reversed() {
 		return new Motion(-this.motionX, -this.motionY, -this.motionZ);

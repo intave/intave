@@ -26,14 +26,14 @@ import static de.jpx3.intave.codec.ByteBufStreamCodecs.*;
 public final class AttributeModifier {
 	public static final StreamCodec<ByteBuf, ByteBuf, AttributeModifier> STREAM_CODEC = StreamCodec.of(
 		(buffer, modifier) -> {
-			MinecraftKey.STREAM_CODEC.nullable(BOOLEAN).encode(buffer, modifier.key);
+			MinecraftKey.INTERNAL_STREAM_CODEC.nullable(BOOLEAN).encode(buffer, modifier.key);
 			UUID.nullable(BOOLEAN).encode(buffer, modifier.uuid);
 			STRING.encode(buffer, modifier.name == null ? "" : modifier.name);
 			INTEGER.encode(buffer, modifier.operation.getId());
 			DOUBLE.encode(buffer, modifier.amount);
 		},
 		buffer -> {
-			MinecraftKey key = MinecraftKey.STREAM_CODEC.nullable(BOOLEAN).decode(buffer);
+			MinecraftKey key = MinecraftKey.INTERNAL_STREAM_CODEC.nullable(BOOLEAN).decode(buffer);
 			java.util.UUID uuid = UUID.nullable(BOOLEAN).decode(buffer);
 			String name = STRING.decode(buffer);
 			return new AttributeModifier(

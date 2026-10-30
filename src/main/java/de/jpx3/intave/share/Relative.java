@@ -15,15 +15,15 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.EquivalentConverter;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.google.common.collect.Maps;
+import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.klass.locate.Locate;
+import io.netty.buffer.ByteBuf;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public enum Relative {
   X(0),
@@ -35,6 +35,29 @@ public enum Relative {
   DELTA_Y(6),
   DELTA_Z(7),
   ROTATE_DELTA(8);
+
+  public static final StreamCodec<ByteBuf, ByteBuf, Set<Relative>> LEGACY_FLAGS_STREAM_CODEC =
+    flagsCodec(ByteBufStreamCodecs.UNSIGNED_BYTE, 31);
+  public static final StreamCodec<ByteBuf, ByteBuf, Set<Relative>> FLAGS_STREAM_CODEC =
+    flagsCodec(ByteBufStreamCodecs.INTEGER, -1);
+
+  private static StreamCodec<ByteBuf, ByteBuf, Set<Relative>> flagsCodec(
+    StreamCodec<ByteBuf, ByteBuf, Integer> bitsCodec, int allowedMask
+  ) {
+    return bitsCodec.beforeAndAfter(bits -> {
+      Set<Relative> flags = EnumSet.noneOf(Relative.class);
+      for (Relative flag : values()) {
+        if ((bits & flag.index()) != 0) flags.add(flag);
+      }
+      return flags;
+    }, flags -> {
+      int bits = indexOf(flags);
+      if ((bits & ~allowedMask) != 0) {
+        throw new IllegalArgumentException("Legacy teleport flags cannot contain motion flags");
+      }
+      return bits;
+    });
+  }
 
   public static final Set<Relative> ALL_RELATIVE = new HashSet<>(Arrays.asList(values()));
   public static final Set<Relative> RELATIVE_POSITION = new HashSet<>(Arrays.asList(X, Y, Z));

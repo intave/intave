@@ -19,5 +19,6 @@ public enum PlayerDigAction {
   DROP_ITEM,
   RELEASE_USE_ITEM,
   SWAP_HELD_ITEMS,
-  STAB
+  STAB,
+  CHANGE_DESTROY_DIRECTION
 }

@@ -11,11 +11,12 @@
 
 package de.jpx3.intave.packet.contract;
 
-import ac.intave.samples.event.TimeEvent;
-
 public interface TimeUpdatePacket extends Packet {
 
 	long gameTime();
 
-	TimeEvent timeUpdate();
+	/** Client-visible day time; legacy signed time is exposed as its magnitude. */
+	long dayTime();
+
+	boolean ticking();
 }

@@ -15,7 +15,6 @@ import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.share.PlayerHand;
 
-/** Keeps ProtocolLib hand values at the packet boundary. */
 public final class PlayerHandConverter {
   private PlayerHandConverter() {
   }

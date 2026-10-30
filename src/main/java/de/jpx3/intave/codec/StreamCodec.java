@@ -1,9 +1,19 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.codec;
 
 import de.jpx3.intave.codec.dispatch.DispatchCodecBuilder;
 import de.jpx3.intave.codec.smart.SmartCodecBuilder;
-import de.jpx3.intave.codec.transform.QuadFunction;
-import de.jpx3.intave.codec.transform.TriFunction;
+import de.jpx3.intave.codec.transform.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -163,6 +173,191 @@ public interface StreamCodec<I, O, T> extends StreamEncoder<O, T>, StreamDecoder
         T3 t3 = valueThreeConverter.decode(b);
         T4 t4 = valueFourConverter.decode(b);
         return constructor.apply(t1, t2, t3, t4);
+      }
+    };
+  }
+
+  static <B, C, T1, T2, T3, T4, T5> StreamCodec<B, B, C> compound(
+    StreamCodec<B, B, T1> codec1, Function<C, T1> getter1,
+    StreamCodec<B, B, T2> codec2, Function<C, T2> getter2,
+    StreamCodec<B, B, T3> codec3, Function<C, T3> getter3,
+    StreamCodec<B, B, T4> codec4, Function<C, T4> getter4,
+    StreamCodec<B, B, T5> codec5, Function<C, T5> getter5,
+    PentaFunction<T1, T2, T3, T4, T5, C> constructor
+  ) {
+    return new StreamCodec<B, B, C>() {
+      @Override
+      public void encode(B buffer, C value) {
+        codec1.encode(buffer, getter1.apply(value));
+        codec2.encode(buffer, getter2.apply(value));
+        codec3.encode(buffer, getter3.apply(value));
+        codec4.encode(buffer, getter4.apply(value));
+        codec5.encode(buffer, getter5.apply(value));
+      }
+
+      @Override
+      public C decode(B buffer) {
+        return constructor.apply(
+          codec1.decode(buffer),
+          codec2.decode(buffer),
+          codec3.decode(buffer),
+          codec4.decode(buffer),
+          codec5.decode(buffer)
+        );
+      }
+    };
+  }
+
+  static <B, C, T1, T2, T3, T4, T5, T6> StreamCodec<B, B, C> compound(
+    StreamCodec<B, B, T1> codec1, Function<C, T1> getter1,
+    StreamCodec<B, B, T2> codec2, Function<C, T2> getter2,
+    StreamCodec<B, B, T3> codec3, Function<C, T3> getter3,
+    StreamCodec<B, B, T4> codec4, Function<C, T4> getter4,
+    StreamCodec<B, B, T5> codec5, Function<C, T5> getter5,
+    StreamCodec<B, B, T6> codec6, Function<C, T6> getter6,
+    HexaFunction<T1, T2, T3, T4, T5, T6, C> constructor
+  ) {
+    return new StreamCodec<B, B, C>() {
+      @Override
+      public void encode(B buffer, C value) {
+        codec1.encode(buffer, getter1.apply(value));
+        codec2.encode(buffer, getter2.apply(value));
+        codec3.encode(buffer, getter3.apply(value));
+        codec4.encode(buffer, getter4.apply(value));
+        codec5.encode(buffer, getter5.apply(value));
+        codec6.encode(buffer, getter6.apply(value));
+      }
+
+      @Override
+      public C decode(B buffer) {
+        return constructor.apply(
+          codec1.decode(buffer),
+          codec2.decode(buffer),
+          codec3.decode(buffer),
+          codec4.decode(buffer),
+          codec5.decode(buffer),
+          codec6.decode(buffer)
+        );
+      }
+    };
+  }
+
+  static <B, C, T1, T2, T3, T4, T5, T6, T7> StreamCodec<B, B, C> compound(
+    StreamCodec<B, B, T1> codec1, Function<C, T1> getter1,
+    StreamCodec<B, B, T2> codec2, Function<C, T2> getter2,
+    StreamCodec<B, B, T3> codec3, Function<C, T3> getter3,
+    StreamCodec<B, B, T4> codec4, Function<C, T4> getter4,
+    StreamCodec<B, B, T5> codec5, Function<C, T5> getter5,
+    StreamCodec<B, B, T6> codec6, Function<C, T6> getter6,
+    StreamCodec<B, B, T7> codec7, Function<C, T7> getter7,
+    HeptaFunction<T1, T2, T3, T4, T5, T6, T7, C> constructor
+  ) {
+    return new StreamCodec<B, B, C>() {
+      @Override
+      public void encode(B buffer, C value) {
+        codec1.encode(buffer, getter1.apply(value));
+        codec2.encode(buffer, getter2.apply(value));
+        codec3.encode(buffer, getter3.apply(value));
+        codec4.encode(buffer, getter4.apply(value));
+        codec5.encode(buffer, getter5.apply(value));
+        codec6.encode(buffer, getter6.apply(value));
+        codec7.encode(buffer, getter7.apply(value));
+      }
+
+      @Override
+      public C decode(B buffer) {
+        return constructor.apply(
+          codec1.decode(buffer),
+          codec2.decode(buffer),
+          codec3.decode(buffer),
+          codec4.decode(buffer),
+          codec5.decode(buffer),
+          codec6.decode(buffer),
+          codec7.decode(buffer)
+        );
+      }
+    };
+  }
+
+  static <B, C, T1, T2, T3, T4, T5, T6, T7, T8> StreamCodec<B, B, C> compound(
+    StreamCodec<B, B, T1> codec1, Function<C, T1> getter1,
+    StreamCodec<B, B, T2> codec2, Function<C, T2> getter2,
+    StreamCodec<B, B, T3> codec3, Function<C, T3> getter3,
+    StreamCodec<B, B, T4> codec4, Function<C, T4> getter4,
+    StreamCodec<B, B, T5> codec5, Function<C, T5> getter5,
+    StreamCodec<B, B, T6> codec6, Function<C, T6> getter6,
+    StreamCodec<B, B, T7> codec7, Function<C, T7> getter7,
+    StreamCodec<B, B, T8> codec8, Function<C, T8> getter8,
+    OctaFunction<T1, T2, T3, T4, T5, T6, T7, T8, C> constructor
+  ) {
+    return new StreamCodec<B, B, C>() {
+      @Override
+      public void encode(B buffer, C value) {
+        codec1.encode(buffer, getter1.apply(value));
+        codec2.encode(buffer, getter2.apply(value));
+        codec3.encode(buffer, getter3.apply(value));
+        codec4.encode(buffer, getter4.apply(value));
+        codec5.encode(buffer, getter5.apply(value));
+        codec6.encode(buffer, getter6.apply(value));
+        codec7.encode(buffer, getter7.apply(value));
+        codec8.encode(buffer, getter8.apply(value));
+      }
+
+      @Override
+      public C decode(B buffer) {
+        return constructor.apply(
+          codec1.decode(buffer),
+          codec2.decode(buffer),
+          codec3.decode(buffer),
+          codec4.decode(buffer),
+          codec5.decode(buffer),
+          codec6.decode(buffer),
+          codec7.decode(buffer),
+          codec8.decode(buffer)
+        );
+      }
+    };
+  }
+
+  static <B, C, T1, T2, T3, T4, T5, T6, T7, T8, T9> StreamCodec<B, B, C> compound(
+    StreamCodec<B, B, T1> codec1, Function<C, T1> getter1,
+    StreamCodec<B, B, T2> codec2, Function<C, T2> getter2,
+    StreamCodec<B, B, T3> codec3, Function<C, T3> getter3,
+    StreamCodec<B, B, T4> codec4, Function<C, T4> getter4,
+    StreamCodec<B, B, T5> codec5, Function<C, T5> getter5,
+    StreamCodec<B, B, T6> codec6, Function<C, T6> getter6,
+    StreamCodec<B, B, T7> codec7, Function<C, T7> getter7,
+    StreamCodec<B, B, T8> codec8, Function<C, T8> getter8,
+    StreamCodec<B, B, T9> codec9, Function<C, T9> getter9,
+    NonaFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, C> constructor
+  ) {
+    return new StreamCodec<B, B, C>() {
+      @Override
+      public void encode(B buffer, C value) {
+        codec1.encode(buffer, getter1.apply(value));
+        codec2.encode(buffer, getter2.apply(value));
+        codec3.encode(buffer, getter3.apply(value));
+        codec4.encode(buffer, getter4.apply(value));
+        codec5.encode(buffer, getter5.apply(value));
+        codec6.encode(buffer, getter6.apply(value));
+        codec7.encode(buffer, getter7.apply(value));
+        codec8.encode(buffer, getter8.apply(value));
+        codec9.encode(buffer, getter9.apply(value));
+      }
+
+      @Override
+      public C decode(B buffer) {
+        return constructor.apply(
+          codec1.decode(buffer),
+          codec2.decode(buffer),
+          codec3.decode(buffer),
+          codec4.decode(buffer),
+          codec5.decode(buffer),
+          codec6.decode(buffer),
+          codec7.decode(buffer),
+          codec8.decode(buffer),
+          codec9.decode(buffer)
+        );
       }
     };
   }

@@ -62,7 +62,7 @@ final class Receiver extends ChannelInboundHandlerAdapter {
 	private void inspectCompressionEnvelope(ByteBuf envelope) {
 		final ByteBuf packet;
 		try {
-			packet = MinecraftCompressionEnvelope.copyPacket(envelope);
+			packet = CompressionRescue.copyPacket(envelope);
 		} catch (RuntimeException ignored) {
 			return;
 		}

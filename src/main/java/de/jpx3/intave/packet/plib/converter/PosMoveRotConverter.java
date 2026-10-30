@@ -23,8 +23,7 @@ public final class PosMoveRotConverter implements EquivalentConverter<PositionMo
   private static final ThreadLocal<ByteBuf> caches = ThreadLocal.withInitial(Unpooled::buffer);
   public static final Class<?> nativePositionMoveRotClass = positionMoveRotationClass();
   private static final StreamCodec<ByteBuf, ByteBuf, PositionMoveRotation> intaveCodec = PositionMoveRotation.STREAM_CODEC;
-  private static final StreamCodec<ByteBuf, ByteBuf, Object> nativeCodec = (StreamCodec<ByteBuf, ByteBuf, Object>)
-    CodecTranslator.translatedCodecOf(nativePositionMoveRotClass);
+  private static final StreamCodec<ByteBuf, ByteBuf, Object> nativeCodec = CodecTranslator.translatedCodecOf(nativePositionMoveRotClass);
 
   private PosMoveRotConverter() {}
 

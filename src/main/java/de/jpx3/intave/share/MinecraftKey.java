@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.share;
 
 import de.jpx3.intave.annotate.Nullable;
@@ -10,7 +21,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 public final class MinecraftKey {
-  public static final StreamCodec<ByteBuf, ByteBuf, MinecraftKey> STREAM_CODEC = StreamCodec.compound(
+  public static final StreamCodec<ByteBuf, ByteBuf, MinecraftKey> STREAM_CODEC = ByteBufStreamCodecs.VARINT_STRING.beforeAndAfter(
+    value -> value.indexOf(':') < 0 ? withDefaultNamespace(value) : from(value), MinecraftKey::fullKey
+  );
+  public static final StreamCodec<ByteBuf, ByteBuf, MinecraftKey> INTERNAL_STREAM_CODEC = StreamCodec.compound(
     ByteBufStreamCodecs.STRING, MinecraftKey::namespace,
     ByteBufStreamCodecs.STRING, MinecraftKey::path,
     MinecraftKey::new

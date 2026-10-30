@@ -11,9 +11,11 @@
 
 package de.jpx3.intave.packet.injection;
 
-import de.jpx3.intave.codec.VarIntCodec;
+import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.packet.ConnectionState;
-import de.jpx3.intave.packet.wire.HandshakeWirePacket;
+import de.jpx3.intave.packet.PacketDirection;
+import de.jpx3.intave.packet.contract.mutable.MutableHandshakePacket;
+import de.jpx3.intave.packet.wire.WirePackets;
 import de.jpx3.intave.registry.PacketIdRegistries;
 import de.jpx3.intave.registry.PacketIdRegistry;
 import io.netty.buffer.ByteBuf;
@@ -37,12 +39,7 @@ final class BindingTest {
     Binding binding = Binding.bind(channel);
     assertEquals(ConnectionState.HANDSHAKING, binding.connectionState());
 
-    ByteBuf handshake = Unpooled.buffer();
-    VarIntCodec.INSTANCE.encode(handshake, 0);
-    HandshakeWirePacket.STREAM_CODEC.encode(
-      handshake,
-      new HandshakeWirePacket(764, "localhost", 25565, ConnectionState.LOGIN)
-    );
+    ByteBuf handshake = handshake(764);
 
     assertTrue(channel.writeInbound(handshake));
     assertEquals(ConnectionState.LOGIN, binding.connectionState());
@@ -56,12 +53,7 @@ final class BindingTest {
   void closesUnsupportedProtocolConnections() {
     EmbeddedChannel channel = channelWithViaCodecs();
     Binding binding = Binding.bind(channel);
-    ByteBuf handshake = Unpooled.buffer();
-    VarIntCodec.INSTANCE.encode(handshake, 0);
-    HandshakeWirePacket.STREAM_CODEC.encode(
-      handshake,
-      new HandshakeWirePacket(Integer.MAX_VALUE, "localhost", 25565, ConnectionState.LOGIN)
-    );
+    ByteBuf handshake = handshake(Integer.MAX_VALUE);
 
     assertFalse(channel.writeInbound(handshake));
     assertFalse(channel.isOpen());
@@ -216,14 +208,20 @@ final class BindingTest {
 
   private static Binding bindAndHandshake(EmbeddedChannel channel, int protocolVersion) {
     Binding binding = Binding.bind(channel);
-    ByteBuf handshake = Unpooled.buffer();
-    VarIntCodec.INSTANCE.encode(handshake, 0);
-    HandshakeWirePacket.STREAM_CODEC.encode(
-      handshake,
-      new HandshakeWirePacket(protocolVersion, "localhost", 25565, ConnectionState.LOGIN)
-    );
-    receive(channel, handshake);
+    receive(channel, handshake(protocolVersion));
     return binding;
+  }
+
+  private static ByteBuf handshake(int protocolVersion) {
+    // Use a supported registry version even when testing an unknown advertised protocol.
+    MutableHandshakePacket packet = WirePackets.createPacket(ConnectionState.HANDSHAKING, "SET_PROTOCOL", 764);
+    packet.setProtocolVersion(protocolVersion);
+    packet.setServerAddress("localhost");
+    packet.setServerPort(25565);
+    packet.setNextConnectionState(ConnectionState.LOGIN);
+    ByteBuf handshake = Unpooled.buffer();
+    WirePackets.encodePacket(PacketDirection.SERVERBOUND, ConnectionState.HANDSHAKING, "SET_PROTOCOL", 764, packet, handshake);
+    return handshake;
   }
 
   private static ByteBuf packet(
@@ -233,13 +231,13 @@ final class BindingTest {
     int protocolVersion
   ) {
     ByteBuf packet = Unpooled.buffer();
-    VarIntCodec.INSTANCE.encode(packet, registry.idOf(state, typeName, protocolVersion));
+    ByteBufStreamCodecs.VARINT.encode(packet, registry.idOf(state, typeName, protocolVersion));
     return packet;
   }
 
   private static ByteBuf compressionEnvelope(ByteBuf packet) {
     ByteBuf envelope = Unpooled.buffer(packet.readableBytes() + 1);
-    VarIntCodec.INSTANCE.encode(envelope, 0);
+    ByteBufStreamCodecs.VARINT.encode(envelope, 0);
     envelope.writeBytes(packet);
     assertTrue(packet.release());
     return envelope;

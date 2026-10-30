@@ -17,7 +17,6 @@ import de.jpx3.intave.share.EntityUseAction;
 import de.jpx3.intave.share.RawVector3d;
 
 public interface MutableEntityUsePacket extends EntityUsePacket, MutableSingleEntityAddressed, MutableHanded {
-
 	void setAction(EntityUseAction action);
 
 	void setHitPosition(@Nullable RawVector3d hitPosition);
