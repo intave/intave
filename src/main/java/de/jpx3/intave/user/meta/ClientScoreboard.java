@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /** A packet-fed copy of the scoreboard state visible to one client. */
 public final class ClientScoreboard {
@@ -32,6 +33,7 @@ public final class ClientScoreboard {
     "red", "light_purple", "yellow", "white"
   };
   private static final char[] COLOR_CODES = "0123456789abcdef".toCharArray();
+  private static final Supplier<String> EMPTY_TEXT = () -> "";
 
   private final Map<String, String> objectives = new HashMap<>();
   private final Map<String, String> displayObjectives = new HashMap<>();
@@ -78,7 +80,7 @@ public final class ClientScoreboard {
   }
 
   public synchronized void createTeam(
-    String name, String prefix, String suffix, String color,
+    String name, Supplier<String> prefix, Supplier<String> suffix, String color,
     List<String> entries
   ) {
     removeTeam(name);
@@ -88,7 +90,7 @@ public final class ClientScoreboard {
   }
 
   public synchronized void updateTeam(
-    String name, String prefix, String suffix, String color
+    String name, Supplier<String> prefix, Supplier<String> suffix, String color
   ) {
     Team team = teams.get(name);
     if (team == null) {
@@ -112,7 +114,7 @@ public final class ClientScoreboard {
   }
 
   public synchronized void addTeamEntries(String name, List<String> entries) {
-    Team team = teams.computeIfAbsent(name, ignored -> new Team("", "", "reset"));
+    Team team = teams.computeIfAbsent(name, ignored -> new Team(EMPTY_TEXT, EMPTY_TEXT, "reset"));
     for (String entry : entries) {
       String previousName = teamsByEntry.put(entry, name);
       if (previousName != null && !previousName.equals(name)) {
@@ -191,7 +193,7 @@ public final class ClientScoreboard {
       return score.owner;
     }
     String teamColor = colorCode(team.color);
-    return teamColor + team.prefix + teamColor + score.owner + team.suffix;
+    return teamColor + team.prefix.get() + teamColor + score.owner + team.suffix.get();
   }
 
   private static String normalizeColor(String color) {
@@ -233,12 +235,12 @@ public final class ClientScoreboard {
   }
 
   private static final class Team {
-    private String prefix;
-    private String suffix;
+    private Supplier<String> prefix;
+    private Supplier<String> suffix;
     private String color;
     private final Set<String> entries = new LinkedHashSet<>();
 
-    private Team(String prefix, String suffix, String color) {
+    private Team(Supplier<String> prefix, Supplier<String> suffix, String color) {
       this.prefix = prefix;
       this.suffix = suffix;
       this.color = color;

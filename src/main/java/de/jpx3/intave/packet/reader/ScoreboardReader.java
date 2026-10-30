@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /** Decodes the scoreboard packets which mutate the client's local scoreboard. */
 public final class ScoreboardReader extends AbstractPacketReader {
@@ -117,33 +118,30 @@ public final class ScoreboardReader extends AbstractPacketReader {
       return new Team(name, action, null, null, null, entries);
     }
 
-    String prefix;
-    String suffix;
+    Supplier<String> prefix;
+    Supplier<String> suffix;
     String color;
     if (MinecraftVersions.VER1_17_0.atOrAbove()) {
       Optional<InternalStructure> optional = packet().getOptionalStructures().readSafely(0);
       InternalStructure parameters = optional == null || !optional.isPresent() ? null : optional.get();
-      prefix = parameters == null ? "" : component(parameters.getChatComponents().readSafely(1));
-      suffix = parameters == null ? "" : component(parameters.getChatComponents().readSafely(2));
+      prefix = parameters == null ? EMPTY_TEXT : lazyComponent(parameters.getChatComponents().readSafely(1));
+      suffix = parameters == null ? EMPTY_TEXT : lazyComponent(parameters.getChatComponents().readSafely(2));
       color = parameters == null ? "reset" : color(parameters.getModifier());
     } else if (MinecraftVersions.VER1_13_0.atOrAbove()) {
-      prefix = component(packet().getChatComponents().readSafely(1));
-      suffix = component(packet().getChatComponents().readSafely(2));
+      prefix = lazyComponent(packet().getChatComponents().readSafely(1));
+      suffix = lazyComponent(packet().getChatComponents().readSafely(2));
       color = color(packet().getModifier());
     } else {
-      prefix = packet().getStrings().readSafely(2);
-      suffix = packet().getStrings().readSafely(3);
+      String legacyPrefix = packet().getStrings().readSafely(2);
+      String legacySuffix = packet().getStrings().readSafely(3);
       Integer legacyColor = packet().getIntegers().readSafely(0);
       color = legacyColor == null
-        ? legacyColorIn(prefix)
+        ? legacyColorIn(legacyPrefix)
         : ClientScoreboard.legacyColor(legacyColor);
+      prefix = fixedText(legacyPrefix);
+      suffix = fixedText(legacySuffix);
     }
-    return new Team(
-      name, action,
-      prefix == null ? "" : prefix,
-      suffix == null ? "" : suffix,
-      color, entries
-    );
+    return new Team(name, action, prefix, suffix, color, entries);
   }
 
   private int teamAction() {
@@ -216,6 +214,40 @@ public final class ScoreboardReader extends AbstractPacketReader {
     return BaseComponent.toLegacyText(ComponentSerializer.parse(component.getJson()));
   }
 
+  private static final Supplier<String> EMPTY_TEXT = () -> "";
+
+  private static Supplier<String> fixedText(String text) {
+    return text == null || text.isEmpty() ? EMPTY_TEXT : () -> text;
+  }
+
+  // Team prefixes are only needed when a sidebar line is rendered, convert them on first use
+  private static Supplier<String> lazyComponent(WrappedChatComponent component) {
+    return component == null ? EMPTY_TEXT : new LazyComponentText(component);
+  }
+
+  private static final class LazyComponentText implements Supplier<String> {
+    private WrappedChatComponent component;
+    private String text;
+
+    private LazyComponentText(WrappedChatComponent component) {
+      this.component = component;
+    }
+
+    @Override
+    public synchronized String get() {
+      if (text == null) {
+        try {
+          String converted = component(component);
+          text = converted == null ? "" : converted;
+        } catch (RuntimeException exception) {
+          text = "";
+        }
+        component = null;
+      }
+      return text;
+    }
+  }
+
   private static String legacyColorIn(String text) {
     if (text != null) {
       for (int i = 0; i + 1 < text.length(); i++) {
@@ -283,13 +315,13 @@ public final class ScoreboardReader extends AbstractPacketReader {
   public static final class Team {
     public final String name;
     public final int action;
-    public final String prefix;
-    public final String suffix;
+    public final Supplier<String> prefix;
+    public final Supplier<String> suffix;
     public final String color;
     public final List<String> entries;
 
     private Team(
-      String name, int action, String prefix, String suffix,
+      String name, int action, Supplier<String> prefix, Supplier<String> suffix,
       String color, List<String> entries
     ) {
       this.name = name;

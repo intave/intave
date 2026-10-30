@@ -279,8 +279,8 @@ public final class ReaderTests extends IntegrationTests {
         assertEquals("readers", decoded.name);
         assertEquals(action, decoded.action);
         if (action == 0 || action == 2) {
-          assertEquals("pre ", plainScoreboardText(decoded.prefix));
-          assertEquals(" post", plainScoreboardText(decoded.suffix));
+          assertEquals("pre ", plainScoreboardText(decoded.prefix.get()));
+          assertEquals(" post", plainScoreboardText(decoded.suffix.get()));
           assertEquals(MinecraftVersions.VER1_13_0.atOrAbove() ? "red" : "reset", decoded.color);
         }
         if (action == 0 || action >= 3) assertEquals(Collections.singletonList("Entry"), decoded.entries);

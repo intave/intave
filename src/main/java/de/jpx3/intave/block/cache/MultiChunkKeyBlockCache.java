@@ -242,8 +242,6 @@ final class MultiChunkKeyBlockCache implements BlockCache {
   @Override
   public void override(World world, int posX, int posY, int posZ, Material type, int variant, String reason) {
     User user = UserRepository.userOf(player);
-    long key = bigKey(posX, posY, posZ);
-    replacementCache.remove(key);
     BlockState blockState;
     if (type == Material.AIR || posY < WorldHeight.LOWER_WORLD_LIMIT) {
       blockState = BlockState.empty();
@@ -252,6 +250,7 @@ final class MultiChunkKeyBlockCache implements BlockCache {
       BlockShape collisionShape = shapeResolver.collisionShapeOf(world, user, type, variant, posX, posY, posZ);
       blockState = new BlockState(outlineShape, collisionShape, type, variant);
     }
+    // Overwrite existing entry in-place without shifting map keys
     Position position = new Position(posX, posY, posZ);
     replacementCache.insert(position, blockState);
     if (IntaveControl.BLOCK_CACHE_DEBUG || user.receives(MessageChannel.DEBUG_BLOCK_CACHE)) {

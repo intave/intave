@@ -27,7 +27,6 @@ final class BlockStateReplacementCache {
   private final Map<Position, BlockState> located = new ConcurrentHashMap<>(96);
   private final Map<Position, Long> locked = new ConcurrentHashMap<>(96);
   private final Long2ReferenceMap<BlockState> indexed = Long2ReferenceMaps.synchronize(new Long2ReferenceOpenHashMap<>(96));
-  private final Set<Position> locations = Sets.newConcurrentHashSet();
 
 	private final Function<? super Position, ? extends Long> keyer;
 
@@ -41,7 +40,6 @@ final class BlockStateReplacementCache {
 
   public void insert(Position position, BlockState blockState) {
     located.put(position, blockState);
-    locations.add(position);
     indexed.put(keyer.apply(position).longValue(), blockState);
   }
 
@@ -66,13 +64,12 @@ final class BlockStateReplacementCache {
   }
 
   public void internalRefresh() {
-    for (Position location : locations) {
+    for (Position location : located.keySet()) {
       if (isLocked(location)) {
         continue;
       }
       BlockState blockState = located.get(location);
       if (blockState == null || blockState.expired()) {
-        locations.remove(location);
         located.remove(location);
         BlockState old = indexed.remove(keyer.apply(location));
         if (old != null) {
@@ -93,7 +90,6 @@ final class BlockStateReplacementCache {
         location.getZ() >= chunkZMinPos && location.getZ() < chunkZMaxPos) {
         long key = keyer.apply(location);
         located.remove(location);
-        locations.remove(location);
         BlockState old = indexed.remove(key);
         if (old != null) {
         }
@@ -116,7 +112,6 @@ final class BlockStateReplacementCache {
     locked.clear();
     located.clear();
     indexed.clear();
-    locations.clear();
   }
 
   public Map<Position, BlockState> located() {
@@ -128,6 +123,6 @@ final class BlockStateReplacementCache {
   }
 
   public Set<Position> locations() {
-    return locations;
+    return located.keySet();
   }
 }

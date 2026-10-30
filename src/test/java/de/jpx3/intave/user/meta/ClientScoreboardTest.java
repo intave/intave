@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -29,7 +30,7 @@ final class ClientScoreboardTest {
     scoreboard.setScore("deaths", "match", 2, "\u00a7cDeaths: 2");
     scoreboard.setScore("assists", "match", 5, null);
     scoreboard.createTeam(
-      "kills-line", "Kills: ", "!", "green",
+      "kills-line", () -> "Kills: ", () -> "!", "green",
       Collections.singletonList("kills")
     );
 
@@ -40,6 +41,28 @@ final class ClientScoreboardTest {
       Arrays.asList("\u00a7aKills: \u00a7akills!", "assists", "\u00a7cDeaths: 2"),
       snapshot.lines()
     );
+  }
+
+  @Test
+  void resolvesTeamTextOnlyForRenderedLines() {
+    ClientScoreboard scoreboard = new ClientScoreboard();
+    scoreboard.setObjective("board", "Title");
+    scoreboard.setDisplayObjective("sidebar", "board");
+    scoreboard.setScore("shown", "board", 1, null);
+    AtomicInteger shownLookups = new AtomicInteger();
+    AtomicInteger hiddenLookups = new AtomicInteger();
+    scoreboard.createTeam(
+      "shown-line", () -> "Shown " + shownLookups.incrementAndGet(), () -> "", "reset",
+      Collections.singletonList("shown")
+    );
+    scoreboard.createTeam(
+      "nametag", () -> "Hidden " + hiddenLookups.incrementAndGet(), () -> "", "reset",
+      Collections.singletonList("OtherPlayer")
+    );
+
+    assertEquals(Collections.singletonList("Shown 1shown"), scoreboard.snapshot("Player").lines());
+    assertEquals(1, shownLookups.get());
+    assertEquals(0, hiddenLookups.get());
   }
 
   @Test
@@ -68,7 +91,7 @@ final class ClientScoreboardTest {
     scoreboard.setDisplayObjective("team_red", "red");
     scoreboard.setScore("normal-line", "normal", 1, null);
     scoreboard.setScore("red-line", "red", 1, null);
-    scoreboard.createTeam("players", "", "", "red", Collections.singletonList("Player"));
+    scoreboard.createTeam("players", () -> "", () -> "", "red", Collections.singletonList("Player"));
 
     assertEquals("Red team", scoreboard.snapshot("Player").title());
     assertEquals(Collections.singletonList("red-line"), scoreboard.snapshot("Player").lines());
