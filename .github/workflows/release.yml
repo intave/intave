@@ -60,6 +60,8 @@ jobs:
 
       - name: Build with Gradle
         if: github.event_name != 'release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew build
 
       - name: Determine artifact suffix

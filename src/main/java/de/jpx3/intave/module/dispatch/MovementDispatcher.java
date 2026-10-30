@@ -914,7 +914,7 @@ public final class MovementDispatcher extends Module {
 
       Motion finalVelocity = motion.copy();
 
-      movementData.teleportLock.lock();
+      user.meta().connection().feedbackAndTeleportLock.lock();
       try {
         MotionUpdate velocity = MotionUpdate.pendingReplacement(finalVelocity);
         movementData.trackVelocity(velocity);
@@ -935,7 +935,7 @@ public final class MovementDispatcher extends Module {
           SELF_SYNCHRONIZATION
         );
       } finally {
-        movementData.teleportLock.unlock();
+        user.meta().connection().feedbackAndTeleportLock.unlock();
       }
 
       movementData.activeTick(RECEIVED_VELOCITY_PACKET);
@@ -955,7 +955,7 @@ public final class MovementDispatcher extends Module {
     MovementMetadata movement = user.meta().movement();
     Motion knockback = reader.motion();
     if (knockback != null) {
-      movement.teleportLock.lock();
+      user.meta().connection().feedbackAndTeleportLock.lock();
       try {
         MotionUpdate update = MotionUpdate.pendingAddition(knockback);
         movement.trackVelocity(update);
@@ -969,7 +969,7 @@ public final class MovementDispatcher extends Module {
           }
         );
       } finally {
-        movement.teleportLock.unlock();
+        user.meta().connection().feedbackAndTeleportLock.unlock();
       }
     }
   }

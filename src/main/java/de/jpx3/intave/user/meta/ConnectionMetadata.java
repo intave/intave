@@ -38,7 +38,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class ConnectionMetadata {
   private final Player player;
   private final FeedbackQueue feedbackQueue = new FeedbackQueue();
-  public final ReentrantLock feedbackLock = new ReentrantLock();
+  // Feedback sends can synchronously invoke teleport and velocity listeners.
+  public final ReentrantLock feedbackAndTeleportLock = new ReentrantLock();
   private final Map<Long, Queue<FeedbackRequest<?>>> transactionOptionalAppendMap = Maps.newConcurrentMap();
   private final Map<Integer, Entity> entitiesById = Maps.newConcurrentMap();
   private final Map<Integer, Integer> entityVehicles = Maps.newConcurrentMap();

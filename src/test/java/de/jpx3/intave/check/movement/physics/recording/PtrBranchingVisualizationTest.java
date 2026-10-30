@@ -34,6 +34,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.nio.charset.StandardCharsets;
@@ -116,7 +117,18 @@ final class PtrBranchingVisualizationTest {
 	private static Path writeReport(String resource, MovementRecording recording, List<TickTrace> ticks, Path outputRoot) throws IOException {
 		Path output = outputPath(resource, outputRoot);
 		Files.createDirectories(output.getParent());
-		Files.writeString(output, HTML.replace("__TRACE_DATA__", toJson(ticks)).replace("__RECORDING__", resource).replace("__RECORDING_NAME__", recordingName(resource)).replace("__CLIENT_PROTOCOL__", Integer.toString(recording.clientProtocolVersion())).replace("__SERVER_VERSION__", recording.serverVersion().getVersion()).replace("__ASSET_VERSION__", recording.serverVersion().getVersion()), StandardCharsets.UTF_8);
+		String template = HTML.replace("__RECORDING__", resource)
+			.replace("__RECORDING_NAME__", recordingName(resource))
+			.replace("__CLIENT_PROTOCOL__", Integer.toString(recording.clientProtocolVersion()))
+			.replace("__SERVER_VERSION__", recording.serverVersion().getVersion())
+			.replace("__ASSET_VERSION__", recording.serverVersion().getVersion());
+		String marker = "__TRACE_DATA__";
+		int traceOffset = template.indexOf(marker);
+		try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
+			writer.write(template, 0, traceOffset);
+			writeJson(writer, ticks);
+			writer.write(template, traceOffset + marker.length(), template.length() - traceOffset - marker.length());
+		}
 		return output;
 	}
 
@@ -454,15 +466,18 @@ final class PtrBranchingVisualizationTest {
 		return String.format(Locale.ROOT, "%016x", key).substring(8);
 	}
 
-	private static String toJson(List<TickTrace> ticks) {
-		StringBuilder json = new StringBuilder("[");
+	private static void writeJson(Writer writer, List<TickTrace> ticks) throws IOException {
+		writer.write('[');
 		for (int index = 0; index < ticks.size(); index++) {
 			if (index > 0) {
-				json.append(',');
+				writer.write(',');
 			}
+			// Keep serialized data bounded to one tick; full reports can exceed 100 MB.
+			StringBuilder json = new StringBuilder();
 			appendTick(json, ticks.get(index));
+			writer.write(json.toString());
 		}
-		return json.append(']').toString();
+		writer.write(']');
 	}
 
 	private static void appendTick(StringBuilder json, TickTrace tick) {

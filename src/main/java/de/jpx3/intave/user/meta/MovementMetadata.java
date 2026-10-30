@@ -179,7 +179,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   public volatile boolean sentTeleportIdBefore = false;
   public volatile int lastTeleportAcceptId = -1;
   public volatile long teleportSequence = 0;
-  public final ReentrantLock teleportLock = new ReentrantLock();
+  private OptionalInt serverTeleportId = OptionalInt.empty();
+  private boolean serverTeleportAcknowledged;
   private long recoveryGeneration;
   private long recoveryFinalTeleportSequence = Long.MAX_VALUE;
 
@@ -1004,13 +1005,14 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   public void trackVelocity(MotionUpdate update) {
-    teleportLock.lock();
+    Lock lock = user.meta().connection().feedbackAndTeleportLock;
+    lock.lock();
     try {
       pendingVelocityUpdates.removeIf(previous -> previous.expired(this));
       update.setSentBeforeTeleport(teleportSequence);
       pendingVelocityUpdates.add(update);
     } finally {
-      teleportLock.unlock();
+      lock.unlock();
     }
   }
 
@@ -1026,7 +1028,8 @@ public final class MovementMetadata implements SimulationEnvironment {
   }
 
   public void discardVelocityBefore(long teleport) {
-    teleportLock.lock();
+    Lock lock = user.meta().connection().feedbackAndTeleportLock;
+    lock.lock();
     try {
       pendingVelocityUpdates.removeIf(update -> {
         if (update.sentBeforeTeleport() > teleport) return false;
@@ -1034,7 +1037,7 @@ public final class MovementMetadata implements SimulationEnvironment {
         return true;
       });
     } finally {
-      teleportLock.unlock();
+      lock.unlock();
     }
   }
 
@@ -1900,8 +1903,36 @@ public final class MovementMetadata implements SimulationEnvironment {
     return unmodifiableView;
   }
 
+  /** Only native outgoing teleports reset the server's acknowledgement state; Intave retries do not. */
+  public void expectServerTeleport(OptionalInt id) {
+    Lock lock = user.meta().connection().feedbackAndTeleportLock;
+    lock.lock();
+    try {
+      serverTeleportId = id;
+      serverTeleportAcknowledged = false;
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  /** Returns whether this acknowledgement may still be forwarded to the native server. */
+  public boolean acknowledgeServerTeleport(int id) {
+    Lock lock = user.meta().connection().feedbackAndTeleportLock;
+    lock.lock();
+    try {
+      // The server only acts on its latest ID; older and Intave-owned IDs are ignored.
+      if (!serverTeleportId.isPresent() || serverTeleportId.getAsInt() != id) return true;
+      if (serverTeleportAcknowledged) return false;
+      serverTeleportAcknowledged = true;
+      return true;
+    } finally {
+      lock.unlock();
+    }
+  }
+
   public long beginRecovery() {
-    teleportLock.lock();
+    Lock lock = user.meta().connection().feedbackAndTeleportLock;
+    lock.lock();
     try {
       if (inRecovery) {
         return -1;
@@ -1911,56 +1942,61 @@ public final class MovementMetadata implements SimulationEnvironment {
       recoveryFinalTeleportSequence = Long.MAX_VALUE;
       return ++recoveryGeneration;
     } finally {
-      teleportLock.unlock();
+      lock.unlock();
     }
   }
 
   public void recoverPendingTeleport() {
-    teleportLock.lock();
+    Lock lock = user.meta().connection().feedbackAndTeleportLock;
+    lock.lock();
     try {
       Teleport latest = pendingTeleports.get().peekLast();
       if (!invalidMovement || inRecovery || latest == null) return;
       beginRecovery();
       recoveryFinalTeleportSequence = latest.uniqueId();
     } finally {
-      teleportLock.unlock();
+      lock.unlock();
     }
   }
 
   public boolean isRecovering(long generation) {
-    teleportLock.lock();
+    Lock lock = user.meta().connection().feedbackAndTeleportLock;
+    lock.lock();
     try {
       return inRecovery && recoveryGeneration == generation &&
         recoveryFinalTeleportSequence == Long.MAX_VALUE;
     } finally {
-      teleportLock.unlock();
+      lock.unlock();
     }
   }
 
   public void finishRecoveryOnNextTeleport(long generation) {
-    teleportLock.lock();
+    Lock lock = user.meta().connection().feedbackAndTeleportLock;
+    lock.lock();
     try {
       if (inRecovery && recoveryGeneration == generation) {
         recoveryFinalTeleportSequence = teleportSequence;
       }
     } finally {
-      teleportLock.unlock();
+      lock.unlock();
     }
   }
 
   public void replaceRecoveryWithExternalTeleport() {
-    teleportLock.lock();
+    Lock lock = user.meta().connection().feedbackAndTeleportLock;
+    lock.lock();
     try {
       if (inRecovery) {
         recoveryFinalTeleportSequence = teleportSequence;
       }
     } finally {
-      teleportLock.unlock();
+      lock.unlock();
     }
   }
 
   public boolean completeRecovery(Teleport teleport) {
-    teleportLock.lock();
+    Lock lock = user.meta().connection().feedbackAndTeleportLock;
+    lock.lock();
     try {
       if (!inRecovery || !teleport.wasAccepted()
         || teleport.uniqueId() != recoveryFinalTeleportSequence
@@ -1971,7 +2007,7 @@ public final class MovementMetadata implements SimulationEnvironment {
       recoveryFinalTeleportSequence = Long.MAX_VALUE;
       return true;
     } finally {
-      teleportLock.unlock();
+      lock.unlock();
     }
   }
 }

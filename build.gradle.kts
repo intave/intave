@@ -71,6 +71,7 @@ repositories {
   maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
   maven { url = uri("https://oss.sonatype.org/content/repositories/central") }
   maven("https://repo.opencollab.dev/maven-snapshots")
+  maven("https://repo.opencollab.dev/maven-releases")
   maven("https://repo.codemc.io/repository/maven-releases/")
 }
 
@@ -96,7 +97,7 @@ dependencies {
   // Server-provided APIs and compile-time annotations.
   compileOnly("org.spigotmc:spigot-api:1.21.1-R0.1-SNAPSHOT")
   compileOnly("org.jetbrains:annotations:23.1.0")
-  compileOnly("org.geysermc.floodgate:api:2.0-SNAPSHOT")
+  compileOnly("org.geysermc.floodgate:api:2.2.5-SNAPSHOT")
   compileOnly("com.github.retrooper:packetevents-spigot:2.13.0")
 
   // Test environment.

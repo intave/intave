@@ -61,5 +61,6 @@ jobs:
 
       - name: Run Paper self-test
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MINECRAFT_VERSION: ${{ matrix.version }}
         run: ./gradlew "testPaper${MINECRAFT_VERSION//./_}"

@@ -413,7 +413,7 @@ public final class FeedbackSender extends Module {
   }
 
   private static ReentrantLock userLock(User user) {
-    return user.meta().connection().feedbackLock;
+    return user.meta().connection().feedbackAndTeleportLock;
   }
 
   private static long pendingTransactions(User user) {

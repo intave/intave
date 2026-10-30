@@ -15,6 +15,8 @@ import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.meta.MovementMetadata;
 
+import java.util.concurrent.locks.Lock;
+
 public final class MotionUpdate extends TickAmbiguousUpdate {
   private final Motion motion;
   private final boolean additive;
@@ -36,13 +38,14 @@ public final class MotionUpdate extends TickAmbiguousUpdate {
   }
 
   public void activate(MovementMetadata movement) {
-    movement.teleportLock.lock();
+    Lock lock = movement.user().meta().connection().feedbackAndTeleportLock;
+    lock.lock();
     try {
       if (corrected) return;
       constraint = CausalConstraint.openEnded(movement.currentTick(), movement.newSequenceNumber());
       movement.queueTickAmbiguousUpdate(this);
     } finally {
-      movement.teleportLock.unlock();
+      lock.unlock();
     }
   }
 

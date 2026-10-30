@@ -185,8 +185,7 @@ public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> 
         .withVL(0)
         .build();
 	    Modules.violationProcessor().processViolation(violation);
-
-
+      user.teleport(movementData.verifiedLastPosition());
     }
     statisticApply(user, CheckStatistics::increasePasses);
   }
