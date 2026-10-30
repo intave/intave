@@ -146,7 +146,11 @@ public final class FeedbackSender extends Module {
     try {
       lock.lock();
       tracedSingleSynchronize(player, target, firstCallback, firstTracker, options);
-      PacketSender.sendServerPacketWithoutEvent(player, encapsulate.shallowClone());
+      // Wrap existing packet handle to avoid reflective field cloning in shallowClone()
+      PacketSender.sendServerPacketWithoutEvent(
+        player,
+        new PacketContainer(encapsulate.getType(), encapsulate.getHandle())
+      );
       tracedSingleSynchronize(player, target, secondCallback, secondTracker, options);
     } finally {
       lock.unlock();
