@@ -22,6 +22,6 @@ public interface Environment {
   boolean property(String name);
   long currentTime();
 
-  Map<String, Boolean> properties();
+  Map<String, String> properties();
   boolean entityMoved(int entity, double distance);
 }

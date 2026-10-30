@@ -25,7 +25,7 @@ import java.util.Set;
 
 abstract class Playback extends SinkEnvironment {
   private final JsonReader recordingReader;
-  private final Map<String, Boolean> properties = new HashMap<>();
+  private final Map<String, String> properties = new HashMap<>();
   private final PlaybackPlayerContainer playbackPlayer = new PlaybackPlayerContainer(this);
   private final Map<Integer, Position> entityPositions = new HashMap<>();
   private final Map<Integer, Double> entityMovementThisTick = new HashMap<>();
@@ -129,7 +129,7 @@ abstract class Playback extends SinkEnvironment {
 
   @Override
   public boolean property(String name) {
-    return properties.getOrDefault(name, false);
+    return Boolean.parseBoolean(properties.get(name));
   }
 
   @Override
@@ -156,7 +156,7 @@ abstract class Playback extends SinkEnvironment {
   }
 
   @Override
-  public Map<String, Boolean> properties() {
+  public Map<String, String> properties() {
     return properties;
   }
 }

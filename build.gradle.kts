@@ -65,6 +65,9 @@ object IntaveTaskGroups {
  * Dependencies
  */
 repositories {
+  mavenLocal {
+    content { includeModule("ac.intave", "samples") }
+  }
   mavenCentral()
   maven { url = uri("https://repo.papermc.io/repository/maven-public/") }
   maven { url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") }
@@ -87,7 +90,7 @@ dependencies {
   )
 
   // Bundled libraries.
-  implementation("ac.intave:samples:0.0.12") { isTransitive = false }
+  implementation("ac.intave:samples:0.0.14-SNAPSHOT") { isTransitive = false }
   implementation("ac.intave:cloud-protocol:0.0.11") { isTransitive = false }
   implementation("it.unimi.dsi:fastutil:8.5.12")
   implementation("net.bytebuddy:byte-buddy:1.18.2")
