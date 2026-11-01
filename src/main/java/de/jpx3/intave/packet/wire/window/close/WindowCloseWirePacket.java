@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.window.close;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableWindowClosePacket;
 import io.netty.buffer.ByteBuf;
@@ -45,8 +46,8 @@ public class WindowCloseWirePacket implements MutableWindowClosePacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("CLOSE_WINDOW".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.CLOSE_WINDOW || packetId == PacketId.Server.CLOSE_WINDOW);
 	}
 
 	@Override

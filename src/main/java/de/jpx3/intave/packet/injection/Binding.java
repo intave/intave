@@ -12,18 +12,26 @@
 package de.jpx3.intave.packet.injection;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
+import de.jpx3.intave.packet.PacketDirection;
 import de.jpx3.intave.packet.contract.HandshakePacket;
 import de.jpx3.intave.packet.contract.Packet;
-import de.jpx3.intave.packet.contract.PlayerInputPacket;
+import de.jpx3.intave.packet.event.PacketEventBus;
+import de.jpx3.intave.packet.event.PacketReceiveEvent;
 import de.jpx3.intave.packet.wire.WirePackets;
+import de.jpx3.intave.reflect.PlayerChannel;
 import de.jpx3.intave.registry.PacketIdRegistries;
 import de.jpx3.intave.registry.PacketIdRegistry;
+import de.jpx3.intave.user.User;
+import de.jpx3.intave.user.UserRepository;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -31,6 +39,7 @@ public final class Binding implements AutoCloseable {
 	private static final String RECEIVE_HANDLER_NAME = "intave-decoder";
 	private static final String SEND_HANDLER_NAME = "intave-encoder";
 
+	private User user;
 	private final Channel channel;
 	private final Receiver receiveHandler;
 	private final Sender sendHandler;
@@ -86,15 +95,18 @@ public final class Binding implements AutoCloseable {
 
 		int packetId = packetIdFromHeader(message);
 		ConnectionState nextState = nextStateAfterReceivedPacket(packetId);
-//		String packetName = PacketIdRegistries.serverbound().typeNameOf(this.connectionState, packetId, this.protocolVersion);
+		PacketId.Client packetType = PacketIdRegistries.serverbound().typeOf(this.connectionState, packetId, this.protocolVersion);
 
-		if (WirePackets.packetIdKnown(this.connectionState, packetId, this.protocolVersion)) {
+		if (packetType != null && WirePackets.packetIdKnown(this.connectionState, packetId, this.protocolVersion)) {
 			Packet packet = WirePackets.decodePacket(this.connectionState, this.protocolVersion, message);
-//			System.out.println("Decoded packet " + packetName + " in state " + this.connectionState + " for protocol version " + this.protocolVersion);
-			if (packet instanceof PlayerInputPacket) {
-				PlayerInputPacket inputPacket = (PlayerInputPacket) packet;
-				System.out.println(inputPacket.input());
-			}
+			PacketEventBus.dispatch(
+				new PacketReceiveEvent(
+					tryGetUser(),
+					PacketDirection.SERVERBOUND,
+					packetType,
+					packet
+				)
+			);
 		}
 		this.connectionState = nextState;
 		return true;
@@ -103,6 +115,23 @@ public final class Binding implements AutoCloseable {
 	void onPacketSend(ByteBuf message) {
 		int packetId = packetIdFromHeader(message);
 		this.connectionState = nextStateAfterSentPacket(packetId);
+	}
+
+	public User tryGetUser() {
+		if (this.user == null) {
+			for (Player otherPlayer : Bukkit.getOnlinePlayers()) {
+				Channel otherChannel = PlayerChannel.channelOf(otherPlayer);
+				if (matchesChannel(otherChannel)) {
+					this.user = UserRepository.userOf(otherPlayer);
+					break;
+				}
+			}
+		}
+		return this.user;
+	}
+
+	boolean matchesChannel(Channel otherChannel) {
+		return otherChannel.pipeline().context(this.receiveHandler) != null;
 	}
 
 	public ConnectionState connectionState() {
@@ -128,22 +157,22 @@ public final class Binding implements AutoCloseable {
 	}
 
 	private ConnectionState nextStateAfterReceivedPacket(int packetId) {
-		PacketIdRegistry serverbound = PacketIdRegistries.serverbound();
+		PacketIdRegistry<PacketId.Client> serverbound = PacketIdRegistries.serverbound();
 		switch (this.connectionState) {
 			case LOGIN:
-				if (packetId == serverbound.idOf(ConnectionState.LOGIN, "LOGIN_ACK", this.protocolVersion)) {
+				if (packetId == serverbound.idOf(ConnectionState.LOGIN, PacketId.Client.LOGIN_ACK, this.protocolVersion)) {
 					return ConnectionState.CONFIGURATION;
 				}
 				break;
 			case PLAY:
-				if (packetId == serverbound.idOf(ConnectionState.PLAY, "CONFIGURATION_ACK", this.protocolVersion)) {
+				if (packetId == serverbound.idOf(ConnectionState.PLAY, PacketId.Client.CONFIGURATION_ACK, this.protocolVersion)) {
 					return ConnectionState.CONFIGURATION;
 				}
 				break;
 			case CONFIGURATION:
 				if (packetId == serverbound.idOf(
 					ConnectionState.CONFIGURATION,
-					"FINISH_CONFIGURATION",
+					PacketId.Client.FINISH_CONFIGURATION,
 					this.protocolVersion
 				)) {
 					return ConnectionState.PLAY;
@@ -159,13 +188,13 @@ public final class Binding implements AutoCloseable {
 		if (this.connectionState != ConnectionState.LOGIN) {
 			return this.connectionState;
 		}
-		PacketIdRegistry clientbound = PacketIdRegistries.clientbound();
-		if (packetId != clientbound.idOf(ConnectionState.LOGIN, "SUCCESS", this.protocolVersion)) {
+		PacketIdRegistry<PacketId.Server> clientbound = PacketIdRegistries.clientbound();
+		if (packetId != clientbound.idOf(ConnectionState.LOGIN, PacketId.Server.SUCCESS, this.protocolVersion)) {
 			return this.connectionState;
 		}
 		return PacketIdRegistries.serverbound().idOf(
 			ConnectionState.LOGIN,
-			"LOGIN_ACK",
+			PacketId.Client.LOGIN_ACK,
 			this.protocolVersion
 		) < 0
 			? ConnectionState.PLAY

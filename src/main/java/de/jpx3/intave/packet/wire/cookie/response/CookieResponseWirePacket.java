@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.cookie.response;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableCookieResponsePacket;
 import de.jpx3.intave.share.MinecraftKey;
@@ -59,11 +60,11 @@ public final class CookieResponseWirePacket implements MutableCookieResponsePack
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
 		return (state == ConnectionState.LOGIN
 						|| state == ConnectionState.CONFIGURATION
 						|| state == ConnectionState.PLAY)
-				&& ("COOKIE_RESPONSE".equals(name));
+				&& (packetId == PacketId.Client.COOKIE_RESPONSE);
 	}
 
 	@Override

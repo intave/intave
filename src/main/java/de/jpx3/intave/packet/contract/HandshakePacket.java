@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.packet.contract;
 
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 
 public interface HandshakePacket extends Packet {
@@ -23,7 +24,7 @@ public interface HandshakePacket extends Packet {
 	ConnectionState nextConnectionState();
 
 	@Override
-	default boolean appliesTo(ConnectionState state, String name) {
-		return state == ConnectionState.HANDSHAKING && name.equals("SET_PROTOCOL");
+	default boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return state == ConnectionState.HANDSHAKING && packetId == PacketId.Client.SET_PROTOCOL;
 	}
 }

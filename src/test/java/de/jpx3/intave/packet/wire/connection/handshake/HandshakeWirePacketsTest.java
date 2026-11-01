@@ -12,6 +12,7 @@
 package de.jpx3.intave.packet.wire.connection.handshake;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.wire.WirePackets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -23,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 final class HandshakeWirePacketsTest {
 	@Test
 	void keepsPacketMutationsOutOfSubsequentInstances() {
-		HandshakeWirePacket first = WirePackets.createPacket(HANDSHAKING, "SET_PROTOCOL", 768);
+		HandshakeWirePacket first = WirePackets.createPacket(HANDSHAKING, PacketId.Client.SET_PROTOCOL, 768);
 		first.setServerAddress("modified.example");
 		first.setNextConnectionState(LOGIN);
 		HandshakeWirePacket second = WirePackets.createPacket(HANDSHAKING, 0, 768);

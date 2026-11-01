@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.packet.wire.player.input;
 
+import de.jpx3.intave.module.linker.packet.PacketId;
 import org.junit.jupiter.api.Test;
 
 import static de.jpx3.intave.packet.PacketDirection.SERVERBOUND;
@@ -23,7 +24,7 @@ final class PlayerInputWirePacketCodecsTest {
 		LegacyPlayerInputWirePacket packet =
 				roundTrip(
 						SERVERBOUND,
-						"PLAYER_INPUT",
+						PacketId.Client.PLAYER_INPUT,
 						767,
 						b -> b.writeFloat(-0.25f).writeFloat(0.75f).writeByte(0x83));
 		assertEquals(-0.25f, packet.strafe());

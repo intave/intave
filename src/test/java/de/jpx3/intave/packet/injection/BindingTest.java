@@ -12,6 +12,7 @@
 package de.jpx3.intave.packet.injection;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.PacketDirection;
 import de.jpx3.intave.packet.contract.mutable.MutableHandshakePacket;
@@ -20,11 +21,14 @@ import de.jpx3.intave.registry.PacketIdRegistries;
 import de.jpx3.intave.registry.PacketIdRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Proxy;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,6 +36,57 @@ import static org.junit.jupiter.api.Assertions.*;
 final class BindingTest {
   private static final String RECEIVER = "intave-decoder";
   private static final String SENDER = "intave-encoder";
+
+  @Test
+  void matchesDirectAndWrappedChannelsForTheSameConnection() {
+    EmbeddedChannel channel = channelWithViaCodecs();
+    try (Binding binding = Binding.bind(channel)) {
+      Channel wrappedChannel = wrapChannel(channel);
+      assertNotEquals(wrappedChannel, channel);
+      assertTrue(binding.matchesChannel(channel));
+      assertTrue(binding.matchesChannel(wrappedChannel));
+    } finally {
+      channel.finishAndReleaseAll();
+    }
+  }
+
+  @Test
+  void matchesChannelWhenThePipelineAlsoReturnsTheWrapper() {
+    EmbeddedChannel channel = channelWithViaCodecs();
+    try (Binding binding = Binding.bind(channel)) {
+      Channel wrappedChannel = wrapChannel(channel, true);
+      assertSame(wrappedChannel, wrappedChannel.pipeline().channel());
+      assertNotSame(channel.pipeline(), wrappedChannel.pipeline());
+      assertTrue(binding.matchesChannel(wrappedChannel));
+    } finally {
+      channel.finishAndReleaseAll();
+    }
+  }
+
+  @Test
+  void matchesRawChannelWhenBoundThroughAWrappedPipeline() {
+    EmbeddedChannel channel = channelWithViaCodecs();
+    try (Binding binding = Binding.bind(wrapChannel(channel, true))) {
+      assertTrue(binding.matchesChannel(channel));
+    } finally {
+      channel.finishAndReleaseAll();
+    }
+  }
+
+  @Test
+  void rejectsDirectAndWrappedChannelsForAnotherConnection() {
+    EmbeddedChannel channel = channelWithViaCodecs();
+    EmbeddedChannel otherChannel = channelWithViaCodecs();
+    try (Binding binding = Binding.bind(channel); Binding otherBinding = Binding.bind(otherChannel)) {
+      assertTrue(otherBinding.matchesChannel(otherChannel));
+      assertFalse(binding.matchesChannel(otherChannel));
+      assertFalse(binding.matchesChannel(wrapChannel(otherChannel)));
+      assertFalse(binding.matchesChannel(wrapChannel(otherChannel, true)));
+    } finally {
+      channel.finishAndReleaseAll();
+      otherChannel.finishAndReleaseAll();
+    }
+  }
 
   @Test
   void tracksTheHandshakeConnectionState() {
@@ -70,7 +125,7 @@ final class BindingTest {
     EmbeddedChannel channel = channelWithViaCodecs();
     Binding binding = bindAndHandshake(channel, protocolVersion);
 
-    send(channel, packet(PacketIdRegistries.clientbound(), ConnectionState.LOGIN, "SUCCESS", protocolVersion));
+    send(channel, packet(PacketIdRegistries.clientbound(), ConnectionState.LOGIN, PacketId.Server.SUCCESS, protocolVersion));
     assertEquals(ConnectionState.PLAY, binding.connectionState());
 
     binding.close();
@@ -83,16 +138,16 @@ final class BindingTest {
     EmbeddedChannel channel = channelWithViaCodecs();
     Binding binding = bindAndHandshake(channel, protocolVersion);
 
-    send(channel, packet(PacketIdRegistries.clientbound(), ConnectionState.LOGIN, "SUCCESS", protocolVersion));
+    send(channel, packet(PacketIdRegistries.clientbound(), ConnectionState.LOGIN, PacketId.Server.SUCCESS, protocolVersion));
     assertEquals(ConnectionState.LOGIN, binding.connectionState());
 
-    receive(channel, packet(PacketIdRegistries.serverbound(), ConnectionState.LOGIN, "LOGIN_ACK", protocolVersion));
+    receive(channel, packet(PacketIdRegistries.serverbound(), ConnectionState.LOGIN, PacketId.Client.LOGIN_ACK, protocolVersion));
     assertEquals(ConnectionState.CONFIGURATION, binding.connectionState());
 
     receive(channel, packet(
       PacketIdRegistries.serverbound(),
       ConnectionState.CONFIGURATION,
-      "FINISH_CONFIGURATION",
+      PacketId.Client.FINISH_CONFIGURATION,
       protocolVersion
     ));
     assertEquals(ConnectionState.PLAY, binding.connectionState());
@@ -100,7 +155,7 @@ final class BindingTest {
     receive(channel, packet(
       PacketIdRegistries.serverbound(),
       ConnectionState.PLAY,
-      "CONFIGURATION_ACK",
+      PacketId.Client.CONFIGURATION_ACK,
       protocolVersion
     ));
     assertEquals(ConnectionState.CONFIGURATION, binding.connectionState());
@@ -157,15 +212,15 @@ final class BindingTest {
     EmbeddedChannel channel = channelWithViaCodecs();
     Binding binding = bindAndHandshake(channel, protocolVersion);
 
-    send(channel, packet(PacketIdRegistries.clientbound(), ConnectionState.LOGIN, "SUCCESS", protocolVersion));
-    receive(channel, packet(PacketIdRegistries.serverbound(), ConnectionState.LOGIN, "LOGIN_ACK", protocolVersion));
+    send(channel, packet(PacketIdRegistries.clientbound(), ConnectionState.LOGIN, PacketId.Server.SUCCESS, protocolVersion));
+    receive(channel, packet(PacketIdRegistries.serverbound(), ConnectionState.LOGIN, PacketId.Client.LOGIN_ACK, protocolVersion));
     assertEquals(ConnectionState.CONFIGURATION, binding.connectionState());
 
     channel.pipeline().addBefore("via-decoder", "decompress", new ChannelInboundHandlerAdapter());
     receive(channel, compressionEnvelope(packet(
       PacketIdRegistries.serverbound(),
       ConnectionState.CONFIGURATION,
-      "FINISH_CONFIGURATION",
+      PacketId.Client.FINISH_CONFIGURATION,
       protocolVersion
     )));
 
@@ -187,7 +242,7 @@ final class BindingTest {
     send(channel, compressionEnvelope(packet(
       PacketIdRegistries.clientbound(),
       ConnectionState.LOGIN,
-      "SUCCESS",
+      PacketId.Server.SUCCESS,
       protocolVersion
     )));
 
@@ -197,6 +252,33 @@ final class BindingTest {
 
     binding.close();
     assertFalse(channel.finishAndReleaseAll());
+  }
+
+  private static Channel wrapChannel(Channel channel) {
+    return wrapChannel(channel, false);
+  }
+
+  private static Channel wrapChannel(Channel channel, boolean wrapPipeline) {
+    return (Channel) Proxy.newProxyInstance(
+      Channel.class.getClassLoader(),
+      new Class<?>[]{Channel.class},
+      (proxy, method, arguments) -> {
+        if (method.getName().equals("equals")) {
+          return proxy == arguments[0];
+        }
+        if (wrapPipeline && method.getName().equals("pipeline")) {
+          // ProtocolLib 4.8 returns its channel wrapper from PipelineProxy.channel().
+          return Proxy.newProxyInstance(
+            ChannelPipeline.class.getClassLoader(),
+            new Class<?>[]{ChannelPipeline.class},
+            (pipelineProxy, pipelineMethod, pipelineArguments) -> pipelineMethod.getName().equals("channel")
+              ? proxy
+              : pipelineMethod.invoke(channel.pipeline(), pipelineArguments)
+          );
+        }
+        return method.invoke(channel, arguments);
+      }
+    );
   }
 
   private static EmbeddedChannel channelWithViaCodecs() {
@@ -214,20 +296,20 @@ final class BindingTest {
 
   private static ByteBuf handshake(int protocolVersion) {
     // Use a supported registry version even when testing an unknown advertised protocol.
-    MutableHandshakePacket packet = WirePackets.createPacket(ConnectionState.HANDSHAKING, "SET_PROTOCOL", 764);
+    MutableHandshakePacket packet = WirePackets.createPacket(ConnectionState.HANDSHAKING, PacketId.Client.SET_PROTOCOL, 764);
     packet.setProtocolVersion(protocolVersion);
     packet.setServerAddress("localhost");
     packet.setServerPort(25565);
     packet.setNextConnectionState(ConnectionState.LOGIN);
     ByteBuf handshake = Unpooled.buffer();
-    WirePackets.encodePacket(PacketDirection.SERVERBOUND, ConnectionState.HANDSHAKING, "SET_PROTOCOL", 764, packet, handshake);
+    WirePackets.encodePacket(PacketDirection.SERVERBOUND, ConnectionState.HANDSHAKING, PacketId.Client.SET_PROTOCOL, 764, packet, handshake);
     return handshake;
   }
 
   private static ByteBuf packet(
-    PacketIdRegistry registry,
+    PacketIdRegistry<?> registry,
     ConnectionState state,
-    String typeName,
+    PacketId typeName,
     int protocolVersion
   ) {
     ByteBuf packet = Unpooled.buffer();

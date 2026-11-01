@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.packet.wire.ability.inbound;
 
+import de.jpx3.intave.module.linker.packet.PacketId;
 import org.junit.jupiter.api.Test;
 
 import static de.jpx3.intave.packet.PacketDirection.SERVERBOUND;
@@ -35,10 +36,10 @@ final class AbilityInWirePacketCodecsTest {
 		AbilityInWirePacket legacy =
 				roundTrip(
 						SERVERBOUND,
-						"ABILITIES",
+						PacketId.Client.ABILITIES_IN,
 						578,
 						b -> b.writeByte(2).writeFloat(0.05f).writeFloat(0.1f));
-		AbilityInWirePacket modern = roundTrip(SERVERBOUND, "ABILITIES", 735, b -> b.writeByte(2));
+		AbilityInWirePacket modern = roundTrip(SERVERBOUND, PacketId.Client.ABILITIES_IN, 735, b -> b.writeByte(2));
 		assertInstanceOf(AbilityInWithSpeedsWirePacket.class, legacy);
 		assertEquals(AbilityInWirePacket.class, modern.getClass());
 		assertTrue(legacy.requestedFlying());

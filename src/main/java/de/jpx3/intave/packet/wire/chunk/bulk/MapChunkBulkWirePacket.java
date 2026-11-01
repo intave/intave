@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.chunk.bulk;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableMapChunkBulkPacket;
 import io.netty.buffer.ByteBuf;
@@ -67,8 +68,8 @@ public class MapChunkBulkWirePacket implements MutableMapChunkBulkPacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("MAP_CHUNK_BULK".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.MAP_CHUNK_BULK);
 	}
 
 	@Override

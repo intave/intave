@@ -24,9 +24,9 @@ final class WirePacketWrap<T extends Packet> {
 	private final StreamCodec<ByteBuf, ByteBuf, T> codec;
 
 	private WirePacketWrap(
-			Class<T> packetClass,
-			Constructor<T> constructor,
-			StreamCodec<ByteBuf, ByteBuf, T> codec) {
+		Class<T> packetClass,
+		Constructor<T> constructor,
+		StreamCodec<ByteBuf, ByteBuf, T> codec) {
 		this.packetClass = packetClass;
 		this.constructor = constructor;
 		this.codec = codec;
@@ -37,7 +37,7 @@ final class WirePacketWrap<T extends Packet> {
 			return this.constructor.newInstance();
 		} catch (ReflectiveOperationException failure) {
 			throw new IllegalStateException(
-					"Could not create " + this.packetClass.getName(), failure);
+				"Could not create " + this.packetClass.getName(), failure);
 		}
 	}
 
@@ -48,10 +48,10 @@ final class WirePacketWrap<T extends Packet> {
 	public void encode(ByteBuf payload, Packet packet) {
 		if (packet.getClass() != this.packetClass) {
 			throw new IllegalArgumentException(
-					"Expected "
-							+ this.packetClass.getName()
-							+ ", got "
-							+ packet.getClass().getName());
+				"Expected "
+					+ this.packetClass.getName()
+					+ ", got "
+					+ packet.getClass().getName());
 		}
 		this.codec.encode(payload, this.packetClass.cast(packet));
 	}
@@ -62,14 +62,14 @@ final class WirePacketWrap<T extends Packet> {
 			Constructor<T> constructor = packetClass.getConstructor();
 			@SuppressWarnings("unchecked")
 			StreamCodec<ByteBuf, ByteBuf, T> codec =
-					(StreamCodec<ByteBuf, ByteBuf, T>) packetClass.getDeclaredField("STREAM_CODEC").get(null);
+				(StreamCodec<ByteBuf, ByteBuf, T>) packetClass.getDeclaredField("STREAM_CODEC").get(null);
 			return new WirePacketWrap<>(packetClass, constructor, codec);
 		} catch (ReflectiveOperationException failure) {
 			throw new IllegalArgumentException(
-					packetClass.getName()
-							+ " must declare a public no-argument constructor and public STREAM_CODEC"
-							+ " field",
-					failure);
+				packetClass.getName()
+					+ " must declare a public no-argument constructor and public STREAM_CODEC"
+					+ " field",
+				failure);
 		}
 	}
 }

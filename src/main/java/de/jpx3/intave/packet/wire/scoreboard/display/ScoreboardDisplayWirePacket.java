@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.scoreboard.display;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableScoreboardDisplayPacket;
 import io.netty.buffer.ByteBuf;
@@ -76,8 +77,8 @@ public class ScoreboardDisplayWirePacket implements MutableScoreboardDisplayPack
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("SCOREBOARD_DISPLAY_OBJECTIVE".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.SCOREBOARD_DISPLAY_OBJECTIVE);
 	}
 
 	@Override

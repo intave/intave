@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.packet.wire.player.action;
 
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.share.PlayerAction;
 import org.junit.jupiter.api.Test;
 
@@ -23,11 +24,11 @@ final class PlayerActionWirePacketCodecsTest {
 	void entityActionSixMeansInventoryBeforeOffhandWasAdded() {
 		PlayerActionWirePacket legacy =
 				roundTrip(
-						SERVERBOUND, "ENTITY_ACTION", 47, b -> b.writeBytes(new byte[] {12, 6, 0}));
+						SERVERBOUND, PacketId.Client.ENTITY_ACTION_IN, 47, b -> b.writeBytes(new byte[] {12, 6, 0}));
 		PlayerActionWirePacket modern =
 				roundTrip(
 						SERVERBOUND,
-						"ENTITY_ACTION",
+						PacketId.Client.ENTITY_ACTION_IN,
 						107,
 						b -> b.writeBytes(new byte[] {12, 6, 0}));
 		assertEquals(PlayerAction.OPEN_INVENTORY, legacy.playerAction());

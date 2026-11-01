@@ -11,14 +11,15 @@
 
 package de.jpx3.intave.packet.contract;
 
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 
 public interface Packet {
-	default boolean appliesTo(ConnectionState state, String name, int protocolVersion) {
-		return appliesTo(state, name) && appliesTo(protocolVersion);
+	default boolean appliesTo(ConnectionState state, PacketId packetId, int protocolVersion) {
+		return appliesTo(state, packetId) && appliesTo(protocolVersion);
 	}
 
-	boolean appliesTo(ConnectionState state, String name);
+	boolean appliesTo(ConnectionState state, PacketId packetId);
 
 	default boolean appliesTo(int protocolVersion) {
 		return true;

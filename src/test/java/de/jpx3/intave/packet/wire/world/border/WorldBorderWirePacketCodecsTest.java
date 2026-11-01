@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.world.border;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.VarLongCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import org.junit.jupiter.api.Test;
 
 import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
@@ -26,7 +27,7 @@ final class WorldBorderWirePacketCodecsTest {
 			WorldBorderWirePacket border =
 					roundTrip(
 							CLIENTBOUND,
-							protocol < 755 ? "WORLD_BORDER" : "INITIALIZE_BORDER",
+							protocol < 755 ? PacketId.Server.WORLD_BORDER : PacketId.Server.INITIALIZE_BORDER,
 							protocol,
 							b -> {
 								if (protocol < 755) b.writeByte(3);
@@ -48,28 +49,28 @@ final class WorldBorderWirePacketCodecsTest {
 	@Test
 	void modernWorldBorderPacketsContainOnlyTheirOwnActionPayload() {
 		WorldBorderWirePacket size =
-				roundTrip(CLIENTBOUND, "SET_BORDER_SIZE", 777, b -> b.writeDouble(400));
+				roundTrip(CLIENTBOUND, PacketId.Server.SET_BORDER_SIZE, 777, b -> b.writeDouble(400));
 		assertEquals(400.0, size.size());
 		assertNull(size.center());
 		WorldBorderWirePacket center =
 				roundTrip(
 						CLIENTBOUND,
-						"SET_BORDER_CENTER",
+						PacketId.Server.SET_BORDER_CENTER,
 						777,
 						b -> b.writeDouble(12).writeDouble(24));
 		assertEquals(24, center.center().getZ());
 		WorldBorderWirePacket lerp =
 				roundTrip(
 						CLIENTBOUND,
-						"SET_BORDER_LERP_SIZE",
+						PacketId.Server.SET_BORDER_LERP_SIZE,
 						777,
 						b -> {
 							b.writeDouble(600).writeDouble(400);
 							VarLongCodec.INSTANCE.encode(b, 60000L);
 						});
 		assertEquals(60000L, lerp.lerpTime());
-		roundTrip(CLIENTBOUND, "SET_BORDER_WARNING_DELAY", 777, b -> b.writeByte(15));
-		roundTrip(CLIENTBOUND, "SET_BORDER_WARNING_DISTANCE", 777, b -> b.writeByte(5));
+		roundTrip(CLIENTBOUND, PacketId.Server.SET_BORDER_WARNING_DELAY, 777, b -> b.writeByte(15));
+		roundTrip(CLIENTBOUND, PacketId.Server.SET_BORDER_WARNING_DISTANCE, 777, b -> b.writeByte(5));
 		assertThrows(
 				IllegalArgumentException.class,
 				() -> size.setCenter(new de.jpx3.intave.share.Position()));

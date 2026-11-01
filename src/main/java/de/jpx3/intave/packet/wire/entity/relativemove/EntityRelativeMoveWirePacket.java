@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.entity.relativemove;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityRelativeMovePacket;
 import de.jpx3.intave.share.EntityRelativeMoveStep;
@@ -92,8 +93,8 @@ public class EntityRelativeMoveWirePacket implements MutableEntityRelativeMovePa
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("REL_ENTITY_MOVE".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.REL_ENTITY_MOVE);
 	}
 
 	@Override

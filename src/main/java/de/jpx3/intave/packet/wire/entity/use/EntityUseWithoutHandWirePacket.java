@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.entity.use;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityUsePacket;
 import de.jpx3.intave.share.EntityUseAction;
@@ -93,8 +94,8 @@ public class EntityUseWithoutHandWirePacket implements MutableEntityUsePacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return state == ConnectionState.PLAY && "USE_ENTITY".equals(name);
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return state == ConnectionState.PLAY && packetId == PacketId.Client.USE_ENTITY;
 	}
 
 	@Override

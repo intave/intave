@@ -32,9 +32,9 @@ import de.jpx3.intave.block.variant.BlockVariant;
 import de.jpx3.intave.check.CheckService;
 import de.jpx3.intave.check.movement.Physics;
 import de.jpx3.intave.check.movement.Timer;
+import de.jpx3.intave.check.movement.physics.update.MotionUpdate;
 import de.jpx3.intave.check.movement.physics.update.PistonActionUpdate;
 import de.jpx3.intave.check.movement.physics.update.ShulkerBoxActionUpdate;
-import de.jpx3.intave.check.movement.physics.update.MotionUpdate;
 import de.jpx3.intave.check.world.InteractionRaytrace;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.Hypot;
@@ -54,6 +54,8 @@ import de.jpx3.intave.module.test.record.action.ShulkerBoxAction;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.tracker.player.PacketLogging;
 import de.jpx3.intave.module.violation.Violation;
+import de.jpx3.intave.packet.contract.PlayerInputPacket;
+import de.jpx3.intave.packet.event.PacketEventBus;
 import de.jpx3.intave.packet.plib.PacketSender;
 import de.jpx3.intave.packet.plib.converter.InputConverter;
 import de.jpx3.intave.packet.reader.*;
@@ -753,6 +755,22 @@ public final class MovementDispatcher extends Module {
     }
   }
 
+  {
+    PacketEventBus.addListener(event -> {
+      PlayerInputPacket packet = (PlayerInputPacket) event.packet();
+      User user = event.user();
+      if (user == null) {
+        System.out.println("[Intave] Received player input packet for non-user ");
+        return;
+      }
+      MovementMetadata movementData = user.meta().movement();
+      if (user.meta().protocol().protocolVersion() >= VER_1_21_2) {
+        movementData.lastInput = movementData.input;
+        movementData.input = packet.input();
+      }
+    }, PLAYER_INPUT);
+  }
+
   @PacketSubscription(
     packetsIn = {
       STEER_VEHICLE
@@ -767,17 +785,17 @@ public final class MovementDispatcher extends Module {
       if (!user.meta().protocol().sendsInputs()) {
         return;
       }
-      StructureModifier<Boolean> inputBooleans = packet.getStructures().read(0).getBooleans();
-      movementData.lastInput = movementData.input;
-      movementData.input = new Input(
-        inputBooleans.read(0),
-        inputBooleans.read(1),
-        inputBooleans.read(2),
-        inputBooleans.read(3),
-        inputBooleans.read(4),
-        inputBooleans.read(5),
-        inputBooleans.read(6)
-      );
+//      StructureModifier<Boolean> inputBooleans = packet.getStructures().read(0).getBooleans();
+//      movementData.lastInput = movementData.input;
+//      movementData.input = new Input(
+//        inputBooleans.read(0),
+//        inputBooleans.read(1),
+//        inputBooleans.read(2),
+//        inputBooleans.read(3),
+//        inputBooleans.read(4),
+//        inputBooleans.read(5),
+//        inputBooleans.read(6)
+//      );
       if (user.receives(MessageChannel.DEBUG_SENT_INPUT)) {
         ActionBar.sendActionBar(player, String.valueOf(movementData.input));
       }

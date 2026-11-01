@@ -425,7 +425,7 @@ public final class ProtocolMetadata {
   }
 
   public boolean sendsInputs() {
-    return protocolVersion >= VER_1_21_2 && MinecraftVersions.VER1_21_2.atOrAbove();
+    return protocolVersion >= VER_1_21_2;// && MinecraftVersions.VER1_21_2.atOrAbove();
   }
 
   public boolean sendsAttackSwingPackets() {

@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.world.gamestate;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableGameStateChangePacket;
 import de.jpx3.intave.share.GameStateChangeType;
@@ -50,8 +51,8 @@ public class GameStateChangeWirePacket implements MutableGameStateChangePacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("GAME_STATE_CHANGE".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.GAME_STATE_CHANGE);
 	}
 
 	@Override

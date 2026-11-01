@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.entity.animation;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityAnimationPacket;
 import de.jpx3.intave.share.EntityAnimation;
@@ -59,8 +60,8 @@ public class EntityAnimationWirePacket implements MutableEntityAnimationPacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("ANIMATION".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.ANIMATION);
 	}
 
 	@Override

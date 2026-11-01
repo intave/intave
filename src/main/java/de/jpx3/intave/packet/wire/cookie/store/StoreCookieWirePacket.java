@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.cookie.store;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableStoreCookiePacket;
 import de.jpx3.intave.share.MinecraftKey;
@@ -23,25 +24,24 @@ import static de.jpx3.intave.packet.wire.WireCodecs.count;
 
 public class StoreCookieWirePacket implements MutableStoreCookiePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, StoreCookieWirePacket> STREAM_CODEC =
-			StreamCodec.of(
-					(output, packet) -> {
-						MinecraftKey.STREAM_CODEC.encode(output, packet.key);
-						{
-							if (packet.payload.length > 5120)
-								throw new IllegalArgumentException("Cookie exceeds 5120 bytes");
-							ByteBufStreamCodecs.VARINT.encode(output, packet.payload.length);
-							output.writeBytes(packet.payload);
-						}
-					},
-					input -> {
-						MinecraftKey key = MinecraftKey.STREAM_CODEC.decode(input);
-						byte[] payload = bytes(input, count(input, 5120));
-						return new StoreCookieWirePacket(key, payload);
-					});
+		StreamCodec.of(
+			(output, packet) -> {
+				MinecraftKey.STREAM_CODEC.encode(output, packet.key);
+				{
+					if (packet.payload.length > 5120)
+						throw new IllegalArgumentException("Cookie exceeds 5120 bytes");
+					ByteBufStreamCodecs.VARINT.encode(output, packet.payload.length);
+					output.writeBytes(packet.payload);
+				}
+			},
+			input -> {
+				MinecraftKey key = MinecraftKey.STREAM_CODEC.decode(input);
+				byte[] payload = bytes(input, count(input, 5120));
+				return new StoreCookieWirePacket(key, payload);
+			});
 
-	protected MinecraftKey key = MinecraftKey.withDefaultNamespace("cookie");
-
-	protected byte[] payload = new byte[0];
+	protected MinecraftKey key;
+	protected byte[] payload;
 
 	public StoreCookieWirePacket() {
 		this(MinecraftKey.withDefaultNamespace("cookie"), new byte[0]);
@@ -73,11 +73,11 @@ public class StoreCookieWirePacket implements MutableStoreCookiePacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
 		return (state == ConnectionState.LOGIN
-						|| state == ConnectionState.CONFIGURATION
-						|| state == ConnectionState.PLAY)
-				&& ("STORE_COOKIE".equals(name));
+			|| state == ConnectionState.CONFIGURATION
+			|| state == ConnectionState.PLAY)
+			&& (packetId == PacketId.Server.STORE_COOKIE);
 	}
 
 	@Override

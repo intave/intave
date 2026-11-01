@@ -12,6 +12,7 @@
 package de.jpx3.intave.packet.wire;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.PacketDirection;
 import de.jpx3.intave.packet.contract.*;
@@ -31,12 +32,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 final class WirePacketCodecsTest {
 	@Test
-	void everyRegistrationMatchesItsDirectionStateNameAndProtocol() {
+	void everyRegistrationMatchesItsDirectionStateTypeAndProtocol() {
 		for (PacketDirection direction : PacketDirection.values()) {
-			PacketIdRegistry registry = registry(direction);
+			PacketIdRegistry<?> registry = registry(direction);
 			for (int protocol : registry.supportedProtocolVersions()) {
 				for (ConnectionState state : ConnectionState.values()) {
-					for (Map.Entry<String, Integer> entry :
+					for (Map.Entry<? extends PacketId, Integer> entry :
 							registry.packetIds(state, protocol).entrySet()) {
 						if (!WirePackets.packetIdKnown(
 								direction, state, entry.getValue(), protocol)) continue;
@@ -59,40 +60,39 @@ final class WirePacketCodecsTest {
 	@Test
 	void nbtAndRegistryDependentPacketsAreNotRegistered() {
 		for (int protocol : registry(SERVERBOUND).supportedProtocolVersions()) {
-			for (String name : new String[] {"WINDOW_CLICK", "SET_CREATIVE_SLOT"}) {
-				assertUnsupported(SERVERBOUND, name, protocol);
+			for (PacketId packetType : new PacketId[] {PacketId.Client.WINDOW_CLICK, PacketId.Client.SET_CREATIVE_SLOT}) {
+				assertUnsupported(SERVERBOUND, packetType, protocol);
 			}
-			for (String name :
-					new String[] {
-						"WINDOW_ITEMS",
-						"SET_SLOT",
-						"ENTITY_EQUIPMENT",
-						"OPEN_WINDOW",
-						"ENTITY_METADATA",
-						"ENTITY_EFFECT",
-						"REMOVE_ENTITY_EFFECT",
-						"BLOCK_ACTION",
-						"BLOCK_CHANGE",
-						"SPAWN_ENTITY"
+			for (PacketId packetType : new PacketId[] {
+						PacketId.Server.WINDOW_ITEMS,
+						PacketId.Server.SET_SLOT,
+						PacketId.Server.ENTITY_EQUIPMENT,
+						PacketId.Server.OPEN_WINDOW,
+						PacketId.Server.ENTITY_METADATA,
+						PacketId.Server.ENTITY_EFFECT,
+						PacketId.Server.REMOVE_ENTITY_EFFECT,
+						PacketId.Server.BLOCK_ACTION,
+						PacketId.Server.BLOCK_CHANGE,
+						PacketId.Server.SPAWN_ENTITY
 					}) {
-				assertUnsupported(CLIENTBOUND, name, protocol);
+				assertUnsupported(CLIENTBOUND, packetType, protocol);
 			}
-			if (protocol < 107) assertUnsupported(SERVERBOUND, "USE_ITEM_ON", protocol);
+			if (protocol < 107) assertUnsupported(SERVERBOUND, PacketId.Client.USE_ITEM_ON, protocol);
 			if (protocol >= 765) {
-				assertUnsupported(CLIENTBOUND, "EXPLOSION", protocol);
-				assertUnsupported(CLIENTBOUND, "TAB_COMPLETE", protocol);
-				assertUnsupported(CLIENTBOUND, "SCOREBOARD_OBJECTIVE", protocol);
+				assertUnsupported(CLIENTBOUND, PacketId.Server.EXPLOSION, protocol);
+				assertUnsupported(CLIENTBOUND, PacketId.Server.TAB_COMPLETE_OUT, protocol);
+				assertUnsupported(CLIENTBOUND, PacketId.Server.SCOREBOARD_OBJECTIVE, protocol);
 			}
-			if (protocol >= 775) assertUnsupported(CLIENTBOUND, "UPDATE_TIME", protocol);
+			if (protocol >= 775) assertUnsupported(CLIENTBOUND, PacketId.Server.UPDATE_TIME, protocol);
 		}
 	}
 
 	@Test
 	void theSameCanonicalNameUsesDirectionSpecificFields() {
 		HeldItemSlotPacket received =
-				roundTrip(SERVERBOUND, "HELD_ITEM_SLOT", 768, b -> b.writeShort(7));
+				roundTrip(SERVERBOUND, PacketId.Client.HELD_ITEM_SLOT_IN, 768, b -> b.writeShort(7));
 		HeldItemSlotPacket sent =
-				roundTrip(CLIENTBOUND, "HELD_ITEM_SLOT", 768, b -> b.writeByte(7));
+				roundTrip(CLIENTBOUND, PacketId.Server.HELD_ITEM_SLOT_OUT, 768, b -> b.writeByte(7));
 		assertEquals(7, received.slot());
 		assertEquals(7, sent.slot());
 	}
@@ -102,7 +102,7 @@ final class WirePacketCodecsTest {
 		TabCompleteResponsePacket suggestions =
 				roundTrip(
 						CLIENTBOUND,
-						"TAB_COMPLETE",
+						PacketId.Server.TAB_COMPLETE_OUT,
 						764,
 						b -> {
 							b.writeBytes(new byte[] {9, 1, 2, 1});
@@ -114,7 +114,7 @@ final class WirePacketCodecsTest {
 		ScoreboardObjectivePacket objective =
 				roundTrip(
 						CLIENTBOUND,
-						"SCOREBOARD_OBJECTIVE",
+						PacketId.Server.SCOREBOARD_OBJECTIVE,
 						764,
 						b -> {
 							ByteBufStreamCodecs.VARINT_STRING.encode(b, "score");
@@ -128,21 +128,21 @@ final class WirePacketCodecsTest {
 	@Test
 	void menuAndWindowIdsRetainTheirVersionSpecificWidths() {
 		WindowClosePacket oldClose =
-				roundTrip(SERVERBOUND, "CLOSE_WINDOW", 767, b -> b.writeByte(255));
+				roundTrip(SERVERBOUND, PacketId.Client.CLOSE_WINDOW, 767, b -> b.writeByte(255));
 		WindowClosePacket newClose =
 				roundTrip(
 						SERVERBOUND,
-						"CLOSE_WINDOW",
+						PacketId.Client.CLOSE_WINDOW,
 						768,
 						b -> ByteBufStreamCodecs.VARINT.encode(b, 300));
 		assertEquals(255, oldClose.containerId());
 		assertEquals(300, newClose.containerId());
 		MenuButtonPacket oldButton =
-				roundTrip(SERVERBOUND, "ENCHANT_ITEM", 765, b -> b.writeByte(12).writeByte(3));
+				roundTrip(SERVERBOUND, PacketId.Client.ENCHANT_ITEM, 765, b -> b.writeByte(12).writeByte(3));
 		MenuButtonPacket newButton =
 				roundTrip(
 						SERVERBOUND,
-						"ENCHANT_ITEM",
+						PacketId.Client.ENCHANT_ITEM,
 						766,
 						b -> {
 							ByteBufStreamCodecs.VARINT.encode(b, 300);
@@ -157,7 +157,7 @@ final class WirePacketCodecsTest {
 		ByteBuf input = Unpooled.buffer();
 		try {
 			ByteBufStreamCodecs.VARINT.encode(
-					input, registry(SERVERBOUND).idOf(PLAY, "COOKIE_RESPONSE", 768));
+					input, registry(SERVERBOUND).idOf(PLAY, PacketId.Client.COOKIE_RESPONSE, 768));
 			ByteBufStreamCodecs.VARINT_STRING.encode(input, "minecraft:test");
 			input.writeBoolean(true);
 			ByteBufStreamCodecs.VARINT.encode(input, 5121);
@@ -167,7 +167,7 @@ final class WirePacketCodecsTest {
 			assertEquals(0, input.readerIndex());
 			input.clear();
 			ByteBufStreamCodecs.VARINT.encode(
-					input, registry(CLIENTBOUND).idOf(PLAY, "ENTITY_DESTROY", 768));
+					input, registry(CLIENTBOUND).idOf(PLAY, PacketId.Server.ENTITY_DESTROY, 768));
 			ByteBufStreamCodecs.VARINT.encode(input, -1);
 			assertThrows(
 					IllegalArgumentException.class,

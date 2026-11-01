@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.tabcomplete.request;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableTabCompleteRequestPacket;
 import io.netty.buffer.ByteBuf;
@@ -49,8 +50,8 @@ public class TabCompleteRequestWirePacket implements MutableTabCompleteRequestPa
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("TAB_COMPLETE".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.TAB_COMPLETE_IN);
 	}
 
 	@Override

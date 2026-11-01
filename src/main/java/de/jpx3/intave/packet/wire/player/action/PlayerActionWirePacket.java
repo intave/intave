@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.player.action;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerActionPacket;
 import de.jpx3.intave.share.PlayerAction;
@@ -109,8 +110,8 @@ public class PlayerActionWirePacket implements MutablePlayerActionPacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("ENTITY_ACTION".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.ENTITY_ACTION_IN);
 	}
 
 	@Override

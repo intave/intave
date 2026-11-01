@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.packet.wire.player.teleport;
 
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerTeleportPacket;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +26,7 @@ final class PlayerTeleportWirePacketCodecsTest {
 			MutablePlayerTeleportPacket packet =
 					roundTrip(
 							CLIENTBOUND,
-							"POSITION",
+							PacketId.Server.POSITION,
 							protocol,
 							b -> {
 								if (protocol >= 768) b.writeByte(42);

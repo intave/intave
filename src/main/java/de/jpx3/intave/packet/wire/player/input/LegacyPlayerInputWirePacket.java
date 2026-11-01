@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.player.input;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerInputPacket;
 import de.jpx3.intave.share.Input;
@@ -43,8 +44,8 @@ public final class LegacyPlayerInputWirePacket implements MutablePlayerInputPack
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return state == ConnectionState.PLAY && "PLAYER_INPUT".equals(name);
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return state == ConnectionState.PLAY && packetId == PacketId.Client.PLAYER_INPUT;
 	}
 
 	@Override

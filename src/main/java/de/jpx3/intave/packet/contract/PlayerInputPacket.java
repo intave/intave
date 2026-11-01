@@ -12,6 +12,7 @@
 package de.jpx3.intave.packet.contract;
 
 import de.jpx3.intave.annotate.Nullable;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.share.Input;
 
@@ -42,7 +43,7 @@ public interface PlayerInputPacket extends Packet {
 	}
 
 	@Override
-	default boolean appliesTo(ConnectionState state, String name) {
-		return state == ConnectionState.PLAY && name.equals("PLAYER_INPUT");
+	default boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return state == ConnectionState.PLAY && packetId == PacketId.Client.PLAYER_INPUT;
 	}
 }

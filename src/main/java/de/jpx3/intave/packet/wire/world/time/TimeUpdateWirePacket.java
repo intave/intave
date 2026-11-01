@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.world.time;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableTimeUpdatePacket;
 import io.netty.buffer.ByteBuf;
@@ -53,8 +54,8 @@ public class TimeUpdateWirePacket implements MutableTimeUpdatePacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("UPDATE_TIME".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.UPDATE_TIME);
 	}
 
 	@Override

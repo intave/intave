@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.ability.inbound;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableAbilityInPacket;
 import io.netty.buffer.ByteBuf;
@@ -35,8 +36,8 @@ public class AbilityInWirePacket implements MutableAbilityInPacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("ABILITIES".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.ABILITIES_IN);
 	}
 
 	@Override

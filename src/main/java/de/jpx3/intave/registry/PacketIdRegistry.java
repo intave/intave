@@ -11,57 +11,61 @@
 
 package de.jpx3.intave.registry;
 
+import de.jpx3.intave.annotate.Nullable;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 
 import java.util.*;
 
-public final class PacketIdRegistry {
-	private final Map<Integer, Map<ConnectionState, Map<String, Integer>>> protocols;
-	private final Map<Integer, Map<ConnectionState, String[]>> typeNames;
+public final class PacketIdRegistry<T extends Enum<T> & PacketId> {
+	private final Map<Integer, Map<ConnectionState, Map<T, Integer>>> protocols;
+	private final Map<Integer, Map<ConnectionState, List<T>>> packetTypes;
 	private final Set<Integer> supportedProtocolVersions;
 
-	PacketIdRegistry(Map<Integer, Map<ConnectionState, Map<String, Integer>>> protocols) {
-		Map<Integer, Map<ConnectionState, Map<String, Integer>>> copy = new HashMap<>();
-		Map<Integer, Map<ConnectionState, String[]>> typeNames = new HashMap<>();
+	PacketIdRegistry(Class<T> packetIdClass, Map<Integer, Map<ConnectionState, Map<T, Integer>>> protocols) {
+		Map<Integer, Map<ConnectionState, Map<T, Integer>>> copy = new HashMap<>();
+		Map<Integer, Map<ConnectionState, List<T>>> packetTypes = new HashMap<>();
 		protocols.forEach((protocol, states) -> {
-			Map<ConnectionState, Map<String, Integer>> stateCopy = new EnumMap<>(ConnectionState.class);
-			Map<ConnectionState, String[]> stateTypeNames = new EnumMap<>(ConnectionState.class);
+			Map<ConnectionState, Map<T, Integer>> stateCopy = new EnumMap<>(ConnectionState.class);
+			Map<ConnectionState, List<T>> statePacketTypes = new EnumMap<>(ConnectionState.class);
 			states.forEach((state, ids) -> {
-				stateCopy.put(state, Collections.unmodifiableMap(new HashMap<>(ids)));
-				stateTypeNames.put(state, indexTypeNames(protocol, state, ids));
+				Map<T, Integer> idCopy = new EnumMap<>(packetIdClass);
+				idCopy.putAll(ids);
+				stateCopy.put(state, Collections.unmodifiableMap(idCopy));
+				statePacketTypes.put(state, indexPacketTypes(protocol, state, ids));
 			});
 			copy.put(protocol, Collections.unmodifiableMap(stateCopy));
-			typeNames.put(protocol, Collections.unmodifiableMap(stateTypeNames));
+			packetTypes.put(protocol, Collections.unmodifiableMap(statePacketTypes));
 		});
 		this.protocols = Collections.unmodifiableMap(copy);
-		this.typeNames = Collections.unmodifiableMap(typeNames);
+		this.packetTypes = Collections.unmodifiableMap(packetTypes);
 		this.supportedProtocolVersions = Collections.unmodifiableSet(new TreeSet<>(protocols.keySet()));
 	}
 
-	public int idOf(ConnectionState connectionState, String typeName, int protocolVersion) {
+	public int idOf(ConnectionState connectionState, PacketId packetType, int protocolVersion) {
 		Objects.requireNonNull(connectionState, "connectionState");
-		Objects.requireNonNull(typeName, "typeName");
-		Map<ConnectionState, Map<String, Integer>> states = protocols.get(protocolVersion);
+		Objects.requireNonNull(packetType, "packetType");
+		Map<ConnectionState, Map<T, Integer>> states = protocols.get(protocolVersion);
 		if (states == null) {
 			throw new IllegalArgumentException("Unsupported packet protocol version " + protocolVersion);
 		}
 		return states.getOrDefault(connectionState, Collections.emptyMap())
-			.getOrDefault(typeName, -1);
+			.getOrDefault(packetType, -1);
 	}
 
-	public String typeNameOf(ConnectionState connectionState, int packetId, int protocolVersion) {
+	public @Nullable T typeOf(ConnectionState connectionState, int packetId, int protocolVersion) {
 		Objects.requireNonNull(connectionState, "connectionState");
-		Map<ConnectionState, String[]> states = this.typeNames.get(protocolVersion);
+		Map<ConnectionState, List<T>> states = this.packetTypes.get(protocolVersion);
 		if (states == null) {
 			throw new IllegalArgumentException("Unsupported packet protocol version " + protocolVersion);
 		}
-		String[] names = states.get(connectionState);
-		return names != null && packetId >= 0 && packetId < names.length ? names[packetId] : null;
+		List<T> types = states.get(connectionState);
+		return types != null && packetId >= 0 && packetId < types.size() ? types.get(packetId) : null;
 	}
 
-	public Map<String, Integer> packetIds(ConnectionState connectionState, int protocolVersion) {
+	public Map<T, Integer> packetIds(ConnectionState connectionState, int protocolVersion) {
 		Objects.requireNonNull(connectionState, "connectionState");
-		Map<ConnectionState, Map<String, Integer>> states = this.protocols.get(protocolVersion);
+		Map<ConnectionState, Map<T, Integer>> states = this.protocols.get(protocolVersion);
 		if (states == null) {
 			throw new IllegalArgumentException("Unsupported packet protocol version " + protocolVersion);
 		}
@@ -72,20 +76,19 @@ public final class PacketIdRegistry {
 		return supportedProtocolVersions;
 	}
 
-	private static String[] indexTypeNames(int protocolVersion, ConnectionState connectionState, Map<String, Integer> packetIds) {
+	private static <T extends PacketId> List<T> indexPacketTypes(int protocolVersion, ConnectionState connectionState, Map<T, Integer> packetIds) {
 		int largestPacketId = -1;
 		for (int packetId : packetIds.values()) {
 			largestPacketId = Math.max(largestPacketId, packetId);
 		}
 
-		String[] names = new String[largestPacketId + 1];
-		packetIds.forEach((typeName, packetId) -> {
-			String previousTypeName = names[packetId];
-			if (previousTypeName != null) {
-				throw new IllegalArgumentException("Duplicate packet ID " + packetId + " for protocol " + protocolVersion + " in " + connectionState + ": " + previousTypeName + " and " + typeName);
+		List<T> types = new ArrayList<>(Collections.nCopies(largestPacketId + 1, null));
+		packetIds.forEach((packetType, packetId) -> {
+			T previousType = types.set(packetId, packetType);
+			if (previousType != null) {
+				throw new IllegalArgumentException("Duplicate packet ID " + packetId + " for protocol " + protocolVersion + " in " + connectionState + ": " + previousType + " and " + packetType);
 			}
-			names[packetId] = typeName;
 		});
-		return names;
+		return Collections.unmodifiableList(types);
 	}
 }

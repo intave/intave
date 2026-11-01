@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.wire.connection.keepalive;
 
-import de.jpx3.intave.packet.PacketDirection;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.wire.WirePackets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -25,17 +25,17 @@ import static org.junit.jupiter.api.Assertions.*;
 final class KeepAliveWirePacketCodecsTest {
 	@Test
 	void keepAliveChangesFromVarIntToLongInBothDirections() {
-		for (PacketDirection direction : PacketDirection.values()) {
+		for (PacketId packetType : new PacketId[] {PacketId.Client.KEEP_ALIVE, PacketId.Server.KEEP_ALIVE}) {
 			KeepAliveWirePacket legacy =
 					roundTrip(
-							direction,
-							"KEEP_ALIVE",
+							packetType.direction(),
+							packetType,
 							335,
 							b -> b.writeBytes(new byte[] {(byte) 0xac, 2}));
 			assertEquals(300, legacy.id());
 			assertInstanceOf(KeepAliveVarIntIdWirePacket.class, legacy);
 			KeepAliveWirePacket modern =
-					roundTrip(direction, "KEEP_ALIVE", 340, b -> b.writeLong(0x123456789abcdefL));
+					roundTrip(packetType.direction(), packetType, 340, b -> b.writeLong(0x123456789abcdefL));
 			assertEquals(0x123456789abcdefL, modern.id());
 			assertEquals(KeepAliveWirePacket.class, modern.getClass());
 		}
@@ -51,7 +51,7 @@ final class KeepAliveWirePacketCodecsTest {
 							WirePackets.encodePacket(
 									SERVERBOUND,
 									PLAY,
-									"KEEP_ALIVE",
+									PacketId.Client.KEEP_ALIVE,
 									340,
 									new KeepAliveVarIntIdWirePacket(),
 									output));

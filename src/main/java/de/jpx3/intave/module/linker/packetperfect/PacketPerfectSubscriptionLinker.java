@@ -45,11 +45,11 @@ public final class PacketPerfectSubscriptionLinker extends Module {
 	public void linkSubscription(SubscriptionInstanceProvider<User, ?, PacketEventSubscriber> provider, Method method) {
 		if (method.isAnnotationPresent(OnReceive.class)) {
 			OnReceive annotation = method.getAnnotation(OnReceive.class);
-			linkReceiveSubscription(provider, method, annotation.priority(), annotation.stage());
+//			linkReceiveSubscription(provider, method, annotation.priority(), annotation.stage());
 		}
 		if (method.isAnnotationPresent(OnSend.class)) {
 			OnSend annotation = method.getAnnotation(OnSend.class);
-			linkSendSubscription(provider, method, annotation.priority(), annotation.stage());
+//			linkSendSubscription(provider, method, annotation.priority(), annotation.stage());
 		}
 	}
 

@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.player.ground;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerMovePacket;
 import de.jpx3.intave.share.Position;
@@ -57,8 +58,8 @@ public class PlayerGroundWirePacket implements MutablePlayerMovePacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("GROUND".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.FLYING);
 	}
 
 	@Override

@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.packet.wire.item.use;
 
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.contract.mutable.MutableBlockInteractionPacket;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +27,7 @@ final class UseItemWirePacketCodecsTest {
 			MutableBlockInteractionPacket packet =
 					roundTrip(
 							SERVERBOUND,
-							"USE_ITEM",
+							PacketId.Client.USE_ITEM,
 							protocol,
 							b -> {
 								b.writeByte(1);

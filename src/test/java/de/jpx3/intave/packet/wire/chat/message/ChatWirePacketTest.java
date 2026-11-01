@@ -12,6 +12,7 @@
 package de.jpx3.intave.packet.wire.chat.message;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.contract.Packet;
 import de.jpx3.intave.packet.wire.WirePackets;
 import io.netty.buffer.ByteBuf;
@@ -186,7 +187,7 @@ final class ChatWirePacketTest {
 	}
 
 	private static ChatUnsignedWirePacket roundTrip(int protocol, Consumer<ByteBuf> writer) {
-		Packet prototype = WirePackets.createPacket(PLAY, "CHAT", protocol);
+		Packet prototype = WirePackets.createPacket(PLAY, PacketId.Client.CHAT_IN, protocol);
 		ByteBuf input = Unpooled.buffer();
 		try {
 			writer.accept(input);

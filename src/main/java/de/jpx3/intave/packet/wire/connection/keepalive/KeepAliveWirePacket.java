@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.connection.keepalive;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableKeepAlivePacket;
 import io.netty.buffer.ByteBuf;
@@ -45,9 +46,9 @@ public class KeepAliveWirePacket implements MutableKeepAlivePacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
 		return (state == ConnectionState.PLAY || state == ConnectionState.CONFIGURATION)
-				&& ("KEEP_ALIVE".equals(name));
+				&& (packetId == PacketId.Client.KEEP_ALIVE || packetId == PacketId.Server.KEEP_ALIVE);
 	}
 
 	@Override

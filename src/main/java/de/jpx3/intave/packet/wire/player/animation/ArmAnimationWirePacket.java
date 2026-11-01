@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.player.animation;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableArmAnimationPacket;
 import de.jpx3.intave.share.PlayerHand;
@@ -46,8 +47,8 @@ public class ArmAnimationWirePacket implements MutableArmAnimationPacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("ARM_ANIMATION".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.ARM_ANIMATION);
 	}
 
 	@Override

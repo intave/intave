@@ -11,5 +11,14 @@
 
 package de.jpx3.intave.packet;
 
-public class Test {
+// Before = what we see from client & server
+// After = what we send to client & server
+public enum ListenerSlot {
+	BEFORE_IMMUTABLE,
+	PROCESSING_MUTABLE,
+	AFTER_IMMUTABLE;
+
+	public boolean allowMutations() {
+		return this == PROCESSING_MUTABLE;
+	}
 }

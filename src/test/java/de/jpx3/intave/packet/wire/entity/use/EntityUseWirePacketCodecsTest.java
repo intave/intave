@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.packet.wire.entity.use;
 
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.contract.EntityVelocityPacket;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityUsePacket;
 import de.jpx3.intave.share.EntityUseAction;
@@ -34,7 +35,7 @@ final class EntityUseWirePacketCodecsTest {
 			byte[] vector = vectors[i];
 			for (int protocol : new int[] {775, 777}) {
 				InteractEntityWirePacket interaction = roundTrip(
-					SERVERBOUND, "USE_ENTITY", protocol,
+					SERVERBOUND, PacketId.Client.USE_ENTITY, protocol,
 					buffer -> buffer.writeByte(42).writeByte(1).writeBytes(vector).writeBoolean(true));
 				assertEquals(42, interaction.entityId());
 				assertEquals(de.jpx3.intave.share.PlayerHand.OFF_HAND, interaction.hand());
@@ -44,7 +45,7 @@ final class EntityUseWirePacketCodecsTest {
 				assertTrue(interaction.secondary());
 			}
 			EntityVelocityPacket velocity = roundTrip(
-				CLIENTBOUND, "ENTITY_VELOCITY", 773,
+				CLIENTBOUND, PacketId.Server.ENTITY_VELOCITY, 773,
 				buffer -> buffer.writeByte(42).writeBytes(vector));
 			assertEquals(scales[i], velocity.motion().motionX());
 			assertEquals(0, velocity.motion().motionY());
@@ -63,7 +64,7 @@ final class EntityUseWirePacketCodecsTest {
 				MutableEntityUsePacket packet =
 						roundTrip(
 								SERVERBOUND,
-								"USE_ENTITY",
+								PacketId.Client.USE_ENTITY,
 								protocol,
 								b -> {
 									b.writeByte(42).writeByte(id);

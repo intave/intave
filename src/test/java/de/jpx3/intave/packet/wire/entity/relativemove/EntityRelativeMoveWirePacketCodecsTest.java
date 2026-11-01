@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.packet.wire.entity.relativemove;
 
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityRelativeMovePacket;
 import de.jpx3.intave.packet.wire.WirePackets;
 import de.jpx3.intave.share.RawVector3d;
@@ -30,19 +31,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 final class EntityRelativeMoveWirePacketCodecsTest {
 	@Test
 	void relativeMovesSwitchFromBytesToShortsThenSteppedPaths() {
-		for (String name : new String[] {"REL_ENTITY_MOVE", "REL_ENTITY_MOVE_LOOK"}) {
+		for (PacketId packetType : new PacketId[] {PacketId.Server.REL_ENTITY_MOVE, PacketId.Server.REL_ENTITY_MOVE_LOOK}) {
 			for (int protocol : new int[] {47, 107, 777}) {
 				de.jpx3.intave.packet.contract.EntityRelativeMovePacket packet =
 						roundTrip(
 								CLIENTBOUND,
-								name,
+								packetType,
 								protocol,
 								b -> {
 									b.writeByte(42);
 									if (protocol >= 777) b.writeByte(1);
 									if (protocol == 47) b.writeByte(32).writeByte(-64).writeByte(1);
 									else b.writeShort(4096).writeShort(-8192).writeShort(128);
-									if (name.endsWith("LOOK")) b.writeByte(64).writeByte(16);
+									if (packetType == PacketId.Server.REL_ENTITY_MOVE_LOOK) b.writeByte(64).writeByte(16);
 									if (protocol < 777) b.writeBoolean(true);
 								});
 				assertEquals(1, packet.steps().size());
@@ -53,7 +54,7 @@ final class EntityRelativeMoveWirePacketCodecsTest {
 		EntityRelativeMoveWirePacket stepped =
 				roundTrip(
 						CLIENTBOUND,
-						"REL_ENTITY_MOVE",
+						PacketId.Server.REL_ENTITY_MOVE,
 						777,
 						b -> {
 							b.writeByte(42).writeByte(5);
@@ -66,12 +67,12 @@ final class EntityRelativeMoveWirePacketCodecsTest {
 
 	@Test
 	void relativeMoveCodecsPreserveSignedDeltaBounds() {
-		for (String name : new String[] {"REL_ENTITY_MOVE", "REL_ENTITY_MOVE_LOOK"}) {
+		for (PacketId packetType : new PacketId[] {PacketId.Server.REL_ENTITY_MOVE, PacketId.Server.REL_ENTITY_MOVE_LOOK}) {
 			for (int protocol : new int[] {47, 107, 777}) {
 				MutableEntityRelativeMovePacket packet =
 						roundTrip(
 								CLIENTBOUND,
-								name,
+								packetType,
 								protocol,
 								b -> {
 									b.writeByte(42);
@@ -79,7 +80,7 @@ final class EntityRelativeMoveWirePacketCodecsTest {
 									if (protocol == 47)
 										b.writeByte(-128).writeByte(127).writeByte(-1);
 									else b.writeShort(-32768).writeShort(32767).writeShort(-1);
-									if (name.endsWith("LOOK")) b.writeByte(-128).writeByte(127);
+									if (packetType == PacketId.Server.REL_ENTITY_MOVE_LOOK) b.writeByte(-128).writeByte(127);
 									if (protocol < 777) b.writeBoolean(true);
 								});
 				RawVector3d delta = packet.steps().getFirst().delta();
@@ -92,9 +93,9 @@ final class EntityRelativeMoveWirePacketCodecsTest {
 
 	@Test
 	void relativeMoveCodecsRejectOutOfRangeAndNonfiniteDeltas() {
-		for (String name : new String[] {"REL_ENTITY_MOVE", "REL_ENTITY_MOVE_LOOK"}) {
+		for (PacketId packetType : new PacketId[] {PacketId.Server.REL_ENTITY_MOVE, PacketId.Server.REL_ENTITY_MOVE_LOOK}) {
 			for (int protocol : new int[] {47, 107, 777}) {
-				int id = registry(CLIENTBOUND).idOf(PLAY, name, protocol);
+				int id = registry(CLIENTBOUND).idOf(PLAY, packetType, protocol);
 				MutableEntityRelativeMovePacket packet =
 						WirePackets.createPacket(CLIENTBOUND, PLAY, id, protocol);
 				for (double value :
@@ -111,7 +112,7 @@ final class EntityRelativeMoveWirePacketCodecsTest {
 								IllegalArgumentException.class,
 								() ->
 										WirePackets.encodePacket(
-												CLIENTBOUND, PLAY, name, protocol, packet, output));
+												CLIENTBOUND, PLAY, packetType, protocol, packet, output));
 						assertEquals(1, output.writerIndex());
 						assertEquals(0x55, output.getUnsignedByte(0));
 					} finally {

@@ -121,7 +121,8 @@ import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
 import static de.jpx3.intave.packet.PacketDirection.SERVERBOUND;
 
 final class WirePacketCatalog {
-	private WirePacketCatalog() {}
+	private WirePacketCatalog() {
+	}
 
 	static void register() {
 		WirePackets.register(SERVERBOUND, AbilityInWirePacket.class);

@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.player.teleportaccept;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableTeleportAcceptPacket;
 import de.jpx3.intave.share.PositionAndRotation;
@@ -61,8 +62,8 @@ public class TeleportAcceptWirePacket implements MutableTeleportAcceptPacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("TELEPORT_ACCEPT".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.TELEPORT_ACCEPT);
 	}
 
 	@Override

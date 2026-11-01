@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.block.interaction;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableBlockInteractionPacket;
 import de.jpx3.intave.share.BlockPosition;
@@ -59,8 +60,8 @@ public class BlockInteractionProtocol107WirePacket implements MutableBlockIntera
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("USE_ITEM_ON".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.USE_ITEM_ON);
 	}
 
 	@Override

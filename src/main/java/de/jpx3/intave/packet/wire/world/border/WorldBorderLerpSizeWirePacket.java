@@ -14,6 +14,7 @@ package de.jpx3.intave.packet.wire.world.border;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.codec.VarLongCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import io.netty.buffer.ByteBuf;
 
@@ -40,8 +41,8 @@ public final class WorldBorderLerpSizeWirePacket extends WorldBorderWirePacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return state == ConnectionState.PLAY && "SET_BORDER_LERP_SIZE".equals(name);
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return state == ConnectionState.PLAY && packetId == PacketId.Server.SET_BORDER_LERP_SIZE;
 	}
 
 	@Override

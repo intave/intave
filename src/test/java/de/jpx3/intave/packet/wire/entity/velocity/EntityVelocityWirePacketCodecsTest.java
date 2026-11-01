@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.packet.wire.entity.velocity;
 
+import de.jpx3.intave.module.linker.packet.PacketId;
 import org.junit.jupiter.api.Test;
 
 import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
@@ -23,7 +24,7 @@ final class EntityVelocityWirePacketCodecsTest {
 		EntityVelocityWirePacket packet =
 				roundTrip(
 						CLIENTBOUND,
-						"ENTITY_VELOCITY",
+						PacketId.Server.ENTITY_VELOCITY,
 						772,
 						b ->
 								b.writeByte(42)
@@ -33,7 +34,7 @@ final class EntityVelocityWirePacketCodecsTest {
 		assertEquals(2949 / 8000.0, packet.motion().motionX);
 		assertEquals(-2949 / 8000.0, packet.motion().motionY);
 		EntityVelocityWirePacket zero =
-				roundTrip(CLIENTBOUND, "ENTITY_VELOCITY", 773, b -> b.writeByte(42).writeByte(0));
+				roundTrip(CLIENTBOUND, PacketId.Server.ENTITY_VELOCITY, 773, b -> b.writeByte(42).writeByte(0));
 		assertEquals(0, zero.motion().motionX);
 	}
 }

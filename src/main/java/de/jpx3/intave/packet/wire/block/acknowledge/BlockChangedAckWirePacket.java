@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.block.acknowledge;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableBlockChangedAckPacket;
 import io.netty.buffer.ByteBuf;
@@ -37,8 +38,8 @@ public class BlockChangedAckWirePacket implements MutableBlockChangedAckPacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("BLOCK_CHANGED_ACK".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.BLOCK_CHANGED_ACK);
 	}
 
 	@Override

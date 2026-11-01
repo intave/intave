@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.chunk.unload;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableUnloadChunkPacket;
 import io.netty.buffer.ByteBuf;
@@ -37,8 +38,8 @@ public class UnloadChunkWirePacket implements MutableUnloadChunkPacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("UNLOAD_CHUNK".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.UNLOAD_CHUNK);
 	}
 
 	@Override

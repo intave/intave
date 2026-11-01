@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.block.dig;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableBlockDigPacket;
 import de.jpx3.intave.share.BlockPosition;
@@ -69,8 +70,8 @@ public class BlockDigWirePacket implements MutableBlockDigPacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("BLOCK_DIG".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.BLOCK_DIG);
 	}
 
 	@Override

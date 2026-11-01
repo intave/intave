@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.packet.wire.player.ground;
 
+import de.jpx3.intave.module.linker.packet.PacketId;
 import org.junit.jupiter.api.Test;
 
 import static de.jpx3.intave.packet.PacketDirection.SERVERBOUND;
@@ -20,10 +21,10 @@ import static org.junit.jupiter.api.Assertions.*;
 final class PlayerGroundWirePacketCodecsTest {
 	@Test
 	void modernMovementRetainsHorizontalCollision() {
-		PlayerGroundWirePacket packet = roundTrip(SERVERBOUND, "GROUND", 768, b -> b.writeByte(3));
+		PlayerGroundWirePacket packet = roundTrip(SERVERBOUND, PacketId.Client.FLYING, 768, b -> b.writeByte(3));
 		assertTrue(packet.onGround());
 		assertTrue(packet.horizontalCollision());
-		PlayerGroundWirePacket legacy = roundTrip(SERVERBOUND, "GROUND", 767, b -> b.writeByte(1));
+		PlayerGroundWirePacket legacy = roundTrip(SERVERBOUND, PacketId.Client.FLYING, 767, b -> b.writeByte(1));
 		assertNull(legacy.horizontalCollision());
 	}
 

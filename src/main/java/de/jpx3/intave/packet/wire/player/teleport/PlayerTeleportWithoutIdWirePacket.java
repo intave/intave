@@ -12,6 +12,7 @@
 package de.jpx3.intave.packet.wire.player.teleport;
 
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerTeleportPacket;
 import de.jpx3.intave.share.Motion;
@@ -61,8 +62,8 @@ public class PlayerTeleportWithoutIdWirePacket implements MutablePlayerTeleportP
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("POSITION".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.POSITION);
 	}
 
 	@Override

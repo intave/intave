@@ -15,6 +15,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import de.jpx3.intave.access.IntaveInternalException;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
@@ -26,30 +27,32 @@ import java.util.Map;
 
 public final class PacketIdRegistries {
   private static final String DIRECTORY = "registry/packet_ids/";
-  private static final PacketIdRegistry SERVERBOUND;
-  private static final PacketIdRegistry CLIENTBOUND;
+  private static final PacketIdRegistry<PacketId.Client> SERVERBOUND;
+  private static final PacketIdRegistry<PacketId.Server> CLIENTBOUND;
 
   static {
-    Map<Integer, Map<ConnectionState, Map<String, Integer>>> serverbound = new HashMap<>();
-    Map<Integer, Map<ConnectionState, Map<String, Integer>>> clientbound = new HashMap<>();
+    Map<Integer, Map<ConnectionState, Map<PacketId.Client, Integer>>> serverbound = new HashMap<>();
+    Map<Integer, Map<ConnectionState, Map<PacketId.Server, Integer>>> clientbound = new HashMap<>();
+    Map<String, PacketId.Client> clientTypes = indexTypes(PacketId.Client.values());
+    Map<String, PacketId.Server> serverTypes = indexTypes(PacketId.Server.values());
     JsonObject names = readVersionedObject("type_to_name.json").getAsJsonObject("states");
     for (JsonElement entry : readJson("index.json").getAsJsonArray()) {
       String version = entry.getAsString();
       JsonObject data = readVersionedObject(version + ".json");
       int protocol = data.get("protocolVersion").getAsInt();
       JsonObject states = data.getAsJsonObject("states");
-      serverbound.put(protocol, readStates(states, "serverbound", names, version));
-      clientbound.put(protocol, readStates(states, "clientbound", names, version));
+      serverbound.put(protocol, readStates(states, "serverbound", names, version, clientTypes));
+      clientbound.put(protocol, readStates(states, "clientbound", names, version, serverTypes));
     }
     JsonObject additional = readVersionedObject("additional_protocols.json").getAsJsonObject("protocols");
     for (Map.Entry<String, JsonElement> entry : additional.entrySet()) {
       int protocol = Integer.parseInt(entry.getKey());
       JsonObject states = entry.getValue().getAsJsonObject().getAsJsonObject("states");
-      serverbound.put(protocol, readStates(states, "serverbound", null, null));
-      clientbound.put(protocol, readStates(states, "clientbound", null, null));
+      serverbound.put(protocol, readStates(states, "serverbound", null, null, clientTypes));
+      clientbound.put(protocol, readStates(states, "clientbound", null, null, serverTypes));
     }
-    SERVERBOUND = new PacketIdRegistry(serverbound);
-    CLIENTBOUND = new PacketIdRegistry(clientbound);
+    SERVERBOUND = new PacketIdRegistry<>(PacketId.Client.class, serverbound);
+    CLIENTBOUND = new PacketIdRegistry<>(PacketId.Server.class, clientbound);
   }
 
   public static void setup() {
@@ -59,25 +62,25 @@ public final class PacketIdRegistries {
   private PacketIdRegistries() {
   }
 
-  public static PacketIdRegistry serverbound() {
+  public static PacketIdRegistry<PacketId.Client> serverbound() {
     return SERVERBOUND;
   }
 
-  public static PacketIdRegistry clientbound() {
+  public static PacketIdRegistry<PacketId.Server> clientbound() {
     return CLIENTBOUND;
   }
 
-  private static Map<ConnectionState, Map<String, Integer>> readStates(
-    JsonObject source, String direction, JsonObject names, String version
+  private static <T extends Enum<T> & PacketId> Map<ConnectionState, Map<T, Integer>> readStates(
+    JsonObject source, String direction, JsonObject names, String version, Map<String, T> packetTypes
   ) {
-    Map<ConnectionState, Map<String, Integer>> states = new EnumMap<>(ConnectionState.class);
+    Map<ConnectionState, Map<T, Integer>> states = new EnumMap<>(ConnectionState.class);
     for (Map.Entry<String, JsonElement> state : source.entrySet()) {
       ConnectionState connectionState = ConnectionState.valueOf(state.getKey().toUpperCase(Locale.ROOT));
       JsonObject sourceIds = state.getValue().getAsJsonObject().getAsJsonObject(direction);
-      Map<String, Integer> ids = new HashMap<>();
+      Map<T, Integer> ids = new HashMap<>();
       if (names == null) {
         for (Map.Entry<String, JsonElement> packet : sourceIds.entrySet()) {
-          ids.put(packet.getKey(), packet.getValue().getAsInt());
+          ids.put(requireType(packetTypes, packet.getKey()), packet.getValue().getAsInt());
         }
       } else {
         JsonObject nativeIds = sourceIds.getAsJsonObject("ids");
@@ -85,13 +88,32 @@ public final class PacketIdRegistries {
         for (Map.Entry<String, JsonElement> packet : translations.entrySet()) {
           JsonElement className = packet.getValue().getAsJsonObject().get(version);
           if (className != null) {
-            ids.put(packet.getKey(), nativeIds.get(className.getAsString()).getAsInt());
+            ids.put(requireType(packetTypes, packet.getKey()), nativeIds.get(className.getAsString()).getAsInt());
           }
         }
       }
       states.put(connectionState, ids);
     }
     return states;
+  }
+
+  private static <T extends PacketId> Map<String, T> indexTypes(T[] values) {
+    Map<String, T> types = new HashMap<>();
+    for (T value : values) {
+      T previous = types.put(value.registryName(), value);
+      if (previous != null) {
+        throw new IntaveInternalException("Duplicate packet registry name " + value.registryName());
+      }
+    }
+    return types;
+  }
+
+  private static <T extends PacketId> T requireType(Map<String, T> types, String name) {
+    T type = types.get(name);
+    if (type == null) {
+      throw new IntaveInternalException("Unknown packet registry name " + name);
+    }
+    return type;
   }
 
   private static JsonObject readVersionedObject(String file) {

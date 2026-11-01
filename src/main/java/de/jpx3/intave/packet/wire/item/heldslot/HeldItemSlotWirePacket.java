@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.item.heldslot;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableHeldItemSlotPacket;
 import io.netty.buffer.ByteBuf;
@@ -45,8 +46,8 @@ public class HeldItemSlotWirePacket implements MutableHeldItemSlotPacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("HELD_ITEM_SLOT".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.HELD_ITEM_SLOT_IN);
 	}
 
 	@Override

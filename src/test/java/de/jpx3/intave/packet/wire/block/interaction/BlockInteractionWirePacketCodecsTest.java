@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.packet.wire.block.interaction;
 
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.contract.mutable.MutableBlockInteractionPacket;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +26,7 @@ final class BlockInteractionWirePacketCodecsTest {
 		MutableBlockInteractionPacket old =
 				roundTrip(
 						SERVERBOUND,
-						"USE_ITEM_ON",
+						PacketId.Client.USE_ITEM_ON,
 						107,
 						b -> {
 							b.writeLong(0).writeByte(1).writeByte(0);
@@ -35,7 +36,7 @@ final class BlockInteractionWirePacketCodecsTest {
 		MutableBlockInteractionPacket modern =
 				roundTrip(
 						SERVERBOUND,
-						"USE_ITEM_ON",
+						PacketId.Client.USE_ITEM_ON,
 						768,
 						b -> {
 							b.writeByte(0).writeLong(0).writeByte(1);

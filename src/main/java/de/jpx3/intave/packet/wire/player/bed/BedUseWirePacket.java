@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.player.bed;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableBedUsePacket;
 import de.jpx3.intave.share.BlockPosition;
@@ -59,8 +60,8 @@ public class BedUseWirePacket implements MutableBedUsePacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return (state == ConnectionState.PLAY) && ("BED".equals(name));
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.BED);
 	}
 
 	@Override

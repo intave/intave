@@ -11,7 +11,6 @@
 
 package de.jpx3.intave.packet;
 
-/** The destination of a packet on the Minecraft connection. */
 public enum PacketDirection {
 	SERVERBOUND,
 	CLIENTBOUND

@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.wire.entity.position;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityPositionPacket;
 import de.jpx3.intave.share.Position;
@@ -90,8 +91,8 @@ public final class EntityPositionSyncWirePacket implements MutableEntityPosition
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
-		return state == ConnectionState.PLAY && "ENTITY_POSITION_SYNC".equals(name);
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
+		return state == ConnectionState.PLAY && packetId == PacketId.Server.ENTITY_POSITION_SYNC;
 	}
 
 	@Override

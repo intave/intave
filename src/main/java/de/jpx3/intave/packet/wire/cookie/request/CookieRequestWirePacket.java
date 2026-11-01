@@ -12,6 +12,7 @@
 package de.jpx3.intave.packet.wire.cookie.request;
 
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableCookieRequestPacket;
 import de.jpx3.intave.share.MinecraftKey;
@@ -45,11 +46,11 @@ public class CookieRequestWirePacket implements MutableCookieRequestPacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, String name) {
+	public boolean appliesTo(ConnectionState state, PacketId packetId) {
 		return (state == ConnectionState.LOGIN
 						|| state == ConnectionState.CONFIGURATION
 						|| state == ConnectionState.PLAY)
-				&& ("COOKIE_REQUEST".equals(name));
+				&& (packetId == PacketId.Server.COOKIE_REQUEST);
 	}
 
 	@Override
