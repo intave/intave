@@ -11,13 +11,21 @@
 
 package de.jpx3.intave.block.interact;
 
+import com.comphenix.protocol.wrappers.BlockPosition;
+import com.comphenix.protocol.wrappers.EnumWrappers.PlayerDigType;
+import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.block.cache.BlockCaches;
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.type.MaterialSearch;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
+import de.jpx3.intave.check.world.InteractionRaytrace;
+import de.jpx3.intave.check.world.interaction.Interaction;
+import de.jpx3.intave.check.world.interaction.InteractionEmulator;
+import de.jpx3.intave.check.world.interaction.InteractionType;
 import de.jpx3.intave.share.BoundingBox;
+import de.jpx3.intave.share.PlayerHand;
 import de.jpx3.intave.test.After;
 import de.jpx3.intave.test.Before;
 import de.jpx3.intave.test.BlockStorage;
@@ -36,7 +44,9 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -413,6 +423,55 @@ public final class DoorInteractionTests extends IntegrationTests {
     if (player != null) {
       UserRepository.unregisterUser(player);
     }
+  }
+
+  @Test(
+    testCode = "H",
+    severity = Severity.ERROR
+  )
+  public void breakingAnOpenedDoorDoesNotToggleItsCachedState() throws ReflectiveOperationException {
+    InteractionRaytrace check = IntavePlugin.singletonInstance().checks().searchCheck(InteractionRaytrace.class);
+    Field emulatorField = InteractionRaytrace.class.getDeclaredField("interactionEmulator");
+    emulatorField.setAccessible(true);
+    InteractionEmulator emulator = (InteractionEmulator) emulatorField.get(check);
+    DoorPair pair = doorPair(DoorInteractionInteractionPatch::canOpenByHand);
+
+    for (Block half : new Block[]{lowerBlock, upperBlock}) {
+      prepareDoor(pair);
+      assertEquals(InteractionEmulator.EmulationResult.SUCCEEDED,
+        emulate(emulator, half, InteractionType.INTERACT, null));
+      assertDoorOpen(pair, true);
+      BlockShape lowerShape = blockCache.collisionShapeAt(0, 1, 0);
+      BlockShape upperShape = blockCache.collisionShapeAt(0, 2, 0);
+
+      for (PlayerDigType action : new PlayerDigType[]{
+        PlayerDigType.START_DESTROY_BLOCK, PlayerDigType.ABORT_DESTROY_BLOCK, PlayerDigType.START_DESTROY_BLOCK
+      }) {
+        assertEquals(InteractionEmulator.EmulationResult.SUCCEEDED,
+          emulate(emulator, half, InteractionType.START_BREAK, action));
+        assertDoorOpen(pair, true);
+        assertEquals(lowerShape, blockCache.collisionShapeAt(0, 1, 0));
+        assertEquals(upperShape, blockCache.collisionShapeAt(0, 2, 0));
+      }
+
+      assertEquals(InteractionEmulator.EmulationResult.SUCCEEDED,
+        emulate(emulator, half, InteractionType.EMPTY_INTERACT, null));
+      assertDoorOpen(pair, true);
+      assertEquals(InteractionEmulator.EmulationResult.SUCCEEDED,
+        emulate(emulator, half, InteractionType.BREAK, PlayerDigType.STOP_DESTROY_BLOCK));
+      assertEquals(Material.AIR, blockCache.typeAt(half.getX(), half.getY(), half.getZ()));
+    }
+  }
+
+  private InteractionEmulator.EmulationResult emulate(
+    InteractionEmulator emulator, Block block, InteractionType type, PlayerDigType action
+  ) {
+    return emulator.emulate(new Interaction(
+      0, null, world, player,
+      new BlockPosition(block.getX(), block.getY(), block.getZ()), 1, type,
+      Material.AIR, new ItemStack(Material.AIR), PlayerHand.MAIN_HAND, action,
+      Float.NaN, Float.NaN, Float.NaN, -1
+    ));
   }
 
   private void prepareDoor(DoorPair pair) {

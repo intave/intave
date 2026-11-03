@@ -132,9 +132,10 @@ public final class InteractionEmulator implements EventProcessor {
     switch (interactionType) {
       case PLACE:
         return emulatePlacement(player, interaction);
-      case START_BREAK:
       case INTERACT:
         return emulateInteraction(player, interaction);
+      case START_BREAK:
+        return EmulationResult.SUCCEEDED;
       case EMPTY_INTERACT:
         return emulateEmptyInteraction(player, interaction);
       case BREAK:
@@ -524,7 +525,7 @@ public final class InteractionEmulator implements EventProcessor {
   }
 
   private EmulationResult emulateEmptyInteraction(Player player, Interaction interaction) {
-    emulatePhysicalInteract(player, VolatileBlockAccess.blockAccess(interaction.targetBlock().toLocation(interaction.world())));
+    emulateItemInteraction(player, interaction.itemTypeInHand());
     return EmulationResult.SUCCEEDED;
   }
 
