@@ -41,6 +41,28 @@ final class EntityTypeDataRegistryTest {
 
     EntityTypeData boat = registry.resolveFor(41, false);
     assertEquals("Boat", boat.name());
+    assertTrue(boat.isBoat());
+    assertEquals(0.1, boat.mountedYOffset());
+  }
+
+  @Test
+  void recognizesBoatsAndRaftsFromModernRegistries() {
+    EntityTypeDataRegistry registry = new EntityTypeDataRegistry(new MinecraftVersion("1.21.1"));
+    EntityTypeData chestBoat = registry.resolveFor(17, false);
+    assertEquals("chest_boat", chestBoat.name());
+    assertTrue(chestBoat.isBoat());
+    assertEquals(0.1, chestBoat.mountedYOffset());
+    assertEquals(RideableEntityType.CHEST_BOAT, RideableEntityType.identifyFrom("ChestBoat"));
+
+    registry = new EntityTypeDataRegistry(new MinecraftVersion("26.3"));
+    for (int identifier : new int[]{0, 1, 8, 9, 90, 91, 95, 96, 106, 107}) {
+      EntityTypeData boat = registry.resolveFor(identifier, false);
+      assertTrue(boat.isBoat(), boat.name());
+      assertEquals(0.1, boat.mountedYOffset(), boat.name());
+    }
+    assertFalse(registry.resolveFor(59, true).isBoat());
+    assertEquals(RideableEntityType.BOAT, RideableEntityType.identifyFrom("BAMBOO_RAFT"));
+    assertEquals(RideableEntityType.CHEST_BOAT, RideableEntityType.identifyFrom("BAMBOO_CHEST_RAFT"));
   }
 
   @Test

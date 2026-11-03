@@ -718,7 +718,7 @@ public final class MockSimulationEnvironment implements SimulationEnvironment {
   }
 
   @Override
-  public boolean collidedWithBoat() {
+  public boolean collidedWithEntity() {
     return false;
   }
 

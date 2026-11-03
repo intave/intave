@@ -45,7 +45,7 @@ public final class DefaultSimulationEvaluator implements SimulationEvaluator {
     double motionY,
     double motionZ,
     boolean onLadder,
-    boolean collidedWithBoat,
+    boolean collidedWithEntity,
     Set<? super EvaluationTag> tags
   ) {
 	  MetadataBundle meta = user.meta();
@@ -186,11 +186,11 @@ public final class DefaultSimulationEvaluator implements SimulationEvaluator {
         tags.add(EvaluationTag.VELOCITY_FLYING);
       }
 
-      if (collidedWithBoat && !movement.isInVehicle() && motionY < 0.605) {
+      if (collidedWithEntity && !movement.isInVehicle() && motionY < 0.605) {
         if (movement.enforceBoatStep()) {
           if (motionY < 0.1) {
             motionYTolerance = Math.max(motionYTolerance, 1);
-            tags.add(EvaluationTag.BOAT);
+            tags.add(EvaluationTag.COLLISION);
           }
           movement.setEnforceBoatStep(false);
         } else if (movement.baseMotionY() <= 0) {
@@ -198,7 +198,7 @@ public final class DefaultSimulationEvaluator implements SimulationEvaluator {
           if (motionY > movement.jumpMotion()) {
             movement.setEnforceBoatStep(true);
           }
-          tags.add(EvaluationTag.BOAT);
+          tags.add(EvaluationTag.COLLISION);
         }
       }
 
@@ -522,10 +522,10 @@ public final class DefaultSimulationEvaluator implements SimulationEvaluator {
         tags.add(EvaluationTag.LADDER);
       }
 
-      if (collidedWithBoat) {
+      if (collidedWithEntity) {
         motionXTolerance = Math.max(motionXTolerance, 0.4);
         motionZTolerance = Math.max(motionZTolerance, 0.4);
-        tags.add(EvaluationTag.BOAT);
+        tags.add(EvaluationTag.COLLISION);
       }
 
       if (movement.physicsUnpredictableVelocityExpected()) {

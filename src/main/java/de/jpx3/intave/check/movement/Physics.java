@@ -423,7 +423,7 @@ public final class Physics extends Check {
     movementData.onLadderLast = onLadderCurrent;
 
     // Entity collision check
-    boolean collidedWithBoat = movementData.collidedWithBoat();
+    boolean collidedWithEntity = movementData.collidedWithEntity();
     boolean skipVLCalculation = distance <= 0.00005;
 
     Set<EvaluationTag> verticalTags = EnumSet.noneOf(EvaluationTag.class);
@@ -431,13 +431,13 @@ public final class Physics extends Check {
 
     double verticalViolationIncrease = skipVLCalculation ? 0 : simulationEvaluator.calculateVerticalViolationIncrease(
       user, movementData, predictedOffsetY,
-      onLadder, collidedWithBoat, verticalTags
+      onLadder, collidedWithEntity, verticalTags
     );
     double horizontalViolationIncrease = skipVLCalculation ? 0 : simulationEvaluator.calculateHorizontalViolationIncrease(
       user, movementData,
       predictedOffsetX, predictedOffsetZ,
       receivedOffsetMotionX, receivedOffsetMotionZ,
-      onLadder, collidedWithBoat, horizontalTags
+      onLadder, collidedWithEntity, horizontalTags
     );
 
     if (IntaveControl.NO_TOLERANCE_PHYSICS) {
@@ -487,7 +487,7 @@ public final class Physics extends Check {
       && !skipVLCalculation
       && movementData.ticksPast(IN_WEB) > 5
       && !movementData.inWater()
-      && !movementData.collidedWithBoat();
+      && !movementData.collidedWithEntity();
     if (checkVelocity && !movementData.gliding && movementData.ticksPast(EXTERNAL_VELOCITY) < 10 && !movementData.receivedFlyingPacketIn(2)) {
       boolean actuallyMoved = (Math.abs(predictedOffsetX) > 0.01 || Math.abs(predictedOffsetZ) > 0.01);
 
@@ -692,7 +692,7 @@ public final class Physics extends Check {
     if (violationLevelIncrease > 0) {
       boolean uncommonArea =
         movementData.collidedHorizontally
-        || movementData.collidedWithBoat()
+        || movementData.collidedWithEntity()
         || movementData.inWeb;
       if (uncommonArea) {
         violationLevelIncrease /= 2;
@@ -1169,7 +1169,7 @@ public final class Physics extends Check {
 
 //      List<String> tags = new ArrayList<>();
 //      tags.add("d:" + (movementData.recentlyEncounteredFlyingPacket(1) ? "~" + formatDouble(distance, 6) : formatDouble(distance, 6)));
-//      if (collidedWithBoat) {
+//      if (collidedWithEntity) {
 //        tags.add("boat");
 //      }
 //      if (movedIntoBlock) {

@@ -65,7 +65,7 @@ final class ImmutableSimulationEnvironmentCopy implements SimulationEnvironment 
 	private final boolean inWater, inLava, inWeb;
 	private final double lavaDepth;
 	private final boolean onGround, lastOnGround, collidedHorizontally, collidedVertically;
-	private final boolean collidedWithBoat;
+	private final boolean collidedWithEntity;
 	private final double frictionPosSubtraction;
 	private final float frictionMultiplier;
 	private final boolean receivesFlyingPackets;
@@ -173,7 +173,7 @@ final class ImmutableSimulationEnvironmentCopy implements SimulationEnvironment 
 		this.lastOnGround = source.lastOnGround();
 		this.collidedHorizontally = source.collidedHorizontally();
 		this.collidedVertically = source.collidedVertically();
-		this.collidedWithBoat = source.collidedWithBoat();
+		this.collidedWithEntity = source.collidedWithEntity();
 		this.frictionPosSubtraction = source.frictionPosSubtraction();
 		this.frictionMultiplier = source.frictionMultiplier();
 		this.receivesFlyingPackets = source.receivedFlyingPacketIn(Integer.MAX_VALUE);
@@ -756,8 +756,8 @@ final class ImmutableSimulationEnvironmentCopy implements SimulationEnvironment 
 	}
 
 	@Override
-	public boolean collidedWithBoat() {
-		return collidedWithBoat;
+	public boolean collidedWithEntity() {
+		return collidedWithEntity;
 	}
 
 	@Override

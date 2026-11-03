@@ -567,13 +567,13 @@ public final class MovementDispatcher extends Module {
       }
 
       boolean clientOnGround = vehicleMove ? player.isOnGround() : reader.onGround();
-      boolean collidedWithBoat = movement.collidedWithBoat();
+      boolean collidedWithEntity = movement.collidedWithEntity();
 
       if (movement.onGround && !clientOnGround && movement.step) {
         movement.onGround = false;
       }
 
-      if (collidedWithBoat) {
+      if (collidedWithEntity) {
         movement.onGround = clientOnGround;
       }
 

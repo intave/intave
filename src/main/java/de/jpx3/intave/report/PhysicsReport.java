@@ -146,7 +146,7 @@ public final class PhysicsReport implements Report {
     state.addProperty("pose", movement.pose().name());
     state.addProperty("simulator", movement.simulator().getClass().getSimpleName());
     state.addProperty("onLadderLast", movement.onLadderLast);
-    state.addProperty("collidedWithBoat", movement.collidedWithBoat());
+    state.addProperty("collidedWithEntity", movement.collidedWithEntity());
     state.addProperty("lastOnGround", movement.lastOnGround());
     state.addProperty("inWater", movement.inWater());
     state.addProperty("inLava", movement.inLava());

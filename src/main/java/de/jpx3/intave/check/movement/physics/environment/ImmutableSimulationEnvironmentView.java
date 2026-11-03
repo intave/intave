@@ -587,8 +587,8 @@ final class ImmutableSimulationEnvironmentView implements SimulationEnvironment 
 	}
 
 	@Override
-	public boolean collidedWithBoat() {
-		return delegate.collidedWithBoat();
+	public boolean collidedWithEntity() {
+		return delegate.collidedWithEntity();
 	}
 
 	@Override

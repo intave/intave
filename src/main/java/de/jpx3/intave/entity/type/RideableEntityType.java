@@ -27,11 +27,11 @@ public enum RideableEntityType {
 	public static RideableEntityType identifyFrom(
 		String entityName
 	) {
-		switch (entityName.toLowerCase(Locale.ROOT)) {
-			case "boat":
-				return BOAT;
-			case "chestboat":
-				return CHEST_BOAT;
+		String name = entityName.replace("_", "").toLowerCase(Locale.ROOT);
+		if (name.endsWith("boat") || name.endsWith("raft")) {
+			return name.contains("chest") ? CHEST_BOAT : BOAT;
+		}
+		switch (name) {
 			case "llama":
 				return LLAMA;
 			case "minecart":
