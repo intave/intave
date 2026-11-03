@@ -161,6 +161,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   // Entity collision
   public boolean enforceBoatStep;
   public volatile Position nearestBoatPosition = null;
+  public volatile BoundingBox nearestEntitySurface = null;
   public float boatGlide;
   public double waterLevel;
   public BoatSimulator.Status boatStatus = BoatSimulator.Status.ON_LAND,
@@ -522,8 +523,20 @@ public final class MovementMetadata implements SimulationEnvironment {
     this.lastMovementConfiguration = configuration;
   }
 
-  public boolean collidedWithBoat() {
-    return nearestBoatPosition != null && distanceToVerifiedPosition(nearestBoatPosition) < 2;
+  public boolean collidedWithEntity() {
+    Position boatPosition = nearestBoatPosition;
+    BoundingBox surface = nearestEntitySurface;
+    return (boatPosition != null && distanceToVerifiedPosition(boatPosition) < 2)
+      || (surface != null && distanceToEntitySurface(surface) < 2);
+  }
+
+  public double distanceToEntitySurface(BoundingBox surface) {
+    if (verifiedLastPositionY < surface.maxY - 1.0E-7) {
+      return Double.POSITIVE_INFINITY;
+    }
+    return surface.nearestDistanceTo(new RawVector3d(
+      verifiedLastPositionX, verifiedLastPositionY, verifiedLastPositionZ
+    ));
   }
 
   public double distanceToVerifiedPosition(Position position) {

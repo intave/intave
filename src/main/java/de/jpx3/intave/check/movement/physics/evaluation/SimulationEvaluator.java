@@ -22,7 +22,7 @@ public interface SimulationEvaluator {
     SimulationEnvironment movement,
     double predictedX, double predictedY, double predictedZ,
     double motionX, double motionY, double motionZ,
-    boolean onLadder, boolean collidedWithBoat,
+    boolean onLadder, boolean collidedWithEntity,
     Set<? super EvaluationTag> tags
   );
 
@@ -30,14 +30,14 @@ public interface SimulationEvaluator {
     User user,
     SimulationEnvironment movement,
     double predictedX, double predictedZ,
-    boolean onLadder, boolean collidedWithBoat,
+    boolean onLadder, boolean collidedWithEntity,
     Set<? super EvaluationTag> tags
   ) {
     return calculateHorizontalViolationIncrease(
       user, movement,
       predictedX, predictedZ,
       movement.offsetMotionX(), movement.offsetMotionZ(),
-      onLadder, collidedWithBoat, tags
+      onLadder, collidedWithEntity, tags
     );
   }
 
@@ -46,7 +46,7 @@ public interface SimulationEvaluator {
     SimulationEnvironment movement,
     double predictedX, double predictedZ,
     double motionX, double motionZ,
-    boolean onLadder, boolean collidedWithBoat,
+    boolean onLadder, boolean collidedWithEntity,
     Set<? super EvaluationTag> tags
   ) {
     double motionY = movement.offsetMotionY();
@@ -54,7 +54,7 @@ public interface SimulationEvaluator {
       user, movement,
       predictedX, motionY, predictedZ,
       motionX, motionY, motionZ,
-      onLadder, collidedWithBoat, tags
+      onLadder, collidedWithEntity, tags
     );
   }
 
@@ -63,7 +63,7 @@ public interface SimulationEvaluator {
     SimulationEnvironment movement,
     double predictedY,
     boolean onLadder,
-    boolean collidedWithBoat,
+    boolean collidedWithEntity,
     Set<? super EvaluationTag> tags
   ) {
     double motionX = movement.offsetMotionX();
@@ -73,7 +73,7 @@ public interface SimulationEvaluator {
       user, movement,
       motionX, predictedY, motionZ,
       motionX, motionY, motionZ,
-      onLadder, collidedWithBoat, tags
+      onLadder, collidedWithEntity, tags
     );
   }
 }

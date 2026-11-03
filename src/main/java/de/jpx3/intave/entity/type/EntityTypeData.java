@@ -35,16 +35,11 @@ public final class EntityTypeData {
     this.isLivingEntity = isLivingEntity;
     this.creationId = creationId;
 
-	  boolean boat = false;
     boolean shulker = false;
     boolean fireball = false;
     boolean armorstand = false;
     String lowercaseName = entityName.toLowerCase(Locale.ROOT);
     switch (lowercaseName) {
-      case "boat":
-      case "chestboat":
-        boat = true;
-        break;
       case "shulker":
         shulker = true;
         break;
@@ -56,11 +51,11 @@ public final class EntityTypeData {
         armorstand = true;
         break;
     }
-	  this.boat = boat;
     this.shulker = shulker;
     this.fireball = fireball;
     this.armorstand = armorstand;
 	  rideableType = RideableEntityType.identifyFrom(entityName);
+    this.boat = rideableType == RideableEntityType.BOAT || rideableType == RideableEntityType.CHEST_BOAT;
   }
 
   public boolean isLivingEntity() {
@@ -88,6 +83,7 @@ public final class EntityTypeData {
     double def = height * 0.75;
     switch (rideableType) {
       case BOAT:
+      case CHEST_BOAT:
         return 0.1;
       case LLAMA:
         return height * 0.67;

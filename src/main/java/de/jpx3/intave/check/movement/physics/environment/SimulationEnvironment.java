@@ -457,7 +457,7 @@ public interface SimulationEnvironment {
     }
   }
 
-  boolean collidedWithBoat();
+  boolean collidedWithEntity();
   double frictionPosSubtraction();
 
   float frictionMultiplier();
