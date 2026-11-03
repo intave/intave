@@ -14,23 +14,23 @@ package de.jpx3.intave.check.other.protocolscanner;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.EnumWrappers;
-import de.jpx3.intave.packet.reader.BlockDigReader;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.check.CheckPart;
 import de.jpx3.intave.check.other.ProtocolScanner;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
+import de.jpx3.intave.packet.plib.reader.BlockDigReader;
+import de.jpx3.intave.share.PlayerDigAction;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.InventoryMetadata;
-import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.Locale;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.BLOCK_DIG;
+import static de.jpx3.intave.packet.contract.PacketType.Client.BLOCK_DIG;
 
 public final class InvalidRelease extends CheckPart<ProtocolScanner> {
 	public InvalidRelease(ProtocolScanner parentCheck) {

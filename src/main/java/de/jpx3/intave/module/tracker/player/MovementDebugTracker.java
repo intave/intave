@@ -1,11 +1,22 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.tracker.player;
 
 import com.comphenix.protocol.events.PacketContainer;
 import de.jpx3.intave.connect.customclient.LabyModChannelHelper;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.PacketReaders;
-import de.jpx3.intave.packet.reader.PayloadInReader;
+import de.jpx3.intave.packet.plib.reader.PacketReaders;
+import de.jpx3.intave.packet.plib.reader.PayloadInReader;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -22,8 +33,8 @@ import java.util.Base64;
 import java.util.Map;
 
 import static de.jpx3.intave.IntaveControl.ENABLE_MOVEMENT_DEBUGGER_COLLECTOR;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.CUSTOM_PAYLOAD_IN;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.SET_COMMAND_MINECART;
+import static de.jpx3.intave.packet.contract.PacketType.Client.CUSTOM_PAYLOAD_IN;
+import static de.jpx3.intave.packet.contract.PacketType.Client.SET_COMMAND_MINECART;
 
 public final class MovementDebugTracker extends Module implements PluginMessageListener {
 

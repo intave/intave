@@ -16,7 +16,7 @@ import ac.intave.samples.event.EventSink;
 import ac.intave.samples.event.TimeEvent;
 import ac.intave.samples.event.WeatherEvent;
 import ac.intave.samples.share.ClockState;
-import de.jpx3.intave.packet.reader.TimeUpdateReader.Update;
+import de.jpx3.intave.packet.plib.reader.TimeUpdateReader.Update;
 import de.jpx3.intave.user.User;
 import org.junit.jupiter.api.Test;
 

@@ -11,9 +11,8 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.WindowAddressed;
+import de.jpx3.intave.packet.contract.immutable.WindowAddressed;
 
-public interface MutableWindowAddressed extends WindowAddressed {
-
+public interface MutableWindowAddressed extends WindowAddressed, Mutable {
 	void setContainerId(int containerId);
 }

@@ -36,7 +36,7 @@ public class PlayerTeleportWithoutDismountWirePacket extends PlayerTeleportWithI
 	}
 
 	public PlayerTeleportWithoutDismountWirePacket(
-			Position position, Rotation rotation, Set<Relative> flags, int teleportId) {
+		Position position, Rotation rotation, Set<Relative> flags, int teleportId) {
 		super(position, rotation, flags, teleportId);
 	}
 

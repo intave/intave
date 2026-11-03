@@ -13,14 +13,13 @@ package de.jpx3.intave.packet.contract.mutable;
 
 import de.jpx3.intave.check.movement.physics.environment.Pose;
 import de.jpx3.intave.entity.type.EntityTypeData;
-import de.jpx3.intave.packet.contract.EntityMetadataPacket;
+import de.jpx3.intave.packet.contract.immutable.EntityMetadataPacket;
 import de.jpx3.intave.share.BlockPosition;
 
 import java.util.Optional;
 import java.util.OptionalInt;
 
-public interface MutableEntityMetadataPacket extends EntityMetadataPacket, MutablePrimaryEntityAddressed {
-
+public interface MutableEntityMetadataPacket extends EntityMetadataPacket, MutablePrimaryEntityAddressed, Mutable {
 	void setEntityFlags(byte flags);
 
 	void setLivingFlags(byte flags);

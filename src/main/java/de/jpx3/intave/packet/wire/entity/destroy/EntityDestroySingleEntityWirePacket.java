@@ -17,21 +17,19 @@ import io.netty.buffer.ByteBuf;
 
 public final class EntityDestroySingleEntityWirePacket extends EntityDestroyWirePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityDestroySingleEntityWirePacket>
-			STREAM_CODEC =
-					StreamCodec.of(
-							(output, packet) -> {
-								if (packet.entityIds.length != 1)
-									throw new IllegalArgumentException(
-											"1.17 removes one entity per packet");
-
-								for (int id : packet.entityIds) ByteBufStreamCodecs.VARINT.encode(output, id);
-							},
-							input -> {
-								int[] entityIds = new int[1];
-								for (int i = 0; i < entityIds.length; i++)
-									entityIds[i] = ByteBufStreamCodecs.VARINT.decode(input);
-								return new EntityDestroySingleEntityWirePacket(entityIds);
-							});
+		STREAM_CODEC =
+		StreamCodec.of(
+			(output, packet) -> {
+				if (packet.entityIds.length != 1)
+					throw new IllegalArgumentException("1.17 removes one entity per packet");
+				for (int id : packet.entityIds) ByteBufStreamCodecs.VARINT.encode(output, id);
+			},
+			input -> {
+				int[] entityIds = new int[1];
+				for (int i = 0; i < entityIds.length; i++)
+					entityIds[i] = ByteBufStreamCodecs.VARINT.decode(input);
+				return new EntityDestroySingleEntityWirePacket(entityIds);
+			});
 
 	public EntityDestroySingleEntityWirePacket() {
 		super();
@@ -43,6 +41,6 @@ public final class EntityDestroySingleEntityWirePacket extends EntityDestroyWire
 
 	@Override
 	public boolean appliesTo(int protocolVersion) {
-		return protocolVersion >= 755 && protocolVersion < 756;
+		return protocolVersion == 755;
 	}
 }

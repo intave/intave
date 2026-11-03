@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.AbilityOutPacket;
+import de.jpx3.intave.packet.contract.immutable.AbilityOutPacket;
 
-public interface MutableAbilityOutPacket extends AbilityOutPacket {
-
+public interface MutableAbilityOutPacket extends AbilityOutPacket, Mutable {
 	void setFlyingSpeed(float speed);
 
 	void setWalkingSpeed(float speed);

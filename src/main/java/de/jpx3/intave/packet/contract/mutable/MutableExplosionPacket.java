@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.ExplosionPacket;
+import de.jpx3.intave.packet.contract.immutable.ExplosionPacket;
 
-public interface MutableExplosionPacket extends ExplosionPacket, MutableMotionUpdate {
+public interface MutableExplosionPacket extends ExplosionPacket, MutableMotionUpdate, Mutable {
 }

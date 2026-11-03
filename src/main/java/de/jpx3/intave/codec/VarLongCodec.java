@@ -13,8 +13,10 @@ package de.jpx3.intave.codec;
 
 import io.netty.buffer.ByteBuf;
 
-public final class VarLongCodec implements StreamCodec<ByteBuf, ByteBuf, Long> {
-	public static final VarLongCodec INSTANCE = new VarLongCodec();
+final class VarLongCodec implements StreamCodec<ByteBuf, ByteBuf, Long> {
+	static final VarLongCodec INSTANCE = new VarLongCodec();
+
+	private VarLongCodec() {}
 
 	@Override
 	public void encode(ByteBuf buf, Long value) {

@@ -13,10 +13,11 @@ package de.jpx3.intave.packet.wire;
 
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.PacketDirection;
-import de.jpx3.intave.packet.contract.Packet;
+import de.jpx3.intave.packet.contract.PacketContract;
+import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.contract.TypedPacketContract;
 import de.jpx3.intave.registry.PacketIdRegistries;
 import de.jpx3.intave.registry.PacketIdRegistry;
 import io.netty.buffer.ByteBuf;
@@ -32,10 +33,10 @@ public final class WirePackets {
 	private final PacketIdRegistry<?> registry;
 	private static final WirePackets SERVERBOUND = new WirePackets(PacketIdRegistries.serverbound());
 	private static final WirePackets CLIENTBOUND = new WirePackets(PacketIdRegistries.clientbound());
-	private final Int2ObjectMap<Map<ConnectionState, WirePacketWrap<?>[]>> packets = new Int2ObjectOpenHashMap<>();
+	private final Int2ObjectMap<Map<ConnectionState, WirePacketDefinition<?>[]>> packets = new Int2ObjectOpenHashMap<>();
 
 	static {
-		WirePacketCatalog.register();
+		WirePacketCatalog.registerAll();
 	}
 
 	private WirePackets(PacketIdRegistry<?> registry) {
@@ -49,31 +50,28 @@ public final class WirePackets {
 		return Objects.requireNonNull(direction, "direction") == PacketDirection.SERVERBOUND ? SERVERBOUND : CLIENTBOUND;
 	}
 
-	static <T extends Packet> void register(PacketDirection direction, Class<T> packetClass) {
-		direction(direction).register(packetClass);
+	static <T extends PacketContract> void register(PacketType packetType, Class<T> packetClass) {
+		direction(packetType.direction()).registerPacket(packetType, packetClass);
 	}
 
-	private <T extends Packet> void register(Class<T> packetClass) {
-		WirePacketWrap<T> wirePacketWrap = WirePacketWrap.from(packetClass);
-		T prototype = wirePacketWrap.createEmpty();
+	private <T extends PacketContract> void registerPacket(PacketType packetType, Class<T> packetClass) {
+		WirePacketDefinition<T> definition = WirePacketDefinition.from(packetClass);
+		T prototype = definition.createEmpty();
 		for (int protocolVersion : registry.supportedProtocolVersions()) {
 			for (ConnectionState state : ConnectionState.values()) {
-				Map<? extends PacketId, Integer> typeToId = registry.packetIds(state, protocolVersion);
-				for (Map.Entry<? extends PacketId, Integer> packet : typeToId.entrySet()) {
-					PacketId packetType = packet.getKey();
-					if (prototype.appliesTo(state, packetType, protocolVersion)) {
-						register(protocolVersion, state, packetType, packet.getValue(), wirePacketWrap);
-					}
+				int packetId = registry.idOf(state, packetType, protocolVersion);
+				if (packetId >= 0 && prototype.appliesTo(state, packetType, protocolVersion)) {
+					register(protocolVersion, state, packetType, packetId, definition);
 				}
 			}
 		}
 	}
 
-	private void register(int protocolVersion, ConnectionState state, PacketId packetType, int packetId, WirePacketWrap<?> definition) {
-		Map<ConnectionState, WirePacketWrap<?>[]> states = packets.get(protocolVersion);
-		WirePacketWrap<?>[] registrations = states.get(state);
+	private void register(int protocolVersion, ConnectionState state, PacketType packetType, int packetId, WirePacketDefinition<?> definition) {
+		Map<ConnectionState, WirePacketDefinition<?>[]> states = packets.get(protocolVersion);
+		WirePacketDefinition<?>[] registrations = states.get(state);
 		if (registrations == null) {
-			registrations = new WirePacketWrap<?>[packetId + 1];
+			registrations = new WirePacketDefinition<?>[packetId + 1];
 			states.put(state, registrations);
 		} else if (packetId >= registrations.length) {
 			registrations = Arrays.copyOf(registrations, packetId + 1);
@@ -85,19 +83,19 @@ public final class WirePackets {
 		registrations[packetId] = definition;
 	}
 
-	private <T extends Packet> T createPlayPacketInternal(PacketId packetType, int protocolVersion) {
+	private <T extends PacketContract> T createPlayPacketInternal(PacketType packetType, int protocolVersion) {
 		return createPacketInternal(ConnectionState.PLAY, packetType, protocolVersion);
 	}
 
-	private <T extends Packet> T createLoginPacketInternal(PacketId packetType, int protocolVersion) {
+	private <T extends PacketContract> T createLoginPacketInternal(PacketType packetType, int protocolVersion) {
 		return createPacketInternal(ConnectionState.LOGIN, packetType, protocolVersion);
 	}
 
-	private <T extends Packet> T createStatusPacketInternal(PacketId packetType, int protocolVersion) {
+	private <T extends PacketContract> T createStatusPacketInternal(PacketType packetType, int protocolVersion) {
 		return createPacketInternal(ConnectionState.STATUS, packetType, protocolVersion);
 	}
 
-	private <T extends Packet> T createPacketInternal(ConnectionState state, PacketId packetType, int protocolVersion) {
+	private <T extends PacketContract> T createPacketInternal(ConnectionState state, PacketType packetType, int protocolVersion) {
 		int packetId = registry.idOf(state, packetType, protocolVersion);
 		if (packetId < 0) {
 			throw new IllegalArgumentException("No packet with type " + packetType + " found in state " + state + " for protocol version " + protocolVersion);
@@ -105,21 +103,21 @@ public final class WirePackets {
 		return createPacketInternal(state, packetId, protocolVersion);
 	}
 
-	private <T extends Packet> T createPacketInternal(ConnectionState state, int packetId, int protocolVersion) {
+	private <T extends PacketContract> T createPacketInternal(ConnectionState state, int packetId, int protocolVersion) {
 		//noinspection unchecked
 		return (T) find(state, packetId, protocolVersion).createEmpty();
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T extends Packet> @Nullable T createVersionIndependentPacketInternal(ConnectionState state, ByteBuf packet) {
+	private <T extends PacketContract> @Nullable T createVersionIndependentPacketInternal(ConnectionState state, ByteBuf packet) {
 		ByteBuf input = packet.duplicate();
 		int packetId = ByteBufStreamCodecs.VARINT.decode(input);
-		WirePacketWrap<?> packetType = findVersionIndependentPacketType(state, packetId);
+		WirePacketDefinition<?> packetType = findVersionIndependentPacketType(state, packetId);
 		return packetType == null ? null : (T) packetType.decode(input);
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T extends Packet> @Nullable T decodePacketInternal(ConnectionState state, int protocolVersion, ByteBuf packet) {
+	private <T extends PacketContract> @Nullable T decodePacketInternal(ConnectionState state, int protocolVersion, ByteBuf packet) {
 		ByteBuf input = packet.duplicate();
 		int packetId = ByteBufStreamCodecs.VARINT.decode(input);
 		if (!packetIdKnownInternal(state, packetId, protocolVersion)) {
@@ -128,27 +126,27 @@ public final class WirePackets {
 		return (T) decodePayload(state, packetId, protocolVersion, input);
 	}
 
-	private Packet decodePayload(ConnectionState state, int packetId, int protocolVersion, ByteBuf payload) {
+	private PacketContract decodePayload(ConnectionState state, int packetId, int protocolVersion, ByteBuf payload) {
 		return find(state, packetId, protocolVersion).decode(payload);
 	}
 
 	private boolean packetIdKnownInternal(ConnectionState state, int packetId, int protocolVersion) {
-		Map<ConnectionState, WirePacketWrap<?>[]> states = packets.get(protocolVersion);
+		Map<ConnectionState, WirePacketDefinition<?>[]> states = packets.get(protocolVersion);
 		if (states == null) {
 			return false;
 		}
-		WirePacketWrap<?>[] registrations = states.get(state);
+		WirePacketDefinition<?>[] registrations = states.get(state);
 		return registrations != null && packetId >= 0 && packetId < registrations.length && registrations[packetId] != null;
 	}
 
-	private @Nullable WirePacketWrap<?> findVersionIndependentPacketType(ConnectionState state, int packetId) {
-		WirePacketWrap<?> packetType = null;
-		for (Map<ConnectionState, WirePacketWrap<?>[]> states : packets.values()) {
-			WirePacketWrap<?>[] registrations = states.get(state);
+	private @Nullable WirePacketDefinition<?> findVersionIndependentPacketType(ConnectionState state, int packetId) {
+		WirePacketDefinition<?> packetType = null;
+		for (Map<ConnectionState, WirePacketDefinition<?>[]> states : packets.values()) {
+			WirePacketDefinition<?>[] registrations = states.get(state);
 			if (registrations == null || packetId < 0 || packetId >= registrations.length) {
 				return null;
 			}
-			WirePacketWrap<?> candidate = registrations[packetId];
+			WirePacketDefinition<?> candidate = registrations[packetId];
 			if (candidate == null) {
 				return null;
 			}
@@ -161,75 +159,76 @@ public final class WirePackets {
 		return packetType;
 	}
 
-	private WirePacketWrap<?> find(ConnectionState state, int packetId, int protocolVersion) {
+	private WirePacketDefinition<?> find(ConnectionState state, int packetId, int protocolVersion) {
 		Objects.requireNonNull(state, "state");
-		Map<ConnectionState, WirePacketWrap<?>[]> states = packets.get(protocolVersion);
+		Map<ConnectionState, WirePacketDefinition<?>[]> states = packets.get(protocolVersion);
 		if (states == null) {
 			throw new IllegalArgumentException("Unsupported packet protocol version " + protocolVersion);
 		}
-		WirePacketWrap<?>[] registrations = states.get(state);
+		WirePacketDefinition<?>[] registrations = states.get(state);
 		if (registrations != null && packetId >= 0 && packetId < registrations.length && registrations[packetId] != null) {
 			return registrations[packetId];
 		}
 		throw new IllegalArgumentException("No wire packet with ID " + packetId + " found in state " + state + " for protocol version " + protocolVersion);
 	}
 
-	public static <T extends Packet> T createPlayPacket(PacketId packetType, int protocolVersion) {
+	public static <T extends PacketContract> T createPlayPacket(PacketType packetType, int protocolVersion) {
 		return direction(packetType.direction()).createPlayPacketInternal(packetType, protocolVersion);
 	}
 
-	public static <T extends Packet> T createPlayPacket(PacketDirection direction, PacketId packetType, int protocolVersion) {
+	public static <T extends PacketContract> T createPlayPacket(PacketDirection direction, PacketType packetType, int protocolVersion) {
 		return direction(direction).createPlayPacketInternal(packetType, protocolVersion);
 	}
 
-	public static <T extends Packet> T createLoginPacket(PacketId packetType, int protocolVersion) {
+	public static <T extends PacketContract> T createLoginPacket(PacketType packetType, int protocolVersion) {
 		return direction(packetType.direction()).createLoginPacketInternal(packetType, protocolVersion);
 	}
 
-	public static <T extends Packet> T createLoginPacket(PacketDirection direction, PacketId packetType, int protocolVersion) {
+	public static <T extends PacketContract> T createLoginPacket(PacketDirection direction, PacketType packetType, int protocolVersion) {
 		return direction(direction).createLoginPacketInternal(packetType, protocolVersion);
 	}
 
-	public static <T extends Packet> T createStatusPacket(PacketId packetType, int protocolVersion) {
+	public static <T extends PacketContract> T createStatusPacket(PacketType packetType, int protocolVersion) {
 		return direction(packetType.direction()).createStatusPacketInternal(packetType, protocolVersion);
 	}
 
-	public static <T extends Packet> T createStatusPacket(PacketDirection direction, PacketId packetType, int protocolVersion) {
+	public static <T extends PacketContract> T createStatusPacket(PacketDirection direction, PacketType packetType, int protocolVersion) {
 		return direction(direction).createStatusPacketInternal(packetType, protocolVersion);
 	}
 
-	public static <T extends Packet> T createPacket(ConnectionState state, PacketId packetType, int protocolVersion) {
+	public static <T extends PacketContract> T createPacket(ConnectionState state, PacketType packetType, int protocolVersion) {
 		return direction(packetType.direction()).createPacketInternal(state, packetType, protocolVersion);
 	}
 
-	public static <T extends Packet> T createPacket(PacketDirection direction, ConnectionState state, PacketId packetType, int protocolVersion) {
+	public static <T extends PacketContract> T createPacket(PacketDirection direction, ConnectionState state, PacketType packetType, int protocolVersion) {
 		return direction(direction).createPacketInternal(state, packetType, protocolVersion);
 	}
 
-	public static <T extends Packet> T createPacket(ConnectionState state, int packetId, int protocolVersion) {
+	public static <T extends PacketContract> T createPacket(ConnectionState state, int packetId, int protocolVersion) {
 		return SERVERBOUND.createPacketInternal(state, packetId, protocolVersion);
 	}
 
-	public static <T extends Packet> T createPacket(PacketDirection direction, ConnectionState state, int packetId, int protocolVersion) {
+	public static <T extends PacketContract> T createPacket(PacketDirection direction, ConnectionState state, int packetId, int protocolVersion) {
 		return direction(direction).createPacketInternal(state, packetId, protocolVersion);
 	}
 
-	public static <T extends Packet> @Nullable T createVersionIndependentPacket(ConnectionState state, ByteBuf packet) {
+	public static <T extends PacketContract> @Nullable T createVersionIndependentPacket(ConnectionState state, ByteBuf packet) {
 		return SERVERBOUND.createVersionIndependentPacketInternal(state, packet);
 	}
 
-	public static <T extends Packet> @Nullable T createVersionIndependentPacket(PacketDirection direction, ConnectionState state, ByteBuf packet) {
+	public static <T extends PacketContract> @Nullable T createVersionIndependentPacket(PacketDirection direction, ConnectionState state, ByteBuf packet) {
 		return direction(direction).createVersionIndependentPacketInternal(state, packet);
 	}
 
-	public static <T extends Packet> @Nullable T decodePacket(ConnectionState state, int protocolVersion, ByteBuf packet) {
+	public static <T extends PacketContract> @Nullable T decodePacket(ConnectionState state, int protocolVersion, ByteBuf packet) {
 		return SERVERBOUND.decodePacketInternal(state, protocolVersion, packet);
 	}
 
-	public static <T extends Packet> @Nullable T decodePacket(PacketDirection direction, ConnectionState state, int protocolVersion, ByteBuf packet) {
+	public static <T extends PacketContract> @Nullable T decodePacket(PacketDirection direction, ConnectionState state, int protocolVersion, ByteBuf packet) {
 		return direction(direction).decodePacketInternal(state, protocolVersion, packet);
 	}
 
+	@Deprecated
 	public static boolean packetIdKnown(ConnectionState state, int packetId, int protocolVersion) {
 		return SERVERBOUND.packetIdKnownInternal(state, packetId, protocolVersion);
 	}
@@ -238,14 +237,18 @@ public final class WirePackets {
 		return direction(direction).packetIdKnownInternal(state, packetId, protocolVersion);
 	}
 
-	public static void encodePacket(ConnectionState state, PacketId packetType, int protocolVersion, Packet packet, ByteBuf output) {
+	public static void encodePacket(ConnectionState state, PacketType packetType, int protocolVersion, PacketContract packet, ByteBuf output) {
 		encodePacket(packetType.direction(), state, packetType, protocolVersion, packet, output);
 	}
 
-	public static void encodePacket(PacketDirection direction, ConnectionState state, PacketId packetType, int protocolVersion, Packet packet, ByteBuf output) {
+	public static void encodePacket(ConnectionState connectionState, TypedPacketContract tpc, int protocolVersion, ByteBuf newMessage) {
+		encodePacket(tpc.type().direction(), connectionState, tpc.type(), protocolVersion, tpc.contract(), newMessage);
+	}
+
+	public static void encodePacket(PacketDirection direction, ConnectionState state, PacketType type, int protocolVersion, PacketContract packet, ByteBuf output) {
 		WirePackets packets = direction(direction);
-		int id = packets.registry.idOf(state, packetType, protocolVersion);
-		WirePacketWrap<?> definition = packets.find(state, id, protocolVersion);
+		int id = packets.registry.idOf(state, type, protocolVersion);
+		WirePacketDefinition<?> definition = packets.find(state, id, protocolVersion);
 		int start = output.writerIndex();
 		try {
 			ByteBufStreamCodecs.VARINT.encode(output, id);

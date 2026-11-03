@@ -33,10 +33,10 @@ public class BlockInteractionProtocol315WirePacket extends BlockInteractionProto
 	}
 
 	public BlockInteractionProtocol315WirePacket(
-			BlockPosition blockPosition,
-			int directionId,
-			PlayerHand hand,
-			RawVector3d hitPosition) {
+		BlockPosition blockPosition,
+		int directionId,
+		PlayerHand hand,
+		RawVector3d hitPosition) {
 		super(blockPosition, directionId, hand, hitPosition);
 	}
 

@@ -11,14 +11,13 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.PlayerTeleportPacket;
+import de.jpx3.intave.packet.contract.immutable.PlayerTeleportPacket;
 import de.jpx3.intave.share.PositionMoveRotation;
 import de.jpx3.intave.share.Relative;
 
 import java.util.Set;
 
-public interface MutablePlayerTeleportPacket extends PlayerTeleportPacket, MutablePositioned, MutableRotated, MutableMotionUpdate {
-
+public interface MutablePlayerTeleportPacket extends PlayerTeleportPacket, MutablePositioned, MutableRotated, MutableMotionUpdate, Mutable {
 	void setTeleportId(int teleportId);
 
 	void setFlags(Set<Relative> flags);

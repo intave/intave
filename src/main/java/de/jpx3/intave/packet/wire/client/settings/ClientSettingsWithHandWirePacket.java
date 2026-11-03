@@ -36,12 +36,12 @@ public class ClientSettingsWithHandWirePacket extends ClientSettingsWithoutHandW
 	}
 
 	public ClientSettingsWithHandWirePacket(
-			String locale,
-			int viewDistance,
-			int chatVisibility,
-			boolean chatColors,
-			int skinParts,
-			MainHand mainHand) {
+		String locale,
+		int viewDistance,
+		int chatVisibility,
+		boolean chatColors,
+		int skinParts,
+		MainHand mainHand) {
 		super(locale, viewDistance, chatVisibility, chatColors, skinParts);
 		this.mainHand = mainHand;
 	}
@@ -58,6 +58,7 @@ public class ClientSettingsWithHandWirePacket extends ClientSettingsWithoutHandW
 
 	@Override
 	public void setMainHand(MainHand value) {
+		markMutated();
 		mainHand = Objects.requireNonNull(value, "mainHand");
 	}
 }

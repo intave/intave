@@ -13,12 +13,11 @@ package de.jpx3.intave.packet.wire.ability.outbound;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableAbilityOutPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class AbilityOutWirePacket implements MutableAbilityOutPacket {
+public class AbilityOutWirePacket extends MutableWirePacket implements MutableAbilityOutPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, AbilityOutWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.UNSIGNED_BYTE, AbilityOutWirePacket::flags,
@@ -49,6 +48,7 @@ public class AbilityOutWirePacket implements MutableAbilityOutPacket {
 
 	@Override
 	public void setFlyingSpeed(float value) {
+		markMutated();
 		this.flyingSpeed = value;
 	}
 
@@ -59,12 +59,8 @@ public class AbilityOutWirePacket implements MutableAbilityOutPacket {
 
 	@Override
 	public void setWalkingSpeed(float value) {
+		markMutated();
 		this.walkingSpeed = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.ABILITIES_OUT);
 	}
 
 	@Override
@@ -84,11 +80,13 @@ public class AbilityOutWirePacket implements MutableAbilityOutPacket {
 
 	@Override
 	public void setFlying(boolean value) {
+		markMutated();
 		flags = value ? flags | 2 : flags & ~2;
 	}
 
 	@Override
 	public void setFlyingAllowed(boolean value) {
+		markMutated();
 		flags = value ? flags | 4 : flags & ~4;
 	}
 

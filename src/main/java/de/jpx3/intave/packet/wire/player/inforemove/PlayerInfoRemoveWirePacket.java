@@ -13,34 +13,33 @@ package de.jpx3.intave.packet.wire.player.inforemove;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerInfoRemovePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static de.jpx3.intave.packet.wire.WireCodecs.count;
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.count;
 
-public class PlayerInfoRemoveWirePacket implements MutablePlayerInfoRemovePacket {
+public class PlayerInfoRemoveWirePacket extends MutableWirePacket implements MutablePlayerInfoRemovePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PlayerInfoRemoveWirePacket> STREAM_CODEC =
-			StreamCodec.of(
-					(output, packet) -> {
-						ByteBufStreamCodecs.VARINT.encode(output, packet.playerIds.size());
-						for (UUID id : packet.playerIds) {
-							output.writeLong(id.getMostSignificantBits());
-							output.writeLong(id.getLeastSignificantBits());
-						}
-					},
-					input -> {
-						int count = count(input, input.readableBytes() / 16);
-						List<UUID> playerIds = new ArrayList<>(count);
-						for (int i = 0; i < count; i++)
-							playerIds.add(new UUID(input.readLong(), input.readLong()));
-						return new PlayerInfoRemoveWirePacket(playerIds);
-					});
+		StreamCodec.of(
+			(output, packet) -> {
+				ByteBufStreamCodecs.VARINT.encode(output, packet.playerIds.size());
+				for (UUID id : packet.playerIds) {
+					output.writeLong(id.getMostSignificantBits());
+					output.writeLong(id.getLeastSignificantBits());
+				}
+			},
+			input -> {
+				int count = count(input, input.readableBytes() / 16);
+				List<UUID> playerIds = new ArrayList<>(count);
+				for (int i = 0; i < count; i++)
+					playerIds.add(new UUID(input.readLong(), input.readLong()));
+				return new PlayerInfoRemoveWirePacket(playerIds);
+			});
 
 	protected List<UUID> playerIds = new ArrayList<>();
 
@@ -54,17 +53,14 @@ public class PlayerInfoRemoveWirePacket implements MutablePlayerInfoRemovePacket
 
 	@Override
 	public List<UUID> playerIds() {
+		markMutated();
 		return this.playerIds;
 	}
 
 	@Override
 	public void setPlayerIds(List<UUID> value) {
+		markMutated();
 		this.playerIds = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.PLAYER_INFO_REMOVE);
 	}
 
 	@Override

@@ -39,6 +39,7 @@ public final class HorseWindowOpenProtocol477WirePacket extends HorseWindowOpenW
 
 	@Override
 	public void setSlots(int value) {
+		markMutated();
 		int offset = 1;
 
 		count = value;

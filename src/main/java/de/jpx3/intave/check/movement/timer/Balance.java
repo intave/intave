@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.movement.timer;
 
 import com.comphenix.protocol.events.PacketEvent;
@@ -30,7 +41,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static de.jpx3.intave.math.MathHelper.formatDouble;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.RESPAWN;
+import static de.jpx3.intave.packet.contract.PacketType.Server.RESPAWN;
 
 @Deprecated
 public final class Balance extends MetaCheckPart<Timer, Balance.BalanceMeta> {

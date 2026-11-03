@@ -39,7 +39,7 @@ public class PlayerTeleportWithIdWirePacket extends PlayerTeleportWithoutIdWireP
 	}
 
 	public PlayerTeleportWithIdWirePacket(
-			Position position, Rotation rotation, Set<Relative> flags, int teleportId) {
+		Position position, Rotation rotation, Set<Relative> flags, int teleportId) {
 		super(position, rotation, flags);
 		this.teleportId = teleportId;
 	}
@@ -56,6 +56,7 @@ public class PlayerTeleportWithIdWirePacket extends PlayerTeleportWithoutIdWireP
 
 	@Override
 	public void setTeleportId(int value) {
+		markMutated();
 		teleportId = value;
 	}
 

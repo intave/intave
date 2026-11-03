@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.WindowOpenPacket;
+import de.jpx3.intave.packet.contract.immutable.WindowOpenPacket;
 
-public interface MutableWindowOpenPacket extends WindowOpenPacket, MutableWindowAddressed, MutableEntityAddressed {
-
+public interface MutableWindowOpenPacket extends WindowOpenPacket, MutableWindowAddressed, MutableEntityAddressed, Mutable {
 	void setMenuType(String menuType);
 
 	void setSlots(int slots);

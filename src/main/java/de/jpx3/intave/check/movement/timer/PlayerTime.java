@@ -50,7 +50,7 @@ import java.util.UUID;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.LOGIN;
+import static de.jpx3.intave.packet.contract.PacketType.Server.LOGIN;
 
 public class PlayerTime extends MetaCheckPart<Timer, PlayerTime.PlayerTimeMeta> {
   private static final long DEFAULT_DELAY = 500;

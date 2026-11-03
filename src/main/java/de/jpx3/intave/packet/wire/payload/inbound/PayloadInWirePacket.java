@@ -13,29 +13,27 @@ package de.jpx3.intave.packet.wire.payload.inbound;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutablePayloadInPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-import static de.jpx3.intave.packet.wire.WireCodecs.bytes;
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.bytes;
 
-public class PayloadInWirePacket implements MutablePayloadInPacket {
+public class PayloadInWirePacket extends MutableWirePacket implements MutablePayloadInPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PayloadInWirePacket> STREAM_CODEC =
-			StreamCodec.of(
-					(output, packet) -> {
-						ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.tag);
-						output.writeBytes(packet.payload);
-					},
-					input -> {
-						String tag = ByteBufStreamCodecs.VARINT_STRING.decode(input);
-						byte[] payload = bytes(input, input.readableBytes());
-						return new PayloadInWirePacket(tag, payload);
-					});
+		StreamCodec.of(
+			(output, packet) -> {
+				ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.tag);
+				output.writeBytes(packet.payload);
+			},
+			input -> {
+				String tag = ByteBufStreamCodecs.VARINT_STRING.decode(input);
+				byte[] payload = bytes(input, input.readableBytes());
+				return new PayloadInWirePacket(tag, payload);
+			});
 
-	protected String tag = "";
-
-	protected byte[] payload = new byte[0];
+	protected String tag;
+	protected byte[] payload;
 
 	public PayloadInWirePacket() {
 		this("", new byte[0]);
@@ -53,23 +51,20 @@ public class PayloadInWirePacket implements MutablePayloadInPacket {
 
 	@Override
 	public void setTag(String value) {
+		markMutated();
 		this.tag = value;
 	}
 
 	@Override
 	public byte[] payload() {
+		markMutated();
 		return this.payload;
 	}
 
 	@Override
 	public void setPayload(byte[] value) {
+		markMutated();
 		this.payload = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY || state == ConnectionState.CONFIGURATION)
-				&& (packetId == PacketId.Client.CUSTOM_PAYLOAD_IN);
 	}
 
 	@Override

@@ -27,13 +27,11 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.player.PacketLogging;
-import de.jpx3.intave.packet.reader.BlockDigReader;
+import de.jpx3.intave.packet.plib.reader.BlockDigReader;
 import de.jpx3.intave.share.Position;
-import de.jpx3.intave.share.PositionMoveRotation;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
-import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -44,8 +42,8 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Optional;
 
+import static de.jpx3.intave.packet.contract.PacketType.Client.BLOCK_DIG;
 import static de.jpx3.intave.share.PlayerDigAction.DROP_ITEM;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.BLOCK_DIG;
 
 public final class QPressDebugTracker extends Module {
 	@PacketSubscription(priority = ListenerPriority.HIGH, packetsIn = {BLOCK_DIG})

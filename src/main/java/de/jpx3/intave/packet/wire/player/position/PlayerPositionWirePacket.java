@@ -13,14 +13,13 @@ package de.jpx3.intave.packet.wire.player.position;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerMovePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
 import io.netty.buffer.ByteBuf;
 
-public class PlayerPositionWirePacket implements MutablePlayerMovePacket {
+public class PlayerPositionWirePacket extends MutableWirePacket implements MutablePlayerMovePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PlayerPositionWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			Position.STREAM_CODEC, PlayerPositionWirePacket::position,
@@ -28,8 +27,7 @@ public class PlayerPositionWirePacket implements MutablePlayerMovePacket {
 			PlayerPositionWirePacket::new
 		);
 
-	protected Position position = new Position();
-
+	protected Position position;
 	protected int flags;
 
 	public PlayerPositionWirePacket() {
@@ -43,11 +41,13 @@ public class PlayerPositionWirePacket implements MutablePlayerMovePacket {
 
 	@Override
 	public Position position() {
+		if (position != null && !position.isImmutable()) markMutated();
 		return this.position;
 	}
 
 	@Override
 	public void setPosition(Position value) {
+		markMutated();
 		this.position = value;
 	}
 
@@ -58,12 +58,8 @@ public class PlayerPositionWirePacket implements MutablePlayerMovePacket {
 
 	@Override
 	public void setRotation(Rotation value) {
+		markMutated();
 		throw new UnsupportedOperationException("This packet does not support rotation");
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.POSITION);
 	}
 
 	@Override
@@ -88,11 +84,13 @@ public class PlayerPositionWirePacket implements MutablePlayerMovePacket {
 
 	@Override
 	public void setOnGround(boolean value) {
+		markMutated();
 		flags = value ? flags | 1 : flags & ~1;
 	}
 
 	@Override
 	public void setHorizontalCollision(boolean value) {
+		markMutated();
 		flags = value ? flags | 2 : flags & ~2;
 	}
 

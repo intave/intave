@@ -11,13 +11,12 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.SingleBlockChangePacket;
+import de.jpx3.intave.packet.contract.immutable.SingleBlockChangePacket;
 import de.jpx3.intave.share.PositionedBlockState;
 
 import java.util.Collections;
 
-public interface MutableSingleBlockChangePacket extends SingleBlockChangePacket, MutableBlockUpdates, MutableBlockAddressed {
-
+public interface MutableSingleBlockChangePacket extends SingleBlockChangePacket, MutableBlockUpdates, MutableBlockAddressed, Mutable {
 	default void setBlockUpdate(PositionedBlockState update) {
 		setBlockUpdates(Collections.singletonList(update));
 	}

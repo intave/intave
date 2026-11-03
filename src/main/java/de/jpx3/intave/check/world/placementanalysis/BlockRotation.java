@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.world.placementanalysis;
 
 import de.jpx3.intave.block.access.BlockInteractionAccess;
@@ -9,7 +20,7 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
-import de.jpx3.intave.packet.reader.BlockInteractionReader;
+import de.jpx3.intave.packet.plib.reader.BlockInteractionReader;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;
@@ -22,9 +33,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static de.jpx3.intave.check.world.PlacementAnalysis.COMMON_FLAG_MESSAGE;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.BLOCK_PLACE;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.USE_ITEM;
 import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
+import static de.jpx3.intave.packet.contract.PacketType.Client.BLOCK_PLACE;
+import static de.jpx3.intave.packet.contract.PacketType.Client.USE_ITEM;
 
 public final class BlockRotation extends PlayerCheckPart<PlacementAnalysis> {
 	private final List<Long> placementSpeedHistory = GarbageCollector.watch(new ArrayList<>());

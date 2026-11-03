@@ -23,7 +23,7 @@ public final class BlockDigWithoutSequenceWirePacket extends BlockDigWirePacket 
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, BlockDigWirePacket::actionId,
 			BlockPosition.WIRE_STREAM_CODEC, BlockDigWirePacket::blockPosition,
-			ByteBufStreamCodecs.enumCodec( Direction.values(), ByteBufStreamCodecs.UNSIGNED_BYTE), BlockDigWirePacket::direction,
+			ByteBufStreamCodecs.enumCodec(Direction.values(), ByteBufStreamCodecs.UNSIGNED_BYTE), BlockDigWirePacket::direction,
 			BlockDigWithoutSequenceWirePacket::new
 		);
 
@@ -32,7 +32,7 @@ public final class BlockDigWithoutSequenceWirePacket extends BlockDigWirePacket 
 	}
 
 	public BlockDigWithoutSequenceWirePacket(
-			int actionId, BlockPosition blockPosition, Direction direction) {
+		int actionId, BlockPosition blockPosition, Direction direction) {
 		super(actionId, blockPosition, direction, 0);
 	}
 
@@ -45,6 +45,7 @@ public final class BlockDigWithoutSequenceWirePacket extends BlockDigWirePacket 
 
 	@Override
 	public void setAction(PlayerDigAction value) {
+		markMutated();
 		if (value == PlayerDigAction.CHANGE_DESTROY_DIRECTION) {
 			throw new IllegalArgumentException("Direction changes require 26.3");
 		} else {

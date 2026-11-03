@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.wire.chunk.data;
 
-import de.jpx3.intave.module.linker.packet.PacketId;
+import de.jpx3.intave.packet.contract.PacketType;
 import org.junit.jupiter.api.Test;
 
 import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
@@ -26,7 +26,7 @@ final class MapChunkWirePacketCodecsTest {
 		MapChunkWirePacket chunk =
 				roundTrip(
 						CLIENTBOUND,
-						PacketId.Server.MAP_CHUNK,
+						PacketType.Server.MAP_CHUNK,
 						768,
 						b -> b.writeInt(-12).writeInt(27).writeBytes(data));
 		assertEquals(-12, chunk.chunkX(0));

@@ -16,19 +16,18 @@ import de.jpx3.intave.codec.StreamCodec;
 import io.netty.buffer.ByteBuf;
 
 public final class ScoreboardDisplayByteSlotWirePacket extends ScoreboardDisplayWirePacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, ScoreboardDisplayByteSlotWirePacket>
-			STREAM_CODEC =
-					StreamCodec.of(
-							(output, packet) -> {
-								output.writeByte(packet.slot);
-								ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.objectiveName == null ? "" : packet.objectiveName);
-							},
-							input -> {
-								int slot = input.readUnsignedByte();
-								String name = ByteBufStreamCodecs.VARINT_STRING.decode(input);
-								String objectiveName = name.isEmpty() ? null : name;
-								return new ScoreboardDisplayByteSlotWirePacket(slot, objectiveName);
-							});
+	public static final StreamCodec<ByteBuf, ByteBuf, ScoreboardDisplayByteSlotWirePacket> STREAM_CODEC =
+		StreamCodec.of(
+			(output, packet) -> {
+				output.writeByte(packet.slot);
+				ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.objectiveName == null ? "" : packet.objectiveName);
+			},
+			input -> {
+				int slot = input.readUnsignedByte();
+				String name = ByteBufStreamCodecs.VARINT_STRING.decode(input);
+				String objectiveName = name.isEmpty() ? null : name;
+				return new ScoreboardDisplayByteSlotWirePacket(slot, objectiveName);
+			});
 
 	public ScoreboardDisplayByteSlotWirePacket() {
 		super();

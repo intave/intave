@@ -11,9 +11,8 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.Textual;
+import de.jpx3.intave.packet.contract.immutable.Textual;
 
-public interface MutableTextual extends Textual {
-
+public interface MutableTextual extends Textual, Mutable {
 	void setText(String text);
 }

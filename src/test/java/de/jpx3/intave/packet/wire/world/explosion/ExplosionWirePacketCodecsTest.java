@@ -12,7 +12,7 @@
 package de.jpx3.intave.packet.wire.world.explosion;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
-import de.jpx3.intave.module.linker.packet.PacketId;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.wire.WirePackets;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Motion;
@@ -35,7 +35,7 @@ final class ExplosionWirePacketCodecsTest {
 			ExplosionWirePacket packet =
 					roundTrip(
 							CLIENTBOUND,
-							PacketId.Server.EXPLOSION,
+							PacketType.Server.EXPLOSION,
 							protocol,
 							b -> {
 								b.writeFloat(-10.25f)
@@ -67,7 +67,7 @@ final class ExplosionWirePacketCodecsTest {
 			ExplosionWirePacket packet =
 					roundTrip(
 							CLIENTBOUND,
-							PacketId.Server.EXPLOSION,
+							PacketType.Server.EXPLOSION,
 							protocol,
 							b -> {
 								b.writeFloat(-10.25f)
@@ -99,7 +99,7 @@ final class ExplosionWirePacketCodecsTest {
 			ExplosionWirePacket packet =
 					roundTrip(
 							CLIENTBOUND,
-							PacketId.Server.EXPLOSION,
+							PacketType.Server.EXPLOSION,
 							protocol,
 							b -> {
 								b.writeDouble(-10.2500000001)
@@ -124,7 +124,7 @@ final class ExplosionWirePacketCodecsTest {
 	@Test
 	void explosionsCanBeEncodedFromExplicitFields() {
 		for (int protocol : new int[] {47, 755, 761}) {
-			int id = registry(CLIENTBOUND).idOf(PLAY, PacketId.Server.EXPLOSION, protocol);
+			int id = registry(CLIENTBOUND).idOf(PLAY, PacketType.Server.EXPLOSION, protocol);
 			ExplosionWirePacket packet =
 					(ExplosionWirePacket) WirePackets.createPacket(CLIENTBOUND, PLAY, id, protocol);
 			packet.setPosition(-10.25, 64.5, 2.75);
@@ -133,7 +133,7 @@ final class ExplosionWirePacketCodecsTest {
 			packet.setMotion(new Motion(0.125, -0.25, 0.5));
 			ByteBuf output = Unpooled.buffer();
 			try {
-				WirePackets.encodePacket(CLIENTBOUND, PLAY, PacketId.Server.EXPLOSION, protocol, packet, output);
+				WirePackets.encodePacket(CLIENTBOUND, PLAY, PacketType.Server.EXPLOSION, protocol, packet, output);
 				assertEquals(id, ByteBufStreamCodecs.VARINT.decode(output));
 				if (protocol < 761) {
 					assertEquals(-10.25f, output.readFloat());
@@ -170,7 +170,7 @@ final class ExplosionWirePacketCodecsTest {
 				ByteBuf input = Unpooled.buffer();
 				try {
 					ByteBufStreamCodecs.VARINT.encode(
-							input, registry(CLIENTBOUND).idOf(PLAY, PacketId.Server.EXPLOSION, protocol));
+							input, registry(CLIENTBOUND).idOf(PLAY, PacketType.Server.EXPLOSION, protocol));
 					input.writeZero(protocol < 761 ? 16 : 28);
 					if (protocol < 755) input.writeInt(count);
 					else ByteBufStreamCodecs.VARINT.encode(input, count);
@@ -189,7 +189,7 @@ final class ExplosionWirePacketCodecsTest {
 	@Test
 	void explosionBlockOffsetsMustFitSignedBytes() {
 		for (int protocol : new int[] {47, 755, 761}) {
-			int id = registry(CLIENTBOUND).idOf(PLAY, PacketId.Server.EXPLOSION, protocol);
+			int id = registry(CLIENTBOUND).idOf(PLAY, PacketType.Server.EXPLOSION, protocol);
 			ExplosionWirePacket packet =
 					(ExplosionWirePacket) WirePackets.createPacket(CLIENTBOUND, PLAY, id, protocol);
 			for (BlockPosition offset :
@@ -206,7 +206,7 @@ final class ExplosionWirePacketCodecsTest {
 									WirePackets.encodePacket(
 											CLIENTBOUND,
 											PLAY,
-											PacketId.Server.EXPLOSION,
+											PacketType.Server.EXPLOSION,
 											protocol,
 											packet,
 											output));

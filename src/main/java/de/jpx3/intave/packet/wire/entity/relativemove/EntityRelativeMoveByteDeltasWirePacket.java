@@ -22,37 +22,38 @@ import java.util.List;
 
 public final class EntityRelativeMoveByteDeltasWirePacket extends EntityRelativeMoveWirePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityRelativeMoveByteDeltasWirePacket>
-			STREAM_CODEC =
-					StreamCodec.of(
-							(output, packet) -> {
-								ByteBufStreamCodecs.VARINT.encode(output, packet.entityId);
-								EntityRelativeMoveStep step = packet.steps.get(0);
-								RawVector3d.BYTE_DELTA_STREAM_CODEC.encode(output, step.delta());
+		STREAM_CODEC =
+		StreamCodec.of(
+			(output, packet) -> {
+				ByteBufStreamCodecs.VARINT.encode(output, packet.entityId);
+				EntityRelativeMoveStep step = packet.steps.get(0);
+				RawVector3d.BYTE_DELTA_STREAM_CODEC.encode(output, step.delta());
 
-								output.writeBoolean(packet.onGround);
-							},
-							input -> {
-								int entityId = ByteBufStreamCodecs.VARINT.decode(input);
-								RawVector3d delta = RawVector3d.BYTE_DELTA_STREAM_CODEC.decode(input);
-								List<EntityRelativeMoveStep> steps = new ArrayList<>();
-								steps.add(new Step(delta, 0));
+				output.writeBoolean(packet.onGround);
+			},
+			input -> {
+				int entityId = ByteBufStreamCodecs.VARINT.decode(input);
+				RawVector3d delta = RawVector3d.BYTE_DELTA_STREAM_CODEC.decode(input);
+				List<EntityRelativeMoveStep> steps = new ArrayList<>();
+				steps.add(new Step(delta, 0));
 
-								boolean onGround = input.readBoolean();
-								return new EntityRelativeMoveByteDeltasWirePacket(
-										entityId, steps, onGround);
-							});
+				boolean onGround = input.readBoolean();
+				return new EntityRelativeMoveByteDeltasWirePacket(
+					entityId, steps, onGround);
+			});
 
 	public EntityRelativeMoveByteDeltasWirePacket() {
 		super();
 	}
 
 	public EntityRelativeMoveByteDeltasWirePacket(
-			int entityId, List<EntityRelativeMoveStep> steps, boolean onGround) {
+		int entityId, List<EntityRelativeMoveStep> steps, boolean onGround) {
 		super(entityId, onGround, false, steps);
 	}
 
 	@Override
 	public void setSteps(List<? extends EntityRelativeMoveStep> value) {
+		markMutated();
 		if (value.size() != 1 || value.get(0).delayTicks() != 0) {
 			throw new IllegalArgumentException("Linear movement requires one step without a delay");
 		}

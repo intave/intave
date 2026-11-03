@@ -11,14 +11,13 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.ChatOutPacket;
+import de.jpx3.intave.packet.contract.immutable.ChatOutPacket;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public interface MutableChatOutPacket extends ChatOutPacket {
-
+public interface MutableChatOutPacket extends ChatOutPacket, Mutable {
 	void setLinesJson(List<String> lines);
 
 	void setChannel(Channel channel);

@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.EntityEffectPacket;
+import de.jpx3.intave.packet.contract.immutable.EntityEffectPacket;
 
-public interface MutableEntityEffectPacket extends EntityEffectPacket, MutableEffectAddressed {
-
+public interface MutableEntityEffectPacket extends EntityEffectPacket, MutableEffectAddressed, Mutable {
 	void setEffectAmplifier(int amplifier);
 
 	void setEffectDuration(int ticks);

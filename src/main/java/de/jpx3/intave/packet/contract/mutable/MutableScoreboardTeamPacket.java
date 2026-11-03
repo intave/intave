@@ -12,13 +12,12 @@
 package de.jpx3.intave.packet.contract.mutable;
 
 import de.jpx3.intave.annotate.Nullable;
-import de.jpx3.intave.packet.contract.ScoreboardTeamPacket;
+import de.jpx3.intave.packet.contract.immutable.ScoreboardTeamPacket;
 import de.jpx3.intave.share.ScoreboardTeamAction;
 
 import java.util.List;
 
-public interface MutableScoreboardTeamPacket extends ScoreboardTeamPacket {
-
+public interface MutableScoreboardTeamPacket extends ScoreboardTeamPacket, Mutable {
 	void setName(String name);
 
 	void setAction(ScoreboardTeamAction action);

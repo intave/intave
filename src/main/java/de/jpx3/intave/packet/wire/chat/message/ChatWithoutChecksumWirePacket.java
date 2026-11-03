@@ -56,6 +56,7 @@ public class ChatWithoutChecksumWirePacket extends ChatUnsignedWirePacket {
 	}
 
 	public void setTimestamp(Instant value) {
+		markMutated();
 		timestamp = value;
 	}
 
@@ -64,14 +65,17 @@ public class ChatWithoutChecksumWirePacket extends ChatUnsignedWirePacket {
 	}
 
 	public void setSalt(long value) {
+		markMutated();
 		salt = value;
 	}
 
 	public byte[] signature() {
+		markMutated();
 		return signature;
 	}
 
 	public void setSignature(byte[] value) {
+		markMutated();
 		signature = value;
 	}
 
@@ -80,14 +84,17 @@ public class ChatWithoutChecksumWirePacket extends ChatUnsignedWirePacket {
 	}
 
 	public void setOffset(int value) {
+		markMutated();
 		offset = value;
 	}
 
 	public BitSet acknowledged() {
+		markMutated();
 		return acknowledged;
 	}
 
 	public void setAcknowledged(BitSet value) {
+		markMutated();
 		acknowledged = value;
 	}
 

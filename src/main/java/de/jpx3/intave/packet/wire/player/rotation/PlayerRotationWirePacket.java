@@ -13,14 +13,13 @@ package de.jpx3.intave.packet.wire.player.rotation;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerMovePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
 import io.netty.buffer.ByteBuf;
 
-public class PlayerRotationWirePacket implements MutablePlayerMovePacket {
+public class PlayerRotationWirePacket extends MutableWirePacket implements MutablePlayerMovePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PlayerRotationWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			Rotation.STREAM_CODEC, PlayerRotationWirePacket::rotation,
@@ -48,22 +47,20 @@ public class PlayerRotationWirePacket implements MutablePlayerMovePacket {
 
 	@Override
 	public void setPosition(Position value) {
+		markMutated();
 		throw new UnsupportedOperationException("This packet does not support position");
 	}
 
 	@Override
 	public Rotation rotation() {
+		markMutated();
 		return this.rotation;
 	}
 
 	@Override
 	public void setRotation(Rotation value) {
+		markMutated();
 		this.rotation = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.LOOK);
 	}
 
 	@Override
@@ -88,11 +85,13 @@ public class PlayerRotationWirePacket implements MutablePlayerMovePacket {
 
 	@Override
 	public void setOnGround(boolean value) {
+		markMutated();
 		flags = value ? flags | 1 : flags & ~1;
 	}
 
 	@Override
 	public void setHorizontalCollision(boolean value) {
+		markMutated();
 		flags = value ? flags | 2 : flags & ~2;
 	}
 

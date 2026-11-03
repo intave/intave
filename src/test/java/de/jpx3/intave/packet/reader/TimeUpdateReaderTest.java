@@ -12,6 +12,7 @@
 package de.jpx3.intave.packet.reader;
 
 import ac.intave.samples.event.TimeEvent;
+import de.jpx3.intave.packet.plib.reader.TimeUpdateReader;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;

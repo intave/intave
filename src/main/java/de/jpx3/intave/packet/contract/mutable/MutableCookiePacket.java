@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.CookiePacket;
+import de.jpx3.intave.packet.contract.immutable.CookiePacket;
 import de.jpx3.intave.share.MinecraftKey;
 
-public interface MutableCookiePacket extends CookiePacket {
-
+public interface MutableCookiePacket extends CookiePacket, Mutable {
 	void setKey(MinecraftKey key);
 }

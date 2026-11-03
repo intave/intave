@@ -34,7 +34,7 @@ import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.feedback.FeedbackTests;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
-import de.jpx3.intave.packet.reader.ReaderTests;
+import de.jpx3.intave.packet.plib.reader.ReaderTests;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
 import de.jpx3.intave.security.HWIDVerification;

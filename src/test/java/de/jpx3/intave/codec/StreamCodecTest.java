@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.codec;
 
 import io.netty.buffer.ByteBuf;
@@ -5,8 +16,7 @@ import io.netty.buffer.Unpooled;
 import org.bukkit.Material;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 final class StreamCodecTest {
 	private static final StreamCodec<ByteBuf, ByteBuf, Example> VERSION_ONE = ByteBufStreamCodecs.smartCodec(
@@ -41,6 +51,21 @@ final class StreamCodecTest {
 		.field("name", ByteBufStreamCodecs.STRING)
 		.field("score", ByteBufStreamCodecs.INTEGER, () -> 10)
 		.build();
+
+	@Test
+	void canNotBeNullRejectsNullBeforeCallingEncoder() {
+		StreamCodec<String, StringBuilder, String> codec = StreamCodec
+			.<String, StringBuilder, String>of(StringBuilder::append, value -> value)
+			.throwIfNullEncoded();
+		StringBuilder output = new StringBuilder("prefix");
+		assertThrows(IllegalArgumentException.class, () -> codec.encode(output, null));
+		assertEquals("prefix", output.toString());
+
+		String value = "value";
+		codec.encode(output, value);
+		assertEquals("prefixvalue", output.toString());
+		assertSame(value, codec.decode(value));
+	}
 
 	@Test
 	void smartCodecReadsOlderPayloadWithFallbacks() {

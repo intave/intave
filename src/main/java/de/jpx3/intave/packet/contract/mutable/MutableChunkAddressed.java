@@ -11,9 +11,8 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.ChunkAddressed;
+import de.jpx3.intave.packet.contract.immutable.ChunkAddressed;
 
-public interface MutableChunkAddressed extends ChunkAddressed {
-
+public interface MutableChunkAddressed extends ChunkAddressed, Mutable {
 	void setChunkCoordinates(int index, int x, int z);
 }

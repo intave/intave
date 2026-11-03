@@ -13,101 +13,94 @@ package de.jpx3.intave.packet.wire.world.border;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.codec.VarLongCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableWorldBorderPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.Position;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Objects;
 
-import static de.jpx3.intave.packet.wire.WireCodecs.enumValue;
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.enumValue;
 
-/** The combined border packet used before 1.17. Its action is part of the payload. */
-public class WorldBorderWirePacket implements MutableWorldBorderPacket {
+public class WorldBorderWirePacket extends MutableWirePacket implements MutableWorldBorderPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, WorldBorderWirePacket> STREAM_CODEC =
-			StreamCodec.of(
-					(output, packet) -> {
-						ByteBufStreamCodecs.VARINT.encode(output, packet.action.ordinal());
-						if (packet.center() != null) {
-							output.writeDouble(packet.center.getX());
-							output.writeDouble(packet.center.getZ());
-						}
-						if (packet.oldSize() != null) output.writeDouble(packet.oldSize);
-						if (packet.size() != null || packet.newSize() != null)
-							output.writeDouble(packet.newSize);
-						if (packet.lerpTime() != null)
-							VarLongCodec.INSTANCE.encode(output, packet.lerpTime);
-						if (packet.absoluteMaxSize() != null)
-							ByteBufStreamCodecs.VARINT.encode(output, packet.absoluteMaxSize);
-						if (packet.action == Action.INITIALIZE
-								|| packet.action == Action.WARNING_DISTANCE)
-							ByteBufStreamCodecs.VARINT.encode(output, packet.warningDistance);
-						if (packet.action == Action.INITIALIZE
-								|| packet.action == Action.WARNING_DELAY)
-							ByteBufStreamCodecs.VARINT.encode(output, packet.warningDelay);
-					},
-					input -> {
-						Action action = enumValue(Action.values(), ByteBufStreamCodecs.VARINT.decode(input));
-						boolean initialize = action == Action.INITIALIZE;
-						Position center =
-								initialize || action == Action.SET_CENTER
-										? new Position(input.readDouble(), 0, input.readDouble())
-										: new Position();
-						double oldSize =
-								initialize || action == Action.LERP_SIZE
-										? input.readDouble()
-										: 60000000;
-						double newSize =
-								initialize
-												|| action == Action.LERP_SIZE
-												|| action == Action.SET_SIZE
-										? input.readDouble()
-										: 60000000;
-						long lerpTime =
-								initialize || action == Action.LERP_SIZE
-										? VarLongCodec.INSTANCE.decode(input)
-										: 0;
-						int absoluteMaxSize = initialize ? ByteBufStreamCodecs.VARINT.decode(input) : 29999984;
-						int warningDistance =
-								initialize || action == Action.WARNING_DISTANCE ? ByteBufStreamCodecs.VARINT.decode(input) : 5;
-						int warningDelay =
-								initialize || action == Action.WARNING_DELAY ? ByteBufStreamCodecs.VARINT.decode(input) : 15;
-						return new WorldBorderWirePacket(
-								action,
-								center,
-								oldSize,
-								newSize,
-								lerpTime,
-								absoluteMaxSize,
-								warningDistance,
-								warningDelay);
-					});
+		StreamCodec.of(
+			(output, packet) -> {
+				ByteBufStreamCodecs.VARINT.encode(output, packet.action.ordinal());
+				if (packet.center() != null) {
+					output.writeDouble(packet.center.getX());
+					output.writeDouble(packet.center.getZ());
+				}
+				if (packet.oldSize() != null) output.writeDouble(packet.oldSize);
+				if (packet.size() != null || packet.newSize() != null)
+					output.writeDouble(packet.newSize);
+				if (packet.lerpTime() != null)
+					ByteBufStreamCodecs.VARLONG.encode(output, packet.lerpTime);
+				if (packet.absoluteMaxSize() != null)
+					ByteBufStreamCodecs.VARINT.encode(output, packet.absoluteMaxSize);
+				if (packet.action == Action.INITIALIZE
+					|| packet.action == Action.WARNING_DISTANCE)
+					ByteBufStreamCodecs.VARINT.encode(output, packet.warningDistance);
+				if (packet.action == Action.INITIALIZE
+					|| packet.action == Action.WARNING_DELAY)
+					ByteBufStreamCodecs.VARINT.encode(output, packet.warningDelay);
+			},
+			input -> {
+				Action action = enumValue(Action.values(), ByteBufStreamCodecs.VARINT.decode(input));
+				boolean initialize = action == Action.INITIALIZE;
+				Position center =
+					initialize || action == Action.SET_CENTER
+						? new Position(input.readDouble(), 0, input.readDouble())
+						: new Position();
+				double oldSize =
+					initialize || action == Action.LERP_SIZE
+						? input.readDouble()
+						: 60000000;
+				double newSize =
+					initialize
+						|| action == Action.LERP_SIZE
+						|| action == Action.SET_SIZE
+						? input.readDouble()
+						: 60000000;
+				long lerpTime =
+					initialize || action == Action.LERP_SIZE
+						? ByteBufStreamCodecs.VARLONG.decode(input)
+						: 0;
+				int absoluteMaxSize = initialize ? ByteBufStreamCodecs.VARINT.decode(input) : 29999984;
+				int warningDistance =
+					initialize || action == Action.WARNING_DISTANCE ? ByteBufStreamCodecs.VARINT.decode(input) : 5;
+				int warningDelay =
+					initialize || action == Action.WARNING_DELAY ? ByteBufStreamCodecs.VARINT.decode(input) : 15;
+				return new WorldBorderWirePacket(
+					action,
+					center,
+					oldSize,
+					newSize,
+					lerpTime,
+					absoluteMaxSize,
+					warningDistance,
+					warningDelay);
+			});
 
-	protected Action action = Action.INITIALIZE;
-
-	protected Position center = new Position();
-
-	protected double oldSize = 60000000, newSize = 60000000;
-
+	protected Action action;
+	protected Position center;
+	protected double oldSize, newSize;
 	protected long lerpTime;
-
-	protected int absoluteMaxSize = 29999984, warningDistance = 5, warningDelay = 15;
+	protected int absoluteMaxSize, warningDistance, warningDelay;
 
 	public WorldBorderWirePacket() {
 		this(Action.INITIALIZE, new Position(), 60000000, 60000000, 0, 29999984, 5, 15);
 	}
 
 	public WorldBorderWirePacket(
-			Action action,
-			Position center,
-			double oldSize,
-			double newSize,
-			long lerpTime,
-			int absoluteMaxSize,
-			int warningDistance,
-			int warningDelay) {
+		Action action,
+		Position center,
+		double oldSize,
+		double newSize,
+		long lerpTime,
+		int absoluteMaxSize,
+		int warningDistance,
+		int warningDelay) {
 		this.action = action;
 		this.center = center;
 		this.oldSize = oldSize;
@@ -116,11 +109,6 @@ public class WorldBorderWirePacket implements MutableWorldBorderPacket {
 		this.absoluteMaxSize = absoluteMaxSize;
 		this.warningDistance = warningDistance;
 		this.warningDelay = warningDelay;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return state == ConnectionState.PLAY && packetId == PacketId.Server.WORLD_BORDER;
 	}
 
 	@Override
@@ -133,13 +121,16 @@ public class WorldBorderWirePacket implements MutableWorldBorderPacket {
 	}
 
 	public void setAction(Action action) {
+		markMutated();
 		Objects.requireNonNull(action, "action");
 		this.action = action;
 	}
 
 	@Override
 	public Position center() {
-		return action == Action.SET_CENTER || action == Action.INITIALIZE ? center : null;
+		if (action != Action.SET_CENTER && action != Action.INITIALIZE) return null;
+		if (center != null && !center.isImmutable()) markMutated();
+		return center;
 	}
 
 	@Override
@@ -169,18 +160,21 @@ public class WorldBorderWirePacket implements MutableWorldBorderPacket {
 
 	@Override
 	public void setCenter(Position value) {
+		markMutated();
 		if (action != Action.INITIALIZE) setAction(Action.SET_CENTER);
 		center = Objects.requireNonNull(value, "center");
 	}
 
 	@Override
 	public void setSize(double value) {
+		markMutated();
 		if (action != Action.INITIALIZE) setAction(Action.SET_SIZE);
 		newSize = value;
 	}
 
 	@Override
 	public void setLerp(double oldSize, double newSize, long milliseconds) {
+		markMutated();
 		if (action != Action.INITIALIZE) setAction(Action.LERP_SIZE);
 		this.oldSize = oldSize;
 		this.newSize = newSize;
@@ -189,6 +183,7 @@ public class WorldBorderWirePacket implements MutableWorldBorderPacket {
 
 	@Override
 	public void setAbsoluteMaxSize(int value) {
+		markMutated();
 		setAction(Action.INITIALIZE);
 		absoluteMaxSize = value;
 	}

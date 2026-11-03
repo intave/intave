@@ -12,9 +12,9 @@
 package de.jpx3.intave.module.tracker.block;
 
 import de.jpx3.intave.module.Module;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.UpdateTagReader;
+import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.plib.reader.UpdateTagReader;
 import de.jpx3.intave.share.MinecraftKey;
 import de.jpx3.intave.user.User;
 
@@ -24,7 +24,7 @@ import java.util.Map;
 public final class BlockTagTracker extends Module {
 
 	@PacketSubscription(
-		packetsOut = PacketId.Server.UPDATE_TAGS
+		packetsOut = PacketType.Server.UPDATE_TAGS
 	)
 	public void onTags(
 		User user, UpdateTagReader reader

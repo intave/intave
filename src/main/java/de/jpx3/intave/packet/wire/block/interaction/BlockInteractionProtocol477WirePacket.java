@@ -36,11 +36,11 @@ public class BlockInteractionProtocol477WirePacket extends BlockInteractionProto
 	}
 
 	public BlockInteractionProtocol477WirePacket(
-			PlayerHand hand,
-			BlockPosition blockPosition,
-			int directionId,
-			RawVector3d hitPosition,
-			boolean inside) {
+		PlayerHand hand,
+		BlockPosition blockPosition,
+		int directionId,
+		RawVector3d hitPosition,
+		boolean inside) {
 		super(blockPosition, directionId, hand, hitPosition);
 		this.inside = inside;
 	}

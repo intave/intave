@@ -12,13 +12,12 @@
 package de.jpx3.intave.packet.wire.cookie.request;
 
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableCookieRequestPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.MinecraftKey;
 import io.netty.buffer.ByteBuf;
 
-public class CookieRequestWirePacket implements MutableCookieRequestPacket {
+public class CookieRequestWirePacket extends MutableWirePacket implements MutableCookieRequestPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, CookieRequestWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			MinecraftKey.STREAM_CODEC, CookieRequestWirePacket::key,
@@ -42,15 +41,8 @@ public class CookieRequestWirePacket implements MutableCookieRequestPacket {
 
 	@Override
 	public void setKey(MinecraftKey value) {
+		markMutated();
 		this.key = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.LOGIN
-						|| state == ConnectionState.CONFIGURATION
-						|| state == ConnectionState.PLAY)
-				&& (packetId == PacketId.Server.COOKIE_REQUEST);
 	}
 
 	@Override

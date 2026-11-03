@@ -11,12 +11,11 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.EntityRelativeMovePacket;
+import de.jpx3.intave.packet.contract.immutable.EntityRelativeMovePacket;
 import de.jpx3.intave.share.EntityRelativeMoveStep;
 
 import java.util.List;
 
-public interface MutableEntityRelativeMovePacket extends EntityRelativeMovePacket, MutableSingleEntityAddressed {
-
+public interface MutableEntityRelativeMovePacket extends EntityRelativeMovePacket, MutableSingleEntityAddressed, Mutable {
 	void setSteps(List<? extends EntityRelativeMoveStep> steps);
 }

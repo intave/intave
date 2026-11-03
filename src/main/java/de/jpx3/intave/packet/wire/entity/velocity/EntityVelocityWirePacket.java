@@ -13,13 +13,12 @@ package de.jpx3.intave.packet.wire.entity.velocity;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityVelocityPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.Motion;
 import io.netty.buffer.ByteBuf;
 
-public class EntityVelocityWirePacket implements MutableEntityVelocityPacket {
+public class EntityVelocityWirePacket extends MutableWirePacket implements MutableEntityVelocityPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityVelocityWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, EntityVelocityWirePacket::entityId,
@@ -27,9 +26,8 @@ public class EntityVelocityWirePacket implements MutableEntityVelocityPacket {
 			EntityVelocityWirePacket::new
 		);
 
-	protected int entityId = 0;
-
-	protected Motion motion = new Motion(0, 0, 0);
+	protected int entityId;
+	protected Motion motion;
 
 	public EntityVelocityWirePacket() {
 		this(0, new Motion(0, 0, 0));
@@ -47,22 +45,20 @@ public class EntityVelocityWirePacket implements MutableEntityVelocityPacket {
 
 	@Override
 	public void setEntityId(int value) {
+		markMutated();
 		this.entityId = value;
 	}
 
 	@Override
 	public Motion motion() {
+		markMutated();
 		return this.motion;
 	}
 
 	@Override
 	public void setMotion(Motion value) {
+		markMutated();
 		this.motion = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.ENTITY_VELOCITY);
 	}
 
 	@Override

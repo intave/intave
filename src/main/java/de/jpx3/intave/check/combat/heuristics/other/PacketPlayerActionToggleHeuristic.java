@@ -16,14 +16,14 @@ import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.packet.plib.reader.PlayerActionReader;
 import de.jpx3.intave.share.PlayerAction;
-import de.jpx3.intave.packet.reader.PlayerActionReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.FLYING_PACKET_ACCURATE;
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
 
 public final class PacketPlayerActionToggleHeuristic extends ClassicHeuristic<PacketPlayerActionToggleHeuristic.PacketSprintToggleHeuristicMeta> {
   public PacketPlayerActionToggleHeuristic(Heuristics parentCheck) {

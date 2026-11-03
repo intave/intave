@@ -11,11 +11,10 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.TabCompleteResponsePacket;
+import de.jpx3.intave.packet.contract.immutable.TabCompleteResponsePacket;
 
 import java.util.List;
 
-public interface MutableTabCompleteResponsePacket extends TabCompleteResponsePacket {
-
+public interface MutableTabCompleteResponsePacket extends TabCompleteResponsePacket, Mutable {
 	void setSuggestions(List<String> suggestions);
 }

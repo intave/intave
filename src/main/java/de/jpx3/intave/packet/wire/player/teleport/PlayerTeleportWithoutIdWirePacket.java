@@ -12,9 +12,8 @@
 package de.jpx3.intave.packet.wire.player.teleport;
 
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerTeleportPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Relative;
@@ -25,7 +24,7 @@ import java.util.EnumSet;
 import java.util.OptionalInt;
 import java.util.Set;
 
-public class PlayerTeleportWithoutIdWirePacket implements MutablePlayerTeleportPacket {
+public class PlayerTeleportWithoutIdWirePacket extends MutableWirePacket implements MutablePlayerTeleportPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PlayerTeleportWithoutIdWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			Position.STREAM_CODEC, PlayerTeleportWithoutIdWirePacket::position,
@@ -35,9 +34,7 @@ public class PlayerTeleportWithoutIdWirePacket implements MutablePlayerTeleportP
 		);
 
 	protected Position position;
-
 	protected Rotation rotation;
-
 	protected Set<Relative> flags;
 
 	public PlayerTeleportWithoutIdWirePacket() {
@@ -45,15 +42,15 @@ public class PlayerTeleportWithoutIdWirePacket implements MutablePlayerTeleportP
 	}
 
 	public PlayerTeleportWithoutIdWirePacket(
-			Position position, Rotation rotation, Set<Relative> flags) {
+		Position position, Rotation rotation, Set<Relative> flags) {
 		this.position = position;
 		this.rotation = rotation;
 		this.flags = flags;
 	}
 
 	@Override
-	public de.jpx3.intave.packet.contract.MotionUpdate.Mode motionMode() {
-		return de.jpx3.intave.packet.contract.MotionUpdate.Mode.OVERRIDE;
+	public Mode motionMode() {
+		return Mode.OVERRIDE;
 	}
 
 	@Override
@@ -62,37 +59,38 @@ public class PlayerTeleportWithoutIdWirePacket implements MutablePlayerTeleportP
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.POSITION);
-	}
-
-	@Override
 	public Position position() {
+		if (position != null && !position.isImmutable()) markMutated();
 		return this.position;
 	}
 
 	@Override
 	public void setPosition(Position value) {
+		markMutated();
 		this.position = value;
 	}
 
 	@Override
 	public Rotation rotation() {
+		markMutated();
 		return this.rotation;
 	}
 
 	@Override
 	public void setRotation(Rotation value) {
+		markMutated();
 		this.rotation = value;
 	}
 
 	@Override
 	public Set<Relative> flags() {
+		markMutated();
 		return this.flags;
 	}
 
 	@Override
 	public void setFlags(Set<Relative> value) {
+		markMutated();
 		this.flags = value;
 	}
 
@@ -103,6 +101,7 @@ public class PlayerTeleportWithoutIdWirePacket implements MutablePlayerTeleportP
 
 	@Override
 	public void setTeleportId(int value) {
+		markMutated();
 		throw new IllegalStateException("No teleport ID before 1.9");
 	}
 
@@ -113,6 +112,7 @@ public class PlayerTeleportWithoutIdWirePacket implements MutablePlayerTeleportP
 
 	@Override
 	public void setMotion(Motion value) {
+		markMutated();
 		throw new IllegalStateException("No motion before 1.21.2");
 	}
 }

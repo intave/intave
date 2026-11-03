@@ -13,27 +13,26 @@ package de.jpx3.intave.packet.wire.entity.destroy;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityDestroyPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-import static de.jpx3.intave.packet.wire.WireCodecs.count;
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.count;
 
-public class EntityDestroyWirePacket implements MutableEntityDestroyPacket {
+public class EntityDestroyWirePacket extends MutableWirePacket implements MutableEntityDestroyPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityDestroyWirePacket> STREAM_CODEC =
-			StreamCodec.of(
-					(output, packet) -> {
-						ByteBufStreamCodecs.VARINT.encode(output, packet.entityIds.length);
-						for (int id : packet.entityIds) ByteBufStreamCodecs.VARINT.encode(output, id);
-					},
-					input -> {
-						int[] entityIds = new int[count(input, input.readableBytes())];
-						for (int i = 0; i < entityIds.length; i++) entityIds[i] = ByteBufStreamCodecs.VARINT.decode(input);
-						return new EntityDestroyWirePacket(entityIds);
-					});
+		StreamCodec.of(
+			(output, packet) -> {
+				ByteBufStreamCodecs.VARINT.encode(output, packet.entityIds.length);
+				for (int id : packet.entityIds) ByteBufStreamCodecs.VARINT.encode(output, id);
+			},
+			input -> {
+				int[] entityIds = new int[count(input, input.readableBytes())];
+				for (int i = 0; i < entityIds.length; i++) entityIds[i] = ByteBufStreamCodecs.VARINT.decode(input);
+				return new EntityDestroyWirePacket(entityIds);
+			});
 
-	protected int[] entityIds = new int[0];
+	protected int[] entityIds;
 
 	public EntityDestroyWirePacket() {
 		this(new int[0]);
@@ -45,17 +44,14 @@ public class EntityDestroyWirePacket implements MutableEntityDestroyPacket {
 
 	@Override
 	public int[] entityIds() {
+		markMutated();
 		return this.entityIds;
 	}
 
 	@Override
 	public void setEntityIds(int[] value) {
+		markMutated();
 		this.entityIds = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.ENTITY_DESTROY);
 	}
 
 	@Override

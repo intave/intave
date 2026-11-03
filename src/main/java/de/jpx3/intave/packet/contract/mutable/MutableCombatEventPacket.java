@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.CombatEventPacket;
+import de.jpx3.intave.packet.contract.immutable.CombatEventPacket;
 
-public interface MutableCombatEventPacket extends CombatEventPacket, MutableEntityAddressed {
-
+public interface MutableCombatEventPacket extends CombatEventPacket, MutableEntityAddressed, Mutable {
 	void setFirstEntityId(int entityId);
 
 	void setSecondEntityId(int entityId);

@@ -13,9 +13,8 @@ package de.jpx3.intave.packet.wire.entity.relativemove;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityRelativeMovePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.EntityRelativeMoveStep;
 import de.jpx3.intave.share.RawVector3d;
 import io.netty.buffer.ByteBuf;
@@ -24,58 +23,55 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class EntityRelativeMoveWirePacket implements MutableEntityRelativeMovePacket {
+public class EntityRelativeMoveWirePacket extends MutableWirePacket implements MutableEntityRelativeMovePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityRelativeMoveWirePacket> STREAM_CODEC =
-			StreamCodec.of(
-					(output, packet) -> {
-						ByteBufStreamCodecs.VARINT.encode(output, packet.entityId);
-						ByteBufStreamCodecs.VARINT.encode(output, (packet.onGround ? 1 : 0)
-										| (packet.stepped ? packet.steps.size() << 1 : 0));
-						if (!packet.stepped && packet.steps.size() != 1)
-							throw new IllegalArgumentException("Linear movement requires one step");
-						for (EntityRelativeMoveStep step : packet.steps) {
-							if (packet.stepped) ByteBufStreamCodecs.VARINT.encode(output, step.delayTicks());
-							RawVector3d.SHORT_DELTA_STREAM_CODEC.encode(output, step.delta());
-						}
-					},
-					input -> {
-						int entityId = ByteBufStreamCodecs.VARINT.decode(input);
-						int count = 1;
+		StreamCodec.of(
+			(output, packet) -> {
+				ByteBufStreamCodecs.VARINT.encode(output, packet.entityId);
+				ByteBufStreamCodecs.VARINT.encode(output, (packet.onGround ? 1 : 0)
+					| (packet.stepped ? packet.steps.size() << 1 : 0));
+				if (!packet.stepped && packet.steps.size() != 1)
+					throw new IllegalArgumentException("Linear movement requires one step");
+				for (EntityRelativeMoveStep step : packet.steps) {
+					if (packet.stepped) ByteBufStreamCodecs.VARINT.encode(output, step.delayTicks());
+					RawVector3d.SHORT_DELTA_STREAM_CODEC.encode(output, step.delta());
+				}
+			},
+			input -> {
+				int entityId = ByteBufStreamCodecs.VARINT.decode(input);
+				int count;
 
-						int properties = ByteBufStreamCodecs.VARINT.decode(input);
-						boolean onGround = (properties & 1) != 0;
-						int stepCount = properties >>> 1;
-						boolean stepped = stepCount != 0;
-						count = stepped ? stepCount : 1;
+				int properties = ByteBufStreamCodecs.VARINT.decode(input);
+				boolean onGround = (properties & 1) != 0;
+				int stepCount = properties >>> 1;
+				boolean stepped = stepCount != 0;
+				count = stepped ? stepCount : 1;
 
-						if (count > input.readableBytes() / 6)
-							throw new IllegalArgumentException("Too many movement steps");
-						List<EntityRelativeMoveStep> steps = new ArrayList<>(count);
-						for (int i = 0; i < count; i++) {
-							final int ticks = stepped ? ByteBufStreamCodecs.VARINT.decode(input) : 0;
-							final RawVector3d delta = RawVector3d.SHORT_DELTA_STREAM_CODEC.decode(input);
-							steps.add(new Step(delta, ticks));
-						}
-						return new EntityRelativeMoveWirePacket(entityId, onGround, stepped, steps);
-					});
+				if (count > input.readableBytes() / 6)
+					throw new IllegalArgumentException("Too many movement steps");
+				List<EntityRelativeMoveStep> steps = new ArrayList<>(count);
+				for (int i = 0; i < count; i++) {
+					final int ticks = stepped ? ByteBufStreamCodecs.VARINT.decode(input) : 0;
+					final RawVector3d delta = RawVector3d.SHORT_DELTA_STREAM_CODEC.decode(input);
+					steps.add(new Step(delta, ticks));
+				}
+				return new EntityRelativeMoveWirePacket(entityId, onGround, stepped, steps);
+			});
 
-	protected int entityId = 0;
-
+	protected int entityId;
 	protected boolean onGround, stepped;
-
-	protected List<EntityRelativeMoveStep> steps =
-			new ArrayList<>(Collections.singletonList(new Step(new RawVector3d(0, 0, 0), 0)));
+	protected List<EntityRelativeMoveStep> steps;
 
 	public EntityRelativeMoveWirePacket() {
 		this(
-				0,
-				false,
-				false,
-				new ArrayList<>(Collections.singletonList(new Step(new RawVector3d(0, 0, 0), 0))));
+			0,
+			false,
+			false,
+			new ArrayList<>(Collections.singletonList(new Step(new RawVector3d(0, 0, 0), 0))));
 	}
 
 	public EntityRelativeMoveWirePacket(
-			int entityId, boolean onGround, boolean stepped, List<EntityRelativeMoveStep> steps) {
+		int entityId, boolean onGround, boolean stepped, List<EntityRelativeMoveStep> steps) {
 		this.entityId = entityId;
 		this.onGround = onGround;
 		this.stepped = stepped;
@@ -89,12 +85,8 @@ public class EntityRelativeMoveWirePacket implements MutableEntityRelativeMovePa
 
 	@Override
 	public void setEntityId(int value) {
+		markMutated();
 		this.entityId = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.REL_ENTITY_MOVE);
 	}
 
 	@Override
@@ -104,11 +96,13 @@ public class EntityRelativeMoveWirePacket implements MutableEntityRelativeMovePa
 
 	@Override
 	public List<EntityRelativeMoveStep> steps() {
+		markMutated();
 		return Collections.unmodifiableList(steps);
 	}
 
 	@Override
 	public void setSteps(List<? extends EntityRelativeMoveStep> value) {
+		markMutated();
 		boolean requiresSteps = value.size() != 1 || value.get(0).delayTicks() != 0;
 
 		if (value.isEmpty()) throw new IllegalArgumentException("Empty movement");

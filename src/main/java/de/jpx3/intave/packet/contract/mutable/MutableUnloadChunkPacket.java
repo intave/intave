@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.UnloadChunkPacket;
+import de.jpx3.intave.packet.contract.immutable.UnloadChunkPacket;
 
-public interface MutableUnloadChunkPacket extends UnloadChunkPacket, MutableChunkAddressed {
+public interface MutableUnloadChunkPacket extends UnloadChunkPacket, MutableChunkAddressed, Mutable {
 }

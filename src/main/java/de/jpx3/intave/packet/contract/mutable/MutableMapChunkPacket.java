@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.MapChunkPacket;
+import de.jpx3.intave.packet.contract.immutable.MapChunkPacket;
 
-public interface MutableMapChunkPacket extends MapChunkPacket, MutableChunkAddressed {
+public interface MutableMapChunkPacket extends MapChunkPacket, MutableChunkAddressed, Mutable {
 }

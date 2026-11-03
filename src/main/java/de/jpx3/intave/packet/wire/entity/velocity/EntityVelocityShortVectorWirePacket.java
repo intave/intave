@@ -44,7 +44,7 @@ public final class EntityVelocityShortVectorWirePacket extends EntityVelocityWir
 		return protocolVersion >= 47 && protocolVersion < 773;
 	}
 
-	protected static int quantize(double value, short original) {
+	private static int quantize(double value, short original) {
 		if (value == original / 8000.0) return original;
 		return (int) (Math.max(-3.9, Math.min(3.9, value)) * 8000);
 	}

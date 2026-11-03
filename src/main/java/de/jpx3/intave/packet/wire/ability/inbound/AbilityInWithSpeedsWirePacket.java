@@ -46,6 +46,7 @@ public final class AbilityInWithSpeedsWirePacket extends AbilityInWirePacket {
 	}
 
 	public void setFlyingSpeed(float flyingSpeed) {
+		markMutated();
 		this.flyingSpeed = flyingSpeed;
 	}
 
@@ -54,6 +55,7 @@ public final class AbilityInWithSpeedsWirePacket extends AbilityInWirePacket {
 	}
 
 	public void setWalkingSpeed(float walkingSpeed) {
+		markMutated();
 		this.walkingSpeed = walkingSpeed;
 	}
 }

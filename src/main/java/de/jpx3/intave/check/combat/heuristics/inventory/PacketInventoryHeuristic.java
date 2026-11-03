@@ -19,9 +19,9 @@ import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
-import de.jpx3.intave.packet.reader.ClientCommandReader;
+import de.jpx3.intave.packet.plib.reader.ClientCommandReader;
+import de.jpx3.intave.packet.plib.reader.PlayerMoveReader;
 import de.jpx3.intave.share.ClientCommand;
-import de.jpx3.intave.packet.reader.PlayerMoveReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
@@ -30,9 +30,9 @@ import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.BURN_LONGER;
 import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.DMG_HIGH;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
 
 public final class PacketInventoryHeuristic extends ClassicHeuristic<PacketInventoryHeuristic.PacketInventoryMeta> {
 

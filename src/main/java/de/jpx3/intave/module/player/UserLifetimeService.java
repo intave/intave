@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.player;
 
 import com.comphenix.protocol.events.PacketEvent;
@@ -14,7 +25,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.LOGIN;
+import static de.jpx3.intave.packet.contract.PacketType.Server.LOGIN;
 
 public final class UserLifetimeService extends Module {
   public void enable() {

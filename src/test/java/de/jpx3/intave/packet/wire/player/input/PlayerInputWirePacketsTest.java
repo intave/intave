@@ -12,7 +12,7 @@
 package de.jpx3.intave.packet.wire.player.input;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
-import de.jpx3.intave.module.linker.packet.PacketId;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.wire.WirePackets;
 import de.jpx3.intave.registry.PacketIdRegistries;
 import de.jpx3.intave.share.Input;
@@ -27,7 +27,7 @@ final class PlayerInputWirePacketsTest {
 	@Test
 	void consumesThePacketIdBeforeDecodingPlayerInputFlags() {
 		int protocolVersion = 776;
-		int packetId = PacketIdRegistries.serverbound().idOf(PLAY, PacketId.Client.PLAYER_INPUT, protocolVersion);
+		int packetId = PacketIdRegistries.serverbound().idOf(PLAY, PacketType.Client.PLAYER_INPUT, protocolVersion);
 		Input expected = new Input(false, false, true, false, true, false, true);
 		ByteBuf packet = Unpooled.buffer();
 		try {

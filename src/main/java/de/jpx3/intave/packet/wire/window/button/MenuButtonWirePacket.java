@@ -13,12 +13,11 @@ package de.jpx3.intave.packet.wire.window.button;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableMenuButtonPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class MenuButtonWirePacket implements MutableMenuButtonPacket {
+public class MenuButtonWirePacket extends MutableWirePacket implements MutableMenuButtonPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, MenuButtonWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, MenuButtonWirePacket::containerId,
@@ -26,9 +25,8 @@ public class MenuButtonWirePacket implements MutableMenuButtonPacket {
 			MenuButtonWirePacket::new
 		);
 
-	protected int containerId = 0;
-
-	protected int button = 0;
+	protected int containerId;
+	protected int button;
 
 	public MenuButtonWirePacket() {
 		this(0, 0);
@@ -46,6 +44,7 @@ public class MenuButtonWirePacket implements MutableMenuButtonPacket {
 
 	@Override
 	public void setContainerId(int value) {
+		markMutated();
 		this.containerId = value;
 	}
 
@@ -56,12 +55,8 @@ public class MenuButtonWirePacket implements MutableMenuButtonPacket {
 
 	@Override
 	public void setButton(int value) {
+		markMutated();
 		this.button = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.ENCHANT_ITEM);
 	}
 
 	@Override

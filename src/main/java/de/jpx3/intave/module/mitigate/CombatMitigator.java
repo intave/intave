@@ -18,9 +18,9 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.EntityVelocityReader;
+import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.plib.reader.EntityVelocityReader;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
 import de.jpx3.intave.user.MessageChannel;
@@ -110,7 +110,7 @@ public final class CombatMitigator extends Module {
   }
 
   @PacketSubscription(
-    packetsIn = PacketId.Client.ARM_ANIMATION
+    packetsIn = PacketType.Client.ARM_ANIMATION
   )
   public void onArmAnimationPacket(
     User user, PacketEvent event
@@ -119,7 +119,7 @@ public final class CombatMitigator extends Module {
   }
 
   @PacketSubscription(
-    packetsOut = PacketId.Server.ENTITY_VELOCITY
+    packetsOut = PacketType.Server.ENTITY_VELOCITY
   )
   public void onVelocityPacket(
     User user, PacketEvent event, EntityVelocityReader reader

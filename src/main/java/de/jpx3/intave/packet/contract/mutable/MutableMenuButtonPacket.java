@@ -11,9 +11,8 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.MenuButtonPacket;
+import de.jpx3.intave.packet.contract.immutable.MenuButtonPacket;
 
-public interface MutableMenuButtonPacket extends MenuButtonPacket, MutableWindowAddressed {
-
+public interface MutableMenuButtonPacket extends MenuButtonPacket, MutableWindowAddressed, Mutable {
 	void setButton(int button);
 }

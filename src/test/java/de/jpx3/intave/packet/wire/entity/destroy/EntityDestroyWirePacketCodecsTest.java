@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.wire.entity.destroy;
 
-import de.jpx3.intave.module.linker.packet.PacketId;
+import de.jpx3.intave.packet.contract.PacketType;
 import org.junit.jupiter.api.Test;
 
 import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
@@ -25,7 +25,7 @@ final class EntityDestroyWirePacketCodecsTest {
 			EntityDestroyWirePacket packet =
 					roundTrip(
 							CLIENTBOUND,
-							PacketId.Server.ENTITY_DESTROY,
+							PacketType.Server.ENTITY_DESTROY,
 							protocol,
 							b -> {
 								if (protocol != 755) b.writeByte(1);

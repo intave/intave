@@ -13,19 +13,18 @@ package de.jpx3.intave.packet.wire.item.pick;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutablePickItemPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class PickItemWirePacket implements MutablePickItemPacket {
+public final class PickItemWirePacket extends MutableWirePacket implements MutablePickItemPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PickItemWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, PickItemWirePacket::slot,
 			PickItemWirePacket::new
 		);
 
-	protected int slot;
+	private int slot;
 
 	public PickItemWirePacket() {
 		this(0);
@@ -42,12 +41,8 @@ public class PickItemWirePacket implements MutablePickItemPacket {
 
 	@Override
 	public void setSlot(int value) {
+		markMutated();
 		this.slot = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.PICK_ITEM);
 	}
 
 	@Override

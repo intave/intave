@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.wire.entity.position;
 
-import de.jpx3.intave.module.linker.packet.PacketId;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityPositionPacket;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +26,7 @@ final class EntityPositionWirePacketCodecsTest {
 			EntityPositionDoublePositionWirePacket packet =
 					roundTrip(
 							CLIENTBOUND,
-							PacketId.Server.ENTITY_TELEPORT,
+							PacketType.Server.ENTITY_TELEPORT,
 							protocol,
 							b -> {
 								b.writeByte(42);
@@ -53,7 +53,7 @@ final class EntityPositionWirePacketCodecsTest {
 			MutableEntityPositionPacket packet =
 					roundTrip(
 							CLIENTBOUND,
-							PacketId.Server.ENTITY_POSITION_SYNC,
+							PacketType.Server.ENTITY_POSITION_SYNC,
 							protocol,
 							b -> {
 								b.writeByte(42);

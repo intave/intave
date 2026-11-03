@@ -16,6 +16,8 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
+import java.util.List;
+
 @ChannelHandler.Sharable
 final class Receiver extends ChannelInboundHandlerAdapter {
 	private final HandlerPlacement placement;
@@ -33,16 +35,37 @@ final class Receiver extends ChannelInboundHandlerAdapter {
 			return;
 		}
 
-		ByteBuf packet = (ByteBuf) message;
+		ByteBuf original = (ByteBuf) message;
 		if (this.placement.isCurrent(context.pipeline())) {
-			if (!this.binding.onPacketReceive(packet)) {
-				packet.release();
+			List<ByteBuf> packets;
+			try {
+				packets = this.binding.onPacketReceive(original);
+			} catch (RuntimeException | Error failure) {
+				original.release();
+				throw failure;
+			}
+			// error/full cancel
+			if (packets == null || packets.isEmpty()) {
+				original.release();
 				context.close();
 				return;
 			}
+			boolean forwardsOriginal = false;
+			for (ByteBuf packet : packets) {
+				if (packet == original) {
+					forwardsOriginal = true;
+					break;
+				}
+			}
+			if (!forwardsOriginal) {
+				original.release();
+			}
+			for (ByteBuf packet : packets) {
+				context.fireChannelRead(packet);
+			}
+			return;
 		} else if (this.placement.isSeparatedFromAnchorBy(context.pipeline(), "decompress")) {
-			inspectCompressionEnvelope(packet);
-			repairAfterCurrentMessage(context);
+			this.placement.repair(context, this);
 		} else {
 			repairAfterCurrentMessage(context);
 		}
@@ -57,19 +80,5 @@ final class Receiver extends ChannelInboundHandlerAdapter {
 
 	private void repairAfterCurrentMessage(ChannelHandlerContext context) {
 		context.executor().execute(() -> this.placement.repair(context, this));
-	}
-
-	private void inspectCompressionEnvelope(ByteBuf envelope) {
-		final ByteBuf packet;
-		try {
-			packet = CompressionRescue.copyPacket(envelope);
-		} catch (RuntimeException ignored) {
-			return;
-		}
-		try {
-			this.binding.onPacketReceive(packet);
-		} finally {
-			packet.release();
-		}
 	}
 }

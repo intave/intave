@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.TimeUpdatePacket;
+import de.jpx3.intave.packet.contract.immutable.TimeUpdatePacket;
 
-public interface MutableTimeUpdatePacket extends TimeUpdatePacket {
-
+public interface MutableTimeUpdatePacket extends TimeUpdatePacket, Mutable {
 	void setGameTime(long gameTime);
 
 	void setDayTime(long dayTime);

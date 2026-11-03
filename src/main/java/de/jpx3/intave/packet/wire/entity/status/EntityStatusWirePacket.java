@@ -13,12 +13,11 @@ package de.jpx3.intave.packet.wire.entity.status;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityStatusPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class EntityStatusWirePacket implements MutableEntityStatusPacket {
+public final class EntityStatusWirePacket extends MutableWirePacket implements MutableEntityStatusPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityStatusWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.INTEGER, EntityStatusWirePacket::entityId,
@@ -26,9 +25,8 @@ public class EntityStatusWirePacket implements MutableEntityStatusPacket {
 			EntityStatusWirePacket::new
 		);
 
-	protected int entityId = 0;
-
-	protected Byte status = (byte) 0;
+	private int entityId;
+	private Byte status;
 
 	public EntityStatusWirePacket() {
 		this(0, (byte) 0);
@@ -46,6 +44,7 @@ public class EntityStatusWirePacket implements MutableEntityStatusPacket {
 
 	@Override
 	public void setEntityId(int value) {
+		markMutated();
 		this.entityId = value;
 	}
 
@@ -55,17 +54,13 @@ public class EntityStatusWirePacket implements MutableEntityStatusPacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.ENTITY_STATUS);
-	}
-
-	@Override
 	public boolean appliesTo(int protocolVersion) {
 		return protocolVersion >= 47;
 	}
 
 	@Override
 	public void setStatus(byte status) {
+		markMutated();
 		this.status = status;
 	}
 }

@@ -13,13 +13,12 @@ package de.jpx3.intave.packet.wire.cookie.response;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableCookieResponsePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.MinecraftKey;
 import io.netty.buffer.ByteBuf;
 
-public final class CookieResponseWirePacket implements MutableCookieResponsePacket {
+public final class CookieResponseWirePacket extends MutableWirePacket implements MutableCookieResponsePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, CookieResponseWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			MinecraftKey.STREAM_CODEC, CookieResponseWirePacket::key,
@@ -46,25 +45,20 @@ public final class CookieResponseWirePacket implements MutableCookieResponsePack
 
 	@Override
 	public void setKey(MinecraftKey value) {
+		markMutated();
 		this.key = value;
 	}
 
 	@Override
 	public byte[] payload() {
+		markMutated();
 		return this.payload;
 	}
 
 	@Override
 	public void setPayload(byte[] value) {
+		markMutated();
 		this.payload = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.LOGIN
-						|| state == ConnectionState.CONFIGURATION
-						|| state == ConnectionState.PLAY)
-				&& (packetId == PacketId.Client.COOKIE_RESPONSE);
 	}
 
 	@Override

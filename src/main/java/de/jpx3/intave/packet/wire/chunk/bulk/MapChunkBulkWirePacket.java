@@ -13,41 +13,40 @@ package de.jpx3.intave.packet.wire.chunk.bulk;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableMapChunkBulkPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-import static de.jpx3.intave.packet.wire.WireCodecs.bytes;
-import static de.jpx3.intave.packet.wire.WireCodecs.count;
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.bytes;
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.count;
 
-public class MapChunkBulkWirePacket implements MutableMapChunkBulkPacket {
+public class MapChunkBulkWirePacket extends MutableWirePacket implements MutableMapChunkBulkPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, MapChunkBulkWirePacket> STREAM_CODEC =
-			StreamCodec.of(
-					(output, packet) -> {
-						output.writeBoolean(packet.skyLight);
-						ByteBufStreamCodecs.VARINT.encode(output, packet.x.length);
-						for (int i = 0; i < packet.x.length; i++) {
-							output.writeInt(packet.x[i]);
-							output.writeInt(packet.z[i]);
-							output.writeShort(packet.masks[i]);
-						}
-						output.writeBytes(packet.data);
-					},
-					input -> {
-						boolean skyLight = input.readBoolean();
-						int count = count(input, input.readableBytes() / 10);
-						int[] x = new int[count];
-						int[] z = new int[count];
-						int[] masks = new int[count];
-						for (int i = 0; i < count; i++) {
-							x[i] = input.readInt();
-							z[i] = input.readInt();
-							masks[i] = input.readUnsignedShort();
-						}
-						byte[] data = bytes(input, input.readableBytes());
-						return new MapChunkBulkWirePacket(skyLight, x, z, masks, data);
-					});
+		StreamCodec.of(
+			(output, packet) -> {
+				output.writeBoolean(packet.skyLight);
+				ByteBufStreamCodecs.VARINT.encode(output, packet.x.length);
+				for (int i = 0; i < packet.x.length; i++) {
+					output.writeInt(packet.x[i]);
+					output.writeInt(packet.z[i]);
+					output.writeShort(packet.masks[i]);
+				}
+				output.writeBytes(packet.data);
+			},
+			input -> {
+				boolean skyLight = input.readBoolean();
+				int count = count(input, input.readableBytes() / 10);
+				int[] x = new int[count];
+				int[] z = new int[count];
+				int[] masks = new int[count];
+				for (int i = 0; i < count; i++) {
+					x[i] = input.readInt();
+					z[i] = input.readInt();
+					masks[i] = input.readUnsignedShort();
+				}
+				byte[] data = bytes(input, input.readableBytes());
+				return new MapChunkBulkWirePacket(skyLight, x, z, masks, data);
+			});
 
 	private boolean skyLight;
 
@@ -65,11 +64,6 @@ public class MapChunkBulkWirePacket implements MutableMapChunkBulkPacket {
 		this.z = z;
 		this.masks = masks;
 		this.data = data;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.MAP_CHUNK_BULK);
 	}
 
 	@Override
@@ -94,6 +88,7 @@ public class MapChunkBulkWirePacket implements MutableMapChunkBulkPacket {
 
 	@Override
 	public void setChunkCoordinates(int index, int x, int z) {
+		markMutated();
 		this.x[index] = x;
 		this.z[index] = z;
 	}

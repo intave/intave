@@ -11,23 +11,27 @@
 
 package de.jpx3.intave.packet.event;
 
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.PacketDirection;
-import de.jpx3.intave.packet.contract.Packet;
+import de.jpx3.intave.packet.contract.PacketContract;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.user.User;
 
 public final class PacketReceiveEvent extends PacketEvent {
-  private final PacketId.Client packetId;
+  private final PacketType.Client packetId;
 
 	public PacketReceiveEvent(
-		User user, PacketDirection direction,
-		PacketId.Client packetId, Packet packet
+		User user, PacketType.Client packetId, PacketContract packet
 	) {
-		super(user, direction, packet);
+		super(user, packet);
 		this.packetId = packetId;
 	}
 
-	public PacketId.Client packetId() {
+	@Override
+	public PacketDirection direction() {
+		return PacketDirection.SERVERBOUND;
+	}
+
+	public PacketType.Client packetId() {
 		return packetId;
 	}
 }

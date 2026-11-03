@@ -13,13 +13,12 @@ package de.jpx3.intave.packet.wire.player.animation;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableArmAnimationPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.PlayerHand;
 import io.netty.buffer.ByteBuf;
 
-public class ArmAnimationWirePacket implements MutableArmAnimationPacket {
+public class ArmAnimationWirePacket extends MutableWirePacket implements MutableArmAnimationPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, ArmAnimationWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.enumCodec(PlayerHand.values()), ArmAnimationWirePacket::hand,
@@ -43,12 +42,8 @@ public class ArmAnimationWirePacket implements MutableArmAnimationPacket {
 
 	@Override
 	public void setHand(PlayerHand value) {
+		markMutated();
 		this.hand = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.ARM_ANIMATION);
 	}
 
 	@Override

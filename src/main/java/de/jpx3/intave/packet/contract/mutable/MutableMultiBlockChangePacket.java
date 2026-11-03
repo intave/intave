@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.MultiBlockChangePacket;
+import de.jpx3.intave.packet.contract.immutable.MultiBlockChangePacket;
 
-public interface MutableMultiBlockChangePacket extends MultiBlockChangePacket, MutableBlockUpdates {
+public interface MutableMultiBlockChangePacket extends MultiBlockChangePacket, MutableBlockUpdates, Mutable {
 }

@@ -13,33 +13,31 @@ package de.jpx3.intave.packet.wire.player.teleportaccept;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableTeleportAcceptPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.PositionAndRotation;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Objects;
 
-public class TeleportAcceptWirePacket implements MutableTeleportAcceptPacket {
+public class TeleportAcceptWirePacket extends MutableWirePacket implements MutableTeleportAcceptPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, TeleportAcceptWirePacket> STREAM_CODEC =
-			StreamCodec.of(
-					(output, packet) -> {
-						ByteBufStreamCodecs.VARINT.encode(output, packet.teleportId);
-						PositionAndRotation.STREAM_CODEC.encode(
-								output,
-								Objects.requireNonNull(
-										packet.positionAndRotation, "positionAndRotation"));
-					},
-					input -> {
-						int teleportId = ByteBufStreamCodecs.VARINT.decode(input);
-						PositionAndRotation positionAndRotation =
-								PositionAndRotation.STREAM_CODEC.decode(input);
-						return new TeleportAcceptWirePacket(teleportId, positionAndRotation);
-					});
+		StreamCodec.of(
+			(output, packet) -> {
+				ByteBufStreamCodecs.VARINT.encode(output, packet.teleportId);
+				PositionAndRotation.STREAM_CODEC.encode(
+					output,
+					Objects.requireNonNull(
+						packet.positionAndRotation, "positionAndRotation"));
+			},
+			input -> {
+				int teleportId = ByteBufStreamCodecs.VARINT.decode(input);
+				PositionAndRotation positionAndRotation =
+					PositionAndRotation.STREAM_CODEC.decode(input);
+				return new TeleportAcceptWirePacket(teleportId, positionAndRotation);
+			});
 
-	protected int teleportId = 0;
-
+	protected int teleportId;
 	protected PositionAndRotation positionAndRotation;
 
 	public TeleportAcceptWirePacket() {
@@ -58,12 +56,8 @@ public class TeleportAcceptWirePacket implements MutableTeleportAcceptPacket {
 
 	@Override
 	public void setTeleportId(int value) {
+		markMutated();
 		this.teleportId = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.TELEPORT_ACCEPT);
 	}
 
 	@Override
@@ -78,6 +72,7 @@ public class TeleportAcceptWirePacket implements MutableTeleportAcceptPacket {
 
 	@Override
 	public void setPositionAndRotation(PositionAndRotation value) {
+		markMutated();
 		positionAndRotation = value;
 	}
 }

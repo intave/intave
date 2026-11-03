@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.EntityPositionPacket;
+import de.jpx3.intave.packet.contract.immutable.EntityPositionPacket;
 
-public interface MutableEntityPositionPacket extends EntityPositionPacket, MutableSingleEntityAddressed, MutablePositioned {
+public interface MutableEntityPositionPacket extends EntityPositionPacket, MutableSingleEntityAddressed, MutablePositioned, Mutable {
 }

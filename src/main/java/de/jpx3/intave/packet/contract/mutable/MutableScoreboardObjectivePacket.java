@@ -12,11 +12,10 @@
 package de.jpx3.intave.packet.contract.mutable;
 
 import de.jpx3.intave.annotate.Nullable;
-import de.jpx3.intave.packet.contract.ScoreboardObjectivePacket;
+import de.jpx3.intave.packet.contract.immutable.ScoreboardObjectivePacket;
 import de.jpx3.intave.share.ScoreboardObjectiveAction;
 
-public interface MutableScoreboardObjectivePacket extends ScoreboardObjectivePacket, MutableObjectiveAddressed {
-
+public interface MutableScoreboardObjectivePacket extends ScoreboardObjectivePacket, MutableObjectiveAddressed, Mutable {
 	void setAction(ScoreboardObjectiveAction action);
 
 	void setDisplayNameJson(@Nullable String json);

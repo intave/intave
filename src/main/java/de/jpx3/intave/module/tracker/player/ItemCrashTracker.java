@@ -27,10 +27,10 @@ import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.List;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.UPDATE_SIGN;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.WINDOW_CLICK;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.SET_SLOT;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.WINDOW_ITEMS;
+import static de.jpx3.intave.packet.contract.PacketType.Client.UPDATE_SIGN;
+import static de.jpx3.intave.packet.contract.PacketType.Client.WINDOW_CLICK;
+import static de.jpx3.intave.packet.contract.PacketType.Server.SET_SLOT;
+import static de.jpx3.intave.packet.contract.PacketType.Server.WINDOW_ITEMS;
 
 public final class ItemCrashTracker extends Module {
   @PacketSubscription(

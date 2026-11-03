@@ -12,10 +12,9 @@
 package de.jpx3.intave.packet.contract.mutable;
 
 import de.jpx3.intave.annotate.Nullable;
-import de.jpx3.intave.packet.contract.ScoreboardScorePacket;
+import de.jpx3.intave.packet.contract.immutable.ScoreboardScorePacket;
 
-public interface MutableScoreboardScorePacket extends ScoreboardScorePacket, MutableObjectiveAddressed {
-
+public interface MutableScoreboardScorePacket extends ScoreboardScorePacket, MutableObjectiveAddressed, Mutable {
 	void setOwner(String owner);
 
 	void setRemoved(boolean removed);

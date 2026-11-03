@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.world.placementanalysis;
 
 import com.comphenix.protocol.PacketType;
@@ -6,11 +17,11 @@ import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.share.PlayerAction;
-import de.jpx3.intave.packet.reader.BlockInteractionReader;
-import de.jpx3.intave.packet.reader.PlayerActionReader;
+import de.jpx3.intave.packet.plib.reader.BlockInteractionReader;
+import de.jpx3.intave.packet.plib.reader.PlayerActionReader;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Direction;
+import de.jpx3.intave.share.PlayerAction;
 import de.jpx3.intave.share.Rotation;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
@@ -21,7 +32,7 @@ import org.bukkit.util.Vector;
 import java.util.LinkedList;
 import java.util.List;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
 
 public class SmartSpeed extends PlayerCheckPart<PlacementAnalysis> {
 	private final List<Rotation> pastRotations = new LinkedList<>();

@@ -13,22 +13,21 @@ package de.jpx3.intave.packet.wire.entity.attack;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityUsePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.EntityUseAction;
 import de.jpx3.intave.share.PlayerHand;
 import de.jpx3.intave.share.RawVector3d;
 import io.netty.buffer.ByteBuf;
 
-public class AttackEntityWirePacket implements MutableEntityUsePacket {
+public class AttackEntityWirePacket extends MutableWirePacket implements MutableEntityUsePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, AttackEntityWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, AttackEntityWirePacket::entityId,
 			AttackEntityWirePacket::new
 		);
 
-	protected int entityId = 0;
+	protected int entityId;
 
 	public AttackEntityWirePacket() {
 		this(0);
@@ -45,12 +44,8 @@ public class AttackEntityWirePacket implements MutableEntityUsePacket {
 
 	@Override
 	public void setEntityId(int value) {
+		markMutated();
 		this.entityId = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.ATTACK_ENTITY);
 	}
 
 	@Override
@@ -65,6 +60,7 @@ public class AttackEntityWirePacket implements MutableEntityUsePacket {
 
 	@Override
 	public void setAction(EntityUseAction value) {
+		markMutated();
 		if (value != EntityUseAction.ATTACK) {
 			throw new IllegalArgumentException("Expected ATTACK");
 		}
@@ -77,6 +73,7 @@ public class AttackEntityWirePacket implements MutableEntityUsePacket {
 
 	@Override
 	public void setHitPosition(RawVector3d value) {
+		markMutated();
 		if (value != null) {
 			throw new IllegalArgumentException("Attack has no hit position");
 		}
@@ -89,6 +86,7 @@ public class AttackEntityWirePacket implements MutableEntityUsePacket {
 
 	@Override
 	public void setHand(PlayerHand value) {
+		markMutated();
 		if (value != null) {
 			throw new IllegalArgumentException("Attack has no hand");
 		}

@@ -12,7 +12,7 @@
 package de.jpx3.intave.packet.wire.tabcomplete.request;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
-import de.jpx3.intave.module.linker.packet.PacketId;
+import de.jpx3.intave.packet.contract.PacketType;
 import org.junit.jupiter.api.Test;
 
 import static de.jpx3.intave.packet.PacketDirection.SERVERBOUND;
@@ -23,7 +23,7 @@ final class TabCompleteRequestWirePacketCodecsTest {
 	void tabCompletionKeepsOptionalTargetsAndTransactionIds() {
 		roundTrip(
 				SERVERBOUND,
-				PacketId.Client.TAB_COMPLETE_IN,
+				PacketType.Client.TAB_COMPLETE_IN,
 				47,
 				b -> {
 					ByteBufStreamCodecs.VARINT_STRING.encode(b, "/help");
@@ -31,7 +31,7 @@ final class TabCompleteRequestWirePacketCodecsTest {
 				});
 		roundTrip(
 				SERVERBOUND,
-				PacketId.Client.TAB_COMPLETE_IN,
+				PacketType.Client.TAB_COMPLETE_IN,
 				107,
 				b -> {
 					ByteBufStreamCodecs.VARINT_STRING.encode(b, "/help");
@@ -39,7 +39,7 @@ final class TabCompleteRequestWirePacketCodecsTest {
 				});
 		roundTrip(
 				SERVERBOUND,
-				PacketId.Client.TAB_COMPLETE_IN,
+				PacketType.Client.TAB_COMPLETE_IN,
 				393,
 				b -> {
 					b.writeByte(42);

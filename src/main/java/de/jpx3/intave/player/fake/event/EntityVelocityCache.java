@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.player.fake.event;
 
 import com.google.common.collect.Lists;
@@ -5,13 +16,13 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.EntityVelocityReader;
+import de.jpx3.intave.packet.plib.reader.EntityVelocityReader;
 import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.user.User;
 
 import java.util.List;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.ENTITY_VELOCITY;
+import static de.jpx3.intave.packet.contract.PacketType.Server.ENTITY_VELOCITY;
 
 public final class EntityVelocityCache implements PacketEventSubscriber {
   private static final double VELOCITY_CONVERT_FACTOR = 8000.0D;

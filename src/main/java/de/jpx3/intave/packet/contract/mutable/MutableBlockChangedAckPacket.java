@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.BlockChangedAckPacket;
+import de.jpx3.intave.packet.contract.immutable.BlockChangedAckPacket;
 
-public interface MutableBlockChangedAckPacket extends BlockChangedAckPacket, MutableSequenced {
+public interface MutableBlockChangedAckPacket extends BlockChangedAckPacket, MutableSequenced, Mutable {
 }

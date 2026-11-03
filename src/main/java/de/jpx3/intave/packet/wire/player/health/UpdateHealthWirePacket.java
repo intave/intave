@@ -13,12 +13,11 @@ package de.jpx3.intave.packet.wire.player.health;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableUpdateHealthPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class UpdateHealthWirePacket implements MutableUpdateHealthPacket {
+public class UpdateHealthWirePacket extends MutableWirePacket implements MutableUpdateHealthPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, UpdateHealthWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.FLOAT, UpdateHealthWirePacket::health,
@@ -27,11 +26,9 @@ public class UpdateHealthWirePacket implements MutableUpdateHealthPacket {
 			UpdateHealthWirePacket::new
 		);
 
-	protected float health = 20;
-
-	protected int foodLevel = 20;
-
-	protected float saturation = 5;
+	protected float health;
+	protected int foodLevel;
+	protected float saturation;
 
 	public UpdateHealthWirePacket() {
 		this(20, 20, 5);
@@ -50,6 +47,7 @@ public class UpdateHealthWirePacket implements MutableUpdateHealthPacket {
 
 	@Override
 	public void setHealth(float value) {
+		markMutated();
 		this.health = value;
 	}
 
@@ -60,6 +58,7 @@ public class UpdateHealthWirePacket implements MutableUpdateHealthPacket {
 
 	@Override
 	public void setFoodLevel(int value) {
+		markMutated();
 		this.foodLevel = value;
 	}
 
@@ -70,12 +69,8 @@ public class UpdateHealthWirePacket implements MutableUpdateHealthPacket {
 
 	@Override
 	public void setSaturation(float value) {
+		markMutated();
 		this.saturation = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.UPDATE_HEALTH);
 	}
 
 	@Override

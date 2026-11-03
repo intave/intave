@@ -13,12 +13,11 @@ package de.jpx3.intave.packet.wire.entity.attach;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableAttachEntityPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class AttachEntityWirePacket implements MutableAttachEntityPacket {
+public class AttachEntityWirePacket extends MutableWirePacket implements MutableAttachEntityPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, AttachEntityWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.INTEGER, AttachEntityWirePacket::entityId,
@@ -45,6 +44,7 @@ public class AttachEntityWirePacket implements MutableAttachEntityPacket {
 
 	@Override
 	public void setEntityId(int value) {
+		markMutated();
 		this.entityId = value;
 	}
 
@@ -55,12 +55,8 @@ public class AttachEntityWirePacket implements MutableAttachEntityPacket {
 
 	@Override
 	public void setVehicleId(int value) {
+		markMutated();
 		this.vehicleId = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.ATTACH_ENTITY);
 	}
 
 	@Override
@@ -75,6 +71,7 @@ public class AttachEntityWirePacket implements MutableAttachEntityPacket {
 
 	@Override
 	public void setMount(boolean value) {
+		markMutated();
 		if (value) {
 			throw new UnsupportedOperationException("Use MOUNT for passenger updates since 1.9");
 		}

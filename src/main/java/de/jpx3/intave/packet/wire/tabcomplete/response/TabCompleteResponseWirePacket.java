@@ -13,77 +13,69 @@ package de.jpx3.intave.packet.wire.tabcomplete.response;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableTabCompleteResponsePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static de.jpx3.intave.packet.wire.WireCodecs.count;
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.count;
 
-public class TabCompleteResponseWirePacket implements MutableTabCompleteResponsePacket {
+public class TabCompleteResponseWirePacket extends MutableWirePacket implements MutableTabCompleteResponsePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, TabCompleteResponseWirePacket> STREAM_CODEC =
-			StreamCodec.of(
-					(output, packet) -> {
-						ByteBufStreamCodecs.VARINT.encode(output, packet.id);
-						ByteBufStreamCodecs.VARINT.encode(output, packet.start);
-						ByteBufStreamCodecs.VARINT.encode(output, packet.length);
+		StreamCodec.of(
+			(output, packet) -> {
+				ByteBufStreamCodecs.VARINT.encode(output, packet.id);
+				ByteBufStreamCodecs.VARINT.encode(output, packet.start);
+				ByteBufStreamCodecs.VARINT.encode(output, packet.length);
 
-						ByteBufStreamCodecs.VARINT.encode(output, packet.suggestions.size());
-						for (int i = 0; i < packet.suggestions.size(); i++) {
-							ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.suggestions.get(i));
+				ByteBufStreamCodecs.VARINT.encode(output, packet.suggestions.size());
+				for (int i = 0; i < packet.suggestions.size(); i++) {
+					ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.suggestions.get(i));
 
-							String tooltip =
-									i < packet.tooltips.size() ? packet.tooltips.get(i) : null;
-							output.writeBoolean(tooltip != null);
-							if (tooltip != null) ByteBufStreamCodecs.stringCodec(262144).encode(output, tooltip);
-						}
-					},
-					input -> {
-						int id = ByteBufStreamCodecs.VARINT.decode(input);
-						int start = ByteBufStreamCodecs.VARINT.decode(input);
-						int length = ByteBufStreamCodecs.VARINT.decode(input);
+					String tooltip =
+						i < packet.tooltips.size() ? packet.tooltips.get(i) : null;
+					output.writeBoolean(tooltip != null);
+					if (tooltip != null) ByteBufStreamCodecs.stringCodec(262144).encode(output, tooltip);
+				}
+			},
+			input -> {
+				int id = ByteBufStreamCodecs.VARINT.decode(input);
+				int start = ByteBufStreamCodecs.VARINT.decode(input);
+				int length = ByteBufStreamCodecs.VARINT.decode(input);
 
-						int count = count(input, input.readableBytes());
-						List<String> suggestions = new ArrayList<>(count);
-						List<String> tooltips = new ArrayList<>(count);
-						for (int i = 0; i < count; i++) {
-							suggestions.add(ByteBufStreamCodecs.VARINT_STRING.decode(input));
-							String tooltip = null;
-							if ((input.readBoolean())) {
-								tooltip = ByteBufStreamCodecs.stringCodec(262144).decode(input);
-							}
-							tooltips.add(tooltip);
-						}
-						return new TabCompleteResponseWirePacket(
-								id, start, length, suggestions, tooltips);
-					});
+				int count = count(input, input.readableBytes());
+				List<String> suggestions = new ArrayList<>(count);
+				List<String> tooltips = new ArrayList<>(count);
+				for (int i = 0; i < count; i++) {
+					suggestions.add(ByteBufStreamCodecs.VARINT_STRING.decode(input));
+					String tooltip = null;
+					if ((input.readBoolean())) {
+						tooltip = ByteBufStreamCodecs.stringCodec(262144).decode(input);
+					}
+					tooltips.add(tooltip);
+				}
+				return new TabCompleteResponseWirePacket(
+					id, start, length, suggestions, tooltips);
+			});
 
 	protected int id, start, length;
-
-	protected List<String> suggestions = new ArrayList<>();
-
-	protected List<String> tooltips = new ArrayList<>();
+	protected List<String> suggestions;
+	protected List<String> tooltips;
 
 	public TabCompleteResponseWirePacket() {
 		this(0, 0, 0, new ArrayList<>(), new ArrayList<>());
 	}
 
 	public TabCompleteResponseWirePacket(
-			int id, int start, int length, List<String> suggestions, List<String> tooltips) {
+		int id, int start, int length, List<String> suggestions, List<String> tooltips) {
 		this.id = id;
 		this.start = start;
 		this.length = length;
 		this.suggestions = suggestions;
 		this.tooltips = tooltips;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.TAB_COMPLETE_OUT);
 	}
 
 	@Override
@@ -93,11 +85,13 @@ public class TabCompleteResponseWirePacket implements MutableTabCompleteResponse
 
 	@Override
 	public List<String> suggestions() {
+		markMutated();
 		return Collections.unmodifiableList(suggestions);
 	}
 
 	@Override
 	public void setSuggestions(List<String> value) {
+		markMutated();
 		suggestions = new ArrayList<>(value);
 		tooltips.clear();
 	}

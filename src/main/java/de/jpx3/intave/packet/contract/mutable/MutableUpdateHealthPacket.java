@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.UpdateHealthPacket;
+import de.jpx3.intave.packet.contract.immutable.UpdateHealthPacket;
 
-public interface MutableUpdateHealthPacket extends UpdateHealthPacket {
-
+public interface MutableUpdateHealthPacket extends UpdateHealthPacket, Mutable {
 	void setHealth(float health);
 
 	void setFoodLevel(int foodLevel);

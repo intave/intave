@@ -20,7 +20,7 @@ public final class AttachEntityMountOrLeashWirePacket extends AttachEntityWirePa
 		StreamCodec.compound(
 			ByteBufStreamCodecs.INTEGER, AttachEntityWirePacket::entityId,
 			ByteBufStreamCodecs.INTEGER, AttachEntityWirePacket::vehicleId,
-			ByteBufStreamCodecs.UNSIGNED_BYTE.beforeAndAfter( value -> value == 0, value -> value ? 0 : 1), AttachEntityMountOrLeashWirePacket::isMount,
+			ByteBufStreamCodecs.UNSIGNED_BYTE.beforeAndAfter(value -> value == 0, value -> value ? 0 : 1), AttachEntityMountOrLeashWirePacket::isMount,
 			AttachEntityMountOrLeashWirePacket::new
 		);
 
@@ -47,6 +47,7 @@ public final class AttachEntityMountOrLeashWirePacket extends AttachEntityWirePa
 
 	@Override
 	public void setMount(boolean value) {
+		markMutated();
 		mount = value;
 	}
 }

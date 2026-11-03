@@ -12,6 +12,7 @@
 package de.jpx3.intave.packet.reader;
 
 import ac.intave.samples.event.InventoryActionEvent;
+import de.jpx3.intave.packet.plib.reader.WindowClickReader;
 import de.jpx3.intave.share.WindowClickType;
 import org.junit.jupiter.api.Test;
 

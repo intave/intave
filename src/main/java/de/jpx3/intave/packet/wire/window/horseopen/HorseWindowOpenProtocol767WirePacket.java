@@ -39,6 +39,7 @@ public final class HorseWindowOpenProtocol767WirePacket extends HorseWindowOpenW
 
 	@Override
 	public void setSlots(int value) {
+		markMutated();
 		int offset = 1;
 		if (((value < offset || (value - offset) % 3 != 0)))
 			throw new IllegalArgumentException("Horse slots must contain complete columns");

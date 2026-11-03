@@ -12,10 +12,9 @@
 package de.jpx3.intave.packet.contract.mutable;
 
 import de.jpx3.intave.annotate.Nullable;
-import de.jpx3.intave.packet.contract.CookieResponsePacket;
+import de.jpx3.intave.packet.contract.immutable.CookieResponsePacket;
 
-public interface MutableCookieResponsePacket extends CookieResponsePacket, MutableCookiePacket {
-
+public interface MutableCookieResponsePacket extends CookieResponsePacket, MutableCookiePacket, Mutable {
 	void setPayload(@Nullable byte[] payload);
 
 	default void clearPayload() {

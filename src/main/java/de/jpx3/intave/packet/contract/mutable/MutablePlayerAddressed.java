@@ -11,14 +11,13 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.PlayerAddressed;
+import de.jpx3.intave.packet.contract.immutable.PlayerAddressed;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public interface MutablePlayerAddressed extends PlayerAddressed {
-
+public interface MutablePlayerAddressed extends PlayerAddressed, Mutable {
 	void setPlayerIds(List<UUID> playerIds);
 
 	default void removePlayer(UUID playerId) {

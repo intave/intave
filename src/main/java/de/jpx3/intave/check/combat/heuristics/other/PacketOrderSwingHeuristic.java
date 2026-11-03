@@ -19,13 +19,13 @@ import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
-import de.jpx3.intave.packet.reader.EntityUseReader;
+import de.jpx3.intave.packet.plib.reader.EntityUseReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.entity.Player;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
 
 public final class PacketOrderSwingHeuristic extends ClassicHeuristic<PacketOrderSwingHeuristic.PacketOrderSwingHeuristicMeta> {
   private final IntavePlugin plugin;

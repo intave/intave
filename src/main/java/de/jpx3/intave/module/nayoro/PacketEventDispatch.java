@@ -11,29 +11,26 @@
 
 package de.jpx3.intave.module.nayoro;
 
-import de.jpx3.intave.share.PlayerHand;
-
-import de.jpx3.intave.share.EntityUseAction;
-import de.jpx3.intave.share.ClientCommand;
-
 import ac.intave.samples.event.*;
 import ac.intave.samples.share.Position;
 import ac.intave.samples.share.Rotation;
 import ac.intave.samples.share.SlotUpdate;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
+import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.*;
+import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.plib.reader.*;
+import de.jpx3.intave.share.ClientCommand;
+import de.jpx3.intave.share.EntityUseAction;
+import de.jpx3.intave.share.PlayerDigAction;
+import de.jpx3.intave.share.PlayerHand;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.InventoryMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -44,10 +41,10 @@ import java.util.function.BiConsumer;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 import static de.jpx3.intave.module.linker.packet.ListenerPriority.LOWEST;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.VEHICLE_MOVE;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.POSITION;
+import static de.jpx3.intave.packet.contract.PacketType.Client.VEHICLE_MOVE;
+import static de.jpx3.intave.packet.contract.PacketType.Server.*;
 
 public final class PacketEventDispatch implements PacketEventSubscriber {
   private static volatile Method attackCooldownMethod;
@@ -337,7 +334,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
   @PacketSubscription(
     priority = ListenerPriority.LOW,
     packetsIn = {
-      PacketId.Client.CLOSE_WINDOW
+      PacketType.Client.CLOSE_WINDOW
     }
   )
   public void receiveWindowClose(User user, WindowIdReader reader) {
@@ -352,7 +349,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsOut = {
-      PacketId.Server.CLOSE_WINDOW
+      PacketType.Server.CLOSE_WINDOW
     }
   )
   public void sentWindowClose(User user, WindowIdReader reader) {
@@ -468,7 +465,7 @@ public final class PacketEventDispatch implements PacketEventSubscriber {
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsIn = {
-      PacketId.Client.AUTO_RECIPE
+      PacketType.Client.AUTO_RECIPE
     }
   )
   public void receivePlaceRecipe(User user, PacketContainer packet) {

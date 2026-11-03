@@ -13,12 +13,11 @@ package de.jpx3.intave.packet.wire.player.experience;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableExperiencePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class ExperienceWirePacket implements MutableExperiencePacket {
+public class ExperienceWirePacket extends MutableWirePacket implements MutableExperiencePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, ExperienceWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.FLOAT, ExperienceWirePacket::progress,
@@ -50,6 +49,7 @@ public class ExperienceWirePacket implements MutableExperiencePacket {
 
 	@Override
 	public void setProgress(float value) {
+		markMutated();
 		this.progress = value;
 	}
 
@@ -60,6 +60,7 @@ public class ExperienceWirePacket implements MutableExperiencePacket {
 
 	@Override
 	public void setLevel(int value) {
+		markMutated();
 		this.level = value;
 	}
 
@@ -70,12 +71,8 @@ public class ExperienceWirePacket implements MutableExperiencePacket {
 
 	@Override
 	public void setTotalExperience(int value) {
+		markMutated();
 		this.totalExperience = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.EXPERIENCE);
 	}
 
 	@Override

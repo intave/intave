@@ -20,10 +20,10 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.linker.packet.PrioritySlot;
-import de.jpx3.intave.packet.reader.GameStateChangeReader;
+import de.jpx3.intave.packet.plib.reader.GameStateChangeReader;
+import de.jpx3.intave.packet.plib.reader.TimeUpdateReader;
+import de.jpx3.intave.packet.plib.reader.TimeUpdateReader.Update;
 import de.jpx3.intave.share.GameStateChangeType;
-import de.jpx3.intave.packet.reader.TimeUpdateReader;
-import de.jpx3.intave.packet.reader.TimeUpdateReader.Update;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
 import org.bukkit.event.Cancellable;
@@ -32,7 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
+import static de.jpx3.intave.packet.contract.PacketType.Server.*;
 
 /** Records the time and weather packets sent to each player. */
 public final class PlayerEnvironmentRecorder implements PacketEventSubscriber {

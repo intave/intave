@@ -19,8 +19,8 @@ import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.Entity;
-import de.jpx3.intave.packet.reader.EntityUseReader;
-import de.jpx3.intave.packet.reader.HeldItemSlotReader;
+import de.jpx3.intave.packet.plib.reader.EntityUseReader;
+import de.jpx3.intave.packet.plib.reader.HeldItemSlotReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
 import de.jpx3.intave.world.raytrace.Raytrace;
@@ -30,7 +30,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_8;
 
 public final class AttackRequiredHeuristic extends ClassicHeuristic<AttackRequiredHeuristic.AttackRequiredMeta> {

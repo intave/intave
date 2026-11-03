@@ -28,42 +28,7 @@ import static de.jpx3.intave.codec.JsonStreamCodecs.doubleField;
 import static de.jpx3.intave.codec.JsonStreamCodecs.object;
 
 public class RawVector3d {
-  /** The packed, scaled vector introduced in 1.21.9 (network/LpVec3). */
-  public static final StreamCodec<ByteBuf, ByteBuf, RawVector3d> LOW_PRECISION_STREAM_CODEC = StreamCodec.of(
-    (output, value) -> {
-      double x = sanitizeVector(value.x),
-          y = sanitizeVector(value.y),
-          z = sanitizeVector(value.z);
-      double maximum = Math.max(Math.abs(x), Math.max(Math.abs(y), Math.abs(z)));
-      if (maximum < 3.051944088384301E-5) {
-        output.writeByte(0);
-        return;
-      }
-      long scale = (long) Math.ceil(maximum);
-      boolean extended = (scale & 3) != scale;
-      long packed =
-          (extended ? scale & 3 | 4 : scale)
-              | packVector(x / scale) << 3
-              | packVector(y / scale) << 18
-              | packVector(z / scale) << 33;
-      output.writeByte((int) packed);
-      output.writeByte((int) (packed >> 8));
-      output.writeInt((int) (packed >> 16));
-      if (extended) ByteBufStreamCodecs.VARINT.encode(output, (int) (scale >> 2));
-    },
-    input -> {
-      int first = input.readUnsignedByte();
-      if (first == 0) return new RawVector3d(0, 0, 0);
-      int second = input.readUnsignedByte();
-      long packed = input.readUnsignedInt() << 16 | (long) second << 8 | first;
-      long scale = first & 3;
-      if ((first & 4) != 0) scale |= (ByteBufStreamCodecs.VARINT.decode(input) & 0xffffffffL) << 2;
-      return new RawVector3d(
-          unpackVector(packed >> 3) * scale,
-          unpackVector(packed >> 18) * scale,
-          unpackVector(packed >> 33) * scale);
-    }
-  );
+  public static final StreamCodec<ByteBuf, ByteBuf, RawVector3d> LOW_PRECISION_STREAM_CODEC = LowPrecisionVectorCodec.INSTANCE;
 
   private static final StreamCodec<ByteBuf, ByteBuf, Double> BYTE_DELTA =
     ByteBufStreamCodecs.BYTE.beforeAndAfter(
@@ -101,20 +66,6 @@ public class RawVector3d {
     BYTE_HIT_COORDINATE, RawVector3d::z,
     RawVector3d::new
   );
-
-  private static double sanitizeVector(double value) {
-    return Double.isNaN(value)
-        ? 0
-        : Math.max(-1.7179869183E10, Math.min(1.7179869183E10, value));
-  }
-
-  private static long packVector(double value) {
-    return Math.round((value * 0.5 + 0.5) * 32766);
-  }
-
-  private static double unpackVector(long value) {
-    return Math.min(value & 32767, 32766) * 2.0 / 32766.0 - 1.0;
-  }
 
   private static int quantizedDelta(double value, double divisor, int minimum, int maximum) {
     double scaled = Math.rint(value * divisor);

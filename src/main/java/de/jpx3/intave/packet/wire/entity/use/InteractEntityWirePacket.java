@@ -13,15 +13,14 @@ package de.jpx3.intave.packet.wire.entity.use;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityUsePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.EntityUseAction;
 import de.jpx3.intave.share.PlayerHand;
 import de.jpx3.intave.share.RawVector3d;
 import io.netty.buffer.ByteBuf;
 
-public class InteractEntityWirePacket implements MutableEntityUsePacket {
+public class InteractEntityWirePacket extends MutableWirePacket implements MutableEntityUsePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, InteractEntityWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, InteractEntityWirePacket::entityId,
@@ -31,12 +30,9 @@ public class InteractEntityWirePacket implements MutableEntityUsePacket {
 			InteractEntityWirePacket::new
 		);
 
-	protected int entityId = 0;
-
-	protected PlayerHand hand = PlayerHand.MAIN_HAND;
-
-	protected RawVector3d hitPosition = new RawVector3d(0, 0, 0);
-
+	protected int entityId;
+	protected PlayerHand hand;
+	protected RawVector3d hitPosition;
 	private boolean secondary;
 
 	public InteractEntityWirePacket() {
@@ -44,7 +40,7 @@ public class InteractEntityWirePacket implements MutableEntityUsePacket {
 	}
 
 	public InteractEntityWirePacket(
-			int entityId, PlayerHand hand, RawVector3d hitPosition, boolean secondary) {
+		int entityId, PlayerHand hand, RawVector3d hitPosition, boolean secondary) {
 		this.entityId = entityId;
 		this.hand = hand;
 		this.hitPosition = hitPosition;
@@ -58,6 +54,7 @@ public class InteractEntityWirePacket implements MutableEntityUsePacket {
 
 	@Override
 	public void setEntityId(int value) {
+		markMutated();
 		this.entityId = value;
 	}
 
@@ -68,16 +65,19 @@ public class InteractEntityWirePacket implements MutableEntityUsePacket {
 
 	@Override
 	public void setHand(PlayerHand value) {
+		markMutated();
 		this.hand = value;
 	}
 
 	@Override
 	public RawVector3d hitPosition() {
+		markMutated();
 		return this.hitPosition;
 	}
 
 	@Override
 	public void setHitPosition(RawVector3d value) {
+		markMutated();
 		this.hitPosition = value;
 	}
 
@@ -86,12 +86,8 @@ public class InteractEntityWirePacket implements MutableEntityUsePacket {
 	}
 
 	public void setSecondary(boolean value) {
+		markMutated();
 		secondary = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.USE_ENTITY);
 	}
 
 	@Override
@@ -106,6 +102,7 @@ public class InteractEntityWirePacket implements MutableEntityUsePacket {
 
 	@Override
 	public void setAction(EntityUseAction value) {
+		markMutated();
 		if (value != EntityUseAction.INTERACT_AT)
 			throw new IllegalArgumentException("Use the dedicated attack packet for attacks");
 	}

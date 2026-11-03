@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.tracker.player;
 
 import com.comphenix.protocol.events.PacketContainer;
@@ -8,10 +19,10 @@ import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.WindowItemReader;
-import de.jpx3.intave.packet.reader.ClientCommandReader;
+import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.plib.reader.ClientCommandReader;
+import de.jpx3.intave.packet.plib.reader.WindowItemReader;
 import de.jpx3.intave.share.ClientCommand;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -22,8 +33,8 @@ import org.bukkit.entity.Player;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.CLIENT_COMMAND;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.CLIENT_COMMAND;
+import static de.jpx3.intave.packet.contract.PacketType.Server.*;
 
 public final class InventoryTracker extends Module {
 
@@ -33,7 +44,7 @@ public final class InventoryTracker extends Module {
 
   /**
    * Tracks if the server forces a player to open an inventory by listening to
-   * the {@link de.jpx3.intave.module.linker.packet.PacketId.Server#OPEN_WINDOW}
+   * the {@link PacketType.Server#OPEN_WINDOW}
    * packet.
    */
   @PacketSubscription(
@@ -67,7 +78,7 @@ public final class InventoryTracker extends Module {
 
   /**
    * Tracks if the client opens the inventory by listening to the
-   * {@link de.jpx3.intave.module.linker.packet.PacketId.Client#CLIENT_COMMAND}
+   * {@link PacketType.Client#CLIENT_COMMAND}
    * packet.
    * However, this functionality was removed in Minecraft 1.9.
    */
@@ -114,13 +125,13 @@ public final class InventoryTracker extends Module {
 
   /**
    * Tracks if the server forces a player to close the inventory by listening to
-   * the {@link de.jpx3.intave.module.linker.packet.PacketId.Server#CLOSE_WINDOW}
+   * the {@link PacketType.Server#CLOSE_WINDOW}
    * packet.
    */
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsOut = {
-      PacketId.Server.CLOSE_WINDOW
+      PacketType.Server.CLOSE_WINDOW
     },
     ignoreCancelled = false
   )
@@ -132,13 +143,13 @@ public final class InventoryTracker extends Module {
 
   /**
    * Tracks if the player closes the inventory by listening to the
-   * {@link de.jpx3.intave.module.linker.packet.PacketId.Client#CLOSE_WINDOW}
+   * {@link PacketType.Client#CLOSE_WINDOW}
    * packet.
    */
   @PacketSubscription(
     priority = ListenerPriority.LOW,
     packetsIn = {
-      PacketId.Client.CLOSE_WINDOW
+      PacketType.Client.CLOSE_WINDOW
     }
   )
   public void receiveCloseWindow(PacketEvent event) {

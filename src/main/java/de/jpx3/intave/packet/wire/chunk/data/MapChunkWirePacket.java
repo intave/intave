@@ -12,27 +12,26 @@
 package de.jpx3.intave.packet.wire.chunk.data;
 
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableMapChunkPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-import static de.jpx3.intave.packet.wire.WireCodecs.bytes;
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.bytes;
 
-public class MapChunkWirePacket implements MutableMapChunkPacket {
+public class MapChunkWirePacket extends MutableWirePacket implements MutableMapChunkPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, MapChunkWirePacket> STREAM_CODEC =
-			StreamCodec.of(
-					(output, packet) -> {
-						output.writeInt(packet.x);
-						output.writeInt(packet.z);
-						output.writeBytes(packet.chunkData);
-					},
-					input -> {
-						int x = input.readInt();
-						int z = input.readInt();
-						byte[] chunkData = bytes(input, input.readableBytes());
-						return new MapChunkWirePacket(x, z, chunkData);
-					});
+		StreamCodec.of(
+			(output, packet) -> {
+				output.writeInt(packet.x);
+				output.writeInt(packet.z);
+				output.writeBytes(packet.chunkData);
+			},
+			input -> {
+				int x = input.readInt();
+				int z = input.readInt();
+				byte[] chunkData = bytes(input, input.readableBytes());
+				return new MapChunkWirePacket(x, z, chunkData);
+			});
 
 	private int x, z;
 
@@ -46,11 +45,6 @@ public class MapChunkWirePacket implements MutableMapChunkPacket {
 		this.x = x;
 		this.z = z;
 		this.chunkData = chunkData;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.MAP_CHUNK);
 	}
 
 	@Override
@@ -72,16 +66,19 @@ public class MapChunkWirePacket implements MutableMapChunkPacket {
 
 	@Override
 	public void setChunkCoordinates(int index, int x, int z) {
+		markMutated();
 		checkIndex(index);
 		this.x = x;
 		this.z = z;
 	}
 
 	public byte[] chunkData() {
+		markMutated();
 		return chunkData.clone();
 	}
 
 	public void setChunkData(byte[] data) {
+		markMutated();
 		chunkData = data.clone();
 	}
 

@@ -18,14 +18,14 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
-import de.jpx3.intave.packet.reader.WindowClickReader;
+import de.jpx3.intave.packet.plib.reader.WindowClickReader;
 import de.jpx3.intave.share.WindowClickType;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.InventoryMetadata;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.WINDOW_CLICK;
+import static de.jpx3.intave.packet.contract.PacketType.Client.WINDOW_CLICK;
 
 public final class NotOpenCheck extends CheckPart<InventoryClickAnalysis> {
   private final IntavePlugin plugin;

@@ -11,12 +11,22 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.WorldBorderPacket;
+import de.jpx3.intave.annotate.Nullable;
+import de.jpx3.intave.packet.contract.immutable.WorldBorderPacket;
 import de.jpx3.intave.share.Position;
 
-public interface MutableWorldBorderPacket extends WorldBorderPacket {
-
+public interface MutableWorldBorderPacket extends WorldBorderPacket, Mutable {
 	void setCenter(Position center);
+
+	@Nullable
+	default Position mutableCenter() {
+		Position center = center();
+		if (center != null && center.isImmutable()) {
+			center = center.mutable();
+			setCenter(center);
+		}
+		return center;
+	}
 
 	void setSize(double size);
 

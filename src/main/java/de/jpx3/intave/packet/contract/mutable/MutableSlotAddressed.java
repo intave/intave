@@ -11,9 +11,8 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.SlotAddressed;
+import de.jpx3.intave.packet.contract.immutable.SlotAddressed;
 
-public interface MutableSlotAddressed extends SlotAddressed {
-
+public interface MutableSlotAddressed extends SlotAddressed, Mutable {
 	void setSlot(int slot);
 }

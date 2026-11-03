@@ -19,9 +19,9 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.linker.packet.PrioritySlot;
-import de.jpx3.intave.packet.reader.AbilityInReader;
-import de.jpx3.intave.packet.reader.AbilityOutReader;
-import de.jpx3.intave.packet.reader.GameStateChangeReader;
+import de.jpx3.intave.packet.plib.reader.AbilityInReader;
+import de.jpx3.intave.packet.plib.reader.AbilityOutReader;
+import de.jpx3.intave.packet.plib.reader.GameStateChangeReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
 import de.jpx3.intave.user.UserRepository;
@@ -35,9 +35,9 @@ import org.bukkit.event.player.PlayerToggleFlightEvent;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.ABILITIES_IN;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.ABILITIES_OUT;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.GAME_STATE_CHANGE;
+import static de.jpx3.intave.packet.contract.PacketType.Client.ABILITIES_IN;
+import static de.jpx3.intave.packet.contract.PacketType.Server.ABILITIES_OUT;
+import static de.jpx3.intave.packet.contract.PacketType.Server.GAME_STATE_CHANGE;
 import static de.jpx3.intave.share.GameStateChangeType.CHANGE_GAME_MODE;
 
 /** Keeps client observations independent of the server's flight permission and state. */

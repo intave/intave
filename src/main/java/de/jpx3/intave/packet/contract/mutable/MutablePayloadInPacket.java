@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.PayloadInPacket;
+import de.jpx3.intave.packet.contract.immutable.PayloadInPacket;
 
-public interface MutablePayloadInPacket extends PayloadInPacket {
-
+public interface MutablePayloadInPacket extends PayloadInPacket, Mutable {
 	void setTag(String tag);
 
 	void setPayload(byte[] payload);

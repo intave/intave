@@ -54,11 +54,11 @@ import de.jpx3.intave.module.test.record.action.ShulkerBoxAction;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.tracker.player.PacketLogging;
 import de.jpx3.intave.module.violation.Violation;
-import de.jpx3.intave.packet.contract.PlayerInputPacket;
+import de.jpx3.intave.packet.contract.immutable.PlayerInputPacket;
 import de.jpx3.intave.packet.event.PacketEventBus;
 import de.jpx3.intave.packet.plib.PacketSender;
 import de.jpx3.intave.packet.plib.converter.InputConverter;
-import de.jpx3.intave.packet.reader.*;
+import de.jpx3.intave.packet.plib.reader.*;
 import de.jpx3.intave.player.ActionBar;
 import de.jpx3.intave.player.FaultKicks;
 import de.jpx3.intave.player.ItemProperties;
@@ -96,11 +96,11 @@ import static de.jpx3.intave.IntaveControl.DEBUG_MOVEMENT_IGNORE;
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.*;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 import static de.jpx3.intave.module.feedback.FeedbackOptions.SELF_SYNCHRONIZATION;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.VEHICLE_MOVE;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
 import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.POSITION;
+import static de.jpx3.intave.packet.contract.PacketType.Client.VEHICLE_MOVE;
+import static de.jpx3.intave.packet.contract.PacketType.Server.*;
 import static de.jpx3.intave.user.MessageChannel.DEBUG_TELEPORT;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.*;
 
@@ -760,7 +760,6 @@ public final class MovementDispatcher extends Module {
       PlayerInputPacket packet = (PlayerInputPacket) event.packet();
       User user = event.user();
       if (user == null) {
-        System.out.println("[Intave] Received player input packet for non-user ");
         return;
       }
       MovementMetadata movementData = user.meta().movement();
@@ -768,6 +767,7 @@ public final class MovementDispatcher extends Module {
         movementData.lastInput = movementData.input;
         movementData.input = packet.input();
       }
+      event.setPacket(packet);
     }, PLAYER_INPUT);
   }
 

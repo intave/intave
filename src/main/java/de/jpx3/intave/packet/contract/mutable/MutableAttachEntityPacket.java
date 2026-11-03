@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.AttachEntityPacket;
+import de.jpx3.intave.packet.contract.immutable.AttachEntityPacket;
 
-public interface MutableAttachEntityPacket extends AttachEntityPacket, MutablePrimaryEntityAddressed {
-
+public interface MutableAttachEntityPacket extends AttachEntityPacket, MutablePrimaryEntityAddressed, Mutable {
 	void setVehicleId(int vehicleId);
 
 	void setMount(boolean mount);

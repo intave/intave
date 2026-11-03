@@ -13,19 +13,18 @@ package de.jpx3.intave.packet.wire.window.close;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableWindowClosePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class WindowCloseWirePacket implements MutableWindowClosePacket {
+public class WindowCloseWirePacket extends MutableWirePacket implements MutableWindowClosePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, WindowCloseWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, WindowCloseWirePacket::containerId,
 			WindowCloseWirePacket::new
 		);
 
-	protected int containerId = 0;
+	protected int containerId;
 
 	public WindowCloseWirePacket() {
 		this(0);
@@ -42,12 +41,8 @@ public class WindowCloseWirePacket implements MutableWindowClosePacket {
 
 	@Override
 	public void setContainerId(int value) {
+		markMutated();
 		this.containerId = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.CLOSE_WINDOW || packetId == PacketId.Server.CLOSE_WINDOW);
 	}
 
 	@Override

@@ -11,9 +11,8 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.WindowRevision;
+import de.jpx3.intave.packet.contract.immutable.WindowRevision;
 
-public interface MutableWindowRevision extends WindowRevision, MutableWindowAddressed {
-
+public interface MutableWindowRevision extends WindowRevision, MutableWindowAddressed, Mutable {
 	void setRevision(int revision);
 }

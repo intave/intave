@@ -11,11 +11,10 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.BlockActionPacket;
+import de.jpx3.intave.packet.contract.immutable.BlockActionPacket;
 import de.jpx3.intave.share.MinecraftKey;
 
-public interface MutableBlockActionPacket extends BlockActionPacket, MutableBlockAddressed {
-
+public interface MutableBlockActionPacket extends BlockActionPacket, MutableBlockAddressed, Mutable {
 	void setBlockType(MinecraftKey blockType);
 
 	void setAction(int action);

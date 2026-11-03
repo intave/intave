@@ -12,8 +12,6 @@
 package de.jpx3.intave.packet.wire.world.border;
 
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.share.Position;
 import io.netty.buffer.ByteBuf;
 
@@ -21,15 +19,15 @@ import java.util.Objects;
 
 public final class WorldBorderSetCenterWirePacket extends WorldBorderWirePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, WorldBorderSetCenterWirePacket> STREAM_CODEC =
-			StreamCodec.of(
-					(output, packet) -> {
-						output.writeDouble(packet.center.getX());
-						output.writeDouble(packet.center.getZ());
-					},
-					input -> {
-						Position center = new Position(input.readDouble(), 0, input.readDouble());
-						return new WorldBorderSetCenterWirePacket(center);
-					});
+		StreamCodec.of(
+			(output, packet) -> {
+				output.writeDouble(packet.center.getX());
+				output.writeDouble(packet.center.getZ());
+			},
+			input -> {
+				Position center = new Position(input.readDouble(), 0, input.readDouble());
+				return new WorldBorderSetCenterWirePacket(center);
+			});
 
 	public WorldBorderSetCenterWirePacket() {
 		action = Action.SET_CENTER;
@@ -41,17 +39,13 @@ public final class WorldBorderSetCenterWirePacket extends WorldBorderWirePacket 
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return state == ConnectionState.PLAY && packetId == PacketId.Server.SET_BORDER_CENTER;
-	}
-
-	@Override
 	public boolean appliesTo(int protocolVersion) {
 		return protocolVersion >= 755;
 	}
 
 	@Override
 	public void setAction(Action value) {
+		markMutated();
 		if (Objects.requireNonNull(value, "action") != Action.SET_CENTER)
 			throw new IllegalArgumentException("Action is fixed for SET_BORDER_CENTER");
 	}

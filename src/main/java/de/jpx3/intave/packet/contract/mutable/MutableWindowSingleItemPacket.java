@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.WindowSingleItemPacket;
+import de.jpx3.intave.packet.contract.immutable.WindowSingleItemPacket;
 
-public interface MutableWindowSingleItemPacket extends WindowSingleItemPacket, MutableWindowItemsPacket, MutableSlotAddressed {
+public interface MutableWindowSingleItemPacket extends WindowSingleItemPacket, MutableWindowItemsPacket, MutableSlotAddressed, Mutable {
 }

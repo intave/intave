@@ -49,6 +49,7 @@ public final class ChatWirePacket extends ChatWithoutChecksumWirePacket {
 	}
 
 	public void setChecksum(byte value) {
+		markMutated();
 		checksum = value;
 	}
 

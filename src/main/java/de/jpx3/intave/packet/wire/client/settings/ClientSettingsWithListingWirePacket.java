@@ -36,14 +36,14 @@ public class ClientSettingsWithListingWirePacket extends ClientSettingsWithFilte
 	}
 
 	public ClientSettingsWithListingWirePacket(
-			String locale,
-			int viewDistance,
-			int chatVisibility,
-			boolean chatColors,
-			int skinParts,
-			MainHand mainHand,
-			boolean filtering,
-			boolean listing) {
+		String locale,
+		int viewDistance,
+		int chatVisibility,
+		boolean chatColors,
+		int skinParts,
+		MainHand mainHand,
+		boolean filtering,
+		boolean listing) {
 		super(locale, viewDistance, chatVisibility, chatColors, skinParts, mainHand, filtering);
 		this.listing = listing;
 	}

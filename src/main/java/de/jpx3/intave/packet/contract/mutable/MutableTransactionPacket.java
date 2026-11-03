@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.TransactionPacket;
+import de.jpx3.intave.packet.contract.immutable.TransactionPacket;
 
-public interface MutableTransactionPacket extends TransactionPacket, MutableWindowAddressed {
-
+public interface MutableTransactionPacket extends TransactionPacket, MutableWindowAddressed, Mutable {
 	void setActionNumber(short actionNumber);
 
 	void setAccepted(boolean accepted);

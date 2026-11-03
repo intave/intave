@@ -23,7 +23,7 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.violation.Violation;
-import de.jpx3.intave.packet.reader.BlockInteractionReader;
+import de.jpx3.intave.packet.plib.reader.BlockInteractionReader;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.Position;
@@ -41,8 +41,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 import static de.jpx3.intave.check.world.PlacementAnalysis.COMMON_FLAG_MESSAGE;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
 
 public class RotationFlick extends PlayerCheckPart<PlacementAnalysis> {
 	private final Histogram rotationHistogram = new Histogram(70, 90, 0.2, 100);

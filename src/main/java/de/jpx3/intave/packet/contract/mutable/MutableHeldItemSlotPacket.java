@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.HeldItemSlotPacket;
+import de.jpx3.intave.packet.contract.immutable.HeldItemSlotPacket;
 
-public interface MutableHeldItemSlotPacket extends HeldItemSlotPacket, MutableSlotAddressed {
+public interface MutableHeldItemSlotPacket extends HeldItemSlotPacket, MutableSlotAddressed, Mutable {
 }

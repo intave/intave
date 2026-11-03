@@ -17,13 +17,13 @@ import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.math.Matrix;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.module.violation.ViolationProcessor;
-import de.jpx3.intave.packet.reader.WindowClickReader;
+import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.plib.reader.WindowClickReader;
 import de.jpx3.intave.share.WindowClickType;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
@@ -35,9 +35,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static de.jpx3.intave.math.MathHelper.formatDouble;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.CLOSE_WINDOW;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.WINDOW_CLICK;
 import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
+import static de.jpx3.intave.packet.contract.PacketType.Client.CLOSE_WINDOW;
+import static de.jpx3.intave.packet.contract.PacketType.Client.WINDOW_CLICK;
 
 public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, RegrDelayAnalyzer.ClickDelayMeta> {
   public RegrDelayAnalyzer(InventoryClickAnalysis parentCheck) {
@@ -47,7 +47,7 @@ public class RegrDelayAnalyzer extends MetaCheckPart<InventoryClickAnalysis, Reg
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsOut = {
-      PacketId.Server.OPEN_WINDOW
+      PacketType.Server.OPEN_WINDOW
     }
   )
   public void openWindowPacket(User user) {

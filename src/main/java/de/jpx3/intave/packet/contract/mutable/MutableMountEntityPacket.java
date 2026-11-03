@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.MountEntityPacket;
+import de.jpx3.intave.packet.contract.immutable.MountEntityPacket;
 
-public interface MutableMountEntityPacket extends MountEntityPacket, MutablePrimaryEntityAddressed {
-
+public interface MutableMountEntityPacket extends MountEntityPacket, MutablePrimaryEntityAddressed, Mutable {
 	void setPassengerIds(int[] passengerIds);
 
 	@Override

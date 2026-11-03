@@ -11,12 +11,11 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.EntityAttributesPacket;
+import de.jpx3.intave.packet.contract.immutable.EntityAttributesPacket;
 import de.jpx3.intave.player.attribute.Attribute;
 
 import java.util.List;
 
-public interface MutableEntityAttributesPacket extends EntityAttributesPacket, MutableSingleEntityAddressed {
-
+public interface MutableEntityAttributesPacket extends EntityAttributesPacket, MutableSingleEntityAddressed, Mutable {
 	void setAttributes(List<Attribute> attributes);
 }

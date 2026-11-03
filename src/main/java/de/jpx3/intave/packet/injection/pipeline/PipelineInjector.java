@@ -13,5 +13,6 @@ package de.jpx3.intave.packet.injection.pipeline;
 
 public interface PipelineInjector {
 	void inject();
+
 	void uninject();
 }

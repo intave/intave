@@ -12,14 +12,13 @@
 package de.jpx3.intave.packet.contract.mutable;
 
 import de.jpx3.intave.annotate.Nullable;
-import de.jpx3.intave.packet.contract.ItemUpdates;
+import de.jpx3.intave.packet.contract.immutable.ItemUpdates;
 import de.jpx3.intave.share.ItemStack;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public interface MutableItemUpdates extends ItemUpdates, MutableWindowAddressed {
-
+public interface MutableItemUpdates extends ItemUpdates, MutableWindowAddressed, Mutable {
 	void setItemMap(Map<Integer, ItemStack> items);
 
 	default void setItem(int slot, @Nullable ItemStack item) {

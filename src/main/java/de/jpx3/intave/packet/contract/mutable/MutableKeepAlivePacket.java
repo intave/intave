@@ -11,9 +11,8 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.KeepAlivePacket;
+import de.jpx3.intave.packet.contract.immutable.KeepAlivePacket;
 
-public interface MutableKeepAlivePacket extends KeepAlivePacket {
-
+public interface MutableKeepAlivePacket extends KeepAlivePacket, Mutable {
 	void setId(long id);
 }

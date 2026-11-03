@@ -11,6 +11,8 @@
 
 package de.jpx3.intave.module.linker.packet;
 
+import de.jpx3.intave.packet.contract.PacketType;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -23,8 +25,8 @@ public @interface PacketSubscription {
   PrioritySlot prioritySlot() default PrioritySlot.INTERNAL;
   Engine engine() default Engine.PROTOCOLLIB;
   String identifier() default "no identifier assigned";
-  PacketId.Client[] packetsIn() default {};
-  PacketId.Server[] packetsOut() default {};
+  PacketType.Client[] packetsIn() default {};
+  PacketType.Server[] packetsOut() default {};
   boolean ignoreCancelled() default true;
   boolean debug() default false;
 }

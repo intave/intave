@@ -50,18 +50,22 @@ public final class EntityPositionWirePacket extends EntityPositionDoublePosition
 	}
 
 	public Motion motion() {
+		markMutated();
 		return motion;
 	}
 
 	public void setMotion(Motion value) {
+		markMutated();
 		motion = value;
 	}
 
 	public Set<Relative> flags() {
+		markMutated();
 		return flags;
 	}
 
 	public void setFlags(Set<Relative> value) {
+		markMutated();
 		flags = value;
 	}
 

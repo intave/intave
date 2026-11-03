@@ -12,21 +12,21 @@
 package de.jpx3.intave.check.combat.heuristics.other;
 
 import com.comphenix.protocol.events.PacketEvent;
-import de.jpx3.intave.packet.reader.BlockDigReader;
 import de.jpx3.intave.check.combat.Heuristics;
 import de.jpx3.intave.check.combat.heuristics.ClassicHeuristic;
 import de.jpx3.intave.check.combat.heuristics.HeuristicsClassicType;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
-import de.jpx3.intave.packet.reader.HeldItemSlotReader;
+import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.plib.reader.BlockDigReader;
+import de.jpx3.intave.packet.plib.reader.HeldItemSlotReader;
+import de.jpx3.intave.share.PlayerDigAction;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
-import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.entity.Player;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
 
 public class ToolSwitchHeuristic extends ClassicHeuristic<ToolSwitchHeuristic.ToolSwitchHeuristicMeta> {
   public ToolSwitchHeuristic(Heuristics parentCheck) {
@@ -49,7 +49,7 @@ public class ToolSwitchHeuristic extends ClassicHeuristic<ToolSwitchHeuristic.To
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsIn = {
-      PacketId.Client.BLOCK_DIG
+      PacketType.Client.BLOCK_DIG
     }
   )
   public void receiveBlockBreakAction(PacketEvent event, BlockDigReader reader) {
@@ -69,7 +69,7 @@ public class ToolSwitchHeuristic extends ClassicHeuristic<ToolSwitchHeuristic.To
   @PacketSubscription(
     priority = ListenerPriority.HIGH,
     packetsIn = {
-      PacketId.Client.HELD_ITEM_SLOT_IN
+      PacketType.Client.HELD_ITEM_SLOT_IN
     }
   )
   public void receiveHeldItemSlotChange(User user, HeldItemSlotReader reader) {

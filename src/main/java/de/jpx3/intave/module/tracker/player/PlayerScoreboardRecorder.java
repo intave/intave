@@ -21,11 +21,11 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.linker.packet.PrioritySlot;
-import de.jpx3.intave.packet.reader.ScoreboardReader;
-import de.jpx3.intave.packet.reader.ScoreboardReader.Display;
-import de.jpx3.intave.packet.reader.ScoreboardReader.Objective;
-import de.jpx3.intave.packet.reader.ScoreboardReader.Score;
-import de.jpx3.intave.packet.reader.ScoreboardReader.Team;
+import de.jpx3.intave.packet.plib.reader.ScoreboardReader;
+import de.jpx3.intave.packet.plib.reader.ScoreboardReader.Display;
+import de.jpx3.intave.packet.plib.reader.ScoreboardReader.Objective;
+import de.jpx3.intave.packet.plib.reader.ScoreboardReader.Score;
+import de.jpx3.intave.packet.plib.reader.ScoreboardReader.Team;
 import de.jpx3.intave.share.ScoreboardObjectiveAction;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
@@ -38,11 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.RESET_SCORE;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.SCOREBOARD_DISPLAY_OBJECTIVE;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.SCOREBOARD_OBJECTIVE;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.SCOREBOARD_SCORE;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.SCOREBOARD_TEAM;
+import static de.jpx3.intave.packet.contract.PacketType.Server.*;
 
 /** Mirrors outgoing scoreboard packets and samples the visible sidebar. */
 public final class PlayerScoreboardRecorder extends Module {

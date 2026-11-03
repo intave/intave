@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.filter;
 
 import com.comphenix.protocol.PacketType;
@@ -8,9 +19,9 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.cleanup.ShutdownTasks;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.EntityIterable;
-import de.jpx3.intave.packet.reader.PacketReaders;
-import de.jpx3.intave.packet.reader.SubstitutionIterator;
+import de.jpx3.intave.packet.plib.reader.EntityIterable;
+import de.jpx3.intave.packet.plib.reader.PacketReaders;
+import de.jpx3.intave.packet.plib.reader.SubstitutionIterator;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
@@ -26,8 +37,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Server.*;
 
 public final class EntityIdFilter extends Filter {
   private static final String RELOAD_METADATA_KEY = "intave::DT6NyhqI5bPJTeQRO6KWl1hNcEy2YZAp";

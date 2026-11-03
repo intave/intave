@@ -13,14 +13,15 @@ package de.jpx3.intave.packet.wire.player.input;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerInputPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.Input;
 import io.netty.buffer.ByteBuf;
 
-/** The two analog axes must survive a round trip without being quantized to keys. */
-public final class LegacyPlayerInputWirePacket implements MutablePlayerInputPacket {
+/**
+ * The two analog axes must survive a round trip without being quantized to keys.
+ */
+public final class LegacyPlayerInputWirePacket extends MutableWirePacket implements MutablePlayerInputPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, LegacyPlayerInputWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.FLOAT, LegacyPlayerInputWirePacket::strafe,
@@ -41,11 +42,6 @@ public final class LegacyPlayerInputWirePacket implements MutablePlayerInputPack
 		this.strafe = strafe;
 		this.forward = forward;
 		this.flags = flags;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return state == ConnectionState.PLAY && packetId == PacketId.Client.PLAYER_INPUT;
 	}
 
 	@Override
@@ -79,21 +75,25 @@ public final class LegacyPlayerInputWirePacket implements MutablePlayerInputPack
 
 	@Override
 	public void setAxes(float forward, float strafe) {
+		markMutated();
 		this.forward = forward;
 		this.strafe = strafe;
 	}
 
 	@Override
 	public void setJumping(boolean jumping) {
+		markMutated();
 		flags = jumping ? flags | 1 : flags & ~1;
 	}
 
 	public void setDismounting(boolean dismounting) {
+		markMutated();
 		flags = dismounting ? flags | 2 : flags & ~2;
 	}
 
 	@Override
 	public void setInput(Input input) {
+		markMutated();
 		setAxes(input.forward(), input.strafe());
 		setJumping(input.jumpKey());
 		setDismounting(input.sneakKey());

@@ -11,12 +11,11 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.PlayerInfoPacket;
+import de.jpx3.intave.packet.contract.immutable.PlayerInfoPacket;
 import de.jpx3.intave.share.PlayerInfoAction;
 
 import java.util.Set;
 
-public interface MutablePlayerInfoPacket extends PlayerInfoPacket, MutablePlayerAddressed {
-
+public interface MutablePlayerInfoPacket extends PlayerInfoPacket, MutablePlayerAddressed, Mutable {
 	void setActions(Set<PlayerInfoAction> actions);
 }

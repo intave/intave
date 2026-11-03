@@ -44,6 +44,7 @@ public final class BlockDigLegacyPositionWirePacket extends BlockDigWirePacket {
 
 	@Override
 	public void setAction(PlayerDigAction value) {
+		markMutated();
 		if (value == PlayerDigAction.CHANGE_DESTROY_DIRECTION) {
 			throw new IllegalArgumentException("Direction changes require 26.3");
 		} else {

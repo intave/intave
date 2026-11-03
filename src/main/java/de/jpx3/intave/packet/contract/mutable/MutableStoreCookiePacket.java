@@ -11,8 +11,8 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.StoreCookiePacket;
+import de.jpx3.intave.packet.contract.immutable.StoreCookiePacket;
 
-public interface MutableStoreCookiePacket extends StoreCookiePacket, MutableCookiePacket {
+public interface MutableStoreCookiePacket extends StoreCookiePacket, MutableCookiePacket, Mutable {
 	void setPayload(byte[] payload);
 }

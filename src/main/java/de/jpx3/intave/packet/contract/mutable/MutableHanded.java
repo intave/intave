@@ -12,11 +12,10 @@
 package de.jpx3.intave.packet.contract.mutable;
 
 import de.jpx3.intave.annotate.Nullable;
-import de.jpx3.intave.packet.contract.Handed;
+import de.jpx3.intave.packet.contract.immutable.Handed;
 import de.jpx3.intave.share.PlayerHand;
 
-public interface MutableHanded extends Handed {
-
+public interface MutableHanded extends Handed, Mutable {
 	void setHand(@Nullable PlayerHand hand);
 
 	default void clearHand() {

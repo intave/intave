@@ -13,12 +13,11 @@ package de.jpx3.intave.packet.wire.recipe.place;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutablePlaceRecipePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class PlaceRecipeWirePacket implements MutablePlaceRecipePacket {
+public class PlaceRecipeWirePacket extends MutableWirePacket implements MutablePlaceRecipePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PlaceRecipeWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, PlaceRecipeWirePacket::containerId,
@@ -50,6 +49,7 @@ public class PlaceRecipeWirePacket implements MutablePlaceRecipePacket {
 
 	@Override
 	public void setContainerId(int value) {
+		markMutated();
 		this.containerId = value;
 	}
 
@@ -60,12 +60,8 @@ public class PlaceRecipeWirePacket implements MutablePlaceRecipePacket {
 
 	@Override
 	public void setPlaceAll(boolean value) {
+		markMutated();
 		this.placeAll = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.AUTO_RECIPE);
 	}
 
 	@Override

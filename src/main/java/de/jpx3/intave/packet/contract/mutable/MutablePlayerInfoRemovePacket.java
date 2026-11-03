@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.PlayerInfoRemovePacket;
+import de.jpx3.intave.packet.contract.immutable.PlayerInfoRemovePacket;
 
-public interface MutablePlayerInfoRemovePacket extends PlayerInfoRemovePacket, MutablePlayerAddressed {
+public interface MutablePlayerInfoRemovePacket extends PlayerInfoRemovePacket, MutablePlayerAddressed, Mutable {
 }

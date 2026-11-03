@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.SingleEntityAddressed;
+import de.jpx3.intave.packet.contract.immutable.SingleEntityAddressed;
 
-public interface MutableSingleEntityAddressed extends SingleEntityAddressed, MutablePrimaryEntityAddressed {
-
+public interface MutableSingleEntityAddressed extends SingleEntityAddressed, MutablePrimaryEntityAddressed, Mutable {
 	@Override
 	default void setEntityId(int index, int entityId) {
 		if (index != 0) {

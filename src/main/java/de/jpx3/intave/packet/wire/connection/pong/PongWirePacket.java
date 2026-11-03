@@ -13,12 +13,11 @@ package de.jpx3.intave.packet.wire.connection.pong;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutablePongPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class PongWirePacket implements MutablePongPacket {
+public class PongWirePacket extends MutableWirePacket implements MutablePongPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PongWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.INTEGER, PongWirePacket::id,
@@ -42,13 +41,8 @@ public class PongWirePacket implements MutablePongPacket {
 
 	@Override
 	public void setId(int value) {
+		markMutated();
 		this.id = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY || state == ConnectionState.CONFIGURATION)
-				&& (packetId == PacketId.Client.PONG);
 	}
 
 	@Override

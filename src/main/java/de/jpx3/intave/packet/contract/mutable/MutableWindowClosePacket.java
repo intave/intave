@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.WindowClosePacket;
+import de.jpx3.intave.packet.contract.immutable.WindowClosePacket;
 
-public interface MutableWindowClosePacket extends WindowClosePacket, MutableWindowAddressed {
+public interface MutableWindowClosePacket extends WindowClosePacket, MutableWindowAddressed, Mutable {
 }

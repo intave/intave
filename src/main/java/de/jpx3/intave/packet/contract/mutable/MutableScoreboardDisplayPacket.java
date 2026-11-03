@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.ScoreboardDisplayPacket;
+import de.jpx3.intave.packet.contract.immutable.ScoreboardDisplayPacket;
 
-public interface MutableScoreboardDisplayPacket extends ScoreboardDisplayPacket, MutableObjectiveAddressed {
-
+public interface MutableScoreboardDisplayPacket extends ScoreboardDisplayPacket, MutableObjectiveAddressed, Mutable {
 	void setDisplaySlot(String displaySlot);
 
 	default void clearDisplaySlot() {

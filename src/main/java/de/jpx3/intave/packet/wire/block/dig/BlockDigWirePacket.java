@@ -13,15 +13,14 @@ package de.jpx3.intave.packet.wire.block.dig;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableBlockDigPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.PlayerDigAction;
 import io.netty.buffer.ByteBuf;
 
-public class BlockDigWirePacket implements MutableBlockDigPacket {
+public class BlockDigWirePacket extends MutableWirePacket implements MutableBlockDigPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, BlockDigWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, BlockDigWirePacket::actionId,
@@ -40,8 +39,8 @@ public class BlockDigWirePacket implements MutableBlockDigPacket {
 	}
 
 	public BlockDigWirePacket(
-			int actionId, BlockPosition blockPosition,
-			Direction direction, int sequence
+		int actionId, BlockPosition blockPosition,
+		Direction direction, int sequence
 	) {
 		this.actionId = actionId;
 		this.blockPosition = blockPosition;
@@ -56,6 +55,7 @@ public class BlockDigWirePacket implements MutableBlockDigPacket {
 
 	@Override
 	public void setBlockPosition(BlockPosition value) {
+		markMutated();
 		this.blockPosition = value;
 	}
 
@@ -66,12 +66,8 @@ public class BlockDigWirePacket implements MutableBlockDigPacket {
 
 	@Override
 	public void setDirection(Direction value) {
+		markMutated();
 		this.direction = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.BLOCK_DIG);
 	}
 
 	@Override
@@ -88,6 +84,7 @@ public class BlockDigWirePacket implements MutableBlockDigPacket {
 
 	@Override
 	public void setAction(PlayerDigAction value) {
+		markMutated();
 		if (value == PlayerDigAction.CHANGE_DESTROY_DIRECTION) {
 			actionId = 1;
 		} else {

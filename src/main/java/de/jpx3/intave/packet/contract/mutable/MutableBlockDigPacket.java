@@ -11,12 +11,11 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.BlockDigPacket;
+import de.jpx3.intave.packet.contract.immutable.BlockDigPacket;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.PlayerDigAction;
 
-public interface MutableBlockDigPacket extends BlockDigPacket, MutableBlockAddressed {
-
+public interface MutableBlockDigPacket extends BlockDigPacket, MutableBlockAddressed, Mutable {
 	void setAction(PlayerDigAction action);
 
 	void setDirection(Direction direction);

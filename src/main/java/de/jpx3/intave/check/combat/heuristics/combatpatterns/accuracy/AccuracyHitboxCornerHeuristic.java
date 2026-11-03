@@ -21,7 +21,7 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.tracker.entity.Entity;
-import de.jpx3.intave.packet.reader.EntityUseReader;
+import de.jpx3.intave.packet.plib.reader.EntityUseReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AttackMetadata;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
@@ -29,7 +29,7 @@ import de.jpx3.intave.user.meta.MovementMetadata;
 
 import java.util.List;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
 
 public final class AccuracyHitboxCornerHeuristic extends ClassicHeuristic<AccuracyHitboxCornerHeuristic.PerfectAttackMeta> {
   public AccuracyHitboxCornerHeuristic(Heuristics parentCheck) {

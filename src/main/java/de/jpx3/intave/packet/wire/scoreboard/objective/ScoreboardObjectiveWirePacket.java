@@ -13,46 +13,42 @@ package de.jpx3.intave.packet.wire.scoreboard.objective;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableScoreboardObjectivePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.ScoreboardObjectiveAction;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Objects;
 
-public class ScoreboardObjectiveWirePacket implements MutableScoreboardObjectivePacket {
+public class ScoreboardObjectiveWirePacket extends MutableWirePacket implements MutableScoreboardObjectivePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, ScoreboardObjectiveWirePacket> STREAM_CODEC =
-			StreamCodec.of(
-					(output, packet) -> {
-						ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.objectiveName);
-						output.writeByte(packet.action.id());
-						if (packet.action != ScoreboardObjectiveAction.REMOVE) {
-							ByteBufStreamCodecs.stringCodec(262144).encode(output, packet.display);
-							ByteBufStreamCodecs.VARINT.encode(output, packet.renderType);
-						}
-					},
-					input -> {
-						String display = "\"\"";
-						int renderType = 0;
+		StreamCodec.of(
+			(output, packet) -> {
+				ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.objectiveName);
+				output.writeByte(packet.action.id());
+				if (packet.action != ScoreboardObjectiveAction.REMOVE) {
+					ByteBufStreamCodecs.stringCodec(262144).encode(output, packet.display);
+					ByteBufStreamCodecs.VARINT.encode(output, packet.renderType);
+				}
+			},
+			input -> {
+				String display = "\"\"";
+				int renderType = 0;
 
-						String objectiveName = ByteBufStreamCodecs.VARINT_STRING.decode(input);
-						ScoreboardObjectiveAction action =
-								ScoreboardObjectiveAction.byId(input.readUnsignedByte());
-						if (action != ScoreboardObjectiveAction.REMOVE) {
-							display = ByteBufStreamCodecs.stringCodec(262144).decode(input);
-							renderType = ByteBufStreamCodecs.VARINT.decode(input);
-						}
-						return new ScoreboardObjectiveWirePacket(
-								objectiveName, action, display, renderType);
-					});
+				String objectiveName = ByteBufStreamCodecs.VARINT_STRING.decode(input);
+				ScoreboardObjectiveAction action =
+					ScoreboardObjectiveAction.byId(input.readUnsignedByte());
+				if (action != ScoreboardObjectiveAction.REMOVE) {
+					display = ByteBufStreamCodecs.stringCodec(262144).decode(input);
+					renderType = ByteBufStreamCodecs.VARINT.decode(input);
+				}
+				return new ScoreboardObjectiveWirePacket(
+					objectiveName, action, display, renderType);
+			});
 
-	protected String objectiveName = "";
-
-	protected ScoreboardObjectiveAction action = ScoreboardObjectiveAction.CREATE;
-
-	protected String display = "\"\"";
-
+	protected String objectiveName;
+	protected ScoreboardObjectiveAction action;
+	protected String display;
 	protected int renderType;
 
 	public ScoreboardObjectiveWirePacket() {
@@ -60,10 +56,10 @@ public class ScoreboardObjectiveWirePacket implements MutableScoreboardObjective
 	}
 
 	public ScoreboardObjectiveWirePacket(
-			String objectiveName,
-			ScoreboardObjectiveAction action,
-			String display,
-			int renderType) {
+		String objectiveName,
+		ScoreboardObjectiveAction action,
+		String display,
+		int renderType) {
 		this.objectiveName = objectiveName;
 		this.action = action;
 		this.display = display;
@@ -77,6 +73,7 @@ public class ScoreboardObjectiveWirePacket implements MutableScoreboardObjective
 
 	@Override
 	public void setObjectiveName(String value) {
+		markMutated();
 		this.objectiveName = value;
 	}
 
@@ -87,12 +84,8 @@ public class ScoreboardObjectiveWirePacket implements MutableScoreboardObjective
 
 	@Override
 	public void setAction(ScoreboardObjectiveAction value) {
+		markMutated();
 		this.action = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.SCOREBOARD_OBJECTIVE);
 	}
 
 	@Override
@@ -107,6 +100,7 @@ public class ScoreboardObjectiveWirePacket implements MutableScoreboardObjective
 
 	@Override
 	public void setDisplayNameJson(String value) {
+		markMutated();
 		display = Objects.requireNonNull(value);
 	}
 }

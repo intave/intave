@@ -21,44 +21,44 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class EntityRelativeMoveLookByteDeltasWirePacket extends EntityRelativeMoveLookWirePacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, EntityRelativeMoveLookByteDeltasWirePacket>
-			STREAM_CODEC =
-					StreamCodec.of(
-							(output, packet) -> {
-								ByteBufStreamCodecs.VARINT.encode(output, packet.entityId);
-								EntityRelativeMoveStep step = packet.steps.get(0);
-								RawVector3d.BYTE_DELTA_STREAM_CODEC.encode(output, step.delta());
-								output.writeByte(packet.yaw);
-								output.writeByte(packet.pitch);
-								output.writeBoolean(packet.onGround);
-							},
-							input -> {
-								int entityId = ByteBufStreamCodecs.VARINT.decode(input);
-								RawVector3d delta = RawVector3d.BYTE_DELTA_STREAM_CODEC.decode(input);
-								List<EntityRelativeMoveStep> steps = new ArrayList<>();
-								steps.add(new Step(delta, 0));
-								byte yaw = input.readByte();
-								byte pitch = input.readByte();
-								boolean onGround = input.readBoolean();
-								return new EntityRelativeMoveLookByteDeltasWirePacket(
-										entityId, steps, yaw, pitch, onGround);
-							});
+	public static final StreamCodec<ByteBuf, ByteBuf, EntityRelativeMoveLookByteDeltasWirePacket> STREAM_CODEC =
+		StreamCodec.of(
+			(output, packet) -> {
+				ByteBufStreamCodecs.VARINT.encode(output, packet.entityId);
+				EntityRelativeMoveStep step = packet.steps.get(0);
+				RawVector3d.BYTE_DELTA_STREAM_CODEC.encode(output, step.delta());
+				output.writeByte(packet.yaw);
+				output.writeByte(packet.pitch);
+				output.writeBoolean(packet.onGround);
+			},
+			input -> {
+				int entityId = ByteBufStreamCodecs.VARINT.decode(input);
+				RawVector3d delta = RawVector3d.BYTE_DELTA_STREAM_CODEC.decode(input);
+				List<EntityRelativeMoveStep> steps = new ArrayList<>();
+				steps.add(new Step(delta, 0));
+				byte yaw = input.readByte();
+				byte pitch = input.readByte();
+				boolean onGround = input.readBoolean();
+				return new EntityRelativeMoveLookByteDeltasWirePacket(
+					entityId, steps, yaw, pitch, onGround);
+			});
 
 	public EntityRelativeMoveLookByteDeltasWirePacket() {
 		super();
 	}
 
 	public EntityRelativeMoveLookByteDeltasWirePacket(
-			int entityId,
-			List<EntityRelativeMoveStep> steps,
-			byte yaw,
-			byte pitch,
-			boolean onGround) {
+		int entityId,
+		List<EntityRelativeMoveStep> steps,
+		byte yaw,
+		byte pitch,
+		boolean onGround) {
 		super(entityId, onGround, false, steps, yaw, pitch);
 	}
 
 	@Override
 	public void setSteps(List<? extends EntityRelativeMoveStep> value) {
+		markMutated();
 		if (value.size() != 1 || value.get(0).delayTicks() != 0) {
 			throw new IllegalArgumentException("Linear movement requires one step without a delay");
 		}

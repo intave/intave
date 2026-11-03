@@ -59,7 +59,7 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
 import de.jpx3.intave.module.nayoro.Inventory;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.packet.injection.InjectionService;
-import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.packet.plib.reader.PacketReaders;
 import de.jpx3.intave.player.FaultKicks;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.player.fake.IdentifierReserve;

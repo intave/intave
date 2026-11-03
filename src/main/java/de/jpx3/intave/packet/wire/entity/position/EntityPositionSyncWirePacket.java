@@ -13,14 +13,13 @@ package de.jpx3.intave.packet.wire.entity.position;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityPositionPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
 import io.netty.buffer.ByteBuf;
 
-public final class EntityPositionSyncWirePacket implements MutableEntityPositionPacket {
+public final class EntityPositionSyncWirePacket extends MutableWirePacket implements MutableEntityPositionPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityPositionSyncWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, EntityPositionSyncWirePacket::entityId,
@@ -53,32 +52,47 @@ public final class EntityPositionSyncWirePacket implements MutableEntityPosition
 
 	@Override
 	public void setEntityId(int value) {
+		markMutated();
 		entityId = value;
 	}
 
 	@Override
 	public Position position() {
-		return path.endPosition();
+		Position position = path.endPosition();
+		if (!position.isImmutable()) markMutated();
+		return position;
 	}
 
 	@Override
 	public void setPosition(Position value) {
+		markMutated();
 		path = path.withEndPosition(value);
 	}
 
 	public EntityPositionPath path() {
+		if (path != null) {
+			for (EntityPositionPath.Step step : path.steps()) {
+				if (!step.position().isImmutable()) {
+					markMutated();
+					break;
+				}
+			}
+		}
 		return path;
 	}
 
 	public void setPath(EntityPositionPath value) {
+		markMutated();
 		path = value;
 	}
 
 	public Rotation rotation() {
+		markMutated();
 		return rotation;
 	}
 
 	public void setRotation(Rotation value) {
+		markMutated();
 		rotation = value;
 	}
 
@@ -87,12 +101,8 @@ public final class EntityPositionSyncWirePacket implements MutableEntityPosition
 	}
 
 	public void setOnGround(boolean value) {
+		markMutated();
 		onGround = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return state == ConnectionState.PLAY && packetId == PacketId.Server.ENTITY_POSITION_SYNC;
 	}
 
 	@Override

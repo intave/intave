@@ -15,12 +15,12 @@ import de.jpx3.intave.check.PlayerCheckPart;
 import de.jpx3.intave.check.world.PlacementAnalysis;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.BlockInteractionReader;
+import de.jpx3.intave.packet.plib.reader.BlockInteractionReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
 
 public final class Constraint extends PlayerCheckPart<PlacementAnalysis> {
 	private int backwardsStreak;

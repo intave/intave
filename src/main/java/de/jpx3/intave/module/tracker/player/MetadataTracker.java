@@ -19,7 +19,7 @@ import de.jpx3.intave.block.access.VolatileBlockAccess;
 import de.jpx3.intave.check.movement.physics.environment.Pose;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.EntityMetadataReader;
+import de.jpx3.intave.packet.plib.reader.EntityMetadataReader;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
@@ -28,7 +28,7 @@ import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
 import org.bukkit.Material;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.ENTITY_METADATA;
+import static de.jpx3.intave.packet.contract.PacketType.Server.ENTITY_METADATA;
 
 public final class MetadataTracker extends Module {
 

@@ -11,11 +11,10 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.GameStateChangePacket;
+import de.jpx3.intave.packet.contract.immutable.GameStateChangePacket;
 import de.jpx3.intave.share.GameStateChangeType;
 
-public interface MutableGameStateChangePacket extends GameStateChangePacket {
-
+public interface MutableGameStateChangePacket extends GameStateChangePacket, Mutable {
 	void setType(GameStateChangeType type);
 
 	void setValue(float value);

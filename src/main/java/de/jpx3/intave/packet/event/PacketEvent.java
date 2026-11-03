@@ -12,42 +12,39 @@
 package de.jpx3.intave.packet.event;
 
 import de.jpx3.intave.packet.PacketDirection;
-import de.jpx3.intave.packet.contract.Packet;
+import de.jpx3.intave.packet.contract.PacketContract;
+import de.jpx3.intave.packet.contract.mutable.Mutable;
 import de.jpx3.intave.user.User;
 import org.bukkit.event.Cancellable;
 
-public class PacketEvent implements AutoCloseable, Cancellable {
+public abstract class PacketEvent implements AutoCloseable, Cancellable {
 	private User user;
-	private PacketDirection direction;
-	private Packet packet;
+	private PacketContract packet;
 	private boolean dirty;
 	private boolean cancelled;
 
-	public PacketEvent(User user, PacketDirection direction, Packet packet) {
+	public PacketEvent(User user, PacketContract packet) {
 		this.user = user;
-		this.direction = direction;
 		this.packet = packet;
 	}
+
+	public abstract PacketDirection direction();
 
 	public User user() {
 		return user;
 	}
 
-	public PacketDirection direction() {
-		return direction;
-	}
-
-	public Packet packet() {
+	public PacketContract packet() {
 		return packet;
 	}
 
-	public void setPacket(Packet newPacket) {
+	public void setPacket(PacketContract newPacket) {
 		this.packet = newPacket;
 		this.dirty = true;
 	}
 
 	public boolean dirty() {
-		return dirty;
+		return dirty || packet instanceof Mutable && ((Mutable) packet).couldHaveBeenMutated();
 	}
 
 	@Override
@@ -63,7 +60,6 @@ public class PacketEvent implements AutoCloseable, Cancellable {
 	@Override
 	public void close() throws Exception {
 		user = null;
-		direction = null;
 		packet = null;
 	}
 }

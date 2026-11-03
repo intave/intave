@@ -13,12 +13,11 @@ package de.jpx3.intave.packet.wire.tabcomplete.request;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableTabCompleteRequestPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class TabCompleteRequestWirePacket implements MutableTabCompleteRequestPacket {
+public class TabCompleteRequestWirePacket extends MutableWirePacket implements MutableTabCompleteRequestPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, TabCompleteRequestWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, TabCompleteRequestWirePacket::transactionId,
@@ -26,8 +25,7 @@ public class TabCompleteRequestWirePacket implements MutableTabCompleteRequestPa
 			TabCompleteRequestWirePacket::new
 		);
 
-	protected String text = "";
-
+	protected String text;
 	protected int transactionId;
 
 	public TabCompleteRequestWirePacket() {
@@ -46,12 +44,8 @@ public class TabCompleteRequestWirePacket implements MutableTabCompleteRequestPa
 
 	@Override
 	public void setText(String value) {
+		markMutated();
 		this.text = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.TAB_COMPLETE_IN);
 	}
 
 	@Override

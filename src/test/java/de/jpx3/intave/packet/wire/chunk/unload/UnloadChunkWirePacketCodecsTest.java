@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.wire.chunk.unload;
 
-import de.jpx3.intave.module.linker.packet.PacketId;
+import de.jpx3.intave.packet.contract.PacketType;
 import org.junit.jupiter.api.Test;
 
 import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
@@ -22,9 +22,9 @@ final class UnloadChunkWirePacketCodecsTest {
 	@Test
 	void unloadingChunksUsesTheCorrectCoordinateOrder() {
 		UnloadChunkWirePacket old =
-				roundTrip(CLIENTBOUND, PacketId.Server.UNLOAD_CHUNK, 763, b -> b.writeInt(12).writeInt(34));
+				roundTrip(CLIENTBOUND, PacketType.Server.UNLOAD_CHUNK, 763, b -> b.writeInt(12).writeInt(34));
 		UnloadChunkWirePacket modern =
-				roundTrip(CLIENTBOUND, PacketId.Server.UNLOAD_CHUNK, 764, b -> b.writeInt(34).writeInt(12));
+				roundTrip(CLIENTBOUND, PacketType.Server.UNLOAD_CHUNK, 764, b -> b.writeInt(34).writeInt(12));
 		assertEquals(12, old.chunkX(0));
 		assertEquals(12, modern.chunkX(0));
 		assertEquals(34, modern.chunkZ(0));

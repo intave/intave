@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.ExperiencePacket;
+import de.jpx3.intave.packet.contract.immutable.ExperiencePacket;
 
-public interface MutableExperiencePacket extends ExperiencePacket {
-
+public interface MutableExperiencePacket extends ExperiencePacket, Mutable {
 	void setProgress(float progress);
 
 	void setTotalExperience(int totalExperience);

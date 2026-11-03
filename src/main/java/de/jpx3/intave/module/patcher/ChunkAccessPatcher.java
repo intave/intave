@@ -20,8 +20,8 @@ import de.jpx3.intave.klass.Lookup;
 import de.jpx3.intave.klass.rewrite.PatchyLoadingInjector;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.world.chunk.ChunkProviderServerAccess;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import org.bukkit.Bukkit;
@@ -61,7 +61,7 @@ public final class ChunkAccessPatcher extends Module {
   }
 
   @PacketSubscription(
-    packetsOut = PacketId.Server.RESPAWN
+    packetsOut = PacketType.Server.RESPAWN
   )
   public void patchRespawnWorldType(PacketEvent event) {
     if (!MinecraftVersions.VER1_16_0.atOrAbove()) {

@@ -12,12 +12,11 @@
 package de.jpx3.intave.packet.contract.mutable;
 
 import de.jpx3.intave.annotate.Nullable;
-import de.jpx3.intave.packet.contract.BlockInteractionPacket;
+import de.jpx3.intave.packet.contract.immutable.BlockInteractionPacket;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.RawVector3d;
 
-public interface MutableBlockInteractionPacket extends BlockInteractionPacket, MutableBlockAddressed, MutableHanded, MutableSequenced {
-
+public interface MutableBlockInteractionPacket extends BlockInteractionPacket, MutableBlockAddressed, MutableHanded, MutableSequenced, Mutable {
 	void setDirection(@Nullable Direction direction);
 
 	void setHitPosition(@Nullable RawVector3d hitPosition);

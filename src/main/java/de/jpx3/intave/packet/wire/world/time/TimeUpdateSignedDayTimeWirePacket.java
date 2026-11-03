@@ -15,32 +15,23 @@ import de.jpx3.intave.codec.StreamCodec;
 import io.netty.buffer.ByteBuf;
 
 public final class TimeUpdateSignedDayTimeWirePacket extends TimeUpdateWirePacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, TimeUpdateSignedDayTimeWirePacket>
-			STREAM_CODEC =
-					StreamCodec.of(
-							(output, packet) -> {
-								output.writeLong(packet.gameTime);
-								// Legacy clients observe frozen zero as tick 1, encoded using the
-								// -1 sentinel.
-								long wireTime =
-										!packet.ticking
-												? (packet.dayTime == 0 ? -1 : -packet.dayTime)
-												: packet.dayTime;
-								output.writeLong(wireTime);
-							},
-							input -> {
-								long gameTime = input.readLong();
-								long wireTime = input.readLong();
-
-								if (wireTime == Long.MIN_VALUE) {
-									throw new IllegalArgumentException(
-											"Legacy day time magnitude exceeds Long.MAX_VALUE");
-								}
-								long dayTime = Math.abs(wireTime);
-								boolean ticking = wireTime >= 0;
-								return new TimeUpdateSignedDayTimeWirePacket(
-										gameTime, dayTime, ticking);
-							});
+	public static final StreamCodec<ByteBuf, ByteBuf, TimeUpdateSignedDayTimeWirePacket> STREAM_CODEC =
+		StreamCodec.of((output, packet) -> {
+		output.writeLong(packet.gameTime);
+		// Legacy clients observe frozen zero as tick 1, encoded using the
+		// -1 sentinel.
+		long wireTime = !packet.ticking ? (packet.dayTime == 0 ? -1 : -packet.dayTime) : packet.dayTime;
+		output.writeLong(wireTime);
+	}, input -> {
+		long gameTime = input.readLong();
+		long wireTime = input.readLong();
+		if (wireTime == Long.MIN_VALUE) {
+			throw new IllegalArgumentException("Legacy day time magnitude exceeds Long.MAX_VALUE");
+		}
+		long dayTime = Math.abs(wireTime);
+		boolean ticking = wireTime >= 0;
+		return new TimeUpdateSignedDayTimeWirePacket(gameTime, dayTime, ticking);
+	});
 
 	public TimeUpdateSignedDayTimeWirePacket() {
 		super();
@@ -52,9 +43,9 @@ public final class TimeUpdateSignedDayTimeWirePacket extends TimeUpdateWirePacke
 
 	@Override
 	public void setDayTime(long value) {
+		markMutated();
 		if (value < 0) {
-			throw new IllegalArgumentException(
-					"Legacy day time must be nonnegative; use setTicking to freeze it");
+			throw new IllegalArgumentException("Legacy day time must be nonnegative; use setTicking to freeze it");
 		}
 		dayTime = value;
 	}

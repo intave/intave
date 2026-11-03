@@ -12,7 +12,7 @@
 package de.jpx3.intave.packet.wire.client.settings;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
-import de.jpx3.intave.module.linker.packet.PacketId;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.mutable.MutableClientSettingsPacket;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +28,7 @@ final class ClientSettingsWirePacketCodecsTest {
 			MutableClientSettingsPacket packet =
 					roundTrip(
 							SERVERBOUND,
-							PacketId.Client.SETTINGS,
+							PacketType.Client.SETTINGS,
 							protocol,
 							b -> {
 								ByteBufStreamCodecs.VARINT_STRING.encode(b, "en_us");

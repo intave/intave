@@ -11,8 +11,8 @@
 
 package de.jpx3.intave.packet;
 
-// Before = what we see from client & server
-// After = what we send to client & server
+// Before = what we see from client/server
+// After = what we send to client/server
 public enum ListenerSlot {
 	BEFORE_IMMUTABLE,
 	PROCESSING_MUTABLE,

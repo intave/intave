@@ -12,11 +12,10 @@
 package de.jpx3.intave.packet.contract.mutable;
 
 import de.jpx3.intave.annotate.Nullable;
-import de.jpx3.intave.packet.contract.BlockAddressed;
+import de.jpx3.intave.packet.contract.immutable.BlockAddressed;
 import de.jpx3.intave.share.BlockPosition;
 
-public interface MutableBlockAddressed extends BlockAddressed {
-
+public interface MutableBlockAddressed extends BlockAddressed, Mutable {
 	void setBlockPosition(@Nullable BlockPosition position);
 
 	default void clearBlockPosition() {

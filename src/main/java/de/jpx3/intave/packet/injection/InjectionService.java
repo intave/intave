@@ -19,20 +19,20 @@ import de.jpx3.intave.packet.injection.pipeline.PipelineInjector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class InjectionService {
-  private final AtomicBoolean closed = new AtomicBoolean();
-  private final PipelineInjector pipelineInjector;
+	private final AtomicBoolean closed = new AtomicBoolean();
+	private final PipelineInjector pipelineInjector;
 
-  public InjectionService() {
-    PipelineInjector fallback = new DefaultPipelineInjector();
-    this.pipelineInjector = new PaperPipelineInjector(fallback);
-    this.pipelineInjector.inject();
-    ShutdownTasks.add(this::close);
-  }
+	public InjectionService() {
+		PipelineInjector fallback = new DefaultPipelineInjector();
+		this.pipelineInjector = new PaperPipelineInjector(fallback);
+		this.pipelineInjector.inject();
+		ShutdownTasks.add(this::close);
+	}
 
-  private void close() {
-    if (!this.closed.compareAndSet(false, true)) {
-      return;
-    }
-    this.pipelineInjector.uninject();
-  }
+	private void close() {
+		if (!this.closed.compareAndSet(false, true)) {
+			return;
+		}
+		this.pipelineInjector.uninject();
+	}
 }

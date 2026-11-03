@@ -12,8 +12,8 @@
 package de.jpx3.intave.check.combat;
 
 import com.comphenix.protocol.PacketType;
-import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.check.MetaCheck;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.module.Modules;
@@ -22,8 +22,8 @@ import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.player.AbilityTracker;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
-import de.jpx3.intave.packet.reader.EntityUseReader;
-import de.jpx3.intave.packet.reader.PlayerMoveReader;
+import de.jpx3.intave.packet.plib.reader.EntityUseReader;
+import de.jpx3.intave.packet.plib.reader.PlayerMoveReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
@@ -33,7 +33,7 @@ import org.bukkit.event.Cancellable;
 import java.util.ArrayList;
 import java.util.List;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
 
 public final class ClickSpeedLimiter extends MetaCheck<ClickSpeedLimiter.ClickSpeedLimiterMeta> {
 	private final int maxCPS;

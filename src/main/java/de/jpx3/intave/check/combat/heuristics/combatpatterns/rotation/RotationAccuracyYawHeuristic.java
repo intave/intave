@@ -33,9 +33,9 @@ import java.util.List;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 import static de.jpx3.intave.math.MathHelper.averageOf;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.LOOK;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION_LOOK;
 import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.DMG_LIGHT;
+import static de.jpx3.intave.packet.contract.PacketType.Client.LOOK;
+import static de.jpx3.intave.packet.contract.PacketType.Client.POSITION_LOOK;
 
 public final class RotationAccuracyYawHeuristic extends ClassicHeuristic<RotationAccuracyYawHeuristic.RotationAccuracyHeuristicMeta> {
 

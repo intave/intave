@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.ClientCommandPacket;
+import de.jpx3.intave.packet.contract.immutable.ClientCommandPacket;
 import de.jpx3.intave.share.ClientCommand;
 
-public interface MutableClientCommandPacket extends ClientCommandPacket {
-
+public interface MutableClientCommandPacket extends ClientCommandPacket, Mutable {
 	void setCommand(ClientCommand command);
 }

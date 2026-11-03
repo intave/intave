@@ -21,7 +21,7 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.violation.Violation;
-import de.jpx3.intave.packet.reader.EntityUseReader;
+import de.jpx3.intave.packet.plib.reader.EntityUseReader;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
@@ -33,12 +33,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static de.jpx3.intave.share.EntityUseAction.ATTACK;
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.ATTACK_ENTITY;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.USE_ENTITY;
 import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.ATTACK_ENTITY;
+import static de.jpx3.intave.packet.contract.PacketType.Client.USE_ENTITY;
+import static de.jpx3.intave.share.EntityUseAction.ATTACK;
 
 public class MicroBlink extends MetaCheckPart<Timer, MicroBlink.MicroBlinkMeta> {
   public MicroBlink(Timer parentCheck) {

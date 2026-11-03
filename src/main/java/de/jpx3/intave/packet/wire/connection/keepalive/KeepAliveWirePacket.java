@@ -13,19 +13,18 @@ package de.jpx3.intave.packet.wire.connection.keepalive;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableKeepAlivePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class KeepAliveWirePacket implements MutableKeepAlivePacket {
+public class KeepAliveWirePacket extends MutableWirePacket implements MutableKeepAlivePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, KeepAliveWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.LONG, KeepAliveWirePacket::id,
 			KeepAliveWirePacket::new
 		);
 
-	protected long id = 0;
+	protected long id;
 
 	public KeepAliveWirePacket() {
 		this(0);
@@ -42,13 +41,8 @@ public class KeepAliveWirePacket implements MutableKeepAlivePacket {
 
 	@Override
 	public void setId(long value) {
+		markMutated();
 		this.id = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY || state == ConnectionState.CONFIGURATION)
-				&& (packetId == PacketId.Client.KEEP_ALIVE || packetId == PacketId.Server.KEEP_ALIVE);
 	}
 
 	@Override

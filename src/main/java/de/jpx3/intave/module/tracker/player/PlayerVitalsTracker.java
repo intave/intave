@@ -17,14 +17,14 @@ import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.ExperienceReader;
-import de.jpx3.intave.packet.reader.UpdateHealthReader;
+import de.jpx3.intave.packet.plib.reader.ExperienceReader;
+import de.jpx3.intave.packet.plib.reader.UpdateHealthReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;
 
 import static de.jpx3.intave.module.feedback.FeedbackOptions.SELF_SYNCHRONIZATION;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.EXPERIENCE;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.UPDATE_HEALTH;
+import static de.jpx3.intave.packet.contract.PacketType.Server.EXPERIENCE;
+import static de.jpx3.intave.packet.contract.PacketType.Server.UPDATE_HEALTH;
 
 public final class PlayerVitalsTracker extends Module {
   @PacketSubscription(

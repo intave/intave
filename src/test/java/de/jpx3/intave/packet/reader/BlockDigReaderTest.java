@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.packet.reader;
 
+import de.jpx3.intave.packet.plib.reader.BlockDigReader;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Direction;
 import org.junit.jupiter.api.Test;

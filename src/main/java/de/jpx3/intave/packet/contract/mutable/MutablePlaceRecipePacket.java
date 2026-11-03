@@ -11,9 +11,8 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.PlaceRecipePacket;
+import de.jpx3.intave.packet.contract.immutable.PlaceRecipePacket;
 
-public interface MutablePlaceRecipePacket extends PlaceRecipePacket, MutableWindowAddressed {
-
+public interface MutablePlaceRecipePacket extends PlaceRecipePacket, MutableWindowAddressed, Mutable {
 	void setPlaceAll(boolean placeAll);
 }

@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.EffectAddressed;
+import de.jpx3.intave.packet.contract.immutable.EffectAddressed;
 import de.jpx3.intave.share.MinecraftKey;
 
-public interface MutableEffectAddressed extends EffectAddressed, MutableSingleEntityAddressed {
-
+public interface MutableEffectAddressed extends EffectAddressed, MutableSingleEntityAddressed, Mutable {
 	void setEffectType(MinecraftKey effectType);
 }

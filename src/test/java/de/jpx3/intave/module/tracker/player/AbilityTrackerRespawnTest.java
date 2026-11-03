@@ -14,7 +14,7 @@ package de.jpx3.intave.module.tracker.player;
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.module.feedback.EmptyFeedbackCallback;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.AbilityOutReader;
+import de.jpx3.intave.packet.plib.reader.AbilityOutReader;
 import de.jpx3.intave.test.FakePlayerFactory;
 import de.jpx3.intave.test.FakeWorldFactory;
 import de.jpx3.intave.user.User;
@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.Queue;
 import java.util.UUID;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.RESPAWN;
+import static de.jpx3.intave.packet.contract.PacketType.Server.RESPAWN;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.*;
 import static org.junit.jupiter.api.Assertions.*;
 

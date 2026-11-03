@@ -12,10 +12,9 @@
 package de.jpx3.intave.packet.contract.mutable;
 
 import de.jpx3.intave.annotate.Nullable;
-import de.jpx3.intave.packet.contract.ObjectiveAddressed;
+import de.jpx3.intave.packet.contract.immutable.ObjectiveAddressed;
 
-public interface MutableObjectiveAddressed extends ObjectiveAddressed {
-
+public interface MutableObjectiveAddressed extends ObjectiveAddressed, Mutable {
 	void setObjectiveName(@Nullable String name);
 
 	default void clearObjectiveName() {

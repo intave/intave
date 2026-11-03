@@ -11,11 +11,10 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.EntityEquipmentPacket;
+import de.jpx3.intave.packet.contract.immutable.EntityEquipmentPacket;
 
 import java.util.List;
 
-public interface MutableEntityEquipmentPacket extends EntityEquipmentPacket, MutableSingleEntityAddressed {
-
+public interface MutableEntityEquipmentPacket extends EntityEquipmentPacket, MutableSingleEntityAddressed, Mutable {
 	void setEquipment(List<? extends Entry> equipment);
 }

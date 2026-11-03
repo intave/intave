@@ -11,9 +11,8 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.EntityStatusPacket;
+import de.jpx3.intave.packet.contract.immutable.EntityStatusPacket;
 
-public interface MutableEntityStatusPacket extends EntityStatusPacket, MutableSingleEntityAddressed {
-
+public interface MutableEntityStatusPacket extends EntityStatusPacket, MutableSingleEntityAddressed, Mutable {
 	void setStatus(byte status);
 }

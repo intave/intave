@@ -13,45 +13,44 @@ package de.jpx3.intave.packet.wire.player.action;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerActionPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.PlayerAction;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Arrays;
 
-import static de.jpx3.intave.packet.wire.WireCodecs.enumValue;
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.enumValue;
 
-public class PlayerActionWirePacket implements MutablePlayerActionPacket {
+public class PlayerActionWirePacket extends MutableWirePacket implements MutablePlayerActionPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PlayerActionWirePacket> STREAM_CODEC =
-			StreamCodec.of(
-					(output, packet) -> {
-						ByteBufStreamCodecs.VARINT.encode(output, packet.entityId);
-						PlayerAction[] actions = PlayerActionWirePacket.MODERN;
-						PlayerAction value =
-								packet.playerAction.isStartSneak()
-										? PlayerAction.PRESS_SHIFT_KEY
-										: packet.playerAction.isStopSneak()
-												? PlayerAction.RELEASE_SHIFT_KEY
-												: packet.playerAction == PlayerAction.RIDING_JUMP
-														? PlayerAction.START_RIDING_JUMP
-														: packet.playerAction;
-						int actionId = Arrays.asList(actions).indexOf(value);
-						if (actionId < 0)
-							throw new IllegalArgumentException(
-									"Unsupported player action: " + packet.playerAction);
-						ByteBufStreamCodecs.VARINT.encode(output, actionId);
-						ByteBufStreamCodecs.VARINT.encode(output, packet.data);
-					},
-					input -> {
-						int entityId = ByteBufStreamCodecs.VARINT.decode(input);
-						int actionId = ByteBufStreamCodecs.VARINT.decode(input);
-						PlayerAction playerAction =
-								enumValue(PlayerActionWirePacket.MODERN, actionId);
-						int data = ByteBufStreamCodecs.VARINT.decode(input);
-						return new PlayerActionWirePacket(entityId, playerAction, data);
-					});
+		StreamCodec.of(
+			(output, packet) -> {
+				ByteBufStreamCodecs.VARINT.encode(output, packet.entityId);
+				PlayerAction[] actions = PlayerActionWirePacket.MODERN;
+				PlayerAction value =
+					packet.playerAction.isStartSneak()
+						? PlayerAction.PRESS_SHIFT_KEY
+						: packet.playerAction.isStopSneak()
+						? PlayerAction.RELEASE_SHIFT_KEY
+						: packet.playerAction == PlayerAction.RIDING_JUMP
+						? PlayerAction.START_RIDING_JUMP
+						: packet.playerAction;
+				int actionId = Arrays.asList(actions).indexOf(value);
+				if (actionId < 0)
+					throw new IllegalArgumentException(
+						"Unsupported player action: " + packet.playerAction);
+				ByteBufStreamCodecs.VARINT.encode(output, actionId);
+				ByteBufStreamCodecs.VARINT.encode(output, packet.data);
+			},
+			input -> {
+				int entityId = ByteBufStreamCodecs.VARINT.decode(input);
+				int actionId = ByteBufStreamCodecs.VARINT.decode(input);
+				PlayerAction playerAction =
+					enumValue(PlayerActionWirePacket.MODERN, actionId);
+				int data = ByteBufStreamCodecs.VARINT.decode(input);
+				return new PlayerActionWirePacket(entityId, playerAction, data);
+			});
 
 	protected static final PlayerAction[] PRE_1_9 = {
 		PlayerAction.PRESS_SHIFT_KEY,
@@ -106,12 +105,8 @@ public class PlayerActionWirePacket implements MutablePlayerActionPacket {
 
 	@Override
 	public void setPlayerAction(PlayerAction value) {
+		markMutated();
 		this.playerAction = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.ENTITY_ACTION_IN);
 	}
 
 	@Override

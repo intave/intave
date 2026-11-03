@@ -12,13 +12,8 @@
 package de.jpx3.intave.module.tracker.player;
 
 
-import de.jpx3.intave.share.PlayerDigAction;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import de.jpx3.intave.packet.reader.BlockInteractionReader;
-import de.jpx3.intave.packet.reader.BlockDigReader;
-import de.jpx3.intave.packet.reader.HeldItemSlotReader;
-import de.jpx3.intave.packet.reader.WindowItemReader;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.module.Module;
@@ -27,8 +22,13 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.packet.plib.PacketSender;
+import de.jpx3.intave.packet.plib.reader.BlockDigReader;
+import de.jpx3.intave.packet.plib.reader.BlockInteractionReader;
+import de.jpx3.intave.packet.plib.reader.HeldItemSlotReader;
+import de.jpx3.intave.packet.plib.reader.WindowItemReader;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.share.BlockPosition;
+import de.jpx3.intave.share.PlayerDigAction;
 import de.jpx3.intave.share.PlayerHand;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
@@ -46,10 +46,8 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.Map;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.HELD_ITEM_SLOT_OUT;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.SET_SLOT;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.WINDOW_ITEMS;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Server.*;
 
 public class PlayerHandTracker extends Module {
 //  @BukkitEventSubscription

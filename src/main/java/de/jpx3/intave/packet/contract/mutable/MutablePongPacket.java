@@ -11,9 +11,8 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.PongPacket;
+import de.jpx3.intave.packet.contract.immutable.PongPacket;
 
-public interface MutablePongPacket extends PongPacket {
-
+public interface MutablePongPacket extends PongPacket, Mutable {
 	void setId(int id);
 }

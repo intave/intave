@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.combat.clickpatterns;
 
 
@@ -7,15 +18,15 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
-import de.jpx3.intave.packet.reader.BlockDigReader;
-import de.jpx3.intave.packet.reader.EntityUseReader;
-import de.jpx3.intave.user.User;
+import de.jpx3.intave.packet.plib.reader.BlockDigReader;
+import de.jpx3.intave.packet.plib.reader.EntityUseReader;
 import de.jpx3.intave.share.PlayerDigAction;
+import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 
-import static de.jpx3.intave.share.PlayerDigAction.DROP_ITEM;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
+import static de.jpx3.intave.share.PlayerDigAction.DROP_ITEM;
 
 public abstract class TickAlignedHistoryBlueprint<E extends TickAlignedMeta> extends Blueprint<ClickPatterns, TickAlignedMeta, E> {
   private int historyLength = 80;

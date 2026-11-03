@@ -20,22 +20,13 @@ import io.netty.buffer.ByteBuf;
 
 import java.util.Objects;
 
-/** The action and its dependent fields, between the entity ID and any trailing flags. */
 final class EntityUseInteraction {
 	private static final StreamCodec<ByteBuf, ByteBuf, PlayerHand> HAND_CODEC =
-			ByteBufStreamCodecs.enumCodec(PlayerHand.values())
-					.beforeAndAfter(
-							hand -> hand,
-							hand -> {
-								if (hand == null)
-									throw new IllegalArgumentException(
-											"Entity interaction requires a hand");
-								return hand;
-							});
+		ByteBufStreamCodecs.enumCodec(PlayerHand.values()).throwIfNullEncoded();
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityUseInteraction> STREAM_CODEC =
-			codec(HAND_CODEC);
+		codec(HAND_CODEC);
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityUseInteraction>
-			WITHOUT_HAND_STREAM_CODEC = codec(StreamCodec.of((PlayerHand) null));
+		WITHOUT_HAND_STREAM_CODEC = codec(StreamCodec.of(null));
 
 	private final EntityUseAction action;
 	private final RawVector3d hitPosition;
@@ -60,30 +51,31 @@ final class EntityUseInteraction {
 	}
 
 	private static StreamCodec<ByteBuf, ByteBuf, EntityUseInteraction> codec(
-			StreamCodec<ByteBuf, ByteBuf, PlayerHand> handCodec) {
+		StreamCodec<ByteBuf, ByteBuf, PlayerHand> handCodec
+	) {
 		return StreamCodec.of(
-				(output, interaction) -> {
-					if (interaction.action == EntityUseAction.INTERACT_AT
-							&& interaction.hitPosition == null) {
-						throw new IllegalArgumentException("INTERACT_AT requires a hit position");
-					}
-					EntityUseAction.WIRE_STREAM_CODEC.encode(output, interaction.action);
-					if (interaction.action == EntityUseAction.INTERACT_AT) {
-						RawVector3d.FLOAT_STREAM_CODEC.encode(output, interaction.hitPosition);
-					}
-					if (interaction.action != EntityUseAction.ATTACK) {
-						handCodec.encode(output, interaction.hand);
-					}
-				},
-				input -> {
-					EntityUseAction action = EntityUseAction.WIRE_STREAM_CODEC.decode(input);
-					RawVector3d hitPosition =
-							action == EntityUseAction.INTERACT_AT
-									? RawVector3d.FLOAT_STREAM_CODEC.decode(input)
-									: null;
-					PlayerHand hand =
-							action != EntityUseAction.ATTACK ? handCodec.decode(input) : null;
-					return new EntityUseInteraction(action, hitPosition, hand);
-				});
+			(output, interaction) -> {
+				if (interaction.action == EntityUseAction.INTERACT_AT
+					&& interaction.hitPosition == null) {
+					throw new IllegalArgumentException("INTERACT_AT requires a hit position");
+				}
+				EntityUseAction.WIRE_STREAM_CODEC.encode(output, interaction.action);
+				if (interaction.action == EntityUseAction.INTERACT_AT) {
+					RawVector3d.FLOAT_STREAM_CODEC.encode(output, interaction.hitPosition);
+				}
+				if (interaction.action != EntityUseAction.ATTACK) {
+					handCodec.encode(output, interaction.hand);
+				}
+			},
+			input -> {
+				EntityUseAction action = EntityUseAction.WIRE_STREAM_CODEC.decode(input);
+				RawVector3d hitPosition =
+					action == EntityUseAction.INTERACT_AT
+						? RawVector3d.FLOAT_STREAM_CODEC.decode(input)
+						: null;
+				PlayerHand hand =
+					action != EntityUseAction.ATTACK ? handCodec.decode(input) : null;
+				return new EntityUseInteraction(action, hitPosition, hand);
+			});
 	}
 }

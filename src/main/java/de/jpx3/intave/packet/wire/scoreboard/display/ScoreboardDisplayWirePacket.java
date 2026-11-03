@@ -13,26 +13,25 @@ package de.jpx3.intave.packet.wire.scoreboard.display;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableScoreboardDisplayPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Arrays;
 
-public class ScoreboardDisplayWirePacket implements MutableScoreboardDisplayPacket {
+public class ScoreboardDisplayWirePacket extends MutableWirePacket implements MutableScoreboardDisplayPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, ScoreboardDisplayWirePacket> STREAM_CODEC =
-			StreamCodec.of(
-					(output, packet) -> {
-						ByteBufStreamCodecs.VARINT.encode(output, packet.slot);
-						ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.objectiveName == null ? "" : packet.objectiveName);
-					},
-					input -> {
-						int slot = ByteBufStreamCodecs.VARINT.decode(input);
-						String name = ByteBufStreamCodecs.VARINT_STRING.decode(input);
-						String objectiveName = name.isEmpty() ? null : name;
-						return new ScoreboardDisplayWirePacket(slot, objectiveName);
-					});
+		StreamCodec.of(
+			(output, packet) -> {
+				ByteBufStreamCodecs.VARINT.encode(output, packet.slot);
+				ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.objectiveName == null ? "" : packet.objectiveName);
+			},
+			input -> {
+				int slot = ByteBufStreamCodecs.VARINT.decode(input);
+				String name = ByteBufStreamCodecs.VARINT_STRING.decode(input);
+				String objectiveName = name.isEmpty() ? null : name;
+				return new ScoreboardDisplayWirePacket(slot, objectiveName);
+			});
 
 	protected static final String[] COLORS = {
 		"black",
@@ -53,8 +52,7 @@ public class ScoreboardDisplayWirePacket implements MutableScoreboardDisplayPack
 		"white"
 	};
 
-	protected String objectiveName = null;
-
+	protected String objectiveName;
 	protected int slot;
 
 	public ScoreboardDisplayWirePacket() {
@@ -73,12 +71,8 @@ public class ScoreboardDisplayWirePacket implements MutableScoreboardDisplayPack
 
 	@Override
 	public void setObjectiveName(String value) {
+		markMutated();
 		this.objectiveName = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.SCOREBOARD_DISPLAY_OBJECTIVE);
 	}
 
 	@Override
@@ -96,6 +90,7 @@ public class ScoreboardDisplayWirePacket implements MutableScoreboardDisplayPack
 
 	@Override
 	public void setDisplaySlot(String value) {
+		markMutated();
 		if (value.equals("list")) slot = 0;
 		else if (value.equals("sidebar")) slot = 1;
 		else if (value.equals("below_name")) slot = 2;

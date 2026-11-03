@@ -50,6 +50,7 @@ public final class EntityUseWirePacket extends EntityUseWithHandWirePacket {
 	}
 
 	public void setSecondary(boolean value) {
+		markMutated();
 		secondary = value;
 	}
 

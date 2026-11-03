@@ -50,6 +50,7 @@ public class ChatWithPreviewWirePacket extends ChatUnsignedWirePacket {
 	}
 
 	public void setTimestamp(Instant value) {
+		markMutated();
 		timestamp = value;
 	}
 
@@ -58,14 +59,17 @@ public class ChatWithPreviewWirePacket extends ChatUnsignedWirePacket {
 	}
 
 	public void setSalt(long value) {
+		markMutated();
 		salt = value;
 	}
 
 	public byte[] signature() {
+		markMutated();
 		return signature;
 	}
 
 	public void setSignature(byte[] value) {
+		markMutated();
 		signature = value;
 	}
 
@@ -74,6 +78,7 @@ public class ChatWithPreviewWirePacket extends ChatUnsignedWirePacket {
 	}
 
 	public void setSignedPreview(boolean value) {
+		markMutated();
 		signedPreview = value;
 	}
 

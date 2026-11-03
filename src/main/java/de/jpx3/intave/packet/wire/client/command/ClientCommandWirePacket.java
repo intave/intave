@@ -13,13 +13,12 @@ package de.jpx3.intave.packet.wire.client.command;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableClientCommandPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.ClientCommand;
 import io.netty.buffer.ByteBuf;
 
-public class ClientCommandWirePacket implements MutableClientCommandPacket {
+public class ClientCommandWirePacket extends MutableWirePacket implements MutableClientCommandPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, ClientCommandWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.enumCodec(ClientCommand.values()), ClientCommandWirePacket::command,
@@ -43,12 +42,8 @@ public class ClientCommandWirePacket implements MutableClientCommandPacket {
 
 	@Override
 	public void setCommand(ClientCommand value) {
+		markMutated();
 		this.command = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.CLIENT_COMMAND);
 	}
 
 	@Override

@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.WindowBulkItemsPacket;
+import de.jpx3.intave.packet.contract.immutable.WindowBulkItemsPacket;
 
-public interface MutableWindowBulkItemsPacket extends WindowBulkItemsPacket, MutableWindowItemsPacket {
+public interface MutableWindowBulkItemsPacket extends WindowBulkItemsPacket, MutableWindowItemsPacket, Mutable {
 }

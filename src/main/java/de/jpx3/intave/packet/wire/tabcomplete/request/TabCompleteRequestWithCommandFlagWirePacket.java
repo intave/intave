@@ -17,7 +17,7 @@ import de.jpx3.intave.share.BlockPosition;
 import io.netty.buffer.ByteBuf;
 
 public final class TabCompleteRequestWithCommandFlagWirePacket
-		extends TabCompleteRequestWithTargetWirePacket {
+	extends TabCompleteRequestWithTargetWirePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, TabCompleteRequestWithCommandFlagWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT_STRING, TabCompleteRequestWirePacket::text,
@@ -33,7 +33,7 @@ public final class TabCompleteRequestWithCommandFlagWirePacket
 	}
 
 	public TabCompleteRequestWithCommandFlagWirePacket(
-			String text, boolean assumeCommand, BlockPosition target) {
+		String text, boolean assumeCommand, BlockPosition target) {
 		super(text, target);
 		this.assumeCommand = assumeCommand;
 	}

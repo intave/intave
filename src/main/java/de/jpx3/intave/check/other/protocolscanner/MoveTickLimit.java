@@ -21,7 +21,7 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.event.Cancellable;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
 
 public final class MoveTickLimit extends PlayerCheckPart<ProtocolScanner> {
   private final int violationLevel;

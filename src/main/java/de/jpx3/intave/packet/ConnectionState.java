@@ -12,5 +12,9 @@
 package de.jpx3.intave.packet;
 
 public enum ConnectionState {
-	HANDSHAKING, STATUS, LOGIN, PLAY, CONFIGURATION
+	HANDSHAKING,
+	STATUS,
+	LOGIN,
+	PLAY,
+	CONFIGURATION
 }

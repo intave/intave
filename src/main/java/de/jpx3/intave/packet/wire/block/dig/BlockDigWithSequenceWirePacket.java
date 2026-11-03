@@ -33,7 +33,7 @@ public final class BlockDigWithSequenceWirePacket extends BlockDigWirePacket {
 	}
 
 	public BlockDigWithSequenceWirePacket(
-			int actionId, BlockPosition blockPosition, Direction direction, int sequence) {
+		int actionId, BlockPosition blockPosition, Direction direction, int sequence) {
 		super(actionId, blockPosition, direction, sequence);
 	}
 
@@ -46,6 +46,7 @@ public final class BlockDigWithSequenceWirePacket extends BlockDigWirePacket {
 
 	@Override
 	public void setAction(PlayerDigAction value) {
+		markMutated();
 		if (value == PlayerDigAction.CHANGE_DESTROY_DIRECTION) {
 			throw new IllegalArgumentException("Direction changes require 26.3");
 		} else {

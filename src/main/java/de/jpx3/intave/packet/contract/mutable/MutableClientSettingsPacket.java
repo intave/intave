@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.ClientSettingsPacket;
+import de.jpx3.intave.packet.contract.immutable.ClientSettingsPacket;
 
-public interface MutableClientSettingsPacket extends ClientSettingsPacket {
-
+public interface MutableClientSettingsPacket extends ClientSettingsPacket, Mutable {
 	void setLocale(String locale);
 
 	void setMainHand(MainHand hand);

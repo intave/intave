@@ -49,18 +49,22 @@ public final class ChatWithLastSeenWirePacket extends ChatWithPreviewWirePacket 
 	}
 
 	public List<ChatLastSeenMessage> lastSeen() {
+		markMutated();
 		return lastSeen;
 	}
 
 	public void setLastSeen(List<ChatLastSeenMessage> value) {
+		markMutated();
 		lastSeen = value;
 	}
 
 	public ChatLastSeenMessage lastReceived() {
+		markMutated();
 		return lastReceived;
 	}
 
 	public void setLastReceived(ChatLastSeenMessage value) {
+		markMutated();
 		lastReceived = value;
 	}
 

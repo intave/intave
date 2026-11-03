@@ -13,13 +13,12 @@ package de.jpx3.intave.packet.wire.world.gamestate;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableGameStateChangePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.GameStateChangeType;
 import io.netty.buffer.ByteBuf;
 
-public class GameStateChangeWirePacket implements MutableGameStateChangePacket {
+public class GameStateChangeWirePacket extends MutableWirePacket implements MutableGameStateChangePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, GameStateChangeWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.UNSIGNED_BYTE, GameStateChangeWirePacket::typeId,
@@ -27,8 +26,7 @@ public class GameStateChangeWirePacket implements MutableGameStateChangePacket {
 			GameStateChangeWirePacket::new
 		);
 
-	protected float value = 0;
-
+	protected float value;
 	private int typeId;
 
 	public GameStateChangeWirePacket() {
@@ -47,12 +45,8 @@ public class GameStateChangeWirePacket implements MutableGameStateChangePacket {
 
 	@Override
 	public void setValue(float value) {
+		markMutated();
 		this.value = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.GAME_STATE_CHANGE);
 	}
 
 	@Override
@@ -67,6 +61,7 @@ public class GameStateChangeWirePacket implements MutableGameStateChangePacket {
 
 	@Override
 	public void setType(GameStateChangeType type) {
+		markMutated();
 		typeId = type.id();
 	}
 

@@ -20,75 +20,75 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 abstract class ChannelPipelineInjector implements PipelineInjector {
-  private final Set<Binding> connectionBindings = ConcurrentHashMap.newKeySet();
-  private final AtomicBoolean injected = new AtomicBoolean();
-  private final AtomicBoolean closed = new AtomicBoolean();
+	private final Set<Binding> connectionBindings = ConcurrentHashMap.newKeySet();
+	private final AtomicBoolean injected = new AtomicBoolean();
+	private final AtomicBoolean closed = new AtomicBoolean();
 
-  @Override
-  public final void inject() {
-    if (this.closed.get()) {
-      throw new IllegalStateException(getClass().getSimpleName() + " is closed");
-    }
-    if (!this.injected.compareAndSet(false, true)) {
-      return;
-    }
-    try {
-      injectServerChannels();
-    } catch (RuntimeException failure) {
-      uninject();
-      throw failure;
-    }
-  }
+	@Override
+	public final void inject() {
+		if (this.closed.get()) {
+			throw new IllegalStateException(getClass().getSimpleName() + " is closed");
+		}
+		if (!this.injected.compareAndSet(false, true)) {
+			return;
+		}
+		try {
+			injectServerChannels();
+		} catch (RuntimeException failure) {
+			uninject();
+			throw failure;
+		}
+	}
 
-  protected abstract void injectServerChannels();
+	protected abstract void injectServerChannels();
 
-  @Override
-  public final void uninject() {
-    if (!this.closed.compareAndSet(false, true)) {
-      return;
-    }
-    try {
-      uninjectServerChannels();
-    } finally {
-      for (Binding binding : this.connectionBindings) {
-        binding.close();
-      }
-      this.connectionBindings.clear();
-    }
-  }
+	@Override
+	public final void uninject() {
+		if (!this.closed.compareAndSet(false, true)) {
+			return;
+		}
+		try {
+			uninjectServerChannels();
+		} finally {
+			for (Binding binding : this.connectionBindings) {
+				binding.close();
+			}
+			this.connectionBindings.clear();
+		}
+	}
 
-  protected abstract void uninjectServerChannels();
+	protected abstract void uninjectServerChannels();
 
-  protected final boolean isClosed() {
-    return this.closed.get();
-  }
+	protected final boolean isClosed() {
+		return this.closed.get();
+	}
 
-  protected final void injectConnectionAfterInitializers(Channel channel) {
-    channel.eventLoop().execute(() -> injectConnection(channel));
-  }
+	protected final void injectConnectionAfterInitializers(Channel channel) {
+		channel.eventLoop().execute(() -> injectConnection(channel));
+	}
 
-  protected final void injectConnection(Channel channel) {
-    if (this.closed.get() || !channel.isOpen()) {
-      return;
-    }
+	protected final void injectConnection(Channel channel) {
+		if (this.closed.get() || !channel.isOpen()) {
+			return;
+		}
 
-    final Binding binding;
-    try {
-      binding = Binding.bind(channel);
-    } catch (RuntimeException failure) {
-      IntaveLogger.logger().error("Failed to inject connection into channel " + channel, failure);
-      return;
-    }
+		final Binding binding;
+		try {
+			binding = Binding.bind(channel);
+		} catch (RuntimeException failure) {
+			IntaveLogger.logger().error("Failed to inject connection into channel " + channel, failure);
+			return;
+		}
 
-    this.connectionBindings.add(binding);
-    if (this.closed.get()) {
-      this.connectionBindings.remove(binding);
-      binding.close();
-      return;
-    }
-    channel.closeFuture().addListener(ignored -> {
-      this.connectionBindings.remove(binding);
-      binding.close();
-    });
-  }
+		this.connectionBindings.add(binding);
+		if (this.closed.get()) {
+			this.connectionBindings.remove(binding);
+			binding.close();
+			return;
+		}
+		channel.closeFuture().addListener(ignored -> {
+			this.connectionBindings.remove(binding);
+			binding.close();
+		});
+	}
 }

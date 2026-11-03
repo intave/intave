@@ -15,8 +15,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import de.jpx3.intave.access.IntaveInternalException;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.resource.Resource;
 import de.jpx3.intave.resource.Resources;
 
@@ -27,14 +27,14 @@ import java.util.Map;
 
 public final class PacketIdRegistries {
   private static final String DIRECTORY = "registry/packet_ids/";
-  private static final PacketIdRegistry<PacketId.Client> SERVERBOUND;
-  private static final PacketIdRegistry<PacketId.Server> CLIENTBOUND;
+  private static final PacketIdRegistry<PacketType.Client> SERVERBOUND;
+  private static final PacketIdRegistry<PacketType.Server> CLIENTBOUND;
 
   static {
-    Map<Integer, Map<ConnectionState, Map<PacketId.Client, Integer>>> serverbound = new HashMap<>();
-    Map<Integer, Map<ConnectionState, Map<PacketId.Server, Integer>>> clientbound = new HashMap<>();
-    Map<String, PacketId.Client> clientTypes = indexTypes(PacketId.Client.values());
-    Map<String, PacketId.Server> serverTypes = indexTypes(PacketId.Server.values());
+    Map<Integer, Map<ConnectionState, Map<PacketType.Client, Integer>>> serverbound = new HashMap<>();
+    Map<Integer, Map<ConnectionState, Map<PacketType.Server, Integer>>> clientbound = new HashMap<>();
+    Map<String, PacketType.Client> clientTypes = indexTypes(PacketType.Client.values());
+    Map<String, PacketType.Server> serverTypes = indexTypes(PacketType.Server.values());
     JsonObject names = readVersionedObject("type_to_name.json").getAsJsonObject("states");
     for (JsonElement entry : readJson("index.json").getAsJsonArray()) {
       String version = entry.getAsString();
@@ -51,8 +51,8 @@ public final class PacketIdRegistries {
       serverbound.put(protocol, readStates(states, "serverbound", null, null, clientTypes));
       clientbound.put(protocol, readStates(states, "clientbound", null, null, serverTypes));
     }
-    SERVERBOUND = new PacketIdRegistry<>(PacketId.Client.class, serverbound);
-    CLIENTBOUND = new PacketIdRegistry<>(PacketId.Server.class, clientbound);
+    SERVERBOUND = new PacketIdRegistry<>(PacketType.Client.class, serverbound);
+    CLIENTBOUND = new PacketIdRegistry<>(PacketType.Server.class, clientbound);
   }
 
   public static void setup() {
@@ -62,15 +62,15 @@ public final class PacketIdRegistries {
   private PacketIdRegistries() {
   }
 
-  public static PacketIdRegistry<PacketId.Client> serverbound() {
+  public static PacketIdRegistry<PacketType.Client> serverbound() {
     return SERVERBOUND;
   }
 
-  public static PacketIdRegistry<PacketId.Server> clientbound() {
+  public static PacketIdRegistry<PacketType.Server> clientbound() {
     return CLIENTBOUND;
   }
 
-  private static <T extends Enum<T> & PacketId> Map<ConnectionState, Map<T, Integer>> readStates(
+  private static <T extends Enum<T> & PacketType> Map<ConnectionState, Map<T, Integer>> readStates(
     JsonObject source, String direction, JsonObject names, String version, Map<String, T> packetTypes
   ) {
     Map<ConnectionState, Map<T, Integer>> states = new EnumMap<>(ConnectionState.class);
@@ -97,7 +97,7 @@ public final class PacketIdRegistries {
     return states;
   }
 
-  private static <T extends PacketId> Map<String, T> indexTypes(T[] values) {
+  private static <T extends PacketType> Map<String, T> indexTypes(T[] values) {
     Map<String, T> types = new HashMap<>();
     for (T value : values) {
       T previous = types.put(value.registryName(), value);
@@ -108,7 +108,7 @@ public final class PacketIdRegistries {
     return types;
   }
 
-  private static <T extends PacketId> T requireType(Map<String, T> types, String name) {
+  private static <T extends PacketType> T requireType(Map<String, T> types, String name) {
     T type = types.get(name);
     if (type == null) {
       throw new IntaveInternalException("Unknown packet registry name " + name);

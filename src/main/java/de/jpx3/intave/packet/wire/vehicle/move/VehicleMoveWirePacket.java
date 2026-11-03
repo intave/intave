@@ -13,14 +13,13 @@ package de.jpx3.intave.packet.wire.vehicle.move;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerMovePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
 import io.netty.buffer.ByteBuf;
 
-public class VehicleMoveWirePacket implements MutablePlayerMovePacket {
+public class VehicleMoveWirePacket extends MutableWirePacket implements MutablePlayerMovePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, VehicleMoveWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			Position.STREAM_CODEC, VehicleMoveWirePacket::position,
@@ -29,10 +28,8 @@ public class VehicleMoveWirePacket implements MutablePlayerMovePacket {
 			VehicleMoveWirePacket::new
 		);
 
-	protected Position position = new Position();
-
-	protected Rotation rotation = new Rotation(0, 0);
-
+	protected Position position;
+	protected Rotation rotation;
 	protected boolean onGround;
 
 	public VehicleMoveWirePacket() {
@@ -47,27 +44,26 @@ public class VehicleMoveWirePacket implements MutablePlayerMovePacket {
 
 	@Override
 	public Position position() {
+		if (position != null && !position.isImmutable()) markMutated();
 		return this.position;
 	}
 
 	@Override
 	public void setPosition(Position value) {
+		markMutated();
 		this.position = value;
 	}
 
 	@Override
 	public Rotation rotation() {
+		markMutated();
 		return this.rotation;
 	}
 
 	@Override
 	public void setRotation(Rotation value) {
+		markMutated();
 		this.rotation = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.VEHICLE_MOVE);
 	}
 
 	@Override
@@ -92,11 +88,13 @@ public class VehicleMoveWirePacket implements MutablePlayerMovePacket {
 
 	@Override
 	public void setOnGround(boolean value) {
+		markMutated();
 		onGround = value;
 	}
 
 	@Override
 	public void setHorizontalCollision(boolean value) {
+		markMutated();
 		throw new IllegalStateException("Vehicle packets have no horizontal collision flag");
 	}
 }

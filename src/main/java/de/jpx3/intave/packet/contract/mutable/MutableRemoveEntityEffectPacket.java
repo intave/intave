@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.RemoveEntityEffectPacket;
+import de.jpx3.intave.packet.contract.immutable.RemoveEntityEffectPacket;
 
-public interface MutableRemoveEntityEffectPacket extends RemoveEntityEffectPacket, MutableEffectAddressed {
+public interface MutableRemoveEntityEffectPacket extends RemoveEntityEffectPacket, MutableEffectAddressed, Mutable {
 }

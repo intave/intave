@@ -12,7 +12,7 @@
 package de.jpx3.intave.packet.wire.world.time;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
-import de.jpx3.intave.module.linker.packet.PacketId;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.wire.WirePackets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -27,13 +27,13 @@ final class TimeUpdateWirePacketCodecsTest {
 	@Test
 	void timeUpdatesStopBeforeRegistryBackedClocks() {
 		TimeUpdateWirePacket legacy =
-				roundTrip(CLIENTBOUND, PacketId.Server.UPDATE_TIME, 767, b -> b.writeLong(42).writeLong(-6000));
+				roundTrip(CLIENTBOUND, PacketType.Server.UPDATE_TIME, 767, b -> b.writeLong(42).writeLong(-6000));
 		assertEquals(6000L, legacy.dayTime());
 		assertFalse(legacy.ticking());
 		TimeUpdateWirePacket modern =
 				roundTrip(
 						CLIENTBOUND,
-						PacketId.Server.UPDATE_TIME,
+						PacketType.Server.UPDATE_TIME,
 						774,
 						b -> b.writeLong(42).writeLong(6000).writeBoolean(false));
 		assertEquals(6000L, modern.dayTime());
@@ -44,14 +44,14 @@ final class TimeUpdateWirePacketCodecsTest {
 	void timeFieldsCanBeMutatedWithoutRecordingTypes() {
 		for (int protocol : new int[] {767, 768}) {
 			TimeUpdateWirePacket packet =
-					WirePackets.createPlayPacket(CLIENTBOUND, PacketId.Server.UPDATE_TIME, protocol);
+					WirePackets.createPlayPacket(CLIENTBOUND, PacketType.Server.UPDATE_TIME, protocol);
 			packet.setGameTime(42);
 			packet.setDayTime(6000);
 			packet.setTicking(false);
 			ByteBuf output = Unpooled.buffer();
 			try {
 				WirePackets.encodePacket(
-						CLIENTBOUND, PLAY, PacketId.Server.UPDATE_TIME, protocol, packet, output);
+						CLIENTBOUND, PLAY, PacketType.Server.UPDATE_TIME, protocol, packet, output);
 				ByteBufStreamCodecs.VARINT.decode(output);
 				assertEquals(42, output.readLong());
 				assertEquals(protocol < 768 ? -6000 : 6000, output.readLong());
@@ -70,7 +70,7 @@ final class TimeUpdateWirePacketCodecsTest {
 		packet.setTicking(false);
 		ByteBuf output = Unpooled.buffer();
 		try {
-			WirePackets.encodePacket(CLIENTBOUND, PLAY, PacketId.Server.UPDATE_TIME, 767, packet, output);
+			WirePackets.encodePacket(CLIENTBOUND, PLAY, PacketType.Server.UPDATE_TIME, 767, packet, output);
 			ByteBuf payload = output.duplicate();
 			ByteBufStreamCodecs.VARINT.decode(payload);
 			payload.readLong();

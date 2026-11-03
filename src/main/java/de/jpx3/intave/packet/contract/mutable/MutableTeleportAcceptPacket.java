@@ -11,11 +11,10 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.TeleportAcceptPacket;
+import de.jpx3.intave.packet.contract.immutable.TeleportAcceptPacket;
 import de.jpx3.intave.share.PositionAndRotation;
 
-public interface MutableTeleportAcceptPacket extends TeleportAcceptPacket {
-
+public interface MutableTeleportAcceptPacket extends TeleportAcceptPacket, Mutable {
 	void setTeleportId(int teleportId);
 
 	void setPositionAndRotation(PositionAndRotation positionAndRotation);

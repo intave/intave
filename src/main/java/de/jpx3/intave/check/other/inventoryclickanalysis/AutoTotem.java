@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.other.inventoryclickanalysis;
 
 import de.jpx3.intave.block.type.MaterialSearch;
@@ -7,7 +18,7 @@ import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
-import de.jpx3.intave.packet.reader.WindowClickReader;
+import de.jpx3.intave.packet.plib.reader.WindowClickReader;
 import de.jpx3.intave.share.WindowClickType;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
@@ -17,7 +28,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.WINDOW_CLICK;
+import static de.jpx3.intave.packet.contract.PacketType.Client.WINDOW_CLICK;
 import static de.jpx3.intave.share.WindowClickType.PICKUP;
 
 public final class AutoTotem extends MetaCheckPart<InventoryClickAnalysis, AutoTotem.AutoTotemMeta> {

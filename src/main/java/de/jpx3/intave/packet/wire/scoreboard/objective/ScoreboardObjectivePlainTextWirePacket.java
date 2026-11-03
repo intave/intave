@@ -17,31 +17,30 @@ import de.jpx3.intave.share.ScoreboardObjectiveAction;
 import io.netty.buffer.ByteBuf;
 
 public final class ScoreboardObjectivePlainTextWirePacket extends ScoreboardObjectiveWirePacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, ScoreboardObjectivePlainTextWirePacket>
-			STREAM_CODEC =
-					StreamCodec.of(
-							(output, packet) -> {
-								ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.objectiveName);
-								output.writeByte(packet.action.id());
-								if (packet.action != ScoreboardObjectiveAction.REMOVE) {
-									ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.legacyName);
-									ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.legacyRenderType);
-								}
-							},
-							input -> {
-								String legacyName = "";
-								String legacyRenderType = "integer";
+	public static final StreamCodec<ByteBuf, ByteBuf, ScoreboardObjectivePlainTextWirePacket> STREAM_CODEC =
+		StreamCodec.of(
+			(output, packet) -> {
+				ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.objectiveName);
+				output.writeByte(packet.action.id());
+				if (packet.action != ScoreboardObjectiveAction.REMOVE) {
+					ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.legacyName);
+					ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.legacyRenderType);
+				}
+			},
+			input -> {
+				String legacyName = "";
+				String legacyRenderType = "integer";
 
-								String objectiveName = ByteBufStreamCodecs.VARINT_STRING.decode(input);
-								ScoreboardObjectiveAction action =
-										ScoreboardObjectiveAction.byId(input.readUnsignedByte());
-								if (action != ScoreboardObjectiveAction.REMOVE) {
-									legacyName = ByteBufStreamCodecs.VARINT_STRING.decode(input);
-									legacyRenderType = ByteBufStreamCodecs.VARINT_STRING.decode(input);
-								}
-								return new ScoreboardObjectivePlainTextWirePacket(
-										objectiveName, action, legacyName, legacyRenderType);
-							});
+				String objectiveName = ByteBufStreamCodecs.VARINT_STRING.decode(input);
+				ScoreboardObjectiveAction action =
+					ScoreboardObjectiveAction.byId(input.readUnsignedByte());
+				if (action != ScoreboardObjectiveAction.REMOVE) {
+					legacyName = ByteBufStreamCodecs.VARINT_STRING.decode(input);
+					legacyRenderType = ByteBufStreamCodecs.VARINT_STRING.decode(input);
+				}
+				return new ScoreboardObjectivePlainTextWirePacket(
+					objectiveName, action, legacyName, legacyRenderType);
+			});
 
 	private String legacyName = "", legacyRenderType = "integer";
 
@@ -50,10 +49,10 @@ public final class ScoreboardObjectivePlainTextWirePacket extends ScoreboardObje
 	}
 
 	public ScoreboardObjectivePlainTextWirePacket(
-			String objectiveName,
-			ScoreboardObjectiveAction action,
-			String legacyName,
-			String legacyRenderType) {
+		String objectiveName,
+		ScoreboardObjectiveAction action,
+		String legacyName,
+		String legacyRenderType) {
 		super(objectiveName, action, "\"\"", 0);
 		this.legacyName = legacyName;
 		this.legacyRenderType = legacyRenderType;
@@ -62,12 +61,13 @@ public final class ScoreboardObjectivePlainTextWirePacket extends ScoreboardObje
 	@Override
 	public String displayNameJson() {
 		return action == ScoreboardObjectiveAction.REMOVE
-				? null
-				: new com.google.gson.JsonPrimitive(legacyName).toString();
+			? null
+			: new com.google.gson.JsonPrimitive(legacyName).toString();
 	}
 
 	@Override
 	public void setDisplayNameJson(String value) {
+		markMutated();
 		legacyName = new com.google.gson.JsonParser().parse(value).getAsString();
 	}
 

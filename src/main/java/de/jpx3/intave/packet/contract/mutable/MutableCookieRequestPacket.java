@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.CookieRequestPacket;
+import de.jpx3.intave.packet.contract.immutable.CookieRequestPacket;
 
-public interface MutableCookieRequestPacket extends CookieRequestPacket, MutableCookiePacket {
+public interface MutableCookieRequestPacket extends CookieRequestPacket, MutableCookiePacket, Mutable {
 }

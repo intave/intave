@@ -11,13 +11,12 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.BlockTagsPacket;
+import de.jpx3.intave.packet.contract.immutable.BlockTagsPacket;
 import de.jpx3.intave.share.MinecraftKey;
 
 import java.util.List;
 import java.util.Map;
 
-public interface MutableBlockTagsPacket extends BlockTagsPacket {
-
+public interface MutableBlockTagsPacket extends BlockTagsPacket, Mutable {
 	void setBlockTags(Map<MinecraftKey, List<MinecraftKey>> tags);
 }

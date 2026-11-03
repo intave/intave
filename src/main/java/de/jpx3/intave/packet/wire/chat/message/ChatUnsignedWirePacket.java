@@ -13,12 +13,11 @@ package de.jpx3.intave.packet.wire.chat.message;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableChatPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class ChatUnsignedWirePacket implements MutableChatPacket {
+public class ChatUnsignedWirePacket extends MutableWirePacket implements MutableChatPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, ChatUnsignedWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.stringCodec(256), ChatUnsignedWirePacket::text,
@@ -42,12 +41,8 @@ public class ChatUnsignedWirePacket implements MutableChatPacket {
 
 	@Override
 	public void setText(String value) {
+		markMutated();
 		text = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return state == ConnectionState.PLAY && packetId == PacketId.Client.CHAT_IN;
 	}
 
 	@Override

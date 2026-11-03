@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.BedUsePacket;
+import de.jpx3.intave.packet.contract.immutable.BedUsePacket;
 
-public interface MutableBedUsePacket extends BedUsePacket, MutableSingleEntityAddressed, MutableBlockAddressed {
+public interface MutableBedUsePacket extends BedUsePacket, MutableSingleEntityAddressed, MutableBlockAddressed, Mutable {
 }

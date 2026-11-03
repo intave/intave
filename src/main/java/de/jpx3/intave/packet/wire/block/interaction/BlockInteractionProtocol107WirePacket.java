@@ -13,9 +13,8 @@ package de.jpx3.intave.packet.wire.block.interaction;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableBlockInteractionPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.PlayerHand;
@@ -24,7 +23,7 @@ import io.netty.buffer.ByteBuf;
 
 import java.util.OptionalInt;
 
-public class BlockInteractionProtocol107WirePacket implements MutableBlockInteractionPacket {
+public class BlockInteractionProtocol107WirePacket extends MutableWirePacket implements MutableBlockInteractionPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, BlockInteractionProtocol107WirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			BlockPosition.LEGACY_STREAM_CODEC, BlockInteractionProtocol107WirePacket::blockPosition,
@@ -44,10 +43,10 @@ public class BlockInteractionProtocol107WirePacket implements MutableBlockIntera
 	}
 
 	public BlockInteractionProtocol107WirePacket(
-			BlockPosition blockPosition,
-			int directionId,
-			PlayerHand hand,
-			RawVector3d hitPosition) {
+		BlockPosition blockPosition,
+		int directionId,
+		PlayerHand hand,
+		RawVector3d hitPosition) {
 		this.blockPosition = blockPosition;
 		this.directionId = directionId;
 		this.hand = hand;
@@ -60,17 +59,13 @@ public class BlockInteractionProtocol107WirePacket implements MutableBlockIntera
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.USE_ITEM_ON);
-	}
-
-	@Override
 	public BlockPosition blockPosition() {
 		return this.blockPosition;
 	}
 
 	@Override
 	public void setBlockPosition(BlockPosition value) {
+		markMutated();
 		this.blockPosition = value;
 	}
 
@@ -81,16 +76,19 @@ public class BlockInteractionProtocol107WirePacket implements MutableBlockIntera
 
 	@Override
 	public void setHand(PlayerHand value) {
+		markMutated();
 		this.hand = value;
 	}
 
 	@Override
 	public RawVector3d hitPosition() {
+		markMutated();
 		return this.hitPosition;
 	}
 
 	@Override
 	public void setHitPosition(RawVector3d value) {
+		markMutated();
 		this.hitPosition = value;
 	}
 
@@ -106,6 +104,7 @@ public class BlockInteractionProtocol107WirePacket implements MutableBlockIntera
 
 	@Override
 	public void setDirection(Direction value) {
+		markMutated();
 		directionId = value == null ? 255 : value.ordinal();
 	}
 
@@ -116,6 +115,7 @@ public class BlockInteractionProtocol107WirePacket implements MutableBlockIntera
 
 	@Override
 	public void setSequenceNumber(int value) {
+		markMutated();
 		throw new IllegalStateException("No sequence before 1.19");
 	}
 

@@ -15,22 +15,22 @@ import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import io.netty.buffer.ByteBuf;
 
-import static de.jpx3.intave.packet.wire.WireCodecs.count;
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.count;
 
 public final class EntityDestroyLegacyArrayWirePacket extends EntityDestroyWirePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityDestroyLegacyArrayWirePacket>
-			STREAM_CODEC =
-					StreamCodec.of(
-							(output, packet) -> {
-								ByteBufStreamCodecs.VARINT.encode(output, packet.entityIds.length);
-								for (int id : packet.entityIds) ByteBufStreamCodecs.VARINT.encode(output, id);
-							},
-							input -> {
-								int[] entityIds = new int[count(input, input.readableBytes())];
-								for (int i = 0; i < entityIds.length; i++)
-									entityIds[i] = ByteBufStreamCodecs.VARINT.decode(input);
-								return new EntityDestroyLegacyArrayWirePacket(entityIds);
-							});
+		STREAM_CODEC =
+		StreamCodec.of(
+			(output, packet) -> {
+				ByteBufStreamCodecs.VARINT.encode(output, packet.entityIds.length);
+				for (int id : packet.entityIds) ByteBufStreamCodecs.VARINT.encode(output, id);
+			},
+			input -> {
+				int[] entityIds = new int[count(input, input.readableBytes())];
+				for (int i = 0; i < entityIds.length; i++)
+					entityIds[i] = ByteBufStreamCodecs.VARINT.decode(input);
+				return new EntityDestroyLegacyArrayWirePacket(entityIds);
+			});
 
 	public EntityDestroyLegacyArrayWirePacket() {
 		super();

@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.filter;
 
 import com.comphenix.protocol.events.PacketContainer;
@@ -7,8 +18,8 @@ import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.EntityMetadataReader;
-import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.packet.plib.reader.EntityMetadataReader;
+import de.jpx3.intave.packet.plib.reader.PacketReaders;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -16,7 +27,7 @@ import org.bukkit.entity.Wither;
 
 import java.util.List;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.ENTITY_METADATA;
+import static de.jpx3.intave.packet.contract.PacketType.Server.ENTITY_METADATA;
 
 //@Deprecated
 public final class HealthFilter extends Filter {

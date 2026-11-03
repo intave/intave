@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.other.protocolscanner;
 
 import de.jpx3.intave.check.PlayerCheckPart;
@@ -5,11 +16,11 @@ import de.jpx3.intave.check.other.ProtocolScanner;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
-import de.jpx3.intave.packet.reader.HeldItemSlotReader;
+import de.jpx3.intave.packet.plib.reader.HeldItemSlotReader;
 import de.jpx3.intave.user.User;
 import org.bukkit.entity.Player;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.HELD_ITEM_SLOT_IN;
+import static de.jpx3.intave.packet.contract.PacketType.Client.HELD_ITEM_SLOT_IN;
 
 public final class SentSlotTwice extends PlayerCheckPart<ProtocolScanner> {
   private final int vl;

@@ -20,10 +20,10 @@ import de.jpx3.intave.module.test.record.MovementFrameState;
 import de.jpx3.intave.module.test.record.MovementRecording;
 import de.jpx3.intave.module.test.record.action.ActiveItemReplacementAction;
 import de.jpx3.intave.module.test.record.action.ItemUsePacketAction;
-import de.jpx3.intave.packet.reader.BlockDigReader;
-import de.jpx3.intave.packet.reader.BlockInteractionReader;
-import de.jpx3.intave.packet.reader.HeldItemSlotReader;
-import de.jpx3.intave.packet.reader.PlayerMoveReader;
+import de.jpx3.intave.packet.plib.reader.BlockDigReader;
+import de.jpx3.intave.packet.plib.reader.BlockInteractionReader;
+import de.jpx3.intave.packet.plib.reader.HeldItemSlotReader;
+import de.jpx3.intave.packet.plib.reader.PlayerMoveReader;
 import de.jpx3.intave.player.ActionBar;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.share.*;
@@ -42,7 +42,7 @@ import java.nio.file.Files;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.DeflaterOutputStream;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 

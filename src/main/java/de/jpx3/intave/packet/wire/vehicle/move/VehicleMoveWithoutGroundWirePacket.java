@@ -39,6 +39,7 @@ public final class VehicleMoveWithoutGroundWirePacket extends VehicleMoveWirePac
 
 	@Override
 	public void setOnGround(boolean value) {
+		markMutated();
 		throw new IllegalStateException("No ground flag before 1.21.4");
 	}
 

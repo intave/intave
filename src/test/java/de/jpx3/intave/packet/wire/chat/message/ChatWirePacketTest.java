@@ -12,8 +12,8 @@
 package de.jpx3.intave.packet.wire.chat.message;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.contract.Packet;
+import de.jpx3.intave.packet.contract.PacketContract;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.wire.WirePackets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -187,7 +187,7 @@ final class ChatWirePacketTest {
 	}
 
 	private static ChatUnsignedWirePacket roundTrip(int protocol, Consumer<ByteBuf> writer) {
-		Packet prototype = WirePackets.createPacket(PLAY, PacketId.Client.CHAT_IN, protocol);
+		PacketContract prototype = WirePackets.createPacket(PLAY, PacketType.Client.CHAT_IN, protocol);
 		ByteBuf input = Unpooled.buffer();
 		try {
 			writer.accept(input);
@@ -203,7 +203,7 @@ final class ChatWirePacketTest {
 		}
 	}
 
-	private static void assertEncoding(Packet packet, Consumer<ByteBuf> writer) {
+	private static void assertEncoding(PacketContract packet, Consumer<ByteBuf> writer) {
 		ByteBuf expected = Unpooled.buffer(), actual = Unpooled.buffer();
 		try {
 			writer.accept(expected);

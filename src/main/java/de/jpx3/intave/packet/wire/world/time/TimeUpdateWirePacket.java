@@ -13,12 +13,11 @@ package de.jpx3.intave.packet.wire.world.time;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableTimeUpdatePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class TimeUpdateWirePacket implements MutableTimeUpdatePacket {
+public class TimeUpdateWirePacket extends MutableWirePacket implements MutableTimeUpdatePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, TimeUpdateWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.LONG, TimeUpdateWirePacket::gameTime,
@@ -27,11 +26,9 @@ public class TimeUpdateWirePacket implements MutableTimeUpdatePacket {
 			TimeUpdateWirePacket::new
 		);
 
-	protected long gameTime = 0;
-
+	protected long gameTime;
 	protected long dayTime;
-
-	protected boolean ticking = true;
+	protected boolean ticking;
 
 	public TimeUpdateWirePacket() {
 		this(0, 0, true);
@@ -50,12 +47,8 @@ public class TimeUpdateWirePacket implements MutableTimeUpdatePacket {
 
 	@Override
 	public void setGameTime(long value) {
+		markMutated();
 		this.gameTime = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.UPDATE_TIME);
 	}
 
 	@Override
@@ -70,6 +63,7 @@ public class TimeUpdateWirePacket implements MutableTimeUpdatePacket {
 
 	@Override
 	public void setDayTime(long value) {
+		markMutated();
 		dayTime = value;
 	}
 
@@ -80,6 +74,7 @@ public class TimeUpdateWirePacket implements MutableTimeUpdatePacket {
 
 	@Override
 	public void setTicking(boolean value) {
+		markMutated();
 		ticking = value;
 	}
 }

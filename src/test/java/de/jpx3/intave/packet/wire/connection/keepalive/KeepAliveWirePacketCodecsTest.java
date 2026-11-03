@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.wire.connection.keepalive;
 
-import de.jpx3.intave.module.linker.packet.PacketId;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.wire.WirePackets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 final class KeepAliveWirePacketCodecsTest {
 	@Test
 	void keepAliveChangesFromVarIntToLongInBothDirections() {
-		for (PacketId packetType : new PacketId[] {PacketId.Client.KEEP_ALIVE, PacketId.Server.KEEP_ALIVE}) {
+		for (PacketType packetType : new PacketType[] {PacketType.Client.KEEP_ALIVE_IN, PacketType.Server.KEEP_ALIVE_OUT}) {
 			KeepAliveWirePacket legacy =
 					roundTrip(
 							packetType.direction(),
@@ -51,7 +51,7 @@ final class KeepAliveWirePacketCodecsTest {
 							WirePackets.encodePacket(
 									SERVERBOUND,
 									PLAY,
-									PacketId.Client.KEEP_ALIVE,
+									PacketType.Client.KEEP_ALIVE_IN,
 									340,
 									new KeepAliveVarIntIdWirePacket(),
 									output));

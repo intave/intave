@@ -12,7 +12,7 @@
 package de.jpx3.intave.packet.wire.recipe.place;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
-import de.jpx3.intave.module.linker.packet.PacketId;
+import de.jpx3.intave.packet.contract.PacketType;
 import org.junit.jupiter.api.Test;
 
 import static de.jpx3.intave.packet.PacketDirection.SERVERBOUND;
@@ -27,7 +27,7 @@ final class PlaceRecipeWirePacketCodecsTest {
 			PlaceRecipeWirePacket packet =
 					roundTrip(
 							SERVERBOUND,
-							PacketId.Client.AUTO_RECIPE,
+							PacketType.Client.AUTO_RECIPE,
 							protocol,
 							b -> {
 								if (protocol == 768) ByteBufStreamCodecs.VARINT.encode(b, 300);

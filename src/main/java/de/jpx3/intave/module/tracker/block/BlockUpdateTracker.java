@@ -28,13 +28,13 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.reader.*;
+import de.jpx3.intave.packet.plib.reader.*;
+import de.jpx3.intave.share.PlayerDigAction;
 import de.jpx3.intave.share.Position;
-import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.MessageChannel;
+import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
-import de.jpx3.intave.share.PlayerDigAction;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -47,11 +47,11 @@ import org.bukkit.util.Vector;
 import java.util.Collection;
 import java.util.List;
 
-import static de.jpx3.intave.share.PlayerDigAction.*;
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.NEARBY_COLLISION_INACCURACY;
 import static de.jpx3.intave.module.feedback.FeedbackOptions.*;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Server.*;
+import static de.jpx3.intave.share.PlayerDigAction.*;
 
 public final class BlockUpdateTracker extends Module {
   @PacketSubscription(
@@ -148,8 +148,8 @@ public final class BlockUpdateTracker extends Module {
     }
   )
   public void checkInteractionTarget(
-    User user, PacketContainer packet,
-    BlockPositionReader reader, Cancellable cancellable
+	  User user, PacketContainer packet,
+	  BlockPositionReader reader, Cancellable cancellable
   ) {
     PacketType packetType = packet.getType();
     boolean check = true;

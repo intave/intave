@@ -28,8 +28,8 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.packet.plib.PacketSender;
-import de.jpx3.intave.packet.reader.EntityUseReader;
-import de.jpx3.intave.packet.reader.WindowSingleItemReader;
+import de.jpx3.intave.packet.plib.reader.EntityUseReader;
+import de.jpx3.intave.packet.plib.reader.WindowSingleItemReader;
 import de.jpx3.intave.player.DamageModify;
 import de.jpx3.intave.player.fake.FakePlayer;
 import de.jpx3.intave.user.User;
@@ -55,15 +55,9 @@ import java.util.function.Consumer;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.ATTACK_REDUCE;
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.ENTITY_USE;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.ATTACK_ENTITY;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.CLIENT_TICK_END;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.FLYING;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.LOOK;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION_LOOK;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.USE_ENTITY;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.RESPAWN;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.SET_SLOT;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Server.RESPAWN;
+import static de.jpx3.intave.packet.contract.PacketType.Server.SET_SLOT;
 import static org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BLOCKING;
 
 public final class AttackDispatcher extends Module {

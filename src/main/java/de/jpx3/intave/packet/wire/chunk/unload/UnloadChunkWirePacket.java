@@ -13,12 +13,11 @@ package de.jpx3.intave.packet.wire.chunk.unload;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableUnloadChunkPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class UnloadChunkWirePacket implements MutableUnloadChunkPacket {
+public class UnloadChunkWirePacket extends MutableWirePacket implements MutableUnloadChunkPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, UnloadChunkWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.INTEGER, UnloadChunkWirePacket::z,
@@ -35,11 +34,6 @@ public class UnloadChunkWirePacket implements MutableUnloadChunkPacket {
 	public UnloadChunkWirePacket(int z, int x) {
 		this.z = z;
 		this.x = x;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.UNLOAD_CHUNK);
 	}
 
 	@Override
@@ -61,6 +55,7 @@ public class UnloadChunkWirePacket implements MutableUnloadChunkPacket {
 
 	@Override
 	public void setChunkCoordinates(int index, int x, int z) {
+		markMutated();
 		checkIndex(index);
 		this.x = x;
 		this.z = z;

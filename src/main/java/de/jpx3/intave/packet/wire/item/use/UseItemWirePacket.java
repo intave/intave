@@ -43,6 +43,7 @@ public class UseItemWirePacket extends UseItemProtocol759WirePacket {
 	}
 
 	public Rotation rotation() {
+		markMutated();
 		return rotation;
 	}
 }

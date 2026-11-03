@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.tracker.entity;
 
 import com.comphenix.protocol.events.PacketContainer;
@@ -15,9 +26,9 @@ import de.jpx3.intave.entity.size.HitboxSizeAccess;
 import de.jpx3.intave.entity.type.EntityTypeData;
 import de.jpx3.intave.entity.type.EntityTypeDataAccessor;
 import de.jpx3.intave.klass.Lookup;
-import de.jpx3.intave.packet.reader.EntityMetadataReader;
-import de.jpx3.intave.packet.reader.EntityReader;
-import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.packet.plib.reader.EntityMetadataReader;
+import de.jpx3.intave.packet.plib.reader.EntityReader;
+import de.jpx3.intave.packet.plib.reader.PacketReaders;
 import de.jpx3.intave.reflect.access.ReflectiveHandleAccess;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;

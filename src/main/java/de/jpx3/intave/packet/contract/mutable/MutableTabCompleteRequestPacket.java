@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.TabCompleteRequestPacket;
+import de.jpx3.intave.packet.contract.immutable.TabCompleteRequestPacket;
 
-public interface MutableTabCompleteRequestPacket extends TabCompleteRequestPacket, MutableTextual {
+public interface MutableTabCompleteRequestPacket extends TabCompleteRequestPacket, MutableTextual, Mutable {
 }

@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.reader;
 
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.packet.plib.reader.EntityMetadataReader;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

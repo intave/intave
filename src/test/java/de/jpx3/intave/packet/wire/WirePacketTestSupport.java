@@ -12,9 +12,9 @@
 package de.jpx3.intave.packet.wire;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.PacketDirection;
-import de.jpx3.intave.packet.contract.Packet;
+import de.jpx3.intave.packet.contract.PacketContract;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.registry.PacketIdRegistries;
 import de.jpx3.intave.registry.PacketIdRegistry;
 import io.netty.buffer.ByteBuf;
@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public final class WirePacketTestSupport {
 	private WirePacketTestSupport() {}
 
-	public static void assertUnsupported(PacketDirection direction, PacketId packetType, int protocol) {
+	public static void assertUnsupported(PacketDirection direction, PacketType packetType, int protocol) {
 		int id = registry(direction).idOf(PLAY, packetType, protocol);
 		if (id < 0) return;
 		assertFalse(
@@ -50,8 +50,8 @@ public final class WirePacketTestSupport {
 				: PacketIdRegistries.clientbound();
 	}
 
-	public static <T extends Packet> T roundTrip(
-			PacketDirection direction, PacketId packetType, int protocol, Consumer<ByteBuf> payload) {
+	public static <T extends PacketContract> T roundTrip(
+		PacketDirection direction, PacketType packetType, int protocol, Consumer<ByteBuf> payload) {
 		ByteBuf input = Unpooled.buffer(), output = Unpooled.buffer();
 		try {
 			int id = registry(direction).idOf(PLAY, packetType, protocol);
@@ -63,7 +63,7 @@ public final class WirePacketTestSupport {
 			assertNotNull(decoded);
 			assertEquals(0, input.readerIndex());
 			ByteBuf body = input.duplicate().readerIndex(payloadStart);
-			WirePacketWrap.from(decoded.getClass()).decode(body);
+			WirePacketDefinition.from(decoded.getClass()).decode(body);
 			assertFalse(body.isReadable(), packetType + " left unread bytes");
 			WirePackets.encodePacket(direction, PLAY, packetType, protocol, decoded, output);
 			assertEquals(input, output, packetType + " changed during round trip");
@@ -74,11 +74,11 @@ public final class WirePacketTestSupport {
 		}
 	}
 
-	public static <T extends Packet> T decodePayload(Class<T> packetClass, ByteBuf input) {
-		return WirePacketWrap.from(packetClass).decode(input);
+	public static <T extends PacketContract> T decodePayload(Class<T> packetClass, ByteBuf input) {
+		return WirePacketDefinition.from(packetClass).decode(input);
 	}
 
-	public static void encodePayload(Packet packet, ByteBuf output) {
-		WirePacketWrap.from(packet.getClass()).encode(output, packet);
+	public static void encodePayload(PacketContract packet, ByteBuf output) {
+		WirePacketDefinition.from(packet.getClass()).encode(output, packet);
 	}
 }

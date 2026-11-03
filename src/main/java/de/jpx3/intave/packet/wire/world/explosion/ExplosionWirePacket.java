@@ -13,9 +13,8 @@ package de.jpx3.intave.packet.wire.world.explosion;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableExplosionPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Motion;
 import io.netty.buffer.ByteBuf;
@@ -24,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public abstract class ExplosionWirePacket implements MutableExplosionPacket {
+public abstract class ExplosionWirePacket extends MutableWirePacket implements MutableExplosionPacket {
 	protected static final StreamCodec<ByteBuf, ByteBuf, List<BlockPosition>> INT_BLOCK_OFFSETS = blockOffsetsCodec(ByteBufStreamCodecs.INTEGER);
 	protected static final StreamCodec<ByteBuf, ByteBuf, List<BlockPosition>> VAR_INT_BLOCK_OFFSETS = blockOffsetsCodec(ByteBufStreamCodecs.VARINT);
 
@@ -62,6 +61,7 @@ public abstract class ExplosionWirePacket implements MutableExplosionPacket {
 	}
 
 	public void setPosition(double x, double y, double z) {
+		markMutated();
 		this.x = x;
 		this.y = y;
 		this.z = z;
@@ -72,30 +72,30 @@ public abstract class ExplosionWirePacket implements MutableExplosionPacket {
 	}
 
 	public void setPower(float power) {
+		markMutated();
 		this.power = power;
 	}
 
 	public List<BlockPosition> affectedBlockOffsets() {
+		markMutated();
 		return affectedBlockOffsets;
 	}
 
 	public void setAffectedBlockOffsets(List<BlockPosition> offsets) {
+		markMutated();
 		this.affectedBlockOffsets = new ArrayList<>(offsets);
 	}
 
 	@Override
 	public Motion motion() {
+		markMutated();
 		return this.motion;
 	}
 
 	@Override
 	public void setMotion(Motion value) {
+		markMutated();
 		this.motion = Objects.requireNonNull(value, "motion");
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.EXPLOSION);
 	}
 
 	@Override

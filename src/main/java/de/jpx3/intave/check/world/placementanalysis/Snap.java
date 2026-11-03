@@ -30,8 +30,8 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 import static de.jpx3.intave.check.world.PlacementAnalysis.COMMON_FLAG_MESSAGE;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
 import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
 
 public final class Snap extends PlayerCheckPart<PlacementAnalysis> {
 	private static final int HISTORY_LENGTH = 6;

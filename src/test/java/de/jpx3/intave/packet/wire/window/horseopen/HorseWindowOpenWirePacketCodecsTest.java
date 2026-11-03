@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.wire.window.horseopen;
 
-import de.jpx3.intave.module.linker.packet.PacketId;
+import de.jpx3.intave.packet.contract.PacketType;
 import org.junit.jupiter.api.Test;
 
 import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
@@ -25,7 +25,7 @@ final class HorseWindowOpenWirePacketCodecsTest {
 			HorseWindowOpenWirePacket packet =
 					roundTrip(
 							CLIENTBOUND,
-							PacketId.Server.OPEN_WINDOW_HORSE,
+							PacketType.Server.OPEN_WINDOW_HORSE,
 							protocol,
 							b -> b.writeByte(2).writeByte(5).writeInt(42));
 			assertEquals(protocol < 767 ? 5 : protocol < 770 ? 16 : 15, packet.slots());

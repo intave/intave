@@ -13,13 +13,12 @@ package de.jpx3.intave.packet.wire.entity.animation;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityAnimationPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.EntityAnimation;
 import io.netty.buffer.ByteBuf;
 
-public class EntityAnimationWirePacket implements MutableEntityAnimationPacket {
+public class EntityAnimationWirePacket extends MutableWirePacket implements MutableEntityAnimationPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityAnimationWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, EntityAnimationWirePacket::entityId,
@@ -46,6 +45,7 @@ public class EntityAnimationWirePacket implements MutableEntityAnimationPacket {
 
 	@Override
 	public void setEntityId(int value) {
+		markMutated();
 		this.entityId = value;
 	}
 
@@ -56,12 +56,8 @@ public class EntityAnimationWirePacket implements MutableEntityAnimationPacket {
 
 	@Override
 	public void setAnimation(EntityAnimation value) {
+		markMutated();
 		this.animation = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.ANIMATION);
 	}
 
 	@Override

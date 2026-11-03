@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.EntityDestroyPacket;
+import de.jpx3.intave.packet.contract.immutable.EntityDestroyPacket;
 
-public interface MutableEntityDestroyPacket extends EntityDestroyPacket, MutableEntityAddressed {
-
+public interface MutableEntityDestroyPacket extends EntityDestroyPacket, MutableEntityAddressed, Mutable {
 	void setEntityIds(int[] entityIds);
 
 	@Override

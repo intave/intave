@@ -11,10 +11,12 @@
 
 package de.jpx3.intave.packet.wire.entity.use;
 
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.contract.EntityVelocityPacket;
+import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.contract.immutable.EntityVelocityPacket;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityUsePacket;
 import de.jpx3.intave.share.EntityUseAction;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
 
 import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
@@ -23,6 +25,26 @@ import static de.jpx3.intave.packet.wire.WirePacketTestSupport.roundTrip;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class EntityUseWirePacketCodecsTest {
+	@Test
+	void requiredHandRejectsNullWhileAttacksAndLegacyInteractionsRemainValid() {
+		ByteBuf buffer = Unpooled.buffer();
+		try {
+			EntityUseInteraction interaction = new EntityUseInteraction(EntityUseAction.INTERACT, null, null);
+			assertThrows(IllegalArgumentException.class, () -> EntityUseInteraction.STREAM_CODEC.encode(buffer, interaction));
+			buffer.clear();
+			EntityUseInteraction.WITHOUT_HAND_STREAM_CODEC.encode(buffer, interaction);
+			assertNull(EntityUseInteraction.WITHOUT_HAND_STREAM_CODEC.decode(buffer).hand());
+			buffer.clear();
+			EntityUseInteraction attack = new EntityUseInteraction(EntityUseAction.ATTACK, null, null);
+			EntityUseInteraction.STREAM_CODEC.encode(buffer, attack);
+			EntityUseInteraction decoded = EntityUseInteraction.STREAM_CODEC.decode(buffer);
+			assertEquals(EntityUseAction.ATTACK, decoded.action());
+			assertNull(decoded.hand());
+		} finally {
+			buffer.release();
+		}
+	}
+
 	@Test
 	void interactionsAndVelocitiesShareTheLowPrecisionVectorFormat() {
 		byte[][] vectors = {
@@ -35,7 +57,7 @@ final class EntityUseWirePacketCodecsTest {
 			byte[] vector = vectors[i];
 			for (int protocol : new int[] {775, 777}) {
 				InteractEntityWirePacket interaction = roundTrip(
-					SERVERBOUND, PacketId.Client.USE_ENTITY, protocol,
+					SERVERBOUND, PacketType.Client.USE_ENTITY, protocol,
 					buffer -> buffer.writeByte(42).writeByte(1).writeBytes(vector).writeBoolean(true));
 				assertEquals(42, interaction.entityId());
 				assertEquals(de.jpx3.intave.share.PlayerHand.OFF_HAND, interaction.hand());
@@ -45,7 +67,7 @@ final class EntityUseWirePacketCodecsTest {
 				assertTrue(interaction.secondary());
 			}
 			EntityVelocityPacket velocity = roundTrip(
-				CLIENTBOUND, PacketId.Server.ENTITY_VELOCITY, 773,
+				CLIENTBOUND, PacketType.Server.ENTITY_VELOCITY, 773,
 				buffer -> buffer.writeByte(42).writeBytes(vector));
 			assertEquals(scales[i], velocity.motion().motionX());
 			assertEquals(0, velocity.motion().motionY());
@@ -64,7 +86,7 @@ final class EntityUseWirePacketCodecsTest {
 				MutableEntityUsePacket packet =
 						roundTrip(
 								SERVERBOUND,
-								PacketId.Client.USE_ENTITY,
+								PacketType.Client.USE_ENTITY,
 								protocol,
 								b -> {
 									b.writeByte(42).writeByte(id);

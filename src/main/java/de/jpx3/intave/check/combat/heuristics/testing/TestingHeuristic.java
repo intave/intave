@@ -25,8 +25,8 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.BLOCK_DIG;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.BLOCK_PLACE;
+import static de.jpx3.intave.packet.contract.PacketType.Client.BLOCK_DIG;
+import static de.jpx3.intave.packet.contract.PacketType.Client.BLOCK_PLACE;
 
 public final class TestingHeuristic extends MetaCheckPart<Heuristics, TestingHeuristic.ExampleMeta> {
   public TestingHeuristic(Heuristics parent) {

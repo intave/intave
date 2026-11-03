@@ -11,9 +11,8 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.EntityAddressed;
+import de.jpx3.intave.packet.contract.immutable.EntityAddressed;
 
-public interface MutableEntityAddressed extends EntityAddressed {
-
+public interface MutableEntityAddressed extends EntityAddressed, Mutable {
 	void setEntityId(int index, int entityId);
 }

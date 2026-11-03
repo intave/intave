@@ -13,12 +13,11 @@ package de.jpx3.intave.packet.wire.item.carriedslot;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableHeldItemSlotPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class CarriedItemSlotWirePacket implements MutableHeldItemSlotPacket {
+public class CarriedItemSlotWirePacket extends MutableWirePacket implements MutableHeldItemSlotPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, CarriedItemSlotWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.SIGNED_BYTE, CarriedItemSlotWirePacket::slot,
@@ -42,12 +41,8 @@ public class CarriedItemSlotWirePacket implements MutableHeldItemSlotPacket {
 
 	@Override
 	public void setSlot(int value) {
+		markMutated();
 		this.slot = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.HELD_ITEM_SLOT_OUT);
 	}
 
 	@Override

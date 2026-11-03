@@ -12,11 +12,10 @@
 package de.jpx3.intave.packet.contract.mutable;
 
 import de.jpx3.intave.annotate.Nullable;
-import de.jpx3.intave.packet.contract.CarriedItem;
+import de.jpx3.intave.packet.contract.immutable.CarriedItem;
 import de.jpx3.intave.share.ItemStack;
 
-public interface MutableCarriedItem extends CarriedItem {
-
+public interface MutableCarriedItem extends CarriedItem, Mutable {
 	void setCarriedItem(@Nullable ItemStack item);
 
 	default void clearCarriedItem() {

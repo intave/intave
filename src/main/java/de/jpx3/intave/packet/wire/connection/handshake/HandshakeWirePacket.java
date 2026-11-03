@@ -15,43 +15,44 @@ import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableHandshakePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
 import java.nio.charset.StandardCharsets;
 
-public final class HandshakeWirePacket implements MutableHandshakePacket {
+public final class HandshakeWirePacket extends MutableWirePacket implements MutableHandshakePacket {
 	private static final StreamCodec<ByteBuf, ByteBuf, String> SERVER_ADDRESS =
-			StreamCodec.of(
-					(output, address) -> {
-						byte[] bytes = address.getBytes(StandardCharsets.UTF_8);
-						ByteBufStreamCodecs.VARINT.encode(output, bytes.length);
-						output.writeBytes(bytes);
-					},
-					input -> {
-						int length = ByteBufStreamCodecs.VARINT.decode(input);
-						if (length < 0 || length > input.readableBytes() - 3) {
-							throw new IllegalArgumentException(
-									"Invalid handshake server address length: " + length);
-						}
-						byte[] bytes = new byte[length];
-						input.readBytes(bytes);
-						return new String(bytes, StandardCharsets.UTF_8);
-					});
+		StreamCodec.of(
+			(output, address) -> {
+				byte[] bytes = address.getBytes(StandardCharsets.UTF_8);
+				ByteBufStreamCodecs.VARINT.encode(output, bytes.length);
+				output.writeBytes(bytes);
+			},
+			input -> {
+				int length = ByteBufStreamCodecs.VARINT.decode(input);
+				if (length < 0 || length > input.readableBytes() - 3) {
+					throw new IllegalArgumentException(
+						"Invalid handshake server address length: " + length);
+				}
+				byte[] bytes = new byte[length];
+				input.readBytes(bytes);
+				return new String(bytes, StandardCharsets.UTF_8);
+			});
 	private static final StreamCodec<ByteBuf, ByteBuf, ConnectionState> NEXT_STATE =
-			ByteBufStreamCodecs.VARINT.beforeAndAfter(
-					HandshakeWirePacket::decodeNextConnectionState,
-					HandshakeWirePacket::encodeNextConnectionState);
+		ByteBufStreamCodecs.VARINT.beforeAndAfter(
+			HandshakeWirePacket::decodeNextConnectionState,
+			HandshakeWirePacket::encodeNextConnectionState);
 	public static final StreamCodec<ByteBuf, ByteBuf, HandshakeWirePacket> STREAM_CODEC =
-			StreamCodec.compound(
-					ByteBufStreamCodecs.VARINT,
-					HandshakeWirePacket::protocolVersion,
-					SERVER_ADDRESS,
-					HandshakeWirePacket::serverAddress,
-					ByteBufStreamCodecs.UNSIGNED_SHORT,
-					HandshakeWirePacket::serverPort,
-					NEXT_STATE,
-					HandshakeWirePacket::nextConnectionState,
-					HandshakeWirePacket::new);
+		StreamCodec.compound(
+			ByteBufStreamCodecs.VARINT,
+			HandshakeWirePacket::protocolVersion,
+			SERVER_ADDRESS,
+			HandshakeWirePacket::serverAddress,
+			ByteBufStreamCodecs.UNSIGNED_SHORT,
+			HandshakeWirePacket::serverPort,
+			NEXT_STATE,
+			HandshakeWirePacket::nextConnectionState,
+			HandshakeWirePacket::new);
 
 	private int protocolVersion;
 	private String serverAddress;
@@ -66,10 +67,10 @@ public final class HandshakeWirePacket implements MutableHandshakePacket {
 	}
 
 	public HandshakeWirePacket(
-			int protocolVersion,
-			String serverAddress,
-			int serverPort,
-			ConnectionState nextConnectionState) {
+		int protocolVersion,
+		String serverAddress,
+		int serverPort,
+		ConnectionState nextConnectionState) {
 		this.protocolVersion = protocolVersion;
 		this.serverAddress = serverAddress;
 		this.serverPort = serverPort;
@@ -98,37 +99,41 @@ public final class HandshakeWirePacket implements MutableHandshakePacket {
 
 	@Override
 	public void setProtocolVersion(int protocolVersion) {
+		markMutated();
 		this.protocolVersion = protocolVersion;
 	}
 
 	@Override
 	public void setServerAddress(String serverAddress) {
+		markMutated();
 		this.serverAddress = serverAddress;
 	}
 
 	@Override
 	public void setServerPort(int serverPort) {
+		markMutated();
 		this.serverPort = serverPort;
 	}
 
 	@Override
 	public void setNextConnectionState(ConnectionState nextConnectionState) {
+		markMutated();
 		this.nextConnectionState = nextConnectionState;
 	}
 
 	@Override
 	public String toString() {
 		return "HandshakeWirePacket{"
-				+ "protocolVersion="
-				+ protocolVersion
-				+ ", serverAddress='"
-				+ serverAddress
-				+ '\''
-				+ ", serverPort="
-				+ serverPort
-				+ ", nextConnectionState="
-				+ nextConnectionState
-				+ '}';
+			+ "protocolVersion="
+			+ protocolVersion
+			+ ", serverAddress='"
+			+ serverAddress
+			+ '\''
+			+ ", serverPort="
+			+ serverPort
+			+ ", nextConnectionState="
+			+ nextConnectionState
+			+ '}';
 	}
 
 	@Override
@@ -150,9 +155,9 @@ public final class HandshakeWirePacket implements MutableHandshakePacket {
 		}
 		HandshakeWirePacket other = (HandshakeWirePacket) obj;
 		return this.protocolVersion == other.protocolVersion
-				&& this.serverAddress.equals(other.serverAddress)
-				&& this.serverPort == other.serverPort
-				&& this.nextConnectionState == other.nextConnectionState;
+			&& this.serverAddress.equals(other.serverAddress)
+			&& this.serverPort == other.serverPort
+			&& this.nextConnectionState == other.nextConnectionState;
 	}
 
 	private static ConnectionState decodeNextConnectionState(int intention) {
@@ -173,6 +178,6 @@ public final class HandshakeWirePacket implements MutableHandshakePacket {
 			return 2;
 		}
 		throw new IllegalArgumentException(
-				"Invalid handshake connection state: " + connectionState);
+			"Invalid handshake connection state: " + connectionState);
 	}
 }

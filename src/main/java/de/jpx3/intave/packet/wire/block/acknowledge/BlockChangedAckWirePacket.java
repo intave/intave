@@ -13,14 +13,13 @@ package de.jpx3.intave.packet.wire.block.acknowledge;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableBlockChangedAckPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
 import java.util.OptionalInt;
 
-public class BlockChangedAckWirePacket implements MutableBlockChangedAckPacket {
+public class BlockChangedAckWirePacket extends MutableWirePacket implements MutableBlockChangedAckPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, BlockChangedAckWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, BlockChangedAckWirePacket::sequence,
@@ -38,11 +37,6 @@ public class BlockChangedAckWirePacket implements MutableBlockChangedAckPacket {
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.BLOCK_CHANGED_ACK);
-	}
-
-	@Override
 	public boolean appliesTo(int protocolVersion) {
 		return protocolVersion >= 759;
 	}
@@ -54,6 +48,7 @@ public class BlockChangedAckWirePacket implements MutableBlockChangedAckPacket {
 
 	@Override
 	public void setSequenceNumber(int value) {
+		markMutated();
 		sequence = value;
 	}
 

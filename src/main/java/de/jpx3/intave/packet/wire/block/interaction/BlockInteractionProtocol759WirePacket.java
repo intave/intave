@@ -39,12 +39,12 @@ public class BlockInteractionProtocol759WirePacket extends BlockInteractionProto
 	}
 
 	public BlockInteractionProtocol759WirePacket(
-			PlayerHand hand,
-			BlockPosition blockPosition,
-			int directionId,
-			RawVector3d hitPosition,
-			boolean inside,
-			int sequence) {
+		PlayerHand hand,
+		BlockPosition blockPosition,
+		int directionId,
+		RawVector3d hitPosition,
+		boolean inside,
+		int sequence) {
 		super(hand, blockPosition, directionId, hitPosition, inside);
 		this.sequence = sequence;
 	}
@@ -61,6 +61,7 @@ public class BlockInteractionProtocol759WirePacket extends BlockInteractionProto
 
 	@Override
 	public void setSequenceNumber(int value) {
+		markMutated();
 		sequence = value;
 	}
 

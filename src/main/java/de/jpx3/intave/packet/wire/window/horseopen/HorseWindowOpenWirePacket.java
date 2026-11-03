@@ -13,14 +13,13 @@ package de.jpx3.intave.packet.wire.window.horseopen;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableWindowOpenPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
 import java.util.OptionalInt;
 
-public class HorseWindowOpenWirePacket implements MutableWindowOpenPacket {
+public class HorseWindowOpenWirePacket extends MutableWirePacket implements MutableWindowOpenPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, HorseWindowOpenWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, HorseWindowOpenWirePacket::containerId,
@@ -29,8 +28,7 @@ public class HorseWindowOpenWirePacket implements MutableWindowOpenPacket {
 			HorseWindowOpenWirePacket::new
 		);
 
-	protected int containerId = 0;
-
+	protected int containerId;
 	protected int count, entityId;
 
 	public HorseWindowOpenWirePacket() {
@@ -50,12 +48,8 @@ public class HorseWindowOpenWirePacket implements MutableWindowOpenPacket {
 
 	@Override
 	public void setContainerId(int value) {
+		markMutated();
 		this.containerId = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.OPEN_WINDOW_HORSE);
 	}
 
 	@Override
@@ -70,6 +64,7 @@ public class HorseWindowOpenWirePacket implements MutableWindowOpenPacket {
 
 	@Override
 	public void setMenuType(String value) {
+		markMutated();
 		if (!"minecraft:horse".equals(value))
 			throw new IllegalArgumentException("Expected horse menu");
 	}
@@ -81,6 +76,7 @@ public class HorseWindowOpenWirePacket implements MutableWindowOpenPacket {
 
 	@Override
 	public void setSlots(int value) {
+		markMutated();
 		int offset = 0;
 		if (((value < offset || (value - offset) % 3 != 0)))
 			throw new IllegalArgumentException("Horse slots must contain complete columns");
@@ -94,6 +90,7 @@ public class HorseWindowOpenWirePacket implements MutableWindowOpenPacket {
 
 	@Override
 	public void setEntityId(int value) {
+		markMutated();
 		entityId = value;
 	}
 

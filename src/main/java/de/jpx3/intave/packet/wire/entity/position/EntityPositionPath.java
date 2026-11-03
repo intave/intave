@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import static de.jpx3.intave.packet.wire.WireCodecs.count;
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.count;
 
 final class EntityPositionPath {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityPositionPath> STREAM_CODEC = StreamCodec.of(

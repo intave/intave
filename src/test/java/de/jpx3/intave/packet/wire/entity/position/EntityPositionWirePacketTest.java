@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.function.Consumer;
 
@@ -115,12 +116,44 @@ final class EntityPositionWirePacketTest {
 		assertEquals(new Position(4, 5, 6), packet.position());
 		assertEquals(2, packet.path().steps().get(0).tickOffset());
 		assertEquals(5, packet.path().steps().get(1).tickOffset());
-		packet.setPosition(new Position(7, 8, 9));
+		Position original = packet.position();
+		Position editable = packet.mutablePosition();
+		assertSame(editable, packet.mutablePosition());
+		editable.setX(7);
+		editable.setY(8);
+		editable.setZ(9);
+		assertEquals(new Position(4, 5, 6), original);
 		assertEncoding(EntityPositionSyncWirePacket.STREAM_CODEC, packet, buffer ->
 			buffer.writeByte(42).writeByte(1).writeByte(2)
 				.writeDouble(1).writeDouble(2).writeDouble(3).writeByte(2)
 				.writeDouble(7).writeDouble(8).writeDouble(9).writeByte(5)
 				.writeFloat(90).writeFloat(45).writeBoolean(true));
+	}
+
+	@Test
+	void pathsOnlyMarkMutationWhenTheyExposeMutablePositions() {
+		EntityPositionPath immutablePath = new EntityPositionPath(true, Arrays.asList(
+			new EntityPositionPath.Step(new Position(1, 2, 3), 2),
+			new EntityPositionPath.Step(new Position(4, 5, 6), 5)));
+		EntityPositionSyncWirePacket clean = new EntityPositionSyncWirePacket(42, immutablePath, Rotation.zero(), true);
+		assertSame(immutablePath, clean.path());
+		assertEquals(new Position(4, 5, 6), clean.position());
+		assertFalse(clean.couldHaveBeenMutated());
+
+		Position first = Position.mutableOf(1, 2, 3);
+		EntityPositionPath mutablePath = new EntityPositionPath(true, Arrays.asList(
+			new EntityPositionPath.Step(first, 2),
+			new EntityPositionPath.Step(new Position(4, 5, 6), 5)));
+		EntityPositionSyncWirePacket packet = new EntityPositionSyncWirePacket(42, mutablePath, Rotation.zero(), true);
+		assertEquals(new Position(4, 5, 6), packet.position());
+		assertFalse(packet.couldHaveBeenMutated());
+		packet.path().steps().get(0).position().setX(9);
+		assertTrue(packet.couldHaveBeenMutated());
+		assertEncoding(EntityPositionSyncWirePacket.STREAM_CODEC, packet, buffer ->
+			buffer.writeByte(42).writeByte(1).writeByte(2)
+				.writeDouble(9).writeDouble(2).writeDouble(3).writeByte(2)
+				.writeDouble(4).writeDouble(5).writeDouble(6).writeByte(5)
+				.writeFloat(0).writeFloat(0).writeBoolean(true));
 	}
 
 	@Test

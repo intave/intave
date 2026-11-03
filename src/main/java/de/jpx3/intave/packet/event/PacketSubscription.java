@@ -26,7 +26,7 @@ public interface PacketSubscription extends Comparable<PacketSubscription> {
 		return ListenerPriority.NORMAL;
 	}
 
-	default boolean allowMutations() {
+	default boolean allowForPacketMutations() {
 		return slot().allowMutations();
 	}
 

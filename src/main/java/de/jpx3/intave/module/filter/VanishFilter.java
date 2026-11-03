@@ -13,16 +13,15 @@ package de.jpx3.intave.module.filter;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.google.common.collect.Lists;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.linker.packet.PrioritySlot;
-import de.jpx3.intave.packet.reader.PlayerInfoReader;
+import de.jpx3.intave.packet.plib.reader.PlayerInfoReader;
+import de.jpx3.intave.packet.plib.reader.PlayerInfoReader.PlayerInfoEntry;
+import de.jpx3.intave.packet.plib.reader.PlayerInfoRemoveReader;
 import de.jpx3.intave.share.PlayerInfoAction;
-import de.jpx3.intave.packet.reader.PlayerInfoReader.PlayerInfoEntry;
-import de.jpx3.intave.packet.reader.PlayerInfoRemoveReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
@@ -33,7 +32,7 @@ import org.bukkit.event.Cancellable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
+import static de.jpx3.intave.packet.contract.PacketType.Server.*;
 
 public final class VanishFilter extends Filter {
   private final boolean disabled;

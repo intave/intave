@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.PickItemPacket;
+import de.jpx3.intave.packet.contract.immutable.PickItemPacket;
 
-public interface MutablePickItemPacket extends PickItemPacket, MutableSlotAddressed {
+public interface MutablePickItemPacket extends PickItemPacket, MutableSlotAddressed, Mutable {
 }

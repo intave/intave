@@ -13,9 +13,8 @@ package de.jpx3.intave.packet.wire.item.use;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableBlockInteractionPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.PlayerHand;
@@ -24,7 +23,7 @@ import io.netty.buffer.ByteBuf;
 
 import java.util.OptionalInt;
 
-public class UseItemProtocol107WirePacket implements MutableBlockInteractionPacket {
+public class UseItemProtocol107WirePacket extends MutableWirePacket implements MutableBlockInteractionPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, UseItemProtocol107WirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.enumCodec(PlayerHand.values()), UseItemProtocol107WirePacket::hand,
@@ -47,17 +46,13 @@ public class UseItemProtocol107WirePacket implements MutableBlockInteractionPack
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.USE_ITEM);
-	}
-
-	@Override
 	public PlayerHand hand() {
 		return this.hand;
 	}
 
 	@Override
 	public void setHand(PlayerHand value) {
+		markMutated();
 		this.hand = value;
 	}
 
@@ -73,6 +68,7 @@ public class UseItemProtocol107WirePacket implements MutableBlockInteractionPack
 
 	@Override
 	public void setBlockPosition(BlockPosition value) {
+		markMutated();
 		if (value != null) throw new IllegalArgumentException("Item use has no block position");
 	}
 
@@ -83,6 +79,7 @@ public class UseItemProtocol107WirePacket implements MutableBlockInteractionPack
 
 	@Override
 	public void setDirection(Direction value) {
+		markMutated();
 		if (value != null) throw new IllegalArgumentException("Item use has no face");
 	}
 
@@ -93,6 +90,7 @@ public class UseItemProtocol107WirePacket implements MutableBlockInteractionPack
 
 	@Override
 	public void setHitPosition(RawVector3d value) {
+		markMutated();
 		if (value != null) throw new IllegalArgumentException("Item use has no hit position");
 	}
 
@@ -103,6 +101,7 @@ public class UseItemProtocol107WirePacket implements MutableBlockInteractionPack
 
 	@Override
 	public void setSequenceNumber(int value) {
+		markMutated();
 		throw new IllegalStateException("No sequence before 1.19");
 	}
 }

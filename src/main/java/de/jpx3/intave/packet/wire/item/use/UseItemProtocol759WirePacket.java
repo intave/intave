@@ -49,6 +49,7 @@ public class UseItemProtocol759WirePacket extends UseItemProtocol107WirePacket {
 
 	@Override
 	public void setSequenceNumber(int value) {
+		markMutated();
 		sequence = value;
 	}
 

@@ -12,8 +12,8 @@
 package de.jpx3.intave.packet.wire.cookie.response;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.wire.WirePackets;
 import de.jpx3.intave.share.MinecraftKey;
 import io.netty.buffer.ByteBuf;
@@ -29,7 +29,7 @@ final class CookieResponseWirePacketTest {
 	void optionalPayloadsKeepNullDistinctFromEmptyAndAcceptTheMaximumSize() {
 		for (ConnectionState state : new ConnectionState[] {LOGIN, CONFIGURATION, PLAY}) {
 			for (int protocol : new int[] {766, 777}) {
-				assertInstanceOf(CookieResponseWirePacket.class, WirePackets.createPacket(state, PacketId.Client.COOKIE_RESPONSE, protocol));
+				assertInstanceOf(CookieResponseWirePacket.class, WirePackets.createPacket(state, PacketType.Client.COOKIE_RESPONSE, protocol));
 			}
 		}
 		for (int length : new int[] {-1, 0, 128, 5120}) {
@@ -99,7 +99,7 @@ final class CookieResponseWirePacketTest {
 			packet.setPayload(new byte[5121]);
 			input.clear().writeByte(0x55);
 			assertThrows(IllegalArgumentException.class,
-				() -> WirePackets.encodePacket(SERVERBOUND, PLAY, PacketId.Client.COOKIE_RESPONSE, 766, packet, input));
+				() -> WirePackets.encodePacket(SERVERBOUND, PLAY, PacketType.Client.COOKIE_RESPONSE, 766, packet, input));
 			assertEquals(1, input.writerIndex());
 			assertEquals(0x55, input.getUnsignedByte(0));
 		} finally {

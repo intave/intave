@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.PlayerActionPacket;
+import de.jpx3.intave.packet.contract.immutable.PlayerActionPacket;
 import de.jpx3.intave.share.PlayerAction;
 
-public interface MutablePlayerActionPacket extends PlayerActionPacket {
-
+public interface MutablePlayerActionPacket extends PlayerActionPacket, Mutable {
 	void setPlayerAction(PlayerAction action);
 }

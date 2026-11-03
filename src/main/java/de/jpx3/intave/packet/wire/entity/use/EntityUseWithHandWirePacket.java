@@ -50,6 +50,7 @@ public class EntityUseWithHandWirePacket extends EntityUseWithoutHandWirePacket 
 
 	@Override
 	public void setHand(PlayerHand value) {
+		markMutated();
 		hand = value;
 	}
 

@@ -48,10 +48,10 @@ import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.module.violation.ViolationContext;
 import de.jpx3.intave.packet.plib.PacketSender;
-import de.jpx3.intave.packet.reader.BlockDigReader;
-import de.jpx3.intave.packet.reader.BlockInteractionReader;
-import de.jpx3.intave.packet.reader.EntityReader;
-import de.jpx3.intave.packet.reader.PacketReaders;
+import de.jpx3.intave.packet.plib.reader.BlockDigReader;
+import de.jpx3.intave.packet.plib.reader.BlockInteractionReader;
+import de.jpx3.intave.packet.plib.reader.EntityReader;
+import de.jpx3.intave.packet.plib.reader.PacketReaders;
 import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.MessageChannel;
@@ -74,11 +74,11 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
-import static de.jpx3.intave.share.PlayerDigAction.*;
 import static de.jpx3.intave.check.world.interaction.InteractionType.*;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.BLOCK_BREAK_ANIMATION;
 import static de.jpx3.intave.module.tracker.player.AbilityTracker.GameMode.CREATIVE;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Server.BLOCK_BREAK_ANIMATION;
+import static de.jpx3.intave.share.PlayerDigAction.*;
 
 public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.InteractionMeta> {
 	private final CheckViolationLevelDecrementer decrementer;
@@ -457,7 +457,7 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
       ARM_ANIMATION,
       BLOCK_DIG,
       BLOCK_PLACE,
-      TRANSACTION,
+      TRANSACTION_IN,
       PONG,
       USE_ITEM,
       USE_ENTITY,

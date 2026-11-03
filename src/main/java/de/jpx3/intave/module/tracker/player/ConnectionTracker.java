@@ -17,9 +17,9 @@ import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.math.MathHelper;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.linker.packet.PrioritySlot;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
@@ -34,7 +34,7 @@ public final class ConnectionTracker extends Module {
     priority = ListenerPriority.MONITOR,
     prioritySlot = PrioritySlot.EXTERNAL,
     packetsOut = {
-      PacketId.Server.KEEP_ALIVE
+      PacketType.Server.KEEP_ALIVE_OUT
     },
     ignoreCancelled = false
   )
@@ -58,7 +58,7 @@ public final class ConnectionTracker extends Module {
     priority = ListenerPriority.MONITOR,
     prioritySlot = PrioritySlot.EXTERNAL,
     packetsIn = {
-      PacketId.Client.KEEP_ALIVE
+      PacketType.Client.KEEP_ALIVE_IN
     },
     ignoreCancelled = false
   )

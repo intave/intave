@@ -13,14 +13,13 @@ package de.jpx3.intave.packet.wire.entity.position;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityPositionPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
 import io.netty.buffer.ByteBuf;
 
-public class EntityPositionDoublePositionWirePacket implements MutableEntityPositionPacket {
+public class EntityPositionDoublePositionWirePacket extends MutableWirePacket implements MutableEntityPositionPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityPositionDoublePositionWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, EntityPositionDoublePositionWirePacket::entityId,
@@ -53,24 +52,29 @@ public class EntityPositionDoublePositionWirePacket implements MutableEntityPosi
 
 	@Override
 	public void setEntityId(int value) {
+		markMutated();
 		entityId = value;
 	}
 
 	@Override
 	public Position position() {
+		if (position != null && !position.isImmutable()) markMutated();
 		return position;
 	}
 
 	@Override
 	public void setPosition(Position value) {
+		markMutated();
 		position = value;
 	}
 
 	public Rotation rotation() {
+		markMutated();
 		return rotation;
 	}
 
 	public void setRotation(Rotation value) {
+		markMutated();
 		rotation = value;
 	}
 
@@ -79,12 +83,8 @@ public class EntityPositionDoublePositionWirePacket implements MutableEntityPosi
 	}
 
 	public void setOnGround(boolean value) {
+		markMutated();
 		onGround = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return state == ConnectionState.PLAY && packetId == PacketId.Server.ENTITY_TELEPORT;
 	}
 
 	@Override

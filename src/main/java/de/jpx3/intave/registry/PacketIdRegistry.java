@@ -12,12 +12,12 @@
 package de.jpx3.intave.registry;
 
 import de.jpx3.intave.annotate.Nullable;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
+import de.jpx3.intave.packet.contract.PacketType;
 
 import java.util.*;
 
-public final class PacketIdRegistry<T extends Enum<T> & PacketId> {
+public final class PacketIdRegistry<T extends Enum<T> & PacketType> {
 	private final Map<Integer, Map<ConnectionState, Map<T, Integer>>> protocols;
 	private final Map<Integer, Map<ConnectionState, List<T>>> packetTypes;
 	private final Set<Integer> supportedProtocolVersions;
@@ -42,7 +42,7 @@ public final class PacketIdRegistry<T extends Enum<T> & PacketId> {
 		this.supportedProtocolVersions = Collections.unmodifiableSet(new TreeSet<>(protocols.keySet()));
 	}
 
-	public int idOf(ConnectionState connectionState, PacketId packetType, int protocolVersion) {
+	public int idOf(ConnectionState connectionState, PacketType packetType, int protocolVersion) {
 		Objects.requireNonNull(connectionState, "connectionState");
 		Objects.requireNonNull(packetType, "packetType");
 		Map<ConnectionState, Map<T, Integer>> states = protocols.get(protocolVersion);
@@ -76,7 +76,7 @@ public final class PacketIdRegistry<T extends Enum<T> & PacketId> {
 		return supportedProtocolVersions;
 	}
 
-	private static <T extends PacketId> List<T> indexPacketTypes(int protocolVersion, ConnectionState connectionState, Map<T, Integer> packetIds) {
+	private static <T extends PacketType> List<T> indexPacketTypes(int protocolVersion, ConnectionState connectionState, Map<T, Integer> packetIds) {
 		int largestPacketId = -1;
 		for (int packetId : packetIds.values()) {
 			largestPacketId = Math.max(largestPacketId, packetId);

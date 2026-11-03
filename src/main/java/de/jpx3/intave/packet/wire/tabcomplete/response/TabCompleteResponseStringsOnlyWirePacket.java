@@ -18,38 +18,37 @@ import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.List;
 
-import static de.jpx3.intave.packet.wire.WireCodecs.count;
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.count;
 
 public final class TabCompleteResponseStringsOnlyWirePacket extends TabCompleteResponseWirePacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, TabCompleteResponseStringsOnlyWirePacket>
-			STREAM_CODEC =
-					StreamCodec.of(
-							(output, packet) -> {
-								ByteBufStreamCodecs.VARINT.encode(output, packet.suggestions.size());
-								for (int i = 0; i < packet.suggestions.size(); i++) {
-									ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.suggestions.get(i));
-								}
-							},
-							input -> {
-								int count = count(input, input.readableBytes());
-								List<String> suggestions = new ArrayList<>(count);
-								List<String> tooltips = new ArrayList<>(count);
-								for (int i = 0; i < count; i++) {
-									suggestions.add(ByteBufStreamCodecs.VARINT_STRING.decode(input));
-									String tooltip = null;
+	public static final StreamCodec<ByteBuf, ByteBuf, TabCompleteResponseStringsOnlyWirePacket> STREAM_CODEC =
+		StreamCodec.of(
+			(output, packet) -> {
+				ByteBufStreamCodecs.VARINT.encode(output, packet.suggestions.size());
+				for (int i = 0; i < packet.suggestions.size(); i++) {
+					ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.suggestions.get(i));
+				}
+			},
+			input -> {
+				int count = count(input, input.readableBytes());
+				List<String> suggestions = new ArrayList<>(count);
+				List<String> tooltips = new ArrayList<>(count);
+				for (int i = 0; i < count; i++) {
+					suggestions.add(ByteBufStreamCodecs.VARINT_STRING.decode(input));
+					String tooltip = null;
 
-									tooltips.add(tooltip);
-								}
-								return new TabCompleteResponseStringsOnlyWirePacket(
-										suggestions, tooltips);
-							});
+					tooltips.add(tooltip);
+				}
+				return new TabCompleteResponseStringsOnlyWirePacket(
+					suggestions, tooltips);
+			});
 
 	public TabCompleteResponseStringsOnlyWirePacket() {
 		super();
 	}
 
 	public TabCompleteResponseStringsOnlyWirePacket(
-			List<String> suggestions, List<String> tooltips) {
+		List<String> suggestions, List<String> tooltips) {
 		super(0, 0, 0, suggestions, tooltips);
 	}
 

@@ -34,9 +34,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 import static de.jpx3.intave.check.world.PlacementAnalysis.COMMON_FLAG_MESSAGE;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.LOOK;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION_LOOK;
 import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
+import static de.jpx3.intave.packet.contract.PacketType.Client.LOOK;
+import static de.jpx3.intave.packet.contract.PacketType.Client.POSITION_LOOK;
 
 public final class RotationSpeed extends PlayerCheckPart<PlacementAnalysis> {
 	private static final int QUEUE_SIZE = 12;

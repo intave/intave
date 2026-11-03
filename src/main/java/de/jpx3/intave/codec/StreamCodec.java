@@ -24,6 +24,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static java.util.function.Function.identity;
+
 public interface StreamCodec<I, O, T> extends StreamEncoder<O, T>, StreamDecoder<I, T> {
   static <I, O, T> StreamCodec<I, O, T> of(T value) {
     return new StreamCodec<I, O, T>() {
@@ -427,6 +429,15 @@ public interface StreamCodec<I, O, T> extends StreamEncoder<O, T>, StreamDecoder
     );
   }
 
+  default StreamCodec<I, O, T> throwIfNullEncoded() {
+    return beforeAndAfter(identity(), value -> {
+      if (value == null) {
+        throw new IllegalArgumentException("Cannot encode null value");
+      }
+      return value;
+    });
+  }
+
   default <F> StreamCodec<I ,O, F> beforeAndAfter(
     Function<T, F> wrapper,
     Function<F, T> unwrapper
@@ -474,6 +485,30 @@ public interface StreamCodec<I, O, T> extends StreamEncoder<O, T>, StreamDecoder
           list.add(StreamCodec.this.decode(i));
         }
         return list;
+      }
+    };
+  }
+
+  default StreamCodec<I, O, T> optional(StreamCodec<I, O, Boolean> presenceCodec) {
+    return new StreamCodec<I, O, T>() {
+      @Override
+      public void encode(O o, T t) {
+        if (t == null) {
+          presenceCodec.encode(o, false);
+        } else {
+          presenceCodec.encode(o, true);
+          StreamCodec.this.encode(o, t);
+        }
+      }
+
+      @Override
+      public T decode(I i) {
+        boolean present = presenceCodec.decode(i);
+        if (!present) {
+          return null;
+        } else {
+          return StreamCodec.this.decode(i);
+        }
       }
     };
   }

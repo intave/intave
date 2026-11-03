@@ -12,9 +12,9 @@
 package de.jpx3.intave.packet.contract.mutable;
 
 import de.jpx3.intave.packet.ConnectionState;
-import de.jpx3.intave.packet.contract.HandshakePacket;
+import de.jpx3.intave.packet.contract.immutable.HandshakePacket;
 
-public interface MutableHandshakePacket extends HandshakePacket {
+public interface MutableHandshakePacket extends HandshakePacket, Mutable {
 	void setProtocolVersion(int protocolVersion);
 
 	void setServerAddress(String serverAddress);

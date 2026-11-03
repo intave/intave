@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.EntitySpawnPacket;
+import de.jpx3.intave.packet.contract.immutable.EntitySpawnPacket;
 import de.jpx3.intave.share.MinecraftKey;
 
-public interface MutableEntitySpawnPacket extends EntitySpawnPacket, MutableSingleEntityAddressed, MutablePositioned {
-
+public interface MutableEntitySpawnPacket extends EntitySpawnPacket, MutableSingleEntityAddressed, MutablePositioned, Mutable {
 	void setEntityType(MinecraftKey entityType);
 }

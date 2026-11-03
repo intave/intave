@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.EntityAnimationPacket;
+import de.jpx3.intave.packet.contract.immutable.EntityAnimationPacket;
 import de.jpx3.intave.share.EntityAnimation;
 
-public interface MutableEntityAnimationPacket extends EntityAnimationPacket, MutableSingleEntityAddressed {
-
+public interface MutableEntityAnimationPacket extends EntityAnimationPacket, MutableSingleEntityAddressed, Mutable {
 	void setAnimation(EntityAnimation animation);
 }

@@ -20,7 +20,7 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.tracker.entity.Entity;
-import de.jpx3.intave.packet.reader.EntityUseReader;
+import de.jpx3.intave.packet.plib.reader.EntityUseReader;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.ClientMath;
 import de.jpx3.intave.user.User;
@@ -36,7 +36,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
 
 public final class RotationSnapHeuristic extends ClassicHeuristic<RotationSnapHeuristic.RotationSnapHeuristicMeta> {
   // Defines how long after a block place, arm swing or attack the VL for mitigations should be increased. 

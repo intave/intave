@@ -22,8 +22,8 @@ import de.jpx3.intave.user.UserRepository;
 import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.BLOCK_PLACEMENT;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.LOOK;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION_LOOK;
+import static de.jpx3.intave.packet.contract.PacketType.Client.LOOK;
+import static de.jpx3.intave.packet.contract.PacketType.Client.POSITION_LOOK;
 
 public final class RoundedRotation extends PlayerCheckPart<PlacementAnalysis> {
 	private final static int MIN_ACTIVATION_DATA = 100;

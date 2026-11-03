@@ -26,8 +26,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.ATTACK_REDUCE;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION_LOOK;
+import static de.jpx3.intave.packet.contract.PacketType.Client.POSITION;
+import static de.jpx3.intave.packet.contract.PacketType.Client.POSITION_LOOK;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_9;
 
 public final class AttackReduceIgnoreHeuristic extends MetaCheckPart<Heuristics, AttackReduceIgnoreHeuristic.AttackReduceMeta> {

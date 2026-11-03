@@ -13,9 +13,8 @@ package de.jpx3.intave.packet.wire.entity.use;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityUsePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.EntityUseAction;
 import de.jpx3.intave.share.PlayerHand;
 import de.jpx3.intave.share.RawVector3d;
@@ -23,7 +22,7 @@ import io.netty.buffer.ByteBuf;
 
 import java.util.Objects;
 
-public class EntityUseWithoutHandWirePacket implements MutableEntityUsePacket {
+public class EntityUseWithoutHandWirePacket extends MutableWirePacket implements MutableEntityUsePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityUseWithoutHandWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, EntityUseWithoutHandWirePacket::entityId,
@@ -50,6 +49,7 @@ public class EntityUseWithoutHandWirePacket implements MutableEntityUsePacket {
 	}
 
 	public EntityUseInteraction interaction() {
+		markMutated();
 		return new EntityUseInteraction(action(), hitPosition(), hand());
 	}
 
@@ -60,6 +60,7 @@ public class EntityUseWithoutHandWirePacket implements MutableEntityUsePacket {
 
 	@Override
 	public void setEntityId(int value) {
+		markMutated();
 		entityId = value;
 	}
 
@@ -70,16 +71,19 @@ public class EntityUseWithoutHandWirePacket implements MutableEntityUsePacket {
 
 	@Override
 	public void setAction(EntityUseAction value) {
+		markMutated();
 		action = Objects.requireNonNull(value, "action");
 	}
 
 	@Override
 	public RawVector3d hitPosition() {
+		markMutated();
 		return action == EntityUseAction.INTERACT_AT ? hitPosition : null;
 	}
 
 	@Override
 	public void setHitPosition(RawVector3d value) {
+		markMutated();
 		hitPosition = value;
 	}
 
@@ -90,12 +94,8 @@ public class EntityUseWithoutHandWirePacket implements MutableEntityUsePacket {
 
 	@Override
 	public void setHand(PlayerHand value) {
+		markMutated();
 		if (value != null) throw new UnsupportedOperationException("This packet does not support a hand");
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return state == ConnectionState.PLAY && packetId == PacketId.Client.USE_ENTITY;
 	}
 
 	@Override

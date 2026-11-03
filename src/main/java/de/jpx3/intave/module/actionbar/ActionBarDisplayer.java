@@ -29,7 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.CHAT_OUT;
+import static de.jpx3.intave.packet.contract.PacketType.Server.CHAT_OUT;
 
 public final class ActionBarDisplayer extends Module {
   private final ClickFeeder clickFeeder = new ClickFeeder();

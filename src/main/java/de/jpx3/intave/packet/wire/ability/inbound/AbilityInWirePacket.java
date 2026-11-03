@@ -13,16 +13,15 @@ package de.jpx3.intave.packet.wire.ability.inbound;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableAbilityInPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class AbilityInWirePacket implements MutableAbilityInPacket {
+public class AbilityInWirePacket extends MutableWirePacket implements MutableAbilityInPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, AbilityInWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
-			ByteBufStreamCodecs.UNSIGNED_BYTE,
-			AbilityInWirePacket::flags, AbilityInWirePacket::new
+			ByteBufStreamCodecs.UNSIGNED_BYTE, AbilityInWirePacket::flags,
+			AbilityInWirePacket::new
 		);
 
 	protected int flags;
@@ -33,11 +32,6 @@ public class AbilityInWirePacket implements MutableAbilityInPacket {
 
 	public AbilityInWirePacket(int flags) {
 		this.flags = flags;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Client.ABILITIES_IN);
 	}
 
 	@Override
@@ -66,16 +60,19 @@ public class AbilityInWirePacket implements MutableAbilityInPacket {
 
 	@Override
 	public void setRequestedFlying(boolean value) {
+		markMutated();
 		flags = value ? flags | 2 : flags & ~2;
 	}
 
 	@Override
 	public void setFlyingSpeed(float flyingSpeed) {
+		markMutated();
 		throw new UnsupportedOperationException("This packet does not support flying speed");
 	}
 
 	@Override
 	public void setWalkingSpeed(float walkingSpeed) {
+		markMutated();
 		throw new UnsupportedOperationException("This packet does not support walking speed");
 	}
 }

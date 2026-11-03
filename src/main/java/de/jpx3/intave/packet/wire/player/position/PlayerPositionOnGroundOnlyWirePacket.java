@@ -39,6 +39,7 @@ public final class PlayerPositionOnGroundOnlyWirePacket extends PlayerPositionWi
 
 	@Override
 	public void setHorizontalCollision(boolean value) {
+		markMutated();
 		throw new IllegalStateException("No horizontal collision flag before 1.21.2");
 	}
 

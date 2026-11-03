@@ -36,12 +36,12 @@ public final class ExplosionDoublePositionWirePacket extends ExplosionWirePacket
 	}
 
 	public ExplosionDoublePositionWirePacket(
-			double x,
-			double y,
-			double z,
-			float power,
-			List<BlockPosition> affectedBlockOffsets,
-			Motion motion) {
+		double x,
+		double y,
+		double z,
+		float power,
+		List<BlockPosition> affectedBlockOffsets,
+		Motion motion) {
 		super(x, y, z, power, affectedBlockOffsets, motion);
 	}
 

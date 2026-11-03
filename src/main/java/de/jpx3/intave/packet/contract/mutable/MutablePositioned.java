@@ -11,10 +11,20 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.Positioned;
+import de.jpx3.intave.annotate.Nullable;
+import de.jpx3.intave.packet.contract.immutable.Positioned;
 import de.jpx3.intave.share.Position;
 
-public interface MutablePositioned extends Positioned {
-
+public interface MutablePositioned extends Positioned, Mutable {
 	void setPosition(Position position);
+
+	@Nullable
+	default Position mutablePosition() {
+		Position position = position();
+		if (position != null && position.isImmutable()) {
+			position = position.mutable();
+			setPosition(position);
+		}
+		return position;
+	}
 }

@@ -13,7 +13,7 @@ package de.jpx3.intave.module.tracker.player;
 
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.packet.reader.AbilityInReader;
+import de.jpx3.intave.packet.plib.reader.AbilityInReader;
 import de.jpx3.intave.test.FakePlayerFactory;
 import de.jpx3.intave.test.FakeWorldFactory;
 import de.jpx3.intave.user.User;
@@ -26,7 +26,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class AbilityTrackerFlightTest {
   @Test

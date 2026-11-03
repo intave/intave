@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.Rotated;
+import de.jpx3.intave.packet.contract.immutable.Rotated;
 import de.jpx3.intave.share.Rotation;
 
-public interface MutableRotated extends Rotated {
-
+public interface MutableRotated extends Rotated, Mutable {
 	void setRotation(Rotation rotation);
 }

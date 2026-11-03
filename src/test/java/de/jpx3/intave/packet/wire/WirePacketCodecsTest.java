@@ -12,10 +12,22 @@
 package de.jpx3.intave.packet.wire;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.PacketDirection;
-import de.jpx3.intave.packet.contract.*;
+import de.jpx3.intave.packet.contract.PacketContract;
+import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.contract.immutable.*;
+import de.jpx3.intave.packet.contract.mutable.Mutable;
+import de.jpx3.intave.packet.wire.entity.position.EntityPositionSyncPositionMoveRotationWirePacket;
+import de.jpx3.intave.packet.wire.entity.position.EntityPositionWirePacket;
+import de.jpx3.intave.packet.wire.player.ground.PlayerGroundWirePacket;
+import de.jpx3.intave.packet.wire.player.position.PlayerPositionWirePacket;
+import de.jpx3.intave.packet.wire.player.positionrotation.PlayerPositionRotationWirePacket;
+import de.jpx3.intave.packet.wire.player.rotation.PlayerRotationWirePacket;
+import de.jpx3.intave.packet.wire.vehicle.move.VehicleMoveWithoutGroundWirePacket;
+import de.jpx3.intave.packet.wire.world.border.WorldBorderInitializeWirePacket;
+import de.jpx3.intave.packet.wire.world.border.WorldBorderSetCenterWirePacket;
+import de.jpx3.intave.packet.wire.world.border.WorldBorderSetSizeWirePacket;
 import de.jpx3.intave.registry.PacketIdRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -32,16 +44,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 final class WirePacketCodecsTest {
 	@Test
-	void everyRegistrationMatchesItsDirectionStateTypeAndProtocol() {
+	void everyRegistrationMatchesItsDirectionStateTypeAndProtocol() throws ReflectiveOperationException {
 		for (PacketDirection direction : PacketDirection.values()) {
 			PacketIdRegistry<?> registry = registry(direction);
 			for (int protocol : registry.supportedProtocolVersions()) {
 				for (ConnectionState state : ConnectionState.values()) {
-					for (Map.Entry<? extends PacketId, Integer> entry :
+					for (Map.Entry<? extends PacketType, Integer> entry :
 							registry.packetIds(state, protocol).entrySet()) {
 						if (!WirePackets.packetIdKnown(
 								direction, state, entry.getValue(), protocol)) continue;
-						Packet packet =
+						PacketContract packet =
 								WirePackets.createPacket(
 										direction, state, entry.getValue(), protocol);
 						assertTrue(Modifier.isPublic(packet.getClass().getModifiers()));
@@ -51,6 +63,8 @@ final class WirePacketCodecsTest {
 						assertTrue(
 								packet.appliesTo(state, entry.getKey(), protocol),
 								entry.toString());
+						assertTrue(packet.getClass().getMethod("appliesTo", ConnectionState.class, PacketType.class).isDefault());
+						assertFalse(((Mutable) packet).couldHaveBeenMutated(), "Matching must not expose mutable packet fields");
 					}
 				}
 			}
@@ -58,41 +72,72 @@ final class WirePacketCodecsTest {
 	}
 
 	@Test
+	void contractsProvideMatchingWithoutAWireImplementation() {
+		KeepAlivePacket keepAlive = () -> {
+			throw new AssertionError("Matching must not read packet data");
+		};
+		for (ConnectionState state : ConnectionState.values()) {
+			boolean expected = state == PLAY || state == ConnectionState.CONFIGURATION;
+			assertEquals(expected, keepAlive.appliesTo(state, PacketType.Client.KEEP_ALIVE_IN));
+			assertEquals(expected, keepAlive.appliesTo(state, PacketType.Server.KEEP_ALIVE_OUT));
+			assertFalse(keepAlive.appliesTo(state, PacketType.Server.PING));
+		}
+		HeldItemSlotPacket heldSlot = () -> 7;
+		assertTrue(heldSlot.appliesTo(PLAY, PacketType.Client.HELD_ITEM_SLOT_IN));
+		assertTrue(heldSlot.appliesTo(PLAY, PacketType.Server.HELD_ITEM_SLOT_OUT));
+		assertFalse(heldSlot.appliesTo(ConnectionState.LOGIN, PacketType.Client.HELD_ITEM_SLOT_IN));
+	}
+
+	@Test
+	void sharedContractsKeepDistinctWireCodecs() {
+		assertEquals(PlayerGroundWirePacket.class, WirePackets.createPlayPacket(PacketType.Client.FLYING, 768).getClass());
+		assertEquals(PlayerPositionWirePacket.class, WirePackets.createPlayPacket(PacketType.Client.POSITION, 768).getClass());
+		assertEquals(PlayerRotationWirePacket.class, WirePackets.createPlayPacket(PacketType.Client.LOOK, 768).getClass());
+		assertEquals(PlayerPositionRotationWirePacket.class, WirePackets.createPlayPacket(PacketType.Client.POSITION_LOOK, 768).getClass());
+		assertEquals(VehicleMoveWithoutGroundWirePacket.class, WirePackets.createPlayPacket(PacketType.Client.VEHICLE_MOVE, 768).getClass());
+		assertEquals(EntityPositionWirePacket.class, WirePackets.createPlayPacket(PacketType.Server.ENTITY_TELEPORT, 768).getClass());
+		assertEquals(EntityPositionSyncPositionMoveRotationWirePacket.class, WirePackets.createPlayPacket(PacketType.Server.ENTITY_POSITION_SYNC, 768).getClass());
+		assertEquals(WorldBorderInitializeWirePacket.class, WirePackets.createPlayPacket(PacketType.Server.INITIALIZE_BORDER, 768).getClass());
+		assertEquals(WorldBorderSetCenterWirePacket.class, WirePackets.createPlayPacket(PacketType.Server.SET_BORDER_CENTER, 768).getClass());
+		assertEquals(WorldBorderSetSizeWirePacket.class, WirePackets.createPlayPacket(PacketType.Server.SET_BORDER_SIZE, 768).getClass());
+	}
+
+	@Test
 	void nbtAndRegistryDependentPacketsAreNotRegistered() {
 		for (int protocol : registry(SERVERBOUND).supportedProtocolVersions()) {
-			for (PacketId packetType : new PacketId[] {PacketId.Client.WINDOW_CLICK, PacketId.Client.SET_CREATIVE_SLOT}) {
+			for (PacketType packetType : new PacketType[] {PacketType.Client.WINDOW_CLICK, PacketType.Client.SET_CREATIVE_SLOT}) {
 				assertUnsupported(SERVERBOUND, packetType, protocol);
 			}
-			for (PacketId packetType : new PacketId[] {
-						PacketId.Server.WINDOW_ITEMS,
-						PacketId.Server.SET_SLOT,
-						PacketId.Server.ENTITY_EQUIPMENT,
-						PacketId.Server.OPEN_WINDOW,
-						PacketId.Server.ENTITY_METADATA,
-						PacketId.Server.ENTITY_EFFECT,
-						PacketId.Server.REMOVE_ENTITY_EFFECT,
-						PacketId.Server.BLOCK_ACTION,
-						PacketId.Server.BLOCK_CHANGE,
-						PacketId.Server.SPAWN_ENTITY
+			for (PacketType packetType : new PacketType[] {
+						PacketType.Server.WINDOW_ITEMS,
+						PacketType.Server.SET_SLOT,
+						PacketType.Server.ENTITY_EQUIPMENT,
+						PacketType.Server.OPEN_WINDOW,
+						PacketType.Server.ENTITY_METADATA,
+						PacketType.Server.ENTITY_EFFECT,
+						PacketType.Server.REMOVE_ENTITY_EFFECT,
+						PacketType.Server.BLOCK_ACTION,
+						PacketType.Server.BLOCK_CHANGE,
+						PacketType.Server.SPAWN_ENTITY
 					}) {
 				assertUnsupported(CLIENTBOUND, packetType, protocol);
 			}
-			if (protocol < 107) assertUnsupported(SERVERBOUND, PacketId.Client.USE_ITEM_ON, protocol);
+			if (protocol < 107) assertUnsupported(SERVERBOUND, PacketType.Client.USE_ITEM_ON, protocol);
 			if (protocol >= 765) {
-				assertUnsupported(CLIENTBOUND, PacketId.Server.EXPLOSION, protocol);
-				assertUnsupported(CLIENTBOUND, PacketId.Server.TAB_COMPLETE_OUT, protocol);
-				assertUnsupported(CLIENTBOUND, PacketId.Server.SCOREBOARD_OBJECTIVE, protocol);
+				assertUnsupported(CLIENTBOUND, PacketType.Server.EXPLOSION, protocol);
+				assertUnsupported(CLIENTBOUND, PacketType.Server.TAB_COMPLETE_OUT, protocol);
+				assertUnsupported(CLIENTBOUND, PacketType.Server.SCOREBOARD_OBJECTIVE, protocol);
 			}
-			if (protocol >= 775) assertUnsupported(CLIENTBOUND, PacketId.Server.UPDATE_TIME, protocol);
+			if (protocol >= 775) assertUnsupported(CLIENTBOUND, PacketType.Server.UPDATE_TIME, protocol);
 		}
 	}
 
 	@Test
 	void theSameCanonicalNameUsesDirectionSpecificFields() {
 		HeldItemSlotPacket received =
-				roundTrip(SERVERBOUND, PacketId.Client.HELD_ITEM_SLOT_IN, 768, b -> b.writeShort(7));
+				roundTrip(SERVERBOUND, PacketType.Client.HELD_ITEM_SLOT_IN, 768, b -> b.writeShort(7));
 		HeldItemSlotPacket sent =
-				roundTrip(CLIENTBOUND, PacketId.Server.HELD_ITEM_SLOT_OUT, 768, b -> b.writeByte(7));
+				roundTrip(CLIENTBOUND, PacketType.Server.HELD_ITEM_SLOT_OUT, 768, b -> b.writeByte(7));
 		assertEquals(7, received.slot());
 		assertEquals(7, sent.slot());
 	}
@@ -102,7 +147,7 @@ final class WirePacketCodecsTest {
 		TabCompleteResponsePacket suggestions =
 				roundTrip(
 						CLIENTBOUND,
-						PacketId.Server.TAB_COMPLETE_OUT,
+						PacketType.Server.TAB_COMPLETE_OUT,
 						764,
 						b -> {
 							b.writeBytes(new byte[] {9, 1, 2, 1});
@@ -114,7 +159,7 @@ final class WirePacketCodecsTest {
 		ScoreboardObjectivePacket objective =
 				roundTrip(
 						CLIENTBOUND,
-						PacketId.Server.SCOREBOARD_OBJECTIVE,
+						PacketType.Server.SCOREBOARD_OBJECTIVE,
 						764,
 						b -> {
 							ByteBufStreamCodecs.VARINT_STRING.encode(b, "score");
@@ -128,21 +173,21 @@ final class WirePacketCodecsTest {
 	@Test
 	void menuAndWindowIdsRetainTheirVersionSpecificWidths() {
 		WindowClosePacket oldClose =
-				roundTrip(SERVERBOUND, PacketId.Client.CLOSE_WINDOW, 767, b -> b.writeByte(255));
+				roundTrip(SERVERBOUND, PacketType.Client.CLOSE_WINDOW, 767, b -> b.writeByte(255));
 		WindowClosePacket newClose =
 				roundTrip(
 						SERVERBOUND,
-						PacketId.Client.CLOSE_WINDOW,
+						PacketType.Client.CLOSE_WINDOW,
 						768,
 						b -> ByteBufStreamCodecs.VARINT.encode(b, 300));
 		assertEquals(255, oldClose.containerId());
 		assertEquals(300, newClose.containerId());
 		MenuButtonPacket oldButton =
-				roundTrip(SERVERBOUND, PacketId.Client.ENCHANT_ITEM, 765, b -> b.writeByte(12).writeByte(3));
+				roundTrip(SERVERBOUND, PacketType.Client.ENCHANT_ITEM, 765, b -> b.writeByte(12).writeByte(3));
 		MenuButtonPacket newButton =
 				roundTrip(
 						SERVERBOUND,
-						PacketId.Client.ENCHANT_ITEM,
+						PacketType.Client.ENCHANT_ITEM,
 						766,
 						b -> {
 							ByteBufStreamCodecs.VARINT.encode(b, 300);
@@ -157,7 +202,7 @@ final class WirePacketCodecsTest {
 		ByteBuf input = Unpooled.buffer();
 		try {
 			ByteBufStreamCodecs.VARINT.encode(
-					input, registry(SERVERBOUND).idOf(PLAY, PacketId.Client.COOKIE_RESPONSE, 768));
+					input, registry(SERVERBOUND).idOf(PLAY, PacketType.Client.COOKIE_RESPONSE, 768));
 			ByteBufStreamCodecs.VARINT_STRING.encode(input, "minecraft:test");
 			input.writeBoolean(true);
 			ByteBufStreamCodecs.VARINT.encode(input, 5121);
@@ -167,7 +212,7 @@ final class WirePacketCodecsTest {
 			assertEquals(0, input.readerIndex());
 			input.clear();
 			ByteBufStreamCodecs.VARINT.encode(
-					input, registry(CLIENTBOUND).idOf(PLAY, PacketId.Server.ENTITY_DESTROY, 768));
+					input, registry(CLIENTBOUND).idOf(PLAY, PacketType.Server.ENTITY_DESTROY, 768));
 			ByteBufStreamCodecs.VARINT.encode(input, -1);
 			assertThrows(
 					IllegalArgumentException.class,

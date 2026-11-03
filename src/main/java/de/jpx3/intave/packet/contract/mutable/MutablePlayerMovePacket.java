@@ -11,10 +11,9 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.PlayerMovePacket;
+import de.jpx3.intave.packet.contract.immutable.PlayerMovePacket;
 
-public interface MutablePlayerMovePacket extends PlayerMovePacket, MutablePositioned, MutableRotated {
-
+public interface MutablePlayerMovePacket extends PlayerMovePacket, MutablePositioned, MutableRotated, Mutable {
 	void setOnGround(boolean onGround);
 
 	void setHorizontalCollision(boolean horizontalCollision);

@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.EntityVelocityPacket;
+import de.jpx3.intave.packet.contract.immutable.EntityVelocityPacket;
 
-public interface MutableEntityVelocityPacket extends EntityVelocityPacket, MutableSingleEntityAddressed, MutableMotionUpdate {
+public interface MutableEntityVelocityPacket extends EntityVelocityPacket, MutableSingleEntityAddressed, MutableMotionUpdate, Mutable {
 }

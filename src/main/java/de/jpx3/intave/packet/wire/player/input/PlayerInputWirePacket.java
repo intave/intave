@@ -13,12 +13,13 @@ package de.jpx3.intave.packet.wire.player.input;
 
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerInputPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.Input;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Objects;
 
-public final class PlayerInputWirePacket implements MutablePlayerInputPacket {
+public final class PlayerInputWirePacket extends MutableWirePacket implements MutablePlayerInputPacket {
 	public final static StreamCodec<ByteBuf, ByteBuf, PlayerInputWirePacket> STREAM_CODEC = Input.STREAM_CODEC.beforeAndAfter(
 		PlayerInputWirePacket::new, PlayerInputWirePacket::input
 	);
@@ -40,6 +41,7 @@ public final class PlayerInputWirePacket implements MutablePlayerInputPacket {
 
 	@Override
 	public void setInput(Input input) {
+		markMutated();
 		this.input = input;
 	}
 

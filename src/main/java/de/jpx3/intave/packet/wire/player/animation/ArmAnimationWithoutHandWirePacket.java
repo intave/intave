@@ -20,7 +20,8 @@ public final class ArmAnimationWithoutHandWirePacket extends ArmAnimationWirePac
 
 	public static final StreamCodec<ByteBuf, ByteBuf, ArmAnimationWithoutHandWirePacket> STREAM_CODEC =
 		StreamCodec.of(
-			(output, packet) -> {},
+			(output, packet) -> {
+			},
 			input -> INSTANCE
 		);
 
@@ -35,6 +36,7 @@ public final class ArmAnimationWithoutHandWirePacket extends ArmAnimationWirePac
 
 	@Override
 	public void setHand(PlayerHand hand) {
+		markMutated();
 		throw new UnsupportedOperationException("This packet does not support a hand");
 	}
 }

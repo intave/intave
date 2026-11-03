@@ -38,19 +38,19 @@ public class PlayerTeleportWirePacket extends PlayerTeleportWithIdWirePacket {
 
 	public PlayerTeleportWirePacket() {
 		this(
-				0,
-				new Position(),
-				new Motion(0, 0, 0),
-				new Rotation(0, 0),
-				EnumSet.noneOf(Relative.class));
+			0,
+			new Position(),
+			new Motion(0, 0, 0),
+			new Rotation(0, 0),
+			EnumSet.noneOf(Relative.class));
 	}
 
 	public PlayerTeleportWirePacket(
-			int teleportId,
-			Position position,
-			Motion motion,
-			Rotation rotation,
-			Set<Relative> flags) {
+		int teleportId,
+		Position position,
+		Motion motion,
+		Rotation rotation,
+		Set<Relative> flags) {
 		super(position, rotation, flags, teleportId);
 		this.motion = motion;
 	}
@@ -67,16 +67,19 @@ public class PlayerTeleportWirePacket extends PlayerTeleportWithIdWirePacket {
 
 	@Override
 	public void setTeleportId(int value) {
+		markMutated();
 		teleportId = value;
 	}
 
 	@Override
 	public Motion motion() {
+		markMutated();
 		return motion;
 	}
 
 	@Override
 	public void setMotion(Motion value) {
+		markMutated();
 		motion = value;
 	}
 }

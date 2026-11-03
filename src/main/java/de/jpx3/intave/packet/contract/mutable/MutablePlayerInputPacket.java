@@ -11,11 +11,10 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.PlayerInputPacket;
+import de.jpx3.intave.packet.contract.immutable.PlayerInputPacket;
 import de.jpx3.intave.share.Input;
 
-public interface MutablePlayerInputPacket extends PlayerInputPacket {
-
+public interface MutablePlayerInputPacket extends PlayerInputPacket, Mutable {
 	void setInput(Input input);
 
 	default void setAxes(float forward, float strafe) {

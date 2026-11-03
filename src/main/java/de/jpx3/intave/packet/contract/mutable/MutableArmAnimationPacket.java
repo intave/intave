@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.ArmAnimationPacket;
+import de.jpx3.intave.packet.contract.immutable.ArmAnimationPacket;
 
-public interface MutableArmAnimationPacket extends ArmAnimationPacket, MutableHanded {
+public interface MutableArmAnimationPacket extends ArmAnimationPacket, MutableHanded, Mutable {
 }

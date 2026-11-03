@@ -28,8 +28,8 @@ import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.entity.Player;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.LOOK;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.POSITION_LOOK;
+import static de.jpx3.intave.packet.contract.PacketType.Client.LOOK;
+import static de.jpx3.intave.packet.contract.PacketType.Client.POSITION_LOOK;
 
 public class RotationExactHeuristic extends ClassicHeuristic<RotationExactHeuristic.RotationExactHeuristicMeta> {
   public RotationExactHeuristic(Heuristics parentCheck) {

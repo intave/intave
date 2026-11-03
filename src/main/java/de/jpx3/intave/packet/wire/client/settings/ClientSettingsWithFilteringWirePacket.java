@@ -35,13 +35,13 @@ public class ClientSettingsWithFilteringWirePacket extends ClientSettingsWithHan
 	}
 
 	public ClientSettingsWithFilteringWirePacket(
-			String locale,
-			int viewDistance,
-			int chatVisibility,
-			boolean chatColors,
-			int skinParts,
-			MainHand mainHand,
-			boolean filtering) {
+		String locale,
+		int viewDistance,
+		int chatVisibility,
+		boolean chatColors,
+		int skinParts,
+		MainHand mainHand,
+		boolean filtering) {
 		super(locale, viewDistance, chatVisibility, chatColors, skinParts, mainHand);
 		this.filtering = filtering;
 	}

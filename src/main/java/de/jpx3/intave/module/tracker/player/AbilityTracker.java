@@ -14,21 +14,21 @@ package de.jpx3.intave.module.tracker.player;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.linker.packet.PrioritySlot;
-import de.jpx3.intave.packet.reader.AbilityInReader;
-import de.jpx3.intave.packet.reader.AbilityOutReader;
-import de.jpx3.intave.packet.reader.EntityReader;
-import de.jpx3.intave.packet.reader.GameStateChangeReader;
+import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.plib.reader.AbilityInReader;
+import de.jpx3.intave.packet.plib.reader.AbilityOutReader;
+import de.jpx3.intave.packet.plib.reader.EntityReader;
+import de.jpx3.intave.packet.plib.reader.GameStateChangeReader;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.event.Cancellable;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
-import static de.jpx3.intave.module.linker.packet.PacketId.Server.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.ABILITIES_IN;
+import static de.jpx3.intave.packet.contract.PacketType.Server.*;
 import static de.jpx3.intave.share.GameStateChangeType.CHANGE_GAME_MODE;
 
 public final class AbilityTracker extends Module {
@@ -114,7 +114,7 @@ public final class AbilityTracker extends Module {
   }
 
   @PacketSubscription(
-    packetsOut = PacketId.Server.POSITION
+    packetsOut = PacketType.Server.POSITION
   )
   public void outgoingPositionUpdate(User user) {
     MovementMetadata movementData = user.meta().movement();

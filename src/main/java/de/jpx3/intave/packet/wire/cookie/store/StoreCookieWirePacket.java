@@ -13,16 +13,15 @@ package de.jpx3.intave.packet.wire.cookie.store;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableStoreCookiePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.MinecraftKey;
 import io.netty.buffer.ByteBuf;
 
-import static de.jpx3.intave.packet.wire.WireCodecs.bytes;
-import static de.jpx3.intave.packet.wire.WireCodecs.count;
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.bytes;
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.count;
 
-public class StoreCookieWirePacket implements MutableStoreCookiePacket {
+public class StoreCookieWirePacket extends MutableWirePacket implements MutableStoreCookiePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, StoreCookieWirePacket> STREAM_CODEC =
 		StreamCodec.of(
 			(output, packet) -> {
@@ -59,25 +58,20 @@ public class StoreCookieWirePacket implements MutableStoreCookiePacket {
 
 	@Override
 	public void setKey(MinecraftKey value) {
+		markMutated();
 		this.key = value;
 	}
 
 	@Override
 	public byte[] payload() {
+		markMutated();
 		return this.payload;
 	}
 
 	@Override
 	public void setPayload(byte[] value) {
+		markMutated();
 		this.payload = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.LOGIN
-			|| state == ConnectionState.CONFIGURATION
-			|| state == ConnectionState.PLAY)
-			&& (packetId == PacketId.Server.STORE_COOKIE);
 	}
 
 	@Override

@@ -39,11 +39,11 @@ public class PlayerTeleportWithDismountWirePacket extends PlayerTeleportWithIdWi
 	}
 
 	public PlayerTeleportWithDismountWirePacket(
-			Position position,
-			Rotation rotation,
-			Set<Relative> flags,
-			int teleportId,
-			boolean dismount) {
+		Position position,
+		Rotation rotation,
+		Set<Relative> flags,
+		int teleportId,
+		boolean dismount) {
 		super(position, rotation, flags, teleportId);
 		this.dismount = dismount;
 	}

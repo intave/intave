@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.wire.block.dig;
 
-import de.jpx3.intave.module.linker.packet.PacketId;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.share.PlayerDigAction;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +26,7 @@ final class BlockDigWirePacketCodecsTest {
 			BlockDigWirePacket packet =
 					roundTrip(
 							SERVERBOUND,
-							PacketId.Client.BLOCK_DIG,
+							PacketType.Client.BLOCK_DIG,
 							protocol,
 							b -> {
 								b.writeByte(protocol >= 777 ? 2 : 1);

@@ -12,11 +12,10 @@
 package de.jpx3.intave.packet.contract.mutable;
 
 import de.jpx3.intave.annotate.Nullable;
-import de.jpx3.intave.packet.contract.MotionUpdate;
+import de.jpx3.intave.packet.contract.immutable.MotionUpdate;
 import de.jpx3.intave.share.Motion;
 
-public interface MutableMotionUpdate extends MotionUpdate {
-
+public interface MutableMotionUpdate extends MotionUpdate, Mutable {
 	void setMotion(@Nullable Motion motion);
 
 	default void clearMotion() {

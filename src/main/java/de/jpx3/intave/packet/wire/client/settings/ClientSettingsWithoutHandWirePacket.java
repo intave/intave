@@ -13,12 +13,11 @@ package de.jpx3.intave.packet.wire.client.settings;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableClientSettingsPacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import io.netty.buffer.ByteBuf;
 
-public class ClientSettingsWithoutHandWirePacket implements MutableClientSettingsPacket {
+public class ClientSettingsWithoutHandWirePacket extends MutableWirePacket implements MutableClientSettingsPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, ClientSettingsWithoutHandWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.stringCodec(16), ClientSettingsWithoutHandWirePacket::locale,
@@ -40,11 +39,11 @@ public class ClientSettingsWithoutHandWirePacket implements MutableClientSetting
 	}
 
 	public ClientSettingsWithoutHandWirePacket(
-			String locale,
-			int viewDistance,
-			int chatVisibility,
-			boolean chatColors,
-			int skinParts
+		String locale,
+		int viewDistance,
+		int chatVisibility,
+		boolean chatColors,
+		int skinParts
 	) {
 		this.locale = locale;
 		this.viewDistance = viewDistance;
@@ -59,18 +58,13 @@ public class ClientSettingsWithoutHandWirePacket implements MutableClientSetting
 	}
 
 	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY || state == ConnectionState.CONFIGURATION)
-				&& (packetId == PacketId.Client.SETTINGS);
-	}
-
-	@Override
 	public String locale() {
 		return this.locale;
 	}
 
 	@Override
 	public void setLocale(String value) {
+		markMutated();
 		this.locale = value;
 	}
 
@@ -81,6 +75,7 @@ public class ClientSettingsWithoutHandWirePacket implements MutableClientSetting
 
 	@Override
 	public void setMainHand(MainHand value) {
+		markMutated();
 		throw new IllegalStateException("No main-hand preference before 1.9");
 	}
 

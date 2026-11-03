@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check.combat;
 
 import com.comphenix.protocol.events.PacketEvent;
@@ -11,9 +22,9 @@ import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.user.User;
 import org.bukkit.entity.Player;
 
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.ARM_ANIMATION;
 import static de.jpx3.intave.module.mitigate.AttackNerfStrategy.RECEIVE_MORE_KNOCKBACK;
 import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
+import static de.jpx3.intave.packet.contract.PacketType.Client.ARM_ANIMATION;
 import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_13;
 
 public final class ClickPatterns extends Check {

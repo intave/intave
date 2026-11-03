@@ -13,13 +13,12 @@ package de.jpx3.intave.packet.wire.player.bed;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.module.linker.packet.PacketId;
-import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableBedUsePacket;
+import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.BlockPosition;
 import io.netty.buffer.ByteBuf;
 
-public class BedUseWirePacket implements MutableBedUsePacket {
+public class BedUseWirePacket extends MutableWirePacket implements MutableBedUsePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, BedUseWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, BedUseWirePacket::entityId,
@@ -46,6 +45,7 @@ public class BedUseWirePacket implements MutableBedUsePacket {
 
 	@Override
 	public void setEntityId(int value) {
+		markMutated();
 		this.entityId = value;
 	}
 
@@ -56,12 +56,8 @@ public class BedUseWirePacket implements MutableBedUsePacket {
 
 	@Override
 	public void setBlockPosition(BlockPosition value) {
+		markMutated();
 		this.blockPosition = value;
-	}
-
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketId packetId) {
-		return (state == ConnectionState.PLAY) && (packetId == PacketId.Server.BED);
 	}
 
 	@Override

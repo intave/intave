@@ -19,7 +19,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCounted;
 import org.bukkit.Material;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
@@ -42,15 +41,7 @@ public final class ByteBufStreamCodecs {
 	public static final StreamCodec<ByteBuf, ByteBuf, Double> FLOAT_AS_DOUBLE = FLOAT.beforeAndAfter(Float::doubleValue, Double::floatValue);
 	public static final StreamCodec<ByteBuf, ByteBuf, String> VARINT_STRING = stringCodec(32767);
 	public static final StreamCodec<ByteBuf, ByteBuf, byte[]> VARINT_BYTES = varIntByteArray(Integer.MAX_VALUE);
-	public static final StreamCodec<ByteBuf, ByteBuf, byte[]> BYTES = StreamCodec.of((buf, arr) -> {
-		INTEGER.encode(buf, arr.length);
-		buf.writeBytes(arr);
-	}, buf -> {
-		int length = INTEGER.decode(buf);
-		byte[] arr = new byte[length];
-		buf.readBytes(arr);
-		return arr;
-	});
+	public static final StreamCodec<ByteBuf, ByteBuf, byte[]> BYTES = ByteArrayCodec.INSTANCE;
 	public static final StreamCodec<ByteBuf, ByteBuf, String> STRING = BYTES.beforeAndAfter(String::new, String::getBytes);
 	public static final StreamCodec<ByteBuf, ByteBuf, Material> MATERIAL = STRING.beforeAndAfter(ByteBufStreamCodecs::findOrThrow, Material::name);
 	public static final StreamCodec<ByteBuf, ByteBuf, UUID> UUID = StreamCodec.of((buf, uuid) -> {
@@ -62,49 +53,36 @@ public final class ByteBufStreamCodecs {
 		return elementCodec.toListCodec(ByteBufStreamCodecs.INTEGER);
 	}
 
-	public static StreamCodec<ByteBuf, ByteBuf, String> stringCodec(int maximum) {
-		if (maximum < 0 || maximum > Integer.MAX_VALUE / 3) {
-			throw new IllegalArgumentException("Invalid string character limit: " + maximum);
+	public static int count(ByteBuf input, int maximum) {
+		int count = VARINT.decode(input);
+		if (count < 0 || count > maximum) {
+			throw new IllegalArgumentException("Invalid wire collection length: " + count);
 		}
-		return StreamCodec.of((output, value) -> {
-			byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
-			if (value.length() > maximum || bytes.length > maximum * 3) {
-				throw new IllegalArgumentException("Wire string exceeds " + maximum + " characters");
-			}
-			VARINT.encode(output, bytes.length);
-			output.writeBytes(bytes);
-		}, input -> {
-			int length = VARINT.decode(input);
-			if (length < 0 || length > maximum * 3 || length > input.readableBytes()) {
-				throw new IllegalArgumentException("Invalid wire string byte length: " + length);
-			}
-			byte[] bytes = new byte[length];
-			input.readBytes(bytes);
-			String value = new String(bytes, StandardCharsets.UTF_8);
-			if (value.length() > maximum) {
-				throw new IllegalArgumentException("Wire string exceeds " + maximum + " characters");
-			}
-			return value;
-		});
+		return count;
+	}
+
+	public static byte[] bytes(ByteBuf input, int length) {
+		if (length < 0 || length > input.readableBytes()) {
+			throw new IllegalArgumentException("Invalid wire byte length: " + length);
+		}
+		byte[] bytes = new byte[length];
+		input.readBytes(bytes);
+		return bytes;
+	}
+
+	public static <E> E enumValue(E[] values, int index) {
+		if (index < 0 || index >= values.length) {
+			throw new IllegalArgumentException("Invalid wire enum index: " + index);
+		}
+		return values[index];
+	}
+
+	public static StreamCodec<ByteBuf, ByteBuf, String> stringCodec(int maximum) {
+		return new StringCodec(maximum);
 	}
 
 	public static StreamCodec<ByteBuf, ByteBuf, byte[]> varIntByteArray(int maxLength) {
-		if (maxLength < 0) throw new IllegalArgumentException("Negative byte array limit");
-		return StreamCodec.of((output, value) -> {
-			if (value.length > maxLength) {
-				throw new IllegalArgumentException("Byte array exceeds " + maxLength + " bytes");
-			}
-			VARINT.encode(output, value.length);
-			output.writeBytes(value);
-		}, input -> {
-			int length = VARINT.decode(input);
-			if (length < 0 || length > maxLength || length > input.readableBytes()) {
-				throw new IllegalArgumentException("Invalid byte array length: " + length);
-			}
-			byte[] value = new byte[length];
-			input.readBytes(value);
-			return value;
-		});
+		return new VarIntByteArrayCodec(maxLength);
 	}
 
 	public static StreamCodec<ByteBuf, ByteBuf, byte[]> fixedByteArray(int length) {
@@ -182,20 +160,7 @@ public final class ByteBufStreamCodecs {
 
 	// optional
 	public static <T> StreamCodec<ByteBuf, ByteBuf, T> optionalCodecOf(StreamCodec<ByteBuf, ByteBuf, T> elementCodec) {
-		return StreamCodec.of((buf, value) -> {
-			if (value == null) {
-				buf.writeBoolean(false);
-			} else {
-				buf.writeBoolean(true);
-				elementCodec.encode(buf, value);
-			}
-		}, buf -> {
-			boolean present = buf.readBoolean();
-			if (!present) {
-				return null;
-			}
-			return elementCodec.decode(buf);
-		});
+		return elementCodec.optional(ByteBufStreamCodecs.BOOLEAN);
 	}
 
 	public static <T> SmartCodecBuilder<ByteBuf, ByteBuf, T> smartCodec() {

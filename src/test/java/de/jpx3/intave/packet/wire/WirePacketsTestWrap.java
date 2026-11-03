@@ -11,9 +11,9 @@
 
 package de.jpx3.intave.packet.wire;
 
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.packet.PacketDirection;
-import de.jpx3.intave.packet.contract.*;
+import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.contract.immutable.*;
 import de.jpx3.intave.packet.contract.mutable.MutableKeepAlivePacket;
 import de.jpx3.intave.registry.PacketIdRegistries;
 import de.jpx3.intave.registry.PacketIdRegistry;
@@ -29,28 +29,28 @@ final class WirePacketsTestWrap {
 	void resolvesPacketTypesAndVersionedIdsAcrossEveryBundledProtocol() {
 		PacketIdRegistry<?> registry = PacketIdRegistries.serverbound();
 		for (int protocol : registry.supportedProtocolVersions()) {
-			int handshakeId = registry.idOf(HANDSHAKING, PacketId.Client.SET_PROTOCOL, protocol);
+			int handshakeId = registry.idOf(HANDSHAKING, PacketType.Client.SET_PROTOCOL, protocol);
 			assertInstanceOf(HandshakePacket.class, WirePackets.createPacket(HANDSHAKING, handshakeId, protocol));
-			assertInstanceOf(HandshakePacket.class, WirePackets.createPacket(HANDSHAKING, PacketId.Client.SET_PROTOCOL, protocol));
-			int inputId = registry.idOf(PLAY, PacketId.Client.PLAYER_INPUT, protocol);
+			assertInstanceOf(HandshakePacket.class, WirePackets.createPacket(HANDSHAKING, PacketType.Client.SET_PROTOCOL, protocol));
+			int inputId = registry.idOf(PLAY, PacketType.Client.PLAYER_INPUT, protocol);
 			assertInstanceOf(PlayerInputPacket.class, WirePackets.createPacket(PLAY, inputId, protocol));
-			assertInstanceOf(PlayerInputPacket.class, WirePackets.createPacket(PLAY, PacketId.Client.PLAYER_INPUT, protocol));
+			assertInstanceOf(PlayerInputPacket.class, WirePackets.createPacket(PLAY, PacketType.Client.PLAYER_INPUT, protocol));
 		}
 	}
 
 	@Test
 	void infersDirectionFromPacketIdsAndRejectsConflictingDirections() {
-		assertInstanceOf(AbilityInPacket.class, WirePackets.createPlayPacket(PacketId.Client.ABILITIES_IN, 47));
-		assertInstanceOf(AbilityOutPacket.class, WirePackets.createPlayPacket(PacketId.Server.ABILITIES_OUT, 47));
+		assertInstanceOf(AbilityInPacket.class, WirePackets.createPlayPacket(PacketType.Client.ABILITIES_IN, 47));
+		assertInstanceOf(AbilityOutPacket.class, WirePackets.createPlayPacket(PacketType.Server.ABILITIES_OUT, 47));
 		assertThrows(IllegalArgumentException.class, () ->
-			WirePackets.createPlayPacket(PacketDirection.SERVERBOUND, PacketId.Server.ABILITIES_OUT, 47));
+			WirePackets.createPlayPacket(PacketDirection.SERVERBOUND, PacketType.Server.ABILITIES_OUT, 47));
 		assertThrows(IllegalArgumentException.class, () ->
-			WirePackets.createPlayPacket(PacketDirection.CLIENTBOUND, PacketId.Client.ABILITIES_IN, 47));
-		MutableKeepAlivePacket packet = WirePackets.createPlayPacket(PacketId.Server.KEEP_ALIVE, 107);
+			WirePackets.createPlayPacket(PacketDirection.CLIENTBOUND, PacketType.Client.ABILITIES_IN, 47));
+		MutableKeepAlivePacket packet = WirePackets.createPlayPacket(PacketType.Server.KEEP_ALIVE_OUT, 107);
 		packet.setId(300);
 		ByteBuf output = Unpooled.buffer();
 		try {
-			WirePackets.encodePacket(PLAY, PacketId.Server.KEEP_ALIVE, 107, packet, output);
+			WirePackets.encodePacket(PLAY, PacketType.Server.KEEP_ALIVE_OUT, 107, packet, output);
 			assertEquals(0x1f, output.getUnsignedByte(0));
 			KeepAlivePacket decoded = WirePackets.decodePacket(PacketDirection.CLIENTBOUND, PLAY, 107, output);
 			assertEquals(300, decoded.id());
@@ -63,10 +63,10 @@ final class WirePacketsTestWrap {
 	void rejectsUnimplementedPacketsAndIdsFromOtherStates() {
 		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(LOGIN, 0, 768));
 		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(STATUS, 0, 768));
-		assertInstanceOf(KeepAlivePacket.class, WirePackets.createPacket(PLAY, PacketId.Client.KEEP_ALIVE, 768));
-		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(HANDSHAKING, PacketId.Client.START, 768));
-		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(PLAY, PacketId.Client.START, 768));
-		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(PLAY, PacketId.Client.CONFIGURATION_ACK, 768));
+		assertInstanceOf(KeepAlivePacket.class, WirePackets.createPacket(PLAY, PacketType.Client.KEEP_ALIVE_IN, 768));
+		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(HANDSHAKING, PacketType.Client.START, 768));
+		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(PLAY, PacketType.Client.START, 768));
+		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(PLAY, PacketType.Client.CONFIGURATION_ACK, 768));
 		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(PLAY, -1, 768));
 		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(PLAY, Integer.MAX_VALUE, 768));
 	}
@@ -74,9 +74,9 @@ final class WirePacketsTestWrap {
 	@Test
 	void rejectsUnsupportedProtocolsAndNullKeys() {
 		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(HANDSHAKING, 0, -1));
-		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(HANDSHAKING, PacketId.Client.SET_PROTOCOL, -1));
+		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(HANDSHAKING, PacketType.Client.SET_PROTOCOL, -1));
 		assertThrows(NullPointerException.class, () -> WirePackets.createPacket(null, 0, 768));
-		assertThrows(NullPointerException.class, () -> WirePackets.createPacket(null, PacketId.Client.SET_PROTOCOL, 768));
+		assertThrows(NullPointerException.class, () -> WirePackets.createPacket(null, PacketType.Client.SET_PROTOCOL, 768));
 		assertThrows(NullPointerException.class, () -> WirePackets.createPacket(PLAY, null, 768));
 	}
 }

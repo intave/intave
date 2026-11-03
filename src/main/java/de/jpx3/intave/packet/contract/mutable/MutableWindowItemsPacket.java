@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.mutable;
 
-import de.jpx3.intave.packet.contract.WindowItemsPacket;
+import de.jpx3.intave.packet.contract.immutable.WindowItemsPacket;
 
-public interface MutableWindowItemsPacket extends WindowItemsPacket, MutableItemUpdates, MutableWindowRevision, MutableCarriedItem {
+public interface MutableWindowItemsPacket extends WindowItemsPacket, MutableItemUpdates, MutableWindowRevision, MutableCarriedItem, Mutable {
 }

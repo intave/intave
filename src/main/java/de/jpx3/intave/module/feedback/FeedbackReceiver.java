@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.feedback;
 
 import com.comphenix.protocol.events.PacketContainer;
@@ -13,14 +24,13 @@ import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
-import de.jpx3.intave.module.linker.packet.PacketId;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.player.FaultKicks;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.Locale;
@@ -29,7 +39,7 @@ import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 import static de.jpx3.intave.module.feedback.FeedbackSender.*;
-import static de.jpx3.intave.module.linker.packet.PacketId.Client.*;
+import static de.jpx3.intave.packet.contract.PacketType.Client.*;
 
 public final class FeedbackReceiver extends Module {
   private static final boolean USE_PING_PACKETS = MinecraftVersions.VER1_17_0.atOrAbove();
@@ -119,7 +129,7 @@ public final class FeedbackReceiver extends Module {
 
   @PacketSubscription(
     packetsIn = {
-      KEEP_ALIVE
+      KEEP_ALIVE_IN
     }
   )
   public void onKeepAlive(PacketEvent event) {
@@ -145,7 +155,7 @@ public final class FeedbackReceiver extends Module {
 
   @PacketSubscription(
     packetsOut = {
-      PacketId.Server.TRANSACTION, PacketId.Server.PING
+      PacketType.Server.TRANSACTION_OUT, PacketType.Server.PING
     }
   )
   public void outgoingTransaction(PacketEvent event) {
@@ -168,7 +178,7 @@ public final class FeedbackReceiver extends Module {
   @PacketSubscription(
     priority = ListenerPriority.LOWEST,
     packetsIn = {
-      TRANSACTION, PONG
+	    TRANSACTION_IN, PONG
     }
   )
   public void receiveAcknowledgementPacket(PacketEvent event) {
