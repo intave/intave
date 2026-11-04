@@ -18,6 +18,9 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.Pose;
 import de.jpx3.intave.check.movement.physics.simulator.Simulators;
+import de.jpx3.intave.entity.size.HitboxSize;
+import de.jpx3.intave.entity.type.EntityTypeData;
+import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.test.FakePlayerFactory;
 import de.jpx3.intave.test.FakeWorldFactory;
@@ -36,6 +39,7 @@ import java.util.UUID;
 
 import static de.jpx3.intave.user.meta.ProtocolMetadata.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 final class BaseSimulatorPoseInputTest {
@@ -218,6 +222,30 @@ final class BaseSimulatorPoseInputTest {
 
 		assertEquals(Pose.CROUCHING, environment.pose());
 		assertEquals(1.5F, environment.height());
+	}
+
+	@Test
+	void vehicleCollisionBoxUsesTheMountedEntityDimensions() {
+		User user = UserFactory.createFallback();
+		MovementMetadata environment = user.meta().movement();
+		for (HitboxSize size : new HitboxSize[]{HitboxSize.of(1.3964844F, 1.6F), HitboxSize.of(0.9F, 0.9F)}) {
+			environment.restoreRecordedVehicle(new Entity(5, new EntityTypeData("horse", size, 5, true, 11), false));
+			environment.setSimulator(Simulators.HORSE);
+			environment.updateSize();
+			BoundingBox box = BoundingBox.fromPosition(user, environment, POSITION);
+			assertEquals(size.width(), box.maxX - box.minX, EPSILON);
+			assertEquals(size.height(), box.maxY - box.minY, EPSILON);
+			assertFalse(box.intersectsWith(BoundingBox.fromBounds(-2, 51.7, -2, 2, 52, 2)));
+		}
+		environment.setSimulator(Simulators.BOAT);
+		environment.updateSize();
+		assertEquals(1.375F, environment.width());
+		assertEquals(0.5625F, environment.height());
+		environment.restoreRecordedVehicle(null);
+		environment.setSimulator(Simulators.PLAYER);
+		environment.setPose(Pose.STANDING);
+		assertEquals(0.6F, environment.width());
+		assertEquals(1.8F, environment.height());
 	}
 
 	private static void assertUsesCrawlingSlowdown(

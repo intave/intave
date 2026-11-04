@@ -222,7 +222,8 @@ public final class TeleportController implements PacketEventSubscriber {
 		user.meta().connection().feedbackAndTeleportLock.lock();
 		try {
 			movement.invalidMovement = true;
-			if (!movement.pendingTeleports.get().isEmpty()) {
+			boolean riding = movement.isInVehicle();
+			if (!movement.pendingTeleports.get().isEmpty() && !riding) {
 				movement.recoverPendingTeleport();
 				return;
 			}
@@ -237,6 +238,28 @@ public final class TeleportController implements PacketEventSubscriber {
 				user.meta().connection().feedbackAndTeleportLock.lock();
 				try {
 					if (!movement.isRecovering(recovery)) return;
+					if (riding && user.hasPlayer()) {
+						Player player = user.player();
+						long sequence = movement.teleportSequence;
+						if (player.isInsideVehicle()) {
+							player.leaveVehicle();
+						}
+						if (player.isInsideVehicle()) {
+							movement.cancelRecovery(recovery);
+							return;
+						}
+						if (movement.teleportSequence == sequence) {
+							player.teleport(player.getLocation());
+						}
+						if (movement.teleportSequence == sequence) {
+							movement.cancelRecovery(recovery);
+							return;
+						}
+						if (movement.pendingTeleports.get().size() > 1) {
+							onResendTimeout(user);
+						}
+						return;
+					}
 					movement.finishRecoveryOnNextTeleport(recovery);
 					teleport(user, snapshot, Relative.RELATIVE_ROTATION, onGround, true);
 				} finally {

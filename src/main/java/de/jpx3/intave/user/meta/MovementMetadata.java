@@ -1995,6 +1995,20 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
   }
 
+  public void cancelRecovery(long generation) {
+    Lock lock = user.meta().connection().feedbackAndTeleportLock;
+    lock.lock();
+    try {
+      if (inRecovery && recoveryGeneration == generation
+        && recoveryFinalTeleportSequence == Long.MAX_VALUE) {
+        inRecovery = false;
+        recoveryFinalTeleportSequence = Long.MAX_VALUE;
+      }
+    } finally {
+      lock.unlock();
+    }
+  }
+
   public void replaceRecoveryWithExternalTeleport() {
     Lock lock = user.meta().connection().feedbackAndTeleportLock;
     lock.lock();
