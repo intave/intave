@@ -48,7 +48,6 @@ public final class MetadataTracker extends Module {
 		@Nullable Boolean newGliding = newGlidingStatus(user, reader);
 		@Nullable Pose newPose = newPoseStatus(user, reader);
 		@Nullable Byte livingFlags = reader.livingFlags();
-		long itemUseSequence = user.meta().inventory().activeItemUseSequence();
 
 		user.packetTickFeedback(event, () -> {
 			MovementMetadata movement = user.meta().movement();
@@ -67,9 +66,7 @@ public final class MetadataTracker extends Module {
 				movement.setPose(newPose);
 			}
 			if (livingFlags != null) {
-				inventory.applyClientItemUseFlags(
-					itemUseSequence, (livingFlags & 1) != 0
-				);
+				inventory.applyClientItemUseFlags(livingFlags);
 			}
 		});
 	}
