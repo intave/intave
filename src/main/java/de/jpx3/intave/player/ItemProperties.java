@@ -11,6 +11,8 @@
 
 package de.jpx3.intave.player;
 
+import com.comphenix.protocol.utility.MinecraftReflection;
+import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.module.tracker.player.AbilityTracker;
@@ -25,12 +27,16 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static de.jpx3.intave.player.Enchantments.tridentRiptideEnchanted;
 
 public final class ItemProperties {
+  private static final MinecraftVersion USE_EFFECTS_VERSION = new MinecraftVersion("1.21.11");
   private static final ItemUseProfile DEFAULT_USE_PROFILE = new ItemUseProfile(false, 0.2F);
   public static final Material ITEM_TRIDENT = materialByName("TRIDENT");
   public static final Material CROSSBOW = materialByName("CROSSBOW");
@@ -413,6 +419,20 @@ public final class ItemProperties {
     if (itemStack == null) {
       return DEFAULT_USE_PROFILE;
     }
+    if (USE_EFFECTS_VERSION.atOrAbove()) {
+      try {
+        Object nativeItem = MinecraftReflection.getMinecraftItemStack(itemStack);
+        Object component = UseEffectsAccess.GET.invoke(nativeItem, UseEffectsAccess.TYPE);
+        if (component == null) {
+          return DEFAULT_USE_PROFILE;
+        }
+        return new ItemUseProfile(
+          (boolean) UseEffectsAccess.CAN_SPRINT.invoke(component),
+          ((Number) UseEffectsAccess.SPEED_MULTIPLIER.invoke(component)).floatValue()
+        );
+      } catch (ReflectiveOperationException | RuntimeException | LinkageError ignored) {
+      }
+    }
     Object useEffects = itemMetaComponent(itemStack, "hasUseEffects", "getUseEffects");
     if (useEffects == null) {
       return DEFAULT_USE_PROFILE;
@@ -437,6 +457,54 @@ public final class ItemProperties {
       return DEFAULT_USE_PROFILE;
     }
     return new ItemUseProfile(canSprint, multiplier);
+  }
+
+  private static final class UseEffectsAccess {
+    private static final Object TYPE;
+    private static final Method GET;
+    private static final Method CAN_SPRINT;
+    private static final Method SPEED_MULTIPLIER;
+
+    static {
+      try {
+        ClassLoader loader = MinecraftReflection.getItemStackClass().getClassLoader();
+        Class<?> componentType = Class.forName("net.minecraft.core.component.DataComponentType", true, loader);
+        Class<?> components = Class.forName("net.minecraft.core.component.DataComponents", true, loader);
+        Class<?> effects = Class.forName("net.minecraft.world.item.component.UseEffects", true, loader);
+        TYPE = componentType(components, componentType, effects);
+        Class<?> getter = Class.forName("net.minecraft.core.component.DataComponentGetter", true, loader);
+        GET = Arrays.stream(getter.getMethods())
+          .filter(method -> method.getReturnType() == Object.class
+            && Arrays.equals(method.getParameterTypes(), new Class<?>[]{componentType}))
+          .findFirst().orElseThrow(() -> new NoSuchMethodException("Item component getter"));
+        CAN_SPRINT = accessor(effects, "canSprint", "a");
+        SPEED_MULTIPLIER = accessor(effects, "speedMultiplier", "c");
+      } catch (ReflectiveOperationException exception) {
+        throw new IllegalStateException("Unable to resolve item use effects", exception);
+      }
+    }
+
+    private static Object componentType(Class<?> components, Class<?> type, Class<?> value)
+      throws ReflectiveOperationException {
+      for (Field field : components.getFields()) {
+        if (field.getGenericType() instanceof ParameterizedType) {
+          ParameterizedType generic = (ParameterizedType) field.getGenericType();
+          if (generic.getRawType() == type && Arrays.equals(generic.getActualTypeArguments(), new java.lang.reflect.Type[]{value})) {
+            return field.get(null);
+          }
+        }
+      }
+      throw new NoSuchFieldException("Item use effects component");
+    }
+
+    private static Method accessor(Class<?> type, String name, String spigotName)
+      throws NoSuchMethodException {
+      try {
+        return type.getMethod(name);
+      } catch (NoSuchMethodException ignored) {
+        return type.getMethod(spigotName);
+      }
+    }
   }
 
   @Nullable

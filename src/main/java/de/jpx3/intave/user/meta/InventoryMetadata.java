@@ -325,7 +325,8 @@ public final class InventoryMetadata {
       && !ItemProperties.startsUsingOnBlock(user, requestedItem)) {
       return false;
     }
-    if (handActive() && handActiveTicks > 0) {
+    if (handActive() && handActiveTicks > 0
+      && (!activeItemAllowsSprinting || activeItemUseSpeedMultiplier < 1.0F)) {
       // Minecraft suppresses further use attempts while either hand is busy.
       // Once the initial use has crossed a movement boundary, another usable-
       // item request without a release comes from packet-level item-use wrapping
@@ -419,8 +420,8 @@ public final class InventoryMetadata {
       }
       this.pastItemUsageTransition = 0;
       this.handActiveTicks = 0;
-      this.activatedItemThisTick = true;
-      if (deactivatedItemThisTick) {
+      this.activatedItemThisTick |= !profile.canSprint() || profile.speedMultiplier() < 1.0F;
+      if (activatedItemThisTick && deactivatedItemThisTick) {
         suspiciousNoSlowdownPacketPatternThisTick = true;
       }
 
@@ -465,8 +466,8 @@ public final class InventoryMetadata {
       this.serverCompletedItemUseSequence = -1;
       this.pastItemUsageTransition = 0;
       this.handActiveTicks = 0;
-      this.deactivatedItemThisTick = true;
-      if (activatedItemThisTick) {
+      this.deactivatedItemThisTick |= !activeItemAllowsSprinting || activeItemUseSpeedMultiplier < 1.0F;
+      if (activatedItemThisTick && deactivatedItemThisTick) {
         suspiciousNoSlowdownPacketPatternThisTick = true;
       }
       Material activeItem = this.activeItemType;
