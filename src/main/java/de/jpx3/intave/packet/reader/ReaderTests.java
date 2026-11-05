@@ -37,6 +37,7 @@ import de.jpx3.intave.module.linker.packet.ForwardingPacketAdapter;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.tracker.entity.EntityCollisionDisabler;
 import de.jpx3.intave.packet.Relative;
+import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.packet.converter.PlayerHandConverter;
 import de.jpx3.intave.packet.converter.PosMoveRotConverter;
 import de.jpx3.intave.packet.converter.PositionAndRotationConverter;
@@ -63,6 +64,30 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.*;
 
 public final class ReaderTests extends IntegrationTests {
+  @Test(testCode = "use-effects", severity = Severity.ERROR)
+  public void testEffectiveItemUseEffects() throws ReflectiveOperationException {
+    if (new MinecraftVersion("1.21.11").below()) return;
+    User user = UserFactory.createFallback();
+    user.meta().protocol().setProtocolVersion(de.jpx3.intave.user.meta.ProtocolMetadata.VER_1_21_11);
+    ItemStack spear = new ItemStack(Material.valueOf("WOODEN_SPEAR"));
+    ItemProperties.ItemUseProfile profile = ItemProperties.itemUseProfile(user, spear);
+    assertNotNull(profile);
+    assertTrue(profile.canSprint());
+    assertEquals(1.0F, profile.speedMultiplier());
+    java.lang.reflect.Method createItem = org.bukkit.inventory.ItemFactory.class.getMethod("createItemStack", String.class);
+    ItemStack modified = (ItemStack) createItem.invoke(Bukkit.getItemFactory(),
+      "minecraft:wooden_spear[minecraft:use_effects={can_sprint:false,speed_multiplier:0.5}]");
+    profile = ItemProperties.itemUseProfile(user, modified);
+    assertFalse(profile.canSprint());
+    assertEquals(0.5F, profile.speedMultiplier());
+    ItemStack removed = (ItemStack) createItem.invoke(Bukkit.getItemFactory(), "minecraft:wooden_spear[!minecraft:use_effects]");
+    profile = ItemProperties.itemUseProfile(user, removed);
+    assertFalse(profile.canSprint());
+    assertEquals(0.2F, profile.speedMultiplier());
+    profile = ItemProperties.itemUseProfile(user, new ItemStack(Material.valueOf("SHIELD")));
+    assertFalse(profile.canSprint());
+    assertEquals(0.2F, profile.speedMultiplier());
+  }
   private static final Set<PacketType> EXCLUDED_TYPES = new HashSet<>();
   static {
     EXCLUDED_TYPES.add(PacketType.Play.Server.MULTI_BLOCK_CHANGE);

@@ -131,6 +131,22 @@ class ItemPropertiesTest {
   }
 
   @Test
+  void unrestrictedItemUseDoesNotCreateSlowdownSpamPatterns() {
+    User user = userWithFoodLevel(10);
+    user.player().getInventory().setItem(0, componentItem(false, 1.6F, true, 1.0F));
+    user.meta().inventory().setHeldItemSlot(0);
+    assertTrue(user.meta().inventory().activateHandIfUsable(null));
+    user.meta().inventory().tickComplete();
+    user.meta().inventory().activateHandIfUsable(null);
+    assertFalse(user.meta().inventory().repeatedItemUseRequestThisTick());
+    user.meta().inventory().deactivateHand();
+    user.meta().inventory().activateHandIfUsable(null);
+    assertFalse(user.meta().inventory().suspiciousNoSlowdownPacketPatternThisTick());
+    assertFalse(user.meta().inventory().activatedItemThisTick);
+    assertFalse(user.meta().inventory().deactivatedItemThisTick);
+  }
+
+  @Test
   void suspiciousStewBecomesAlwaysEdibleIn117() {
     assertFalse(ItemProperties.alwaysEdible(Material.SUSPICIOUS_STEW, ProtocolMetadata.VER_1_16_4));
     assertTrue(ItemProperties.alwaysEdible(Material.SUSPICIOUS_STEW, ProtocolMetadata.VER_1_17));
