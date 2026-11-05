@@ -510,6 +510,10 @@ public final class InteractionRaytrace extends MetaCheck<InteractionRaytrace.Int
     MovementMetadata movementData = user.meta().movement();
     InteractionMeta interactionMeta = metaOf(user);
 
+    if (movementData.isInVehicle()) {
+      return PreprocessResult.OK;
+    }
+
     if (interaction.type() == START_BREAK && interaction.digType() == ABORT_DESTROY_BLOCK) {
       // the block will be invalid regardless
       return PreprocessResult.OK;

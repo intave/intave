@@ -72,6 +72,47 @@ public final class ReaderTests extends IntegrationTests {
     super("PR");
   }
 
+  @Test(testCode = "mounted-block-break", severity = Severity.ERROR)
+  public void testMountedBlockBreakPreprocessing() throws ReflectiveOperationException {
+    org.bukkit.World world = Bukkit.getWorlds().get(0);
+    double y = world.getMaxHeight() + 4;
+    org.bukkit.entity.Player player = FakePlayerFactory.createPlayer((name, args) -> {
+      if (name.equals("getWorld")) return world;
+      if (name.equals("getLocation")) return new org.bukkit.Location(world, 0.5, y, 0.5);
+      return null;
+    });
+    BlockCache cache = BlockCaches.cacheForPlayer(player);
+    User user = UserFactory.createTestUserFor(player, (ignored, key) -> {
+      if (key.equals("protocolVersion")) return ServerProtocolVersion.current();
+      if (key.equals("blockCache")) return cache;
+      return null;
+    });
+    UserRepository.manuallyRegisterUser(player, user);
+    try {
+      user.meta().movement().setPosition(new Position(0.5, y, 0.5));
+      user.meta().movement().lastPositionX = 0.5;
+      user.meta().movement().lastPositionY = y;
+      user.meta().movement().lastPositionZ = 0.5;
+      InteractionRaytrace check = IntavePlugin.singletonInstance().checks().searchCheck(InteractionRaytrace.class);
+      java.lang.reflect.Method preprocess = InteractionRaytrace.class.getDeclaredMethod("preprocessInteraction", Interaction.class);
+      preprocess.setAccessible(true);
+      for (InteractionType type : new InteractionType[]{InteractionType.START_BREAK, InteractionType.BREAK}) {
+        Interaction interaction = new Interaction(0, null, world, player, new BlockPosition(0, (int) y, 32), 2,
+          type, Material.AIR, null, PlayerHand.MAIN_HAND, EnumWrappers.PlayerDigType.START_DESTROY_BLOCK,
+          Float.NaN, Float.NaN, Float.NaN, -1);
+        user.meta().movement().restoreRecordedVehicle(null);
+        assertEquals("FAILED_CRITICAL", preprocess.invoke(check, interaction).toString());
+        user.meta().movement().restoreRecordedVehicle(new Entity(1,
+          new EntityTypeData("horse", HitboxSize.of(1.3964844F, 1.6F), 100, true, 1), false));
+        assertEquals("OK", preprocess.invoke(check, interaction).toString());
+        user.meta().movement().restoreRecordedVehicle(null);
+        assertEquals("FAILED_CRITICAL", preprocess.invoke(check, interaction).toString());
+      }
+    } finally {
+      UserRepository.unregisterUser(player);
+    }
+  }
+
   @Test(testCode = "recorded-packet-actions", severity = Severity.ERROR)
   public void testRecordedPacketActions() {
     for (PlayerHand hand : PlayerHand.values()) {
