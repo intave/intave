@@ -183,6 +183,7 @@ public final class MovementMetadata implements SimulationEnvironment {
   private OptionalInt serverTeleportId = OptionalInt.empty();
   private boolean serverTeleportAcknowledged;
   private long recoveryGeneration;
+  private boolean recoveryTaskScheduled;
   private long recoveryFinalTeleportSequence = Long.MAX_VALUE;
 
   public long lastSimulationSprintResetAttempt;
@@ -1878,6 +1879,8 @@ public final class MovementMetadata implements SimulationEnvironment {
     if (positionReset) {
       Synchronizer.synchronize(user, () -> {
         if (inRecovery || !pendingTeleports.get().isEmpty()) return;
+        if (player.isInsideVehicle()) player.leaveVehicle();
+        if (player.isInsideVehicle() || inRecovery || !pendingTeleports.get().isEmpty()) return;
         // player.getLocation() is assumed to be correct
         Location target = player.getLocation();
         Modules.tracker().packetLogging().logSystemMessage(user, () ->
@@ -1951,6 +1954,7 @@ public final class MovementMetadata implements SimulationEnvironment {
         return -1;
       }
       inRecovery = true;
+      recoveryTaskScheduled = false;
       dropPostTickMotionProcessing = true;
       recoveryFinalTeleportSequence = Long.MAX_VALUE;
       return ++recoveryGeneration;
@@ -1972,12 +1976,35 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
   }
 
+  public long beginRecoveryTask() {
+    Lock lock = user.meta().connection().feedbackAndTeleportLock;
+    lock.lock();
+    try {
+      if (recoveryTaskScheduled) return -1;
+      if (!inRecovery) beginRecovery();
+      recoveryTaskScheduled = true;
+      return recoveryGeneration;
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  public void endRecoveryTask(long generation) {
+    Lock lock = user.meta().connection().feedbackAndTeleportLock;
+    lock.lock();
+    try {
+      if (recoveryGeneration == generation) recoveryTaskScheduled = false;
+    } finally {
+      lock.unlock();
+    }
+  }
+
   public boolean isRecovering(long generation) {
     Lock lock = user.meta().connection().feedbackAndTeleportLock;
     lock.lock();
     try {
       return inRecovery && recoveryGeneration == generation &&
-        recoveryFinalTeleportSequence == Long.MAX_VALUE;
+        (recoveryFinalTeleportSequence == Long.MAX_VALUE || recoveryTaskScheduled);
     } finally {
       lock.unlock();
     }
@@ -2000,8 +2027,9 @@ public final class MovementMetadata implements SimulationEnvironment {
     lock.lock();
     try {
       if (inRecovery && recoveryGeneration == generation
-        && recoveryFinalTeleportSequence == Long.MAX_VALUE) {
+        && (recoveryFinalTeleportSequence == Long.MAX_VALUE || recoveryTaskScheduled)) {
         inRecovery = false;
+        recoveryTaskScheduled = false;
         recoveryFinalTeleportSequence = Long.MAX_VALUE;
       }
     } finally {
@@ -2015,6 +2043,8 @@ public final class MovementMetadata implements SimulationEnvironment {
     try {
       if (inRecovery) {
         recoveryFinalTeleportSequence = teleportSequence;
+        recoveryGeneration++;
+        recoveryTaskScheduled = false;
       }
     } finally {
       lock.unlock();
@@ -2031,6 +2061,7 @@ public final class MovementMetadata implements SimulationEnvironment {
         return false;
       }
       inRecovery = false;
+      recoveryTaskScheduled = false;
       recoveryFinalTeleportSequence = Long.MAX_VALUE;
       return true;
     } finally {

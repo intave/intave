@@ -46,15 +46,64 @@ class MountedCorrectionTest {
   }
 
   @Test
-  void cancelledDismountDoesNotSendAnUnconfirmablePlayerTeleport() {
+  void existingRecoverySchedulesOnlyOneDismount() {
     Scenario s = new Scenario();
-    s.cancelDismount = true;
-    s.correct();
-    assertTrue(s.mounted);
-    assertFalse(s.movement.inRecovery);
-    assertTrue(s.movement.invalidMovement);
-    assertTrue(s.movement.pendingTeleports.get().isEmpty());
-    assertTrue(s.transmitted.isEmpty());
+    s.nativeTeleport(new Position(20, 70, 20));
+    s.movement.invalidMovement = true;
+    s.movement.recoverPendingTeleport();
+    s.requestCorrection();
+    s.requestCorrection();
+    s.controller.onResendTimeout(s.user);
+    assertEquals(1, s.scheduled.size());
+    assertFalse(s.controller.processMovementPackets(s.user));
+    s.scheduled.removeFirst().run();
+    assertFalse(s.mounted);
+    assertEquals(1, s.movement.pendingTeleports.get().size());
+    s.confirm();
+  }
+
+  @Test
+  void correctionChecksNativeMountBeforeFeedbackArrives() {
+    for (boolean pending : new boolean[]{false, true}) {
+      Scenario s = new Scenario();
+      s.movement.restoreRecordedVehicle(null);
+      if (pending) s.nativeTeleport(new Position(20, 70, 20));
+      s.correct();
+      assertFalse(s.mounted);
+      assertEquals(DISMOUNT, s.movement.pendingTeleports.get().getFirst().change().position());
+      s.confirm();
+    }
+  }
+
+  @Test
+  void retryRecoversNativeMountWithoutAnotherCorrection() {
+    Scenario s = new Scenario();
+    s.movement.restoreRecordedVehicle(null);
+    s.nativeTeleport(new Position(20, 70, 20));
+    s.movement.invalidMovement = true;
+    s.movement.recoverPendingTeleport();
+    s.controller.onResendTimeout(s.user);
+    assertEquals(1, s.scheduled.size());
+    s.scheduled.removeFirst().run();
+    assertFalse(s.mounted);
+    s.confirm();
+  }
+
+  @Test
+  void cancelledDismountDoesNotSendAnUnconfirmablePlayerTeleport() {
+    for (boolean pending : new boolean[]{false, true}) {
+      Scenario s = new Scenario();
+      if (pending) s.nativeTeleport(new Position(20, 70, 20));
+      Teleport original = s.movement.pendingTeleports.get().peekLast();
+      s.cancelDismount = true;
+      s.correct();
+      assertTrue(s.mounted);
+      assertFalse(s.movement.inRecovery);
+      assertTrue(s.movement.invalidMovement);
+      assertEquals(pending ? 1 : 0, s.movement.pendingTeleports.get().size());
+      assertSame(original, s.movement.pendingTeleports.get().peekLast());
+      assertTrue(s.transmitted.isEmpty());
+    }
   }
 
   @Test
@@ -64,6 +113,39 @@ class MountedCorrectionTest {
     s.nativeTeleport(DISMOUNT);
     s.scheduled.removeFirst().run();
     assertTrue(s.mounted);
+    s.confirm();
+  }
+
+  @Test
+  void completedTeleportRetiresItsQueuedRecovery() {
+    Scenario s = new Scenario();
+    s.mounted = false;
+    s.movement.restoreRecordedVehicle(null);
+    s.nativeTeleport(DISMOUNT);
+    s.movement.invalidMovement = true;
+    s.movement.recoverPendingTeleport();
+    s.requestCorrection();
+    s.confirm();
+    s.scheduled.removeFirst().run();
+    assertTrue(s.transmitted.isEmpty());
+    assertFalse(s.movement.inRecovery);
+  }
+
+  @Test
+  void staleTaskCannotReleaseANewerRecoveryTask() {
+    Scenario s = new Scenario();
+    s.requestCorrection();
+    s.nativeTeleport(DISMOUNT);
+    s.mounted = false;
+    s.movement.restoreRecordedVehicle(null);
+    s.controller.onResendTimeout(s.user);
+    assertEquals(2, s.scheduled.size());
+    s.scheduled.removeFirst().run();
+    s.controller.onResendTimeout(s.user);
+    assertEquals(1, s.scheduled.size());
+    s.scheduled.removeFirst().run();
+    assertEquals(1, s.transmitted.size());
+    assertEquals(DISMOUNT, s.transmitted.getFirst().change().position());
     s.confirm();
   }
 
@@ -105,8 +187,12 @@ class MountedCorrectionTest {
       movement.pendingTeleports.get().add(teleport);
     }
 
-    void correct() {
+    void requestCorrection() {
       controller.movementCorrection(user, PositionMoveRotation.withoutRotation(new Position(200, 90, 200), Motion.newEmpty()));
+    }
+
+    void correct() {
+      requestCorrection();
       assertTrue(movement.inRecovery);
       scheduled.removeFirst().run();
     }
