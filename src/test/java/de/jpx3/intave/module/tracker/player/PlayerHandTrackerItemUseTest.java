@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -369,7 +370,7 @@ final class PlayerHandTrackerItemUseTest {
       inventory.setHeldItemSlot(0);
       inventory.activateHand(PlayerHand.MAIN_HAND);
       long sequence = inventory.activeItemUseSequence();
-      inventory.applyClientItemUseFlags(sequence, true);
+      inventory.applyClientItemUseFlags((byte) 1);
       inventory.tickComplete();
 
       inventory.receiveHeldItemSlot(1, user.player().getInventory().getItem(1));
@@ -384,7 +385,7 @@ final class PlayerHandTrackerItemUseTest {
         assertEquals(5, inventory.handActiveTicks);
         assertFalse(inventory.itemUseInterruptedBySlotSwitchThisTick());
         assertEquals(37, inventory.activeClientInventorySlot(0));
-        inventory.applyClientItemUseFlags(sequence, false);
+        inventory.applyClientItemUseFlags((byte) 0);
         assertFalse(inventory.handActive());
       }
     }
@@ -491,20 +492,57 @@ final class PlayerHandTrackerItemUseTest {
   }
 
   @Test
-  void modernInactiveMetadataOnlyEndsAConfirmedUse() {
+  void modernInactiveMetadataEndsAnUnconfirmedUse() {
     User user = user(ProtocolMetadata.VER_1_14);
     user.player().getInventory().setItem(0, new ItemStack(Material.BOW));
     user.player().getInventory().setItem(1, new ItemStack(Material.ARROW));
     user.meta().inventory().setHeldItemSlot(0);
     user.meta().inventory().activateHand(PlayerHand.MAIN_HAND);
-    long useSequence = user.meta().inventory().activeItemUseSequence();
-
-    user.meta().inventory().applyClientItemUseFlags(useSequence, false);
-    assertTrue(user.meta().inventory().handActive());
-
-    user.meta().inventory().applyClientItemUseFlags(useSequence, true);
-    user.meta().inventory().applyClientItemUseFlags(useSequence, false);
+    user.meta().inventory().applyClientItemUseFlags((byte) 0);
     assertFalse(user.meta().inventory().handActive());
+    user.meta().inventory().applyClientItemUseFlags((byte) 1);
+    assertTrue(user.meta().inventory().handActive());
+    user.meta().inventory().applyClientItemUseFlags((byte) 0);
+    assertFalse(user.meta().inventory().handActive());
+  }
+
+  @Test
+  void delayedMetadataStopsTheNewUseAndItsRestartIsNotSuspicious() {
+    User user = user(ProtocolMetadata.VER_26_3);
+    InventoryMetadata inventory = user.meta().inventory();
+    user.player().getInventory().setItem(0, new ItemStack(Material.SHIELD));
+    inventory.setHeldItemSlot(0);
+    inventory.activateHand(PlayerHand.MAIN_HAND);
+    long oldSequence = inventory.activeItemUseSequence();
+    inventory.deactivateHand();
+    inventory.activateHand(PlayerHand.MAIN_HAND);
+    inventory.tickComplete();
+    inventory.clearItemUseTickTransitions();
+    assertNotEquals(oldSequence, inventory.activeItemUseSequence());
+
+    inventory.applyClientItemUseFlags((byte) 0);
+    assertFalse(inventory.handActive());
+    new PlayerHandTracker().receiveItemUseRequest(new TestCancellable(), user, PlayerHand.MAIN_HAND);
+    assertTrue(inventory.handActive());
+    assertFalse(inventory.repeatedItemUseRequestThisTick());
+    assertFalse(inventory.deactivatedItemThisTick);
+    assertFalse(inventory.suspiciousNoSlowdownPacketPatternThisTick());
+  }
+
+  @Test
+  void activeMetadataStartsTheSpecifiedHandWithoutReplacingAnActiveHand() {
+    User user = user(ProtocolMetadata.VER_26_3);
+    InventoryMetadata inventory = user.meta().inventory();
+    user.player().getInventory().setItem(0, new ItemStack(Material.SHIELD));
+    user.player().getInventory().setItemInOffHand(new ItemStack(Material.SHIELD));
+    inventory.setHeldItemSlot(0);
+
+    inventory.applyClientItemUseFlags((byte) 3);
+    assertTrue(inventory.handActive());
+    assertEquals(PlayerHand.OFF_HAND, inventory.activeHand());
+    assertFalse(inventory.activatedItemThisTick);
+    inventory.applyClientItemUseFlags((byte) 1);
+    assertEquals(PlayerHand.OFF_HAND, inventory.activeHand());
   }
 
   @Test
