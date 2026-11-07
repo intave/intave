@@ -4,9 +4,13 @@ import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.cache.MockFullBlockStaticPlane;
 import de.jpx3.intave.block.physics.BlockPhysics;
+import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
+import de.jpx3.intave.check.movement.physics.simulator.Simulators;
 import de.jpx3.intave.entity.size.HitboxSize;
 import de.jpx3.intave.entity.type.EntityTypeData;
 import de.jpx3.intave.module.feedback.EmptyFeedbackCallback;
+import de.jpx3.intave.share.BoundingBox;
+import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.test.FakePlayerFactory;
 import de.jpx3.intave.test.FakeWorldFactory;
@@ -80,6 +84,7 @@ class EntityMountTrackerTest {
   @Test
   void repeatedUpdatesAndAnotherPassengerDoNotResetTheRider() {
     mountLocalPlayer();
+    assertEquals(vehicle.typeData().size().width(), user.meta().movement().width());
     user.meta().movement().invalidVehiclePositionTicks = 17;
     Entity passenger = entity(11);
     tracker.passengers(user, vehicle.entityId(), new int[]{PLAYER});
@@ -100,6 +105,35 @@ class EntityMountTrackerTest {
     assertFalse(user.meta().movement().isInVehicle());
     assertNull(user.meta().connection().vehicleOf(PLAYER));
     assertTrue(user.meta().connection().sittingOn(vehicle.entityId()).isEmpty());
+  }
+
+  @Test
+  void firstMovementAfterDismountUsesThePlayerCollisionBox() {
+    for (String type : new String[]{"Horse", "Boat"}) {
+      vehicle.setTypeData(new EntityTypeData(type, HitboxSize.of(1.4F, 1.6F), 1, true, 0));
+      var movement = user.meta().movement();
+      Position start = new Position(0.5, 64, 0.25);
+      movement.setPosition(start);
+      movement.setVerifiedLastPosition(start, "dismount test");
+      mountLocalPlayer();
+      movement.setSimulator(Simulators.selectFor(movement));
+      movement.tickComplete(false, false, true);
+      assertEquals(type.equals("Boat") ? 1.375F : 1.4F, movement.width());
+
+      tracker.passengers(user, vehicle.entityId(), new int[0]);
+      acknowledge();
+      assertEquals(0.6F, movement.width());
+      assertEquals(BoundingBox.fromPosition(user, movement, start), movement.boundingBox());
+      movement.setSimulator(Simulators.selectFor(movement));
+      var simulation = Simulators.PLAYER.simulateTick(
+        user, new Motion(0, 0, 0.1), movement.immutableView(), MovementConfiguration.blank()
+      );
+
+      assertEquals(0.1, simulation.offsetMotion().motionZ, 1.0E-9);
+      assertEquals(1.8F, movement.height());
+      BoundingBox after = BoundingBox.fromPosition(user, movement, simulation.postTickPosition());
+      assertFalse(after.intersectsWith(BoundingBox.fromBounds(0, 64, 1, 1, 66, 2)));
+    }
   }
 
   @Test
