@@ -228,24 +228,43 @@ final class BaseSimulatorPoseInputTest {
 	void vehicleCollisionBoxUsesTheMountedEntityDimensions() {
 		User user = UserFactory.createFallback();
 		MovementMetadata environment = user.meta().movement();
+		environment.setPosition(POSITION);
 		for (HitboxSize size : new HitboxSize[]{HitboxSize.of(1.3964844F, 1.6F), HitboxSize.of(0.9F, 0.9F)}) {
 			environment.restoreRecordedVehicle(new Entity(5, new EntityTypeData("horse", size, 5, true, 11), false));
 			environment.setSimulator(Simulators.HORSE);
-			environment.updateSize();
 			BoundingBox box = BoundingBox.fromPosition(user, environment, POSITION);
 			assertEquals(size.width(), box.maxX - box.minX, EPSILON);
 			assertEquals(size.height(), box.maxY - box.minY, EPSILON);
+			assertEquals(box, environment.boundingBox());
 			assertFalse(box.intersectsWith(BoundingBox.fromBounds(-2, 51.7, -2, 2, 52, 2)));
 		}
 		environment.setSimulator(Simulators.BOAT);
-		environment.updateSize();
 		assertEquals(1.375F, environment.width());
 		assertEquals(0.5625F, environment.height());
 		environment.restoreRecordedVehicle(null);
 		environment.setSimulator(Simulators.PLAYER);
-		environment.setPose(Pose.STANDING);
 		assertEquals(0.6F, environment.width());
 		assertEquals(1.8F, environment.height());
+	}
+
+	@Test
+	void simulatorChangeRefreshesTheBranchWithoutChangingItsParent() {
+		User user = UserFactory.createFallback();
+		MovementMetadata environment = user.meta().movement();
+		environment.setPosition(POSITION);
+		environment.restoreRecordedVehicle(new Entity(5, new EntityTypeData("horse", HitboxSize.of(1.4F, 1.6F), 5, true, 11), false));
+		environment.setSimulator(Simulators.HORSE);
+		var branch = environment.mutableView();
+
+		branch.setSimulator(Simulators.BOAT);
+
+		assertEquals(1.375F, branch.width());
+		assertEquals(0.5625F, branch.height());
+		assertEquals(BoundingBox.fromPosition(user, branch, POSITION), branch.boundingBox());
+		assertEquals(1.4F, environment.width());
+		branch.commitTo(environment);
+		assertEquals(branch.boundingBox(), environment.boundingBox());
+		assertEquals(branch.width(), environment.width());
 	}
 
 	private static void assertUsesCrawlingSlowdown(

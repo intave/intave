@@ -1628,6 +1628,9 @@ public final class MovementMetadata implements SimulationEnvironment {
   @Override
   public void setSimulator(Simulator simulator) {
     this.simulator = simulator;
+    if (width != pose.width(user, this) || height != pose.height(user, this)) {
+      setPose(pose);
+    }
   }
 
   @Override
@@ -1832,6 +1835,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     this.invalidVehiclePositionTicks = 0;
     this.attachMoveDistance = ridingEntity.distanceTo(lastPosition().toBukkitVec());
     this.vehicle = ridingEntity;
+    setSimulator(Simulators.selectFor(this));
 
     String entityName = ridingEntity.entityName();
     List<String> rideableVehicleNames = Arrays.asList("Boat", "Minecart", "Pig", "Horse", "Camel", "Llama");
@@ -1900,6 +1904,7 @@ public final class MovementMetadata implements SimulationEnvironment {
     }
     activeTick(VEHICLE_DETACHMENT);
     this.vehicle = null;
+    setSimulator(Simulators.selectFor(this));
   }
 
   @Override
