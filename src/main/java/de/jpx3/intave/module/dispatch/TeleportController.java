@@ -19,6 +19,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.executor.Synchronizer;
@@ -82,9 +83,9 @@ public final class TeleportController implements PacketEventSubscriber {
 	}
 
 	TeleportController(
-		BiConsumer<User, Runnable> scheduler,
-		BiConsumer<User, Teleport> transport,
-		BiConsumer<User, TeleportEvent> eventEmitter
+			BiConsumer<User, Runnable> scheduler,
+			BiConsumer<User, Teleport> transport,
+			BiConsumer<User, TeleportEvent> eventEmitter
 	) {
 		this.scheduler = scheduler;
 		this.transport = transport;
@@ -108,14 +109,14 @@ public final class TeleportController implements PacketEventSubscriber {
 	}
 
 	@PacketSubscription(
-		priority = ListenerPriority.LOW,
-		packetsOut = {
-			POSITION
-		}
+			priority = ListenerPriority.LOW,
+			packetsOut = {
+					POSITION
+			}
 	)
 	public void onOutgoingTeleport(
-		PacketEvent event,
-		PlayerTeleportReader reader
+			PacketEvent event,
+			PlayerTeleportReader reader
 	) {
 		Player player = event.getPlayer();
 		User user = UserRepository.userOf(player);
@@ -141,19 +142,19 @@ public final class TeleportController implements PacketEventSubscriber {
 
 			if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
 				user.sendMessage(IntavePlugin.prefix() + "You were instructed to teleport to " +
-					teleport.change().position() + " as " + ChatColor.RED + " it was server-requested");
+						teleport.change().position() + " as " + ChatColor.RED + " it was server-requested");
 			}
 
 			if (teleport.additiveMotionPacket() == null && protocol.legacyTeleportRelativeMotionBehavior()) {
 				teleport.copyRelPosFlagsToRelDeltaFlags();
 			}
 
-			if (teleportFeedbackSyncEnforcement) {
+			if (teleportFeedbackSyncEnforcement && !user.trustFactor().atLeast(TrustFactor.BYPASS)) {
 				user.doubleTickFeedback(
-					event,
-					() -> beforeTeleportTransactionReceive(user, teleport),
-					() -> afterTeleportTransactionReceive(user, teleport),
-					SELF_SYNCHRONIZATION
+						event,
+						() -> beforeTeleportTransactionReceive(user, teleport),
+						() -> afterTeleportTransactionReceive(user, teleport),
+						SELF_SYNCHRONIZATION
 				);
 			} else {
 				teleport.allow();
@@ -170,12 +171,16 @@ public final class TeleportController implements PacketEventSubscriber {
 	}
 
 	@PacketSubscription(
-		priority = ListenerPriority.NORMAL,
-		packetsIn = {TELEPORT_ACCEPT}
+			priority = ListenerPriority.NORMAL,
+			packetsIn = {TELEPORT_ACCEPT}
 	)
 	public void receiveTeleportAccept(
-		User user, Cancellable cancellable, TeleportAcceptReader reader
+			User user, Cancellable cancellable, TeleportAcceptReader reader
 	) {
+		if (user.trustFactor().atLeast(TrustFactor.BYPASS)) {
+			return;
+		}
+
 		if (!receiveTeleportAccept(user, reader.teleportId(), reader.positionAndRotation())) {
 			cancellable.setCancelled(true);
 		}
@@ -231,7 +236,7 @@ public final class TeleportController implements PacketEventSubscriber {
 				return;
 			}
 			PositionMoveRotation snapshot = PositionMoveRotation.withoutRotation(
-				Position.mutableCopy(change.position()), change.motion().copy()
+					Position.mutableCopy(change.position()), change.motion().copy()
 			);
 			scheduler.accept(user, () -> {
 				user.meta().connection().feedbackAndTeleportLock.lock();
@@ -249,6 +254,9 @@ public final class TeleportController implements PacketEventSubscriber {
 	}
 
 	public boolean processMovementPackets(User user) {
+		if (user.trustFactor().atLeast(TrustFactor.BYPASS)) {
+			return true;
+		}
 		MovementMetadata movementData = user.meta().movement();
 		ReentrantLock lock = user.meta().connection().feedbackAndTeleportLock;
 		try {
@@ -260,6 +268,9 @@ public final class TeleportController implements PacketEventSubscriber {
 	}
 
 	public boolean forwardMovementPackets(User user) {
+		if (user.trustFactor().atLeast(TrustFactor.BYPASS)) {
+			return true;
+		}
 		if (!processMovementPackets(user)) {
 			return false;
 		}
@@ -316,17 +327,17 @@ public final class TeleportController implements PacketEventSubscriber {
 			Rotation currentRotation = movementData.rotation();
 
 			PositionMoveRotation expected = first.expectedPositionMoveRotation(
-				lastPosition, currentRotation, movementData.mutableBaseMotionCopy()
+					lastPosition, currentRotation, movementData.mutableBaseMotionCopy()
 			);
 
 			double positionOffset = expected.position().distanceTo(sentPosition);
 			float rotationOffset = expected.rotation().distanceTo(sentRotation);
 
-			if (first.matchesId(teleportId) && first.matches(
-				lastPosition, currentRotation,
-				sentPosition, sentRotation,
-				0.001, Float.NaN
-			)) {
+			if (first.matchesId(teleportId) && (user.trustFactor().atLeast(TrustFactor.BYPASS) || first.matches(
+					lastPosition, currentRotation,
+					sentPosition, sentRotation,
+					0.001, Float.NaN
+			))) {
 				teleports.pollFirst();
 				first.accept();
 				expected.applyTo(movementData);
@@ -338,7 +349,7 @@ public final class TeleportController implements PacketEventSubscriber {
 				movementData.setLastRotation(sentRotation);
 				movementData.activeTick(TELEPORT);
 				if (MathHelper.resolveHorizontalDistance(
-					lastPosition.getX(), lastPosition.getZ(), expected.position().getX(), expected.position().getZ()
+						lastPosition.getX(), lastPosition.getZ(), expected.position().getX(), expected.position().getZ()
 				) > 20) {
 					movementData.activeTick(LONG_TELEPORT);
 				}
@@ -352,9 +363,9 @@ public final class TeleportController implements PacketEventSubscriber {
 				}
 				Integer acceptedTeleportId = first.id().isPresent() ? first.id().getAsInt() : null;
 				event = new TeleportEvent(
-					SampleTypes.position(expected.position()),
-					SampleTypes.rotation(expected.rotation()),
-					acceptedTeleportId
+						SampleTypes.position(expected.position()),
+						SampleTypes.rotation(expected.rotation()),
+						acceptedTeleportId
 				);
 			} else {
 				if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
@@ -387,7 +398,7 @@ public final class TeleportController implements PacketEventSubscriber {
 			// Resolve the outstanding chain in send order. Replaying an older relative
 			// request can apply its offset twice or undo a newer server destination.
 			PositionMoveRotation target = new PositionMoveRotation(
-				movementData.verifiedLastPosition(), movementData.mutableBaseMotionCopy(), movementData.rotation());
+					movementData.verifiedLastPosition(), movementData.mutableBaseMotionCopy(), movementData.rotation());
 			Boolean onGround = null;
 			for (Teleport pending : teleports) {
 				target = target.merge(pending.change(), pending.relativeSet());
@@ -397,9 +408,9 @@ public final class TeleportController implements PacketEventSubscriber {
 			// require their original acknowledgement. Callback identity belongs to
 			// this transmission instance, not to the logical request or packet ID.
 			target = new PositionMoveRotation(target.position(),
-				movementData.preserveVelocity(target.motion(), latest.uniqueId()), target.rotation());
+					movementData.preserveVelocity(target.motion(), latest.uniqueId()), target.rotation());
 			Teleport retry = Teleport.of(latest.uniqueId(), latest.id(), target,
-				EnumSet.noneOf(Relative.class), onGround, MinecraftVersions.VER1_21_3.atOrAbove());
+					EnumSet.noneOf(Relative.class), onGround, MinecraftVersions.VER1_21_3.atOrAbove());
 			teleports.clear();
 			sendTeleport(user, retry);
 		} finally {
@@ -421,17 +432,17 @@ public final class TeleportController implements PacketEventSubscriber {
 				change = new PositionMoveRotation(change.position(), movement.preserveVelocity(change.motion(), -1), change.rotation());
 			}
 			OptionalInt id = user.meta().protocol().supportsTeleportAccepts()
-				? OptionalInt.of(-ThreadLocalRandom.current().nextInt(1, Integer.MAX_VALUE))
-				: OptionalInt.empty();
+					? OptionalInt.of(-ThreadLocalRandom.current().nextInt(1, Integer.MAX_VALUE))
+					: OptionalInt.empty();
 			long teleportSequence = movement.teleportSequence;
 			movement.teleportSequence = teleportSequence + 1;
 			Teleport teleport = Teleport.of(
-				teleportSequence, id, change,
-				relativeSet, onGround,
-				MinecraftVersions.VER1_21_3.atOrAbove()
+					teleportSequence, id, change,
+					relativeSet, onGround,
+					MinecraftVersions.VER1_21_3.atOrAbove()
 			);
 			if (teleport.additiveMotionPacket() == null
-				&& user.meta().protocol().legacyTeleportRelativeMotionBehavior()
+					&& user.meta().protocol().legacyTeleportRelativeMotionBehavior()
 			) {
 				teleport.copyRelPosFlagsToRelDeltaFlags();
 			}
@@ -468,7 +479,7 @@ public final class TeleportController implements PacketEventSubscriber {
 			return null;
 		}
 		PacketContainer companion = ProtocolLibrary.getProtocolManager().createPacket(additive ?
-			PacketType.Play.Server.EXPLOSION : PacketType.Play.Server.ENTITY_VELOCITY
+				PacketType.Play.Server.EXPLOSION : PacketType.Play.Server.ENTITY_VELOCITY
 		);
 		if (additive) {
 			try (ExplosionReader reader = PacketReaders.readerOf(companion)) {
