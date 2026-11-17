@@ -13,7 +13,7 @@ package de.jpx3.intave.packet.event;
 
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.ListenerPriority;
-import de.jpx3.intave.packet.ListenerSlot;
+import de.jpx3.intave.packet.ListenerStage;
 import de.jpx3.intave.packet.PacketDirection;
 import de.jpx3.intave.packet.contract.PacketContract;
 import de.jpx3.intave.packet.contract.PacketType;
@@ -74,7 +74,7 @@ final class PacketEventBusTest {
 		PacketContract afterFirst = packet("after first");
 		PacketContract afterLast = packet("after last");
 		List<PacketContract> observed = new ArrayList<>();
-		on(CHILD, ListenerPriority.NORMAL, ListenerSlot.AFTER_IMMUTABLE, child -> {
+		on(CHILD, ListenerPriority.NORMAL, ListenerStage.AFTER_IMMUTABLE, child -> {
 			assertEquals(CHILD, child.packetType());
 			assertEquals(PacketDirection.CLIENTBOUND, child.direction());
 			observed.add(child.packet());
@@ -89,7 +89,7 @@ final class PacketEventBusTest {
 			parent.addSendBefore(beforeLast.typedTo(CHILD));
 			parent.addSendAfter(afterLast.typedTo(CHILD));
 		});
-		on(ROOT, ListenerPriority.NORMAL, ListenerSlot.AFTER_IMMUTABLE,
+		on(ROOT, ListenerPriority.NORMAL, ListenerStage.AFTER_IMMUTABLE,
 			parent -> observed.add(parent.packet()));
 
 		List<PacketContract> expected = Arrays.asList(beforeFirst, beforeLast, root, afterFirst, afterLast);
@@ -223,11 +223,11 @@ final class PacketEventBusTest {
 	}
 
 	private static void on(PacketType.Server type, ListenerPriority priority, Consumer<PacketSendEvent> handler) {
-		on(type, priority, ListenerSlot.PROCESSING_MUTABLE, handler);
+		on(type, priority, ListenerStage.PROCESSING_MUTABLE, handler);
 	}
 
 	private static void on(
-		PacketType.Server type, ListenerPriority priority, ListenerSlot slot, Consumer<PacketSendEvent> handler
+		PacketType.Server type, ListenerPriority priority, ListenerStage slot, Consumer<PacketSendEvent> handler
 	) {
 		PacketEventBus.addListener(new PacketSubscription() {
 			@Override
@@ -241,7 +241,7 @@ final class PacketEventBusTest {
 			}
 
 			@Override
-			public ListenerSlot slot() {
+			public ListenerStage stage() {
 				return slot;
 			}
 		}, type);

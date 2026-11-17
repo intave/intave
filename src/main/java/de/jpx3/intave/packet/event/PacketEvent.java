@@ -17,6 +17,8 @@ import de.jpx3.intave.packet.contract.mutable.Mutable;
 import de.jpx3.intave.user.User;
 import org.bukkit.event.Cancellable;
 
+import java.util.Objects;
+
 public abstract class PacketEvent implements AutoCloseable, Cancellable {
 	private User user;
 	private PacketContract packet;
@@ -25,7 +27,7 @@ public abstract class PacketEvent implements AutoCloseable, Cancellable {
 
 	public PacketEvent(User user, PacketContract packet) {
 		this.user = user;
-		this.packet = packet;
+		this.packet = Objects.requireNonNull(packet, "packet cannot be null");
 	}
 
 	public abstract PacketDirection direction();

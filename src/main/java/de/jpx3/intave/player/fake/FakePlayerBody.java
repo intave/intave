@@ -22,6 +22,7 @@ import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.executor.Synchronizer;
 import de.jpx3.intave.packet.plib.PacketSender;
 import de.jpx3.intave.packet.plib.reader.EntityMovementReader;
+import de.jpx3.intave.packet.plib.reader.PacketReaders;
 import de.jpx3.intave.packet.plib.reader.PlayerInfoReader;
 import de.jpx3.intave.share.ClientMath;
 import de.jpx3.intave.share.PlayerInfoAction;
@@ -157,10 +158,12 @@ public abstract class FakePlayerBody extends FakePlayerIdentity {
       packet = create(PacketType.Play.Server.REL_ENTITY_MOVE_LOOK);
       packet.getIntegers().write(0, identifier());
       if (MinecraftVersions.VER26_3.atOrAbove()) {
-        EntityMovementReader.writeLinear263(packet,
-          (short) ((to.getX() - from.getX()) * 4096d),
-          (short) ((to.getY() - from.getY()) * 4096d),
-          (short) ((to.getZ() - from.getZ()) * 4096d));
+        try (EntityMovementReader reader = PacketReaders.readerOf(packet)) {
+          reader.writeLinear263(
+            (short) ((to.getX() - from.getX()) * 4096d),
+            (short) ((to.getY() - from.getY()) * 4096d),
+            (short) ((to.getZ() - from.getZ()) * 4096d));
+        }
         packet.getBytes()
           .write(0, compressRotation(to.getYaw()))
           .write(1, compressRotation(to.getPitch()));
@@ -192,10 +195,12 @@ public abstract class FakePlayerBody extends FakePlayerIdentity {
       packet = create(PacketType.Play.Server.REL_ENTITY_MOVE);
       packet.getIntegers().write(0, identifier());
       if (MinecraftVersions.VER26_3.atOrAbove()) {
-        EntityMovementReader.writeLinear263(packet,
-          (short) ((to.getX() - from.getX()) * 4096d),
-          (short) ((to.getY() - from.getY()) * 4096d),
-          (short) ((to.getZ() - from.getZ()) * 4096d));
+        try (EntityMovementReader reader = PacketReaders.readerOf(packet)) {
+          reader.writeLinear263(
+            (short) ((to.getX() - from.getX()) * 4096d),
+            (short) ((to.getY() - from.getY()) * 4096d),
+            (short) ((to.getZ() - from.getZ()) * 4096d));
+        }
       } else if (POSITION_PROCESSING_1_14) {
         packet.getShorts()
           .write(0, (short) ((to.getX() - from.getX()) * 4096d))
@@ -357,7 +362,9 @@ public abstract class FakePlayerBody extends FakePlayerIdentity {
     );
     List<PlayerInfoData> playerInformationList = packet.getPlayerInfoDataLists().readSafely(0);
     playerInformationList.add(playerInfoData);
-    PlayerInfoReader.setPlayerInfoAction(packet, PlayerInfoAction.UPDATE_LATENCY);
+    try (PlayerInfoReader reader = PacketReaders.readerOf(packet)) {
+      reader.setPlayerInfoAction(PlayerInfoAction.UPDATE_LATENCY);
+    }
     packet.getPlayerInfoDataLists().writeSafely(0, playerInformationList);
     packet.getBooleans().writeSafely(0, true);
     send(packet);

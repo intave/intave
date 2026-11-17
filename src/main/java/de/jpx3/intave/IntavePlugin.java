@@ -65,7 +65,7 @@ import de.jpx3.intave.player.ItemProperties;
 import de.jpx3.intave.player.fake.IdentifierReserve;
 import de.jpx3.intave.player.fake.event.FakePlayerEventService;
 import de.jpx3.intave.reflect.access.ReflectiveAccess;
-import de.jpx3.intave.registry.PacketIdRegistries;
+import de.jpx3.intave.registry.PacketTypeRegistries;
 import de.jpx3.intave.resource.Resources;
 import de.jpx3.intave.resource.legacy.EncryptedLegacyResource;
 import de.jpx3.intave.security.PlayerListService;
@@ -186,7 +186,7 @@ public final class IntavePlugin extends JavaPlugin {
       logger.info("Using agent :{~-~}:");
     }
 
-    PacketIdRegistries.setup();
+    PacketTypeRegistries.setup();
     DrillResolver.serverInit();
 
     IntaveDomains.setup();
@@ -427,7 +427,7 @@ public final class IntavePlugin extends JavaPlugin {
       logger.warn("============================================================");
     }
 
-    Modules.linker().packetEvents().refreshLinkages();
+    Modules.linker().protocolLib().refreshLinkages();
     displayVersionInformation();
     successfullyBooted = true;
     randomExitMessages = Resources.localServiceCacheResource("exitmessages", "exitmessages", TimeUnit.DAYS.toMillis(7)).readLines();

@@ -88,7 +88,7 @@ public final class TeleportController implements PacketEventSubscriber {
 		YamlConfiguration settings = IntavePlugin.singletonInstance().settings();
 		String path = "compatibility.position-feedback-sync-enforcement";
 
-		Modules.linker().packetEvents().linkSubscriptionsIn(this);
+		Modules.linker().protocolLib().linkSubscriptionsIn(this);
 
 		boolean defaultSetting = true;
 

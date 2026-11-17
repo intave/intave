@@ -35,7 +35,7 @@ public final class EntityMetadataReader extends EntityReader {
     return value instanceof Number ? ((Number) value).byteValue() : null;
   }
 
-  static int livingFlagsIndex() {
+  int livingFlagsIndex() {
     return MinecraftVersions.VER1_17_0.atOrAbove() ? 8
       : MinecraftVersions.VER1_14_0.atOrAbove() ? 7
       : MinecraftVersions.VER1_10_0.atOrAbove() ? 6 : 5;
@@ -201,7 +201,7 @@ public final class EntityMetadataReader extends EntityReader {
       packet().getWatchableCollectionModifier().write(0, watchables);
     } else {
       packet().getDataValueCollectionModifier().write(0, watchables.stream()
-        .map(EntityMetadataReader::convertWatchableToDataValue)
+        .map(this::convertWatchableToDataValue)
         .collect(Collectors.toList()));
     }
   }
@@ -210,14 +210,14 @@ public final class EntityMetadataReader extends EntityReader {
     return packet().getDataValueCollectionModifier().read(0);
   }
 
-  private static WrappedWatchableObject convertDataValueToWatchable(WrappedDataValue value) {
+  private WrappedWatchableObject convertDataValueToWatchable(WrappedDataValue value) {
     WrappedDataWatcherObject dataWatcherObject = new WrappedDataWatcherObject(
       value.getIndex(), value.getSerializer()
     );
     return new WrappedWatchableObject(dataWatcherObject, value.getValue());
   }
 
-  private static WrappedDataValue convertWatchableToDataValue(WrappedWatchableObject object) {
+  private WrappedDataValue convertWatchableToDataValue(WrappedWatchableObject object) {
     return new WrappedDataValue(
       object.getIndex(),
       object.getWatcherObject().getSerializer(),

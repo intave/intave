@@ -28,7 +28,7 @@ import de.jpx3.intave.packet.wire.vehicle.move.VehicleMoveWithoutGroundWirePacke
 import de.jpx3.intave.packet.wire.world.border.WorldBorderInitializeWirePacket;
 import de.jpx3.intave.packet.wire.world.border.WorldBorderSetCenterWirePacket;
 import de.jpx3.intave.packet.wire.world.border.WorldBorderSetSizeWirePacket;
-import de.jpx3.intave.registry.PacketIdRegistry;
+import de.jpx3.intave.registry.PacketTypeRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
@@ -46,7 +46,7 @@ final class WirePacketCodecsTest {
 	@Test
 	void everyRegistrationMatchesItsDirectionStateTypeAndProtocol() throws ReflectiveOperationException {
 		for (PacketDirection direction : PacketDirection.values()) {
-			PacketIdRegistry<?> registry = registry(direction);
+			PacketTypeRegistry<?> registry = registry(direction);
 			for (int protocol : registry.supportedProtocolVersions()) {
 				for (ConnectionState state : ConnectionState.values()) {
 					for (Map.Entry<? extends PacketType, Integer> entry :

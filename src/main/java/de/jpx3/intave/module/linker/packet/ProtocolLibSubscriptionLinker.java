@@ -44,7 +44,7 @@ import java.util.function.IntUnaryOperator;
 
 import static de.jpx3.intave.IntaveControl.IGNORE_CHUNK_PACKETS;
 
-public final class PacketSubscriptionLinker extends Module {
+public final class ProtocolLibSubscriptionLinker extends Module {
   private static boolean IGNORE_CHAT_PACKETS = false;
   private static boolean IGNORE_SCOREBOARD_TEAM_PACKETS = false;
   private final IntavePlugin plugin;
@@ -54,7 +54,7 @@ public final class PacketSubscriptionLinker extends Module {
   private final List<WeakReferencePacketAdapter> externalPacketListener = new ArrayList<>();
   private InjectionService customInjector;
 
-  public PacketSubscriptionLinker(IntavePlugin plugin) {
+  public ProtocolLibSubscriptionLinker(IntavePlugin plugin) {
     this.plugin = plugin;
   }
 
@@ -340,7 +340,7 @@ public final class PacketSubscriptionLinker extends Module {
       String packetSubscriberClassPath = canonicalRepresentation(className(targetClass));
       String packetEventClassPath = canonicalRepresentation(className(PacketEvent.class));
       Class<PacketSubscriptionMethodExecutor> executorClass = IRXClassFactory.assembleCallerClass(
-        PacketSubscriptionLinker.class.getClassLoader(),
+        ProtocolLibSubscriptionLinker.class.getClassLoader(),
         PacketSubscriptionMethodExecutor.class,
         "<irx>",
         "invoke",

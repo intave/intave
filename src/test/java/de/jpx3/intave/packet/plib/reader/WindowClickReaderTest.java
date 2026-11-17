@@ -9,16 +9,17 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
-package de.jpx3.intave.packet.reader;
+package de.jpx3.intave.packet.plib.reader;
 
 import ac.intave.samples.event.InventoryActionEvent;
-import de.jpx3.intave.packet.plib.reader.WindowClickReader;
 import de.jpx3.intave.share.WindowClickType;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 final class WindowClickReaderTest {
+  private final WindowClickReader reader = new WindowClickReader();
+
   @Test
   void normalizesContainerClickGestures() {
     assertAction(WindowClickType.PICKUP, 12, 0, InventoryActionEvent.Action.CLICK_PRIMARY);
@@ -41,7 +42,7 @@ final class WindowClickReaderTest {
   void recreatesItemAndCountFromHashedStack() {
     FakeItem item = new FakeItem();
 
-    Object rebuilt = WindowClickReader.recreateNativeItemStack(
+    Object rebuilt = reader.recreateNativeItemStack(
       new FakeHashedStack(item, 7, new Object()), FakeNativeItemStack.class
     );
 
@@ -52,15 +53,15 @@ final class WindowClickReaderTest {
 
   @Test
   void treatsHashedEmptyStackAsEmpty() {
-    assertNull(WindowClickReader.recreateNativeItemStack(
+    assertNull(reader.recreateNativeItemStack(
       new FakeEmptyHashedStack(), FakeNativeItemStack.class
     ));
   }
 
-  private static void assertAction(
+  private void assertAction(
     WindowClickType type, int slot, int button, InventoryActionEvent.Action expected
   ) {
-    assertEquals(expected, WindowClickReader.actionOf(type, slot, button));
+    assertEquals(expected, reader.actionOf(type, slot, button));
   }
 
   private static final class FakeHashedStack {

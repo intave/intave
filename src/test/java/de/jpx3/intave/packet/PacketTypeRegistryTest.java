@@ -15,8 +15,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import de.jpx3.intave.packet.contract.PacketType;
-import de.jpx3.intave.registry.PacketIdRegistries;
-import de.jpx3.intave.registry.PacketIdRegistry;
+import de.jpx3.intave.registry.PacketTypeRegistries;
+import de.jpx3.intave.registry.PacketTypeRegistry;
 import de.jpx3.intave.resource.Resources;
 import org.junit.jupiter.api.Test;
 
@@ -39,11 +39,11 @@ final class PacketTypeRegistryTest {
         expected.add(Integer.parseInt(line.split(" ")[1]));
       }
     }
-    assertEquals(expected, PacketIdRegistries.serverbound().supportedProtocolVersions());
-    assertEquals(expected, PacketIdRegistries.clientbound().supportedProtocolVersions());
+    assertEquals(expected, PacketTypeRegistries.serverbound().supportedProtocolVersions());
+    assertEquals(expected, PacketTypeRegistries.clientbound().supportedProtocolVersions());
     for (int protocol : expected) {
-      PacketIdRegistry<?> outgoing = PacketIdRegistries.serverbound();
-      PacketIdRegistry<?> incoming = PacketIdRegistries.clientbound();
+      PacketTypeRegistry<?> outgoing = PacketTypeRegistries.serverbound();
+      PacketTypeRegistry<?> incoming = PacketTypeRegistries.clientbound();
       assertEquals(0, outgoing.idOf(HANDSHAKING, PacketType.Client.SET_PROTOCOL, protocol));
       assertEquals(-1, incoming.idOf(HANDSHAKING, PacketType.Client.SET_PROTOCOL, protocol));
       assertEquals(0, outgoing.idOf(LOGIN, PacketType.Client.START, protocol));
@@ -72,7 +72,7 @@ final class PacketTypeRegistryTest {
             if (className != null) {
               assertTrue(resolved.add(className.getAsString()), "Duplicate translation " + translation.getKey());
               int packetId = ids.get(className.getAsString()).getAsInt();
-              PacketIdRegistry<?> registry = registry(direction.getKey());
+              PacketTypeRegistry<?> registry = registry(direction.getKey());
               assertEquals(packetId,
                 registry.idOf(connectionState, registry.typeOf(connectionState, packetId, protocol), protocol),
                 name + "/" + state.getKey() + "/" + direction.getKey() + "/" + translation.getKey());
@@ -95,7 +95,7 @@ final class PacketTypeRegistryTest {
         for (Map.Entry<String, JsonElement> direction : state.getValue().getAsJsonObject().entrySet()) {
           for (Map.Entry<String, JsonElement> packet : direction.getValue().getAsJsonObject().entrySet()) {
             int packetId = packet.getValue().getAsInt();
-            PacketIdRegistry<?> registry = registry(direction.getKey());
+            PacketTypeRegistry<?> registry = registry(direction.getKey());
             assertEquals(packetId,
               registry.idOf(connectionState, registry.typeOf(connectionState, packetId, protocolVersion), protocolVersion),
               protocolVersion + "/" + state.getKey() + "/" + direction.getKey() + "/" + packet.getKey());
@@ -108,7 +108,7 @@ final class PacketTypeRegistryTest {
 
   @Test
   void retainsExactIdsAcrossReleaseBoundariesAndPacketReplacements() {
-    PacketIdRegistry<?> serverbound = PacketIdRegistries.serverbound();
+    PacketTypeRegistry<?> serverbound = PacketTypeRegistries.serverbound();
     assertEquals(0x05, serverbound.idOf(PLAY, PacketType.Client.LOOK, 47));
     assertEquals(0x0e, serverbound.idOf(PLAY, PacketType.Client.LOOK, 107));
     assertEquals(0x10, serverbound.idOf(PLAY, PacketType.Client.LOOK, 335));
@@ -125,7 +125,7 @@ final class PacketTypeRegistryTest {
     assertEquals(6, serverbound.idOf(PLAY, PacketType.Client.CHAT_PREVIEW, 760));
     assertEquals(-1, serverbound.idOf(PLAY, PacketType.Client.CHAT_PREVIEW, 761));
 
-    PacketIdRegistry<?> clientbound = PacketIdRegistries.clientbound();
+    PacketTypeRegistry<?> clientbound = PacketTypeRegistries.clientbound();
     assertEquals(0x0c, clientbound.idOf(PLAY, PacketType.Server.BOSS, 107));
     assertEquals(-1, clientbound.idOf(PLAY, PacketType.Server.UPDATE_ENTITY_NBT, 107));
     assertEquals(0x46, clientbound.idOf(PLAY, PacketType.Server.UPDATE_SIGN, 109));
@@ -141,20 +141,20 @@ final class PacketTypeRegistryTest {
 
   @Test
   void scopesPacketTypesByDirectionAndConnectionState() {
-    assertEquals(0x04, PacketIdRegistries.serverbound().idOf(PLAY, PacketType.Client.POSITION, 47));
-    assertEquals(0x08, PacketIdRegistries.clientbound().idOf(PLAY, PacketType.Server.POSITION, 47));
-    assertEquals(0x0b, PacketIdRegistries.serverbound().idOf(PLAY, PacketType.Client.KEEP_ALIVE_IN, 107));
-    assertEquals(0x1f, PacketIdRegistries.clientbound().idOf(PLAY, PacketType.Server.KEEP_ALIVE_OUT, 107));
-    assertEquals(-1, PacketIdRegistries.serverbound().idOf(STATUS, PacketType.Client.KEEP_ALIVE_IN, 777));
-    assertEquals(-1, PacketIdRegistries.serverbound().idOf(CONFIGURATION, PacketType.Client.KEEP_ALIVE_IN, 763));
-    assertEquals(3, PacketIdRegistries.serverbound().idOf(CONFIGURATION, PacketType.Client.KEEP_ALIVE_IN, 764));
-    assertEquals(-1, PacketIdRegistries.serverbound().idOf(PLAY, PacketType.Server.KEEP_ALIVE_OUT, 107));
-    assertEquals(-1, PacketIdRegistries.clientbound().idOf(PLAY, PacketType.Client.KEEP_ALIVE_IN, 107));
+    assertEquals(0x04, PacketTypeRegistries.serverbound().idOf(PLAY, PacketType.Client.POSITION, 47));
+    assertEquals(0x08, PacketTypeRegistries.clientbound().idOf(PLAY, PacketType.Server.POSITION, 47));
+    assertEquals(0x0b, PacketTypeRegistries.serverbound().idOf(PLAY, PacketType.Client.KEEP_ALIVE_IN, 107));
+    assertEquals(0x1f, PacketTypeRegistries.clientbound().idOf(PLAY, PacketType.Server.KEEP_ALIVE_OUT, 107));
+    assertEquals(-1, PacketTypeRegistries.serverbound().idOf(STATUS, PacketType.Client.KEEP_ALIVE_IN, 777));
+    assertEquals(-1, PacketTypeRegistries.serverbound().idOf(CONFIGURATION, PacketType.Client.KEEP_ALIVE_IN, 763));
+    assertEquals(3, PacketTypeRegistries.serverbound().idOf(CONFIGURATION, PacketType.Client.KEEP_ALIVE_IN, 764));
+    assertEquals(-1, PacketTypeRegistries.serverbound().idOf(PLAY, PacketType.Server.KEEP_ALIVE_OUT, 107));
+    assertEquals(-1, PacketTypeRegistries.clientbound().idOf(PLAY, PacketType.Client.KEEP_ALIVE_IN, 107));
   }
 
   @Test
   void resolvesRegistryAliasesToExistingSubscriptionIds() {
-    PacketIdRegistry<PacketType.Client> registry = PacketIdRegistries.serverbound();
+    PacketTypeRegistry<PacketType.Client> registry = PacketTypeRegistries.serverbound();
     assertSame(PacketType.Client.FLYING, registry.typeOf(PLAY, 0x03, 47));
     assertSame(PacketType.Client.LOOK, registry.typeOf(PLAY, 0x05, 47));
     assertSame(PacketType.Client.POSITION_LOOK, registry.typeOf(PLAY, 0x06, 47));
@@ -169,7 +169,7 @@ final class PacketTypeRegistryTest {
 
   @Test
   void distinguishesMissingPacketsFromUnsupportedProtocols() {
-    PacketIdRegistry<?> registry = PacketIdRegistries.serverbound();
+    PacketTypeRegistry<?> registry = PacketTypeRegistries.serverbound();
     assertEquals(-1, registry.idOf(PLAY, PacketType.Client.LOGIN_ACK, 777));
     assertEquals(-1, registry.idOf(PLAY, PacketType.Server.POSITION, 47));
     assertNull(registry.typeOf(PLAY, -1, 777));
@@ -185,14 +185,14 @@ final class PacketTypeRegistryTest {
 
   @Test
   void sharesImmutableRegistries() {
-    assertSame(PacketIdRegistries.serverbound(), PacketIdRegistries.serverbound());
-    assertSame(PacketIdRegistries.clientbound(), PacketIdRegistries.clientbound());
-    assertThrows(UnsupportedOperationException.class, () -> PacketIdRegistries.serverbound().supportedProtocolVersions().clear());
-    assertThrows(UnsupportedOperationException.class, () -> PacketIdRegistries.serverbound().packetIds(PLAY, 47).clear());
+    assertSame(PacketTypeRegistries.serverbound(), PacketTypeRegistries.serverbound());
+    assertSame(PacketTypeRegistries.clientbound(), PacketTypeRegistries.clientbound());
+    assertThrows(UnsupportedOperationException.class, () -> PacketTypeRegistries.serverbound().supportedProtocolVersions().clear());
+    assertThrows(UnsupportedOperationException.class, () -> PacketTypeRegistries.serverbound().packetIds(PLAY, 47).clear());
   }
 
-  private static PacketIdRegistry<?> registry(String direction) {
-    return direction.equals("serverbound") ? PacketIdRegistries.serverbound() : PacketIdRegistries.clientbound();
+  private static PacketTypeRegistry<?> registry(String direction) {
+    return direction.equals("serverbound") ? PacketTypeRegistries.serverbound() : PacketTypeRegistries.clientbound();
   }
 
   private static JsonElement readJson(String file) {

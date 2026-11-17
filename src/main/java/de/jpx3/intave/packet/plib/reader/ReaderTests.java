@@ -404,25 +404,23 @@ public final class ReaderTests extends IntegrationTests {
     Object entry = MinecraftVersion.current().equals(new MinecraftVersion("1.21.11"))
       ? nativePlayerInfoEntry(profileId)
       : new SyntheticPlayerInfoEntry(profileId, null);
-    List<PlayerInfoReader.PlayerInfoEntry> entries = PlayerInfoReader.inspectEntries(
-      Arrays.asList(entry), true
-    );
-    assertNotNull(entries);
-    assertEquals(profileId, entries.get(0).profileId());
-
     PacketContainer packet = new PacketContainer(PacketType.Play.Server.PLAYER_INFO);
     packet.getModifier().withType(List.class).write(0, new ArrayList<>(Arrays.asList(entry)));
     try (PlayerInfoReader reader = PacketReaders.readerOf(packet)) {
+      List<PlayerInfoReader.PlayerInfoEntry> entries = reader.inspectEntries(Arrays.asList(entry), true);
+      assertNotNull(entries);
+      assertEquals(profileId, entries.get(0).profileId());
+
       List<PlayerInfoReader.PlayerInfoEntry> packetEntries = reader.playerInfoEntries();
       assertNotNull(packetEntries);
       assertEquals(profileId, packetEntries.get(0).profileId());
       assertTrue(reader.writePlayerInfoEntries(packetEntries));
       assertSame(entry, ((List<?>) packet.getModifier().withType(List.class).read(0)).get(0));
-    }
 
-    assertNull(PlayerInfoReader.inspectEntries(null, true));
-    assertNull(PlayerInfoReader.inspectEntries(Arrays.asList(entry, null), true));
-    assertNull(PlayerInfoReader.inspectEntries(Arrays.asList(new SyntheticPlayerInfoEntry(null, null)), true));
+      assertNull(reader.inspectEntries(null, true));
+      assertNull(reader.inspectEntries(Arrays.asList(entry, null), true));
+      assertNull(reader.inspectEntries(Arrays.asList(new SyntheticPlayerInfoEntry(null, null)), true));
+    }
   }
 
   private Object nativePlayerInfoEntry(UUID profileId) throws ReflectiveOperationException {
@@ -453,9 +451,7 @@ public final class ReaderTests extends IntegrationTests {
       .newInstance(expected.motionX(), expected.motionY(), expected.motionZ());
     Object handle = Class.forName("net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket")
       .getConstructor(int.class, vectorType).newInstance(42, nativeVector);
-    EntityVelocityReader reader = new EntityVelocityReader();
-    reader.enter(PacketContainer.fromPacket(handle));
-    try (EntityVelocityReader acquired = reader) {
+    try (EntityVelocityReader acquired = PacketReaders.readerOf(PacketContainer.fromPacket(handle))) {
       assertEquals(42, acquired.entityId());
       assertEquals(expected.motionX(), acquired.motionX());
       assertEquals(expected.motionY(), acquired.motionY());
@@ -910,11 +906,11 @@ public final class ReaderTests extends IntegrationTests {
     contents.getIntegers().write(0, 0).write(1, 4);
     contents.getItemListModifier().write(0, Arrays.asList(item, empty));
     contents.getItemModifier().write(0, copy);
-    WindowBulkItemReader bulkReader = new WindowBulkItemReader();
-    bulkReader.enter(contents);
-    assertEquals(item, bulkReader.itemMap().get(0));
-    assertEquals(Material.AIR, bulkReader.itemMap().get(1).getType());
-    assertEquals(copy, bulkReader.carriedItem());
+    try (WindowBulkItemReader bulkReader = PacketReaders.readerOf(contents)) {
+      assertEquals(item, bulkReader.itemMap().get(0));
+      assertEquals(Material.AIR, bulkReader.itemMap().get(1).getType());
+      assertEquals(copy, bulkReader.carriedItem());
+    }
 
     PacketContainer equipment = new PacketContainer(PacketType.Play.Server.ENTITY_EQUIPMENT);
     equipment.getSlotStackPairLists().write(0, Arrays.asList(new Pair<>(EnumWrappers.ItemSlot.MAINHAND, item)));
@@ -943,18 +939,22 @@ public final class ReaderTests extends IntegrationTests {
       assertEquals(position ? -0.5D : 0.0D, entity.immediateServerPosition.getY());
       assertEquals(position ? 1.0D / 4096 : 0.0D, entity.immediateServerPosition.getZ());
       assertEquals(position ? 4096L : 0L, entity.serverPosX);
-      EntityMovementReader.Delta update = EntityMovementReader.read(packet, protocol);
-      assertEquals(position ? 4096L : 0L, update.x());
+      try (EntityMovementReader reader = PacketReaders.readerOf(packet)) {
+        EntityMovementReader.Delta update = reader.read(protocol);
+        assertEquals(position ? 4096L : 0L, update.x());
+      }
       assertTrue(packet.getBooleans().read(0));
       if (type != PacketType.Play.Server.REL_ENTITY_MOVE) {
         assertEquals((byte)64, packet.getBytes().read(0));
         assertEquals((byte)-32, packet.getBytes().read(1));
       }
       if (protocol >= 777 && position) {
-        EntityMovementReader.writeLinear263(packet, Short.MIN_VALUE, (short)0, Short.MAX_VALUE);
-        EntityMovementReader.Delta delta = EntityMovementReader.read(packet, protocol);
-        assertEquals((long)Short.MIN_VALUE, delta.x());
-        assertEquals((long)Short.MAX_VALUE, delta.z());
+        try (EntityMovementReader reader = PacketReaders.readerOf(packet)) {
+          reader.writeLinear263(Short.MIN_VALUE, (short)0, Short.MAX_VALUE);
+          EntityMovementReader.Delta delta = reader.read(protocol);
+          assertEquals((long)Short.MIN_VALUE, delta.x());
+          assertEquals((long)Short.MAX_VALUE, delta.z());
+        }
       }
     }
   }
@@ -968,7 +968,10 @@ public final class ReaderTests extends IntegrationTests {
       .newInstance(Arrays.asList(step.newInstance((short)30000, (short)-1, (short)1, 2),
         step.newInstance((short)30000, (short)1, (short)-1, 4)));
     PacketContainer packet = movePacket(PacketType.Play.Server.REL_ENTITY_MOVE_LOOK, delta);
-    EntityMovementReader.Delta decoded = EntityMovementReader.read(packet, ServerProtocolVersion.current());
+    EntityMovementReader.Delta decoded;
+    try (EntityMovementReader reader = PacketReaders.readerOf(packet)) {
+      decoded = reader.read(ServerProtocolVersion.current());
+    }
     assertTrue(decoded.stepped());
     assertEquals(2, decoded.steps().size());
     assertEquals(2, decoded.steps().get(0).ticks);
@@ -998,8 +1001,10 @@ public final class ReaderTests extends IntegrationTests {
     assertEquals(1.25D, entity.immediateServerPosition.getX());
     assertEquals(64.125D, entity.immediateServerPosition.getY());
     assertEquals(-2.5D, entity.immediateServerPosition.getZ());
-    de.jpx3.intave.share.PositionMoveRotation sync =
-      EntityMovementReader.readPositionSync(packet, ServerProtocolVersion.current());
+    PositionMoveRotation sync;
+    try (EntityMovementReader reader = PacketReaders.readerOf(packet)) {
+      sync = reader.readPositionSync(ServerProtocolVersion.current());
+    }
     assertEquals(90F, sync.rotation().yaw());
     assertEquals(-45F, sync.rotation().pitch());
     assertEquals(64.125D, sync.position().getY());
@@ -1063,8 +1068,8 @@ public final class ReaderTests extends IntegrationTests {
         assertEquals(new de.jpx3.intave.share.BlockPosition(-17, 64, 33), reader.nativeBlockPosition());
       }
     }
-    BlockDigReader.setAction(packet, PlayerDigAction.RELEASE_USE_ITEM);
     try (BlockDigReader reader = PacketReaders.readerOf(packet)) {
+      reader.setAction(PlayerDigAction.RELEASE_USE_ITEM);
       assertEquals(PlayerDigAction.RELEASE_USE_ITEM, reader.action());
     }
   }

@@ -9,10 +9,9 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
-package de.jpx3.intave.packet.reader;
+package de.jpx3.intave.packet.plib.reader;
 
 import ac.intave.samples.event.TimeEvent;
-import de.jpx3.intave.packet.plib.reader.TimeUpdateReader;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -21,6 +20,8 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class TimeUpdateReaderTest {
+  private final TimeUpdateReader reader = new TimeUpdateReader();
+
   @Test
   void readsLegacyTwoLongLayout() {
     TimeUpdateReader.Update update = decode(new LegacyTime(100, -18000));
@@ -59,8 +60,8 @@ final class TimeUpdateReaderTest {
     assertTrue(decode(new ClockTime(301, Collections.emptyMap())).event().clocks().isEmpty());
   }
 
-  private static TimeUpdateReader.Update decode(Object packet) {
-    return TimeUpdateReader.decode(packet);
+  private TimeUpdateReader.Update decode(Object packet) {
+    return reader.decode(packet);
   }
 
   private static final class LegacyTime {

@@ -22,8 +22,8 @@ import de.jpx3.intave.packet.event.PacketSubscription;
 import de.jpx3.intave.packet.wire.WirePackets;
 import de.jpx3.intave.packet.wire.connection.ping.PingWirePacket;
 import de.jpx3.intave.packet.wire.window.transaction.TransactionWirePacket;
-import de.jpx3.intave.registry.PacketIdRegistries;
-import de.jpx3.intave.registry.PacketIdRegistry;
+import de.jpx3.intave.registry.PacketTypeRegistries;
+import de.jpx3.intave.registry.PacketTypeRegistry;
 import de.jpx3.intave.user.User;
 import io.netty.buffer.*;
 import io.netty.channel.*;
@@ -31,10 +31,15 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.MessageToMessageEncoder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -47,6 +52,22 @@ import static org.junit.jupiter.api.Assertions.*;
 final class BindingTest {
   private static final String RECEIVER = "intave-decoder";
   private static final String SENDER = "intave-encoder";
+  private final ByteArrayOutputStream errors = new ByteArrayOutputStream();
+  private PrintStream originalError;
+  private PrintStream capturedError;
+
+  @BeforeEach
+  void captureErrors() {
+    originalError = System.err;
+    capturedError = new PrintStream(errors, true, StandardCharsets.UTF_8);
+    System.setErr(capturedError);
+  }
+
+  @AfterEach
+  void restoreErrors() {
+    System.setErr(originalError);
+    capturedError.close();
+  }
 
   @Test
   void matchesDirectAndWrappedChannelsForTheSameConnection() {
@@ -218,7 +239,8 @@ final class BindingTest {
     try (Binding binding = bindAndHandshake(channel, 764)) {
       ByteBuf packet = Unpooled.buffer(1);
 
-      assertThrows(IndexOutOfBoundsException.class, () -> channel.writeInbound(packet));
+      Throwable failure = assertThrows(IndexOutOfBoundsException.class, () -> channel.writeInbound(packet));
+      assertLogged("processing SERVERBOUND", failure, ConnectionState.LOGIN, 764);
       assertEquals(0, packet.refCnt());
       assertNull(channel.readInbound());
     } finally {
@@ -254,10 +276,82 @@ final class BindingTest {
 
       assertTrue(write.isDone());
       assertInstanceOf(IndexOutOfBoundsException.class, write.cause());
+      assertLogged("processing CLIENTBOUND", write.cause(), ConnectionState.LOGIN, 764);
       assertEquals(0, packet.refCnt());
       assertNull(channel.readOutbound());
     } finally {
       channel.finishAndReleaseAll();
+    }
+  }
+
+  @Test
+  void logsMalformedHandshakesBeforeClosingTheConnection() {
+    EmbeddedChannel channel = channelWithViaCodecs();
+    try (Binding binding = Binding.bind(channel)) {
+      ByteBuf packet = Unpooled.buffer().writeByte(0);
+
+      assertFalse(channel.writeInbound(packet));
+      assertFalse(channel.isOpen());
+      assertEquals(0, packet.refCnt());
+      String output = errors.toString(StandardCharsets.UTF_8);
+      assertTrue(output.contains("decoding handshake SERVERBOUND"), output);
+      assertTrue(output.contains("state=HANDSHAKING, protocol=-1"), output);
+      assertTrue(output.contains("IndexOutOfBoundsException"), output);
+      assertTrue(output.contains("\tat " + Binding.class.getName()), output);
+    } finally {
+      channel.finishAndReleaseAll();
+    }
+  }
+
+  @Test
+  void decodesOutgoingPacketsUsingTheClientboundRegistry() {
+    EmbeddedChannel channel = channelWithViaCodecs();
+    try (Binding binding = bindAndHandshake(channel, 47)) {
+      send(channel, packet(PacketTypeRegistries.clientbound(), ConnectionState.LOGIN, PacketType.Server.SUCCESS, 47));
+      ByteBuf original = Unpooled.buffer();
+      WirePackets.encodePacket(PacketDirection.CLIENTBOUND, ConnectionState.PLAY, PacketType.Server.TRANSACTION_OUT,
+        47, new TransactionWirePacket(3, (short) 7, true), original);
+
+      ChannelFuture write = channel.writeAndFlush(original);
+
+      assertTrue(write.isSuccess(), () -> String.valueOf(write.cause()));
+      assertSame(original, channel.readOutbound());
+      original.release();
+      assertEquals("", errors.toString(StandardCharsets.UTF_8));
+    } finally {
+      channel.finishAndReleaseAll();
+    }
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void logsSubscriberErrorsAndPreservesTheOriginalFailure() throws ReflectiveOperationException {
+    Field field = PacketEventBus.class.getDeclaredField("SERVER_SUBSCRIPTIONS");
+    field.setAccessible(true);
+    AtomicReference<Map<PacketType.Server, PacketSubscription[]>> subscriptions =
+      (AtomicReference<Map<PacketType.Server, PacketSubscription[]>>) field.get(null);
+    Map<PacketType.Server, PacketSubscription[]> saved = subscriptions.getAndSet(new EnumMap<>(PacketType.Server.class));
+    AssertionError failure = new AssertionError("subscriber failed", new IllegalStateException("original cause"));
+    try {
+      PacketEventBus.addListener(event -> { throw failure; }, PacketType.Server.TRANSACTION_OUT);
+      EmbeddedChannel channel = channelWithViaCodecs();
+      try (Binding binding = bindAndHandshake(channel, 47)) {
+        send(channel, packet(PacketTypeRegistries.clientbound(), ConnectionState.LOGIN, PacketType.Server.SUCCESS, 47));
+        ByteBuf original = Unpooled.buffer();
+        WirePackets.encodePacket(PacketDirection.CLIENTBOUND, ConnectionState.PLAY, PacketType.Server.TRANSACTION_OUT,
+          47, new TransactionWirePacket(), original);
+
+        ChannelFuture write = channel.writeAndFlush(original);
+
+        assertSame(failure, write.cause());
+        assertEquals(0, original.refCnt());
+        assertLogged("processing CLIENTBOUND", failure, ConnectionState.PLAY, 47);
+        assertTrue(errors.toString(StandardCharsets.UTF_8).contains("Caused by: java.lang.IllegalStateException: original cause"));
+      } finally {
+        channel.finishAndReleaseAll();
+      }
+    } finally {
+      subscriptions.set(saved);
     }
   }
 
@@ -271,6 +365,7 @@ final class BindingTest {
     Map<PacketType.Server, PacketSubscription[]> savedSubscriptions = subscriptions.get();
     try {
       for (int precedingPackets : new int[]{0, 2}) {
+        errors.reset();
         subscriptions.set(new EnumMap<>(PacketType.Server.class));
         PacketEventBus.addListener(event -> {
           PacketSendEvent sendEvent = (PacketSendEvent) event;
@@ -285,7 +380,7 @@ final class BindingTest {
         EmbeddedChannel channel = channelWithViaCodecs();
         List<ByteBuf> allocated = new ArrayList<>();
         try (Binding binding = bindAndHandshake(channel, 47)) {
-          send(channel, packet(PacketIdRegistries.clientbound(), ConnectionState.LOGIN, PacketType.Server.SUCCESS, 47));
+          send(channel, packet(PacketTypeRegistries.clientbound(), ConnectionState.LOGIN, PacketType.Server.SUCCESS, 47));
           channel.config().setAllocator((ByteBufAllocator) Proxy.newProxyInstance(
             ByteBufAllocator.class.getClassLoader(), new Class<?>[]{ByteBufAllocator.class},
             (proxy, method, arguments) -> {
@@ -297,7 +392,7 @@ final class BindingTest {
             }
           ));
           ByteBuf original = packet(
-            PacketIdRegistries.clientbound(), ConnectionState.PLAY, PacketType.Server.KEEP_ALIVE_OUT, 47
+            PacketTypeRegistries.clientbound(), ConnectionState.PLAY, PacketType.Server.KEEP_ALIVE_OUT, 47
           );
           ByteBufStreamCodecs.VARINT.encode(original, 42);
 
@@ -305,6 +400,7 @@ final class BindingTest {
 
           assertTrue(write.isDone());
           assertInstanceOf(IllegalArgumentException.class, write.cause());
+          assertLogged("processing CLIENTBOUND", write.cause(), ConnectionState.PLAY, 47);
           assertEquals(0, original.refCnt());
           assertEquals(precedingPackets + 1, allocated.size());
           for (ByteBuf buffer : allocated) {
@@ -365,7 +461,7 @@ final class BindingTest {
     EmbeddedChannel channel = channelWithViaCodecs();
     Binding binding = bindAndHandshake(channel, protocolVersion);
 
-    send(channel, packet(PacketIdRegistries.clientbound(), ConnectionState.LOGIN, PacketType.Server.SUCCESS, protocolVersion));
+    send(channel, packet(PacketTypeRegistries.clientbound(), ConnectionState.LOGIN, PacketType.Server.SUCCESS, protocolVersion));
     assertEquals(ConnectionState.PLAY, binding.connectionState());
 
     binding.close();
@@ -378,14 +474,14 @@ final class BindingTest {
     EmbeddedChannel channel = channelWithViaCodecs();
     Binding binding = bindAndHandshake(channel, protocolVersion);
 
-    send(channel, packet(PacketIdRegistries.clientbound(), ConnectionState.LOGIN, PacketType.Server.SUCCESS, protocolVersion));
+    send(channel, packet(PacketTypeRegistries.clientbound(), ConnectionState.LOGIN, PacketType.Server.SUCCESS, protocolVersion));
     assertEquals(ConnectionState.LOGIN, binding.connectionState());
 
-    receive(channel, packet(PacketIdRegistries.serverbound(), ConnectionState.LOGIN, PacketType.Client.LOGIN_ACK, protocolVersion));
+    receive(channel, packet(PacketTypeRegistries.serverbound(), ConnectionState.LOGIN, PacketType.Client.LOGIN_ACK, protocolVersion));
     assertEquals(ConnectionState.CONFIGURATION, binding.connectionState());
 
     receive(channel, packet(
-      PacketIdRegistries.serverbound(),
+      PacketTypeRegistries.serverbound(),
       ConnectionState.CONFIGURATION,
       PacketType.Client.FINISH_CONFIGURATION,
       protocolVersion
@@ -393,7 +489,7 @@ final class BindingTest {
     assertEquals(ConnectionState.PLAY, binding.connectionState());
 
     receive(channel, packet(
-      PacketIdRegistries.serverbound(),
+      PacketTypeRegistries.serverbound(),
       ConnectionState.PLAY,
       PacketType.Client.CONFIGURATION_ACK,
       protocolVersion
@@ -452,13 +548,13 @@ final class BindingTest {
     EmbeddedChannel channel = channelWithViaCodecs();
     Binding binding = bindAndHandshake(channel, protocolVersion);
 
-    send(channel, packet(PacketIdRegistries.clientbound(), ConnectionState.LOGIN, PacketType.Server.SUCCESS, protocolVersion));
-    receive(channel, packet(PacketIdRegistries.serverbound(), ConnectionState.LOGIN, PacketType.Client.LOGIN_ACK, protocolVersion));
+    send(channel, packet(PacketTypeRegistries.clientbound(), ConnectionState.LOGIN, PacketType.Server.SUCCESS, protocolVersion));
+    receive(channel, packet(PacketTypeRegistries.serverbound(), ConnectionState.LOGIN, PacketType.Client.LOGIN_ACK, protocolVersion));
     assertEquals(ConnectionState.CONFIGURATION, binding.connectionState());
 
     channel.pipeline().addBefore("via-decoder", "decompress", decompressor());
     receive(channel, compressionEnvelope(packet(
-      PacketIdRegistries.serverbound(),
+      PacketTypeRegistries.serverbound(),
       ConnectionState.CONFIGURATION,
       PacketType.Client.FINISH_CONFIGURATION,
       protocolVersion
@@ -480,7 +576,7 @@ final class BindingTest {
 
     channel.pipeline().addBefore("via-encoder", "compress", compressor(false));
     send(channel, packet(
-      PacketIdRegistries.clientbound(),
+      PacketTypeRegistries.clientbound(),
       ConnectionState.LOGIN,
       PacketType.Server.SUCCESS,
       protocolVersion
@@ -496,6 +592,17 @@ final class BindingTest {
 
   private static Channel wrapChannel(Channel channel) {
     return wrapChannel(channel, false);
+  }
+
+  private void assertLogged(String operation, Throwable failure, ConnectionState state, int protocol) {
+    String output = errors.toString(StandardCharsets.UTF_8);
+    String context = "Exception while " + operation + " packet";
+    assertTrue(output.contains(context), output);
+    assertEquals(output.indexOf(context), output.lastIndexOf(context), "Log each processing failure once");
+    assertTrue(output.contains("state=" + state + ", protocol=" + protocol), output);
+    assertTrue(output.contains("channel="), output);
+    assertTrue(output.contains(failure.toString()), output);
+    assertTrue(output.contains("\tat " + failure.getStackTrace()[0]), output);
   }
 
   private static Channel wrapChannel(Channel channel, boolean wrapPipeline) {
@@ -557,7 +664,7 @@ final class BindingTest {
   }
 
   private static ByteBuf packet(
-    PacketIdRegistry<?> registry,
+    PacketTypeRegistry<?> registry,
     ConnectionState state,
     PacketType typeName,
     int protocolVersion

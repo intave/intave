@@ -20,6 +20,7 @@ import de.jpx3.intave.user.User;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
 
@@ -32,7 +33,7 @@ public final class PacketSendEvent extends PacketEvent {
 		User user, TypedPacketContract tpc
 	) {
 		super(user, tpc.contract());
-		this.type = (PacketType.Server) tpc.type();
+		this.type = (PacketType.Server) Objects.requireNonNull(tpc.type());
 	}
 
 	public PacketSendEvent(

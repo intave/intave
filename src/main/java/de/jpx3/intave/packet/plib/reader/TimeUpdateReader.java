@@ -35,7 +35,7 @@ public final class TimeUpdateReader extends AbstractPacketReader {
     return decode(packet().getHandle());
   }
 
-  static Update decode(Object packet) {
+  Update decode(Object packet) {
     Layout layout = LAYOUTS.get(packet.getClass());
     try {
       long gameTime = layout.gameTime.getLong(packet);
@@ -55,7 +55,7 @@ public final class TimeUpdateReader extends AbstractPacketReader {
     }
   }
 
-  private static Map<String, ClockState> decodeClocks(Map<?, ?> updates) {
+  private Map<String, ClockState> decodeClocks(Map<?, ?> updates) {
     Map<String, ClockState> clocks = new LinkedHashMap<>();
     for (Map.Entry<?, ?> entry : updates.entrySet()) {
       Object key = invoke(entry.getKey(), "key");
@@ -125,7 +125,7 @@ public final class TimeUpdateReader extends AbstractPacketReader {
 
   // These named accessors only exist on unobfuscated 26.x servers. Keep all NMS
   // references behind the reader so loading it remains safe on Java 8 servers.
-  private static Object invoke(Object target, String name) {
+  private Object invoke(Object target, String name) {
     try {
       Method method = target.getClass().getMethod(name);
       return method.invoke(target);

@@ -47,9 +47,24 @@ val gitCommitHash by lazy {
 val simpleName = "Intave"
 val githubToken = providers.environmentVariable("GITHUB_TOKEN")
   .orElse(providers.environmentVariable("GH_TOKEN"))
-val githubAuthors = providers.provider {
-  fetchGitHubContributors("intave/intave", githubToken.orNull)
+// Retain the original credits when GitHub is unavailable or Gradle runs offline.
+val fallbackAuthors = listOf("DarkAndBlue", "Jpx3", "vento", "vxcus", "lennoxlotl", "NotLucky", "Trattue")
+val resolvedGithubAuthors by lazy {
+  if (gradle.startParameter.isOffline) {
+    fallbackAuthors
+  } else {
+    try {
+      fetchGitHubContributors("intave/intave", githubToken.orNull).ifEmpty {
+        throw GradleException("GitHub returned an empty contributor list for intave/intave")
+      }
+    } catch (exception: Exception) {
+      logger.warn("${exception.message}; using the fallback plugin authors.")
+      fallbackAuthors
+    }
+  }
 }
+// Input fingerprinting and task execution must use the same result without fetching twice.
+val githubAuthors = providers.provider { resolvedGithubAuthors }
 group = "de.jpx3"
 version = "$gitTag-$gitCommitHash"
 description = "Automated cheat detection and prevention"
@@ -536,6 +551,12 @@ run {
     build = 175,
     javaVersion = 21,
     expectedSha256 = "6b12678404efd09b353911df60a09724d4732a25725168e77b72e5d07a35378e",
+  )
+  registerLeafRunTask(
+    serverVersion = "1.21.11",
+    build = 179,
+    javaVersion = 25,
+    expectedSha256 = "5da79782215c1a25edcd7c73b3523b7ecb7f4b86dc8a5846a176ed69bc2cd020",
   )
   mcpRebornClientConfigs.forEach { (client, config) ->
     run {

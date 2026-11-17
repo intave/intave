@@ -35,7 +35,7 @@ public final class PlayerPingPacketDispatcher implements PacketEventSubscriber {
   private static final long MIN_TIME_BETWEEN_PLAYER_INFO_UPDATE = 10_000;
 
   public PlayerPingPacketDispatcher(IntavePlugin plugin) {
-    Modules.linker().packetEvents().linkSubscriptionsIn(this);
+    Modules.linker().protocolLib().linkSubscriptionsIn(this);
   }
 
   @PacketSubscription(

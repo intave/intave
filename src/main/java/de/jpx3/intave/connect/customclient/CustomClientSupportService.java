@@ -52,7 +52,7 @@ public final class CustomClientSupportService implements EventProcessor {
     } catch (Exception exception) {
 //      IntaveLogger.logger().info("Failed to register output channel: " + exception.getClass().getSimpleName());
     }
-    Modules.linker().packetEvents().linkSubscriptionsIn(this);
+    Modules.linker().protocolLib().linkSubscriptionsIn(this);
   }
 
   @PacketSubscription(

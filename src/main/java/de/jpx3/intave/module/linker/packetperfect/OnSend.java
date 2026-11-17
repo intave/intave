@@ -11,11 +11,14 @@
 
 package de.jpx3.intave.module.linker.packetperfect;
 
+import de.jpx3.intave.packet.ListenerPriority;
+import de.jpx3.intave.packet.ListenerStage;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OnSend {
-	Priority priority() default Priority.NORMAL;
-	Stage stage() default Stage.AUTOMATIC;
+	ListenerPriority priority() default ListenerPriority.NORMAL;
+	ListenerStage stage() default ListenerStage.AUTOMATIC;
 }

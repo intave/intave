@@ -31,7 +31,6 @@ import de.jpx3.intave.module.tracker.player.PlayerVitalsTracker;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
 import de.jpx3.intave.user.UserRepository;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.jetbrains.annotations.NotNull;
@@ -65,9 +64,9 @@ public final class Nayoro extends Module {
 
   @Override
   public void enable() {
-    Modules.linker().packetEvents().linkSubscriptionsIn(packetEventDispatch);
-    Modules.linker().packetEvents().linkSubscriptionsIn(playerEnvironmentRecorder);
-    Modules.linker().packetEvents().linkSubscriptionsIn(playerFlightRecorder);
+    Modules.linker().protocolLib().linkSubscriptionsIn(packetEventDispatch);
+    Modules.linker().protocolLib().linkSubscriptionsIn(playerEnvironmentRecorder);
+    Modules.linker().protocolLib().linkSubscriptionsIn(playerFlightRecorder);
     Modules.linker().bukkitEvents().registerEventsIn(playerFlightRecorder);
     markerTask = Tasks.periodicNamed(
       "Nayoro.marker", this::emitGlobalMarker, 20L * 60, 20L * 60
@@ -76,9 +75,9 @@ public final class Nayoro extends Module {
 
   @Override
   public void disable() {
-    Modules.linker().packetEvents().removeSubscriptionsOf(packetEventDispatch);
-    Modules.linker().packetEvents().removeSubscriptionsOf(playerEnvironmentRecorder);
-    Modules.linker().packetEvents().removeSubscriptionsOf(playerFlightRecorder);
+    Modules.linker().protocolLib().removeSubscriptionsOf(packetEventDispatch);
+    Modules.linker().protocolLib().removeSubscriptionsOf(playerEnvironmentRecorder);
+    Modules.linker().protocolLib().removeSubscriptionsOf(playerFlightRecorder);
     Modules.linker().bukkitEvents().unregisterEventsIn(playerFlightRecorder);
     if (markerTask != null) {
       markerTask.cancel();

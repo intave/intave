@@ -20,6 +20,7 @@ import com.comphenix.protocol.wrappers.PlayerInfoData;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import de.jpx3.intave.packet.plib.PacketSender;
+import de.jpx3.intave.packet.plib.reader.PacketReaders;
 import de.jpx3.intave.packet.plib.reader.PlayerInfoReader;
 import de.jpx3.intave.share.PlayerInfoAction;
 import org.bukkit.entity.Player;
@@ -52,7 +53,9 @@ public final class TablistMutator {
     );
     List<PlayerInfoData> playerInformationList = packet.getPlayerInfoDataLists().readSafely(0);
     playerInformationList.add(playerInfoData);
-    PlayerInfoReader.setPlayerInfoAction(packet, PlayerInfoAction.ADD_PLAYER);
+    try (PlayerInfoReader reader = PacketReaders.readerOf(packet)) {
+      reader.setPlayerInfoAction(PlayerInfoAction.ADD_PLAYER);
+    }
     packet.getPlayerInfoDataLists().writeSafely(0, playerInformationList);
     PacketSender.sendServerPacket(player, packet);
   }
@@ -70,7 +73,9 @@ public final class TablistMutator {
     );
     List<PlayerInfoData> playerInformationList = packet.getPlayerInfoDataLists().readSafely(0);
     playerInformationList.add(playerInfoData);
-    PlayerInfoReader.setPlayerInfoAction(packet, PlayerInfoAction.REMOVE_PLAYER);
+    try (PlayerInfoReader reader = PacketReaders.readerOf(packet)) {
+      reader.setPlayerInfoAction(PlayerInfoAction.REMOVE_PLAYER);
+    }
     packet.getPlayerInfoDataLists().writeSafely(0, playerInformationList);
     PacketSender.sendServerPacket(player, packet);
   }

@@ -41,7 +41,7 @@ public class PlayerInfoRemoveWirePacket extends MutableWirePacket implements Mut
 				return new PlayerInfoRemoveWirePacket(playerIds);
 			});
 
-	protected List<UUID> playerIds = new ArrayList<>();
+	protected List<UUID> playerIds;
 
 	public PlayerInfoRemoveWirePacket() {
 		this(new ArrayList<>());

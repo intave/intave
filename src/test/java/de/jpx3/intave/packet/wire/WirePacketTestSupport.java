@@ -15,8 +15,8 @@ import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.packet.PacketDirection;
 import de.jpx3.intave.packet.contract.PacketContract;
 import de.jpx3.intave.packet.contract.PacketType;
-import de.jpx3.intave.registry.PacketIdRegistries;
-import de.jpx3.intave.registry.PacketIdRegistry;
+import de.jpx3.intave.registry.PacketTypeRegistries;
+import de.jpx3.intave.registry.PacketTypeRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -44,10 +44,10 @@ public final class WirePacketTestSupport {
 		}
 	}
 
-	public static PacketIdRegistry<?> registry(PacketDirection direction) {
+	public static PacketTypeRegistry<?> registry(PacketDirection direction) {
 		return direction == SERVERBOUND
-				? PacketIdRegistries.serverbound()
-				: PacketIdRegistries.clientbound();
+				? PacketTypeRegistries.serverbound()
+				: PacketTypeRegistries.clientbound();
 	}
 
 	public static <T extends PacketContract> T roundTrip(

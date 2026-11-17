@@ -74,7 +74,7 @@ public final class UpdateTagReader extends AbstractPacketReader {
     return null;
   }
 
-  private static Map<?, ?> blockTagMap(Map<?, ?> registries) {
+  private Map<?, ?> blockTagMap(Map<?, ?> registries) {
     for (Map.Entry<?, ?> registry : registries.entrySet()) {
       if (isBlockRegistryKey(registry.getKey())) {
         return mapField(registry.getValue());
@@ -83,7 +83,7 @@ public final class UpdateTagReader extends AbstractPacketReader {
     return null;
   }
 
-  private static boolean isBlockRegistryKey(Object resourceKey) {
+  private boolean isBlockRegistryKey(Object resourceKey) {
     if (resourceKey == null) {
       return false;
     }
@@ -99,12 +99,12 @@ public final class UpdateTagReader extends AbstractPacketReader {
     return false;
   }
 
-  private static Map<?, ?> legacyBlockTagMap(Object tagSupplier) {
+  private Map<?, ?> legacyBlockTagMap(Object tagSupplier) {
     Object blockTags = firstReferenceField(tagSupplier);
     return mapField(blockTags);
   }
 
-  private static Object firstReferenceField(Object owner) {
+  private Object firstReferenceField(Object owner) {
     if (owner == null) {
       return null;
     }
@@ -119,7 +119,7 @@ public final class UpdateTagReader extends AbstractPacketReader {
     return null;
   }
 
-  private static Map<?, ?> mapField(Object owner) {
+  private Map<?, ?> mapField(Object owner) {
     if (owner instanceof Map) {
       return (Map<?, ?>) owner;
     }
@@ -137,7 +137,7 @@ public final class UpdateTagReader extends AbstractPacketReader {
     return null;
   }
 
-  private static Iterator<?> membersOf(Object value) {
+  private Iterator<?> membersOf(Object value) {
     if (value instanceof Iterable) {
       return ((Iterable<?>) value).iterator();
     }
@@ -171,7 +171,7 @@ public final class UpdateTagReader extends AbstractPacketReader {
     return Collections.emptyList().iterator();
   }
 
-  private static MinecraftKey minecraftKey(Object value) {
+  private MinecraftKey minecraftKey(Object value) {
     if (value instanceof com.comphenix.protocol.wrappers.MinecraftKey) {
       return MinecraftKey.fromProtocolLib(
         (com.comphenix.protocol.wrappers.MinecraftKey) value
@@ -188,14 +188,14 @@ public final class UpdateTagReader extends AbstractPacketReader {
     }
   }
 
-  private static String keyString(Object value) {
+  private String keyString(Object value) {
     if (value instanceof com.comphenix.protocol.wrappers.MinecraftKey) {
       return ((com.comphenix.protocol.wrappers.MinecraftKey) value).getFullKey();
     }
     return value == null ? null : value.toString();
   }
 
-  private static List<Field> instanceFields(Class<?> type) {
+  private List<Field> instanceFields(Class<?> type) {
     List<Field> fields = new ArrayList<>();
     for (Class<?> current = type; current != null && current != Object.class;
          current = current.getSuperclass()) {
@@ -208,7 +208,7 @@ public final class UpdateTagReader extends AbstractPacketReader {
     return fields;
   }
 
-  private static Object read(Field field, Object owner) {
+  private Object read(Field field, Object owner) {
     try {
       field.setAccessible(true);
       return field.get(owner);

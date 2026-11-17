@@ -1,9 +1,20 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.check;
 
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
 import de.jpx3.intave.module.linker.nayoro.NayoroEventSubscriptionLinker;
-import de.jpx3.intave.module.linker.packet.PacketSubscriptionLinker;
+import de.jpx3.intave.module.linker.packet.ProtocolLibSubscriptionLinker;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -14,7 +25,7 @@ import java.util.function.Consumer;
 /**
  * The {@link CheckLinker} links checks to packet and event bindings, used by the {@link CheckService}.
  * The methods {@link CheckLinker#linkBukkitEventSubscriptions(Collection)} and {@link CheckLinker#linkPacketEventSubscriptions(Collection)}
- * take {@link Collection}s of {@link Check}s and forward them to the {@link PacketSubscriptionLinker} and the {@link BukkitEventSubscriptionLinker}.
+ * take {@link Collection}s of {@link Check}s and forward them to the {@link ProtocolLibSubscriptionLinker} and the {@link BukkitEventSubscriptionLinker}.
  * The {@link CheckLinker#removeBukkitEventSubscriptions(Collection)} and {@link CheckLinker#removePacketEventSubscriptions(Collection)} undo this procedure again.
  * <br>
  * <br>
@@ -27,7 +38,7 @@ import java.util.function.Consumer;
  * @see MetaCheck
  * @see MetaCheckPart
  * @see CheckService
- * @see PacketSubscriptionLinker
+ * @see ProtocolLibSubscriptionLinker
  * @see BukkitEventSubscriptionLinker
  */
 final class CheckLinker {
@@ -53,8 +64,8 @@ final class CheckLinker {
    * @param checks the collection of checks to perform linkage on
    */
   public void linkPacketEventSubscriptions(Collection<? extends Check> checks) {
-    PacketSubscriptionLinker packetSubscriptionLinker = Modules.linker().packetEvents();
-    iterativeLink(checks, linkedPacketProcessors, packetSubscriptionLinker::linkSubscriptionsIn);
+    ProtocolLibSubscriptionLinker protocolLibSubscriptionLinker = Modules.linker().protocolLib();
+    iterativeLink(checks, linkedPacketProcessors, protocolLibSubscriptionLinker::linkSubscriptionsIn);
   }
 
   /**
@@ -65,8 +76,8 @@ final class CheckLinker {
    * @param checks the collection of checks to remove linkage
    */
   public void removePacketEventSubscriptions(Collection<? extends Check> checks) {
-    PacketSubscriptionLinker packetSubscriptionLinker = Modules.linker().packetEvents();
-    iterativeRemove(checks, linkedPacketProcessors, packetSubscriptionLinker::removeSubscriptionsOf);
+    ProtocolLibSubscriptionLinker protocolLibSubscriptionLinker = Modules.linker().protocolLib();
+    iterativeRemove(checks, linkedPacketProcessors, protocolLibSubscriptionLinker::removeSubscriptionsOf);
   }
 
   /**

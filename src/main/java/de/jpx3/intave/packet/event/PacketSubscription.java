@@ -12,14 +12,14 @@
 package de.jpx3.intave.packet.event;
 
 import de.jpx3.intave.packet.ListenerPriority;
-import de.jpx3.intave.packet.ListenerSlot;
+import de.jpx3.intave.packet.ListenerStage;
 import org.jspecify.annotations.NonNull;
 
 public interface PacketSubscription extends Comparable<PacketSubscription> {
 	void onPacket(PacketEvent event);
 
-	default ListenerSlot slot() {
-		return ListenerSlot.AFTER_IMMUTABLE;
+	default ListenerStage stage() {
+		return ListenerStage.AFTER_IMMUTABLE;
 	}
 
 	default ListenerPriority priority() {
@@ -27,13 +27,13 @@ public interface PacketSubscription extends Comparable<PacketSubscription> {
 	}
 
 	default boolean allowForPacketMutations() {
-		return slot().allowMutations();
+		return stage().allowMutations();
 	}
 
 	// do not override this method unless you know what you're doing
 	@Override
 	default int compareTo(@NonNull PacketSubscription o) {
-		int slotComparison = slot().compareTo(o.slot());
+		int slotComparison = stage().compareTo(o.stage());
 		if (slotComparison != 0) {
 			return slotComparison;
 		}

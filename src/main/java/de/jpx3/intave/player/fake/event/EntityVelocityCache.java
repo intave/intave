@@ -30,7 +30,7 @@ public final class EntityVelocityCache implements PacketEventSubscriber {
   private final List<Double> verticalVelocities = Lists.newArrayList();
 
   public EntityVelocityCache(IntavePlugin plugin) {
-    Modules.linker().packetEvents().linkSubscriptionsIn(this);
+    Modules.linker().protocolLib().linkSubscriptionsIn(this);
   }
 
   @PacketSubscription(

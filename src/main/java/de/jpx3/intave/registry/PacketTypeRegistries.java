@@ -25,10 +25,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-public final class PacketIdRegistries {
+public final class PacketTypeRegistries {
   private static final String DIRECTORY = "registry/packet_ids/";
-  private static final PacketIdRegistry<PacketType.Client> SERVERBOUND;
-  private static final PacketIdRegistry<PacketType.Server> CLIENTBOUND;
+  private static final PacketTypeRegistry<PacketType.Client> SERVERBOUND;
+  private static final PacketTypeRegistry<PacketType.Server> CLIENTBOUND;
 
   static {
     Map<Integer, Map<ConnectionState, Map<PacketType.Client, Integer>>> serverbound = new HashMap<>();
@@ -51,22 +51,22 @@ public final class PacketIdRegistries {
       serverbound.put(protocol, readStates(states, "serverbound", null, null, clientTypes));
       clientbound.put(protocol, readStates(states, "clientbound", null, null, serverTypes));
     }
-    SERVERBOUND = new PacketIdRegistry<>(PacketType.Client.class, serverbound);
-    CLIENTBOUND = new PacketIdRegistry<>(PacketType.Server.class, clientbound);
+    SERVERBOUND = new PacketTypeRegistry<>(PacketType.Client.class, serverbound);
+    CLIENTBOUND = new PacketTypeRegistry<>(PacketType.Server.class, clientbound);
   }
 
   public static void setup() {
     // intentionally left blank
   }
 
-  private PacketIdRegistries() {
+  private PacketTypeRegistries() {
   }
 
-  public static PacketIdRegistry<PacketType.Client> serverbound() {
+  public static PacketTypeRegistry<PacketType.Client> serverbound() {
     return SERVERBOUND;
   }
 
-  public static PacketIdRegistry<PacketType.Server> clientbound() {
+  public static PacketTypeRegistry<PacketType.Server> clientbound() {
     return CLIENTBOUND;
   }
 

@@ -19,6 +19,8 @@ import de.jpx3.intave.packet.contract.immutable.ClientSettingsPacket;
 import de.jpx3.intave.packet.contract.mutable.Mutable;
 import de.jpx3.intave.packet.contract.mutable.MutableTransactionPacket;
 import de.jpx3.intave.packet.event.PacketEvent;
+import de.jpx3.intave.packet.event.PacketReceiveEvent;
+import de.jpx3.intave.packet.event.PacketSendEvent;
 import de.jpx3.intave.packet.wire.client.settings.ClientSettingsWithHandWirePacket;
 import de.jpx3.intave.packet.wire.cookie.response.CookieResponseWirePacket;
 import de.jpx3.intave.packet.wire.entity.mount.MountEntityWirePacket;
@@ -31,7 +33,7 @@ import de.jpx3.intave.packet.wire.player.rotation.PlayerRotationWirePacket;
 import de.jpx3.intave.packet.wire.window.transaction.TransactionWirePacket;
 import de.jpx3.intave.packet.wire.world.border.WorldBorderSetCenterWirePacket;
 import de.jpx3.intave.packet.wire.world.border.WorldBorderWirePacket;
-import de.jpx3.intave.registry.PacketIdRegistry;
+import de.jpx3.intave.registry.PacketTypeRegistry;
 import de.jpx3.intave.share.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -86,7 +88,7 @@ final class WirePacketMutationTest {
 		try {
 			encodePayload(new PlayerPositionWirePacket(new Position(1, 2, 3), 1), input);
 			PlayerPositionWirePacket packet = decodePayload(PlayerPositionWirePacket.class, input);
-			PacketEvent event = new PacketEvent(null, PacketDirection.SERVERBOUND, packet);
+			PacketEvent event = new PacketReceiveEvent(null, PacketType.Client.POSITION, packet);
 			Position original = packet.position();
 			assertTrue(original.isImmutable());
 			assertEquals(new Position(1, 2, 3), original);
@@ -207,7 +209,7 @@ final class WirePacketMutationTest {
 		try {
 			encodePayload(new PayloadInWirePacket("test", new byte[]{1, 2}), input);
 			PayloadInWirePacket packet = decodePayload(PayloadInWirePacket.class, input);
-			PacketEvent event = new PacketEvent(null, PacketDirection.SERVERBOUND, packet);
+			PacketEvent event = new PacketReceiveEvent(null, PacketType.Client.CUSTOM_PAYLOAD_IN, packet);
 			assertEquals("test", packet.tag());
 			assertFalse(packet.couldHaveBeenMutated());
 			assertFalse(event.dirty());
@@ -259,18 +261,18 @@ final class WirePacketMutationTest {
 	@Test
 	void eventsDetectInPlaceEditsAndReplacement() {
 		TransactionWirePacket packet = new TransactionWirePacket();
-		PacketEvent event = new PacketEvent(null, PacketDirection.CLIENTBOUND, packet);
+		PacketEvent event = new PacketSendEvent(null, PacketType.Server.TRANSACTION_OUT, packet);
 		assertFalse(event.dirty());
 		packet.setAccepted(true);
 		assertTrue(event.dirty());
 
-		PacketEvent replaced = new PacketEvent(null, PacketDirection.CLIENTBOUND, new TransactionWirePacket());
+		PacketEvent replaced = new PacketSendEvent(null, PacketType.Server.TRANSACTION_OUT, new TransactionWirePacket());
 		assertFalse(replaced.dirty());
 		replaced.setPacket(new TransactionWirePacket());
 		assertTrue(replaced.dirty());
 
 		MountEntityWirePacket mount = new MountEntityWirePacket(1, new int[]{2});
-		PacketEvent aliased = new PacketEvent(null, PacketDirection.CLIENTBOUND, mount);
+		PacketEvent aliased = new PacketSendEvent(null, PacketType.Server.MOUNT, mount);
 		assertFalse(aliased.dirty());
 		mount.passengerIds();
 		assertTrue(aliased.dirty());
@@ -286,14 +288,14 @@ final class WirePacketMutationTest {
 		}
 		UntrackedPacket packet = new UntrackedPacket();
 		assertTrue(packet.couldHaveBeenMutated());
-		assertTrue(new PacketEvent(null, PacketDirection.CLIENTBOUND, packet).dirty());
+		assertTrue(new PacketSendEvent(null, PacketType.Server.TRANSACTION_OUT, packet).dirty());
 	}
 
 	@Test
 	void everyRegisteredWirePacketSupportsTrackingAndEverySetterMarksIt() throws ReflectiveOperationException {
 		Set<Class<? extends PacketContract>> packetClasses = new HashSet<>();
 		for (PacketDirection direction : PacketDirection.values()) {
-			PacketIdRegistry<?> registry = registry(direction);
+			PacketTypeRegistry<?> registry = registry(direction);
 			for (int protocol : registry.supportedProtocolVersions()) {
 				for (ConnectionState state : ConnectionState.values()) {
 					for (Map.Entry<? extends PacketType, Integer> entry : registry.packetIds(state, protocol).entrySet()) {

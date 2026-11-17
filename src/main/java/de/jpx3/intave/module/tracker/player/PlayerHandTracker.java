@@ -293,7 +293,7 @@ public class PlayerHandTracker extends Module {
     // Fix eating while sprinting bug: https://www.youtube.com/watch?v=5ZHMrVmtdNY
     if (digType == PlayerDigAction.DROP_ITEM && usedFoodItem) {
       PacketContainer unblockPacket = packet.shallowClone();
-      BlockDigReader.setAction(unblockPacket, PlayerDigAction.RELEASE_USE_ITEM);
+      reader.setAction(unblockPacket, PlayerDigAction.RELEASE_USE_ITEM);
       user.ignoreNextInboundPacket();
       PacketSender.receiveClientPacketFrom(player, unblockPacket);
     }

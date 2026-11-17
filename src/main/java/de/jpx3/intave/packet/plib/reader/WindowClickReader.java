@@ -81,7 +81,7 @@ public final class WindowClickReader extends AbstractPacketReader {
     return integer;
   }
 
-  private static Class<?> nativeWindowClickTypeClass() {
+  private Class<?> nativeWindowClickTypeClass() {
     if (nativeWindowClickTypeClass == null) {
       nativeWindowClickTypeClass = Lookup.serverClass("WindowClickType");
     }
@@ -92,7 +92,7 @@ public final class WindowClickReader extends AbstractPacketReader {
     return actionOf(clickType(), slot(), button());
   }
 
-  static InventoryActionEvent.Action actionOf(
+  InventoryActionEvent.Action actionOf(
     WindowClickType clickType, int slot, int button
   ) {
     switch (clickType) {
@@ -213,7 +213,7 @@ public final class WindowClickReader extends AbstractPacketReader {
     return converted;
   }
 
-  private static ItemStack itemStack(Object value) {
+  private ItemStack itemStack(Object value) {
     if (value == null) {
       return null;
     }
@@ -236,11 +236,48 @@ public final class WindowClickReader extends AbstractPacketReader {
       : BukkitConverters.getItemStackConverter().getSpecific(nativeItem);
   }
 
-  static Object recreateNativeItemStack(Object hashedStack, Class<?> nativeItemStackClass) {
+  Object recreateNativeItemStack(Object hashedStack, Class<?> nativeItemStackClass) {
     HashedStackAccess access = HASHED_STACK_ACCESS.computeIfAbsent(
-      hashedStack.getClass(), type -> HashedStackAccess.create(type, nativeItemStackClass)
+      hashedStack.getClass(), type -> createHashedStackAccess(type, nativeItemStackClass)
     );
     return access.recreate(hashedStack);
+  }
+
+  private HashedStackAccess createHashedStackAccess(
+    Class<?> hashedStackClass, Class<?> nativeItemStackClass
+  ) {
+    try {
+      Field count = null;
+      for (Field field : hashedStackClass.getDeclaredFields()) {
+        if (!Modifier.isStatic(field.getModifiers()) && field.getType() == Integer.TYPE) {
+          count = field;
+          break;
+        }
+      }
+      if (count == null) {
+        return HashedStackAccess.EMPTY;
+      }
+
+      for (Constructor<?> constructor : nativeItemStackClass.getDeclaredConstructors()) {
+        Class<?>[] parameters = constructor.getParameterTypes();
+        if (parameters.length != 2 || parameters[1] != Integer.TYPE) {
+          continue;
+        }
+        for (Field field : hashedStackClass.getDeclaredFields()) {
+          if (Modifier.isStatic(field.getModifiers())
+            || !parameters[0].isAssignableFrom(field.getType())) {
+            continue;
+          }
+          field.setAccessible(true);
+          count.setAccessible(true);
+          constructor.setAccessible(true);
+          return new HashedStackAccess(field, count, constructor);
+        }
+      }
+    } catch (RuntimeException ignored) {
+      // Treat inaccessible or unfamiliar hashed-stack implementations as empty.
+    }
+    return HashedStackAccess.EMPTY;
   }
 
   private static final class HashedStackAccess {
@@ -256,43 +293,6 @@ public final class WindowClickReader extends AbstractPacketReader {
       this.item = item;
       this.count = count;
       this.itemStackConstructor = itemStackConstructor;
-    }
-
-    private static HashedStackAccess create(
-      Class<?> hashedStackClass, Class<?> nativeItemStackClass
-    ) {
-      try {
-        Field count = null;
-        for (Field field : hashedStackClass.getDeclaredFields()) {
-          if (!Modifier.isStatic(field.getModifiers()) && field.getType() == Integer.TYPE) {
-            count = field;
-            break;
-          }
-        }
-        if (count == null) {
-          return EMPTY;
-        }
-
-        for (Constructor<?> constructor : nativeItemStackClass.getDeclaredConstructors()) {
-          Class<?>[] parameters = constructor.getParameterTypes();
-          if (parameters.length != 2 || parameters[1] != Integer.TYPE) {
-            continue;
-          }
-          for (Field field : hashedStackClass.getDeclaredFields()) {
-            if (Modifier.isStatic(field.getModifiers())
-              || !parameters[0].isAssignableFrom(field.getType())) {
-              continue;
-            }
-            field.setAccessible(true);
-            count.setAccessible(true);
-            constructor.setAccessible(true);
-            return new HashedStackAccess(field, count, constructor);
-          }
-        }
-      } catch (RuntimeException ignored) {
-        // Treat inaccessible or unfamiliar hashed-stack implementations as empty.
-      }
-      return EMPTY;
     }
 
     private Object recreate(Object hashedStack) {

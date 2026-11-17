@@ -588,7 +588,10 @@ public final class EntityTracker extends Module {
 
     MovementMetadata movement = user.meta().movement();
     double distanceBefore = entity.distanceToPlayerCache > 8 ? 10 : entity.immediateServerPosition.distance(movement.positionX, movement.positionY, movement.positionZ);
-    EntityMovementReader.Delta delta = EntityMovementReader.read(packet, ServerProtocolVersion.current());
+    EntityMovementReader.Delta delta;
+    try (EntityMovementReader reader = PacketReaders.readerOf(packet)) {
+      delta = reader.read(ServerProtocolVersion.current());
+    }
     long dx = delta.x(), dy = delta.y(), dz = delta.z();
     double divisor = delta.divisor();
     entity.applyImmediateRelativeMove(dx, dy, dz, divisor);

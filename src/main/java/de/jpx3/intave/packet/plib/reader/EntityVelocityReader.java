@@ -106,7 +106,7 @@ public class EntityVelocityReader extends EntityReader {
     }
   }
 
-  private static double nativeAxis(Object vector, Field field) {
+  private double nativeAxis(Object vector, Field field) {
     try {
       return field.getDouble(vector);
     } catch (IllegalAccessException exception) {

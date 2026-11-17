@@ -19,7 +19,7 @@ public final class AnimationReader extends EntityReader {
 		return decodeAnimation(packet().getIntegers().read(1), MinecraftVersions.VER26_3.atOrAbove());
 	}
 
-	static EntityAnimation decodeAnimation(int id, boolean modern) {
+	EntityAnimation decodeAnimation(int id, boolean modern) {
 		// 26.3 moved swings to ClientboundSwingAnimationPacket and renumbered the remaining actions.
 		if (modern) {
 			switch (id) {

@@ -16,7 +16,9 @@ import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.linker.packet.PrioritySlot;
+import de.jpx3.intave.module.linker.packetperfect.OnReceive;
 import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.contract.immutable.AbilityInPacket;
 import de.jpx3.intave.packet.plib.reader.AbilityInReader;
 import de.jpx3.intave.packet.plib.reader.AbilityOutReader;
 import de.jpx3.intave.packet.plib.reader.EntityReader;
@@ -27,18 +29,19 @@ import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.event.Cancellable;
 
+import static de.jpx3.intave.packet.ListenerStage.AFTER_IMMUTABLE;
 import static de.jpx3.intave.packet.contract.PacketType.Client.ABILITIES_IN;
 import static de.jpx3.intave.packet.contract.PacketType.Server.*;
 import static de.jpx3.intave.share.GameStateChangeType.CHANGE_GAME_MODE;
 
 public final class AbilityTracker extends Module {
-  @PacketSubscription(priority = ListenerPriority.MONITOR, packetsIn = ABILITIES_IN)
-  public void recordClientAbilities(User user, AbilityInReader reader, Cancellable cancellable) {
-    if (cancellable.isCancelled()) {
-      return;
-    }
-    boolean flying = reader.requestedFlying();
+  @OnReceive(
+    stage = AFTER_IMMUTABLE
+  )
+  public void onAbilities(User user, AbilityInPacket packet) {
+    boolean flying = packet.requestedFlying();
     user.meta().abilities().acknowledgeClientFlying(flying);
+    user.sendMessage("§aClient flying: " + flying);
   }
 
   @PacketSubscription(packetsOut = CAMERA)

@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.packet.injection;
 
+import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.PacketDirection;
@@ -24,8 +25,8 @@ import de.jpx3.intave.packet.event.PacketReceiveEvent;
 import de.jpx3.intave.packet.event.PacketSendEvent;
 import de.jpx3.intave.packet.wire.WirePackets;
 import de.jpx3.intave.reflect.PlayerChannel;
-import de.jpx3.intave.registry.PacketIdRegistries;
-import de.jpx3.intave.registry.PacketIdRegistry;
+import de.jpx3.intave.registry.PacketTypeRegistries;
+import de.jpx3.intave.registry.PacketTypeRegistry;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import io.netty.buffer.ByteBuf;
@@ -83,45 +84,60 @@ public final class Binding implements AutoCloseable {
 	}
 
 	List<ByteBuf> onPacketReceive(ByteBuf message) {
-		if (this.connectionState == ConnectionState.HANDSHAKING) {
-			HandshakePacket handshake;
-			try {
-				handshake = WirePackets.createVersionIndependentPacket(ConnectionState.HANDSHAKING, message);
-			} catch (RuntimeException ignored) {
-				return Collections.emptyList();
-			}
-			if (handshake == null) {
+		try {
+			if (this.connectionState == ConnectionState.HANDSHAKING) {
+				HandshakePacket handshake;
+				try {
+					handshake = WirePackets.createVersionIndependentPacket(ConnectionState.HANDSHAKING, message);
+				} catch (RuntimeException failure) {
+					logPacketFailure(PacketDirection.SERVERBOUND, "decoding handshake", failure);
+					return Collections.emptyList();
+				}
+				if (handshake == null) {
+					return Collections.singletonList(message);
+				}
+				if (!supports(handshake.protocolVersion())) {
+					return Collections.emptyList();
+				}
+				this.protocolVersion = handshake.protocolVersion();
+				this.connectionState = handshake.nextConnectionState();
 				return Collections.singletonList(message);
 			}
-			if (!supports(handshake.protocolVersion())) {
-				return Collections.emptyList();
+
+			int packetId = packetIdFromHeader(message);
+			ConnectionState nextState = nextStateAfterReceivedPacket(packetId);
+			PacketType.Client packetType = PacketTypeRegistries.serverbound().typeOf(this.connectionState, packetId, this.protocolVersion);
+
+			if (packetType != null && WirePackets.packetIdKnown(PacketDirection.SERVERBOUND, this.connectionState, packetId, this.protocolVersion)) {
+				PacketContract packet = WirePackets.decodePacket(this.connectionState, this.protocolVersion, message);
+				User nullableUser = tryGetUser();
+				PacketEventBus.dispatch(new PacketReceiveEvent(nullableUser, packetType, packet));
 			}
-			this.protocolVersion = handshake.protocolVersion();
-			this.connectionState = handshake.nextConnectionState();
+			this.connectionState = nextState;
 			return Collections.singletonList(message);
+		} catch (RuntimeException | Error failure) {
+			logPacketFailure(PacketDirection.SERVERBOUND, "processing", failure);
+			throw failure;
 		}
-
-		int packetId = packetIdFromHeader(message);
-		ConnectionState nextState = nextStateAfterReceivedPacket(packetId);
-		PacketType.Client packetType = PacketIdRegistries.serverbound().typeOf(this.connectionState, packetId, this.protocolVersion);
-
-		if (packetType != null && WirePackets.packetIdKnown(PacketDirection.SERVERBOUND, this.connectionState, packetId, this.protocolVersion)) {
-			PacketContract packet = WirePackets.decodePacket(this.connectionState, this.protocolVersion, message);
-			User nullableUser = tryGetUser();
-			PacketEventBus.dispatch(new PacketReceiveEvent(nullableUser, packetType, packet));
-		}
-		this.connectionState = nextState;
-		return Collections.singletonList(message);
 	}
 
 	List<ByteBuf> onPacketSend(ByteBuf message) {
+		try {
+			return processPacketSend(message);
+		} catch (RuntimeException | Error failure) {
+			logPacketFailure(CLIENTBOUND, "processing", failure);
+			throw failure;
+		}
+	}
+
+	private List<ByteBuf> processPacketSend(ByteBuf message) {
 		int packetId = packetIdFromHeader(message);
 		ConnectionState nextState = nextStateAfterSentPacket(packetId);
 		User nullableUser = tryGetUser();
-		PacketType.Server packetType = PacketIdRegistries.clientbound().typeOf(this.connectionState, packetId, this.protocolVersion);
+		PacketType.Server packetType = PacketTypeRegistries.clientbound().typeOf(this.connectionState, packetId, this.protocolVersion);
 
 		if (packetType != null && WirePackets.packetIdKnown(CLIENTBOUND, this.connectionState, packetId, this.protocolVersion)) {
-			PacketContract packet = WirePackets.decodePacket(this.connectionState, this.protocolVersion, message);
+			PacketContract packet = WirePackets.decodePacket(CLIENTBOUND, this.connectionState, this.protocolVersion, message);
 			List<TypedPacketContract> outgoingPackets = PacketEventBus.dispatch(
 				new PacketSendEvent(nullableUser, packetType, packet)
 			);
@@ -154,6 +170,19 @@ public final class Binding implements AutoCloseable {
 		}
 		this.connectionState = nextState;
 		return Collections.singletonList(message);
+	}
+
+	void logPacketFailure(PacketDirection direction, String operation, Throwable failure) {
+		String message = "Exception while " + operation + " " + direction + " packet"
+			+ " (state=" + this.connectionState + ", protocol=" + this.protocolVersion
+			+ ", channel=" + this.channel + ")";
+		IntaveLogger logger = IntaveLogger.logger();
+		if (logger != null) {
+			logger.error(message, failure);
+		} else {
+			System.err.println("[Intave] " + message);
+			failure.printStackTrace();
+		}
 	}
 
 	public User tryGetUser() {
@@ -196,7 +225,7 @@ public final class Binding implements AutoCloseable {
 	}
 
 	private ConnectionState nextStateAfterReceivedPacket(int packetId) {
-		PacketIdRegistry<PacketType.Client> serverbound = PacketIdRegistries.serverbound();
+		PacketTypeRegistry<PacketType.Client> serverbound = PacketTypeRegistries.serverbound();
 		switch (this.connectionState) {
 			case LOGIN:
 				if (packetId == serverbound.idOf(ConnectionState.LOGIN, PacketType.Client.LOGIN_ACK, this.protocolVersion)) {
@@ -227,11 +256,11 @@ public final class Binding implements AutoCloseable {
 		if (this.connectionState != ConnectionState.LOGIN) {
 			return this.connectionState;
 		}
-		PacketIdRegistry<PacketType.Server> clientbound = PacketIdRegistries.clientbound();
+		PacketTypeRegistry<PacketType.Server> clientbound = PacketTypeRegistries.clientbound();
 		if (packetId != clientbound.idOf(ConnectionState.LOGIN, PacketType.Server.SUCCESS, this.protocolVersion)) {
 			return this.connectionState;
 		}
-		return PacketIdRegistries.serverbound().idOf(
+		return PacketTypeRegistries.serverbound().idOf(
 			ConnectionState.LOGIN,
 			PacketType.Client.LOGIN_ACK,
 			this.protocolVersion
@@ -245,6 +274,6 @@ public final class Binding implements AutoCloseable {
 	}
 
 	private static boolean supports(int protocolVersion) {
-		return PacketIdRegistries.serverbound().supportedProtocolVersions().contains(protocolVersion);
+		return PacketTypeRegistries.serverbound().supportedProtocolVersions().contains(protocolVersion);
 	}
 }

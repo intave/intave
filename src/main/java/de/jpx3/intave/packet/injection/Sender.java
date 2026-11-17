@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.packet.injection;
 
+import de.jpx3.intave.packet.PacketDirection;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 
@@ -109,7 +110,8 @@ final class Sender extends ChannelDuplexHandler {
 		final ByteBuf packet;
 		try {
 			packet = CompressionRescue.copyPacket(envelope);
-		} catch (RuntimeException ignored) {
+		} catch (RuntimeException failure) {
+			this.binding.logPacketFailure(PacketDirection.CLIENTBOUND, "decoding compression envelope for", failure);
 			repairAfterCurrentMessage(context);
 			context.write(envelope, promise);
 			return;

@@ -54,6 +54,18 @@ final class WirePacketDefinition<T extends PacketContract> {
 		this.codec.encode(payload, this.packetClass.cast(packet));
 	}
 
+	public Class<T> packetClass() {
+		return packetClass;
+	}
+
+	public Constructor<T> constructor() {
+		return constructor;
+	}
+
+	public StreamCodec<ByteBuf, ByteBuf, T> codec() {
+		return codec;
+	}
+
 	public static <T extends PacketContract> WirePacketDefinition<T> from(Class<T> packetClass) {
 		try {
 			Constructor<T> constructor = packetClass.getConstructor();

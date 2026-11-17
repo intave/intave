@@ -24,16 +24,15 @@ import java.util.Collections;
 import java.util.List;
 
 /** Native server layouts for relative entity movement, before any protocol translation. */
-public final class EntityMovementReader {
-  private EntityMovementReader() {}
-
-  public static Delta read(PacketContainer packet, int serverProtocol) {
+public final class EntityMovementReader extends EntityReader {
+  public Delta read(int serverProtocol) {
+    PacketContainer packet = packet();
     if (packet.getType() == PacketType.Play.Server.ENTITY_LOOK) {
       int divisor = serverProtocol < 107 ? 32 : 4096;
       return new Delta(Collections.singletonList(new Step(0, 0, 0, 0, divisor)), false, divisor);
     }
     if (serverProtocol >= ProtocolMetadata.VER_26_3) {
-      return Native263.read(packet);
+      return Native263.INSTANCE.read(packet);
     }
     if (serverProtocol >= 477) {
       StructureModifier<Short> fields = packet.getShorts();
@@ -47,19 +46,20 @@ public final class EntityMovementReader {
     return linear(fields.read(0), fields.read(1), fields.read(2), 32);
   }
 
-  private static Delta linear(int x, int y, int z, int divisor) {
+  private Delta linear(int x, int y, int z, int divisor) {
     return new Delta(Collections.singletonList(new Step(x, y, z, 0, divisor)), false, divisor);
   }
 
-  public static void writeLinear263(PacketContainer packet, short x, short y, short z) {
+  public void writeLinear263(short x, short y, short z) {
     try {
-      packet.getModifier().withType(Native263.DELTA).write(0, Native263.LINEAR_CONSTRUCTOR.newInstance(x, y, z));
+      packet().getModifier().withType(Native263.DELTA).write(0, Native263.LINEAR_CONSTRUCTOR.newInstance(x, y, z));
     } catch (ReflectiveOperationException exception) {
       throw new IllegalStateException("Cannot create 26.3 relative entity movement", exception);
     }
   }
 
-  public static PositionMoveRotation readPositionSync(PacketContainer packet, int serverProtocol) {
+  public PositionMoveRotation readPositionSync(int serverProtocol) {
+    PacketContainer packet = packet();
     if (serverProtocol < ProtocolMetadata.VER_26_3) return PositionMoveRotation.firstFrom(packet);
     try {
       Object path = packet.getModifier().withType(Native263.POSITION_PATH).read(0);
@@ -115,6 +115,7 @@ public final class EntityMovementReader {
   }
 
   private static final class Native263 {
+    private static final Native263 INSTANCE = new Native263();
     private static final Class<?> DELTA;
     private static final Class<?> LINEAR;
     private static final Class<?> STEPPED;
@@ -137,7 +138,7 @@ public final class EntityMovementReader {
       }
     }
 
-    private static Delta read(PacketContainer packet) {
+    private Delta read(PacketContainer packet) {
       Object delta = packet.getModifier().withType(DELTA).read(0);
       if (LINEAR.isInstance(delta)) {
         return new Delta(Collections.singletonList(step(delta, false)), false, 4096);
@@ -152,7 +153,7 @@ public final class EntityMovementReader {
       }
     }
 
-    private static Step step(Object value, boolean stepped) {
+    private Step step(Object value, boolean stepped) {
       StructureModifier<Object> fields = new StructureModifier<>(value.getClass()).withTarget(value);
       StructureModifier<Short> axes = fields.withType(short.class);
       return new Step(

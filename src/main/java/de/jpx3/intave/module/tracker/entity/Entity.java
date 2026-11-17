@@ -20,6 +20,7 @@ import de.jpx3.intave.math.Hypot;
 import de.jpx3.intave.module.feedback.FeedbackObserver;
 import de.jpx3.intave.module.feedback.PendingCountingFeedbackObserver;
 import de.jpx3.intave.packet.plib.reader.EntityMovementReader;
+import de.jpx3.intave.packet.plib.reader.PacketReaders;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
@@ -349,7 +350,10 @@ public class Entity {
   }
 
   public void handleEntityPositionSync(User user, PacketContainer packet) {
-    PositionMoveRotation posMoveRot = EntityMovementReader.readPositionSync(packet, ServerProtocolVersion.current());
+    PositionMoveRotation posMoveRot;
+    try (EntityMovementReader reader = PacketReaders.readerOf(packet)) {
+      posMoveRot = reader.readPositionSync(ServerProtocolVersion.current());
+    }
     Position position = posMoveRot.position();
     handleEntityPositionSync(position);
     if (ENABLE_MOVEMENT_DEBUGGER_COLLECTOR && entityName().toLowerCase().contains("chicken")) {
@@ -386,7 +390,10 @@ public class Entity {
     double newPosX;
     double newPosY;
     double newPosZ;
-    PositionMoveRotation posMoveRot = EntityMovementReader.readPositionSync(packet, ServerProtocolVersion.current());
+    PositionMoveRotation posMoveRot;
+    try (EntityMovementReader reader = PacketReaders.readerOf(packet)) {
+      posMoveRot = reader.readPositionSync(ServerProtocolVersion.current());
+    }
     Position position = posMoveRot.position();
     newPosX = position.getX();
     newPosY = position.getY();
@@ -405,7 +412,10 @@ public class Entity {
   }
 
   public void immediateEntityMovement(PacketContainer packet) {
-    EntityMovementReader.Delta delta = EntityMovementReader.read(packet, ServerProtocolVersion.current());
+    EntityMovementReader.Delta delta;
+    try (EntityMovementReader reader = PacketReaders.readerOf(packet)) {
+      delta = reader.read(ServerProtocolVersion.current());
+    }
     applyImmediateRelativeMove(delta.x(), delta.y(), delta.z(), delta.divisor());
   }
 
@@ -427,7 +437,10 @@ public class Entity {
    * @param packet contains information about the entity movement
    */
   public void handleEntityMovement(User user, PacketContainer packet, boolean sync) {
-    EntityMovementReader.Delta delta = EntityMovementReader.read(packet, ServerProtocolVersion.current());
+    EntityMovementReader.Delta delta;
+    try (EntityMovementReader reader = PacketReaders.readerOf(packet)) {
+      delta = reader.read(ServerProtocolVersion.current());
+    }
     applyRelativeMove(delta.x(), delta.y(), delta.z(), delta.divisor());
   }
 

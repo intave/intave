@@ -38,7 +38,7 @@ public final class ActionBarDisplayer extends Module {
   @Override
   public void enable() {
     Modules.linker().bukkitEvents().registerEventsIn(clickFeeder);
-    Modules.linker().packetEvents().linkSubscriptionsIn(clickFeeder);
+    Modules.linker().protocolLib().linkSubscriptionsIn(clickFeeder);
   }
 
 

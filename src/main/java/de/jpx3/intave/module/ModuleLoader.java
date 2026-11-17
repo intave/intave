@@ -37,8 +37,9 @@ final class ModuleLoader {
 
     // linker
     prepareModule("de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker", eventBoot);
-    prepareModule("de.jpx3.intave.module.linker.packet.PacketSubscriptionLinker", packetBoot);
+    prepareModule("de.jpx3.intave.module.linker.packet.ProtocolLibSubscriptionLinker", packetBoot);
     prepareModule("de.jpx3.intave.module.linker.nayoro.NayoroEventSubscriptionLinker", packetBoot);
+    prepareModule("de.jpx3.intave.module.linker.packetperfect.PacketPerfectSubscriptionLinker", packetBoot);
 
     // feedback
     prepareModule("de.jpx3.intave.module.feedback.FeedbackSender", lateBoot);

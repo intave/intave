@@ -17,12 +17,12 @@ import de.jpx3.intave.packet.contract.PacketType;
 
 import java.util.*;
 
-public final class PacketIdRegistry<T extends Enum<T> & PacketType> {
+public final class PacketTypeRegistry<T extends Enum<T> & PacketType> {
 	private final Map<Integer, Map<ConnectionState, Map<T, Integer>>> protocols;
 	private final Map<Integer, Map<ConnectionState, List<T>>> packetTypes;
 	private final Set<Integer> supportedProtocolVersions;
 
-	PacketIdRegistry(Class<T> packetIdClass, Map<Integer, Map<ConnectionState, Map<T, Integer>>> protocols) {
+	PacketTypeRegistry(Class<T> packetIdClass, Map<Integer, Map<ConnectionState, Map<T, Integer>>> protocols) {
 		Map<Integer, Map<ConnectionState, Map<T, Integer>>> copy = new HashMap<>();
 		Map<Integer, Map<ConnectionState, List<T>>> packetTypes = new HashMap<>();
 		protocols.forEach((protocol, states) -> {

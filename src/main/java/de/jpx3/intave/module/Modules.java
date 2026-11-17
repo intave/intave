@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module;
 
 import de.jpx3.intave.cleanup.ShutdownTasks;
@@ -8,7 +19,8 @@ import de.jpx3.intave.module.feedback.FeedbackReceiver;
 import de.jpx3.intave.module.feedback.FeedbackSender;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
 import de.jpx3.intave.module.linker.nayoro.NayoroEventSubscriptionLinker;
-import de.jpx3.intave.module.linker.packet.PacketSubscriptionLinker;
+import de.jpx3.intave.module.linker.packet.ProtocolLibSubscriptionLinker;
+import de.jpx3.intave.module.linker.packetperfect.PacketPerfectSubscriptionLinker;
 import de.jpx3.intave.module.mitigate.CombatMitigator;
 import de.jpx3.intave.module.mitigate.ReconDelayLimiter;
 import de.jpx3.intave.module.nayoro.Nayoro;
@@ -125,8 +137,12 @@ public final class Modules {
       return find(BukkitEventSubscriptionLinker.class);
     }
 
-    public PacketSubscriptionLinker packetEvents() {
-      return find(PacketSubscriptionLinker.class);
+    public ProtocolLibSubscriptionLinker protocolLib() {
+      return find(ProtocolLibSubscriptionLinker.class);
+    }
+
+    public PacketPerfectSubscriptionLinker packetPerfect() {
+      return find(PacketPerfectSubscriptionLinker.class);
     }
 
     public NayoroEventSubscriptionLinker nayoroEvents() {

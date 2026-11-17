@@ -15,8 +15,8 @@ import de.jpx3.intave.packet.PacketDirection;
 import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.immutable.*;
 import de.jpx3.intave.packet.contract.mutable.MutableKeepAlivePacket;
-import de.jpx3.intave.registry.PacketIdRegistries;
-import de.jpx3.intave.registry.PacketIdRegistry;
+import de.jpx3.intave.registry.PacketTypeRegistries;
+import de.jpx3.intave.registry.PacketTypeRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 final class WirePacketsTestWrap {
 	@Test
 	void resolvesPacketTypesAndVersionedIdsAcrossEveryBundledProtocol() {
-		PacketIdRegistry<?> registry = PacketIdRegistries.serverbound();
+		PacketTypeRegistry<?> registry = PacketTypeRegistries.serverbound();
 		for (int protocol : registry.supportedProtocolVersions()) {
 			int handshakeId = registry.idOf(HANDSHAKING, PacketType.Client.SET_PROTOCOL, protocol);
 			assertInstanceOf(HandshakePacket.class, WirePackets.createPacket(HANDSHAKING, handshakeId, protocol));

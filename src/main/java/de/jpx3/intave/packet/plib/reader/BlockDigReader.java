@@ -48,7 +48,7 @@ public final class BlockDigReader extends BlockPositionReader {
     setAction(packet(), action);
   }
 
-  public static void setAction(PacketContainer packet, PlayerDigAction action) {
+  public void setAction(PacketContainer packet, PlayerDigAction action) {
     StructureModifier<Object> modifier = actionModifier(packet);
     if (modifier == null) {
       throw new IllegalStateException("Missing player dig action field");
@@ -62,7 +62,7 @@ public final class BlockDigReader extends BlockPositionReader {
     return actionModifier(packet());
   }
 
-  private static @Nullable StructureModifier<Object> actionModifier(PacketContainer packet) {
+  private @Nullable StructureModifier<Object> actionModifier(PacketContainer packet) {
     StructureModifier<Object> packetModifier = packet.getModifier();
     for (int index = 0; index < packetModifier.size(); index++) {
       Class<?> type = packetModifier.getField(index).getType();
@@ -73,7 +73,7 @@ public final class BlockDigReader extends BlockPositionReader {
     return null;
   }
 
-  private static boolean isActionType(Class<?> type) {
+  private boolean isActionType(Class<?> type) {
     if (!type.isEnum()) {
       return false;
     }
@@ -89,7 +89,7 @@ public final class BlockDigReader extends BlockPositionReader {
     return start && stop && release;
   }
 
-  private static Object enumValue(Class<?> type, PlayerDigAction action) {
+  private Object enumValue(Class<?> type, PlayerDigAction action) {
     String name = action == PlayerDigAction.SWAP_HELD_ITEMS
       ? "SWAP_ITEM_WITH_OFFHAND"
       : action.name();
@@ -114,7 +114,7 @@ public final class BlockDigReader extends BlockPositionReader {
     return isCanonicalItemUseRelease(nativeBlockPosition(), direction());
   }
 
-  static boolean isCanonicalItemUseRelease(
+  boolean isCanonicalItemUseRelease(
     @Nullable BlockPosition blockPosition, @Nullable Direction direction
   ) {
     return BlockPosition.ORIGIN.equals(blockPosition) && direction == Direction.DOWN;

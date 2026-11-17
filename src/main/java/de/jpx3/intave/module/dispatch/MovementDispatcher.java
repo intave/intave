@@ -45,6 +45,7 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.linker.packet.PrioritySlot;
+import de.jpx3.intave.module.linker.packetperfect.OnReceive;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.test.PhysicsTestRecorder;
 import de.jpx3.intave.module.test.record.MovementRecording;
@@ -55,7 +56,6 @@ import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.tracker.player.PacketLogging;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.packet.contract.immutable.PlayerInputPacket;
-import de.jpx3.intave.packet.event.PacketEventBus;
 import de.jpx3.intave.packet.plib.PacketSender;
 import de.jpx3.intave.packet.plib.converter.InputConverter;
 import de.jpx3.intave.packet.plib.reader.*;
@@ -653,7 +653,9 @@ public final class MovementDispatcher extends Module {
     PacketContainer packet = protocolManager.createPacket(PacketType.Play.Client.BLOCK_DIG);
     packet.getBlockPositionModifier().write(0, new com.comphenix.protocol.wrappers.BlockPosition(0, 0, 0));
     packet.getDirections().write(0, EnumWrappers.Direction.DOWN);
-    BlockDigReader.setAction(packet, PlayerDigAction.RELEASE_USE_ITEM);
+    try (BlockDigReader reader = PacketReaders.readerOf(packet)) {
+      reader.setAction(PlayerDigAction.RELEASE_USE_ITEM);
+    }
     user.ignoreNextInboundPacket();
     PacketSender.receiveClientPacketFrom(player, packet);
     Synchronizer.synchronize(user, player::updateInventory);
@@ -755,20 +757,16 @@ public final class MovementDispatcher extends Module {
     }
   }
 
-  {
-    PacketEventBus.addListener(event -> {
-      PlayerInputPacket packet = (PlayerInputPacket) event.packet();
-      User user = event.user();
-      if (user == null) {
-        return;
-      }
-      MovementMetadata movementData = user.meta().movement();
-      if (user.meta().protocol().protocolVersion() >= VER_1_21_2) {
-        movementData.lastInput = movementData.input;
-        movementData.input = packet.input();
-      }
-      event.setPacket(packet);
-    }, PLAYER_INPUT);
+  @OnReceive
+  public void onInput(
+    User user, PlayerInputPacket input
+  ) {
+    MovementMetadata movementData = user.meta().movement();
+    if (user.meta().protocol().protocolVersion() >= VER_1_21_2) {
+      movementData.lastInput = movementData.input;
+      movementData.input = input.input();
+      user.sendMessage(input.input().toString());
+    }
   }
 
   @PacketSubscription(

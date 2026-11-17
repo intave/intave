@@ -9,16 +9,24 @@
  *   https://polyformproject.org/licenses/perimeter/1.0.0/
  */
 
-package de.jpx3.intave.packet.reader;
+package de.jpx3.intave.packet.plib.reader;
 
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.packet.plib.reader.EntityMetadataReader;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 final class EntityMetadataReaderTest {
+  private EntityMetadataReader reader;
+
+  @BeforeEach
+  void setUp() {
+    MinecraftVersion.setCurrent(MinecraftVersions.VER1_21_4);
+    reader = new EntityMetadataReader();
+  }
+
   @Test
   void resolvesLivingFlagsAcrossMetadataLayoutChanges() {
     MinecraftVersion original = MinecraftVersion.current();
@@ -33,8 +41,8 @@ final class EntityMetadataReaderTest {
     }
   }
 
-  private static void assertIndex(MinecraftVersion version, int expected) {
+  private void assertIndex(MinecraftVersion version, int expected) {
     MinecraftVersion.setCurrent(version);
-    assertEquals(expected, EntityMetadataReader.livingFlagsIndex());
+    assertEquals(expected, reader.livingFlagsIndex());
   }
 }

@@ -46,9 +46,10 @@ public final class PacketReaders {
     setup(ENTITY_EFFECT, EntityEffectReader::new);
     setup(ENTITY_EQUIPMENT, EntityReader::new);
     setup(ENTITY_HEAD_ROTATION, EntityReader::new);
-    setup(ENTITY_LOOK, EntityReader::new);
+    setup(ENTITY_LOOK, EntityMovementReader::new);
     setup(ENTITY_METADATA, EntityMetadataReader::new);
-    setup(ENTITY_MOVE_LOOK, EntityReader::new);
+    setup(ENTITY_MOVE_LOOK, EntityMovementReader::new);
+    setup(ENTITY_POSITION_SYNC, EntityMovementReader::new);
     setup(ENTITY_STATUS, EntityStatusReader::new);
     setup(ENTITY_SOUND, EntityReader::new);
     setup(ENTITY_TELEPORT, EntityReader::new);
@@ -72,8 +73,8 @@ public final class PacketReaders {
     setup(PLAYER_INFO_REMOVE, PlayerInfoRemoveReader::new);
     setup(REMOVE_ENTITY_EFFECT, EntityReader::new);
 		setup(RESET_SCORE, ScoreboardReader::new);
-		setup(REL_ENTITY_MOVE, EntityReader::new);
-    setup(REL_ENTITY_MOVE_LOOK, EntityReader::new);
+    setup(REL_ENTITY_MOVE, EntityMovementReader::new);
+    setup(REL_ENTITY_MOVE_LOOK, EntityMovementReader::new);
     setup(SPAWN_ENTITY, EntityReader::new);
     setup(SPAWN_ENTITY_LIVING, EntityReader::new);
     setup(SPAWN_ENTITY_PAINTING, EntityReader::new);

@@ -11,7 +11,6 @@
 
 package de.jpx3.intave.packet.plib.reader;
 
-import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.reflect.StructureModifier;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.wrappers.BukkitConverters;
@@ -50,28 +49,24 @@ public final class PlayerInfoReader extends AbstractPacketReader {
     }
   }
 
+  public void setPlayerInfoAction(PlayerInfoAction action) {
+    packet().getPlayerInfoAction().writeSafely(0, EnumWrappers.PlayerInfoAction.valueOf(action.name()));
+  }
+
   public void setPlayerInfoActions(Set<PlayerInfoAction> actions) {
-    setPlayerInfoActions(packet(), actions);
-  }
-
-  public static void setPlayerInfoAction(PacketContainer packet, PlayerInfoAction action) {
-    packet.getPlayerInfoAction().writeSafely(0, EnumWrappers.PlayerInfoAction.valueOf(action.name()));
-  }
-
-  public static void setPlayerInfoActions(PacketContainer packet, Set<PlayerInfoAction> actions) {
     if (MULTIPLE_ACTIONS) {
       Set<EnumWrappers.PlayerInfoAction> converted = EnumSet.noneOf(EnumWrappers.PlayerInfoAction.class);
       for (PlayerInfoAction action : actions) {
         converted.add(EnumWrappers.PlayerInfoAction.valueOf(action.name()));
       }
-      packet.getPlayerInfoActions().writeSafely(0, converted);
+      packet().getPlayerInfoActions().writeSafely(0, converted);
       return;
     }
     if (actions.size() != 1) {
       throw new IllegalArgumentException("Legacy player info packets require exactly one action");
     }
     PlayerInfoAction action = actions.iterator().next();
-    packet.getPlayerInfoAction().writeSafely(0, EnumWrappers.PlayerInfoAction.valueOf(action.name()));
+    setPlayerInfoAction(action);
   }
 
   // Null means the packet cannot be inspected safely; the caller must leave it unchanged.
@@ -84,7 +79,7 @@ public final class PlayerInfoReader extends AbstractPacketReader {
     }
   }
 
-  static List<PlayerInfoEntry> inspectEntries(List<?> rawEntries, boolean multipleActions) {
+  List<PlayerInfoEntry> inspectEntries(List<?> rawEntries, boolean multipleActions) {
     if (rawEntries == null) {
       return null;
     }
@@ -115,7 +110,7 @@ public final class PlayerInfoReader extends AbstractPacketReader {
     }
   }
 
-  private static UUID profileId(Object rawEntry, boolean multipleActions) {
+  private UUID profileId(Object rawEntry, boolean multipleActions) {
     StructureModifier<Object> modifier = new StructureModifier<>(rawEntry.getClass(), null, false)
       .withTarget(rawEntry);
     if (multipleActions) {

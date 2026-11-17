@@ -26,7 +26,8 @@ public final class PacketEventBus {
 	private static final AtomicReference<Map<PacketType.Server, PacketSubscription[]>> SERVER_SUBSCRIPTIONS = new AtomicReference<>(new EnumMap<>(PacketType.Server.class));
 
 	public static void addListener(PacketSubscription subscription, PacketType.Client... packetId) {
-		for (PacketType.Client id : packetId) {
+		Set<PacketType.Client> uniqueIds = new HashSet<>(Arrays.asList(packetId));
+		for (PacketType.Client id : uniqueIds) {
 			addListener(subscription, id);
 		}
 	}
@@ -47,7 +48,8 @@ public final class PacketEventBus {
 	}
 
 	public static void addListener(PacketSubscription subscription, PacketType.Server... packetId) {
-		for (PacketType.Server id : packetId) {
+		Set<PacketType.Server> uniqueIds = new HashSet<>(Arrays.asList(packetId));
+		for (PacketType.Server id : uniqueIds) {
 			addListener(subscription, id);
 		}
 	}

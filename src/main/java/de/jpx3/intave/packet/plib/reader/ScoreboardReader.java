@@ -153,7 +153,7 @@ public final class ScoreboardReader extends AbstractPacketReader {
     return packet().getIntegers().read(1);
   }
 
-  private static String color(StructureModifier<Object> fields) {
+  private String color(StructureModifier<Object> fields) {
     // Older supported ProtocolLib builds do not expose getChatFormattings().
     for (Object value : fields.getValues()) {
       if (value instanceof Optional) {
@@ -208,14 +208,14 @@ public final class ScoreboardReader extends AbstractPacketReader {
     return packet().getStrings().readSafely(1);
   }
 
-  private static String component(WrappedChatComponent component) {
+  private String component(WrappedChatComponent component) {
     if (component == null) {
       return null;
     }
     return BaseComponent.toLegacyText(ComponentSerializer.parse(component.getJson()));
   }
 
-  private static String legacyColorIn(String text) {
+  private String legacyColorIn(String text) {
     if (text != null) {
       for (int i = 0; i + 1 < text.length(); i++) {
         if (text.charAt(i) != '\u00a7') {
