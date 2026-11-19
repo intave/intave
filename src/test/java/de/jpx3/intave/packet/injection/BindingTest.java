@@ -15,20 +15,27 @@ import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.PacketDirection;
 import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.contract.mutable.MutableEntityVelocityPacket;
 import de.jpx3.intave.packet.contract.mutable.MutableHandshakePacket;
+import de.jpx3.intave.packet.contract.mutable.MutableHeldItemSlotPacket;
 import de.jpx3.intave.packet.event.PacketEventBus;
 import de.jpx3.intave.packet.event.PacketSendEvent;
 import de.jpx3.intave.packet.event.PacketSubscription;
 import de.jpx3.intave.packet.wire.WirePackets;
 import de.jpx3.intave.packet.wire.connection.ping.PingWirePacket;
+import de.jpx3.intave.packet.wire.entity.velocity.EntityVelocityWirePacket;
+import de.jpx3.intave.packet.wire.item.heldslot.HeldItemSlotWirePacket;
 import de.jpx3.intave.packet.wire.window.transaction.TransactionWirePacket;
+import de.jpx3.intave.packet.wire.world.explosion.ExplosionOptionalMotionWirePacket;
 import de.jpx3.intave.registry.PacketTypeRegistries;
 import de.jpx3.intave.registry.PacketTypeRegistry;
+import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.user.User;
 import io.netty.buffer.*;
 import io.netty.channel.*;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.DecoderException;
+import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.MessageToMessageEncoder;
 import org.junit.jupiter.api.AfterEach;
@@ -44,6 +51,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.Deflater;
 
@@ -55,6 +63,49 @@ final class BindingTest {
   private final ByteArrayOutputStream errors = new ByteArrayOutputStream();
   private PrintStream originalError;
   private PrintStream capturedError;
+  private AtomicReference<Map<PacketType.Client, PacketSubscription[]>> clientSubscriptions;
+  private Map<PacketType.Client, PacketSubscription[]> savedClientSubscriptions;
+
+  @Test
+  void explicitSubscriptionBypassStillCompressesAndWritesThePacket() {
+    PacketSubscription subscription = event -> fail("Already tracked teleport motion must not be tracked again");
+    PacketEventBus.addListener(subscription, PacketType.Server.ENTITY_VELOCITY);
+    EmbeddedChannel channel = channelWithViaCodecs();
+    try (Binding binding = bindAndPlay(channel, 773)) {
+      channel.pipeline().addBefore("via-encoder", "compress", compressor(true));
+      ChannelFuture sent = binding.sendSilently(new EntityVelocityWirePacket(1, new Motion(0.125, 0.25, 0.5))
+        .typedTo(PacketType.Server.ENTITY_VELOCITY));
+      assertTrue(sent.isSuccess(), () -> String.valueOf(sent.cause()));
+      ByteBuf envelope = channel.readOutbound();
+      ByteBuf packet = CompressionRescue.copyPacket(envelope);
+      try {
+        MutableEntityVelocityPacket decoded = WirePackets.decodePacket(PacketDirection.CLIENTBOUND, ConnectionState.PLAY, 773, packet);
+        assertEquals(1, decoded.entityId());
+        assertEquals(0.25, decoded.motion().motionY(), 0.001);
+      } finally {
+        packet.release();
+        envelope.release();
+      }
+      assertNull(channel.readOutbound());
+    } finally {
+      PacketEventBus.removeListener(subscription);
+      channel.finishAndReleaseAll();
+    }
+  }
+
+  @BeforeEach
+  @SuppressWarnings("unchecked")
+  void isolateClientSubscriptions() throws ReflectiveOperationException {
+    Field field = PacketEventBus.class.getDeclaredField("CLIENT_SUBSCRIPTIONS");
+    field.setAccessible(true);
+    clientSubscriptions = (AtomicReference<Map<PacketType.Client, PacketSubscription[]>>) field.get(null);
+    savedClientSubscriptions = clientSubscriptions.getAndSet(new EnumMap<>(PacketType.Client.class));
+  }
+
+  @AfterEach
+  void restoreClientSubscriptions() {
+    clientSubscriptions.set(savedClientSubscriptions);
+  }
 
   @BeforeEach
   void captureErrors() {
@@ -67,6 +118,107 @@ final class BindingTest {
   void restoreErrors() {
     System.setErr(originalError);
     capturedError.close();
+  }
+
+  @Test
+  void nativeSendsBypassServerEncodersAndRunSubscriptionsOnce() {
+    for (boolean compressed : new boolean[]{false, true}) {
+      AtomicInteger calls = new AtomicInteger();
+      PacketSubscription subscription = event -> {
+        calls.incrementAndGet();
+        ((MutableEntityVelocityPacket) event.packet()).setEntityId(456);
+      };
+      PacketEventBus.addListener(subscription, PacketType.Server.ENTITY_VELOCITY);
+      EmbeddedChannel channel = channelWithViaCodecs();
+      try (Binding binding = bindAndPlay(channel, 773)) {
+        assertSame(binding, Binding.of(wrapChannel(channel, true)));
+        channel.pipeline().replace("via-encoder", "via-encoder", new ChannelOutboundHandlerAdapter() {
+          @Override
+          public void write(ChannelHandlerContext context, Object message, ChannelPromise promise) {
+            fail("Native client-version bytes must not enter ViaVersion's encoder");
+          }
+        });
+        channel.pipeline().addBefore("via-encoder", "compress", compressor(compressed));
+        ChannelFuture sent = binding.send(new EntityVelocityWirePacket(123, new Motion(8, 0.4, -8))
+          .typedTo(PacketType.Server.ENTITY_VELOCITY));
+        assertTrue(sent.isSuccess(), () -> String.valueOf(sent.cause()));
+        assertEquals(1, calls.get());
+        ByteBuf envelope = channel.readOutbound();
+        ByteBuf packet = CompressionRescue.copyPacket(envelope);
+        try {
+          MutableEntityVelocityPacket decoded = WirePackets.decodePacket(PacketDirection.CLIENTBOUND, ConnectionState.PLAY, 773, packet);
+          assertEquals(456, decoded.entityId());
+          assertEquals(8, decoded.motion().motionX(), 0.001);
+          assertEquals(-8, decoded.motion().motionZ(), 0.001);
+        } finally {
+          packet.release();
+          envelope.release();
+        }
+        assertNull(channel.readOutbound());
+      } finally {
+        PacketEventBus.removeListener(subscription);
+        channel.finishAndReleaseAll();
+      }
+    }
+  }
+
+  @Test
+  void nativeCancellationKeepsQueuedFeedbackInOrder() {
+    for (boolean cancel : new boolean[]{false, true}) {
+      AtomicInteger feedbackCalls = new AtomicInteger();
+      PacketSubscription motion = event -> {
+        PacketSendEvent send = (PacketSendEvent) event;
+        send.setCancelled(cancel);
+        send.addSendBefore(new PingWirePacket(11).typedTo(PacketType.Server.PING));
+        send.addSendAfter(new PingWirePacket(22).typedTo(PacketType.Server.PING));
+      };
+      PacketSubscription feedback = event -> feedbackCalls.incrementAndGet();
+      PacketEventBus.addListener(motion, PacketType.Server.EXPLOSION);
+      PacketEventBus.addListener(feedback, PacketType.Server.PING);
+      EmbeddedChannel channel = channelWithViaCodecs();
+      try (Binding binding = bindAndPlay(channel, 777)) {
+        ExplosionOptionalMotionWirePacket explosion = WirePackets.createPlayPacket(PacketType.Server.EXPLOSION, 777);
+        explosion.setDefaultEffects(777);
+        ChannelFuture sent = binding.send(explosion.typedTo(PacketType.Server.EXPLOSION));
+        assertTrue(sent.isSuccess(), () -> String.valueOf(sent.cause()));
+        assertEquals(2, feedbackCalls.get());
+        for (PacketType.Server type : cancel ? List.of(PacketType.Server.PING, PacketType.Server.PING)
+          : List.of(PacketType.Server.PING, PacketType.Server.EXPLOSION, PacketType.Server.PING)) {
+          ByteBuf packet = channel.readOutbound();
+          assertNotNull(packet);
+          try {
+            assertEquals(PacketTypeRegistries.clientbound().idOf(ConnectionState.PLAY, type, 777), ByteBufStreamCodecs.VARINT.decode(packet));
+            if (type == PacketType.Server.PING) assertEquals(channel.outboundMessages().isEmpty() ? 22 : 11, packet.readInt());
+          } finally {
+            packet.release();
+          }
+        }
+        assertNull(channel.readOutbound());
+      } finally {
+        PacketEventBus.removeListener(motion);
+        PacketEventBus.removeListener(feedback);
+        channel.finishAndReleaseAll();
+      }
+    }
+  }
+
+  @Test
+  void nativeSendRejectsWrongStateDirectionVersionAndClosedBindings() {
+    EmbeddedChannel channel = channelWithViaCodecs();
+    Binding binding = bindAndHandshake(channel, 47);
+    try {
+      assertInstanceOf(IllegalArgumentException.class, binding.send(new PingWirePacket(1).typedTo(PacketType.Server.PING)).cause());
+      send(channel, packet(PacketTypeRegistries.clientbound(), ConnectionState.LOGIN, PacketType.Server.SUCCESS, 47));
+      assertInstanceOf(IllegalArgumentException.class, binding.send(new HeldItemSlotWirePacket(1).typedTo(PacketType.Client.HELD_ITEM_SLOT_IN)).cause());
+      assertFalse(binding.send(new EntityVelocityWirePacket(1, new Motion()).typedTo(PacketType.Server.ENTITY_VELOCITY)).isSuccess());
+      binding.close();
+      assertThrows(IllegalStateException.class, () -> Binding.of(channel));
+      assertInstanceOf(IllegalStateException.class, binding.send(new PingWirePacket(1).typedTo(PacketType.Server.PING)).cause());
+      assertNull(channel.readOutbound());
+    } finally {
+      binding.close();
+      channel.finishAndReleaseAll();
+    }
   }
 
   @Test
@@ -268,10 +420,244 @@ final class BindingTest {
   }
 
   @Test
+  void forwardsUnchangedIncomingPacketsWithoutCopying() {
+    PacketEventBus.addListener(event ->
+      assertEquals(3, ((MutableHeldItemSlotPacket) event.packet()).slot()), PacketType.Client.HELD_ITEM_SLOT_IN);
+    EmbeddedChannel channel = channelWithViaCodecs();
+    try (Binding binding = bindAndPlay(channel, 47)) {
+      ByteBuf original = heldSlot(47, 3);
+      int readerIndex = original.readerIndex();
+      int writerIndex = original.writerIndex();
+
+      assertTrue(channel.writeInbound(original));
+      ByteBuf forwarded = channel.readInbound();
+      try {
+        assertSame(original, forwarded);
+        assertEquals(readerIndex, forwarded.readerIndex());
+        assertEquals(writerIndex, forwarded.writerIndex());
+        assertEquals(1, forwarded.refCnt());
+      } finally {
+        forwarded.release();
+      }
+      assertNull(channel.readInbound());
+    } finally {
+      channel.finishAndReleaseAll();
+    }
+  }
+
+  @Test
+  void cancelsIncomingPacketsWithoutClosingTheConnection() {
+    PacketEventBus.addListener(event -> {
+      if (((MutableHeldItemSlotPacket) event.packet()).slot() == 3) {
+        // Cancellation must win even over a replacement that cannot be encoded.
+        event.setPacket(new PingWirePacket());
+        event.setCancelled(true);
+      }
+    }, PacketType.Client.HELD_ITEM_SLOT_IN);
+    EmbeddedChannel channel = channelWithViaCodecs();
+    try (Binding binding = bindAndPlay(channel, 47)) {
+      ByteBuf cancelled = heldSlot(47, 3);
+      assertFalse(channel.writeInbound(cancelled));
+      assertEquals(0, cancelled.refCnt());
+      assertNull(channel.readInbound());
+      assertTrue(channel.isOpen());
+      assertEquals(ConnectionState.PLAY, binding.connectionState());
+
+      ByteBuf next = heldSlot(47, 4);
+      assertTrue(channel.writeInbound(next));
+      ByteBuf forwarded = channel.readInbound();
+      try {
+        assertSame(next, forwarded);
+        assertEquals(1, forwarded.refCnt());
+      } finally {
+        forwarded.release();
+      }
+      assertEquals("", errors.toString(StandardCharsets.UTF_8));
+    } finally {
+      channel.finishAndReleaseAll();
+    }
+  }
+
+  @Test
+  void forwardsIncomingPacketMutationsAndReplacements() {
+    for (boolean replace : new boolean[]{false, true}) {
+      clientSubscriptions.set(new EnumMap<>(PacketType.Client.class));
+      PacketEventBus.addListener(event -> {
+        if (replace) {
+          // A new packet need not have its mutable flag set.
+          event.setPacket(new HeldItemSlotWirePacket(7));
+        } else {
+          ((MutableHeldItemSlotPacket) event.packet()).setSlot(7);
+        }
+      }, PacketType.Client.HELD_ITEM_SLOT_IN);
+      for (int protocolVersion : new int[]{47, 776}) {
+        EmbeddedChannel channel = channelWithViaCodecs();
+        try (Binding binding = bindAndPlay(channel, protocolVersion)) {
+          ByteBuf original = heldSlot(protocolVersion, 3);
+          assertTrue(channel.writeInbound(original));
+          assertEquals(0, original.refCnt());
+          assertHeldSlot(channel, protocolVersion, 7);
+          assertTrue(channel.isOpen());
+          assertEquals(ConnectionState.PLAY, binding.connectionState());
+        } finally {
+          channel.finishAndReleaseAll();
+        }
+      }
+    }
+  }
+
+  @Test
+  void appliesIncomingCancellationAndEditsAfterRepairingCompressionPlacement() {
+    PacketEventBus.addListener(event -> {
+      MutableHeldItemSlotPacket packet = (MutableHeldItemSlotPacket) event.packet();
+      if (packet.slot() == 3) {
+        event.setCancelled(true);
+      } else {
+        packet.setSlot(7);
+      }
+    }, PacketType.Client.HELD_ITEM_SLOT_IN);
+    for (boolean compressed : new boolean[]{false, true}) {
+      EmbeddedChannel channel = channelWithViaCodecs();
+      try (Binding binding = bindAndPlay(channel, 47)) {
+        channel.pipeline().addBefore("via-decoder", "decompress", decompressor());
+        ByteBuf cancelled = compressionEnvelope(heldSlot(47, 3), compressed);
+        assertFalse(channel.writeInbound(cancelled));
+        assertEquals(0, cancelled.refCnt());
+        assertTrue(channel.isOpen());
+        assertNull(channel.readInbound());
+        assertImmediatelyBefore(channel, RECEIVER, "via-decoder");
+
+        ByteBuf edited = compressionEnvelope(heldSlot(47, 4), compressed);
+        assertTrue(channel.writeInbound(edited));
+        assertEquals(0, edited.refCnt());
+        assertHeldSlot(channel, 47, 7);
+      } finally {
+        channel.finishAndReleaseAll();
+      }
+    }
+  }
+
+  @Test
+  void releasesIncomingPacketsWhenASubscriberThrows() {
+    AssertionError failure = new AssertionError("incoming subscriber failed");
+    PacketEventBus.addListener(event -> { throw failure; }, PacketType.Client.HELD_ITEM_SLOT_IN);
+    EmbeddedChannel channel = channelWithViaCodecs();
+    try (Binding binding = bindAndPlay(channel, 47)) {
+      ByteBuf original = heldSlot(47, 3);
+      assertSame(failure, assertThrows(AssertionError.class, () -> channel.writeInbound(original)));
+      assertEquals(0, original.refCnt());
+      assertNull(channel.readInbound());
+      assertLogged("processing SERVERBOUND", failure, ConnectionState.PLAY, 47);
+    } finally {
+      channel.finishAndReleaseAll();
+    }
+  }
+
+  @Test
+  void releasesIncomingAndAllocatedPacketsWhenEncodingFails() {
+    PacketEventBus.addListener(event -> event.setPacket(new PingWirePacket()), PacketType.Client.HELD_ITEM_SLOT_IN);
+    EmbeddedChannel channel = channelWithViaCodecs();
+    List<ByteBuf> allocated = new ArrayList<>();
+    try (Binding binding = bindAndPlay(channel, 47)) {
+      channel.config().setAllocator((ByteBufAllocator) Proxy.newProxyInstance(
+        ByteBufAllocator.class.getClassLoader(), new Class<?>[]{ByteBufAllocator.class},
+        (proxy, method, arguments) -> {
+          Object result = method.invoke(UnpooledByteBufAllocator.DEFAULT, arguments);
+          if (result instanceof ByteBuf) {
+            allocated.add((ByteBuf) result);
+          }
+          return result;
+        }
+      ));
+      ByteBuf original = heldSlot(47, 3);
+
+      Throwable failure = assertThrows(IllegalArgumentException.class, () -> channel.writeInbound(original));
+
+      assertEquals(0, original.refCnt());
+      assertEquals(1, allocated.size());
+      assertEquals(0, allocated.get(0).refCnt());
+      assertNull(channel.readInbound());
+      assertEquals(ConnectionState.PLAY, binding.connectionState());
+      assertLogged("processing SERVERBOUND", failure, ConnectionState.PLAY, 47);
+    } finally {
+      channel.finishAndReleaseAll();
+      for (ByteBuf buffer : allocated) {
+        if (buffer.refCnt() > 0) {
+          buffer.release();
+        }
+      }
+    }
+  }
+
+  @Test
+  void forwardsEmptyOutboundBuffersWithoutReadingAPacketHeader() {
+    for (boolean consumed : new boolean[]{false, true}) {
+      EmbeddedChannel channel = channelWithViaCodecs();
+      try (Binding binding = bindAndPlay(channel, 774)) {
+        ByteBuf original = consumed
+          ? Unpooled.buffer(1).writeByte(0).readerIndex(1)
+          : channel.alloc().directBuffer(0, 1);
+        ChannelFuture write = channel.writeAndFlush(original);
+        ByteBuf forwarded = channel.readOutbound();
+        try {
+          assertTrue(write.isSuccess(), () -> String.valueOf(write.cause()));
+          assertSame(original, forwarded);
+          assertEquals(1, original.refCnt());
+          assertEquals(consumed ? 1 : 0, original.readerIndex());
+          assertFalse(forwarded.isReadable());
+          assertEquals(ConnectionState.PLAY, binding.connectionState());
+          assertTrue(channel.isActive());
+          assertEquals("", errors.toString(StandardCharsets.UTF_8));
+        } finally {
+          if (forwarded != null) forwarded.release();
+        }
+        assertEquals(0, original.refCnt());
+        assertNull(channel.readOutbound());
+      } finally {
+        channel.finishAndReleaseAll();
+      }
+    }
+  }
+
+  @Test
+  void preservesEmptyEncoderWritesWhenCompressionPlacementChanges() {
+    for (boolean moved : new boolean[]{false, true}) {
+      EmbeddedChannel channel = channelWithViaCodecs();
+      try (Binding binding = bindAndPlay(channel, 774)) {
+        channel.pipeline().replace("via-encoder", "via-encoder", new MessageToByteEncoder<Integer>() {
+          @Override
+          protected void encode(ChannelHandlerContext context, Integer message, ByteBuf output) {
+            // A cancelled packet produces no bytes, so Netty forwards an empty buffer.
+          }
+        });
+        if (moved) {
+          channel.pipeline().addBefore("via-encoder", "compress", new ChannelOutboundHandlerAdapter());
+        }
+
+        ChannelFuture write = channel.writeAndFlush(1);
+        ByteBuf forwarded = channel.readOutbound();
+        try {
+          assertTrue(write.isSuccess(), () -> String.valueOf(write.cause()));
+          assertNotNull(forwarded);
+          assertFalse(forwarded.isReadable());
+          assertEquals(ConnectionState.PLAY, binding.connectionState());
+          assertTrue(channel.isActive());
+          assertEquals("", errors.toString(StandardCharsets.UTF_8));
+        } finally {
+          if (forwarded != null) forwarded.release();
+        }
+        assertNull(channel.readOutbound());
+      } finally {
+        channel.finishAndReleaseAll();
+      }
+    }
+  }
+
+  @Test
   void releasesOutboundPacketsAndFailsThePromiseWhenTheBindingThrows() {
     EmbeddedChannel channel = channelWithViaCodecs();
     try (Binding binding = bindAndHandshake(channel, 764)) {
-      ByteBuf packet = Unpooled.buffer(1);
+      ByteBuf packet = Unpooled.buffer(1).writeByte(0x80);
       ChannelFuture write = channel.writeAndFlush(packet);
 
       assertTrue(write.isDone());
@@ -352,6 +738,64 @@ final class BindingTest {
       }
     } finally {
       subscriptions.set(saved);
+    }
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void outgoingCancellationPreservesQueuedPackets() throws ReflectiveOperationException {
+    Field field = PacketEventBus.class.getDeclaredField("SERVER_SUBSCRIPTIONS");
+    field.setAccessible(true);
+    AtomicReference<Map<PacketType.Server, PacketSubscription[]>> subscriptions =
+      (AtomicReference<Map<PacketType.Server, PacketSubscription[]>>) field.get(null);
+    Map<PacketType.Server, PacketSubscription[]> savedSubscriptions = subscriptions.get();
+    try {
+      for (int queuedPackets : new int[]{0, 1, 2}) {
+        subscriptions.set(new EnumMap<>(PacketType.Server.class));
+        PacketEventBus.addListener(event -> {
+          PacketSendEvent sendEvent = (PacketSendEvent) event;
+          sendEvent.setCancelled(true);
+          if (queuedPackets >= 1) {
+            sendEvent.addSendBefore(new TransactionWirePacket(3, (short) 1, true).typedTo(PacketType.Server.TRANSACTION_OUT));
+          }
+          if (queuedPackets >= 2) {
+            sendEvent.addSendAfter(new TransactionWirePacket(3, (short) 2, true).typedTo(PacketType.Server.TRANSACTION_OUT));
+          }
+        }, PacketType.Server.KEEP_ALIVE_OUT);
+
+        EmbeddedChannel channel = channelWithViaCodecs();
+        try (Binding binding = bindAndPlay(channel, 47)) {
+          ByteBuf original = packet(PacketTypeRegistries.clientbound(), ConnectionState.PLAY, PacketType.Server.KEEP_ALIVE_OUT, 47);
+          ByteBufStreamCodecs.VARINT.encode(original, 42);
+
+          ChannelFuture write = channel.writeAndFlush(original);
+
+          assertTrue(write.isSuccess(), () -> String.valueOf(write.cause()));
+          assertEquals(0, original.refCnt());
+          assertTrue(channel.isOpen());
+          for (int index = 0; index < queuedPackets; index++) {
+            ByteBuf forwarded = channel.readOutbound();
+            assertNotNull(forwarded, "Queued packet " + index + " must survive parent cancellation");
+            try {
+              assertEquals(1, forwarded.refCnt());
+              assertEquals(PacketTypeRegistries.clientbound().idOf(ConnectionState.PLAY, PacketType.Server.TRANSACTION_OUT, 47),
+                ByteBufStreamCodecs.VARINT.decode(forwarded));
+              assertEquals(3, forwarded.readUnsignedByte());
+              assertEquals(index + 1, forwarded.readShort());
+              assertTrue(forwarded.readBoolean());
+              assertFalse(forwarded.isReadable());
+            } finally {
+              forwarded.release();
+            }
+          }
+          assertNull(channel.readOutbound());
+          assertEquals("", errors.toString(StandardCharsets.UTF_8));
+        } finally {
+          channel.finishAndReleaseAll();
+        }
+      }
+    } finally {
+      subscriptions.set(savedSubscriptions);
     }
   }
 
@@ -638,7 +1082,7 @@ final class BindingTest {
   private static Binding bindAndHandshake(EmbeddedChannel channel, int protocolVersion) {
     Binding binding = Binding.bind(channel);
     receive(channel, handshake(protocolVersion));
-    // Send events need a user lookup; cache a test user without requiring a running Bukkit server.
+    // Packet events need a user lookup; cache a test user without requiring a running Bukkit server.
     try {
       Field user = Binding.class.getDeclaredField("user");
       user.setAccessible(true);
@@ -649,6 +1093,36 @@ final class BindingTest {
       throw new AssertionError(failure);
     }
     return binding;
+  }
+
+  private static Binding bindAndPlay(EmbeddedChannel channel, int protocolVersion) {
+    Binding binding = bindAndHandshake(channel, protocolVersion);
+    send(channel, packet(PacketTypeRegistries.clientbound(), ConnectionState.LOGIN, PacketType.Server.SUCCESS, protocolVersion));
+    if (binding.connectionState() == ConnectionState.LOGIN) {
+      receive(channel, packet(PacketTypeRegistries.serverbound(), ConnectionState.LOGIN, PacketType.Client.LOGIN_ACK, protocolVersion));
+      receive(channel, packet(PacketTypeRegistries.serverbound(), ConnectionState.CONFIGURATION, PacketType.Client.FINISH_CONFIGURATION, protocolVersion));
+    }
+    assertEquals(ConnectionState.PLAY, binding.connectionState());
+    return binding;
+  }
+
+  private static ByteBuf heldSlot(int protocolVersion, int slot) {
+    return packet(PacketTypeRegistries.serverbound(), ConnectionState.PLAY, PacketType.Client.HELD_ITEM_SLOT_IN, protocolVersion)
+      .writeShort(slot);
+  }
+
+  private static void assertHeldSlot(EmbeddedChannel channel, int protocolVersion, int slot) {
+    ByteBuf forwarded = channel.readInbound();
+    try {
+      assertEquals(1, forwarded.refCnt());
+      assertEquals(PacketTypeRegistries.serverbound().idOf(ConnectionState.PLAY, PacketType.Client.HELD_ITEM_SLOT_IN, protocolVersion),
+        ByteBufStreamCodecs.VARINT.decode(forwarded));
+      assertEquals(slot, forwarded.readShort());
+      assertFalse(forwarded.isReadable());
+    } finally {
+      forwarded.release();
+    }
+    assertNull(channel.readInbound());
   }
 
   private static ByteBuf handshake(int protocolVersion) {

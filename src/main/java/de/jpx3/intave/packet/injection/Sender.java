@@ -27,6 +27,35 @@ final class Sender extends ChannelDuplexHandler {
 		this.binding = binding;
 	}
 
+	Binding binding() {
+		return binding;
+	}
+
+	void send(ChannelPipeline pipeline, ByteBuf packet, ChannelPromise promise, boolean filter) {
+		ChannelHandlerContext context;
+		try {
+			context = pipeline.context(this);
+			if (context == null) {
+				throw new IllegalStateException("Packet sender is no longer installed");
+			}
+			placement.repair(context, this);
+			context = pipeline.context(this);
+			if (!placement.isCurrent(pipeline)) {
+				throw new IllegalStateException("Packet encoder is missing");
+			}
+		} catch (RuntimeException | Error failure) {
+			packet.release();
+			throw failure;
+		}
+		// These bytes already use the client's protocol. Skip Minecraft's and ViaVersion's encoders.
+		if (filter) {
+			write(context, packet, promise);
+		} else {
+			context.write(packet, promise);
+		}
+		context.flush();
+	}
+
 	@Override
 	public void write(ChannelHandlerContext context, Object message, ChannelPromise promise) {
 		if (!(message instanceof ByteBuf)) {
@@ -35,6 +64,11 @@ final class Sender extends ChannelDuplexHandler {
 		}
 
 		ByteBuf original = (ByteBuf) message;
+		if (!original.isReadable()) {
+			// Encoders can emit empty writes. Preserve their promises without reading a packet header.
+			context.write(original, promise);
+			return;
+		}
 		if (this.placement.isCurrent(context.pipeline())) {
 			List<ByteBuf> packets;
 			try {

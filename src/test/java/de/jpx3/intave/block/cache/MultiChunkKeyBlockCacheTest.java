@@ -18,7 +18,7 @@ import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.shape.ShapeResolverPipeline;
 import de.jpx3.intave.block.store.BlockStore;
 import de.jpx3.intave.block.store.CopyOnWriteArrayLocalBlockStore;
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.test.FakePlayerFactory;
 import de.jpx3.intave.user.User;
 import org.bukkit.Material;
@@ -27,11 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -62,10 +58,10 @@ class MultiChunkKeyBlockCacheTest {
   void cachedStateIsReturnedWithoutAccessingTheWorld() {
     Fixture fixture = fixture();
     fixture.initializeOrigin(1600, 160, -1600);
-    fixture.put(1600, 160, -1600, BlockState.stone());
+    fixture.put(1600, 160, -1600, BlockCacheEntry.stone());
 
-    assertSame(BlockState.stone(), fixture.cache.stateAt(1600, 160, -1600));
-    assertSame(BlockState.stone(), fixture.cache.peekStateAt(1600, 160, -1600));
+    assertSame(BlockCacheEntry.stone(), fixture.cache.stateAt(1600, 160, -1600));
+    assertSame(BlockCacheEntry.stone(), fixture.cache.peekStateAt(1600, 160, -1600));
     assertEquals(0, fixture.store.clearCount);
   }
 
@@ -74,9 +70,9 @@ class MultiChunkKeyBlockCacheTest {
     Fixture fixture = fixture();
 
     fixture.initializeOrigin(1600, 160, -1600);
-    fixture.put(1600, 160, -1600, BlockState.stone());
+    fixture.put(1600, 160, -1600, BlockCacheEntry.stone());
 
-    assertSame(BlockState.stone(), fixture.cache.stateAt(1600, 160, -1600));
+    assertSame(BlockCacheEntry.stone(), fixture.cache.stateAt(1600, 160, -1600));
     assertEquals(0, fixture.store.clearCount);
   }
 
@@ -84,13 +80,13 @@ class MultiChunkKeyBlockCacheTest {
   void explicitlyClearedCacheAdoptsANewRemoteOrigin() {
     Fixture fixture = fixture();
     fixture.initializeOrigin(0, 64, 0);
-    fixture.put(0, 64, 0, BlockState.stone());
+    fixture.put(0, 64, 0, BlockCacheEntry.stone());
     fixture.cache.invalidateCache();
 
     fixture.initializeOrigin(1600, 160, -1600);
-    fixture.put(1600, 160, -1600, BlockState.stone());
+    fixture.put(1600, 160, -1600, BlockCacheEntry.stone());
 
-    assertSame(BlockState.stone(), fixture.cache.stateAt(1600, 160, -1600));
+    assertSame(BlockCacheEntry.stone(), fixture.cache.stateAt(1600, 160, -1600));
     assertEquals(1, fixture.store.clearCount);
   }
 
@@ -99,13 +95,13 @@ class MultiChunkKeyBlockCacheTest {
     Fixture fixture = fixture();
     int x = 1600, y = 160, z = -1600;
     fixture.initializeOrigin(x, y, z);
-    fixture.put(x, y, z, BlockState.stone());
-    fixture.put(x + 32, y + 32, z, BlockState.stone());
-    fixture.put(x, y, z - 32, BlockState.stone());
+    fixture.put(x, y, z, BlockCacheEntry.stone());
+    fixture.put(x + 32, y + 32, z, BlockCacheEntry.stone());
+    fixture.put(x, y, z - 32, BlockCacheEntry.stone());
 
-    assertSame(BlockState.stone(), fixture.cache.stateAt(x + 32, y + 32, z));
-    assertSame(BlockState.stone(), fixture.cache.stateAt(x, y, z - 32));
-    assertSame(BlockState.stone(), fixture.cache.peekStateAt(x, y, z));
+    assertSame(BlockCacheEntry.stone(), fixture.cache.stateAt(x + 32, y + 32, z));
+    assertSame(BlockCacheEntry.stone(), fixture.cache.stateAt(x, y, z - 32));
+    assertSame(BlockCacheEntry.stone(), fixture.cache.peekStateAt(x, y, z));
     assertEquals(0, fixture.store.clearCount);
   }
 
@@ -134,16 +130,16 @@ class MultiChunkKeyBlockCacheTest {
     Fixture fixture = fixture();
     int x = 1600, y = 160, z = -1600;
     fixture.initializeOrigin(x, y, z);
-    fixture.put(x, y, z, BlockState.stone());
+    fixture.put(x, y, z, BlockCacheEntry.stone());
     fixture.overrideWithAir(x + 48, y, z);
 
     assertEquals(Material.AIR, fixture.cache.stateAt(x + 48, y, z).type());
     assertEquals(1, fixture.store.clearCount);
     fixture.cache.invalidateOverride(x + 48, y, z);
-    fixture.put(x + 48, y, z, BlockState.stone());
-    fixture.put(x + 80, y, z, BlockState.stone());
+    fixture.put(x + 48, y, z, BlockCacheEntry.stone());
+    fixture.put(x + 80, y, z, BlockCacheEntry.stone());
 
-    assertSame(BlockState.stone(), fixture.cache.stateAt(x + 80, y, z));
+    assertSame(BlockCacheEntry.stone(), fixture.cache.stateAt(x + 80, y, z));
     assertEquals(1, fixture.store.clearCount);
 
     fixture.overrideWithAir(x + 96, y, z);
@@ -156,7 +152,7 @@ class MultiChunkKeyBlockCacheTest {
     Fixture fixture = fixture();
     int x = 1600, y = 160, z = -1600;
     fixture.initializeOrigin(x, y, z);
-    fixture.put(x, y, z, BlockState.stone());
+    fixture.put(x, y, z, BlockCacheEntry.stone());
     fixture.store.reportedSize = 4097;
     fixture.overrideWithAir(x + 16, y, z);
 
@@ -169,12 +165,12 @@ class MultiChunkKeyBlockCacheTest {
   void targetedAndFullInvalidationRemoveExpectedEntries() {
     Fixture fixture = fixture();
     fixture.initializeOrigin(0, 64, 0);
-    fixture.put(0, 64, 0, BlockState.stone());
-    fixture.put(1, 64, 0, BlockState.stone());
+    fixture.put(0, 64, 0, BlockCacheEntry.stone());
+    fixture.put(1, 64, 0, BlockCacheEntry.stone());
 
     fixture.cache.invalidateCacheAt(0, 64, 0);
     assertNull(fixture.cache.peekStateAt(0, 64, 0));
-    assertSame(BlockState.stone(), fixture.cache.peekStateAt(1, 64, 0));
+    assertSame(BlockCacheEntry.stone(), fixture.cache.peekStateAt(1, 64, 0));
 
     fixture.cache.invalidateCache();
     assertNull(fixture.cache.peekStateAt(1, 64, 0));
@@ -192,7 +188,7 @@ class MultiChunkKeyBlockCacheTest {
       {0, 0, 32}, {0, 0, -32}
     };
     for (int[] offset : offsets) {
-      fixture.put(originX + offset[0], originY + offset[1], originZ + offset[2], BlockState.stone());
+      fixture.put(originX + offset[0], originY + offset[1], originZ + offset[2], BlockCacheEntry.stone());
     }
 
     int readerCount = 8;
@@ -207,10 +203,10 @@ class MultiChunkKeyBlockCacheTest {
           assertTrue(start.await(5, TimeUnit.SECONDS));
           for (int index = 0; index < readsPerReader; index++) {
             int[] offset = offsets[(readerIndex + index) % offsets.length];
-            BlockState state = fixture.cache.stateAt(
+            BlockCacheEntry state = fixture.cache.stateAt(
               originX + offset[0], originY + offset[1], originZ + offset[2]
             );
-            assertSame(BlockState.stone(), state);
+            assertSame(BlockCacheEntry.stone(), state);
           }
           return null;
         });
@@ -228,7 +224,7 @@ class MultiChunkKeyBlockCacheTest {
     assertEquals(0, fixture.store.clearCount);
     for (int[] offset : offsets) {
       assertSame(
-        BlockState.stone(),
+        BlockCacheEntry.stone(),
         fixture.cache.peekStateAt(
           originX + offset[0], originY + offset[1], originZ + offset[2]
         )
@@ -240,7 +236,7 @@ class MultiChunkKeyBlockCacheTest {
     Fixture fixture = fixture();
     int x = 1600, y = 160, z = -1600;
     fixture.initializeOrigin(x, y, z);
-    fixture.put(x, y, z, BlockState.stone());
+    fixture.put(x, y, z, BlockCacheEntry.stone());
     fixture.overrideWithAir(x + deltaX, y + deltaY, z + deltaZ);
 
     assertEquals(
@@ -278,7 +274,7 @@ class MultiChunkKeyBlockCacheTest {
       cache.override(null, x, y, z, Material.AIR, 0, "TEST");
     }
 
-    private void put(int x, int y, int z, BlockState state) {
+    private void put(int x, int y, int z, BlockCacheEntry state) {
       assertTrue(store.put(x, y, z, state));
     }
   }
@@ -289,12 +285,12 @@ class MultiChunkKeyBlockCacheTest {
     private int reportedSize = -1;
 
     @Override
-    public BlockState get(int x, int y, int z) {
+    public BlockCacheEntry get(int x, int y, int z) {
       return delegate.get(x, y, z);
     }
 
     @Override
-    public boolean put(int x, int y, int z, BlockState state) {
+    public boolean put(int x, int y, int z, BlockCacheEntry state) {
       return delegate.put(x, y, z, state);
     }
 
@@ -304,7 +300,7 @@ class MultiChunkKeyBlockCacheTest {
     }
 
     @Override
-    public void removeIf(Predicate<BlockState> predicate) {
+    public void removeIf(Predicate<BlockCacheEntry> predicate) {
       delegate.removeIf(predicate);
     }
 

@@ -34,7 +34,7 @@ final class PlayerInputWirePacketsTest {
 			ByteBufStreamCodecs.VARINT.encode(packet, packetId);
 			PlayerInputWirePacket.STREAM_CODEC.encode(packet, new PlayerInputWirePacket(expected));
 
-			PlayerInputWirePacket decoded = WirePackets.decodePacket(PLAY, protocolVersion, packet);
+			PlayerInputWirePacket decoded = WirePackets.decodeServerboundPacket(PLAY, protocolVersion, packet);
 
 			assertEquals(expected, decoded.input());
 			assertEquals(0, packet.readerIndex());

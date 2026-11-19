@@ -43,6 +43,10 @@ public final class MethodHandleSubscriptionExecutor {
 	}
 
 	public void invoke(PacketEventSubscriber subscriber, PacketEvent event) {
+		User user = event.user();
+		if (user == null || !user.hasPlayer()) {
+			return;
+		}
 		switch (argumentCount) {
 			case 0:
 				try {
@@ -174,6 +178,7 @@ public final class MethodHandleSubscriptionExecutor {
 	private static boolean isTarget(Class<?> clazz) {
 		return clazz.isInterface() &&
 			clazz != User.class &&
+			clazz != Player.class &&
 			clazz != Cancellable.class;
 	}
 
@@ -190,7 +195,9 @@ public final class MethodHandleSubscriptionExecutor {
 			if (parameterTypes[i] == parameterType) {
 				return i;
 			}
-			// or is a subclass of the parameter type
+		}
+		// Prefer an explicit Cancellable parameter over a PacketEvent that also implements it.
+		for (int i = 0; i < parameterTypes.length; i++) {
 			if (parameterType.isAssignableFrom(parameterTypes[i])) {
 				return i;
 			}

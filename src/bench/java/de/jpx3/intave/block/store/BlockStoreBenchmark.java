@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.block.store;
 
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.BlockCacheEntry;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceMaps;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
 
@@ -36,9 +36,9 @@ public class BlockStoreBenchmark {
 			int randomX = (int) (Math.random() * 32) - 16;
 			int randomY = (int) (Math.random() * 32) - 16;
 			int randomZ = (int) (Math.random() * 32) - 16;
-			BlockState blockState = store.get(randomX, randomY, randomZ);
-			if (blockState != null) {
-				sumA += blockState.variantIndex();
+			BlockCacheEntry blockCacheEntry = store.get(randomX, randomY, randomZ);
+			if (blockCacheEntry != null) {
+				sumA += blockCacheEntry.variantIndex();
 			}
 		}
 
@@ -52,9 +52,9 @@ public class BlockStoreBenchmark {
 			for (int x = centerX - 3; x < centerX + 3; x++) {
 				for (int y = centerY - 3; y < centerY + 3; y++) {
 					for (int z = centerZ - 3; z < centerZ + 3; z++) {
-						BlockState blockState = store.get(x, y, z);
-						if (blockState != null) {
-							sum += blockState.variantIndex();
+						BlockCacheEntry blockCacheEntry = store.get(x, y, z);
+						if (blockCacheEntry != null) {
+							sum += blockCacheEntry.variantIndex();
 						}
 					}
 				}
@@ -63,7 +63,7 @@ public class BlockStoreBenchmark {
 				int randomX = (int) (Math.random() * 32) - 16;
 				int randomY = (int) (Math.random() * 32) - 16;
 				int randomZ = (int) (Math.random() * 32) - 16;
-				store.put(randomX, randomY, randomZ, BlockState.stone());
+				store.put(randomX, randomY, randomZ, BlockCacheEntry.stone());
 			}
 		}
 		long end = System.nanoTime();
@@ -90,9 +90,9 @@ public class BlockStoreBenchmark {
 				for (int z = -16; z < 16; z++) {
 					int hash = Integer.hashCode(x) ^ Integer.hashCode(y) ^ Integer.hashCode(z);
 					if (hash % 2 == 0) {
-						store.put(x, y, z, BlockState.empty());
+						store.put(x, y, z, BlockCacheEntry.empty());
 					} else {
-						store.put(x, y, z, BlockState.stone());
+						store.put(x, y, z, BlockCacheEntry.stone());
 					}
 				}
 			}

@@ -11,14 +11,11 @@
 
 package de.jpx3.intave.module.nayoro;
 
-import de.jpx3.intave.share.PlayerHand;
-
 import ac.intave.samples.share.*;
 import de.jpx3.intave.entity.size.HitboxSize;
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.*;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Direction;
-import de.jpx3.intave.share.RawVector3d;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
@@ -121,7 +118,7 @@ public final class SampleTypes {
     return items;
   }
 
-  public static Block block(BlockState state, int blockX, int blockY, int blockZ) {
+  public static Block block(BlockCacheEntry state, int blockX, int blockY, int blockZ) {
     ArrayList<ac.intave.samples.share.BoundingBox> boxes = new ArrayList<>();
     for (BoundingBox box : state.collisionShape()
       .normalized(blockX, blockY, blockZ)

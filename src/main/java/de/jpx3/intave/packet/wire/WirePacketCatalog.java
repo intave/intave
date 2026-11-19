@@ -16,14 +16,28 @@ import de.jpx3.intave.packet.wire.ability.inbound.AbilityInWirePacket;
 import de.jpx3.intave.packet.wire.ability.inbound.AbilityInWithSpeedsWirePacket;
 import de.jpx3.intave.packet.wire.ability.outbound.AbilityOutWirePacket;
 import de.jpx3.intave.packet.wire.block.acknowledge.BlockChangedAckWirePacket;
+import de.jpx3.intave.packet.wire.block.change.SingleBlockChangeLegacyPositionWirePacket;
+import de.jpx3.intave.packet.wire.block.change.SingleBlockChangeWirePacket;
 import de.jpx3.intave.packet.wire.block.dig.BlockDigLegacyPositionWirePacket;
 import de.jpx3.intave.packet.wire.block.dig.BlockDigWirePacket;
 import de.jpx3.intave.packet.wire.block.dig.BlockDigWithSequenceWirePacket;
 import de.jpx3.intave.packet.wire.block.dig.BlockDigWithoutSequenceWirePacket;
 import de.jpx3.intave.packet.wire.block.interaction.*;
+import de.jpx3.intave.packet.wire.block.multichange.MultiBlockChangeChunkWirePacket;
+import de.jpx3.intave.packet.wire.block.multichange.MultiBlockChangeWirePacket;
+import de.jpx3.intave.packet.wire.block.multichange.MultiBlockChangeWithLightSuppressionWirePacket;
 import de.jpx3.intave.packet.wire.chat.message.*;
+import de.jpx3.intave.packet.wire.chunk.batch.ChunkBatchFinishedWirePacket;
+import de.jpx3.intave.packet.wire.chunk.batch.ChunkBatchReceivedWirePacket;
+import de.jpx3.intave.packet.wire.chunk.batch.ChunkBatchStartWirePacket;
+import de.jpx3.intave.packet.wire.chunk.biomes.ChunksBiomesWirePacket;
+import de.jpx3.intave.packet.wire.chunk.biomes.ChunksBiomesWithStorageLengthWirePacket;
 import de.jpx3.intave.packet.wire.chunk.bulk.MapChunkBulkWirePacket;
-import de.jpx3.intave.packet.wire.chunk.data.MapChunkWirePacket;
+import de.jpx3.intave.packet.wire.chunk.data.*;
+import de.jpx3.intave.packet.wire.chunk.light.LightUpdateLegacyMasksWirePacket;
+import de.jpx3.intave.packet.wire.chunk.light.LightUpdateLegacyMasksWithTrustEdgesWirePacket;
+import de.jpx3.intave.packet.wire.chunk.light.LightUpdateWirePacket;
+import de.jpx3.intave.packet.wire.chunk.light.LightUpdateWithTrustEdgesWirePacket;
 import de.jpx3.intave.packet.wire.chunk.unload.UnloadChunkCoordinatePairWirePacket;
 import de.jpx3.intave.packet.wire.chunk.unload.UnloadChunkWirePacket;
 import de.jpx3.intave.packet.wire.client.command.ClientCommandWirePacket;
@@ -111,9 +125,7 @@ import de.jpx3.intave.packet.wire.window.horseopen.HorseWindowOpenProtocol768Wir
 import de.jpx3.intave.packet.wire.window.horseopen.HorseWindowOpenWirePacket;
 import de.jpx3.intave.packet.wire.window.transaction.TransactionWirePacket;
 import de.jpx3.intave.packet.wire.world.border.*;
-import de.jpx3.intave.packet.wire.world.explosion.ExplosionDoublePositionWirePacket;
-import de.jpx3.intave.packet.wire.world.explosion.ExplosionIntBlockCountWirePacket;
-import de.jpx3.intave.packet.wire.world.explosion.ExplosionVarIntBlockCountWirePacket;
+import de.jpx3.intave.packet.wire.world.explosion.*;
 import de.jpx3.intave.packet.wire.world.gamestate.GameStateChangeWirePacket;
 import de.jpx3.intave.packet.wire.world.time.TimeUpdateSignedDayTimeWirePacket;
 import de.jpx3.intave.packet.wire.world.time.TimeUpdateWirePacket;
@@ -129,6 +141,13 @@ final class WirePacketCatalog {
 		WirePackets.register(PacketType.Server.ABILITIES_OUT, AbilityOutWirePacket.class);
 
 		WirePackets.register(PacketType.Server.BLOCK_CHANGED_ACK, BlockChangedAckWirePacket.class);
+
+		WirePackets.register(PacketType.Server.BLOCK_CHANGE, SingleBlockChangeWirePacket.class);
+		WirePackets.register(PacketType.Server.BLOCK_CHANGE, SingleBlockChangeLegacyPositionWirePacket.class);
+
+		WirePackets.register(PacketType.Server.MULTI_BLOCK_CHANGE, MultiBlockChangeWirePacket.class);
+		WirePackets.register(PacketType.Server.MULTI_BLOCK_CHANGE, MultiBlockChangeWithLightSuppressionWirePacket.class);
+		WirePackets.register(PacketType.Server.MULTI_BLOCK_CHANGE, MultiBlockChangeChunkWirePacket.class);
 
 		WirePackets.register(PacketType.Client.BLOCK_DIG, BlockDigWirePacket.class);
 		WirePackets.register(PacketType.Client.BLOCK_DIG, BlockDigLegacyPositionWirePacket.class);
@@ -151,6 +170,29 @@ final class WirePacketCatalog {
 		WirePackets.register(PacketType.Server.MAP_CHUNK_BULK, MapChunkBulkWirePacket.class);
 
 		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkWirePacket.class);
+		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkFlattenedWirePacket.class);
+		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkWithFluidCountWirePacket.class);
+		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkLegacyMaskWirePacket.class);
+		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkVarIntMaskWirePacket.class);
+		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkWithBlockEntitiesWirePacket.class);
+		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkWithHeightmapsWirePacket.class);
+		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkWithBiomesWirePacket.class);
+		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkWithIgnoreOldDataWirePacket.class);
+		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkVarIntBiomesWirePacket.class);
+		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkBitSetMaskWirePacket.class);
+		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkWithLightWirePacket.class);
+		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkWithoutTrustEdgesWirePacket.class);
+		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkUnnamedNbtWirePacket.class);
+
+		WirePackets.register(PacketType.Server.CHUNK_BATCH_START, ChunkBatchStartWirePacket.class);
+		WirePackets.register(PacketType.Server.CHUNK_BATCH_FINISHED, ChunkBatchFinishedWirePacket.class);
+		WirePackets.register(PacketType.Client.CHUNK_BATCH_RECEIVED, ChunkBatchReceivedWirePacket.class);
+		WirePackets.register(PacketType.Server.CHUNKS_BIOMES, ChunksBiomesWirePacket.class);
+		WirePackets.register(PacketType.Server.CHUNKS_BIOMES, ChunksBiomesWithStorageLengthWirePacket.class);
+		WirePackets.register(PacketType.Server.LIGHT_UPDATE, LightUpdateWirePacket.class);
+		WirePackets.register(PacketType.Server.LIGHT_UPDATE, LightUpdateWithTrustEdgesWirePacket.class);
+		WirePackets.register(PacketType.Server.LIGHT_UPDATE, LightUpdateLegacyMasksWithTrustEdgesWirePacket.class);
+		WirePackets.register(PacketType.Server.LIGHT_UPDATE, LightUpdateLegacyMasksWirePacket.class);
 
 		WirePackets.register(PacketType.Server.UNLOAD_CHUNK, UnloadChunkWirePacket.class);
 		WirePackets.register(PacketType.Server.UNLOAD_CHUNK, UnloadChunkCoordinatePairWirePacket.class);
@@ -315,6 +357,9 @@ final class WirePacketCatalog {
 		WirePackets.register(PacketType.Server.EXPLOSION, ExplosionIntBlockCountWirePacket.class);
 		WirePackets.register(PacketType.Server.EXPLOSION, ExplosionVarIntBlockCountWirePacket.class);
 		WirePackets.register(PacketType.Server.EXPLOSION, ExplosionDoublePositionWirePacket.class);
+		WirePackets.register(PacketType.Server.EXPLOSION, ExplosionWithEffectsWirePacket.class);
+		WirePackets.register(PacketType.Server.EXPLOSION, ExplosionOptionalMotionWirePacket.class);
+		WirePackets.register(PacketType.Server.EXPLOSION, ExplosionWithRadiusWirePacket.class);
 
 		WirePackets.register(PacketType.Server.GAME_STATE_CHANGE, GameStateChangeWirePacket.class);
 

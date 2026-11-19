@@ -24,16 +24,16 @@ import static de.jpx3.intave.codec.JsonStreamCodecs.object;
 public final class PositionedBlockState {
   public static final StreamCodec<JsonReader, JsonWriter, PositionedBlockState> JSON_CODEC = object(
     field("position", BlockPosition.JSON_CODEC, PositionedBlockState::position, BlockPosition.ORIGIN),
-    field("state", BlockState.JSON_CODEC, PositionedBlockState::state, BlockState.empty()),
+    field("state", BlockCacheEntry.JSON_CODEC, PositionedBlockState::state, BlockCacheEntry.empty()),
     PositionedBlockState::new
   );
   public static final StreamCodec<JsonReader, JsonWriter, List<PositionedBlockState>> LIST_JSON_CODEC =
     JsonStreamCodecs.listCodecOf(JSON_CODEC);
 
   private final BlockPosition position;
-  private final BlockState state;
+  private final BlockCacheEntry state;
 
-  public PositionedBlockState(BlockPosition position, BlockState state) {
+  public PositionedBlockState(BlockPosition position, BlockCacheEntry state) {
     this.position = position;
     this.state = state;
   }
@@ -42,7 +42,7 @@ public final class PositionedBlockState {
     return position;
   }
 
-  public BlockState state() {
+  public BlockCacheEntry state() {
     return state;
   }
 }

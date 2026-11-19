@@ -44,10 +44,8 @@ final class Receiver extends ChannelInboundHandlerAdapter {
 				original.release();
 				throw failure;
 			}
-			// error/full cancel
-			if (packets == null || packets.isEmpty()) {
+			if (packets.isEmpty()) {
 				original.release();
-				context.close();
 				return;
 			}
 			boolean forwardsOriginal = false;

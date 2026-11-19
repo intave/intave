@@ -26,7 +26,7 @@ import de.jpx3.intave.block.shape.resolve.ShapeResolver;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.MutableBlockPosition;
 import de.jpx3.intave.share.Position;
@@ -128,8 +128,8 @@ public final class Collision {
           if (collisionChecksRemaining-- <= 0) {
             break exit;
           }
-          BlockState blockState = stateAccess.stateAt(x, y, z);
-          Material material = blockState.type();
+          BlockCacheEntry blockCacheEntry = stateAccess.stateAt(x, y, z);
+          Material material = blockCacheEntry.type();
 
           boolean blockOutsideBorder = !blockInsideBorder(environment, x, z);
           if (blockOutsideBorder && !playerOutsideBorder(environment)) {
@@ -179,7 +179,7 @@ public final class Collision {
           }
 
           // resolve non-air block-shapes
-          BlockShape resolve = blockState.collisionShape();
+          BlockShape resolve = blockCacheEntry.collisionShape();
 
           if (CollisionModifiers.isModified(material)) {
             // this should not happen too often

@@ -1,7 +1,18 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.block.cache;
 
 import de.jpx3.intave.block.shape.BlockShapes;
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.Position;
 import it.unimi.dsi.fastutil.HashCommon;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceMap;
@@ -12,8 +23,8 @@ import org.bukkit.Material;
 import java.lang.reflect.Field;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
@@ -47,9 +58,9 @@ public final class BlockReplacementCacheBenchmark {
   }
 
   private interface Cache {
-    BlockState get(long key);
+    BlockCacheEntry get(long key);
     boolean contains(long key);
-    void insert(Position position, BlockState state);
+    void insert(Position position, BlockCacheEntry state);
     void remove(long key);
     void lock(Position position);
     boolean unlock(Position position);
@@ -62,9 +73,9 @@ public final class BlockReplacementCacheBenchmark {
 
   private static final class Current implements Cache {
     final BlockStateReplacementCache cache = new BlockStateReplacementCache(BlockReplacementCacheBenchmark::key);
-    public BlockState get(long key) { return cache.byKey(key); }
+    public BlockCacheEntry get(long key) { return cache.byKey(key); }
     public boolean contains(long key) { return cache.contains(key); }
-    public void insert(Position p, BlockState s) { cache.insert(p, s); }
+    public void insert(Position p, BlockCacheEntry s) { cache.insert(p, s); }
     public void remove(long key) { cache.remove(key); }
     public void lock(Position p) { cache.lock(p); }
     public boolean unlock(Position p) { return cache.unlock(p); }
@@ -77,18 +88,18 @@ public final class BlockReplacementCacheBenchmark {
 
   // Benchmark-only candidate. The production cache is deliberately untouched.
   private static final class Shared implements Cache {
-    final Map<Position, BlockState> located;
+    final Map<Position, BlockCacheEntry> located;
     final Map<Position, Long> locked;
-    final Long2ReferenceOpenHashMap<BlockState> indexed;
+    final Long2ReferenceOpenHashMap<BlockCacheEntry> indexed;
     Shared() { this(96); }
     Shared(int expected) {
       located = new HashMap<>(expected);
       locked = new HashMap<>(expected);
       indexed = new Long2ReferenceOpenHashMap<>(expected);
     }
-    public synchronized BlockState get(long key) { return indexed.get(key); }
+    public synchronized BlockCacheEntry get(long key) { return indexed.get(key); }
     public synchronized boolean contains(long key) { return indexed.containsKey(key); }
-    public synchronized void insert(Position p, BlockState state) {
+    public synchronized void insert(Position p, BlockCacheEntry state) {
       located.put(p, state);
       indexed.put(key(p), state);
     }
@@ -100,9 +111,9 @@ public final class BlockReplacementCacheBenchmark {
       return time != null && System.currentTimeMillis() - time < 5000L;
     }
     public synchronized void refresh() {
-      Iterator<Map.Entry<Position, BlockState>> iterator = located.entrySet().iterator();
+      Iterator<Map.Entry<Position, BlockCacheEntry>> iterator = located.entrySet().iterator();
       while (iterator.hasNext()) {
-        Map.Entry<Position, BlockState> entry = iterator.next();
+        Map.Entry<Position, BlockCacheEntry> entry = iterator.next();
         Position p = entry.getKey();
         if (!isLocked(p) && entry.getValue().expired()) {
           iterator.remove();
@@ -134,12 +145,12 @@ public final class BlockReplacementCacheBenchmark {
   // Same read-side synchronization as production, with duplicate bookkeeping removed.
   // This intentionally does not claim to fix the production cache's cross-map races.
   private static class Deduplicated implements Cache {
-    final Map<Position, BlockState> located = new ConcurrentHashMap<>(96);
+    final Map<Position, BlockCacheEntry> located = new ConcurrentHashMap<>(96);
     final Map<Position, Long> locked = new ConcurrentHashMap<>(96);
-    final Long2ReferenceMap<BlockState> indexed = Long2ReferenceMaps.synchronize(new Long2ReferenceOpenHashMap<>(96));
-    public BlockState get(long key) { return indexed.get(key); }
+    final Long2ReferenceMap<BlockCacheEntry> indexed = Long2ReferenceMaps.synchronize(new Long2ReferenceOpenHashMap<>(96));
+    public BlockCacheEntry get(long key) { return indexed.get(key); }
     public boolean contains(long key) { return indexed.containsKey(key); }
-    public void insert(Position p, BlockState s) { located.put(p, s); indexed.put(key(p), s); }
+    public void insert(Position p, BlockCacheEntry s) { located.put(p, s); indexed.put(key(p), s); }
     public void remove(long key) { indexed.remove(key); }
     public void lock(Position p) { locked.put(p, System.currentTimeMillis()); }
     public boolean unlock(Position p) { return locked.remove(p) != null; }
@@ -148,7 +159,7 @@ public final class BlockReplacementCacheBenchmark {
       return time != null && System.currentTimeMillis() - time < 5000L;
     }
     public void refresh() {
-      for (Map.Entry<Position, BlockState> entry : located.entrySet()) {
+      for (Map.Entry<Position, BlockCacheEntry> entry : located.entrySet()) {
         Position p = entry.getKey();
         if (!isLocked(p) && entry.getValue().expired()) {
           located.remove(p);
@@ -184,7 +195,7 @@ public final class BlockReplacementCacheBenchmark {
     public int size() {
       synchronized (indexed) {
         int visible = 0;
-        for (BlockState state : indexed.values()) if (state != null) visible++;
+        for (BlockCacheEntry state : indexed.values()) if (state != null) visible++;
         return visible;
       }
     }
@@ -196,9 +207,9 @@ public final class BlockReplacementCacheBenchmark {
     final Shared[] partitions = new Shared[16];
     Striped() { for (int i = 0; i < partitions.length; i++) partitions[i] = new Shared(8); }
     Shared partition(long key) { return partitions[(int) HashCommon.mix(key) & (partitions.length - 1)]; }
-    public BlockState get(long key) { return partition(key).get(key); }
+    public BlockCacheEntry get(long key) { return partition(key).get(key); }
     public boolean contains(long key) { return partition(key).contains(key); }
-    public void insert(Position p, BlockState s) { partition(key(p)).insert(p, s); }
+    public void insert(Position p, BlockCacheEntry s) { partition(key(p)).insert(p, s); }
     public void remove(long key) { partition(key).remove(key); }
     public void lock(Position p) { partition(key(p)).lock(p); }
     public boolean unlock(Position p) { return partition(key(p)).unlock(p); }
@@ -218,12 +229,12 @@ public final class BlockReplacementCacheBenchmark {
   private static long key(Position p) {
     return (p.getBlockX() & 0x3fffffL) << 42 | (p.getBlockY() & 0xfffffL) | (p.getBlockZ() & 0x3fffffL) << 20;
   }
-  private static BlockState state() {
-    return new BlockState(BlockShapes.emptyShape(), BlockShapes.emptyShape(), Material.STONE, 0);
+  private static BlockCacheEntry state() {
+    return new BlockCacheEntry(BlockShapes.emptyShape(), BlockShapes.emptyShape(), Material.STONE, 0);
   }
-  private static BlockState expiredState() throws Exception {
-    BlockState state = state();
-    Field creation = BlockState.class.getDeclaredField("creation");
+  private static BlockCacheEntry expiredState() throws Exception {
+    BlockCacheEntry state = state();
+    Field creation = BlockCacheEntry.class.getDeclaredField("creation");
     creation.setAccessible(true);
     creation.setLong(state, System.currentTimeMillis() - 20_000);
     if (!state.expired()) throw new AssertionError("Expiry fixture is not expired");
@@ -291,7 +302,7 @@ public final class BlockReplacementCacheBenchmark {
     Cache[] caches = new Cache[scenario.caches];
     Position[] positions = new Position[scenario.entries];
     long[] keys = new long[positions.length];
-    BlockState fresh = state(), expired = expiredState();
+    BlockCacheEntry fresh = state(), expired = expiredState();
     for (int i = 0; i < positions.length; i++) {
       positions[i] = new Position(1000 + (i & 63), 64 + ((i >> 12) & 63), 1000 + ((i >> 6) & 63));
       keys[i] = key(positions[i]);
@@ -322,7 +333,7 @@ public final class BlockReplacementCacheBenchmark {
             long key = keys[random & (keys.length - 1)] ^ ((random & 12) == 0 ? 1L << 19 : 0);
             boolean sample = measured && ((sequence++ & 255) == 0);
             long start = sample ? System.nanoTime() : 0;
-            BlockState value = caches[player].get(key);
+            BlockCacheEntry value = caches[player].get(key);
             if (sample) stats.sample(System.nanoTime() - start);
             if (value != null) { checksum += value.variantIndex() + 1; if (measured) stats.hits++; }
           }
@@ -345,7 +356,7 @@ public final class BlockReplacementCacheBenchmark {
           Cache cache = caches[index & (caches.length - 1)];
           Position p = positions[(index / caches.length) & (positions.length - 1)];
           Position update = new Position(p.getX(), p.getY(), p.getZ());
-          BlockState state = scenario.expiry && (index & 3) == 0 ? expired : state();
+          BlockCacheEntry state = scenario.expiry && (index & 3) == 0 ? expired : state();
           boolean sample = measured && (index & 15) == 0;
           long start = sample ? System.nanoTime() : 0;
           cache.remove(key(update));
@@ -413,7 +424,7 @@ public final class BlockReplacementCacheBenchmark {
       throw new AssertionError("Invalid latency histogram merge");
     }
     Cache current = new Current(), shared = cache(variant);
-    BlockState fresh = state(), expired = expiredState();
+    BlockCacheEntry fresh = state(), expired = expiredState();
     Position[] ps = new Position[64];
     for (int i = 0; i < ps.length; i++) ps[i] = new Position(i - 32, 64, i & 7);
     Random random = new Random(12345);

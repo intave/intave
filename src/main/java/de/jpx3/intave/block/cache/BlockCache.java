@@ -13,8 +13,8 @@ package de.jpx3.intave.block.cache;
 
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.block.shape.BlockShape;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.BlockPosition;
-import de.jpx3.intave.share.BlockState;
 import de.jpx3.intave.share.PositionedBlockState;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -25,11 +25,11 @@ public interface BlockCache {
    * Returns an already-resolved state without loading world data or mutating this cache.
    * A {@code null} result means that the position has not been resolved.
    */
-  default @Nullable BlockState peekStateAt(int posX, int posY, int posZ) {
+  default @Nullable BlockCacheEntry peekStateAt(int posX, int posY, int posZ) {
     return null;
   }
 
-  default @NotNull BlockState stateAt(int posX, int posY, int posZ) {
+  default @NotNull BlockCacheEntry stateAt(int posX, int posY, int posZ) {
     throw new UnsupportedOperationException("stateAt(int, int, int) is not implemented");
   }
 

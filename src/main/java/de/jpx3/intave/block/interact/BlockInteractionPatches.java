@@ -13,18 +13,14 @@ package de.jpx3.intave.block.interact;
 
 import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.BlockPosition;
-import de.jpx3.intave.share.BlockState;
 import de.jpx3.intave.share.PositionedBlockState;
 import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 import org.bukkit.World;
 
-import java.util.EnumMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public final class BlockInteractionPatches {
   private static final Map<Material, BlockInteractionPatch> patches = new EnumMap<>(Material.class);
@@ -108,7 +104,7 @@ public final class BlockInteractionPatches {
       return false;
     }
     BlockPosition position = mutation.position();
-    BlockState state = mutation.state();
+    BlockCacheEntry state = mutation.state();
     return position != null
       && state != null
       && state.type() != null

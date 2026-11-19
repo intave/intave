@@ -12,21 +12,22 @@
 package de.jpx3.intave.block.store;
 
 import de.jpx3.intave.annotate.Nullable;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.BlockPosition;
-import de.jpx3.intave.share.BlockState;
 
 import java.util.function.Predicate;
 
 public interface BlockStore {
-	@Nullable BlockState get(int x, int y, int z);
+	@Nullable
+	BlockCacheEntry get(int x, int y, int z);
 
-	default @Nullable BlockState get(BlockPosition position) {
+	default @Nullable BlockCacheEntry get(BlockPosition position) {
 		return get(position.getX(), position.getY(), position.getZ());
 	}
 
-	boolean put(int x, int y, int z, @Nullable BlockState state);
+	boolean put(int x, int y, int z, @Nullable BlockCacheEntry state);
 
-	default boolean put(BlockPosition position, @Nullable BlockState state) {
+	default boolean put(BlockPosition position, @Nullable BlockCacheEntry state) {
 		return put(position.getX(), position.getY(), position.getZ(), state);
 	}
 
@@ -40,7 +41,7 @@ public interface BlockStore {
 
 	int size();
 
-	void removeIf(Predicate<BlockState> predicate);
+	void removeIf(Predicate<BlockCacheEntry> predicate);
 
 	default void clear() {
 		removeIf(state -> true);

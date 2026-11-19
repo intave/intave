@@ -37,15 +37,9 @@ import de.jpx3.intave.module.test.record.MoveFrame;
 import de.jpx3.intave.module.test.record.MovementFrameState;
 import de.jpx3.intave.module.test.record.MovementRecording;
 import de.jpx3.intave.module.test.record.TickRange;
-import de.jpx3.intave.module.test.record.action.ActiveItemReplacementAction;
-import de.jpx3.intave.module.test.record.action.Action;
-import de.jpx3.intave.module.test.record.action.AttackReduction;
-import de.jpx3.intave.module.test.record.action.ItemUsePacketAction;
-import de.jpx3.intave.module.test.record.action.PistonSlimeAction;
-import de.jpx3.intave.module.test.record.action.ReceiveVelocity;
-import de.jpx3.intave.module.test.record.action.ShulkerBoxAction;
-import de.jpx3.intave.player.attribute.Attribute;
+import de.jpx3.intave.module.test.record.action.*;
 import de.jpx3.intave.player.ItemProperties;
+import de.jpx3.intave.player.attribute.Attribute;
 import de.jpx3.intave.player.collider.Colliders;
 import de.jpx3.intave.resource.Resources;
 import de.jpx3.intave.share.*;
@@ -59,11 +53,11 @@ import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.InventoryMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import de.jpx3.intave.user.meta.ProtocolMetadata;
-import org.bukkit.Material;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -215,6 +209,28 @@ final class MovementRecordingPhysicsTests {
 		metadata.tickComplete(true, true, true);
 
 		assertEquals(Pose.STANDING, metadata.pose());
+	}
+
+	@Test
+	void replayOnlyUsesFullInputsWhenTheRecorderCapturedThem() {
+		Input input = new Input(true, false, true, false, true, true, true);
+		for (MinecraftVersion server : new MinecraftVersion[]{
+			new MinecraftVersion("1.8.8"), MinecraftVersions.VER1_21_2, MinecraftVersions.VER1_21_3
+		}) {
+			MinecraftVersion.setCurrent(server);
+			for (int client : new int[]{ProtocolMetadata.VER_1_21, VER_1_21_2, ProtocolMetadata.VER_26_3}) {
+				MovementRecording recording = MovementRecording.create(client, server);
+				World world = createReplayWorld();
+				User user = createReplayUser(recording, new PlaybackBlockCacheView(recording), world,
+					new AtomicReference<>(new Location(world, 0, 64, 0)));
+				boolean fullInputs = client >= VER_1_21_2 && server.isAtLeast(MinecraftVersions.VER1_21_3);
+				assertEquals(fullInputs, user.meta().protocol().sendsInputs(), "Client " + client + " on " + server);
+				applyInputsForTick(user, input);
+				assertEquals(fullInputs ? input : Input.none(), user.meta().movement().input);
+				assertTrue(user.meta().movement().sprinting);
+				assertTrue(user.meta().movement().sneaking);
+			}
+		}
 	}
 
 	@Test
@@ -1105,6 +1121,11 @@ final class MovementRecordingPhysicsTests {
 			case "protocolVersion" -> protocolVersion;
 			default -> null;
 		});
+		// The recorder only captured full keys on these server versions. Older recordings
+		// contain sprint/sneak state, even when their clients support native input packets.
+		user.meta().protocol().setInputPacketsAvailable(
+			recording.serverVersion().isAtLeast(MinecraftVersions.VER1_21_3)
+		);
 		UserRepository.manuallyRegisterUser(player, user);
 		return user;
 	}
@@ -1291,7 +1312,7 @@ final class MovementRecordingPhysicsTests {
 		for (int x = minX; x <= maxX; x++) {
 			for (int z = minZ; z <= maxZ; z++) {
 				for (int y = minY; y <= maxY; y++) {
-					BlockState state = blockCache.stateAt(x, y, z);
+					BlockCacheEntry state = blockCache.stateAt(x, y, z);
 					if (state.type() == org.bukkit.Material.AIR) {
 						continue;
 					}
@@ -1556,7 +1577,7 @@ final class MovementRecordingPhysicsTests {
 		User user, Input input
 	) {
 		MovementMetadata movement = user.meta().movement();
-		if (user.meta().protocol().sendsInputs() && MinecraftVersions.VER1_21_3.atOrAbove()) {
+		if (user.meta().protocol().sendsInputs()) {
 			movement.lastInput = movement.input;
 			movement.input = input;
 		}

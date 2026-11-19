@@ -21,7 +21,7 @@ import de.jpx3.intave.check.movement.physics.environment.Pose;
 import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.check.movement.physics.simulator.Simulators;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
@@ -288,11 +288,11 @@ final class BaseSimulatorBlockSpeedFactorTest {
 
 	private static final class MaterialPlaneBlockCache implements BlockCache {
 		private final int blockY;
-		private final BlockState blockState;
+		private final BlockCacheEntry blockCacheEntry;
 
 		private MaterialPlaneBlockCache(int blockY, Material material) {
 			this.blockY = blockY;
-			this.blockState = new BlockState(
+			this.blockCacheEntry = new BlockCacheEntry(
 				BlockShapes.emptyShape(),
 				BlockShapes.emptyShape(),
 				material,
@@ -301,8 +301,8 @@ final class BaseSimulatorBlockSpeedFactorTest {
 		}
 
 		@Override
-		public @NonNull BlockState stateAt(int posX, int posY, int posZ) {
-			return posY == blockY ? blockState : BlockState.empty();
+		public @NonNull BlockCacheEntry stateAt(int posX, int posY, int posZ) {
+			return posY == blockY ? blockCacheEntry : BlockCacheEntry.empty();
 		}
 
 		@Override

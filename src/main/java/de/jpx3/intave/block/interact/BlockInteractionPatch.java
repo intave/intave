@@ -14,8 +14,8 @@ package de.jpx3.intave.block.interact;
 import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.BlockPosition;
-import de.jpx3.intave.share.BlockState;
 import de.jpx3.intave.share.PositionedBlockState;
 import de.jpx3.intave.user.User;
 import org.bukkit.Material;
@@ -51,7 +51,7 @@ interface BlockInteractionPatch {
     int blockX, int blockY, int blockZ,
     Material material, int variant
   ) {
-    BlockState state = new BlockState(
+    BlockCacheEntry state = new BlockCacheEntry(
       BlockShapes.emptyShape(), BlockShapes.emptyShape(),
       material, variant
     );

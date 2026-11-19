@@ -17,28 +17,34 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 import de.jpx3.intave.IntaveControl;
-import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.Nullable;
-import de.jpx3.intave.executor.Synchronizer;
-import de.jpx3.intave.klass.trace.Caller;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.packet.contract.TypedPacketContract;
+import de.jpx3.intave.packet.event.PacketSendEvent;
 import de.jpx3.intave.packet.plib.PacketSender;
+import de.jpx3.intave.packet.wire.connection.ping.PingWirePacket;
+import de.jpx3.intave.packet.wire.window.transaction.TransactionWirePacket;
+import de.jpx3.intave.reflect.PlayerChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
+import io.netty.channel.Channel;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Queue;
+import java.util.Random;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import static com.comphenix.protocol.PacketType.Play.Server.*;
 import static de.jpx3.intave.module.feedback.FeedbackOptions.*;
+import static de.jpx3.intave.packet.contract.PacketType.Server;
 
 public final class FeedbackSender extends Module {
   public static final short MIN_USER_KEY = Short.MIN_VALUE + 2000;
@@ -47,7 +53,6 @@ public final class FeedbackSender extends Module {
   private static final boolean USE_PING_PONG_PACKETS = MinecraftVersions.VER1_17_0.atOrAbove();
   private static final long OPTIONAL_PENDING_LIMIT = 20;
   private static final long OPTIONAL_SENT_LIMIT = 150;
-  private static long WARNINGS_LEFT = 500;
 
   private static final long bootTime = System.currentTimeMillis();
   public static IdGeneratorMode activeGenerator = IdGeneratorMode.highestCompatibility();
@@ -130,17 +135,11 @@ public final class FeedbackSender extends Module {
     if (!user.hasPlayer()) {
       return;
     }
-    if (!Synchronizer.isSynchronized(user)) {
-      if (matches(SELF_SYNCHRONIZATION, options)) {
-        Synchronizer.synchronize(user, () -> tracedDoubleSynchronize(player, encapsulate, target, firstCallback, secondCallback, firstTracker, secondTracker, options));
-        return;
-      } else if (isInInvalidThread()) {
-        if (WARNINGS_LEFT-- > 0) {
-          IntaveLogger.logger().info("Async packet sent from "+Caller.pluginInfo(true)+" on thread " + Thread.currentThread().getName());
-          IntaveLogger.logger().info("It is highly recommended to only send packets on the main thread.");
-          Thread.dumpStack();
-        }
-      }
+    Channel channel = PlayerChannel.channelOf(player);
+    if (!channel.eventLoop().inEventLoop()) {
+      channel.eventLoop().execute(() -> tracedDoubleSynchronize(player, encapsulate, target,
+        firstCallback, secondCallback, firstTracker, secondTracker, options));
+      return;
     }
     ReentrantLock lock = userLock(user);
     try {
@@ -153,10 +152,37 @@ public final class FeedbackSender extends Module {
     }
   }
 
-  private final Map<String, Boolean> cache = new ConcurrentHashMap<>();
+  public void doubleSynchronize(
+    User user, PacketSendEvent event,
+    EmptyFeedbackCallback before, EmptyFeedbackCallback after
+  ) {
+    ReentrantLock lock = userLock(user);
+    lock.lock();
+    try {
+      event.addSendBefore(createRequestWithPacket(user, before));
+      event.addSendAfter(createRequestWithPacket(user, after));
+    } finally {
+      lock.unlock();
+    }
+  }
 
-  private boolean isInInvalidThread() {
-    return cache.computeIfAbsent(Thread.currentThread().getName(), s -> s.startsWith("Netty "));
+  private TypedPacketContract createRequestWithPacket(User user, EmptyFeedbackCallback callback) {
+    countTransactionPacket(user.player());
+    FeedbackRequest<Object> request = createRequest(user.player(), null, callback, null, 0);
+    request.useNativeTransport();
+    Modules.feedbackAnalysis().sentTransaction(user, request);
+    request.sent();
+    if (IntaveControl.DEBUG_FEEDBACK_PACKETS) {
+//      System.out.println("Received " + transactionIdentifier + "/" +transactionResponse.num() + " from " + player.getName());
+      System.out.println("Sent " + request.userKey() + "/"+request.num() + " to " + user.name() + " on " + Thread.currentThread().getName());
+    }
+    if (user.protocolVersion() >= 755) {
+      int id = Short.toUnsignedInt(request.userKey()) | PING_MASK;
+      return new PingWirePacket(id).typedTo(Server.PING);
+    }
+    return new TransactionWirePacket(
+      0, request.userKey(), false
+    ).typedTo(Server.TRANSACTION_OUT);
   }
 
   public void synchronize(Player player, Consumer<Void> callback) {
@@ -213,25 +239,27 @@ public final class FeedbackSender extends Module {
     Player player, T target, FeedbackCallback<T> callback, FeedbackObserver tracker, int options,
     @Nullable PacketEvent toBundle
   ) {
+    tracedSingleSynchronize(player, target, callback, tracker, options, toBundle, false);
+  }
+
+  private <T> void tracedSingleSynchronize(
+    Player player, T target, FeedbackCallback<T> callback, FeedbackObserver tracker, int options,
+    @Nullable PacketEvent toBundle, boolean resendDeferredPacket
+  ) {
     User user = UserRepository.userOf(player);
     if (!user.hasPlayer()) {
       return;
     }
-    if (!Synchronizer.isSynchronized(user)) {
-      if (matches(SELF_SYNCHRONIZATION, options)) {
-        Synchronizer.synchronize(user, () -> tracedSingleSynchronize(player, target, callback, tracker, options));
-        return;
-      } else if (isInInvalidThread()) {
-//        IntaveLogger.logger().error("We can't perform tick-validation on thread " + Thread.currentThread().getName());
-//        Thread.dumpStack();
-//        callback.success(player, target);
-//        return;
-//        if (WARNINGS_LEFT-- > 0) {
-//          IntaveLogger.logger().info("Async packet sent from "+Caller.pluginInfo(true)+" on thread " + Thread.currentThread().getName());
-//          IntaveLogger.logger().info("It is highly recommended to only send packets on the main thread.");
-//          Thread.dumpStack();
-//        }
+    Channel channel = PlayerChannel.channelOf(player);
+    if (!channel.eventLoop().inEventLoop()) {
+      boolean deferBundle = MinecraftVersions.VER1_19_4.atOrAbove() && !bundlingDisabled && toBundle != null;
+      if (deferBundle) {
+        // The original event must be cancelled before returning to the legacy pipeline.
+        if (toBundle.isReadOnly()) toBundle.setReadOnly(false);
+        toBundle.setCancelled(true);
       }
+      channel.eventLoop().execute(() -> tracedSingleSynchronize(player, target, callback, tracker, options, toBundle, deferBundle));
+      return;
     }
     ReentrantLock lock = userLock(userOf(player));
     try {
@@ -247,6 +275,10 @@ public final class FeedbackSender extends Module {
       }
       if (append) {
         appendRequest(player, target, callback, options);
+        if (resendDeferredPacket) {
+          // No feedback packet is emitted on append; still deliver the cancelled original packet.
+          PacketSender.sendServerPacketWithoutEvent(player, toBundle.getPacket());
+        }
         return;
       }
       countTransactionPacket(player);
@@ -385,7 +417,7 @@ public final class FeedbackSender extends Module {
     Modules.feedbackAnalysis().sentTransaction(user, request);
     if (IntaveControl.DEBUG_FEEDBACK_PACKETS) {
 //      System.out.println("Received " + transactionIdentifier + "/" +transactionResponse.num() + " from " + player.getName());
-      System.out.println("Sent " + id + "/"+request.num() + " to " + receiver.getName());
+      System.out.println("Sent " + id + "/"+request.num() + " to " + receiver.getName() + " on " + Thread.currentThread().getName());
     }
     if (MinecraftVersions.VER1_19_4.atOrAbove() && !bundlingDisabled && toBundle != null) {
       PacketContainer bundle = new PacketContainer(BUNDLE);
@@ -401,15 +433,6 @@ public final class FeedbackSender extends Module {
       PacketSender.sendServerPacket(receiver, packet);
     }
     request.sent();
-    if (IntaveControl.CLIENT_KEEP_ALIVE_NETTY_CHECK) {
-      PacketContainer keepAlivePacket = protocol.createPacket(KEEP_ALIVE);
-      if (MinecraftVersions.VER1_12_0.atOrAbove()) {
-        keepAlivePacket.getLongs().write(0, (long) request.userKey());
-      } else {
-        keepAlivePacket.getIntegers().write(0, (int) request.userKey());
-      }
-      PacketSender.sendServerPacket(receiver, keepAlivePacket);
-    }
   }
 
   private static ReentrantLock userLock(User user) {

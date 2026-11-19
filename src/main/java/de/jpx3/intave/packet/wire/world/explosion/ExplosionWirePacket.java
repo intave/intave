@@ -18,6 +18,7 @@ import de.jpx3.intave.packet.wire.MutableWirePacket;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Motion;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +32,7 @@ public abstract class ExplosionWirePacket extends MutableWirePacket implements M
 	protected float power;
 	protected List<BlockPosition> affectedBlockOffsets;
 	protected Motion motion;
+	protected byte[] effects = new byte[0];
 
 	public ExplosionWirePacket() {
 		this(0, 0, 0, 0, new ArrayList<>(), new Motion(0, 0, 0));
@@ -76,6 +78,48 @@ public abstract class ExplosionWirePacket extends MutableWirePacket implements M
 		this.power = power;
 	}
 
+	public void setEffects(byte[] effects) {
+		markMutated();
+		this.effects = effects.clone();
+	}
+
+	/** Cloud particles, a direct generic explosion sound and no weighted block particles. */
+	public void setDefaultEffects(int protocol) {
+		markMutated();
+		if (!appliesTo(protocol) || protocol > 777) {
+			throw new IllegalArgumentException("Unsupported explosion effects protocol: " + protocol);
+		}
+		if (protocol < 765) return;
+		ByteBuf output = Unpooled.buffer();
+		try {
+			// AMBIENT_ENTITY_EFFECT was removed in 1.20.5; sulfur particles precede CLOUD in 26.2.
+			int cloudParticleId = protocol == 765 ? 5 : protocol >= 776 ? 11 : 4;
+			if (protocol < 768) {
+				ByteBufStreamCodecs.VARINT.encode(output, 0); // KEEP block interaction
+				ByteBufStreamCodecs.VARINT.encode(output, cloudParticleId); // small CLOUD particle
+			}
+			ByteBufStreamCodecs.VARINT.encode(output, cloudParticleId);
+			if (protocol >= 766) ByteBufStreamCodecs.VARINT.encode(output, 0); // direct SoundEvent holder
+			ByteBufStreamCodecs.VARINT_STRING.encode(output, "minecraft:entity.generic.explode");
+			output.writeBoolean(false); // no fixed sound range
+			if (protocol >= 773) ByteBufStreamCodecs.VARINT.encode(output, 0); // empty WeightedList
+			if (protocol >= 777) output.writeBoolean(true); // playSound
+			byte[] payload = new byte[output.readableBytes()];
+			output.readBytes(payload);
+			setEffects(payload);
+		} finally {
+			output.release();
+		}
+	}
+
+	public void setSilentDefaults(int protocol) {
+		setPosition(0, -1.0E9D, 0);
+		setPower(0);
+		setAffectedBlockOffsets(new ArrayList<>());
+		setDefaultEffects(protocol);
+		if (protocol >= 777) effects[effects.length - 1] = 0;
+	}
+
 	public List<BlockPosition> affectedBlockOffsets() {
 		markMutated();
 		return affectedBlockOffsets;
@@ -95,7 +139,7 @@ public abstract class ExplosionWirePacket extends MutableWirePacket implements M
 	@Override
 	public void setMotion(Motion value) {
 		markMutated();
-		this.motion = Objects.requireNonNull(value, "motion");
+		this.motion = Objects.requireNonNull(value.copy(), "motion");
 	}
 
 	@Override

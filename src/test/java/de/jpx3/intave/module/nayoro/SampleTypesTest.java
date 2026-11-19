@@ -15,30 +15,19 @@ import ac.intave.samples.share.Block;
 import ac.intave.samples.share.BlockUpdate;
 import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.block.shape.BlockShapes;
-import de.jpx3.intave.share.BlockPosition;
-import de.jpx3.intave.share.BlockState;
-import de.jpx3.intave.share.BoundingBox;
-import de.jpx3.intave.share.PlayerHand;
-import de.jpx3.intave.share.Position;
+import de.jpx3.intave.share.*;
 import org.bukkit.Material;
 import org.bukkit.util.Vector;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-import static de.jpx3.intave.module.nayoro.NearbyBlockTracker.LOOK_AHEAD_DECAY;
-import static de.jpx3.intave.module.nayoro.NearbyBlockTracker.MAX_LOOK_AHEAD;
-import static de.jpx3.intave.module.nayoro.NearbyBlockTracker.MIN_LOOK_AHEAD;
-import static de.jpx3.intave.module.nayoro.NearbyBlockTracker.NEARBY_BLOCK_RADIUS;
+import static de.jpx3.intave.module.nayoro.NearbyBlockTracker.*;
 import static de.jpx3.intave.share.ClientMath.floor;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -52,7 +41,7 @@ final class SampleTypesTest {
 
   @Test
   void blockIncludesNamePropertiesAndNormalizedCollisionShape() throws Exception {
-    BlockState state = blockState("north");
+    BlockCacheEntry state = blockState("north");
 
     Block converted = SampleTypes.block(state, 10, 64, 20);
 
@@ -70,7 +59,7 @@ final class SampleTypesTest {
     int blockX = floor(10.0D - NEARBY_BLOCK_RADIUS);
     int blockY = floor(64.0D - NEARBY_BLOCK_RADIUS);
     int blockZ = floor(20.0D - NEARBY_BLOCK_RADIUS);
-    AtomicReference<BlockState> state = new AtomicReference<>(BlockState.stone());
+    AtomicReference<BlockCacheEntry> state = new AtomicReference<>(BlockCacheEntry.stone());
     BlockCache blockCache = mutableBlockCacheAt(blockX, blockY, blockZ, state);
     NearbyBlockTracker tracker = new NearbyBlockTracker();
     BoundingBox playerBox = BoundingBox.fromBounds(
@@ -80,7 +69,7 @@ final class SampleTypesTest {
 
     List<BlockUpdate> initial = dirtyNearbyBlocks(tracker, blockCache, playerBox);
     List<BlockUpdate> unchanged = dirtyNearbyBlocks(tracker, blockCache, playerBox);
-    state.set(BlockState.empty());
+    state.set(BlockCacheEntry.empty());
     List<BlockUpdate> removed = dirtyNearbyBlocks(tracker, blockCache, playerBox);
 
     assertEquals(1, initial.size());
@@ -103,7 +92,7 @@ final class SampleTypesTest {
       (proxy, method, arguments) -> {
         if (method.getName().equals("stateAt")) {
           accesses.incrementAndGet();
-          return BlockState.empty();
+          return BlockCacheEntry.empty();
         }
         throw new UnsupportedOperationException(method.getName());
       }
@@ -127,12 +116,12 @@ final class SampleTypesTest {
 
   @Test
   void recordedBlocksStayStrictlyBoundedDuringLongDistanceTravel() {
-    BlockState glass = new BlockState(
+    BlockCacheEntry glass = new BlockCacheEntry(
       BlockShapes.originCube(), BlockShapes.originCube(), Material.GLASS, 0
     );
     NearbyBlockTracker tracker = new NearbyBlockTracker();
     AtomicInteger peakRecordedBlocks = new AtomicInteger();
-    Map<BlockPosition, BlockState> overrides = new HashMap<>();
+    Map<BlockPosition, BlockCacheEntry> overrides = new HashMap<>();
     BlockCache blockCache = blockCache(position -> {
       // Measure during scans as well as between ticks to catch temporary overshoots.
       peakRecordedBlocks.accumulateAndGet(tracker.recordedBlockCount(), Math::max);
@@ -150,10 +139,10 @@ final class SampleTypesTest {
     assertEquals(10_000, peakRecordedBlocks.get());
 
     BlockPosition changed = new BlockPosition(99 * 32, 64, 0);
-    overrides.put(changed, BlockState.stone());
+    overrides.put(changed, BlockCacheEntry.stone());
     assertEquals(1, sampleAt(tracker, blockCache, playerPosition).size());
     assertEquals(10_000, tracker.recordedBlockCount(), "replacing an entry must not evict another");
-    overrides.put(changed, BlockState.empty());
+    overrides.put(changed, BlockCacheEntry.empty());
     List<BlockUpdate> removed = sampleAt(tracker, blockCache, playerPosition);
     assertEquals(1, removed.size());
     assertSame(Block.AIR, removed.getFirst().block());
@@ -169,7 +158,7 @@ final class SampleTypesTest {
     int blockX = 10;
     int blockY = 64;
     int blockZ = 20;
-    AtomicReference<BlockState> state = new AtomicReference<>(blockState("north"));
+    AtomicReference<BlockCacheEntry> state = new AtomicReference<>(blockState("north"));
     BlockCache blockCache = mutableBlockCacheAt(blockX, blockY, blockZ, state);
     NearbyBlockTracker tracker = new NearbyBlockTracker();
     BoundingBox playerBox = BoundingBox.fromBounds(
@@ -190,7 +179,7 @@ final class SampleTypesTest {
     NearbyBlockTracker tracker = new NearbyBlockTracker();
     BlockCache blockCache = mutableBlockCacheAt(
       Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE,
-      new AtomicReference<>(BlockState.empty())
+      new AtomicReference<>(BlockCacheEntry.empty())
     );
     BoundingBox playerBox = BoundingBox.fromBounds(
       10.0, 64.0, 20.0,
@@ -222,7 +211,7 @@ final class SampleTypesTest {
     for (int i = 0; i < directions.length; i++) {
       Set<BlockPosition> blocks = Set.of(nearby, targets[i], targets[i ^ 1]);
       BlockCache cache = blockCache(blockPosition ->
-        blocks.contains(blockPosition) ? BlockState.stone() : BlockState.empty()
+        blocks.contains(blockPosition) ? BlockCacheEntry.stone() : BlockCacheEntry.empty()
       );
       Vector look = directions[i].clone();
       List<BlockUpdate> updates = sampleAt(
@@ -334,15 +323,15 @@ final class SampleTypesTest {
     Vector look = new Vector(0, 0, 1);
     BoundingBox playerBox = playerBoxAt(position);
     BlockPosition removed = boundaryTarget(playerBox, look, MAX_LOOK_AHEAD);
-    AtomicReference<BlockState> state = new AtomicReference<>(BlockState.stone());
-    BlockCache cache = blockCache(block -> block.equals(removed) ? state.get() : BlockState.stone());
+    AtomicReference<BlockCacheEntry> state = new AtomicReference<>(BlockCacheEntry.stone());
+    BlockCache cache = blockCache(block -> block.equals(removed) ? state.get() : BlockCacheEntry.stone());
 
     List<BlockUpdate> initial = sampleAt(tracker, cache, position, look, MAX_LOOK_AHEAD);
     assertEquals(
       scanVolume(playerBox, look, MAX_LOOK_AHEAD), initial.size(),
       "the entire extended box must be sampled without occlusion filtering"
     );
-    state.set(BlockState.empty());
+    state.set(BlockCacheEntry.empty());
     List<BlockUpdate> updates = sampleAt(tracker, cache, position, look, 0.0D);
     assertEquals(1, updates.size());
     assertTrue(containsUpdateAt(updates, removed));
@@ -355,7 +344,7 @@ final class SampleTypesTest {
     Set<BlockPosition> scanned = new HashSet<>();
     BlockCache cache = blockCache(position -> {
       scanned.add(position);
-      return BlockState.empty();
+      return BlockCacheEntry.empty();
     });
     sampleAt(tracker, cache, new Position(0.5D, 64.0D, 0.5D), lookDirection, movementDistance);
     return scanned;
@@ -453,7 +442,7 @@ final class SampleTypesTest {
     );
   }
 
-  private static BlockCache blockCache(Function<BlockPosition, BlockState> stateAt) {
+  private static BlockCache blockCache(Function<BlockPosition, BlockCacheEntry> stateAt) {
     return (BlockCache) Proxy.newProxyInstance(
       BlockCache.class.getClassLoader(),
       new Class<?>[]{BlockCache.class},
@@ -468,8 +457,8 @@ final class SampleTypesTest {
     );
   }
 
-  private static BlockState blockState(String facing) throws Exception {
-    BlockState state = new BlockState(
+  private static BlockCacheEntry blockState(String facing) throws Exception {
+    BlockCacheEntry state = new BlockCacheEntry(
       BlockShapes.emptyShape(),
       BoundingBox.fromBounds(10.25, 64.0, 20.5, 10.75, 65.0, 21.0),
       Material.OAK_STAIRS,
@@ -483,18 +472,18 @@ final class SampleTypesTest {
   }
 
   private static BlockCache mutableBlockCacheAt(
-    int blockX, int blockY, int blockZ, AtomicReference<BlockState> state
+    int blockX, int blockY, int blockZ, AtomicReference<BlockCacheEntry> state
   ) {
     return blockCache(position ->
       position.getX() == blockX && position.getY() == blockY && position.getZ() == blockZ
-        ? state.get() : BlockState.empty()
+        ? state.get() : BlockCacheEntry.empty()
     );
   }
 
   private static void setResolvedProperties(
-    BlockState state, Map<String, Comparable<?>> properties
+    BlockCacheEntry state, Map<String, Comparable<?>> properties
   ) throws Exception {
-    Field field = BlockState.class.getDeclaredField("properties");
+    Field field = BlockCacheEntry.class.getDeclaredField("properties");
     field.setAccessible(true);
     field.set(state, properties);
   }

@@ -14,7 +14,7 @@ package de.jpx3.intave.block.shape.resolve.patch;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.adapter.ViaVersionAdapter;
 import de.jpx3.intave.block.access.VolatileBlockAccess;
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.user.User;
 import org.bukkit.Material;
@@ -174,7 +174,7 @@ final class ThinBlockPatch extends BlockShapePatch {
   }
 
   private static Material neighborType(User user, World world, int posX, int posY, int posZ) {
-    BlockState cachedState = user.blockCache().peekStateAt(posX, posY, posZ);
+    BlockCacheEntry cachedState = user.blockCache().peekStateAt(posX, posY, posZ);
     return cachedState == null
       ? VolatileBlockAccess.blockAccess(world, posX, posY, posZ).getType()
       : cachedState.type();

@@ -384,13 +384,13 @@ final class BaseSimulatorPoseInputTest {
 			0.0D, 51.6D, 0.0D,
 			1.0D, 52.0D, 1.0D
 		);
-		private static final BlockState STATE = new BlockState(
+		private static final BlockCacheEntry STATE = new BlockCacheEntry(
 			SHAPE, SHAPE, org.bukkit.Material.STONE, 0
 		);
 
 		@Override
-		public @NotNull BlockState stateAt(int posX, int posY, int posZ) {
-			return posX == 0 && posY == 51 && posZ == 0 ? STATE : BlockState.empty();
+		public @NotNull BlockCacheEntry stateAt(int posX, int posY, int posZ) {
+			return posX == 0 && posY == 51 && posZ == 0 ? STATE : BlockCacheEntry.empty();
 		}
 
 		@Override

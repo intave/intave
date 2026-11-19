@@ -39,6 +39,10 @@ public final class BlockPosition extends RawVector3d {
     packed -> new BlockPosition((int) (packed >> 38), (int) (packed << 52 >> 52), (int) (packed << 26 >> 38)),
     position -> (position.getX() & 0x3ffffffL) << 38 | (position.getZ() & 0x3ffffffL) << 12 | (position.getY() & 0xfffL)
   );
+  public static final StreamCodec<ByteBuf, ByteBuf, BlockPosition> SECTION_STREAM_CODEC = ByteBufStreamCodecs.LONG.beforeAndAfter(
+    packed -> new BlockPosition((int) (packed >> 42), (int) (packed << 44 >> 44), (int) (packed << 22 >> 42)),
+    position -> (position.getX() & 0x3fffffL) << 42 | (position.getZ() & 0x3fffffL) << 20 | (position.getY() & 0xfffffL)
+  );
   public static final StreamCodec<ByteBuf, ByteBuf, BlockPosition> STREAM_CODEC = StreamCodec.compound(
     ByteBufStreamCodecs.INTEGER, BlockPosition::getX,
     ByteBufStreamCodecs.INTEGER, BlockPosition::getY,

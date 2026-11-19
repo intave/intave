@@ -28,7 +28,10 @@ import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.Engine;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.linker.packetperfect.OnSend;
+import de.jpx3.intave.packet.contract.immutable.BlockUpdates;
 import de.jpx3.intave.packet.plib.reader.*;
+import de.jpx3.intave.share.BlockUpdate;
 import de.jpx3.intave.share.PlayerDigAction;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.MessageChannel;
@@ -180,6 +183,16 @@ public final class BlockUpdateTracker extends Module {
       if (playerLocation.distance(targetBlock) > 16) {
         cancellable.setCancelled(true);
       }
+    }
+  }
+
+  @OnSend
+  public void on(User user, BlockUpdates updates) {
+    int protocolVersion = user.protocolVersion();
+    for (BlockUpdate blockUpdate : updates.blockUpdates()) {
+      user.sendMessage(
+        blockUpdate.position() + " -> " + blockUpdate.material(protocolVersion)
+      );
     }
   }
 

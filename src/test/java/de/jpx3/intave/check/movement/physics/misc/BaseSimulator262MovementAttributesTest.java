@@ -21,8 +21,8 @@ import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.MovementCharacteristics;
 import de.jpx3.intave.check.movement.physics.simulator.Simulators;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.Motion;
-import de.jpx3.intave.share.BlockState;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
 import de.jpx3.intave.test.FakePlayerFactory;
@@ -39,13 +39,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.UUID;
 import java.lang.reflect.Proxy;
+import java.util.UUID;
 import java.util.stream.Stream;
 
-import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_26_1_1;
-import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_26_2;
-import static de.jpx3.intave.user.meta.ProtocolMetadata.VER_26_3;
+import static de.jpx3.intave.user.meta.ProtocolMetadata.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 final class BaseSimulator262MovementAttributesTest {
@@ -323,8 +321,8 @@ final class BaseSimulator262MovementAttributesTest {
     return (BlockCache) Proxy.newProxyInstance(BlockCache.class.getClassLoader(), new Class<?>[]{BlockCache.class}, (proxy, method, args) -> {
       Object value = method.invoke(plane, args);
       if (value == Material.STONE) return material;
-      if (value instanceof BlockState state && state.type() == Material.STONE) {
-        return new BlockState(state.outlineShape(), state.collisionShape(), material, state.variantIndex());
+      if (value instanceof BlockCacheEntry state && state.type() == Material.STONE) {
+        return new BlockCacheEntry(state.outlineShape(), state.collisionShape(), material, state.variantIndex());
       }
       return value;
     });

@@ -22,7 +22,7 @@ import de.jpx3.intave.check.movement.physics.simulator.Simulators;
 import de.jpx3.intave.module.test.record.MovementRecording;
 import de.jpx3.intave.resource.Resources;
 import de.jpx3.intave.search.SearchBrancher;
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
@@ -379,7 +379,7 @@ final class PtrBranchingVisualizationTest {
 		for (int x = originX - BLOCK_RADIUS; x <= originX + BLOCK_RADIUS; x++) {
 			for (int y = originY - 2; y <= originY + 3; y++) {
 				for (int z = originZ - BLOCK_RADIUS; z <= originZ + BLOCK_RADIUS; z++) {
-					BlockState state = user.blockCache().stateAt(x, y, z);
+					BlockCacheEntry state = user.blockCache().stateAt(x, y, z);
 					String material = state.type().name();
 					if (material.endsWith("AIR")) {
 						continue;
@@ -399,11 +399,11 @@ final class PtrBranchingVisualizationTest {
 		return new EnvironmentTrace(formatPosition(origin), origin.getX(), origin.getY(), origin.getZ(), environment.rotation().yaw(), environment.rotation().pitch(), environment.pose().name(), environment.onGround(), environment.shouldHaveFallFlyingPose(), environment.shouldHaveFallFlyingPose() || user.meta().movement().hasElytraEquipped(), playerBox.maxX - playerBox.minX, playerBox.maxY - playerBox.minY, blocks);
 	}
 
-	private static BlockTrace blockTrace(BlockState state, boolean collidable, BoundingBox box, Position origin) {
+	private static BlockTrace blockTrace(BlockCacheEntry state, boolean collidable, BoundingBox box, Position origin) {
 		return new BlockTrace(state.type().name(), collidable, (box.minX + box.maxX) * 0.5 - origin.getX(), (box.minY + box.maxY) * 0.5 - origin.getY(), (box.minZ + box.maxZ) * 0.5 - origin.getZ(), box.maxX - box.minX, box.maxY - box.minY, box.maxZ - box.minZ, formatProperties(state));
 	}
 
-	private static String formatProperties(BlockState state) {
+	private static String formatProperties(BlockCacheEntry state) {
 		if (state.properties().isEmpty()) {
 			return "variant=" + state.variantIndex();
 		}

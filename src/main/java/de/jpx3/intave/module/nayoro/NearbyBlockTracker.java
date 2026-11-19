@@ -14,8 +14,8 @@ package de.jpx3.intave.module.nayoro;
 import ac.intave.samples.share.Block;
 import ac.intave.samples.share.BlockUpdate;
 import de.jpx3.intave.block.cache.BlockCache;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.BlockPosition;
-import de.jpx3.intave.share.BlockState;
 import de.jpx3.intave.share.BoundingBox;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import org.bukkit.Material;
@@ -89,7 +89,7 @@ final class NearbyBlockTracker {
 		List<BlockUpdate> updates
 	) {
 		long positionKey = BlockPosition.toLong(x, y, z);
-		BlockState state = blockCache.stateAt(x, y, z);
+		BlockCacheEntry state = blockCache.stateAt(x, y, z);
 		RecordedBlock previous = recordedBlocks.get(positionKey);
 		if (state.type() == Material.AIR) {
 			if (previous != null) {
@@ -131,10 +131,10 @@ final class NearbyBlockTracker {
 	}
 
 	private static final class RecordedBlock {
-		private BlockState state;
+		private BlockCacheEntry state;
 		private final Block block;
 
-		private RecordedBlock(BlockState state, Block block) {
+		private RecordedBlock(BlockCacheEntry state, Block block) {
 			this.state = state;
 			this.block = block;
 		}

@@ -15,6 +15,7 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscriptionLinker;
 import de.jpx3.intave.module.linker.nayoro.NayoroEventSubscriptionLinker;
 import de.jpx3.intave.module.linker.packet.ProtocolLibSubscriptionLinker;
+import de.jpx3.intave.module.linker.packetperfect.PacketPerfectSubscriptionLinker;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -25,7 +26,7 @@ import java.util.function.Consumer;
 /**
  * The {@link CheckLinker} links checks to packet and event bindings, used by the {@link CheckService}.
  * The methods {@link CheckLinker#linkBukkitEventSubscriptions(Collection)} and {@link CheckLinker#linkPacketEventSubscriptions(Collection)}
- * take {@link Collection}s of {@link Check}s and forward them to the {@link ProtocolLibSubscriptionLinker} and the {@link BukkitEventSubscriptionLinker}.
+ * take {@link Collection}s of {@link Check}s and forward them to the packet linkers and the {@link BukkitEventSubscriptionLinker}.
  * The {@link CheckLinker#removeBukkitEventSubscriptions(Collection)} and {@link CheckLinker#removePacketEventSubscriptions(Collection)} undo this procedure again.
  * <br>
  * <br>
@@ -39,11 +40,13 @@ import java.util.function.Consumer;
  * @see MetaCheckPart
  * @see CheckService
  * @see ProtocolLibSubscriptionLinker
+ * @see PacketPerfectSubscriptionLinker
  * @see BukkitEventSubscriptionLinker
  */
 final class CheckLinker {
   private final Set<EventProcessor> linkedNayoroProcessors = identitySet();
   private final Set<EventProcessor> linkedPacketProcessors = identitySet();
+  private final Set<EventProcessor> linkedPacketPerfectProcessors = identitySet();
   private final Set<EventProcessor> linkedBukkitProcessors = identitySet();
 
   public void linkNayoroEventSubscriptions(Collection<? extends Check> checks) {
@@ -66,6 +69,8 @@ final class CheckLinker {
   public void linkPacketEventSubscriptions(Collection<? extends Check> checks) {
     ProtocolLibSubscriptionLinker protocolLibSubscriptionLinker = Modules.linker().protocolLib();
     iterativeLink(checks, linkedPacketProcessors, protocolLibSubscriptionLinker::linkSubscriptionsIn);
+    PacketPerfectSubscriptionLinker packetPerfectSubscriptionLinker = Modules.linker().packetPerfect();
+    iterativeLink(checks, linkedPacketPerfectProcessors, packetPerfectSubscriptionLinker::linkSubscriptionsIn);
   }
 
   /**
@@ -78,6 +83,8 @@ final class CheckLinker {
   public void removePacketEventSubscriptions(Collection<? extends Check> checks) {
     ProtocolLibSubscriptionLinker protocolLibSubscriptionLinker = Modules.linker().protocolLib();
     iterativeRemove(checks, linkedPacketProcessors, protocolLibSubscriptionLinker::removeSubscriptionsOf);
+    PacketPerfectSubscriptionLinker packetPerfectSubscriptionLinker = Modules.linker().packetPerfect();
+    iterativeRemove(checks, linkedPacketPerfectProcessors, packetPerfectSubscriptionLinker::removeSubscriptionsOf);
   }
 
   /**

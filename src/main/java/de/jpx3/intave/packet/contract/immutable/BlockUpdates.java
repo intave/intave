@@ -11,10 +11,10 @@
 
 package de.jpx3.intave.packet.contract.immutable;
 
-import de.jpx3.intave.share.PositionedBlockState;
+import de.jpx3.intave.share.BlockUpdate;
 
 import java.util.List;
 
 public interface BlockUpdates {
-	List<PositionedBlockState> blockUpdates();
+	List<BlockUpdate> blockUpdates();
 }

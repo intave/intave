@@ -13,6 +13,7 @@ package de.jpx3.intave.block.variant;
 
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
+import de.jpx3.intave.block.state.BlockStates;
 import de.jpx3.intave.block.variant.index.VariantIndex;
 import de.jpx3.intave.cleanup.ReferenceMap;
 import de.jpx3.intave.cleanup.StartupTasks;
@@ -44,6 +45,7 @@ public final class BlockVariantRegister {
       System.out.println("[variant/debug] Indexed " + count + " variations of " + blockCount + " blocks");
     }
     BlockVariantReverseLookup.invalidateCache();
+    BlockStates.invalidateMaterialAndVariantCache();
     // After initialization, we usually don't need most of the cache anymore
     // So we can clear it after startup to lower memory usage
     StartupTasks.add(BlockVariantRegister::invalidateShadowedVariantCache);
@@ -83,6 +85,7 @@ public final class BlockVariantRegister {
     blockVariants.clear();
     BlockVariantReverseLookup.invalidateCache();
     blockVariants.putAll(variants);
+    BlockStates.invalidateMaterialAndVariantCache();
   }
 
   private static Map<Integer, BlockVariant> translateFromServer(Material material) {
@@ -131,5 +134,6 @@ public final class BlockVariantRegister {
   static void invalidateShadowedVariantCache() {
     blockVariants.clear();
     BlockVariantReverseLookup.invalidateCache();
+    BlockStates.invalidateMaterialAndVariantCache();
   }
 }

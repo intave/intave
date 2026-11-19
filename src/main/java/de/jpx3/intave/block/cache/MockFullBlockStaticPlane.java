@@ -13,7 +13,7 @@ package de.jpx3.intave.block.cache;
 
 import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.BlockCacheEntry;
 import it.unimi.dsi.fastutil.longs.Long2BooleanOpenHashMap;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -74,12 +74,12 @@ public final class MockFullBlockStaticPlane implements BlockCache {
   }
 
   @Override
-  public @NotNull BlockState stateAt(int posX, int posY, int posZ) {
+  public @NotNull BlockCacheEntry stateAt(int posX, int posY, int posZ) {
     if (isStone(posX, posY, posZ)) {
       BlockShape collisionShape = BlockShapes.cubeAt(posX, posY, posZ);
-      return new BlockState(collisionShape, collisionShape, Material.STONE, 0);
+      return new BlockCacheEntry(collisionShape, collisionShape, Material.STONE, 0);
     } else {
-      return new BlockState(BlockShapes.emptyShape(), BlockShapes.emptyShape(), Material.AIR, 0);
+      return new BlockCacheEntry(BlockShapes.emptyShape(), BlockShapes.emptyShape(), Material.AIR, 0);
     }
   }
 

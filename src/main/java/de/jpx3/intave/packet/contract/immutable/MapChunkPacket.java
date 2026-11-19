@@ -14,11 +14,14 @@ package de.jpx3.intave.packet.contract.immutable;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.PacketContract;
 import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.share.ChunkData;
 
 import static de.jpx3.intave.packet.ConnectionState.PLAY;
 import static de.jpx3.intave.packet.contract.PacketType.Server.MAP_CHUNK;
 
 public interface MapChunkPacket extends PacketContract, ChunkAddressed {
+	ChunkData chunkData();
+
 	@Override
 	default int chunkCount() {
 		return 1;

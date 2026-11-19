@@ -11,16 +11,26 @@
 
 package de.jpx3.intave.packet.contract.immutable;
 
+import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.PacketContract;
-import de.jpx3.intave.share.PositionedBlockState;
+import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.share.BlockUpdate;
+
+import static de.jpx3.intave.packet.ConnectionState.PLAY;
+import static de.jpx3.intave.packet.contract.PacketType.Server.BLOCK_CHANGE;
 
 public interface SingleBlockChangePacket extends PacketContract, BlockUpdates, BlockAddressed {
-	default PositionedBlockState blockUpdate() {
+	default BlockUpdate blockUpdate() {
 		return blockUpdates().get(0);
 	}
 
 	@Override
 	default boolean hasBlockPosition() {
 		return true;
+	}
+
+	@Override
+	default boolean appliesTo(ConnectionState state, PacketType packetType) {
+		return state == PLAY && packetType == BLOCK_CHANGE;
 	}
 }

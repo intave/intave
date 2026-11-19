@@ -58,14 +58,6 @@ final class WirePacketDefinition<T extends PacketContract> {
 		return packetClass;
 	}
 
-	public Constructor<T> constructor() {
-		return constructor;
-	}
-
-	public StreamCodec<ByteBuf, ByteBuf, T> codec() {
-		return codec;
-	}
-
 	public static <T extends PacketContract> WirePacketDefinition<T> from(Class<T> packetClass) {
 		try {
 			Constructor<T> constructor = packetClass.getConstructor();

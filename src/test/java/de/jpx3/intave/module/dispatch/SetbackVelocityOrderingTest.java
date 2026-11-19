@@ -1,18 +1,33 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 package de.jpx3.intave.module.dispatch;
 
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
-import de.jpx3.intave.check.movement.physics.branch.*;
+import de.jpx3.intave.check.movement.physics.branch.MovementSearchBranch;
+import de.jpx3.intave.check.movement.physics.branch.MovementSearchInput;
+import de.jpx3.intave.check.movement.physics.branch.UpdateBrancher;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
-import de.jpx3.intave.check.movement.physics.update.*;
-import de.jpx3.intave.share.Relative;
+import de.jpx3.intave.check.movement.physics.update.MotionUpdate;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserFactory;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -183,7 +198,7 @@ class SetbackVelocityOrderingTest {
     }
 
     MotionUpdate velocity() {
-      MotionUpdate update = MotionUpdate.pendingReplacement(VELOCITY);
+      MotionUpdate update = MotionUpdate.pendingOverride(VELOCITY);
       movement.trackVelocity(update);
       return update;
     }

@@ -19,9 +19,9 @@ import de.jpx3.intave.block.fluid.FluidFlow;
 import de.jpx3.intave.check.movement.physics.environment.MockSimulationEnvironment;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.check.movement.physics.simulator.Simulators;
-import de.jpx3.intave.check.movement.physics.update.Reduce;
 import de.jpx3.intave.check.movement.physics.update.CausalConstraint;
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.check.movement.physics.update.Reduce;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.BoundingBox;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.test.FakePlayerFactory;
@@ -315,10 +315,10 @@ final class BaseSimulatorAquaticsTest {
 		}
 
 		@Override
-		public @NonNull BlockState stateAt(int posX, int posY, int posZ) {
+		public @NonNull BlockCacheEntry stateAt(int posX, int posY, int posZ) {
 			return posX == blockX && posY == blockY && posZ == blockZ
-				? BlockState.stone()
-				: BlockState.empty();
+				? BlockCacheEntry.stone()
+				: BlockCacheEntry.empty();
 		}
 
 		@Override

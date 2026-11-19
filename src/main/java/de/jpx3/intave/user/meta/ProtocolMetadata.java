@@ -70,6 +70,7 @@ public final class ProtocolMetadata {
   private String clientBrand = "Unknown";
   private String locale = "en_US";
   private int protocolVersion;
+  private boolean inputPacketsAvailable = true;
   private final User user;
   private int refreshes;
 
@@ -425,7 +426,12 @@ public final class ProtocolMetadata {
   }
 
   public boolean sendsInputs() {
-    return protocolVersion >= VER_1_21_2;// && MinecraftVersions.VER1_21_2.atOrAbove();
+    return protocolVersion >= VER_1_21_2 && inputPacketsAvailable;
+  }
+
+  /** Whether this input source supplies full key packets, including during recording playback. */
+  public void setInputPacketsAvailable(boolean inputPacketsAvailable) {
+    this.inputPacketsAvailable = inputPacketsAvailable;
   }
 
   public boolean sendsAttackSwingPackets() {

@@ -11,20 +11,20 @@
 
 package de.jpx3.intave.block.cache;
 
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.BlockCacheEntry;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
 final class EmptyExtendedBlockStateCache implements BlockCache {
   @Override
-  public BlockState peekStateAt(int posX, int posY, int posZ) {
-    return BlockState.empty();
+  public BlockCacheEntry peekStateAt(int posX, int posY, int posZ) {
+    return BlockCacheEntry.empty();
   }
 
   @Override
-  public @NotNull BlockState stateAt(int posX, int posY, int posZ) {
-    return BlockState.empty();
+  public @NotNull BlockCacheEntry stateAt(int posX, int posY, int posZ) {
+    return BlockCacheEntry.empty();
   }
 
   @Override

@@ -23,6 +23,7 @@ import de.jpx3.intave.block.interact.FenceGateInteractionTests;
 import de.jpx3.intave.block.interact.TrapdoorInteractionTests;
 import de.jpx3.intave.block.shape.resolve.BlockShapeDrillTests;
 import de.jpx3.intave.block.shape.resolve.BlockShapePipelineTests;
+import de.jpx3.intave.block.state.BlockStateMaterialTests;
 import de.jpx3.intave.block.variant.BlockVariantTests;
 import de.jpx3.intave.check.EventProcessor;
 import de.jpx3.intave.cleanup.ShutdownTasks;
@@ -197,6 +198,7 @@ public final class IntegrationTestService implements EventProcessor {
       List<Runnable> tests = new ArrayList<>();
       addTests(tests, BlockAccessTests.class);
       addTests(tests, BlockVariantTests.class);
+      addTests(tests, BlockStateMaterialTests.class);
       addTests(tests, DoorInteractionTests.class);
       addTests(tests, TrapdoorInteractionTests.class);
       addTests(tests, FenceGateInteractionTests.class);

@@ -1,0 +1,261 @@
+{
+  "schemaVersion": 1,
+  "protocols": {
+    "47": "1.8.8",
+    "107": "1.9.4",
+    "108": "1.9.4",
+    "109": "1.9.4",
+    "110": "1.9.4",
+    "210": "1.10",
+    "315": "1.11.2",
+    "316": "1.11.2",
+    "335": "1.12.2",
+    "338": "1.12.2",
+    "340": "1.12.2",
+    "393": "1.13",
+    "401": "1.13",
+    "404": "1.13.2",
+    "477": "1.14.4",
+    "480": "1.14.4",
+    "485": "1.14.4",
+    "490": "1.14.4",
+    "498": "1.14.4",
+    "573": "1.15.2",
+    "575": "1.15.2",
+    "578": "1.15.2",
+    "735": "1.16.1",
+    "736": "1.16.1",
+    "751": "1.16.5",
+    "753": "1.16.5",
+    "754": "1.16.5",
+    "755": "1.17",
+    "756": "1.17.1",
+    "757": "1.18",
+    "758": "1.18.2",
+    "759": "1.19",
+    "760": "1.19.2",
+    "761": "1.19.3",
+    "762": "1.19.4",
+    "763": "1.20.1",
+    "764": "1.20.2",
+    "765": "1.20.4",
+    "766": "1.20.5",
+    "767": "1.21.1",
+    "768": "1.21.3",
+    "769": "1.21.4",
+    "770": "1.21.5",
+    "771": "1.21.6",
+    "772": "1.21.8",
+    "773": "1.21.10",
+    "774": "1.21.11",
+    "775": "26.1.2",
+    "776": "26.2",
+    "777": "26.3"
+  },
+  "sources": {
+    "1.8.8": {
+      "jar": "libs/spigot-1.8.8.jar",
+      "sha256": "d9b8e7ed157dbb4bc638b96763b0ad955719acbbdf7ff4378e119ad7010595ca",
+      "registrySha256": "1d644442d97dc1eefcd08afea2998a905771fec738a40807a12f0872c0069d2c",
+      "states": 1394
+    },
+    "1.9.4": {
+      "jar": "libs/spigot-1.9.4.jar",
+      "sha256": "d101d68ad97c248552abf398784b115c273a6bc84f6a2bc72d2fe18ed7982743",
+      "registrySha256": "1bc32500d054336302bbdb619aa7889f2ceeb6350fe90496012dd309c0e37b42",
+      "states": 1470
+    },
+    "1.10": {
+      "jar": "libs/spigot-1.10.jar",
+      "sha256": "aaaa23919f68adf67d575b24347b2f7f78ada992d91c0aec88ff95059a9998e9",
+      "registrySha256": "6d2bc294a431e474de80db27d0f6cd8f79c3d4e06ef32666a11fba46a2c0a4b0",
+      "states": 1477
+    },
+    "1.11.2": {
+      "jar": "libs/spigot-1.11.2.jar",
+      "sha256": "6d08fac41241c4d6249ce2e52db4e7402ba80f564a1e24460779e47d7ad5e240",
+      "registrySha256": "2edc7b7c92cc5075136d3a7eb7a1fd72e3d0dbf17b4ea99ae8c5591675fa108a",
+      "states": 1585
+    },
+    "1.12.2": {
+      "jar": "libs/spigot-1.12.2.jar",
+      "sha256": "6bd687db6b90194d18bcd811496ca0faa0769b7a51c25e84f7af3896e4c3a3bf",
+      "registrySha256": "c8d6d5d8352ec786bcd11a0fc076143a51f85fce6da9b7b228e8b3bcc076b9ba",
+      "states": 1681
+    },
+    "1.13.2": {
+      "jar": "libs/spigot-1.13.2.jar",
+      "sha256": "dc8f88e433ad5a19b5950c1ba73499759e8df2e1a01b9af3f15bd5d0d047de1d",
+      "registrySha256": "64c5298a75b904acde7061270258a39fe5473eb03746a18ce9373d10faee1594",
+      "states": 8599
+    },
+    "1.14.4": {
+      "jar": "client/1.14.4/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "7854b8a9a83e11c21bf51822791594c266905d6d7ec9060fc706990de581a98c",
+      "registrySha256": "0e5a10dab255f3673e4a96bf186ed2085e54eb618c7f8969606771b937347d84",
+      "states": 11271
+    },
+    "1.15.2": {
+      "jar": "client/1.15.2/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "003e7f9f43e0062ac49b767c913fb3545959b4a44a6cd7b4223415919c09c7cb",
+      "registrySha256": "3cac5f26213d95dccd871f128f9d83a493c24e3febb627fb4ec849f6d7764aa1",
+      "states": 11337
+    },
+    "1.16.5": {
+      "jar": "client/1.16.5/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "19f6209b7430801e0cebb6a6c093eb53910dc8f423ba761d6439c61a10884200",
+      "registrySha256": "2863604dc2daf97955e880fbbd730d96d0b36feb8ea38dc9038cdeadfdd2e929",
+      "states": 17112
+    },
+    "1.17.1": {
+      "jar": "client/1.17.1/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "9d577c5b9b82f12fc6c7b4938dcd42aff75846f2d352263ab0fdea4d5daa62da",
+      "registrySha256": "95feec030f243f888961544c751335a0759999d3e872d63a4b06e9e5baf568aa",
+      "states": 20342
+    },
+    "1.18.2": {
+      "jar": "client/1.18.2/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "800f11d666ba54f4ee13092016c6d3a5f8fff3119b093e4cfce924421e18b072",
+      "registrySha256": "95feec030f243f888961544c751335a0759999d3e872d63a4b06e9e5baf568aa",
+      "states": 20342
+    },
+    "1.19.4": {
+      "jar": "client/1.19.4/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "9f8c9f0c9394cdaec951e23473e3c264602ee1598d2156a1552434d87753bc7e",
+      "registrySha256": "2a5904b9d8af78fdbc33ac37a14893e3abd4df2e3a6167aad7a457623cf444d4",
+      "states": 23725
+    },
+    "1.20.1": {
+      "jar": "client/1.20.1/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "ac0acecb744e3024a37ee2e26ee0db87a0417cfaff77953ad56c1df65cd690d0",
+      "registrySha256": "442aba84fdcb933245f7746702d80c669e4596d919323ed0699ee88725a28395",
+      "states": 24135
+    },
+    "1.20.2": {
+      "jar": "client/1.20.2/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "c0b55e9d5ff28cf00ffab096dc391296a94ee2040109d78fd903b687ae328cb6",
+      "registrySha256": "2880282ad1faa627618588a272db930addbf4e363786c78d4536e93ede5d0f5f",
+      "states": 24276
+    },
+    "1.20.4": {
+      "jar": "client/1.20.4/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "8e8e5d144f32f3f85399e59af3e29f702619f413b42f9a5e953a00c4924eb0fb",
+      "registrySha256": "1cfb0198795c0a956abe3c6fa0e6b6fe7abd916d38a710395ef42db4e6eadc2b",
+      "states": 26644
+    },
+    "1.21.1": {
+      "jar": "client/1.21.1/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "f950137d43c1aa1b943a69e7cd935542fff34c8e39328f74a2d81d70c390f610",
+      "registrySha256": "0ffe0b1694a1693295dc90f95378576258853b993805610a4876f2bd6df81513",
+      "states": 26684
+    },
+    "1.21.3": {
+      "jar": "client/1.21.3/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "57c8307b8aa0090c236533e8308c2704fca6f4e98866f4c26204606097996625",
+      "registrySha256": "4a85d23a203ee11dfb7e0fe4f7ce92143c3a11b9010ad499407f2885f5826634",
+      "states": 27318
+    },
+    "1.21.4": {
+      "jar": "client/1.21.4/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "7ebd02bdddc59750f27e9e9916cecbab74435f20f95a31551d353d1d92b3963b",
+      "registrySha256": "d05015197cb8b6b46facfef1b41bcdd29f51d91d53df1848175aeabfdd1f2dac",
+      "states": 27866
+    },
+    "1.21.5": {
+      "jar": "client/1.21.5/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "2c48942c46d00235dc71c01be53e9060fdc54c0ff83874a570fd32dc242ea94f",
+      "registrySha256": "4bbf6ea2531d4093021b177033b8f19dc8d787cd6706672e6dd72255a0f084ec",
+      "states": 27914
+    },
+    "1.21.6": {
+      "jar": "client/1.21.6/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "0d63385c7076ca20e1f45d0c3bea70328554c720e25e7530a43791466613c72a",
+      "registrySha256": "5bf92caede021170ce04b79369e46705edfec5518fe5cdf3c4b0de59a43f3b2f",
+      "states": 27946
+    },
+    "1.21.8": {
+      "jar": "client/1.21.8/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "4d88b26802f02d903b87083ceea5e2932a0bfb0c19f5f95bc32e07a2bf34029e",
+      "registrySha256": "5bf92caede021170ce04b79369e46705edfec5518fe5cdf3c4b0de59a43f3b2f",
+      "states": 27946
+    },
+    "1.21.10": {
+      "jar": "client/1.21.10/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "285c1a57aa0ae28ecbd100bebea42dd98ef5107010be56abdd527b3a787a04d4",
+      "registrySha256": "07c811960172cd9165cd4d01b49cb25a634b613fd9ef9fae660c15d43d2decd7",
+      "states": 29671
+    },
+    "1.21.11": {
+      "jar": "client/1.21.11/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "f7d6c358a7d8cb4327132fbab14a1d115d41f16cc32367ef70a6e9c942720d4b",
+      "registrySha256": "07c811960172cd9165cd4d01b49cb25a634b613fd9ef9fae660c15d43d2decd7",
+      "states": 29671
+    },
+    "26.1.2": {
+      "jar": "client/26.1.2/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "ca7858811abbe5f897da9c74a6555daa51c17ab6d054f422663a592f1b6104db",
+      "registrySha256": "ef15c6fdb6c28fe33197e44ab9520b08396af3ce62a11042d1f0885440698047",
+      "states": 29873
+    },
+    "26.2": {
+      "jar": "client/26.2/build/libs/mcp-reborn-1.0.0.jar",
+      "sha256": "c9aa0492a62f64d56c3553393d49a3810cbaf235c9b50e1d9ed89289632d24d1",
+      "registrySha256": "ea7e42f80d94d1427304455f08f63758b21d5941b8848d1b9b5b483ceed4bc74",
+      "states": 32366
+    },
+    "26.3": {
+      "jar": ".gradle/block-ack-26.3/client.jar",
+      "sha256": "4508d006323f24fa02876310c192d739af56516eb259000ac50f0909a68c9a2d",
+      "registrySha256": "aab8f441648e54babdb2c3f9942305e33425ebc5a9b85e59d5a5d992d6cd2e96",
+      "states": 35723
+    },
+    "1.13": {
+      "url": "https://raw.githubusercontent.com/PrismarineJS/minecraft-data/dd01127457231e7da629d645b3c6738068018eb0/data/pc/1.13/blocks.json",
+      "sha256": "fa230d4a5946b303eea17616417757de6cee5c3c7c0e952f5feb0dabe93e020f",
+      "registrySha256": "ee3df184d27bf4ca5369a034c970dbd3785c7f0a77cb43c5c7ea9051901bf269",
+      "states": 8582
+    },
+    "1.16.1": {
+      "url": "https://raw.githubusercontent.com/PrismarineJS/minecraft-data/dd01127457231e7da629d645b3c6738068018eb0/data/pc/1.16.1/blocks.json",
+      "sha256": "5a15a9b40c6723ac1b00c6f8e0f614f55168458e621a8e7c1daad4d1890a78de",
+      "registrySha256": "397a717db0ba969f0fb5de468c4adcd3af6e9624f0137658b2fb39c1d898b6a6",
+      "states": 17104
+    },
+    "1.17": {
+      "url": "https://raw.githubusercontent.com/PrismarineJS/minecraft-data/dd01127457231e7da629d645b3c6738068018eb0/data/pc/1.17/blocks.json",
+      "sha256": "8cbd43bdab30c26198d256314c675044bc0b0319b15ea0f88f94381c061d0c0f",
+      "registrySha256": "95feec030f243f888961544c751335a0759999d3e872d63a4b06e9e5baf568aa",
+      "states": 20342
+    },
+    "1.18": {
+      "url": "https://raw.githubusercontent.com/PrismarineJS/minecraft-data/dd01127457231e7da629d645b3c6738068018eb0/data/pc/1.18/blocks.json",
+      "sha256": "6f6afb0bdcd6b867a6c2d57cab19b2b9a66e0fd52c14761c03614dd50ce0de24",
+      "registrySha256": "95feec030f243f888961544c751335a0759999d3e872d63a4b06e9e5baf568aa",
+      "states": 20342
+    },
+    "1.19": {
+      "url": "https://raw.githubusercontent.com/PrismarineJS/minecraft-data/dd01127457231e7da629d645b3c6738068018eb0/data/pc/1.19/blocks.json",
+      "sha256": "b52ee372ac2257a1548acb27489135d15ba1792ef4b45fd2974384d7324c55d6",
+      "registrySha256": "18e864c2f2eb966723f92380c89630b16554bb5dae295e41e051f16890033632",
+      "states": 21448
+    },
+    "1.19.2": {
+      "url": "https://raw.githubusercontent.com/PrismarineJS/minecraft-data/dd01127457231e7da629d645b3c6738068018eb0/data/pc/1.19.2/blocks.json",
+      "sha256": "f2fb6606b46f192c0eabcada6ed227250507e13fc2a4713f82e8f9a3f060324f",
+      "registrySha256": "18e864c2f2eb966723f92380c89630b16554bb5dae295e41e051f16890033632",
+      "states": 21448
+    },
+    "1.19.3": {
+      "url": "https://raw.githubusercontent.com/PrismarineJS/minecraft-data/dd01127457231e7da629d645b3c6738068018eb0/data/pc/1.19.3/blocks.json",
+      "sha256": "6b6fc77ee5e927f2e184675fd6859c1cdcb32cb8c1c2446b063bd0015f8d8ca4",
+      "registrySha256": "afe50cf21e0fbaba6c0b7393e7de1cbf35cbf7e4523fe080dcf15f85537bcf0e",
+      "states": 23232
+    },
+    "1.20.5": {
+      "url": "https://raw.githubusercontent.com/PrismarineJS/minecraft-data/dd01127457231e7da629d645b3c6738068018eb0/data/pc/1.20.5/blocks.json",
+      "sha256": "e9b54c8c46147382398f0b765040432aae706960eed58eb4de062c6889cd4be3",
+      "registrySha256": "0ffe0b1694a1693295dc90f95378576258853b993805610a4876f2bd6df81513",
+      "states": 26684
+    }
+  }
+}

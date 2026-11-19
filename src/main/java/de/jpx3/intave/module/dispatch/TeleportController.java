@@ -28,8 +28,15 @@ import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.nayoro.SampleTypes;
+import de.jpx3.intave.packet.contract.TypedPacketContract;
+import de.jpx3.intave.packet.contract.mutable.MutableEntityVelocityPacket;
 import de.jpx3.intave.packet.plib.PacketSender;
-import de.jpx3.intave.packet.plib.reader.*;
+import de.jpx3.intave.packet.plib.reader.PacketReaders;
+import de.jpx3.intave.packet.plib.reader.PlayerMoveReader;
+import de.jpx3.intave.packet.plib.reader.PlayerTeleportReader;
+import de.jpx3.intave.packet.plib.reader.TeleportAcceptReader;
+import de.jpx3.intave.packet.wire.WirePackets;
+import de.jpx3.intave.packet.wire.world.explosion.ExplosionWirePacket;
 import de.jpx3.intave.player.ActionBar;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.MessageChannel;
@@ -55,6 +62,7 @@ import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.LONG_
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 import static de.jpx3.intave.module.feedback.FeedbackOptions.SELF_SYNCHRONIZATION;
 import static de.jpx3.intave.packet.contract.PacketType.Client.TELEPORT_ACCEPT;
+import static de.jpx3.intave.packet.contract.PacketType.Server;
 import static de.jpx3.intave.packet.contract.PacketType.Server.POSITION;
 
 public final class TeleportController implements PacketEventSubscriber {
@@ -446,35 +454,31 @@ public final class TeleportController implements PacketEventSubscriber {
 		try (PlayerTeleportReader reader = PacketReaders.readerOf(packet)) {
 			reader.writeTeleport(teleport);
 		}
-		PacketContainer companion = motionCompanionPacket(user.player(), teleport);
+		TypedPacketContract companion = motionCompanionPacket(user, teleport);
 		user.tickFeedback(() -> beforeTeleportTransactionReceive(user, teleport));
 		PacketSender.sendServerPacketWithoutEvent(user.player(), packet);
 		if (companion != null) {
-			PacketSender.sendServerPacketWithoutEvent(user.player(), companion);
+			// This motion is part of the tracked teleport, not another independent velocity update.
+			de.jpx3.intave.packet.PacketSender.sendSilently(user, companion);
 		}
 		user.tickFeedback(() -> afterTeleportTransactionReceive(user, teleport));
 	}
 
-	private PacketContainer motionCompanionPacket(Player player, Teleport teleport) {
+	TypedPacketContract motionCompanionPacket(User user, Teleport teleport) {
 		Boolean additive = teleport.additiveMotionPacket();
 		if (MinecraftVersions.VER1_21_3.atOrAbove() || additive == null) {
 			return null;
 		}
-		PacketContainer companion = ProtocolLibrary.getProtocolManager().createPacket(additive ?
-			PacketType.Play.Server.EXPLOSION : PacketType.Play.Server.ENTITY_VELOCITY
-		);
 		if (additive) {
-			try (ExplosionReader reader = PacketReaders.readerOf(companion)) {
-				reader.setSilentDefaults();
-				reader.setMotion(teleport.change().motion());
-			}
-		} else {
-			try (EntityVelocityReader reader = PacketReaders.readerOf(companion)) {
-				reader.setEntityId(player.getEntityId());
-				reader.setMotion(teleport.change().motion());
-			}
+			ExplosionWirePacket packet = WirePackets.createPlayPacket(Server.EXPLOSION, user.protocolVersion());
+			packet.setSilentDefaults(user.protocolVersion());
+			packet.setMotion(teleport.change().motion().copy());
+			return packet.typedTo(Server.EXPLOSION);
 		}
-		return companion;
+		MutableEntityVelocityPacket packet = WirePackets.createPlayPacket(Server.ENTITY_VELOCITY, user.protocolVersion());
+		packet.setEntityId(user.player().getEntityId());
+		packet.setMotion(teleport.change().motion().copy());
+		return packet.typedTo(Server.ENTITY_VELOCITY);
 	}
 
 	void beforeTeleportTransactionReceive(User user, Teleport teleport) {

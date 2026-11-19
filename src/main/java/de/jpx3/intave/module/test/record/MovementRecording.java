@@ -277,7 +277,7 @@ public final class MovementRecording {
 	}
 
 	private void captureBlock(BlockCache blockCache, Map<BlockPosition, MaterialVariantStore> delta, int x, int y, int z) {
-		BlockState state = blockCache.peekStateAt(x, y, z);
+		BlockCacheEntry state = blockCache.peekStateAt(x, y, z);
 		Material type;
 		if (state == null) {
 			type = blockCache.typeAt(x, y, z);

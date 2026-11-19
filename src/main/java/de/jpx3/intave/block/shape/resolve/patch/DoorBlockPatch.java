@@ -14,7 +14,7 @@ package de.jpx3.intave.block.shape.resolve.patch;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.block.shape.BlockShape;
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.user.User;
 import org.bukkit.Material;
@@ -53,7 +53,7 @@ final class DoorBlockPatch extends BlockShapePatch {
     BlockCache blockCache = user.blockCache();
     boolean upperHalf = (blockState & HALF_BIT) != 0;
     int otherY = upperHalf ? posY - 1 : posY + 1;
-    BlockState otherHalf = blockCache.peekStateAt(posX, otherY, posZ);
+    BlockCacheEntry otherHalf = blockCache.peekStateAt(posX, otherY, posZ);
     int lowerVariant = upperHalf ? 0 : blockState;
     int upperVariant = upperHalf ? blockState
       : HALF_BIT | (user.meta().protocol().aquaticUpdate() ? HINGE_BIT : 0);

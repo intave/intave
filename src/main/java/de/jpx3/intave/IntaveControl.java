@@ -42,7 +42,7 @@ public final class IntaveControl {
   public static final boolean DEBUG_TELEPORT_PACKET_STACKTRACE = false;
   public static final boolean TELEPORT_FAR_AWAY_ON_Q_PRESS = false;
   public static final boolean TELEPORT_UP_ON_Q_PRESS = false;
-  public static final boolean GIVE_VELOCITY_ON_Q_PRESS = false;
+  public static final boolean GIVE_VELOCITY_ON_Q_PRESS = true;
   public static final boolean EXTREME_VELOCITY_ON_Q_PRESS = false;
   public static final boolean DEBUG_INTAVE_TELEPORT_EVENT_CANCELS = false;
   public static final boolean DISABLE_BLOCK_CACHING_ENTIRELY = false;
@@ -79,7 +79,6 @@ public final class IntaveControl {
   public static final boolean ENABLE_MOVEMENT_DEBUGGER_COLLECTOR = false;
   public static final boolean MOVEMENT_DEBUGGER_COLLECTOR_POSTTICK_OUTPUT = false;
   public static final boolean AUTHENTICATION_DEBUG_MODE = AUTHTEST;
-  public static final boolean CLIENT_KEEP_ALIVE_NETTY_CHECK = false;
   public static final boolean NOTIFY_MISSING_PACKET_FLUSHES = false;
   public static final boolean FIRST_TICK_MUST_BE_FULLY_SIMULATED = false;
   public static final boolean NO_TOLERANCE_PHYSICS = false;

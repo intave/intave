@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.block.store;
 
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.BlockCacheEntry;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.*;
@@ -23,17 +23,17 @@ class CopyOnWriteArrayLocalBlockStoreTest {
 	@Test
 	public void testBasicInsertion() {
 		CopyOnWriteArrayLocalBlockStore store = CopyOnWriteArrayLocalBlockStore.of();
-		assertTrue(store.put(0, 0, 0, BlockState.stone()));
+		assertTrue(store.put(0, 0, 0, BlockCacheEntry.stone()));
 
-		assertEquals(BlockState.stone(), store.get(0, 0, 0));
+		assertEquals(BlockCacheEntry.stone(), store.get(0, 0, 0));
 		assertNull(store.get(0, 1, 0));
 		assertEquals(1, store.size());
 
 		for (int i = 0; i < 1024; i++) {
 			if (i <= 63) {
-				assertTrue(store.put(i, 0, 0, BlockState.stone()));
+				assertTrue(store.put(i, 0, 0, BlockCacheEntry.stone()));
 			} else {
-				assertFalse(store.put(i, 0, 0, BlockState.stone()));
+				assertFalse(store.put(i, 0, 0, BlockCacheEntry.stone()));
 			}
 		}
 	}
@@ -41,7 +41,7 @@ class CopyOnWriteArrayLocalBlockStoreTest {
 	@Test
 	public void testReadOutsideUpperVerticalBoundary() {
 		CopyOnWriteArrayLocalBlockStore store = CopyOnWriteArrayLocalBlockStore.of();
-		assertTrue(store.put(0, 0, 0, BlockState.stone()));
+		assertTrue(store.put(0, 0, 0, BlockCacheEntry.stone()));
 
 		assertNull(store.get(8, 64, 0));
 	}
@@ -49,14 +49,14 @@ class CopyOnWriteArrayLocalBlockStoreTest {
 	@Test
 	public void testVerticalBoundaries() {
 		CopyOnWriteArrayLocalBlockStore store = CopyOnWriteArrayLocalBlockStore.of();
-		assertTrue(store.put(0, 0, 0, BlockState.stone()));
-		assertTrue(store.put(0, -64, 0, BlockState.stone()));
-		assertTrue(store.put(0, 63, 0, BlockState.stone()));
+		assertTrue(store.put(0, 0, 0, BlockCacheEntry.stone()));
+		assertTrue(store.put(0, -64, 0, BlockCacheEntry.stone()));
+		assertTrue(store.put(0, 63, 0, BlockCacheEntry.stone()));
 
-		assertEquals(BlockState.stone(), store.get(0, -64, 0));
-		assertEquals(BlockState.stone(), store.get(0, 63, 0));
-		assertFalse(store.put(0, -65, 0, BlockState.stone()));
-		assertFalse(store.put(0, 64, 0, BlockState.stone()));
+		assertEquals(BlockCacheEntry.stone(), store.get(0, -64, 0));
+		assertEquals(BlockCacheEntry.stone(), store.get(0, 63, 0));
+		assertFalse(store.put(0, -65, 0, BlockCacheEntry.stone()));
+		assertFalse(store.put(0, 64, 0, BlockCacheEntry.stone()));
 		assertNull(store.get(0, -65, 0));
 		assertNull(store.get(0, 64, 0));
 		assertEquals(3, store.size());
@@ -65,30 +65,30 @@ class CopyOnWriteArrayLocalBlockStoreTest {
 	@Test
 	public void testVerticalWindowCanBeCenteredAtExtendedWorldHeights() {
 		CopyOnWriteArrayLocalBlockStore store = CopyOnWriteArrayLocalBlockStore.of();
-		assertTrue(store.put(0, -3000, 0, BlockState.stone()));
-		assertEquals(BlockState.stone(), store.get(0, -3000, 0));
-		assertTrue(store.put(0, -2999, 0, BlockState.empty()));
-		assertEquals(BlockState.empty(), store.get(0, -2999, 0));
+		assertTrue(store.put(0, -3000, 0, BlockCacheEntry.stone()));
+		assertEquals(BlockCacheEntry.stone(), store.get(0, -3000, 0));
+		assertTrue(store.put(0, -2999, 0, BlockCacheEntry.empty()));
+		assertEquals(BlockCacheEntry.empty(), store.get(0, -2999, 0));
 
 		store.clear();
 
-		assertTrue(store.put(0, 3000, 0, BlockState.stone()));
-		assertEquals(BlockState.stone(), store.get(0, 3000, 0));
+		assertTrue(store.put(0, 3000, 0, BlockCacheEntry.stone()));
+		assertEquals(BlockCacheEntry.stone(), store.get(0, 3000, 0));
 	}
 
 	@Test
 	public void testSectorArrayBoundaries() {
 		CopyOnWriteArrayLocalBlockStore store = CopyOnWriteArrayLocalBlockStore.of();
-		assertTrue(store.put(0, 0, 0, BlockState.stone()));
-		assertTrue(store.put(-64, -64, -64, BlockState.stone()));
-		assertTrue(store.put(63, 63, 63, BlockState.stone()));
+		assertTrue(store.put(0, 0, 0, BlockCacheEntry.stone()));
+		assertTrue(store.put(-64, -64, -64, BlockCacheEntry.stone()));
+		assertTrue(store.put(63, 63, 63, BlockCacheEntry.stone()));
 
-		assertEquals(BlockState.stone(), store.get(-64, -64, -64));
-		assertEquals(BlockState.stone(), store.get(63, 63, 63));
-		assertFalse(store.put(-65, 0, 0, BlockState.stone()));
-		assertFalse(store.put(64, 0, 0, BlockState.stone()));
-		assertFalse(store.put(0, 0, -65, BlockState.stone()));
-		assertFalse(store.put(0, 0, 64, BlockState.stone()));
+		assertEquals(BlockCacheEntry.stone(), store.get(-64, -64, -64));
+		assertEquals(BlockCacheEntry.stone(), store.get(63, 63, 63));
+		assertFalse(store.put(-65, 0, 0, BlockCacheEntry.stone()));
+		assertFalse(store.put(64, 0, 0, BlockCacheEntry.stone()));
+		assertFalse(store.put(0, 0, -65, BlockCacheEntry.stone()));
+		assertFalse(store.put(0, 0, 64, BlockCacheEntry.stone()));
 		assertNull(store.get(-65, 0, 0));
 		assertNull(store.get(64, 0, 0));
 		assertNull(store.get(0, 0, -65));
@@ -98,7 +98,7 @@ class CopyOnWriteArrayLocalBlockStoreTest {
 	@Test
 	public void testConcurrentClearAndRemoveIfPreserveSize() throws Exception {
 		CopyOnWriteArrayLocalBlockStore store = CopyOnWriteArrayLocalBlockStore.of();
-		assertTrue(store.put(0, 0, 0, BlockState.stone()));
+		assertTrue(store.put(0, 0, 0, BlockCacheEntry.stone()));
 
 		CountDownLatch predicateEntered = new CountDownLatch(1);
 		CountDownLatch continueRemoval = new CountDownLatch(1);
@@ -133,7 +133,7 @@ class CopyOnWriteArrayLocalBlockStoreTest {
 	@Test
 	public void testConcurrentDistinctWritesPreserveAllEntries() throws Exception {
 		CopyOnWriteArrayLocalBlockStore store = CopyOnWriteArrayLocalBlockStore.of();
-		assertTrue(store.put(8, 0, 0, BlockState.stone()));
+		assertTrue(store.put(8, 0, 0, BlockCacheEntry.stone()));
 
 		int writerCount = 8;
 		int writesPerWriter = 64;
@@ -153,7 +153,7 @@ class CopyOnWriteArrayLocalBlockStoreTest {
 						throw new AssertionError(exception);
 					}
 					for (int y = 0; y < writesPerWriter; y++) {
-						assertTrue(store.put(x, y, 0, BlockState.stone()));
+						assertTrue(store.put(x, y, 0, BlockCacheEntry.stone()));
 					}
 				});
 			}
@@ -166,7 +166,7 @@ class CopyOnWriteArrayLocalBlockStoreTest {
 			assertEquals(1 + writerCount * writesPerWriter, store.size());
 			for (int x = 0; x < writerCount; x++) {
 				for (int y = 0; y < writesPerWriter; y++) {
-					assertEquals(BlockState.stone(), store.get(x, y, 0));
+					assertEquals(BlockCacheEntry.stone(), store.get(x, y, 0));
 				}
 			}
 		} finally {

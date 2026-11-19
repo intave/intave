@@ -11,26 +11,26 @@
 
 package de.jpx3.intave.block.store;
 
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.BlockCacheEntry;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 
 public final class MapBlockStore implements BlockStore {
-	private final Map<Long, BlockState> map;
+	private final Map<Long, BlockCacheEntry> map;
 
-	private MapBlockStore(Map<Long, BlockState> map) {
+	private MapBlockStore(Map<Long, BlockCacheEntry> map) {
 		this.map = map;
 	}
 
 	@Override
-	public BlockState get(int x, int y, int z) {
+	public BlockCacheEntry get(int x, int y, int z) {
 		return map.get(bigKey(x, y, z));
 	}
 
 	@Override
-	public boolean put(int x, int y, int z, BlockState state) {
+	public boolean put(int x, int y, int z, BlockCacheEntry state) {
 		map.put(bigKey(x, y, z), state);
 		return true;
 	}
@@ -41,7 +41,7 @@ public final class MapBlockStore implements BlockStore {
 	}
 
 	@Override
-	public void removeIf(Predicate<BlockState> predicate) {
+	public void removeIf(Predicate<BlockCacheEntry> predicate) {
 		map.entrySet().removeIf(entry -> predicate.test(entry.getValue()));
 	}
 
@@ -54,7 +54,7 @@ public final class MapBlockStore implements BlockStore {
 		return (posX & 0x3fffffL) << 42 | (posY & 0xfffffL) | (posZ & 0x3fffffL) << 20;
 	}
 
-	public static MapBlockStore of(Map<Long, BlockState> map) {
+	public static MapBlockStore of(Map<Long, BlockCacheEntry> map) {
 		return new MapBlockStore(map);
 	}
 

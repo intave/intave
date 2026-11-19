@@ -15,16 +15,12 @@ import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.block.type.MaterialSearch;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.PositionedBlockState;
 import de.jpx3.intave.user.User;
 import org.bukkit.Material;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 final class DoorInteractionInteractionPatch implements BlockInteractionPatch {
   private static final int LEGACY_HALF_BIT = 8;
@@ -71,8 +67,8 @@ final class DoorInteractionInteractionPatch implements BlockInteractionPatch {
     boolean clickedUpper = (variant & LEGACY_HALF_BIT) != 0;
     int lowerY = clickedUpper ? blockY - 1 : blockY;
     int upperY = lowerY + 1;
-    BlockState lower = blockCache.stateAt(blockX, lowerY, blockZ);
-    BlockState upper = blockCache.stateAt(blockX, upperY, blockZ);
+    BlockCacheEntry lower = blockCache.stateAt(blockX, lowerY, blockZ);
+    BlockCacheEntry upper = blockCache.stateAt(blockX, upperY, blockZ);
     boolean validLower = lower.type() == material
       && (lower.variantIndex() & LEGACY_HALF_BIT) == 0;
     boolean validUpper = upper.type() == material
@@ -119,8 +115,8 @@ final class DoorInteractionInteractionPatch implements BlockInteractionPatch {
 
     int lowerY = clickedUpper ? blockY - 1 : blockY;
     int upperY = lowerY + 1;
-    BlockState lower = blockCache.stateAt(blockX, lowerY, blockZ);
-    BlockState upper = blockCache.stateAt(blockX, upperY, blockZ);
+    BlockCacheEntry lower = blockCache.stateAt(blockX, lowerY, blockZ);
+    BlockCacheEntry upper = blockCache.stateAt(blockX, upperY, blockZ);
     if (!validPair(material, lower, upper)) {
       return interactModernBlock(blockX, blockY, blockZ, material, variant);
     }
@@ -173,7 +169,7 @@ final class DoorInteractionInteractionPatch implements BlockInteractionPatch {
     ));
   }
 
-  private static boolean validPair(Material material, BlockState lower, BlockState upper) {
+  private static boolean validPair(Material material, BlockCacheEntry lower, BlockCacheEntry upper) {
     return lower.type() == material && upper.type() == material;
   }
 

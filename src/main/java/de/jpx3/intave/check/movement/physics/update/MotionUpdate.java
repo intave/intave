@@ -113,7 +113,7 @@ public final class MotionUpdate extends TickAmbiguousUpdate {
       movement.currentTick(), movement.newSequenceNumber()));
   }
 
-  public static MotionUpdate pendingReplacement(Motion motion) {
+  public static MotionUpdate pendingOverride(Motion motion) {
     return pending(motion, false);
   }
 
@@ -123,6 +123,7 @@ public final class MotionUpdate extends TickAmbiguousUpdate {
 
   private static MotionUpdate pending(Motion motion, boolean additive) {
     return new MotionUpdate(motion, additive,
-      CausalConstraint.openEnded(Long.MAX_VALUE, Long.MAX_VALUE));
+      CausalConstraint.openEnded(Long.MAX_VALUE, Long.MAX_VALUE)
+    );
   }
 }

@@ -12,6 +12,7 @@
 package de.jpx3.intave.packet.wire.connection.handshake;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.wire.WirePackets;
 import io.netty.buffer.ByteBuf;
@@ -19,6 +20,7 @@ import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
 
 import static de.jpx3.intave.packet.ConnectionState.*;
+import static de.jpx3.intave.packet.PacketDirection.SERVERBOUND;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class HandshakeWirePacketsTest {
@@ -27,7 +29,7 @@ final class HandshakeWirePacketsTest {
 		HandshakeWirePacket first = WirePackets.createPacket(HANDSHAKING, PacketType.Client.SET_PROTOCOL, 768);
 		first.setServerAddress("modified.example");
 		first.setNextConnectionState(LOGIN);
-		HandshakeWirePacket second = WirePackets.createPacket(HANDSHAKING, 0, 768);
+		HandshakeWirePacket second = WirePackets.createServerboundPacket(HANDSHAKING, 0, 768);
 		assertNotSame(first, second);
 		assertEquals("", second.serverAddress());
 		assertEquals(STATUS, second.nextConnectionState());
@@ -47,7 +49,7 @@ final class HandshakeWirePacketsTest {
 		HandshakeWirePacket.STREAM_CODEC.encode(packet, expected);
 		int readerIndex = packet.readerIndex();
 
-		HandshakeWirePacket decoded = WirePackets.decodePacket(HANDSHAKING, protocolVersion, packet);
+		HandshakeWirePacket decoded = WirePackets.decodeServerboundPacket(HANDSHAKING, protocolVersion, packet);
 
 		assertEquals(protocolVersion, decoded.protocolVersion());
 		assertEquals("localhost", decoded.serverAddress());
@@ -70,7 +72,7 @@ final class HandshakeWirePacketsTest {
 		HandshakeWirePacket.STREAM_CODEC.encode(packet, expected);
 		int readerIndex = packet.readerIndex();
 
-		HandshakeWirePacket decoded = WirePackets.createVersionIndependentPacket(HANDSHAKING, packet);
+		HandshakeWirePacket decoded = WirePackets.createPacket(SERVERBOUND, ConnectionState.HANDSHAKING, packet);
 
 		assertEquals(expected, decoded);
 		assertEquals(readerIndex, packet.readerIndex());

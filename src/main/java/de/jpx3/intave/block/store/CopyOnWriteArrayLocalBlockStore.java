@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.block.store;
 
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.BlockCacheEntry;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -29,9 +29,9 @@ public final class CopyOnWriteArrayLocalBlockStore implements BlockStore {
 	}
 
 	@Override
-	public BlockState get(int x, int y, int z) {
+	public BlockCacheEntry get(int x, int y, int z) {
 		Snapshot current = snapshot.get();
-		BlockState[] sector = sectorOf(current, x, y, z);
+		BlockCacheEntry[] sector = sectorOf(current, x, y, z);
 		if (sector == null) {
 			return null;
 		}
@@ -39,7 +39,7 @@ public final class CopyOnWriteArrayLocalBlockStore implements BlockStore {
 	}
 
 	@Override
-	public boolean put(int x, int y, int z, BlockState state) {
+	public boolean put(int x, int y, int z, BlockCacheEntry state) {
 		while (true) {
 			Snapshot current = snapshot.get();
 			int sectorCenterX = current.size == 0 ? x >> 3 : current.sectorCenterX;
@@ -52,11 +52,11 @@ public final class CopyOnWriteArrayLocalBlockStore implements BlockStore {
 				return false;
 			}
 
-			BlockState[] currentSector = sectorAt(
+			BlockCacheEntry[] currentSector = sectorAt(
 				current.sectors, offsetSectorX, offsetSectorY, offsetSectorZ
 			);
 			int blockIndex = blockIndexOf(x, y, z);
-			BlockState previous = currentSector == null ? null : currentSector[blockIndex];
+			BlockCacheEntry previous = currentSector == null ? null : currentSector[blockIndex];
 			if (previous == state) {
 				return true;
 			}
@@ -85,7 +85,7 @@ public final class CopyOnWriteArrayLocalBlockStore implements BlockStore {
 	}
 
 	@Override
-	public void removeIf(Predicate<BlockState> predicate) {
+	public void removeIf(Predicate<BlockCacheEntry> predicate) {
 		while (true) {
 			Snapshot current = snapshot.get();
 			if (current.size == 0) {
@@ -103,7 +103,7 @@ public final class CopyOnWriteArrayLocalBlockStore implements BlockStore {
 		snapshot.set(EMPTY);
 	}
 
-	private static BlockState[] sectorOf(Snapshot snapshot, int x, int y, int z) {
+	private static BlockCacheEntry[] sectorOf(Snapshot snapshot, int x, int y, int z) {
 		if (snapshot.sectors == null) {
 			return null;
 		}
@@ -116,42 +116,42 @@ public final class CopyOnWriteArrayLocalBlockStore implements BlockStore {
 		return sectorAt(snapshot.sectors, offsetSectorX, offsetSectorY, offsetSectorZ);
 	}
 
-	private static BlockState[] sectorAt(
-		BlockState[][][][] sectors, int sectorX, int sectorY, int sectorZ
+	private static BlockCacheEntry[] sectorAt(
+		BlockCacheEntry[][][][] sectors, int sectorX, int sectorY, int sectorZ
 	) {
 		if (sectors == null) {
 			return null;
 		}
-		BlockState[][][] yLayer = sectors[sectorY];
+		BlockCacheEntry[][][] yLayer = sectors[sectorY];
 		if (yLayer == null) {
 			return null;
 		}
-		BlockState[][] zRow = yLayer[sectorZ];
+		BlockCacheEntry[][] zRow = yLayer[sectorZ];
 		if (zRow == null) {
 			return null;
 		}
 		return zRow[sectorX];
 	}
 
-	private static BlockState[][][][] copySectorsWith(
+	private static BlockCacheEntry[][][][] copySectorsWith(
 		Snapshot current,
 		int sectorX, int sectorY, int sectorZ,
-		int blockIndex, BlockState state
+		int blockIndex, BlockCacheEntry state
 	) {
-		BlockState[][][][] updatedSectors = current.sectors == null
-			? new BlockState[Y_SECTORS][][][]
+		BlockCacheEntry[][][][] updatedSectors = current.sectors == null
+			? new BlockCacheEntry[Y_SECTORS][][][]
 			: current.sectors.clone();
-		BlockState[][][] currentYLayer = current.sectors == null ? null : current.sectors[sectorY];
-		BlockState[][][] updatedYLayer = currentYLayer == null
-			? new BlockState[Z_SECTORS][][]
+		BlockCacheEntry[][][] currentYLayer = current.sectors == null ? null : current.sectors[sectorY];
+		BlockCacheEntry[][][] updatedYLayer = currentYLayer == null
+			? new BlockCacheEntry[Z_SECTORS][][]
 			: currentYLayer.clone();
-		BlockState[][] currentZRow = currentYLayer == null ? null : currentYLayer[sectorZ];
-		BlockState[][] updatedZRow = currentZRow == null
-			? new BlockState[X_SECTORS][]
+		BlockCacheEntry[][] currentZRow = currentYLayer == null ? null : currentYLayer[sectorZ];
+		BlockCacheEntry[][] updatedZRow = currentZRow == null
+			? new BlockCacheEntry[X_SECTORS][]
 			: currentZRow.clone();
-		BlockState[] currentSector = currentZRow == null ? null : currentZRow[sectorX];
-		BlockState[] updatedSector = currentSector == null
-			? new BlockState[BLOCKS_PER_SECTOR]
+		BlockCacheEntry[] currentSector = currentZRow == null ? null : currentZRow[sectorX];
+		BlockCacheEntry[] updatedSector = currentSector == null
+			? new BlockCacheEntry[BLOCKS_PER_SECTOR]
 			: currentSector.clone();
 
 		updatedSector[blockIndex] = state;
@@ -161,29 +161,29 @@ public final class CopyOnWriteArrayLocalBlockStore implements BlockStore {
 		return updatedSectors;
 	}
 
-	private static Snapshot removeMatching(Snapshot current, Predicate<BlockState> predicate) {
-		BlockState[][][][] updatedSectors = null;
+	private static Snapshot removeMatching(Snapshot current, Predicate<BlockCacheEntry> predicate) {
+		BlockCacheEntry[][][][] updatedSectors = null;
 		int updatedSize = current.size;
 		for (int y = 0; y < current.sectors.length; y++) {
-			BlockState[][][] currentYLayer = current.sectors[y];
+			BlockCacheEntry[][][] currentYLayer = current.sectors[y];
 			if (currentYLayer == null) {
 				continue;
 			}
-			BlockState[][][] updatedYLayer = null;
+			BlockCacheEntry[][][] updatedYLayer = null;
 			for (int z = 0; z < currentYLayer.length; z++) {
-				BlockState[][] currentZRow = currentYLayer[z];
+				BlockCacheEntry[][] currentZRow = currentYLayer[z];
 				if (currentZRow == null) {
 					continue;
 				}
-				BlockState[][] updatedZRow = null;
+				BlockCacheEntry[][] updatedZRow = null;
 				for (int x = 0; x < currentZRow.length; x++) {
-					BlockState[] currentSector = currentZRow[x];
+					BlockCacheEntry[] currentSector = currentZRow[x];
 					if (currentSector == null) {
 						continue;
 					}
-					BlockState[] updatedSector = null;
+					BlockCacheEntry[] updatedSector = null;
 					for (int block = 0; block < currentSector.length; block++) {
-						BlockState state = currentSector[block];
+						BlockCacheEntry state = currentSector[block];
 						if (state == null || !predicate.test(state)) {
 							continue;
 						}
@@ -231,14 +231,14 @@ public final class CopyOnWriteArrayLocalBlockStore implements BlockStore {
 	}
 
 	private static final class Snapshot {
-		private final BlockState[][][][] sectors;
+		private final BlockCacheEntry[][][][] sectors;
 		private final int sectorCenterX;
 		private final int sectorCenterY;
 		private final int sectorCenterZ;
 		private final int size;
 
 		private Snapshot(
-			BlockState[][][][] sectors,
+			BlockCacheEntry[][][][] sectors,
 			int sectorCenterX, int sectorCenterY, int sectorCenterZ,
 			int size
 		) {

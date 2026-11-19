@@ -15,7 +15,6 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
-import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.adapter.ViaVersionAdapter;
 import de.jpx3.intave.diagnostic.LatencyStudy;
@@ -25,13 +24,16 @@ import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.module.linker.packetperfect.OnReceive;
+import de.jpx3.intave.packet.contract.immutable.PongPacket;
+import de.jpx3.intave.packet.contract.immutable.TransactionPacket;
 import de.jpx3.intave.player.FaultKicks;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.ConnectionMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 
 import java.util.Locale;
 import java.util.Map;
@@ -47,41 +49,28 @@ public final class FeedbackReceiver extends Module {
   private static final long TIMEOUT_KICK = TimeUnit.SECONDS.toMillis(40);
   private static final long CHECK_TIMEOUT_KICK_TICKS = 20 * 10;
 
-  public FeedbackReceiver(IntavePlugin plugin) {
+  public FeedbackReceiver() {
     Tasks.periodicNamed(
       "FeedbackReceiver.transactionTimeout",
       this::checkTransactionTimeout,
       CHECK_TIMEOUT_KICK_TICKS,
       CHECK_TIMEOUT_KICK_TICKS
     ).startAsync();
-    Tasks.periodicNamed(
-      "FeedbackReceiver.invalidOrderDecay",
-      this::decreaseTAKAVL,
-      20 * 60,
-      20 * 60
-    ).startAsync();
-  }
-
-  private void decreaseTAKAVL() {
-    UserRepository.applyOnOnlineUsers(user -> {
-      user.meta().connection().transactionKeepAliveInvalidOrderVL = Math.max(0, user.meta().connection().transactionKeepAliveInvalidOrderVL - 1);
-    });
   }
 
   private void checkTransactionTimeout() {
     UserRepository.applyOnOnlineUsers(user ->
-      Synchronizer.synchronize(user, () -> checkTransactionTimeoutFor(user.player()))
+      Synchronizer.synchronize(user, () -> checkTransactionTimeoutFor(user))
     );
   }
 
-  private void checkTransactionTimeoutFor(Player player) {
-    User user = userOf(player);
+  private void checkTransactionTimeoutFor(User user) {
     ConnectionMetadata connection = user.meta().connection();
     if (oldestPendingTransaction(user) > TIMEOUT_KICK &&
       connection.eligibleForTransactionTimeout &&
       FaultKicks.IGNORING_FEEDBACK
     ) {
-      IntaveLogger.logger().error(player.getName() + " is not responding to any feedback packets");
+      IntaveLogger.logger().error(user.player().getName() + " is not responding to any feedback packets");
       user.kick("Not responding to feedback packets");
       if (IntaveControl.NETTY_DUMP_ON_TIMEOUT) {
         dumpNettyThreads();
@@ -107,72 +96,6 @@ public final class FeedbackReceiver extends Module {
         }
       }
     });
-  }
-
-  @PacketSubscription(
-    packetsIn = WINDOW_CLICK
-  )
-  public void receiveInventoryClick(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
-    PacketContainer packet = event.getPacket();
-    Short clientTransactionId = packet.getShorts().readSafely(0);
-    if (clientTransactionId == null) {
-      return;
-    }
-//    ConnectionMetadata connection = user.meta().connection();
-//    connection.windowClickId++;
-//    connection.windowClickId %= 250;
-//    int start = Short.MAX_VALUE - 250;
-//    packet.getShorts().writeSafely(0, (short) (connection.windowClickId + start));
-  }
-
-  @PacketSubscription(
-    packetsIn = {
-      KEEP_ALIVE_IN
-    }
-  )
-  public void onKeepAlive(PacketEvent event) {
-    if (!IntaveControl.CLIENT_KEEP_ALIVE_NETTY_CHECK) {
-      return;
-    }
-    Player player = event.getPlayer();
-    User user = userOf(player);
-    FeedbackQueue feedbackQueue = user.meta().connection().feedbackQueue();
-    PacketContainer packet = event.getPacket();
-    short possibleUserKey = 0;
-    if (MinecraftVersions.VER1_12_0.atOrAbove()) {
-      possibleUserKey = packet.getLongs().readSafely(0).shortValue();
-    } else {
-      possibleUserKey = packet.getIntegers().readSafely(0).shortValue();
-    }
-    FeedbackRequest<?> peek = feedbackQueue.peek(possibleUserKey);
-    if (peek != null) {
-      peek.verifyPreThreadInjection();
-//      System.out.println("Verified " + possibleUserKey + " for " + player.getName());
-    }
-  }
-
-  @PacketSubscription(
-    packetsOut = {
-      PacketType.Server.TRANSACTION_OUT, PacketType.Server.PING
-    }
-  )
-  public void outgoingTransaction(PacketEvent event) {
-    Player player = event.getPlayer();
-    PacketContainer packet = event.getPacket();
-    User user = UserRepository.userOf(player);
-    boolean noPingMask = user.meta().protocol().noPingMask();
-    if (!hasValidUserKey(packet, noPingMask) && activeGenerator != IdGeneratorMode.highestCompatibility()) {
-      short userKey = userKeyFrom(packet, noPingMask);
-      boolean couldBeWindowClick = userKey >= Short.MAX_VALUE - 250;
-      if (couldBeWindowClick) {
-        return;
-      }
-      activeGenerator = IdGeneratorMode.highestCompatibility();
-      IntaveLogger.logger().info("Detected foreign transaction id " + userKey + " for " + player.getName());
-      IntaveLogger.logger().info("Switching to highest compatibility transaction id selection mode");
-    }
   }
 
   @PacketSubscription(
@@ -204,7 +127,7 @@ public final class FeedbackReceiver extends Module {
       return;
     }
 
-    short userKey = userKeyFrom(packet, noPingMask);
+    short userKey = userKeyFrom(packet);
     FeedbackRequest<?> response = feedbackQueue.peek(userKey);
     if (response == null) {
       if (IntaveControl.DEBUG_FEEDBACK_PACKETS) {
@@ -212,6 +135,39 @@ public final class FeedbackReceiver extends Module {
       }
       return;
     }
+
+    receiveAcknowledgement(user, response, event);
+  }
+
+  @OnReceive(priority = de.jpx3.intave.packet.ListenerPriority.FIRST)
+  public void receivePong(User user, PongPacket packet, Cancellable cancellable) {
+    if ((packet.id() & 0xffff0000) == PING_MASK) {
+      receiveAcknowledgement(user, (short) packet.id(), cancellable);
+    }
+  }
+
+  @OnReceive(priority = de.jpx3.intave.packet.ListenerPriority.FIRST)
+  public void receiveTransaction(User user, TransactionPacket packet, Cancellable cancellable) {
+    if (packet.containerId() == 0) {
+      receiveAcknowledgement(user, packet.actionNumber(), cancellable);
+    }
+  }
+
+  private void receiveAcknowledgement(User user, short key, Cancellable cancellable) {
+    FeedbackRequest<?> response = user.meta().connection().feedbackQueue().peek(key);
+    if (IntaveControl.DEBUG_FEEDBACK_PACKETS) {
+      System.out.println("Received " + key + " from " + user.player().getName() + " and found " + (response == null ? "no request" : response.userKey() + "/" + response.num()));
+    }
+    if (response != null && response.nativeTransport()) {
+      receiveAcknowledgement(user, response, cancellable);
+    }
+  }
+
+  private void receiveAcknowledgement(User user, FeedbackRequest<?> response, Cancellable event) {
+    Player player = user.player();
+    ConnectionMetadata connection = user.meta().connection();
+    FeedbackQueue feedbackQueue = connection.feedbackQueue();
+    short userKey = response.userKey();
 
     long expected = connection.lastReceivedTransactionNum + 1;
     long received = response.num();
@@ -242,23 +198,6 @@ public final class FeedbackReceiver extends Module {
       throw new IllegalStateException("Polling from feedback queue did not return the expected request");
     }
 
-    if (IntaveControl.CLIENT_KEEP_ALIVE_NETTY_CHECK) {
-      if (!response.preThreadInjectionPassed() && !MinecraftVersions.VER1_12_0.atOrAbove() && !user.meta().protocol().affectedByLevitation()) {
-        if (connection.transactionKeepAliveInvalidOrderVL++ > 10) {
-//          Violation violation = Violation.builderFor(ProtocolScanner.class)
-//            .forPlayer(user.player())
-//            .withMessage("invalid transaction/keepalive order")
-//            .withDetails("player version: " + user.meta().protocol().versionString())
-//            .withVL(1)
-//            .build();
-//          Modules.violationProcessor().processViolation(violation);
-          if (connection.transactionKeepAliveInvalidOrderVL > 20) {
-            connection.transactionKeepAliveInvalidOrderVL = 10;
-          }
-        }
-      }
-    }
-
     receiveRequest(user, response);
     long passedTime = response.passedTime();
     connection.receivedTransactionAfter(passedTime);
@@ -280,7 +219,7 @@ public final class FeedbackReceiver extends Module {
     event.setCancelled(true);
   }
 
-  private short userKeyFrom(PacketContainer packet, boolean noPingMask) {
+  private short userKeyFrom(PacketContainer packet) {
     if (USE_PING_PACKETS) {
       int inputInteger = packet.getIntegers().readSafely(0);
       return (short) (inputInteger & 0xffff);

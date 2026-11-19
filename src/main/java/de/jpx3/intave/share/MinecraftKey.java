@@ -50,6 +50,25 @@ public final class MinecraftKey {
 		return namespace + ":" + path;
 	}
 
+  @Override
+  public String toString() {
+    return fullKey();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (!(obj instanceof MinecraftKey)) return false;
+    MinecraftKey other = (MinecraftKey) obj;
+    return namespace.equals(other.namespace) && path.equals(other.path);
+  }
+
+  @Override
+  public int hashCode() {
+    return 31 * namespace.hashCode() + path.hashCode();
+  }
+
+  @Deprecated
   public static @Nullable MinecraftKey fromProtocolLib(
     @Nullable com.comphenix.protocol.wrappers.MinecraftKey protocolLibKey
   ) {
@@ -74,6 +93,7 @@ public final class MinecraftKey {
     return new MinecraftKey(parts[0], parts[1]);
   }
 
+  @Deprecated
   private static final class ConstructorHolder {
     static final Constructor<?> NATIVE_RESOURCE_LOCATION_CONSTRUCTOR;
     static {
@@ -87,6 +107,7 @@ public final class MinecraftKey {
     }
   }
 
+  @Deprecated
   public Object toNativeResourceLocation() {
     try {
       return ConstructorHolder.NATIVE_RESOURCE_LOCATION_CONSTRUCTOR.newInstance(namespace, path);

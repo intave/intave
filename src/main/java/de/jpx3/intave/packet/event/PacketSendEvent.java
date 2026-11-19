@@ -11,6 +11,7 @@
 
 package de.jpx3.intave.packet.event;
 
+import de.jpx3.intave.annotate.Immutable;
 import de.jpx3.intave.packet.PacketDirection;
 import de.jpx3.intave.packet.contract.PacketContract;
 import de.jpx3.intave.packet.contract.PacketType;
@@ -32,8 +33,7 @@ public final class PacketSendEvent extends PacketEvent {
 	public PacketSendEvent(
 		User user, TypedPacketContract tpc
 	) {
-		super(user, tpc.contract());
-		this.type = (PacketType.Server) Objects.requireNonNull(tpc.type());
+		this(user, (PacketType.Server) Objects.requireNonNull(tpc.type()), tpc.contract());
 	}
 
 	public PacketSendEvent(
@@ -51,7 +51,7 @@ public final class PacketSendEvent extends PacketEvent {
 		return super.packet().typedTo(type);
 	}
 
-	public List<TypedPacketContract> sendBefore() {
+	public @Immutable List<TypedPacketContract> sendBefore() {
 		return sendBefore == null ? Collections.emptyList() : sendBefore;
 	}
 
@@ -62,7 +62,7 @@ public final class PacketSendEvent extends PacketEvent {
 		sendBefore.add(packet);
 	}
 
-	public List<TypedPacketContract> sendAfter() {
+	public @Immutable List<TypedPacketContract> sendAfter() {
 		return sendAfter == null ? Collections.emptyList() : sendAfter;
 	}
 

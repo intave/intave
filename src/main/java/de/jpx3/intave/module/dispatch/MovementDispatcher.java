@@ -44,8 +44,8 @@ import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.module.linker.packet.PrioritySlot;
 import de.jpx3.intave.module.linker.packetperfect.OnReceive;
+import de.jpx3.intave.module.linker.packetperfect.OnSend;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.test.PhysicsTestRecorder;
 import de.jpx3.intave.module.test.record.MovementRecording;
@@ -56,6 +56,9 @@ import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.module.tracker.player.PacketLogging;
 import de.jpx3.intave.module.violation.Violation;
 import de.jpx3.intave.packet.contract.immutable.PlayerInputPacket;
+import de.jpx3.intave.packet.contract.mutable.MutableEntityVelocityPacket;
+import de.jpx3.intave.packet.contract.mutable.MutableExplosionPacket;
+import de.jpx3.intave.packet.event.PacketSendEvent;
 import de.jpx3.intave.packet.plib.PacketSender;
 import de.jpx3.intave.packet.plib.converter.InputConverter;
 import de.jpx3.intave.packet.plib.reader.*;
@@ -90,12 +93,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import static de.jpx3.intave.IntaveControl.DEBUG_MOVEMENT_IGNORE;
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.*;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
-import static de.jpx3.intave.module.feedback.FeedbackOptions.SELF_SYNCHRONIZATION;
 import static de.jpx3.intave.module.violation.Violation.ViolationFlags.DISPLAY_IN_ALL_VERBOSE_MODES;
 import static de.jpx3.intave.packet.contract.PacketType.Client.*;
 import static de.jpx3.intave.packet.contract.PacketType.Client.POSITION;
@@ -765,7 +768,6 @@ public final class MovementDispatcher extends Module {
     if (user.meta().protocol().protocolVersion() >= VER_1_21_2) {
       movementData.lastInput = movementData.input;
       movementData.input = input.input();
-      user.sendMessage(input.input().toString());
     }
   }
 
@@ -875,24 +877,14 @@ public final class MovementDispatcher extends Module {
     }
   }
 
-  @PacketSubscription(
-    priority = ListenerPriority.MONITOR,
-    prioritySlot = PrioritySlot.EXTERNAL,
-    packetsOut = {
-      ENTITY_VELOCITY
-    }
-  )
-  public void sentVelocityPacket(
-    User user, Player player,
-    EntityVelocityReader reader,
-    Cancellable cancellable,
-    PacketEvent event
-  ) {
-    if (!event.isFiltered()) {
+  @OnSend(priority = de.jpx3.intave.packet.ListenerPriority.LAST)
+  public void sentVelocityPacket(User user, MutableEntityVelocityPacket packet, PacketSendEvent event) {
+    if (event.isCancelled()) {
       return;
     }
-    if (reader.entityId() == player.getEntityId()) {
-      Motion motion = reader.motion();
+    Player player = user.player();
+    if (packet.entityId() == player.getEntityId()) {
+      Motion motion = packet.motion();
       if (IntaveControl.DEBUG_VELOCITY_RECEIVE) {
         user.sendMessage("§a" + MathHelper.formatMotion(motion));
       }
@@ -916,9 +908,9 @@ public final class MovementDispatcher extends Module {
           motion.setMotionX(motion.motionX() / pendingVelocityPackets);
           motion.setMotionY(Math.min(0, motion.motionY()));
           motion.setMotionZ(motion.motionZ() / pendingVelocityPackets);
-          reader.setMotion(motion);
-        } else if (!event.isReadOnly()){
-          cancellable.setCancelled(true);
+          packet.setMotion(motion);
+        } else {
+          event.setCancelled(true);
           return;
         }
       }
@@ -930,52 +922,46 @@ public final class MovementDispatcher extends Module {
 
       Motion finalVelocity = motion.copy();
 
-      user.meta().connection().feedbackAndTeleportLock.lock();
+      ReentrantLock feedbackAndTeleportLock = user.meta().connection().feedbackAndTeleportLock;
+      feedbackAndTeleportLock.lock();
       try {
-        MotionUpdate velocity = MotionUpdate.pendingReplacement(finalVelocity);
+        MotionUpdate velocity = MotionUpdate.pendingOverride(finalVelocity);
         movementData.trackVelocity(velocity);
         PhysicsTestRecorder recorder = Modules.physicsTestRecorder();
         AtomicReference<PhysicsTestRecorder.VelocityCapture> recordingVelocity = new AtomicReference<>(null);
-        user.doubleTickFeedback(event,
+        Modules.feedback().doubleSynchronize(user, event,
           () -> {
-            recordingVelocity.set(
-              recorder.beginVelocity(user, finalVelocity)
-            );
             velocity.activate(movementData);
+            // other
+            recordingVelocity.set(recorder.beginVelocity(user, finalVelocity));
           },
           () -> {
-            recorder.completeVelocity(recordingVelocity.get());
             velocity.canNotRunAfterThisTick(movementData);
+            // other
+            recorder.completeVelocity(recordingVelocity.get());
             movementData.pendingVelocityPackets.decrementAndGet();
-          },
-          SELF_SYNCHRONIZATION
+          }
         );
       } finally {
-        user.meta().connection().feedbackAndTeleportLock.unlock();
+        feedbackAndTeleportLock.unlock();
       }
 
       movementData.activeTick(RECEIVED_VELOCITY_PACKET);
     }
   }
 
-  @PacketSubscription(
-    priority = ListenerPriority.HIGH,
-    packetsOut = {
-      EXPLOSION
-    }
-  )
-  public void sentExplosion(
-    User user, ExplosionReader reader,
-    PacketEvent event
-  ) {
+  @OnSend(priority = de.jpx3.intave.packet.ListenerPriority.LAST)
+  public void sentExplosion(User user, MutableExplosionPacket packet, PacketSendEvent event) {
+    if (user == null || event.isCancelled()) return;
     MovementMetadata movement = user.meta().movement();
-    Motion knockback = reader.motion();
+    Motion knockback = packet.motion();
     if (knockback != null) {
+      movement.pendingVelocityPackets.incrementAndGet();
       user.meta().connection().feedbackAndTeleportLock.lock();
       try {
         MotionUpdate update = MotionUpdate.pendingAddition(knockback);
         movement.trackVelocity(update);
-        user.doubleTickFeedback(event,
+        Modules.feedback().doubleSynchronize(user, event,
           () -> {
             update.activate(movement);
           },

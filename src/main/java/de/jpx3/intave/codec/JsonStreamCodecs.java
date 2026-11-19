@@ -327,6 +327,20 @@ public final class JsonStreamCodecs {
     );
   }
 
+  /** Wraps positional fields in a JSON array. The decoder must consume exactly those fields. */
+  public static <T> StreamCodec<JsonReader, JsonWriter, T> tuple(JsonEncoder<T> encoder, JsonDecoder<T> decoder) {
+    return of((writer, value) -> {
+      writer.beginArray();
+      encoder.encode(writer, value);
+      writer.endArray();
+    }, reader -> {
+      reader.beginArray();
+      T value = decoder.decode(reader);
+      reader.endArray();
+      return value;
+    });
+  }
+
   public static <T> StreamCodec<JsonReader, JsonWriter, List<T>> listCodecOf(
     StreamCodec<JsonReader, JsonWriter, T> elementCodec
   ) {

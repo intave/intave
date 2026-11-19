@@ -80,7 +80,6 @@ public final class ConnectionMetadata {
 
   public int simulatedBlockAckNum;
 
-  public int windowClickId;
   public int transactionKeepAliveInvalidOrderVL;
 
   public enum DecoySide {

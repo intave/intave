@@ -12,7 +12,7 @@
 package de.jpx3.intave.block.cache;
 
 import com.google.common.collect.Sets;
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.Position;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceMap;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceMaps;
@@ -24,9 +24,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 final class BlockStateReplacementCache {
-  private final Map<Position, BlockState> located = new ConcurrentHashMap<>(96);
+  private final Map<Position, BlockCacheEntry> located = new ConcurrentHashMap<>(96);
   private final Map<Position, Long> locked = new ConcurrentHashMap<>(96);
-  private final Long2ReferenceMap<BlockState> indexed = Long2ReferenceMaps.synchronize(new Long2ReferenceOpenHashMap<>(96));
+  private final Long2ReferenceMap<BlockCacheEntry> indexed = Long2ReferenceMaps.synchronize(new Long2ReferenceOpenHashMap<>(96));
   private final Set<Position> locations = Sets.newConcurrentHashSet();
 
 	private final Function<? super Position, ? extends Long> keyer;
@@ -35,14 +35,14 @@ final class BlockStateReplacementCache {
 	  this.keyer = keyer;
   }
 
-  public BlockState byKey(long index) {
+  public BlockCacheEntry byKey(long index) {
     return indexed.get(index);
   }
 
-  public void insert(Position position, BlockState blockState) {
-    located.put(position, blockState);
+  public void insert(Position position, BlockCacheEntry blockCacheEntry) {
+    located.put(position, blockCacheEntry);
     locations.add(position);
-    indexed.put(keyer.apply(position).longValue(), blockState);
+    indexed.put(keyer.apply(position).longValue(), blockCacheEntry);
   }
 
   public void lock(Position position) {
@@ -70,11 +70,11 @@ final class BlockStateReplacementCache {
       if (isLocked(location)) {
         continue;
       }
-      BlockState blockState = located.get(location);
-      if (blockState == null || blockState.expired()) {
+      BlockCacheEntry blockCacheEntry = located.get(location);
+      if (blockCacheEntry == null || blockCacheEntry.expired()) {
         locations.remove(location);
         located.remove(location);
-        BlockState old = indexed.remove(keyer.apply(location));
+        BlockCacheEntry old = indexed.remove(keyer.apply(location));
         if (old != null) {
         }
         locked.remove(location);
@@ -94,7 +94,7 @@ final class BlockStateReplacementCache {
         long key = keyer.apply(location);
         located.remove(location);
         locations.remove(location);
-        BlockState old = indexed.remove(key);
+        BlockCacheEntry old = indexed.remove(key);
         if (old != null) {
         }
         locked.remove(location);
@@ -119,11 +119,11 @@ final class BlockStateReplacementCache {
     locations.clear();
   }
 
-  public Map<Position, BlockState> located() {
+  public Map<Position, BlockCacheEntry> located() {
     return located;
   }
 
-  public Map<Long, BlockState> indexed() {
+  public Map<Long, BlockCacheEntry> indexed() {
     return indexed;
   }
 

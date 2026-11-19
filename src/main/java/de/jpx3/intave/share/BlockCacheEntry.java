@@ -26,17 +26,17 @@ import java.util.*;
 
 import static de.jpx3.intave.codec.JsonStreamCodecs.*;
 
-public final class BlockState {
-	private static final BlockState EMPTY = new BlockState(BlockShapes.emptyShape(), BlockShapes.emptyShape(), Material.AIR, 0);
-	private static final BlockState STONE = new BlockState(BlockShapes.originCube(), BlockShapes.originCube(), Material.STONE, 0);
-	public static final StreamCodec<JsonReader, JsonWriter, BlockState> JSON_CODEC = object(
-		field("outlineShape", BlockShape.JSON_CODEC, BlockState::outlineShape, BlockShapes.emptyShape()),
-		field("collisionShape", BlockShape.JSON_CODEC, BlockState::collisionShape, BlockShapes.emptyShape()),
-		field("type", JsonStreamCodecs.MATERIAL, BlockState::type, Material.AIR),
-		field("variantIndex", JsonStreamCodecs.INTEGER, BlockState::variantIndex, 0),
-		BlockState::new
+public final class BlockCacheEntry {
+	private static final BlockCacheEntry EMPTY = new BlockCacheEntry(BlockShapes.emptyShape(), BlockShapes.emptyShape(), Material.AIR, 0);
+	private static final BlockCacheEntry STONE = new BlockCacheEntry(BlockShapes.originCube(), BlockShapes.originCube(), Material.STONE, 0);
+	public static final StreamCodec<JsonReader, JsonWriter, BlockCacheEntry> JSON_CODEC = object(
+		field("outlineShape", BlockShape.JSON_CODEC, BlockCacheEntry::outlineShape, BlockShapes.emptyShape()),
+		field("collisionShape", BlockShape.JSON_CODEC, BlockCacheEntry::collisionShape, BlockShapes.emptyShape()),
+		field("type", JsonStreamCodecs.MATERIAL, BlockCacheEntry::type, Material.AIR),
+		field("variantIndex", JsonStreamCodecs.INTEGER, BlockCacheEntry::variantIndex, 0),
+		BlockCacheEntry::new
 	).encodeOnly(
-		field("properties", stringMapCodec(JSON_PRIMITIVE), BlockState::properties, Collections.emptyMap())
+		field("properties", stringMapCodec(JSON_PRIMITIVE), BlockCacheEntry::properties, Collections.emptyMap())
 	);
 
 	private final BlockShape outlineShape;
@@ -47,7 +47,7 @@ public final class BlockState {
 	private final long creation = System.currentTimeMillis();
 	private int hashCode = 0;
 
-	public BlockState(BlockShape outlineShape, BlockShape collisionShape, Material type, int variantIndex) {
+	public BlockCacheEntry(BlockShape outlineShape, BlockShape collisionShape, Material type, int variantIndex) {
 		this.outlineShape = outlineShape;
 		this.collisionShape = collisionShape;
 		this.type = type;
@@ -135,7 +135,7 @@ public final class BlockState {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-		BlockState that = (BlockState) o;
+		BlockCacheEntry that = (BlockCacheEntry) o;
 		if (variantIndex != that.variantIndex) return false;
 		if (creation != that.creation) return false;
 		if (!Objects.equals(collisionShape, that.collisionShape)) return false;
@@ -154,11 +154,11 @@ public final class BlockState {
 		return hashCode;
 	}
 
-	public static BlockState empty() {
+	public static BlockCacheEntry empty() {
 		return EMPTY;
 	}
 
-	public static BlockState stone() {
+	public static BlockCacheEntry stone() {
 		return STONE;
 	}
 }

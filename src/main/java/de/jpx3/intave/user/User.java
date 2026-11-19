@@ -93,6 +93,14 @@ public interface User {
    */
   Player player();
 
+  default String name() {
+	  if (hasPlayer()) {
+		  return player().getName();
+	  } else {
+      return "None";
+    }
+  }
+
   /**
    * Retrieve a user's {@link MetadataBundle}
    *

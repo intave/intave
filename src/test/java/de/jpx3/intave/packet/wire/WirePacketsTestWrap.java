@@ -30,10 +30,10 @@ final class WirePacketsTestWrap {
 		PacketTypeRegistry<?> registry = PacketTypeRegistries.serverbound();
 		for (int protocol : registry.supportedProtocolVersions()) {
 			int handshakeId = registry.idOf(HANDSHAKING, PacketType.Client.SET_PROTOCOL, protocol);
-			assertInstanceOf(HandshakePacket.class, WirePackets.createPacket(HANDSHAKING, handshakeId, protocol));
+			assertInstanceOf(HandshakePacket.class, WirePackets.createServerboundPacket(HANDSHAKING, handshakeId, protocol));
 			assertInstanceOf(HandshakePacket.class, WirePackets.createPacket(HANDSHAKING, PacketType.Client.SET_PROTOCOL, protocol));
 			int inputId = registry.idOf(PLAY, PacketType.Client.PLAYER_INPUT, protocol);
-			assertInstanceOf(PlayerInputPacket.class, WirePackets.createPacket(PLAY, inputId, protocol));
+			assertInstanceOf(PlayerInputPacket.class, WirePackets.createServerboundPacket(PLAY, inputId, protocol));
 			assertInstanceOf(PlayerInputPacket.class, WirePackets.createPacket(PLAY, PacketType.Client.PLAYER_INPUT, protocol));
 		}
 	}
@@ -61,21 +61,21 @@ final class WirePacketsTestWrap {
 
 	@Test
 	void rejectsUnimplementedPacketsAndIdsFromOtherStates() {
-		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(LOGIN, 0, 768));
-		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(STATUS, 0, 768));
+		assertThrows(IllegalArgumentException.class, () -> WirePackets.createServerboundPacket(LOGIN, 0, 768));
+		assertThrows(IllegalArgumentException.class, () -> WirePackets.createServerboundPacket(STATUS, 0, 768));
 		assertInstanceOf(KeepAlivePacket.class, WirePackets.createPacket(PLAY, PacketType.Client.KEEP_ALIVE_IN, 768));
 		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(HANDSHAKING, PacketType.Client.START, 768));
 		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(PLAY, PacketType.Client.START, 768));
 		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(PLAY, PacketType.Client.CONFIGURATION_ACK, 768));
-		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(PLAY, -1, 768));
-		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(PLAY, Integer.MAX_VALUE, 768));
+		assertThrows(IllegalArgumentException.class, () -> WirePackets.createServerboundPacket(PLAY, -1, 768));
+		assertThrows(IllegalArgumentException.class, () -> WirePackets.createServerboundPacket(PLAY, Integer.MAX_VALUE, 768));
 	}
 
 	@Test
 	void rejectsUnsupportedProtocolsAndNullKeys() {
-		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(HANDSHAKING, 0, -1));
+		assertThrows(IllegalArgumentException.class, () -> WirePackets.createServerboundPacket(HANDSHAKING, 0, -1));
 		assertThrows(IllegalArgumentException.class, () -> WirePackets.createPacket(HANDSHAKING, PacketType.Client.SET_PROTOCOL, -1));
-		assertThrows(NullPointerException.class, () -> WirePackets.createPacket(null, 0, 768));
+		assertThrows(NullPointerException.class, () -> WirePackets.createServerboundPacket(null, 0, 768));
 		assertThrows(NullPointerException.class, () -> WirePackets.createPacket(null, PacketType.Client.SET_PROTOCOL, 768));
 		assertThrows(NullPointerException.class, () -> WirePackets.createPacket(PLAY, null, 768));
 	}

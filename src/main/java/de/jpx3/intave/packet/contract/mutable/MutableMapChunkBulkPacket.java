@@ -12,6 +12,10 @@
 package de.jpx3.intave.packet.contract.mutable;
 
 import de.jpx3.intave.packet.contract.immutable.MapChunkBulkPacket;
+import de.jpx3.intave.share.ChunkBulkData;
+
+import java.util.List;
 
 public interface MutableMapChunkBulkPacket extends MapChunkBulkPacket, MutableChunkAddressed, Mutable {
+	void setChunks(boolean skyLight, List<ChunkBulkData> chunks);
 }

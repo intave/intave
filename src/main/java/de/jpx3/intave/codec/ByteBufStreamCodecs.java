@@ -36,6 +36,7 @@ public final class ByteBufStreamCodecs {
 	public static final StreamCodec<ByteBuf, ByteBuf, Long> LONG = StreamCodec.of(ByteBuf::writeLong, ByteBuf::readLong);
 	public static final StreamCodec<ByteBuf, ByteBuf, Instant> INSTANT = LONG.beforeAndAfter(Instant::ofEpochMilli, Instant::toEpochMilli);
 	public static final StreamCodec<ByteBuf, ByteBuf, Long> VARLONG = VarLongCodec.INSTANCE;
+	public static final StreamCodec<ByteBuf, ByteBuf, long[]> VARINT_LONG_ARRAY = VarIntLongArrayCodec.INSTANCE;
 	public static final StreamCodec<ByteBuf, ByteBuf, Float> FLOAT = StreamCodec.of(ByteBuf::writeFloat, ByteBuf::readFloat);
 	public static final StreamCodec<ByteBuf, ByteBuf, Double> DOUBLE = StreamCodec.of(ByteBuf::writeDouble, ByteBuf::readDouble);
 	public static final StreamCodec<ByteBuf, ByteBuf, Double> FLOAT_AS_DOUBLE = FLOAT.beforeAndAfter(Float::doubleValue, Double::floatValue);
@@ -155,6 +156,27 @@ public final class ByteBufStreamCodecs {
 			byte[] arr = new byte[length];
 			buf.readBytes(arr);
 			return arr;
+		});
+	}
+
+	/** A VarInt byte length followed by a fully decoded, bounded value. */
+	public static <T> StreamCodec<ByteBuf, ByteBuf, T> lengthDelimited(StreamCodec<ByteBuf, ByteBuf, T> codec, int maxBytes) {
+		return StreamCodec.of((output, value) -> {
+			ByteBuf body = output.alloc().buffer(Math.min(256, maxBytes), maxBytes);
+			try {
+				codec.encode(body, value);
+				VARINT.encode(output, body.readableBytes());
+				output.writeBytes(body);
+			} finally {
+				body.release();
+			}
+		}, input -> {
+			int length = count(input, maxBytes);
+			if (length > input.readableBytes()) throw new IllegalArgumentException("Truncated length-delimited value");
+			ByteBuf body = input.readSlice(length);
+			T value = codec.decode(body);
+			if (body.isReadable()) throw new IllegalArgumentException("Trailing bytes in length-delimited value");
+			return value;
 		});
 	}
 

@@ -11,7 +11,16 @@
 
 package de.jpx3.intave.packet.contract.immutable;
 
+import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.PacketContract;
+import de.jpx3.intave.packet.contract.PacketType;
+
+import static de.jpx3.intave.packet.ConnectionState.PLAY;
+import static de.jpx3.intave.packet.contract.PacketType.Server.MULTI_BLOCK_CHANGE;
 
 public interface MultiBlockChangePacket extends PacketContract, BlockUpdates {
+	@Override
+	default boolean appliesTo(ConnectionState state, PacketType packetType) {
+		return state == PLAY && packetType == MULTI_BLOCK_CHANGE;
+	}
 }

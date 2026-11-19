@@ -69,6 +69,34 @@ public final class PacketEventBus {
 		});
 	}
 
+	public static void removeListener(PacketSubscription subscription) {
+		removeListener(CLIENT_SUBSCRIPTIONS, subscription);
+		removeListener(SERVER_SUBSCRIPTIONS, subscription);
+	}
+
+	private static <T extends Enum<T> & PacketType> void removeListener(
+		AtomicReference<Map<T, PacketSubscription[]>> registry, PacketSubscription subscription
+	) {
+		registry.updateAndGet(old -> {
+			Map<T, PacketSubscription[]> updated = new EnumMap<>(old);
+			boolean changed = false;
+			for (Map.Entry<T, PacketSubscription[]> entry : old.entrySet()) {
+				PacketSubscription[] remaining = Arrays.stream(entry.getValue())
+					.filter(existing -> existing != subscription).toArray(PacketSubscription[]::new);
+				if (remaining.length == entry.getValue().length) {
+					continue;
+				}
+				changed = true;
+				if (remaining.length == 0) {
+					updated.remove(entry.getKey());
+				} else {
+					updated.put(entry.getKey(), remaining);
+				}
+			}
+			return changed ? updated : old;
+		});
+	}
+
 	public static void dispatch(PacketReceiveEvent event) {
 		PacketSubscription[] packetSubscriptions = CLIENT_SUBSCRIPTIONS.get().get(event.packetId());
 		if (packetSubscriptions != null) {

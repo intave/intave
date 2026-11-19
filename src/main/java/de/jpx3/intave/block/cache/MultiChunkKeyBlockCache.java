@@ -21,8 +21,8 @@ import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.diagnostic.ShapeAccessFlowStudy;
 import de.jpx3.intave.math.Hypot;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.BlockPosition;
-import de.jpx3.intave.share.BlockState;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
@@ -47,7 +47,7 @@ final class MultiChunkKeyBlockCache implements BlockCache {
   private final Player player;
   private final ShapeResolverPipeline shapeResolver;
   private final BlockStore blockCache;
-  private final Map<BlockPosition, BlockState> speculativeHeads = new ConcurrentHashMap<>(8);
+  private final Map<BlockPosition, BlockCacheEntry> speculativeHeads = new ConcurrentHashMap<>(8);
   private final Map<BlockPosition, Integer> speculativeSequenceNumbers = new ConcurrentHashMap<>(8);
   private final HashSet<Long> speculationKeys = new HashSet<>(8);
 
@@ -71,18 +71,18 @@ final class MultiChunkKeyBlockCache implements BlockCache {
   }
 
   @Override
-  public BlockState peekStateAt(int posX, int posY, int posZ) {
+  public BlockCacheEntry peekStateAt(int posX, int posY, int posZ) {
     if (posY < WorldHeight.LOWER_WORLD_LIMIT || WorldHeight.UPPER_WORLD_LIMIT < posY) {
-      return BlockState.empty();
+      return BlockCacheEntry.empty();
     }
-    BlockState replacement = replacementCache.byKey(bigKey(posX, posY, posZ));
+    BlockCacheEntry replacement = replacementCache.byKey(bigKey(posX, posY, posZ));
     return replacement == null ? blockCache.get(posX, posY, posZ) : replacement;
   }
 
   @Override
-  public @NotNull BlockState stateAt(int posX, int posY, int posZ) {
+  public @NotNull BlockCacheEntry stateAt(int posX, int posY, int posZ) {
     if (posY < WorldHeight.LOWER_WORLD_LIMIT || WorldHeight.UPPER_WORLD_LIMIT < posY) {
-      return BlockState.empty();
+      return BlockCacheEntry.empty();
     }
     int chunkX = posX >> 4, chunkY = posY >> 4, chunkZ = posZ >> 4;
     ShapeAccessFlowStudy.requests++;
@@ -109,20 +109,20 @@ final class MultiChunkKeyBlockCache implements BlockCache {
       purgeOverrides();
     }
     long key = bigKey(posX, posY, posZ);
-    BlockState blockState = replacementCache.byKey(key);
-    if (blockState != null) {
-      return blockState;
+    BlockCacheEntry blockCacheEntry = replacementCache.byKey(key);
+    if (blockCacheEntry != null) {
+      return blockCacheEntry;
     }
-    blockState = blockCache.get(posX, posY, posZ);
-    if (blockState == null) {
+    blockCacheEntry = blockCache.get(posX, posY, posZ);
+    if (blockCacheEntry == null) {
       World world = player.getWorld();
       Block block = VolatileBlockAccess.blockAccess(world, posX, posY, posZ);
-      blockState = resolveStateAt(world, block, posX, posY, posZ);
+      blockCacheEntry = resolveStateAt(world, block, posX, posY, posZ);
       if (!DISABLE_BLOCK_CACHING_ENTIRELY && block.getY() >= WorldHeight.LOWER_WORLD_LIMIT) {
-        blockCache.put(posX, posY, posZ, blockState);
+        blockCache.put(posX, posY, posZ, blockCacheEntry);
       }
     }
-    return blockState;
+    return blockCacheEntry;
   }
 
   @Override
@@ -133,18 +133,18 @@ final class MultiChunkKeyBlockCache implements BlockCache {
   @Override
   public void setClientSpeculationValue(World world, int posX, int posY, int posZ, Material type, int variant, int seq) {
     User user = UserRepository.userOf(player);
-    BlockState blockState;
+    BlockCacheEntry blockCacheEntry;
     if (type == Material.AIR || posY < WorldHeight.LOWER_WORLD_LIMIT) {
-      blockState = BlockState.empty();
+      blockCacheEntry = BlockCacheEntry.empty();
     } else {
       BlockShape outlineShape = shapeResolver.outlineShapeOf(world, user, type, variant, posX, posY, posZ);
       BlockShape collisionShape = shapeResolver.collisionShapeOf(world, user, type, variant, posX, posY, posZ);
-      blockState = new BlockState(outlineShape, collisionShape, type, variant);
+      blockCacheEntry = new BlockCacheEntry(outlineShape, collisionShape, type, variant);
     }
     BlockPosition position = BlockPosition.of(posX, posY, posZ);
     speculativeSequenceNumbers.compute(position, (key, old) -> old == null || seq > old ? seq : old);
     // ClientLevel retains the old state only for the first prediction at this position.
-    speculativeHeads.putIfAbsent(position, blockState);
+    speculativeHeads.putIfAbsent(position, blockCacheEntry);
     speculationKeys.add(bigKey(posX, posY, posZ));
     if (IntaveControl.BLOCK_CACHE_DEBUG || user.receives(MessageChannel.DEBUG_BLOCK_CACHE)) {
       user.sendMessage(ChatColor.LIGHT_PURPLE + "SPECULATING " + ChatColor.AQUA+ type + ChatColor.LIGHT_PURPLE + " at " + ChatColor.GRAY + position + " sequence=" + seq);
@@ -158,16 +158,16 @@ final class MultiChunkKeyBlockCache implements BlockCache {
     if (!speculativeHeads.containsKey(position)) {
       return false;
     }
-    BlockState blockState;
+    BlockCacheEntry blockCacheEntry;
     if (type == Material.AIR || posY < WorldHeight.LOWER_WORLD_LIMIT) {
-      blockState = BlockState.empty();
+      blockCacheEntry = BlockCacheEntry.empty();
     } else {
       BlockShape outlineShape = shapeResolver.outlineShapeOf(world, user, type, variant, posX, posY, posZ);
       BlockShape collisionShape = shapeResolver.collisionShapeOf(world, user, type, variant, posX, posY, posZ);
-      blockState = new BlockState(outlineShape, collisionShape, type, variant);
+      blockCacheEntry = new BlockCacheEntry(outlineShape, collisionShape, type, variant);
     }
     // Server block updates change the retained state, never the prediction's sequence.
-    return speculativeHeads.replace(position, blockState) != null;
+    return speculativeHeads.replace(position, blockCacheEntry) != null;
   }
 
   @Override
@@ -180,9 +180,9 @@ final class MultiChunkKeyBlockCache implements BlockCache {
 
   @Override
   public void moveClientSpeculationsToOverride(World world, int seqReq) {
-    for (Map.Entry<BlockPosition, BlockState> speculativeHead : speculativeHeads.entrySet()) {
+    for (Map.Entry<BlockPosition, BlockCacheEntry> speculativeHead : speculativeHeads.entrySet()) {
       BlockPosition blockPosition = speculativeHead.getKey();
-      BlockState blockState = speculativeHead.getValue();
+      BlockCacheEntry blockCacheEntry = speculativeHead.getValue();
       int sequenceNumber = speculativeSequenceNumbers.getOrDefault(blockPosition, -1);
       int posX = blockPosition.getX();
       int posY = blockPosition.getY();
@@ -190,12 +190,12 @@ final class MultiChunkKeyBlockCache implements BlockCache {
       if (sequenceNumber > seqReq) {
         User user = UserRepository.userOf(player);
         if (IntaveControl.BLOCK_CACHE_DEBUG || user.receives(MessageChannel.DEBUG_BLOCK_CACHE)) {
-          user.sendMessage(ChatColor.LIGHT_PURPLE + "SKIP APPLYING " + ChatColor.AQUA + blockState.type() + ChatColor.LIGHT_PURPLE + " at " + ChatColor.GRAY + blockPosition + " " + sequenceNumber + " > " + seqReq);
+          user.sendMessage(ChatColor.LIGHT_PURPLE + "SKIP APPLYING " + ChatColor.AQUA + blockCacheEntry.type() + ChatColor.LIGHT_PURPLE + " at " + ChatColor.GRAY + blockPosition + " " + sequenceNumber + " > " + seqReq);
         }
         continue;
       }
       unlockOverride(posX, posY, posZ);
-      override(world, posX, posY, posZ, blockState.type(), blockState.variantIndex(), "CL_SPEC_FIN_" + sequenceNumber);
+      override(world, posX, posY, posZ, blockCacheEntry.type(), blockCacheEntry.variantIndex(), "CL_SPEC_FIN_" + sequenceNumber);
       invalidateCacheAround(posX, posY, posZ);
       speculativeHeads.remove(blockPosition);
       speculationKeys.remove(bigKey(posX, posY, posZ));
@@ -203,20 +203,20 @@ final class MultiChunkKeyBlockCache implements BlockCache {
     speculativeSequenceNumbers.entrySet().removeIf(entry -> entry.getValue() <= seqReq);
   }
 
-  private BlockState resolveStateAt(World world, Block block, int posX, int posY, int posZ) {
+  private BlockCacheEntry resolveStateAt(World world, Block block, int posX, int posY, int posZ) {
     if (block.getY() < WorldHeight.LOWER_WORLD_LIMIT) {
-      return BlockState.empty();
+      return BlockCacheEntry.empty();
     }
     User user = UserRepository.userOf(player);
     Material type = BlockTypeAccess.typeAccess(block, user);
     if (type == Material.AIR) {
-      return BlockState.empty();
+      return BlockCacheEntry.empty();
     } else {
       ShapeAccessFlowStudy.incremLookups();
       int variant = BlockVariantNativeAccess.variantAccess(block);
       BlockShape outlineShape = shapeResolver.outlineShapeOf(world, user, type, variant, posX, posY, posZ);
       BlockShape collisionShape = shapeResolver.collisionShapeOf(world, user, type, variant, posX, posY, posZ);
-      return new BlockState(outlineShape, collisionShape, type, variant);
+      return new BlockCacheEntry(outlineShape, collisionShape, type, variant);
     }
   }
 
@@ -244,16 +244,16 @@ final class MultiChunkKeyBlockCache implements BlockCache {
     User user = UserRepository.userOf(player);
     long key = bigKey(posX, posY, posZ);
     replacementCache.remove(key);
-    BlockState blockState;
+    BlockCacheEntry blockCacheEntry;
     if (type == Material.AIR || posY < WorldHeight.LOWER_WORLD_LIMIT) {
-      blockState = BlockState.empty();
+      blockCacheEntry = BlockCacheEntry.empty();
     } else {
       BlockShape outlineShape = shapeResolver.outlineShapeOf(world, user, type, variant, posX, posY, posZ);
       BlockShape collisionShape = shapeResolver.collisionShapeOf(world, user, type, variant, posX, posY, posZ);
-      blockState = new BlockState(outlineShape, collisionShape, type, variant);
+      blockCacheEntry = new BlockCacheEntry(outlineShape, collisionShape, type, variant);
     }
     Position position = new Position(posX, posY, posZ);
-    replacementCache.insert(position, blockState);
+    replacementCache.insert(position, blockCacheEntry);
     if (IntaveControl.BLOCK_CACHE_DEBUG || user.receives(MessageChannel.DEBUG_BLOCK_CACHE)) {
       user.sendMessage(ChatColor.LIGHT_PURPLE + "OVERRIDE " + ChatColor.AQUA  + type + ChatColor.LIGHT_PURPLE + " at " + ChatColor.GRAY + position + ChatColor.LIGHT_PURPLE + " for " + ChatColor.RED + reason);
     }

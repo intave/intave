@@ -117,14 +117,12 @@ final class WirePacketCodecsTest {
 						PacketType.Server.ENTITY_EFFECT,
 						PacketType.Server.REMOVE_ENTITY_EFFECT,
 						PacketType.Server.BLOCK_ACTION,
-						PacketType.Server.BLOCK_CHANGE,
 						PacketType.Server.SPAWN_ENTITY
 					}) {
 				assertUnsupported(CLIENTBOUND, packetType, protocol);
 			}
 			if (protocol < 107) assertUnsupported(SERVERBOUND, PacketType.Client.USE_ITEM_ON, protocol);
 			if (protocol >= 765) {
-				assertUnsupported(CLIENTBOUND, PacketType.Server.EXPLOSION, protocol);
 				assertUnsupported(CLIENTBOUND, PacketType.Server.TAB_COMPLETE_OUT, protocol);
 				assertUnsupported(CLIENTBOUND, PacketType.Server.SCOREBOARD_OBJECTIVE, protocol);
 			}

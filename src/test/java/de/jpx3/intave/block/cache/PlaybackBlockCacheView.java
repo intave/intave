@@ -15,8 +15,8 @@ import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.module.test.record.MaterialVariantStore;
 import de.jpx3.intave.module.test.record.MovementRecording;
+import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.BlockPosition;
-import de.jpx3.intave.share.BlockState;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
@@ -41,10 +41,10 @@ public final class PlaybackBlockCacheView implements BlockCache {
 
 	@NotNull
 	@Override
-	public BlockState stateAt(int posX, int posY, int posZ) {
+	public BlockCacheEntry stateAt(int posX, int posY, int posZ) {
 		MaterialVariantStore store = storeAt(posX, posY, posZ);
 		BlockShape shape = collisionShapeAt(posX, posY, posZ);
-		return new BlockState(shape, shape, store.type(), store.variantIndex());
+		return new BlockCacheEntry(shape, shape, store.type(), store.variantIndex());
 	}
 
 	@NotNull

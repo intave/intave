@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.block.store;
 
-import de.jpx3.intave.share.BlockState;
+import de.jpx3.intave.share.BlockCacheEntry;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -31,7 +31,7 @@ public final class SynchronizedBlockStore implements BlockStore {
 	}
 
 	@Override
-	public BlockState get(int x, int y, int z) {
+	public BlockCacheEntry get(int x, int y, int z) {
 		readLock.lock();
 		try {
 			return delegate.get(x, y, z);
@@ -41,7 +41,7 @@ public final class SynchronizedBlockStore implements BlockStore {
 	}
 
 	@Override
-	public boolean put(int x, int y, int z, BlockState state) {
+	public boolean put(int x, int y, int z, BlockCacheEntry state) {
 		writeLock.lock();
 		try {
 			return delegate.put(x, y, z, state);
@@ -61,7 +61,7 @@ public final class SynchronizedBlockStore implements BlockStore {
 	}
 
 	@Override
-	public void removeIf(Predicate<BlockState> predicate) {
+	public void removeIf(Predicate<BlockCacheEntry> predicate) {
 		writeLock.lock();
 		try {
 			delegate.removeIf(predicate);

@@ -265,7 +265,7 @@ public final class PhysicsReport implements Report {
             complete = false;
             break scan;
           }
-          BlockState state = blockCache.peekStateAt(x, y, z);
+          BlockCacheEntry state = blockCache.peekStateAt(x, y, z);
           if (state == null) {
             complete = false;
             continue;

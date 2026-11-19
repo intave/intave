@@ -157,10 +157,10 @@ final class JsonCodecTest {
   void blockStateJsonCodecUsesCollisionOnlyProjection() {
     BlockShape outline = BlockShapes.cubeAt(4, 5, 6);
     BlockShape collision = BoundingBox.fromBounds(4.0, 5.0, 6.0, 5.0, 5.5, 7.0);
-    BlockState expected = new BlockState(outline, collision, Material.STONE, 0);
+    BlockCacheEntry expected = new BlockCacheEntry(outline, collision, Material.STONE, 0);
 
-    String encoded = JsonStreamCodecs.encodeToString(BlockState.JSON_CODEC, expected);
-    BlockState decoded = JsonStreamCodecs.decodeFromString(BlockState.JSON_CODEC, encoded);
+    String encoded = JsonStreamCodecs.encodeToString(BlockCacheEntry.JSON_CODEC, expected);
+    BlockCacheEntry decoded = JsonStreamCodecs.decodeFromString(BlockCacheEntry.JSON_CODEC, encoded);
     JsonObject json = new JsonParser().parse(encoded).getAsJsonObject();
 
     assertEquals("STONE", json.get("type").getAsString());
@@ -174,8 +174,8 @@ final class JsonCodecTest {
 
   @Test
   void blockStateJsonCodecIgnoresPropertiesWhenReading() {
-    BlockState decoded = JsonStreamCodecs.decodeFromString(
-      BlockState.JSON_CODEC,
+    BlockCacheEntry decoded = JsonStreamCodecs.decodeFromString(
+      BlockCacheEntry.JSON_CODEC,
       "{\"type\":\"STONE\",\"variantIndex\":0,\"collisionShape\":[]," +
         "\"properties\":{\"injected\":true}}"
     );
@@ -208,7 +208,7 @@ final class JsonCodecTest {
   void blockRegionSnapshotJsonCodecRoundTripsPositionsAndStates() {
     PositionedBlockState block = new PositionedBlockState(
       BlockPosition.of(2, 63, -4),
-      new BlockState(
+      new BlockCacheEntry(
         BlockShapes.cubeAt(2, 63, -4),
         BlockShapes.cubeAt(2, 63, -4),
         Material.STONE,
@@ -239,7 +239,7 @@ final class JsonCodecTest {
     assertTrue(decoded.complete());
     assertEquals(1, decoded.nonAirBlocks().size());
     assertEquals(block.position(), decoded.nonAirBlocks().get(0).position());
-    BlockState decodedState = decoded.nonAirBlocks().get(0).state();
+    BlockCacheEntry decodedState = decoded.nonAirBlocks().get(0).state();
     assertEquals(block.state().type(), decodedState.type());
     assertEquals(block.state().variantIndex(), decodedState.variantIndex());
     assertEquals(
