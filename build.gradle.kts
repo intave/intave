@@ -105,7 +105,7 @@ dependencies {
   )
 
   // Bundled libraries.
-  implementation("ac.intave:samples:0.0.14-SNAPSHOT") { isTransitive = false }
+  implementation("ac.intave:samples:0.0.14") { isTransitive = false }
   implementation("ac.intave:cloud-protocol:0.0.11") { isTransitive = false }
   implementation("it.unimi.dsi:fastutil:8.5.12")
   implementation("net.bytebuddy:byte-buddy:1.18.2")
