@@ -16,6 +16,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.adapter.ProtocolLibraryAdapter;
 import de.jpx3.intave.block.type.MaterialSearch;
 import de.jpx3.intave.block.variant.BlockVariantNativeAccess;
 import de.jpx3.intave.block.variant.BlockVariantRegister;
@@ -60,7 +61,7 @@ public final class BlockStateMaterialTests extends IntegrationTests {
     PacketContainer packet = new PacketContainer(PacketType.Play.Server.BLOCK_CHANGE);
     packet.getBlockPositionModifier().write(0, new BlockPosition(0, 0, 0));
     packet.getBlockData().write(0, state);
-    ByteBuf payload = (ByteBuf) packet.serializeToBuffer();
+    ByteBuf payload = ProtocolLibraryAdapter.serializePacket(packet);
     try {
       BlockUpdate update = (MinecraftVersions.VER1_14_0.atOrAbove()
         ? BlockUpdate.STREAM_CODEC : BlockUpdate.LEGACY_STREAM_CODEC).decode(payload);

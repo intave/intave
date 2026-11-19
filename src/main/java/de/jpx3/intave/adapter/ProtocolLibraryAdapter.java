@@ -13,11 +13,15 @@ package de.jpx3.intave.adapter;
 
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.utility.MinecraftReflection;
 import com.comphenix.protocol.reflect.accessors.Accessors;
+import com.comphenix.protocol.reflect.accessors.MethodAccessor;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.access.InvalidDependencyException;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -38,6 +42,30 @@ public final class ProtocolLibraryAdapter {
 
   public static boolean protocolLibAvailable() {
     return Bukkit.getPluginManager().getPlugin("ProtocolLib") != null;
+  }
+
+  /** Serializes only the packet payload. The caller must release the returned buffer. */
+  public static ByteBuf serializePacket(PacketContainer packet) {
+    MethodAccessor serializer = PacketSerialization.SERIALIZE_TO_BUFFER;
+    if (serializer != null) {
+      return (ByteBuf) serializer.invoke(packet);
+    }
+    return Unpooled.wrappedBuffer(WirePacket.bytesFromPacket(packet));
+  }
+
+  private static final class PacketSerialization {
+    private static final MethodAccessor SERIALIZE_TO_BUFFER = findSerializer();
+
+    private static MethodAccessor findSerializer() {
+      try {
+        // Select by the installed ProtocolLib API, not the Minecraft version.
+        // Newer WirePacket helpers can expose unused backing-array capacity.
+        return Accessors.getMethodAccessor(PacketContainer.class.getMethod("serializeToBuffer"));
+      } catch (NoSuchMethodException exception) {
+        // ProtocolLib 4.8 lacks this method; its WirePacket helper copies only readable bytes.
+        return null;
+      }
+    }
   }
 
   public static void checkIfOutdated() {
