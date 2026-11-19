@@ -13,7 +13,6 @@ package de.jpx3.intave.block.state;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.injector.netty.WirePacket;
 import com.comphenix.protocol.wrappers.BlockPosition;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
 import de.jpx3.intave.adapter.MinecraftVersions;
@@ -26,7 +25,6 @@ import de.jpx3.intave.test.IntegrationTests;
 import de.jpx3.intave.test.Severity;
 import de.jpx3.intave.test.Test;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import org.bukkit.Material;
 
 public final class BlockStateMaterialTests extends IntegrationTests {
@@ -62,8 +60,7 @@ public final class BlockStateMaterialTests extends IntegrationTests {
     PacketContainer packet = new PacketContainer(PacketType.Play.Server.BLOCK_CHANGE);
     packet.getBlockPositionModifier().write(0, new BlockPosition(0, 0, 0));
     packet.getBlockData().write(0, state);
-    ByteBuf payload = MinecraftVersions.VER1_20_5.atOrAbove()
-      ? (ByteBuf) packet.serializeToBuffer() : Unpooled.wrappedBuffer(WirePacket.bytesFromPacket(packet));
+    ByteBuf payload = (ByteBuf) packet.serializeToBuffer();
     try {
       BlockUpdate update = (MinecraftVersions.VER1_14_0.atOrAbove()
         ? BlockUpdate.STREAM_CODEC : BlockUpdate.LEGACY_STREAM_CODEC).decode(payload);
