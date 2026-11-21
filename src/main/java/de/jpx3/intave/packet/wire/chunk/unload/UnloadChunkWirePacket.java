@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.chunk.unload;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableUnloadChunkPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class UnloadChunkWirePacket extends MutableWirePacket implements MutableUnloadChunkPacket {
+public class UnloadChunkWirePacket extends AbstractMutable implements MutableUnloadChunkPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, UnloadChunkWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.INTEGER, UnloadChunkWirePacket::z,

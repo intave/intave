@@ -14,11 +14,11 @@ package de.jpx3.intave.packet.wire.entity.animation;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityAnimationPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.EntityAnimation;
 import io.netty.buffer.ByteBuf;
 
-public class EntityAnimationWirePacket extends MutableWirePacket implements MutableEntityAnimationPacket {
+public class EntityAnimationWirePacket extends AbstractMutable implements MutableEntityAnimationPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityAnimationWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, EntityAnimationWirePacket::entityId,

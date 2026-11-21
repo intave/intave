@@ -14,12 +14,12 @@ package de.jpx3.intave.packet.wire.block.acknowledge;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableBlockChangedAckPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
 import java.util.OptionalInt;
 
-public class BlockChangedAckWirePacket extends MutableWirePacket implements MutableBlockChangedAckPacket {
+public class BlockChangedAckWirePacket extends AbstractMutable implements MutableBlockChangedAckPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, BlockChangedAckWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, BlockChangedAckWirePacket::sequence,

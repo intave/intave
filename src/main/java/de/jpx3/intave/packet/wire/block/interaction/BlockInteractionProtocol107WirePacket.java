@@ -13,8 +13,10 @@ package de.jpx3.intave.packet.wire.block.interaction;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.packet.ConnectionState;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.mutable.MutableBlockInteractionPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.PlayerHand;
@@ -23,7 +25,7 @@ import io.netty.buffer.ByteBuf;
 
 import java.util.OptionalInt;
 
-public class BlockInteractionProtocol107WirePacket extends MutableWirePacket implements MutableBlockInteractionPacket {
+public class BlockInteractionProtocol107WirePacket extends AbstractMutable implements MutableBlockInteractionPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, BlockInteractionProtocol107WirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			BlockPosition.LEGACY_STREAM_CODEC, BlockInteractionProtocol107WirePacket::blockPosition,
@@ -51,6 +53,11 @@ public class BlockInteractionProtocol107WirePacket extends MutableWirePacket imp
 		this.directionId = directionId;
 		this.hand = hand;
 		this.hitPosition = hitPosition;
+	}
+
+	@Override
+	public boolean appliesTo(ConnectionState state, PacketType type) {
+		return state == ConnectionState.PLAY && type == PacketType.Client.USE_ITEM_ON;
 	}
 
 	@Override

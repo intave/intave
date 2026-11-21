@@ -24,6 +24,6 @@ public interface MutablePlayerInputPacket extends PlayerInputPacket, Mutable {
 
 	default void setJumping(boolean jumping) {
 		Input input = input();
-    setInput(input.withKeysSetTo(input.forward(), input.strafe(), jumping, input.sneakKey(), input.sprintKey()));
+		setInput(input.withKeysSetTo(input.forward(), input.strafe(), jumping, input.sneakKey(), input.sprintKey()));
 	}
 }

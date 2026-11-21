@@ -14,13 +14,13 @@ package de.jpx3.intave.packet.wire.block.dig;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableBlockDigPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.PlayerDigAction;
 import io.netty.buffer.ByteBuf;
 
-public class BlockDigWirePacket extends MutableWirePacket implements MutableBlockDigPacket {
+public class BlockDigWirePacket extends AbstractMutable implements MutableBlockDigPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, BlockDigWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, BlockDigWirePacket::actionId,

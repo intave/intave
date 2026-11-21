@@ -20,7 +20,7 @@ public final class ChunkPacketFixtures {
 
 	public static void nbt(ByteBuf output, boolean named) {
 		output.writeByte(10);
-		if (named) output.writeShort(2).writeByte('h').writeByte('m');
+		if (named) output.writeShort(0);
 		output.writeByte(12).writeShort(1).writeByte('H').writeInt(2);
 		output.writeLong(0xfedcba9876543210L).writeLong(1234).writeByte(0);
 	}

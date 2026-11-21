@@ -11,6 +11,8 @@
 
 package de.jpx3.intave.packet.wire.chunk.data;
 
+import com.viaversion.nbt.tag.CompoundTag;
+import com.viaversion.nbt.tag.LongArrayTag;
 import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.wire.WirePackets;
 import de.jpx3.intave.share.*;
@@ -29,6 +31,59 @@ import static de.jpx3.intave.packet.wire.chunk.ChunkPacketFixtures.varInt;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class MapChunkWirePacketCodecsTest {
+	@Test
+	void viaNbtEditsUseSettersAndCannotMutatePacketStateThroughAliases() {
+		for (int protocol : new int[] {110, 477, 755, 757, 764, 770}) {
+			MapChunkWirePacket packet = roundTrip(CLIENTBOUND, PacketType.Server.MAP_CHUNK, protocol,
+				output -> chunk(output, protocol, true));
+			if (protocol >= 477 && protocol < 770) {
+				CompoundTag heights = packet.heightmapTag();
+				heights.getLongArrayTag("H").getValue()[0] = 42;
+				assertFalse(packet.couldHaveBeenMutated());
+				assertEquals(0xfedcba9876543210L, packet.heightmapTag().getLongArrayTag("H").getValue()[0]);
+				packet.setHeightmapTag(heights);
+				heights.getLongArrayTag("H").getValue()[0] = 99;
+				assertEquals(42, packet.heightmapTag().getLongArrayTag("H").getValue()[0]);
+			}
+
+			CompoundTag tag = new CompoundTag();
+			CompoundTag nested = new CompoundTag();
+			nested.put("values", new LongArrayTag(new long[] {7}));
+			tag.put("nested", nested);
+			if (protocol < 757) {
+				packet.setBlockEntityTags(Arrays.asList(tag, null));
+				packet.blockEntityTags().get(0).getCompoundTag("nested").getLongArrayTag("values").getValue()[0] = 99;
+				assertThrows(UnsupportedOperationException.class, () -> packet.blockEntityTags().clear());
+			} else {
+				ChunkBlockEntity entity = new ChunkBlockEntity(0x12, -32, 300, tag);
+				packet.setBlockEntities(Collections.singletonList(entity));
+				entity.tag().getCompoundTag("nested").getLongArrayTag("values").getValue()[0] = 99;
+			}
+			nested.getLongArrayTag("values").getValue()[0] = 100;
+			assertTrue(packet.couldHaveBeenMutated());
+
+			ByteBuf output = Unpooled.buffer();
+			try {
+				WirePackets.encodePacket(CLIENTBOUND, PLAY, PacketType.Server.MAP_CHUNK, protocol, packet, output);
+				MapChunkWirePacket decoded = WirePackets.decodePacket(CLIENTBOUND, PLAY, protocol, output);
+				if (protocol >= 477 && protocol < 770) {
+					assertEquals(42, decoded.heightmapTag().getLongArrayTag("H").getValue()[0]);
+				}
+				CompoundTag decodedTag;
+				if (protocol < 757) {
+					assertNull(decoded.blockEntityTags().get(1));
+					decodedTag = decoded.blockEntityTags().get(0);
+				} else {
+					decodedTag = decoded.blockEntities().get(0).tag();
+				}
+				assertArrayEquals(new long[] {7}, decodedTag.getCompoundTag("nested").getLongArrayTag("values").getValue());
+				assertFalse(decoded.couldHaveBeenMutated());
+			} finally {
+				output.release();
+			}
+		}
+	}
+
 	@Test
 	void completeChunkEnvelopesRoundTripAcrossEverySupportedProtocol() {
 		for (int protocol : registry(CLIENTBOUND).supportedProtocolVersions()) {
@@ -94,16 +149,16 @@ final class MapChunkWirePacketCodecsTest {
 			if (protocol < 757) packet.setSectionMask(new long[] {0x8001});
 			if (protocol >= 573 && protocol < 751) packet.setBiomeIds(new int[1024]);
 			if (protocol >= 751 && protocol < 757) packet.setBiomeIds(new int[] {1, 300});
-			if (protocol >= 477 && protocol < 770) packet.setHeightmapTag(NbtCompound.EMPTY);
+			if (protocol >= 477 && protocol < 770) packet.setHeightmapTag(new CompoundTag());
 			if (protocol >= 770) {
 				long[] heights = {31};
 				packet.setHeightmaps(Collections.singletonMap(1, heights));
 				heights[0] = 99;
 				packet.heightmaps().get(1)[0] = 99;
 			}
-			if (protocol >= 110 && protocol < 757) packet.setBlockEntityTags(Collections.singletonList(NbtCompound.EMPTY));
+			if (protocol >= 110 && protocol < 757) packet.setBlockEntityTags(Collections.singletonList(new CompoundTag()));
 			if (protocol >= 757) {
-				packet.setBlockEntities(Collections.singletonList(new ChunkBlockEntity(0x12, -32, 300, NbtCompound.EMPTY)));
+				packet.setBlockEntities(Collections.singletonList(new ChunkBlockEntity(0x12, -32, 300, new CompoundTag())));
 				packet.setLightData(new ChunkLightData());
 			}
 			if (protocol >= 735 && protocol < 751) packet.setIgnoreOldData(true);
@@ -130,7 +185,7 @@ final class MapChunkWirePacketCodecsTest {
 	void unavailableFieldsAndInvalidLengthsAreRejected() {
 		MapChunkWirePacket modern = new MapChunkWirePacket();
 		assertThrows(UnsupportedOperationException.class, () -> modern.setFullChunk(true));
-		assertThrows(UnsupportedOperationException.class, () -> modern.setHeightmapTag(NbtCompound.EMPTY));
+		assertThrows(UnsupportedOperationException.class, () -> modern.setHeightmapTag(new CompoundTag()));
 		assertThrows(NullPointerException.class, () -> modern.setChunkData(null));
 		MapChunkWithBiomesWirePacket fixed = new MapChunkWithBiomesWirePacket();
 		assertThrows(IllegalArgumentException.class, () -> fixed.setBiomeIds(new int[3]));

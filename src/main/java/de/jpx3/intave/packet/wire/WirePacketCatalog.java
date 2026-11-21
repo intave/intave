@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.wire;
 
-import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.contract.PacketContract;
 import de.jpx3.intave.packet.wire.ability.inbound.AbilityInWirePacket;
 import de.jpx3.intave.packet.wire.ability.inbound.AbilityInWithSpeedsWirePacket;
 import de.jpx3.intave.packet.wire.ability.outbound.AbilityOutWirePacket;
@@ -42,6 +42,7 @@ import de.jpx3.intave.packet.wire.chunk.unload.UnloadChunkCoordinatePairWirePack
 import de.jpx3.intave.packet.wire.chunk.unload.UnloadChunkWirePacket;
 import de.jpx3.intave.packet.wire.client.command.ClientCommandWirePacket;
 import de.jpx3.intave.packet.wire.client.settings.*;
+import de.jpx3.intave.packet.wire.connection.bundle.BundleDelimiterWirePacket;
 import de.jpx3.intave.packet.wire.connection.handshake.HandshakeWirePacket;
 import de.jpx3.intave.packet.wire.connection.keepalive.KeepAliveVarIntIdWirePacket;
 import de.jpx3.intave.packet.wire.connection.keepalive.KeepAliveWirePacket;
@@ -123,247 +124,273 @@ import de.jpx3.intave.packet.wire.window.horseopen.HorseWindowOpenProtocol477Wir
 import de.jpx3.intave.packet.wire.window.horseopen.HorseWindowOpenProtocol767WirePacket;
 import de.jpx3.intave.packet.wire.window.horseopen.HorseWindowOpenProtocol768WirePacket;
 import de.jpx3.intave.packet.wire.window.horseopen.HorseWindowOpenWirePacket;
+import de.jpx3.intave.packet.wire.window.open.JsonOpenScreenWirePacket;
+import de.jpx3.intave.packet.wire.window.open.LegacyOpenScreenProtocol393WirePacket;
+import de.jpx3.intave.packet.wire.window.open.LegacyOpenScreenWirePacket;
+import de.jpx3.intave.packet.wire.window.open.NbtOpenScreenWirePacket;
 import de.jpx3.intave.packet.wire.window.transaction.TransactionWirePacket;
 import de.jpx3.intave.packet.wire.world.border.*;
 import de.jpx3.intave.packet.wire.world.explosion.*;
 import de.jpx3.intave.packet.wire.world.gamestate.GameStateChangeWirePacket;
+import de.jpx3.intave.packet.wire.world.respawn.RespawnWirePacket;
 import de.jpx3.intave.packet.wire.world.time.TimeUpdateSignedDayTimeWirePacket;
 import de.jpx3.intave.packet.wire.world.time.TimeUpdateWirePacket;
+
+import java.util.Arrays;
+import java.util.List;
 
 final class WirePacketCatalog {
 	private WirePacketCatalog() {
 	}
 
-	static void registerAll() {
-		WirePackets.register(PacketType.Client.ABILITIES_IN, AbilityInWirePacket.class);
-		WirePackets.register(PacketType.Client.ABILITIES_IN, AbilityInWithSpeedsWirePacket.class);
+	static List<Class<? extends PacketContract>> packetClasses() {
+		return Arrays.asList(
+			BundleDelimiterWirePacket.class,
+			AbilityInWirePacket.class,
+			AbilityInWithSpeedsWirePacket.class,
 
-		WirePackets.register(PacketType.Server.ABILITIES_OUT, AbilityOutWirePacket.class);
+			AbilityOutWirePacket.class,
 
-		WirePackets.register(PacketType.Server.BLOCK_CHANGED_ACK, BlockChangedAckWirePacket.class);
+			BlockChangedAckWirePacket.class,
 
-		WirePackets.register(PacketType.Server.BLOCK_CHANGE, SingleBlockChangeWirePacket.class);
-		WirePackets.register(PacketType.Server.BLOCK_CHANGE, SingleBlockChangeLegacyPositionWirePacket.class);
+			SingleBlockChangeWirePacket.class,
+			SingleBlockChangeLegacyPositionWirePacket.class,
 
-		WirePackets.register(PacketType.Server.MULTI_BLOCK_CHANGE, MultiBlockChangeWirePacket.class);
-		WirePackets.register(PacketType.Server.MULTI_BLOCK_CHANGE, MultiBlockChangeWithLightSuppressionWirePacket.class);
-		WirePackets.register(PacketType.Server.MULTI_BLOCK_CHANGE, MultiBlockChangeChunkWirePacket.class);
+			MultiBlockChangeWirePacket.class,
+			MultiBlockChangeWithLightSuppressionWirePacket.class,
+			MultiBlockChangeChunkWirePacket.class,
 
-		WirePackets.register(PacketType.Client.BLOCK_DIG, BlockDigWirePacket.class);
-		WirePackets.register(PacketType.Client.BLOCK_DIG, BlockDigLegacyPositionWirePacket.class);
-		WirePackets.register(PacketType.Client.BLOCK_DIG, BlockDigWithoutSequenceWirePacket.class);
-		WirePackets.register(PacketType.Client.BLOCK_DIG, BlockDigWithSequenceWirePacket.class);
+			BlockDigWirePacket.class,
+			BlockDigLegacyPositionWirePacket.class,
+			BlockDigWithoutSequenceWirePacket.class,
+			BlockDigWithSequenceWirePacket.class,
 
-		WirePackets.register(PacketType.Client.USE_ITEM_ON, BlockInteractionWirePacket.class);
-		WirePackets.register(PacketType.Client.USE_ITEM_ON, BlockInteractionProtocol107WirePacket.class);
-		WirePackets.register(PacketType.Client.USE_ITEM_ON, BlockInteractionProtocol315WirePacket.class);
-		WirePackets.register(PacketType.Client.USE_ITEM_ON, BlockInteractionProtocol477WirePacket.class);
-		WirePackets.register(PacketType.Client.USE_ITEM_ON, BlockInteractionProtocol759WirePacket.class);
+			BlockInteractionWirePacket.class,
+			BlockInteractionProtocol107WirePacket.class,
+			BlockInteractionProtocol315WirePacket.class,
+			BlockInteractionProtocol477WirePacket.class,
+			BlockInteractionProtocol759WirePacket.class,
 
-		WirePackets.register(PacketType.Client.CHAT_IN, ChatWirePacket.class);
-		WirePackets.register(PacketType.Client.CHAT_IN, ChatShortMessageWirePacket.class);
-		WirePackets.register(PacketType.Client.CHAT_IN, ChatUnsignedWirePacket.class);
-		WirePackets.register(PacketType.Client.CHAT_IN, ChatWithPreviewWirePacket.class);
-		WirePackets.register(PacketType.Client.CHAT_IN, ChatWithLastSeenWirePacket.class);
-		WirePackets.register(PacketType.Client.CHAT_IN, ChatWithoutChecksumWirePacket.class);
+			ChatWirePacket.class,
+			ChatShortMessageWirePacket.class,
+			ChatUnsignedWirePacket.class,
+			ChatWithPreviewWirePacket.class,
+			ChatWithLastSeenWirePacket.class,
+			ChatWithoutChecksumWirePacket.class,
 
-		WirePackets.register(PacketType.Server.MAP_CHUNK_BULK, MapChunkBulkWirePacket.class);
+			MapChunkBulkWirePacket.class,
 
-		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkWirePacket.class);
-		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkFlattenedWirePacket.class);
-		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkWithFluidCountWirePacket.class);
-		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkLegacyMaskWirePacket.class);
-		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkVarIntMaskWirePacket.class);
-		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkWithBlockEntitiesWirePacket.class);
-		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkWithHeightmapsWirePacket.class);
-		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkWithBiomesWirePacket.class);
-		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkWithIgnoreOldDataWirePacket.class);
-		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkVarIntBiomesWirePacket.class);
-		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkBitSetMaskWirePacket.class);
-		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkWithLightWirePacket.class);
-		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkWithoutTrustEdgesWirePacket.class);
-		WirePackets.register(PacketType.Server.MAP_CHUNK, MapChunkUnnamedNbtWirePacket.class);
+			MapChunkWirePacket.class,
+			MapChunkFlattenedWirePacket.class,
+			MapChunkWithFluidCountWirePacket.class,
+			MapChunkLegacyMaskWirePacket.class,
+			MapChunkVarIntMaskWirePacket.class,
+			MapChunkWithBlockEntitiesWirePacket.class,
+			MapChunkWithHeightmapsWirePacket.class,
+			MapChunkWithBiomesWirePacket.class,
+			MapChunkWithIgnoreOldDataWirePacket.class,
+			MapChunkVarIntBiomesWirePacket.class,
+			MapChunkBitSetMaskWirePacket.class,
+			MapChunkWithLightWirePacket.class,
+			MapChunkWithoutTrustEdgesWirePacket.class,
+			MapChunkUnnamedNbtWirePacket.class,
 
-		WirePackets.register(PacketType.Server.CHUNK_BATCH_START, ChunkBatchStartWirePacket.class);
-		WirePackets.register(PacketType.Server.CHUNK_BATCH_FINISHED, ChunkBatchFinishedWirePacket.class);
-		WirePackets.register(PacketType.Client.CHUNK_BATCH_RECEIVED, ChunkBatchReceivedWirePacket.class);
-		WirePackets.register(PacketType.Server.CHUNKS_BIOMES, ChunksBiomesWirePacket.class);
-		WirePackets.register(PacketType.Server.CHUNKS_BIOMES, ChunksBiomesWithStorageLengthWirePacket.class);
-		WirePackets.register(PacketType.Server.LIGHT_UPDATE, LightUpdateWirePacket.class);
-		WirePackets.register(PacketType.Server.LIGHT_UPDATE, LightUpdateWithTrustEdgesWirePacket.class);
-		WirePackets.register(PacketType.Server.LIGHT_UPDATE, LightUpdateLegacyMasksWithTrustEdgesWirePacket.class);
-		WirePackets.register(PacketType.Server.LIGHT_UPDATE, LightUpdateLegacyMasksWirePacket.class);
+			ChunkBatchStartWirePacket.class,
+			ChunkBatchFinishedWirePacket.class,
+			ChunkBatchReceivedWirePacket.class,
+			ChunksBiomesWirePacket.class,
+			ChunksBiomesWithStorageLengthWirePacket.class,
+			LightUpdateWirePacket.class,
+			LightUpdateWithTrustEdgesWirePacket.class,
+			LightUpdateLegacyMasksWithTrustEdgesWirePacket.class,
+			LightUpdateLegacyMasksWirePacket.class,
 
-		WirePackets.register(PacketType.Server.UNLOAD_CHUNK, UnloadChunkWirePacket.class);
-		WirePackets.register(PacketType.Server.UNLOAD_CHUNK, UnloadChunkCoordinatePairWirePacket.class);
+			UnloadChunkWirePacket.class,
+			UnloadChunkCoordinatePairWirePacket.class,
 
-		WirePackets.register(PacketType.Client.CLIENT_COMMAND, ClientCommandWirePacket.class);
+			ClientCommandWirePacket.class,
+			ClientCommandWirePacket.Basic.class,
+			ClientCommandWirePacket.WithGameRuleRequest.class,
 
-		WirePackets.register(PacketType.Client.SETTINGS, ClientSettingsWirePacket.class);
-		WirePackets.register(PacketType.Client.SETTINGS, ClientSettingsWithoutHandWirePacket.class);
-		WirePackets.register(PacketType.Client.SETTINGS, ClientSettingsWithHandWirePacket.class);
-		WirePackets.register(PacketType.Client.SETTINGS, ClientSettingsWithFilteringWirePacket.class);
-		WirePackets.register(PacketType.Client.SETTINGS, ClientSettingsWithListingWirePacket.class);
+			ClientSettingsWirePacket.class,
+			ClientSettingsWithoutHandWirePacket.class,
+			ClientSettingsWithHandWirePacket.class,
+			ClientSettingsWithFilteringWirePacket.class,
+			ClientSettingsWithListingWirePacket.class,
 
-		WirePackets.register(PacketType.Client.SET_PROTOCOL, HandshakeWirePacket.class);
+			HandshakeWirePacket.class,
 
-		WirePackets.register(PacketType.Client.KEEP_ALIVE_IN, KeepAliveWirePacket.class);
-		WirePackets.register(PacketType.Server.KEEP_ALIVE_OUT, KeepAliveWirePacket.class);
-		WirePackets.register(PacketType.Client.KEEP_ALIVE_IN, KeepAliveVarIntIdWirePacket.class);
-		WirePackets.register(PacketType.Server.KEEP_ALIVE_OUT, KeepAliveVarIntIdWirePacket.class);
+			KeepAliveWirePacket.class,
+			KeepAliveVarIntIdWirePacket.class,
 
-		WirePackets.register(PacketType.Server.PING, PingWirePacket.class);
+			PingWirePacket.class,
 
-		WirePackets.register(PacketType.Client.PONG, PongWirePacket.class);
+			PongWirePacket.class,
 
-		WirePackets.register(PacketType.Server.COOKIE_REQUEST, CookieRequestWirePacket.class);
+			CookieRequestWirePacket.class,
 
-		WirePackets.register(PacketType.Client.COOKIE_RESPONSE, CookieResponseWirePacket.class);
+			CookieResponseWirePacket.class,
 
-		WirePackets.register(PacketType.Server.STORE_COOKIE, StoreCookieWirePacket.class);
+			StoreCookieWirePacket.class,
 
-		WirePackets.register(PacketType.Server.ANIMATION, EntityAnimationWirePacket.class);
+			EntityAnimationWirePacket.class,
 
-		WirePackets.register(PacketType.Server.ATTACH_ENTITY, AttachEntityWirePacket.class);
-		WirePackets.register(PacketType.Server.ATTACH_ENTITY, AttachEntityMountOrLeashWirePacket.class);
+			AttachEntityWirePacket.class,
+			AttachEntityMountOrLeashWirePacket.class,
 
-		WirePackets.register(PacketType.Client.ATTACK_ENTITY, AttackEntityWirePacket.class);
+			AttackEntityWirePacket.class,
 
-		WirePackets.register(PacketType.Server.ENTITY_DESTROY, EntityDestroyWirePacket.class);
-		WirePackets.register(PacketType.Server.ENTITY_DESTROY, EntityDestroyLegacyArrayWirePacket.class);
-		WirePackets.register(PacketType.Server.ENTITY_DESTROY, EntityDestroySingleEntityWirePacket.class);
+			EntityDestroyWirePacket.class,
+			EntityDestroyLegacyArrayWirePacket.class,
+			EntityDestroySingleEntityWirePacket.class,
 
-		WirePackets.register(PacketType.Server.MOUNT, MountEntityWirePacket.class);
+			MountEntityWirePacket.class,
 
-		WirePackets.register(PacketType.Server.ENTITY_TELEPORT, EntityPositionWirePacket.class);
-		WirePackets.register(PacketType.Server.ENTITY_TELEPORT, EntityPositionFixedPointWirePacket.class);
-		WirePackets.register(PacketType.Server.ENTITY_TELEPORT, EntityPositionDoublePositionWirePacket.class);
-		WirePackets.register(PacketType.Server.ENTITY_POSITION_SYNC, EntityPositionSyncWirePacket.class);
-		WirePackets.register(PacketType.Server.ENTITY_POSITION_SYNC, EntityPositionSyncPositionMoveRotationWirePacket.class);
+			EntityPositionWirePacket.class,
+			EntityPositionFixedPointWirePacket.class,
+			EntityPositionDoublePositionWirePacket.class,
+			EntityPositionSyncWirePacket.class,
+			EntityPositionSyncPositionMoveRotationWirePacket.class,
 
-		WirePackets.register(PacketType.Server.REL_ENTITY_MOVE, EntityRelativeMoveWirePacket.class);
-		WirePackets.register(PacketType.Server.REL_ENTITY_MOVE, EntityRelativeMoveByteDeltasWirePacket.class);
-		WirePackets.register(PacketType.Server.REL_ENTITY_MOVE, EntityRelativeMoveShortDeltasWirePacket.class);
+			EntityRelativeMoveWirePacket.class,
+			EntityRelativeMoveByteDeltasWirePacket.class,
+			EntityRelativeMoveShortDeltasWirePacket.class,
 
-		WirePackets.register(PacketType.Server.REL_ENTITY_MOVE_LOOK, EntityRelativeMoveLookWirePacket.class);
-		WirePackets.register(PacketType.Server.REL_ENTITY_MOVE_LOOK, EntityRelativeMoveLookByteDeltasWirePacket.class);
-		WirePackets.register(PacketType.Server.REL_ENTITY_MOVE_LOOK, EntityRelativeMoveLookShortDeltasWirePacket.class);
+			EntityRelativeMoveLookWirePacket.class,
+			EntityRelativeMoveLookByteDeltasWirePacket.class,
+			EntityRelativeMoveLookShortDeltasWirePacket.class,
 
-		WirePackets.register(PacketType.Server.ENTITY_STATUS, EntityStatusWirePacket.class);
+			EntityStatusWirePacket.class,
 
-		WirePackets.register(PacketType.Client.USE_ENTITY, EntityUseWirePacket.class);
-		WirePackets.register(PacketType.Client.USE_ENTITY, EntityUseWithoutHandWirePacket.class);
-		WirePackets.register(PacketType.Client.USE_ENTITY, EntityUseWithHandWirePacket.class);
-		WirePackets.register(PacketType.Client.USE_ENTITY, InteractEntityWirePacket.class);
+			EntityUseWirePacket.class,
+			EntityUseWithoutHandWirePacket.class,
+			EntityUseWithHandWirePacket.class,
+			InteractEntityWirePacket.class,
 
-		WirePackets.register(PacketType.Server.ENTITY_VELOCITY, EntityVelocityWirePacket.class);
-		WirePackets.register(PacketType.Server.ENTITY_VELOCITY, EntityVelocityShortVectorWirePacket.class);
+			EntityVelocityWirePacket.class,
+			EntityVelocityShortVectorWirePacket.class,
 
-		WirePackets.register(PacketType.Server.HELD_ITEM_SLOT_OUT, CarriedItemSlotWirePacket.class);
+			CarriedItemSlotWirePacket.class,
 
-		WirePackets.register(PacketType.Client.HELD_ITEM_SLOT_IN, HeldItemSlotWirePacket.class);
+			HeldItemSlotWirePacket.class,
 
-		WirePackets.register(PacketType.Client.PICK_ITEM, PickItemWirePacket.class);
+			PickItemWirePacket.class,
 
-		WirePackets.register(PacketType.Client.USE_ITEM, UseItemWirePacket.class);
-		WirePackets.register(PacketType.Client.USE_ITEM, UseItemProtocol107WirePacket.class);
-		WirePackets.register(PacketType.Client.USE_ITEM, UseItemProtocol759WirePacket.class);
+			UseItemWirePacket.class,
+			UseItemProtocol107WirePacket.class,
+			UseItemProtocol759WirePacket.class,
 
-		WirePackets.register(PacketType.Client.CUSTOM_PAYLOAD_IN, PayloadInWirePacket.class);
+			PayloadInWirePacket.class,
 
-		WirePackets.register(PacketType.Client.ENTITY_ACTION_IN, PlayerActionWirePacket.class);
-		WirePackets.register(PacketType.Client.ENTITY_ACTION_IN, PlayerActionWithSneakingWirePacket.class);
-		WirePackets.register(PacketType.Client.ENTITY_ACTION_IN, PlayerActionBeforeOffhandWirePacket.class);
+			PlayerActionWirePacket.class,
+			PlayerActionWithSneakingWirePacket.class,
+			PlayerActionBeforeOffhandWirePacket.class,
 
-		WirePackets.register(PacketType.Client.ARM_ANIMATION, ArmAnimationWirePacket.class);
-		WirePackets.register(PacketType.Client.ARM_ANIMATION, ArmAnimationWithoutHandWirePacket.class);
+			ArmAnimationWirePacket.class,
+			ArmAnimationWithoutHandWirePacket.class,
 
-		WirePackets.register(PacketType.Server.BED, BedUseWirePacket.class);
+			BedUseWirePacket.class,
 
-		WirePackets.register(PacketType.Server.EXPERIENCE, ExperienceWirePacket.class);
+			ExperienceWirePacket.class,
 
-		WirePackets.register(PacketType.Client.FLYING, PlayerGroundWirePacket.class);
-		WirePackets.register(PacketType.Client.FLYING, PlayerGroundOnGroundOnlyWirePacket.class);
+			PlayerGroundWirePacket.class,
+			PlayerGroundOnGroundOnlyWirePacket.class,
 
-		WirePackets.register(PacketType.Server.UPDATE_HEALTH, UpdateHealthWirePacket.class);
+			UpdateHealthWirePacket.class,
 
-		WirePackets.register(PacketType.Server.PLAYER_INFO_REMOVE, PlayerInfoRemoveWirePacket.class);
+			PlayerInfoRemoveWirePacket.class,
 
-		WirePackets.register(PacketType.Client.PLAYER_INPUT, PlayerInputWirePacket.class);
-		WirePackets.register(PacketType.Client.PLAYER_INPUT, LegacyPlayerInputWirePacket.class);
+			PlayerInputWirePacket.class,
+			LegacyPlayerInputWirePacket.class,
 
-		WirePackets.register(PacketType.Client.POSITION, PlayerPositionWirePacket.class);
-		WirePackets.register(PacketType.Client.POSITION, PlayerPositionOnGroundOnlyWirePacket.class);
+			PlayerPositionWirePacket.class,
+			PlayerPositionOnGroundOnlyWirePacket.class,
 
-		WirePackets.register(PacketType.Client.POSITION_LOOK, PlayerPositionRotationWirePacket.class);
-		WirePackets.register(PacketType.Client.POSITION_LOOK, PlayerPositionRotationOnGroundOnlyWirePacket.class);
+			PlayerPositionRotationWirePacket.class,
+			PlayerPositionRotationOnGroundOnlyWirePacket.class,
 
-		WirePackets.register(PacketType.Client.LOOK, PlayerRotationWirePacket.class);
-		WirePackets.register(PacketType.Client.LOOK, PlayerRotationOnGroundOnlyWirePacket.class);
+			PlayerRotationWirePacket.class,
+			PlayerRotationOnGroundOnlyWirePacket.class,
 
-		WirePackets.register(PacketType.Server.POSITION, PlayerTeleportWirePacket.class);
-		WirePackets.register(PacketType.Server.POSITION, PlayerTeleportWithoutIdWirePacket.class);
-		WirePackets.register(PacketType.Server.POSITION, PlayerTeleportWithIdWirePacket.class);
-		WirePackets.register(PacketType.Server.POSITION, PlayerTeleportWithDismountWirePacket.class);
-		WirePackets.register(PacketType.Server.POSITION, PlayerTeleportWithoutDismountWirePacket.class);
+			PlayerTeleportWirePacket.class,
+			PlayerTeleportWithoutIdWirePacket.class,
+			PlayerTeleportWithIdWirePacket.class,
+			PlayerTeleportWithDismountWirePacket.class,
+			PlayerTeleportWithoutDismountWirePacket.class,
 
-		WirePackets.register(PacketType.Client.TELEPORT_ACCEPT, TeleportAcceptWirePacket.class);
-		WirePackets.register(PacketType.Client.TELEPORT_ACCEPT, TeleportAcceptIdOnlyWirePacket.class);
+			TeleportAcceptWirePacket.class,
+			TeleportAcceptIdOnlyWirePacket.class,
 
-		WirePackets.register(PacketType.Client.AUTO_RECIPE, PlaceRecipeWirePacket.class);
-		WirePackets.register(PacketType.Client.AUTO_RECIPE, PlaceRecipeNumericRecipeWirePacket.class);
-		WirePackets.register(PacketType.Client.AUTO_RECIPE, PlaceRecipeKeyRecipeWirePacket.class);
+			PlaceRecipeWirePacket.class,
+			PlaceRecipeNumericRecipeWirePacket.class,
+			PlaceRecipeKeyRecipeWirePacket.class,
 
-		WirePackets.register(PacketType.Server.SCOREBOARD_DISPLAY_OBJECTIVE, ScoreboardDisplayWirePacket.class);
-		WirePackets.register(PacketType.Server.SCOREBOARD_DISPLAY_OBJECTIVE, ScoreboardDisplayByteSlotWirePacket.class);
+			ScoreboardDisplayWirePacket.class,
+			ScoreboardDisplayByteSlotWirePacket.class,
 
-		WirePackets.register(PacketType.Server.SCOREBOARD_OBJECTIVE, ScoreboardObjectiveWirePacket.class);
-		WirePackets.register(PacketType.Server.SCOREBOARD_OBJECTIVE, ScoreboardObjectivePlainTextWirePacket.class);
+			ScoreboardObjectiveWirePacket.class,
+			ScoreboardObjectivePlainTextWirePacket.class,
 
-		WirePackets.register(PacketType.Client.TAB_COMPLETE_IN, TabCompleteRequestWirePacket.class);
-		WirePackets.register(PacketType.Client.TAB_COMPLETE_IN, TabCompleteRequestWithTargetWirePacket.class);
-		WirePackets.register(PacketType.Client.TAB_COMPLETE_IN, TabCompleteRequestWithCommandFlagWirePacket.class);
+			TabCompleteRequestWirePacket.class,
+			TabCompleteRequestWithTargetWirePacket.class,
+			TabCompleteRequestWithCommandFlagWirePacket.class,
 
-		WirePackets.register(PacketType.Server.TAB_COMPLETE_OUT, TabCompleteResponseWirePacket.class);
-		WirePackets.register(PacketType.Server.TAB_COMPLETE_OUT, TabCompleteResponseStringsOnlyWirePacket.class);
+			TabCompleteResponseWirePacket.class,
+			TabCompleteResponseStringsOnlyWirePacket.class,
 
-		WirePackets.register(PacketType.Client.VEHICLE_MOVE, VehicleMoveWirePacket.class);
-		WirePackets.register(PacketType.Client.VEHICLE_MOVE, VehicleMoveWithoutGroundWirePacket.class);
+			VehicleMoveWirePacket.class,
+			VehicleMoveWithoutGroundWirePacket.class,
 
-		WirePackets.register(PacketType.Client.ENCHANT_ITEM, MenuButtonWirePacket.class);
-		WirePackets.register(PacketType.Client.ENCHANT_ITEM, MenuButtonByteFieldsWirePacket.class);
+			MenuButtonWirePacket.class,
+			MenuButtonByteFieldsWirePacket.class,
 
-		WirePackets.register(PacketType.Client.CLOSE_WINDOW, WindowCloseWirePacket.class);
-		WirePackets.register(PacketType.Server.CLOSE_WINDOW, WindowCloseWirePacket.class);
-		WirePackets.register(PacketType.Client.CLOSE_WINDOW, WindowCloseByteIdWirePacket.class);
-		WirePackets.register(PacketType.Server.CLOSE_WINDOW, WindowCloseByteIdWirePacket.class);
+			WindowCloseWirePacket.class,
+			WindowCloseByteIdWirePacket.class,
 
-		WirePackets.register(PacketType.Server.OPEN_WINDOW_HORSE, HorseWindowOpenWirePacket.class);
-		WirePackets.register(PacketType.Server.OPEN_WINDOW_HORSE, HorseWindowOpenProtocol477WirePacket.class);
-		WirePackets.register(PacketType.Server.OPEN_WINDOW_HORSE, HorseWindowOpenProtocol767WirePacket.class);
-		WirePackets.register(PacketType.Server.OPEN_WINDOW_HORSE, HorseWindowOpenProtocol768WirePacket.class);
+			LegacyOpenScreenWirePacket.class,
+			LegacyOpenScreenProtocol393WirePacket.class,
+			JsonOpenScreenWirePacket.class,
+			NbtOpenScreenWirePacket.class,
 
-		WirePackets.register(PacketType.Client.TRANSACTION_IN, TransactionWirePacket.class);
-		WirePackets.register(PacketType.Server.TRANSACTION_OUT, TransactionWirePacket.class);
+			HorseWindowOpenWirePacket.class,
+			HorseWindowOpenProtocol477WirePacket.class,
+			HorseWindowOpenProtocol767WirePacket.class,
+			HorseWindowOpenProtocol768WirePacket.class,
 
-		WirePackets.register(PacketType.Server.WORLD_BORDER, WorldBorderWirePacket.class);
-		WirePackets.register(PacketType.Server.INITIALIZE_BORDER, WorldBorderInitializeWirePacket.class);
-		WirePackets.register(PacketType.Server.SET_BORDER_CENTER, WorldBorderSetCenterWirePacket.class);
-		WirePackets.register(PacketType.Server.SET_BORDER_SIZE, WorldBorderSetSizeWirePacket.class);
-		WirePackets.register(PacketType.Server.SET_BORDER_LERP_SIZE, WorldBorderLerpSizeWirePacket.class);
-		WirePackets.register(PacketType.Server.SET_BORDER_WARNING_DELAY, WorldBorderWarningDelayWirePacket.class);
-		WirePackets.register(PacketType.Server.SET_BORDER_WARNING_DISTANCE, WorldBorderWarningDistanceWirePacket.class);
+			TransactionWirePacket.class,
 
-		WirePackets.register(PacketType.Server.EXPLOSION, ExplosionIntBlockCountWirePacket.class);
-		WirePackets.register(PacketType.Server.EXPLOSION, ExplosionVarIntBlockCountWirePacket.class);
-		WirePackets.register(PacketType.Server.EXPLOSION, ExplosionDoublePositionWirePacket.class);
-		WirePackets.register(PacketType.Server.EXPLOSION, ExplosionWithEffectsWirePacket.class);
-		WirePackets.register(PacketType.Server.EXPLOSION, ExplosionOptionalMotionWirePacket.class);
-		WirePackets.register(PacketType.Server.EXPLOSION, ExplosionWithRadiusWirePacket.class);
+			WorldBorderWirePacket.class,
+			WorldBorderInitializeWirePacket.class,
+			WorldBorderSetCenterWirePacket.class,
+			WorldBorderSetSizeWirePacket.class,
+			WorldBorderLerpSizeWirePacket.class,
+			WorldBorderWarningDelayWirePacket.class,
+			WorldBorderWarningDistanceWirePacket.class,
 
-		WirePackets.register(PacketType.Server.GAME_STATE_CHANGE, GameStateChangeWirePacket.class);
+			ExplosionIntBlockCountWirePacket.class,
+			ExplosionVarIntBlockCountWirePacket.class,
+			ExplosionDoublePositionWirePacket.class,
+			ExplosionWithEffectsWirePacket.class,
+			ExplosionOptionalMotionWirePacket.class,
+			ExplosionWithRadiusWirePacket.class,
 
-		WirePackets.register(PacketType.Server.UPDATE_TIME, TimeUpdateWirePacket.class);
-		WirePackets.register(PacketType.Server.UPDATE_TIME, TimeUpdateSignedDayTimeWirePacket.class);
+			GameStateChangeWirePacket.class,
+
+			RespawnWirePacket.Legacy.class,
+			RespawnWirePacket.LevelType.class,
+			RespawnWirePacket.HashedSeed.class,
+			RespawnWirePacket.NamedDimension.class,
+			RespawnWirePacket.DimensionData.class,
+			RespawnWirePacket.DeathLocation.class,
+			RespawnWirePacket.KeepMask.class,
+			RespawnWirePacket.PortalCooldown.class,
+			RespawnWirePacket.CommonSpawnInfo.class,
+			RespawnWirePacket.RegistryDimension.class,
+			RespawnWirePacket.SeaLevel.class,
+			RespawnWirePacket.VarIntGameModes.class,
+
+			TimeUpdateWirePacket.class,
+			TimeUpdateSignedDayTimeWirePacket.class
+		);
 	}
 }

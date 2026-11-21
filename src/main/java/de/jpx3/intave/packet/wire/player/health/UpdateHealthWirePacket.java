@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.player.health;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableUpdateHealthPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class UpdateHealthWirePacket extends MutableWirePacket implements MutableUpdateHealthPacket {
+public class UpdateHealthWirePacket extends AbstractMutable implements MutableUpdateHealthPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, UpdateHealthWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.FLOAT, UpdateHealthWirePacket::health,

@@ -14,11 +14,11 @@ package de.jpx3.intave.packet.wire.player.bed;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableBedUsePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.BlockPosition;
 import io.netty.buffer.ByteBuf;
 
-public class BedUseWirePacket extends MutableWirePacket implements MutableBedUsePacket {
+public class BedUseWirePacket extends AbstractMutable implements MutableBedUsePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, BedUseWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, BedUseWirePacket::entityId,

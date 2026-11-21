@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.entity.attach;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableAttachEntityPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class AttachEntityWirePacket extends MutableWirePacket implements MutableAttachEntityPacket {
+public class AttachEntityWirePacket extends AbstractMutable implements MutableAttachEntityPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, AttachEntityWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.INTEGER, AttachEntityWirePacket::entityId,

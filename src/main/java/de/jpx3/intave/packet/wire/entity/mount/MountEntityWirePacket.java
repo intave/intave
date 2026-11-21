@@ -14,12 +14,12 @@ package de.jpx3.intave.packet.wire.entity.mount;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableMountEntityPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
 import static de.jpx3.intave.codec.ByteBufStreamCodecs.count;
 
-public class MountEntityWirePacket extends MutableWirePacket implements MutableMountEntityPacket {
+public class MountEntityWirePacket extends AbstractMutable implements MutableMountEntityPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, MountEntityWirePacket> STREAM_CODEC =
 		StreamCodec.of(
 			(output, packet) -> {

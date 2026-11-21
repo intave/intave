@@ -14,14 +14,14 @@ package de.jpx3.intave.packet.wire.player.input;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerInputPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.Input;
 import io.netty.buffer.ByteBuf;
 
 /**
  * The two analog axes must survive a round trip without being quantized to keys.
  */
-public final class LegacyPlayerInputWirePacket extends MutableWirePacket implements MutablePlayerInputPacket {
+public final class LegacyPlayerInputWirePacket extends AbstractMutable implements MutablePlayerInputPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, LegacyPlayerInputWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.FLOAT, LegacyPlayerInputWirePacket::strafe,

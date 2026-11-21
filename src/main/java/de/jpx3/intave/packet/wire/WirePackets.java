@@ -33,7 +33,12 @@ public final class WirePackets {
 	private final Int2ObjectMap<Map<ConnectionState, WirePacketDefinition<?>[]>> packets = new Int2ObjectOpenHashMap<>();
 
 	static {
-		WirePacketCatalog.registerAll();
+		for (Class<? extends PacketContract> packetClass : WirePacketCatalog.packetClasses()) {
+			WirePacketDefinition<?> definition = WirePacketDefinition.from(packetClass);
+			PacketContract prototype = definition.createEmpty();
+			SERVERBOUND.registerPacket(definition, prototype);
+			CLIENTBOUND.registerPacket(definition, prototype);
+		}
 	}
 
 	private WirePackets(PacketTypeRegistry<?> registry) {
@@ -133,18 +138,17 @@ public final class WirePackets {
 		return CLIENTBOUND.registeredPackets(PacketType.Server.class);
 	}
 
-	static <T extends PacketContract> void register(PacketType packetType, Class<T> packetClass) {
-		wirePacketsOf(packetType.direction()).registerPacket(packetType, packetClass);
-	}
-
-	private <T extends PacketContract> void registerPacket(PacketType packetType, Class<T> packetClass) {
-		WirePacketDefinition<T> definition = WirePacketDefinition.from(packetClass);
-		T prototype = definition.createEmpty();
+	private void registerPacket(WirePacketDefinition<?> definition, PacketContract prototype) {
 		for (int protocolVersion : registry.supportedProtocolVersions()) {
+			if (!prototype.appliesTo(protocolVersion)) {
+				continue;
+			}
 			for (ConnectionState state : ConnectionState.values()) {
-				int packetId = registry.idOf(state, packetType, protocolVersion);
-				if (packetId >= 0 && prototype.appliesTo(state, packetType, protocolVersion)) {
-					register(protocolVersion, state, packetType, packetId, definition);
+				for (Map.Entry<? extends PacketType, Integer> packet : registry.packetIds(state, protocolVersion).entrySet()) {
+					PacketType packetType = packet.getKey();
+					if (prototype.appliesTo(state, packetType)) {
+						register(protocolVersion, state, packetType, packet.getValue(), definition);
+					}
 				}
 			}
 		}

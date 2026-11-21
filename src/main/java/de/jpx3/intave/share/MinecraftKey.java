@@ -14,15 +14,11 @@ package de.jpx3.intave.share;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
-import de.jpx3.intave.klass.locate.Locate;
 import io.netty.buffer.ByteBuf;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
 public final class MinecraftKey {
   public static final StreamCodec<ByteBuf, ByteBuf, MinecraftKey> STREAM_CODEC = ByteBufStreamCodecs.VARINT_STRING.beforeAndAfter(
-    value -> value.indexOf(':') < 0 ? withDefaultNamespace(value) : from(value), MinecraftKey::fullKey
+    MinecraftKey::parse, MinecraftKey::fullKey
   );
   public static final StreamCodec<ByteBuf, ByteBuf, MinecraftKey> INTERNAL_STREAM_CODEC = StreamCodec.compound(
     ByteBufStreamCodecs.STRING, MinecraftKey::namespace,
@@ -85,34 +81,15 @@ public final class MinecraftKey {
     return new MinecraftKey("minecraft", path);
   }
 
+  public static MinecraftKey parse(String value) {
+    return value.indexOf(':') < 0 ? withDefaultNamespace(value) : from(value);
+  }
+
   public static MinecraftKey from(String fullKey) {
     String[] parts = fullKey.split(":", 2);
     if (parts.length != 2) {
       throw new IllegalArgumentException("Invalid MinecraftKey: " + fullKey);
     }
     return new MinecraftKey(parts[0], parts[1]);
-  }
-
-  @Deprecated
-  private static final class ConstructorHolder {
-    static final Constructor<?> NATIVE_RESOURCE_LOCATION_CONSTRUCTOR;
-    static {
-      Class<?> minecraftKeyClass = Locate.classByKey("MinecraftKey");
-      try {
-        NATIVE_RESOURCE_LOCATION_CONSTRUCTOR = minecraftKeyClass.getDeclaredConstructor(String.class, String.class);
-        NATIVE_RESOURCE_LOCATION_CONSTRUCTOR.setAccessible(true);
-      } catch (Exception exception) {
-        throw new IllegalStateException(exception);
-      }
-    }
-  }
-
-  @Deprecated
-  public Object toNativeResourceLocation() {
-    try {
-      return ConstructorHolder.NATIVE_RESOURCE_LOCATION_CONSTRUCTOR.newInstance(namespace, path);
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-      throw new RuntimeException(e);
-    }
   }
 }

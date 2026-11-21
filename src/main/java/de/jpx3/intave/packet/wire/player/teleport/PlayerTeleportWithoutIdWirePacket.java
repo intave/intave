@@ -13,7 +13,7 @@ package de.jpx3.intave.packet.wire.player.teleport;
 
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerTeleportPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Relative;
@@ -24,7 +24,7 @@ import java.util.EnumSet;
 import java.util.OptionalInt;
 import java.util.Set;
 
-public class PlayerTeleportWithoutIdWirePacket extends MutableWirePacket implements MutablePlayerTeleportPacket {
+public class PlayerTeleportWithoutIdWirePacket extends AbstractMutable implements MutablePlayerTeleportPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PlayerTeleportWithoutIdWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			Position.STREAM_CODEC, PlayerTeleportWithoutIdWirePacket::position,

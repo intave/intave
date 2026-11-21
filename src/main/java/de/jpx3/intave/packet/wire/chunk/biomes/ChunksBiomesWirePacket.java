@@ -14,7 +14,7 @@ package de.jpx3.intave.packet.wire.chunk.biomes;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableChunksBiomesPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.ChunkBiomeData;
 import io.netty.buffer.ByteBuf;
 
@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-public class ChunksBiomesWirePacket extends MutableWirePacket implements MutableChunksBiomesPacket {
+public class ChunksBiomesWirePacket extends AbstractMutable implements MutableChunksBiomesPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, ChunksBiomesWirePacket> STREAM_CODEC = streamCodec(ChunkBiomeData.STREAM_CODEC, ChunksBiomesWirePacket::new);
 
 	protected static <T extends ChunksBiomesWirePacket> StreamCodec<ByteBuf, ByteBuf, T> streamCodec(

@@ -15,11 +15,11 @@ package de.jpx3.intave.packet;
 // After = what we send to client/server
 public enum ListenerStage {
 	AUTOMATIC,
-	BEFORE_IMMUTABLE,
-	PROCESSING_MUTABLE,
-	AFTER_IMMUTABLE;
+	BEFORE, // IMMUTABLE
+	MUTABLE, // changing & cancelling allowed
+	AFTER; // IMMUTABLE
 
 	public boolean allowMutations() {
-		return this == PROCESSING_MUTABLE;
+		return this == MUTABLE;
 	}
 }

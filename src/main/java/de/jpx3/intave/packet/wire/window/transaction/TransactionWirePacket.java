@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.window.transaction;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableTransactionPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class TransactionWirePacket extends MutableWirePacket implements MutableTransactionPacket {
+public class TransactionWirePacket extends AbstractMutable implements MutableTransactionPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, TransactionWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.UNSIGNED_BYTE, TransactionWirePacket::containerId,

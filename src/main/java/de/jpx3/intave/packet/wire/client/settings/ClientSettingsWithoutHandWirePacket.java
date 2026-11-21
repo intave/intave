@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.client.settings;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableClientSettingsPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class ClientSettingsWithoutHandWirePacket extends MutableWirePacket implements MutableClientSettingsPacket {
+public class ClientSettingsWithoutHandWirePacket extends AbstractMutable implements MutableClientSettingsPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, ClientSettingsWithoutHandWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.stringCodec(16), ClientSettingsWithoutHandWirePacket::locale,

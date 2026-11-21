@@ -14,7 +14,7 @@ package de.jpx3.intave.packet.wire.world.explosion;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableExplosionPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Motion;
 import io.netty.buffer.ByteBuf;
@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public abstract class ExplosionWirePacket extends MutableWirePacket implements MutableExplosionPacket {
+public abstract class ExplosionWirePacket extends AbstractMutable implements MutableExplosionPacket {
 	protected static final StreamCodec<ByteBuf, ByteBuf, List<BlockPosition>> INT_BLOCK_OFFSETS = blockOffsetsCodec(ByteBufStreamCodecs.INTEGER);
 	protected static final StreamCodec<ByteBuf, ByteBuf, List<BlockPosition>> VAR_INT_BLOCK_OFFSETS = blockOffsetsCodec(ByteBufStreamCodecs.VARINT);
 

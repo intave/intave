@@ -13,8 +13,10 @@ package de.jpx3.intave.packet.wire.world.border;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.packet.ConnectionState;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.mutable.MutableWorldBorderPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.Position;
 import io.netty.buffer.ByteBuf;
 
@@ -22,7 +24,7 @@ import java.util.Objects;
 
 import static de.jpx3.intave.codec.ByteBufStreamCodecs.enumValue;
 
-public class WorldBorderWirePacket extends MutableWirePacket implements MutableWorldBorderPacket {
+public class WorldBorderWirePacket extends AbstractMutable implements MutableWorldBorderPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, WorldBorderWirePacket> STREAM_CODEC =
 		StreamCodec.of(
 			(output, packet) -> {
@@ -109,6 +111,11 @@ public class WorldBorderWirePacket extends MutableWirePacket implements MutableW
 		this.absoluteMaxSize = absoluteMaxSize;
 		this.warningDistance = warningDistance;
 		this.warningDelay = warningDelay;
+	}
+
+	@Override
+	public boolean appliesTo(ConnectionState state, PacketType type) {
+		return state == ConnectionState.PLAY && type == PacketType.Server.WORLD_BORDER;
 	}
 
 	@Override

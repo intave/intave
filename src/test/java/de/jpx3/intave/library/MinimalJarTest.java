@@ -38,6 +38,7 @@ final class MinimalJarTest {
       assertNull(jar.getEntry("com/github/luben/zstd/Zstd.class"));
       assertNull(jar.getEntry("org/bouncycastle/cert/X509CertificateHolder.class"));
       assertNull(jar.getEntry("it/unimi/dsi/fastutil/longs/LongSet.class"));
+      assertNull(jar.getEntry("com/viaversion/nbt/tag/CompoundTag.class"));
     }
   }
 
@@ -55,7 +56,8 @@ final class MinimalJarTest {
       for (String name : new String[] {
         "net.bytebuddy.ByteBuddy", "org.bouncycastle.asn1.x500.X500Name",
         "org.bouncycastle.cert.X509CertificateHolder", "org.bouncycastle.asn1.oiw.OIWObjectIdentifiers",
-        "com.github.luben.zstd.Zstd", "it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap"
+        "com.github.luben.zstd.Zstd", "it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap",
+        "com.viaversion.nbt.tag.CompoundTag"
       }) {
         File source = new File(loader.loadClass(name).getProtectionDomain().getCodeSource()
           .getLocation().toURI()).getCanonicalFile();

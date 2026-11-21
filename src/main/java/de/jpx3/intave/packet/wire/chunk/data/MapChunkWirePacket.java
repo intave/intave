@@ -11,20 +11,20 @@
 
 package de.jpx3.intave.packet.wire.chunk.data;
 
+import com.viaversion.nbt.tag.CompoundTag;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableMapChunkPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.ChunkBlockEntity;
 import de.jpx3.intave.share.ChunkData;
 import de.jpx3.intave.share.ChunkLightData;
-import de.jpx3.intave.share.NbtCompound;
 import io.netty.buffer.ByteBuf;
 
 import java.util.*;
 import java.util.function.Supplier;
 
-public class MapChunkWirePacket extends MutableWirePacket implements MutableMapChunkPacket {
+public class MapChunkWirePacket extends AbstractMutable implements MutableMapChunkPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, MapChunkWirePacket> STREAM_CODEC = streamCodec(MapChunkWirePacket::new);
 
 	private final MapChunkFormat format;
@@ -33,9 +33,9 @@ public class MapChunkWirePacket extends MutableWirePacket implements MutableMapC
 	private long[] sectionMask = new long[0];
 	private int[] biomeIds = new int[0];
 	private ChunkData chunkData = ChunkData.EMPTY;
-	private NbtCompound heightmapTag = NbtCompound.EMPTY;
+	private CompoundTag heightmapTag = new CompoundTag();
 	private Map<Integer, long[]> heightmaps = Collections.emptyMap();
-	private List<NbtCompound> blockEntityTags = Collections.emptyList();
+	private List<CompoundTag> blockEntityTags = Collections.emptyList();
 	private List<ChunkBlockEntity> blockEntities = Collections.emptyList();
 	private ChunkLightData lightData = new ChunkLightData();
 
@@ -121,16 +121,18 @@ public class MapChunkWirePacket extends MutableWirePacket implements MutableMapC
 		return biomeIds.clone();
 	}
 
-	public NbtCompound heightmapTag() {
-		return heightmapTag;
+	/** Returns a detached tag; apply edits with {@link #setHeightmapTag(CompoundTag)}. */
+	public CompoundTag heightmapTag() {
+		return heightmapTag.copy();
 	}
 
 	public Map<Integer, long[]> heightmaps() {
 		return copyHeightmaps(heightmaps);
 	}
 
-	public List<NbtCompound> blockEntityTags() {
-		return blockEntityTags;
+	/** Returns detached tags; apply edits with {@link #setBlockEntityTags(List)}. */
+	public List<CompoundTag> blockEntityTags() {
+		return copyTags(blockEntityTags);
 	}
 
 	public List<ChunkBlockEntity> blockEntities() {
@@ -177,10 +179,10 @@ public class MapChunkWirePacket extends MutableWirePacket implements MutableMapC
 		biomeIds = value.clone();
 	}
 
-	public void setHeightmapTag(NbtCompound value) {
+	public void setHeightmapTag(CompoundTag value) {
 		markMutated();
 		require(format.heightmapTag);
-		heightmapTag = Objects.requireNonNull(value, "heightmapTag");
+		heightmapTag = Objects.requireNonNull(value, "heightmapTag").copy();
 	}
 
 	public void setHeightmaps(Map<Integer, long[]> value) {
@@ -189,10 +191,10 @@ public class MapChunkWirePacket extends MutableWirePacket implements MutableMapC
 		heightmaps = copyHeightmaps(value);
 	}
 
-	public void setBlockEntityTags(List<NbtCompound> value) {
+	public void setBlockEntityTags(List<CompoundTag> value) {
 		markMutated();
 		require(format.blockEntities && !format.packedBlockEntities);
-		blockEntityTags = Collections.unmodifiableList(new ArrayList<>(value));
+		blockEntityTags = copyTags(value);
 	}
 
 	public void setBlockEntities(List<ChunkBlockEntity> value) {
@@ -225,7 +227,7 @@ public class MapChunkWirePacket extends MutableWirePacket implements MutableMapC
 			sectionMask = mask == 0 ? new long[0] : new long[]{mask};
 			scalarMask(sectionMask);
 		}
-		StreamCodec<ByteBuf, ByteBuf, NbtCompound> tags = tagCodec();
+		StreamCodec<ByteBuf, ByteBuf, CompoundTag> tags = tagCodec();
 		if (format.heightmapTag) {
 			heightmapTag = Objects.requireNonNull(tags.decode(input), "heightmapTag");
 		}
@@ -326,8 +328,8 @@ public class MapChunkWirePacket extends MutableWirePacket implements MutableMapC
 		return format.biomeFormat != 0 && (!format.fullChunk || fullChunk);
 	}
 
-	private StreamCodec<ByteBuf, ByteBuf, NbtCompound> tagCodec() {
-		return format.namedNbt ? NbtCompound.NAMED_STREAM_CODEC : NbtCompound.STREAM_CODEC;
+	private StreamCodec<ByteBuf, ByteBuf, CompoundTag> tagCodec() {
+		return format.namedNbt ? ByteBufStreamCodecs.NAMED_COMPOUND_TAG : ByteBufStreamCodecs.COMPOUND_TAG;
 	}
 
 	private StreamCodec<ByteBuf, ByteBuf, ChunkBlockEntity> entityCodec() {
@@ -348,6 +350,12 @@ public class MapChunkWirePacket extends MutableWirePacket implements MutableMapC
 		for (T value : values) {
 			codec.encode(output, value);
 		}
+	}
+
+	private static List<CompoundTag> copyTags(List<CompoundTag> tags) {
+		List<CompoundTag> copy = new ArrayList<>(tags.size());
+		for (CompoundTag tag : tags) copy.add(tag == null ? null : tag.copy());
+		return Collections.unmodifiableList(copy);
 	}
 
 	private static Map<Integer, long[]> copyHeightmaps(Map<Integer, long[]> values) {

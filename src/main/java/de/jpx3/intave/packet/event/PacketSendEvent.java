@@ -29,6 +29,7 @@ public final class PacketSendEvent extends PacketEvent {
 	private final PacketType.Server type;
 	private List<TypedPacketContract> sendBefore;
 	private List<TypedPacketContract> sendAfter;
+	private boolean bundleRequired;
 
 	public PacketSendEvent(
 		User user, TypedPacketContract tpc
@@ -49,6 +50,14 @@ public final class PacketSendEvent extends PacketEvent {
 
 	public TypedPacketContract typedPacket() {
 		return super.packet().typedTo(type);
+	}
+
+	public void requireInBundle() {
+		bundleRequired = true;
+	}
+
+	boolean bundleRequired() {
+		return bundleRequired;
 	}
 
 	public @Immutable List<TypedPacketContract> sendBefore() {

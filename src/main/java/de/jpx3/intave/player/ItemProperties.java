@@ -92,7 +92,7 @@ public final class ItemProperties {
   ) {
     return itemStack != null
       && itemStack.getType().name().equals("BRUSH")
-      && user.meta().protocol().protocolVersion() >= ProtocolMetadata.VER_1_19_4;
+      && user.protocolVersion() >= ProtocolMetadata.VER_1_19_4;
   }
 
   @Nullable
@@ -100,7 +100,7 @@ public final class ItemProperties {
     if (!isUsableItem(user, itemStack)) {
       return null;
     }
-    if (user.meta().protocol().protocolVersion() < ProtocolMetadata.VER_1_21_11) {
+    if (user.protocolVersion() < ProtocolMetadata.VER_1_21_11) {
       return DEFAULT_USE_PROFILE;
     }
     return componentUseProfile(itemStack);
@@ -108,7 +108,7 @@ public final class ItemProperties {
 
   private static boolean isUsableItem(User user, @Nullable ItemStack itemStack) {
     Material type = itemStack == null ? Material.AIR : itemStack.getType();
-    int protocolVersion = user.meta().protocol().protocolVersion();
+    int protocolVersion = user.protocolVersion();
     if (/*ITEM_TRIDENT != null && */type == ITEM_TRIDENT) {
       return protocolVersion >= ProtocolMetadata.VER_1_13 && tridentUsable(user, itemStack);
     }
@@ -129,7 +129,7 @@ public final class ItemProperties {
   }
 
   public static boolean canChargeCrossbow(User user, @Nullable ItemStack itemStack) {
-    if (user.meta().protocol().protocolVersion() < ProtocolMetadata.VER_1_14
+    if (user.protocolVersion() < ProtocolMetadata.VER_1_14
       || itemStack == null || itemStack.getType() != CROSSBOW) {
       return false;
     }
@@ -174,7 +174,7 @@ public final class ItemProperties {
   }
 
   public static boolean foodConsumable(User user, Material type) {
-    return isFood(type) && foodAllowed(user, alwaysEdible(type, user.meta().protocol().protocolVersion()));
+    return isFood(type) && foodAllowed(user, alwaysEdible(type, user.protocolVersion()));
   }
 
   public static boolean foodConsumable(User user, @Nullable ItemStack itemStack) {
@@ -184,7 +184,7 @@ public final class ItemProperties {
     if (!hasItemMeta(itemStack)) {
       return foodConsumable(user, itemStack.getType());
     }
-    int protocolVersion = user.meta().protocol().protocolVersion();
+    int protocolVersion = user.protocolVersion();
     Object foodComponent = protocolVersion >= ProtocolMetadata.VER_1_20_5
       ? itemMetaComponent(itemStack, "hasFood", "getFood") : null;
     if (foodComponent != null) {
@@ -196,7 +196,7 @@ public final class ItemProperties {
   private static boolean foodAllowed(User user, boolean alwaysEdible) {
     AbilityMetadata abilityData = user.meta().abilities();
     boolean creative = abilityData.inGameMode(AbilityTracker.GameMode.CREATIVE);
-    int protocolVersion = user.meta().protocol().protocolVersion();
+    int protocolVersion = user.protocolVersion();
     if (creative && protocolVersion < ProtocolMetadata.VER_1_15) {
       return false;
     }
@@ -343,7 +343,7 @@ public final class ItemProperties {
     if (!hasItemMeta(itemStack)) {
       return foodConsumable(user, itemStack.getType());
     }
-    int protocolVersion = user.meta().protocol().protocolVersion();
+    int protocolVersion = user.protocolVersion();
     Object foodComponent = protocolVersion >= ProtocolMetadata.VER_1_20_5
       ? itemMetaComponent(itemStack, "hasFood", "getFood") : null;
     if (foodComponent != null) {
@@ -357,7 +357,7 @@ public final class ItemProperties {
   private static boolean componentUsePossible(
     User user, ItemStack itemStack, @Nullable Object foodComponent
   ) {
-    int protocolVersion = user.meta().protocol().protocolVersion();
+    int protocolVersion = user.protocolVersion();
     if (protocolVersion < ProtocolMetadata.VER_1_20_5) {
       return false;
     }

@@ -14,7 +14,7 @@ package de.jpx3.intave.packet.wire.player.inforemove;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerInfoRemovePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ import java.util.UUID;
 
 import static de.jpx3.intave.codec.ByteBufStreamCodecs.count;
 
-public class PlayerInfoRemoveWirePacket extends MutableWirePacket implements MutablePlayerInfoRemovePacket {
+public class PlayerInfoRemoveWirePacket extends AbstractMutable implements MutablePlayerInfoRemovePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PlayerInfoRemoveWirePacket> STREAM_CODEC =
 		StreamCodec.of(
 			(output, packet) -> {

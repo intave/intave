@@ -20,10 +20,7 @@ import de.jpx3.intave.registry.PacketTypeRegistry;
 import de.jpx3.intave.resource.Resources;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static de.jpx3.intave.packet.ConnectionState.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,12 +30,7 @@ final class PacketTypeRegistryTest {
 
   @Test
   void coversEveryBundledReleaseProtocolWithoutServerInitialization() {
-    Set<Integer> expected = new HashSet<>();
-    for (String line : Resources.resourceFromJarOrBuild("protocolversions").readAsString().split("\\R")) {
-      if (line.startsWith("release ")) {
-        expected.add(Integer.parseInt(line.split(" ")[1]));
-      }
-    }
+    Set<Integer> expected = new HashSet<>(releaseProtocols().values());
     assertEquals(expected, PacketTypeRegistries.serverbound().supportedProtocolVersions());
     assertEquals(expected, PacketTypeRegistries.clientbound().supportedProtocolVersions());
     for (int protocol : expected) {
@@ -55,51 +47,48 @@ final class PacketTypeRegistryTest {
   }
 
   @Test
-  void resolvesEveryNativeClassThroughItsMasterName() {
-    JsonObject names = readJson("type_to_name.json").getAsJsonObject().getAsJsonObject("states");
-    for (JsonElement version : readJson("index.json").getAsJsonArray()) {
-      String name = version.getAsString();
-      JsonObject data = readJson(name + ".json").getAsJsonObject();
-      int protocol = data.get("protocolVersion").getAsInt();
-      for (Map.Entry<String, JsonElement> state : data.getAsJsonObject("states").entrySet()) {
+  void resolvesEveryIndexedNameInBothDirections() {
+    JsonObject index = readJson("index.json").getAsJsonObject();
+    Map<JsonObject, Integer> firstByTable = new HashMap<>();
+    for (int protocol : new TreeSet<>(PacketTypeRegistries.serverbound().supportedProtocolVersions())) {
+      int canonical = index.get(Integer.toString(protocol)).getAsInt();
+      JsonObject states = readJson(canonical + ".json").getAsJsonObject();
+      assertEquals(firstByTable.computeIfAbsent(states, ignored -> protocol).intValue(), canonical);
+      for (Map.Entry<String, JsonElement> state : states.entrySet()) {
         ConnectionState connectionState = ConnectionState.valueOf(state.getKey().toUpperCase(Locale.ROOT));
         for (Map.Entry<String, JsonElement> direction : state.getValue().getAsJsonObject().entrySet()) {
-          JsonObject ids = direction.getValue().getAsJsonObject().getAsJsonObject("ids");
-          JsonObject translations = names.getAsJsonObject(state.getKey()).getAsJsonObject(direction.getKey());
-          Set<String> resolved = new HashSet<>();
-          for (Map.Entry<String, JsonElement> translation : translations.entrySet()) {
-            JsonElement className = translation.getValue().getAsJsonObject().get(name);
-            if (className != null) {
-              assertTrue(resolved.add(className.getAsString()), "Duplicate translation " + translation.getKey());
-              int packetId = ids.get(className.getAsString()).getAsInt();
-              PacketTypeRegistry<?> registry = registry(direction.getKey());
-              assertEquals(packetId,
-                registry.idOf(connectionState, registry.typeOf(connectionState, packetId, protocol), protocol),
-                name + "/" + state.getKey() + "/" + direction.getKey() + "/" + translation.getKey());
-              assertEquals(translation.getKey(), registry.typeOf(connectionState, packetId, protocol).registryName());
-            }
+          PacketTypeRegistry<?> registry = registry(direction.getKey());
+          JsonObject ids = direction.getValue().getAsJsonObject();
+          assertEquals(ids.entrySet().size(), registry.packetIds(connectionState, protocol).size());
+          for (Map.Entry<String, JsonElement> packet : ids.entrySet()) {
+            int id = packet.getValue().getAsInt();
+            PacketType type = registry.typeOf(connectionState, id, protocol);
+            assertNotNull(type);
+            assertEquals(packet.getKey(), type.registryName());
+            assertEquals(id, registry.idOf(connectionState, type, protocol));
           }
-          assertEquals(ids.entrySet().size(), resolved.size(), "Unmapped classes in " + name);
         }
       }
     }
   }
 
   @Test
-  void resolvesEverySupplementalPacket() {
-    JsonObject protocols = readJson("additional_protocols.json").getAsJsonObject().getAsJsonObject("protocols");
-    for (Map.Entry<String, JsonElement> protocol : protocols.entrySet()) {
-      int protocolVersion = Integer.parseInt(protocol.getKey());
-      for (Map.Entry<String, JsonElement> state : protocol.getValue().getAsJsonObject().getAsJsonObject("states").entrySet()) {
+  void keepsReleaseSpecificNativeNamesForRegisteredTypes() {
+    JsonObject names = readJson("type_to_name.json").getAsJsonObject().getAsJsonObject("states");
+    JsonObject releases = names.getAsJsonObject("handshaking").getAsJsonObject("serverbound").getAsJsonObject("SET_PROTOCOL");
+    Map<String, Integer> protocols = releaseProtocols();
+    for (Map.Entry<String, JsonElement> release : releases.entrySet()) {
+      String version = release.getKey();
+      int protocol = protocols.get(version);
+      for (Map.Entry<String, JsonElement> state : names.entrySet()) {
         ConnectionState connectionState = ConnectionState.valueOf(state.getKey().toUpperCase(Locale.ROOT));
         for (Map.Entry<String, JsonElement> direction : state.getValue().getAsJsonObject().entrySet()) {
-          for (Map.Entry<String, JsonElement> packet : direction.getValue().getAsJsonObject().entrySet()) {
-            int packetId = packet.getValue().getAsInt();
-            PacketTypeRegistry<?> registry = registry(direction.getKey());
-            assertEquals(packetId,
-              registry.idOf(connectionState, registry.typeOf(connectionState, packetId, protocolVersion), protocolVersion),
-              protocolVersion + "/" + state.getKey() + "/" + direction.getKey() + "/" + packet.getKey());
-            assertEquals(packet.getKey(), registry.typeOf(connectionState, packetId, protocolVersion).registryName());
+          JsonObject types = direction.getValue().getAsJsonObject();
+          Set<String> nativeNames = new HashSet<>();
+          for (PacketType type : registry(direction.getKey()).packetIds(connectionState, protocol).keySet()) {
+            JsonElement nativeName = types.getAsJsonObject(type.registryName()).get(version);
+            assertNotNull(nativeName, version + "/" + type.registryName());
+            assertTrue(nativeNames.add(nativeName.getAsString()), "Duplicate native name in " + version);
           }
         }
       }
@@ -187,8 +176,23 @@ final class PacketTypeRegistryTest {
   void sharesImmutableRegistries() {
     assertSame(PacketTypeRegistries.serverbound(), PacketTypeRegistries.serverbound());
     assertSame(PacketTypeRegistries.clientbound(), PacketTypeRegistries.clientbound());
+    assertSame(PacketTypeRegistries.clientbound().packetIds(PLAY, 762), PacketTypeRegistries.clientbound().packetIds(PLAY, 763));
     assertThrows(UnsupportedOperationException.class, () -> PacketTypeRegistries.serverbound().supportedProtocolVersions().clear());
     assertThrows(UnsupportedOperationException.class, () -> PacketTypeRegistries.serverbound().packetIds(PLAY, 47).clear());
+  }
+
+  private static Map<String, Integer> releaseProtocols() {
+    Map<String, Integer> protocols = new HashMap<>();
+    for (String line : Resources.resourceFromJarOrBuild("protocolversions").readAsString().split("\\R")) {
+      if (line.startsWith("release ")) {
+        String[] parts = line.split(" ");
+        int protocol = Integer.parseInt(parts[1]);
+        for (String release : parts[3].split(",")) {
+          protocols.put(release, protocol);
+        }
+      }
+    }
+    return protocols;
   }
 
   private static PacketTypeRegistry<?> registry(String direction) {

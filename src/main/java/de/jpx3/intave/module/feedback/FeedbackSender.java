@@ -63,7 +63,6 @@ public final class FeedbackSender extends Module {
   @Override
   public void enable() {
     dumpFeedback = plugin.settings().getBoolean("logging.feedback-dump", false);
-    bundlingDisabled = plugin.settings().getBoolean("check.physics.no-bundling", false);
     boolean disabledTransactionObfuscation = plugin.settings().getBoolean("compatibility.no-transaction-obfuscation", false);
     if (!disabledTransactionObfuscation && !shouldRefrainFromObfuscation()) {
       if (MinecraftVersions.VER1_17_1.atOrAbove()) {
@@ -152,6 +151,17 @@ public final class FeedbackSender extends Module {
     }
   }
 
+  public void synchronize(User user, PacketSendEvent event, EmptyFeedbackCallback callback) {
+    ReentrantLock lock = userLock(user);
+    lock.lock();
+    try {
+      event.addSendAfter(createRequestWithPacket(user, callback));
+      event.requireInBundle();
+    } finally {
+      lock.unlock();
+    }
+  }
+
   public void doubleSynchronize(
     User user, PacketSendEvent event,
     EmptyFeedbackCallback before, EmptyFeedbackCallback after
@@ -161,6 +171,7 @@ public final class FeedbackSender extends Module {
     try {
       event.addSendBefore(createRequestWithPacket(user, before));
       event.addSendAfter(createRequestWithPacket(user, after));
+      event.requireInBundle();
     } finally {
       lock.unlock();
     }
@@ -252,7 +263,7 @@ public final class FeedbackSender extends Module {
     }
     Channel channel = PlayerChannel.channelOf(player);
     if (!channel.eventLoop().inEventLoop()) {
-      boolean deferBundle = MinecraftVersions.VER1_19_4.atOrAbove() && !bundlingDisabled && toBundle != null;
+      boolean deferBundle = MinecraftVersions.VER1_19_4.atOrAbove() && toBundle != null;
       if (deferBundle) {
         // The original event must be cancelled before returning to the legacy pipeline.
         if (toBundle.isReadOnly()) toBundle.setReadOnly(false);
@@ -372,7 +383,6 @@ public final class FeedbackSender extends Module {
   // for the billions of transaction packets we send, caching is easy and makes sense
   private final PacketContainer[] PACKET_CACHE = new PacketContainer[256];
   private final PacketContainer[] PACKET_CACHE_NO_PING_MASK = new PacketContainer[256];
-  private boolean bundlingDisabled;
 
   private void performRequest(
     Player receiver, FeedbackRequest<?> request, @Nullable PacketEvent toBundle
@@ -419,7 +429,7 @@ public final class FeedbackSender extends Module {
 //      System.out.println("Received " + transactionIdentifier + "/" +transactionResponse.num() + " from " + player.getName());
       System.out.println("Sent " + id + "/"+request.num() + " to " + receiver.getName() + " on " + Thread.currentThread().getName());
     }
-    if (MinecraftVersions.VER1_19_4.atOrAbove() && !bundlingDisabled && toBundle != null) {
+    if (MinecraftVersions.VER1_19_4.atOrAbove() && toBundle != null) {
       PacketContainer bundle = new PacketContainer(BUNDLE);
       StructureModifier<Iterable<PacketContainer>> containingPackets = bundle.getPacketBundles();
       containingPackets.write(0, Arrays.asList(packet, toBundle.getPacket()/*.shallowClone()*/));

@@ -14,13 +14,13 @@ package de.jpx3.intave.packet.wire.scoreboard.objective;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableScoreboardObjectivePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.ScoreboardObjectiveAction;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Objects;
 
-public class ScoreboardObjectiveWirePacket extends MutableWirePacket implements MutableScoreboardObjectivePacket {
+public class ScoreboardObjectiveWirePacket extends AbstractMutable implements MutableScoreboardObjectivePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, ScoreboardObjectiveWirePacket> STREAM_CODEC =
 		StreamCodec.of(
 			(output, packet) -> {

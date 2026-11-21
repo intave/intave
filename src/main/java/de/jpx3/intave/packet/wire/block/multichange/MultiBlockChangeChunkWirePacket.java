@@ -13,7 +13,7 @@ package de.jpx3.intave.packet.wire.block.multichange;
 
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableMultiBlockChangePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.BlockUpdate;
 import io.netty.buffer.ByteBuf;
@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public final class MultiBlockChangeChunkWirePacket extends MutableWirePacket implements MutableMultiBlockChangePacket {
+public final class MultiBlockChangeChunkWirePacket extends AbstractMutable implements MutableMultiBlockChangePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, MultiBlockChangeChunkWirePacket> STREAM_CODEC =
 		StreamCodec.of(
 			(output, packet) -> {

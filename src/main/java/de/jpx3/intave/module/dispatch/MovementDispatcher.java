@@ -611,7 +611,7 @@ public final class MovementDispatcher extends Module {
   }
 
   private void updatePotionEffects(User user) {
-    boolean infiniteEffectsAllowed = user.meta().protocol().protocolVersion() >= 763;
+    boolean infiniteEffectsAllowed = user.protocolVersion() >= 763;
     EffectMetadata potionData = user.meta().potions();
     if (potionData.potionEffectSpeedAmplifier() > 0) {
       if (potionData.potionEffectSpeedDuration != -1 || !infiniteEffectsAllowed) {
@@ -765,7 +765,7 @@ public final class MovementDispatcher extends Module {
     User user, PlayerInputPacket input
   ) {
     MovementMetadata movementData = user.meta().movement();
-    if (user.meta().protocol().protocolVersion() >= VER_1_21_2) {
+    if (user.protocolVersion() >= VER_1_21_2) {
       movementData.lastInput = movementData.input;
       movementData.input = input.input();
     }
@@ -977,8 +977,8 @@ public final class MovementDispatcher extends Module {
   }
 
   private static final Set<Material> SHULKER_BOX_MATERIALS = MaterialSearch.materialsThatContain("SHULKER_BOX");
-
   private static final Set<Material> PISTON_MATERIALS = MaterialSearch.materialsThatContain("PISTON");
+
   @PacketSubscription(
     packetsOut = BLOCK_ACTION
   )

@@ -19,7 +19,7 @@ public interface PacketSubscription extends Comparable<PacketSubscription> {
 	void onPacket(PacketEvent event);
 
 	default ListenerStage stage() {
-		return ListenerStage.AFTER_IMMUTABLE;
+		return ListenerStage.AFTER;
 	}
 
 	default ListenerPriority priority() {

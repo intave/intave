@@ -14,7 +14,7 @@ package de.jpx3.intave.packet.wire.tabcomplete.response;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableTabCompleteResponsePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ import java.util.List;
 
 import static de.jpx3.intave.codec.ByteBufStreamCodecs.count;
 
-public class TabCompleteResponseWirePacket extends MutableWirePacket implements MutableTabCompleteResponsePacket {
+public class TabCompleteResponseWirePacket extends AbstractMutable implements MutableTabCompleteResponsePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, TabCompleteResponseWirePacket> STREAM_CODEC =
 		StreamCodec.of(
 			(output, packet) -> {

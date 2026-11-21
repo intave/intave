@@ -56,7 +56,7 @@ public final class MetadataTracker extends Module {
 			movement.sleepingBedPosition = sleepingBedPosition;
 			if (sleepingBedPosition != null) {
 				Material bed = VolatileBlockAccess.typeAccess(user, sleepingBedPosition);
-				Position newPosition = positionFromBedPosition(sleepingBedPosition, bed, user.meta().protocol().protocolVersion());
+				Position newPosition = positionFromBedPosition(sleepingBedPosition, bed, user.protocolVersion());
 				movement.setPosition(newPosition);
 				movement.setVerifiedLastPosition(newPosition, "Bed sleep");
 			}

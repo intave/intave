@@ -13,7 +13,7 @@ package de.jpx3.intave.packet.wire.block.change;
 
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableSingleBlockChangePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.BlockUpdate;
 import io.netty.buffer.ByteBuf;
@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class SingleBlockChangeWirePacket extends MutableWirePacket implements MutableSingleBlockChangePacket {
+public class SingleBlockChangeWirePacket extends AbstractMutable implements MutableSingleBlockChangePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, SingleBlockChangeWirePacket> STREAM_CODEC =
 		BlockUpdate.STREAM_CODEC.beforeAndAfter(SingleBlockChangeWirePacket::new, packet -> packet.update);
 

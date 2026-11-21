@@ -15,6 +15,8 @@ import de.jpx3.intave.packet.contract.immutable.AbilityInPacket;
 
 public interface MutableAbilityInPacket extends AbilityInPacket, Mutable {
 	void setRequestedFlying(boolean flying);
+
 	void setFlyingSpeed(float flyingSpeed);
+
 	void setWalkingSpeed(float walkingSpeed);
 }

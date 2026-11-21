@@ -13,13 +13,15 @@ package de.jpx3.intave.packet.wire.entity.position;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.packet.ConnectionState;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityPositionPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
 import io.netty.buffer.ByteBuf;
 
-public class EntityPositionDoublePositionWirePacket extends MutableWirePacket implements MutableEntityPositionPacket {
+public class EntityPositionDoublePositionWirePacket extends AbstractMutable implements MutableEntityPositionPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityPositionDoublePositionWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, EntityPositionDoublePositionWirePacket::entityId,
@@ -85,6 +87,11 @@ public class EntityPositionDoublePositionWirePacket extends MutableWirePacket im
 	public void setOnGround(boolean value) {
 		markMutated();
 		onGround = value;
+	}
+
+	@Override
+	public boolean appliesTo(ConnectionState state, PacketType type) {
+		return state == ConnectionState.PLAY && type == PacketType.Server.ENTITY_TELEPORT;
 	}
 
 	@Override

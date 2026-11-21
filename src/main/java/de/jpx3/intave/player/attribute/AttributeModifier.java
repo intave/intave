@@ -84,6 +84,7 @@ public final class AttributeModifier {
 		return amount;
 	}
 
+	@Deprecated
 	public static Set<AttributeModifier> fromProtocolLib(
 		Set<com.comphenix.protocol.wrappers.WrappedAttributeModifier> modifiers
 	) {

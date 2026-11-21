@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.item.pick;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutablePickItemPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public final class PickItemWirePacket extends MutableWirePacket implements MutablePickItemPacket {
+public final class PickItemWirePacket extends AbstractMutable implements MutablePickItemPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PickItemWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, PickItemWirePacket::slot,

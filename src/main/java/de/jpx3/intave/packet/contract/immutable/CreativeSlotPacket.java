@@ -12,8 +12,8 @@
 package de.jpx3.intave.packet.contract.immutable;
 
 import de.jpx3.intave.annotate.Nullable;
+import de.jpx3.intave.item.ItemStack;
 import de.jpx3.intave.packet.contract.PacketContract;
-import de.jpx3.intave.share.ItemStack;
 
 public interface CreativeSlotPacket extends PacketContract, SlotAddressed {
 	@Nullable

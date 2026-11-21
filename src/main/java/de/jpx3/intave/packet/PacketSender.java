@@ -13,7 +13,6 @@ package de.jpx3.intave.packet;
 
 import de.jpx3.intave.packet.contract.TypedPacketContract;
 import de.jpx3.intave.packet.injection.Binding;
-import de.jpx3.intave.reflect.PlayerChannel;
 import de.jpx3.intave.user.User;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -24,7 +23,7 @@ public final class PacketSender {
 	}
 
 	public static Binding bindingOf(User user) {
-		return Binding.of(PlayerChannel.channelOf(user.player()));
+		return user.binding();
 	}
 
 	public static ChannelFuture send(User user, TypedPacketContract packet) {

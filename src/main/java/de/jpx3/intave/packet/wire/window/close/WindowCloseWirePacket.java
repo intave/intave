@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.window.close;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableWindowClosePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class WindowCloseWirePacket extends MutableWirePacket implements MutableWindowClosePacket {
+public class WindowCloseWirePacket extends AbstractMutable implements MutableWindowClosePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, WindowCloseWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, WindowCloseWirePacket::containerId,

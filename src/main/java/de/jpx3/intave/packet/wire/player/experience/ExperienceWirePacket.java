@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.player.experience;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableExperiencePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class ExperienceWirePacket extends MutableWirePacket implements MutableExperiencePacket {
+public class ExperienceWirePacket extends AbstractMutable implements MutableExperiencePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, ExperienceWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.FLOAT, ExperienceWirePacket::progress,

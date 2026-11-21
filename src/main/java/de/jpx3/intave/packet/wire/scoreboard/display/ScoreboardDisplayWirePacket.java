@@ -14,12 +14,12 @@ package de.jpx3.intave.packet.wire.scoreboard.display;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableScoreboardDisplayPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Arrays;
 
-public class ScoreboardDisplayWirePacket extends MutableWirePacket implements MutableScoreboardDisplayPacket {
+public class ScoreboardDisplayWirePacket extends AbstractMutable implements MutableScoreboardDisplayPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, ScoreboardDisplayWirePacket> STREAM_CODEC =
 		StreamCodec.of(
 			(output, packet) -> {

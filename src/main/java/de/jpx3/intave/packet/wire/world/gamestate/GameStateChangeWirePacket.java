@@ -14,11 +14,11 @@ package de.jpx3.intave.packet.wire.world.gamestate;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableGameStateChangePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.GameStateChangeType;
 import io.netty.buffer.ByteBuf;
 
-public class GameStateChangeWirePacket extends MutableWirePacket implements MutableGameStateChangePacket {
+public class GameStateChangeWirePacket extends AbstractMutable implements MutableGameStateChangePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, GameStateChangeWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.UNSIGNED_BYTE, GameStateChangeWirePacket::typeId,

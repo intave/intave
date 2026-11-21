@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.chat.message;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableChatPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class ChatUnsignedWirePacket extends MutableWirePacket implements MutableChatPacket {
+public class ChatUnsignedWirePacket extends AbstractMutable implements MutableChatPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, ChatUnsignedWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.stringCodec(256), ChatUnsignedWirePacket::text,

@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.ability.inbound;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableAbilityInPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class AbilityInWirePacket extends MutableWirePacket implements MutableAbilityInPacket {
+public class AbilityInWirePacket extends AbstractMutable implements MutableAbilityInPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, AbilityInWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.UNSIGNED_BYTE, AbilityInWirePacket::flags,

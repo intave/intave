@@ -144,16 +144,16 @@ public final class PacketPerfectSubscriptionLinker extends Module {
 
 		if (mutableType) {
 			if (stage == ListenerStage.AUTOMATIC) {
-				stage = ListenerStage.PROCESSING_MUTABLE;
+				stage = ListenerStage.MUTABLE;
 			}
 			if (!stage.allowMutations()) {
 				throw new IllegalStateException("Subscription method " + method + " is for a mutable packet type, but the stage " + stage + " does not allow mutations");
 			}
 		} else {
-			if (stage == ListenerStage.PROCESSING_MUTABLE) {
+			if (stage == ListenerStage.MUTABLE) {
 				throw new IllegalStateException("Subscription method " + method + " is for a non-mutable packet type, but the stage " + stage + " is for mutable packets");
 			} else if (stage == ListenerStage.AUTOMATIC) {
-				stage = ListenerStage.AFTER_IMMUTABLE;
+				stage = ListenerStage.AFTER;
 			}
 		}
 

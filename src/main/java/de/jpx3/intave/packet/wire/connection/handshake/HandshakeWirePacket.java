@@ -15,12 +15,12 @@ import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.mutable.MutableHandshakePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
 import java.nio.charset.StandardCharsets;
 
-public final class HandshakeWirePacket extends MutableWirePacket implements MutableHandshakePacket {
+public final class HandshakeWirePacket extends AbstractMutable implements MutableHandshakePacket {
 	private static final StreamCodec<ByteBuf, ByteBuf, String> SERVER_ADDRESS =
 		StreamCodec.of(
 			(output, address) -> {

@@ -55,7 +55,8 @@ public final class Libraries {
             throw new IllegalStateException("Invalid library coordinate: " + line);
           }
           Library library = new Library(coordinate[0], coordinate[1], coordinate[2],
-            "https://repo1.maven.org/maven2");
+            coordinate[0].equals("com.viaversion") && coordinate[1].equals("nbt")
+              ? "https://repo.viaversion.com" : "https://repo1.maven.org/maven2");
           if (!library.isInCache()) {
             log.accept("Downloading library " + library.name() + " " + library.version() + " to cache");
             library.downloadToCache();

@@ -14,7 +14,7 @@ package de.jpx3.intave.packet.wire.chunk.bulk;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableMapChunkBulkPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.ChunkBulkData;
 import de.jpx3.intave.share.ChunkSection;
 import io.netty.buffer.ByteBuf;
@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class MapChunkBulkWirePacket extends MutableWirePacket implements MutableMapChunkBulkPacket {
+public class MapChunkBulkWirePacket extends AbstractMutable implements MutableMapChunkBulkPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, MapChunkBulkWirePacket> STREAM_CODEC = StreamCodec.of(
 		(output, packet) -> {
 			output.writeBoolean(packet.skyLight);

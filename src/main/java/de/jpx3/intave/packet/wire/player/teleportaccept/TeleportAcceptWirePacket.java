@@ -14,13 +14,13 @@ package de.jpx3.intave.packet.wire.player.teleportaccept;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableTeleportAcceptPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.PositionAndRotation;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Objects;
 
-public class TeleportAcceptWirePacket extends MutableWirePacket implements MutableTeleportAcceptPacket {
+public class TeleportAcceptWirePacket extends AbstractMutable implements MutableTeleportAcceptPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, TeleportAcceptWirePacket> STREAM_CODEC =
 		StreamCodec.of(
 			(output, packet) -> {

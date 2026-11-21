@@ -12,6 +12,8 @@
 package de.jpx3.intave.packet.wire.world.border;
 
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.packet.ConnectionState;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.share.Position;
 import io.netty.buffer.ByteBuf;
 
@@ -36,6 +38,11 @@ public final class WorldBorderSetCenterWirePacket extends WorldBorderWirePacket 
 	public WorldBorderSetCenterWirePacket(Position center) {
 		this();
 		this.center = center;
+	}
+
+	@Override
+	public boolean appliesTo(ConnectionState state, PacketType type) {
+		return state == ConnectionState.PLAY && type == PacketType.Server.SET_BORDER_CENTER;
 	}
 
 	@Override

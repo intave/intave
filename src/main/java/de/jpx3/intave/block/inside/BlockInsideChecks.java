@@ -32,7 +32,7 @@ public final class BlockInsideChecks {
 	}
 
 	public static List<BlockInsideCheck> suitableFor(User user) {
-		return suitableForProtocol(user.meta().protocol().protocolVersion());
+		return suitableForProtocol(user.protocolVersion());
 	}
 
 	public static BlockInsideCheck any() {

@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.tabcomplete.request;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableTabCompleteRequestPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class TabCompleteRequestWirePacket extends MutableWirePacket implements MutableTabCompleteRequestPacket {
+public class TabCompleteRequestWirePacket extends AbstractMutable implements MutableTabCompleteRequestPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, TabCompleteRequestWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, TabCompleteRequestWirePacket::transactionId,

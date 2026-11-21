@@ -14,7 +14,7 @@ package de.jpx3.intave.packet.wire.player.action;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerActionPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.PlayerAction;
 import io.netty.buffer.ByteBuf;
 
@@ -22,7 +22,7 @@ import java.util.Arrays;
 
 import static de.jpx3.intave.codec.ByteBufStreamCodecs.enumValue;
 
-public class PlayerActionWirePacket extends MutableWirePacket implements MutablePlayerActionPacket {
+public class PlayerActionWirePacket extends AbstractMutable implements MutablePlayerActionPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PlayerActionWirePacket> STREAM_CODEC =
 		StreamCodec.of(
 			(output, packet) -> {

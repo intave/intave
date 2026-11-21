@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.connection.keepalive;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableKeepAlivePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class KeepAliveWirePacket extends MutableWirePacket implements MutableKeepAlivePacket {
+public class KeepAliveWirePacket extends AbstractMutable implements MutableKeepAlivePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, KeepAliveWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.LONG, KeepAliveWirePacket::id,

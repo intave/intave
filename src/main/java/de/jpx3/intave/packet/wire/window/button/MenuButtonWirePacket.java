@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.window.button;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableMenuButtonPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class MenuButtonWirePacket extends MutableWirePacket implements MutableMenuButtonPacket {
+public class MenuButtonWirePacket extends AbstractMutable implements MutableMenuButtonPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, MenuButtonWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, MenuButtonWirePacket::containerId,

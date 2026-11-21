@@ -14,12 +14,12 @@ package de.jpx3.intave.packet.wire.entity.destroy;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityDestroyPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
 import static de.jpx3.intave.codec.ByteBufStreamCodecs.count;
 
-public class EntityDestroyWirePacket extends MutableWirePacket implements MutableEntityDestroyPacket {
+public class EntityDestroyWirePacket extends AbstractMutable implements MutableEntityDestroyPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityDestroyWirePacket> STREAM_CODEC =
 		StreamCodec.of(
 			(output, packet) -> {

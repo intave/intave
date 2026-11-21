@@ -13,6 +13,8 @@ package de.jpx3.intave.packet.wire.world.border;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.packet.ConnectionState;
+import de.jpx3.intave.packet.contract.PacketType;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Objects;
@@ -31,6 +33,11 @@ public final class WorldBorderSetSizeWirePacket extends WorldBorderWirePacket {
 	public WorldBorderSetSizeWirePacket(double newSize) {
 		this();
 		this.newSize = newSize;
+	}
+
+	@Override
+	public boolean appliesTo(ConnectionState state, PacketType type) {
+		return state == ConnectionState.PLAY && type == PacketType.Server.SET_BORDER_SIZE;
 	}
 
 	@Override

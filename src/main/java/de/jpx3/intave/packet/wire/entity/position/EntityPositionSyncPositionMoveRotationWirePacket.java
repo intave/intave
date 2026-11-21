@@ -13,6 +13,8 @@ package de.jpx3.intave.packet.wire.entity.position;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.packet.ConnectionState;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
@@ -50,6 +52,11 @@ public final class EntityPositionSyncPositionMoveRotationWirePacket extends Enti
 	public void setMotion(Motion value) {
 		markMutated();
 		motion = value;
+	}
+
+	@Override
+	public boolean appliesTo(ConnectionState state, PacketType type) {
+		return state == ConnectionState.PLAY && type == PacketType.Server.ENTITY_POSITION_SYNC;
 	}
 
 	@Override

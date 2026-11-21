@@ -14,12 +14,12 @@ package de.jpx3.intave.packet.wire.payload.inbound;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutablePayloadInPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
 import static de.jpx3.intave.codec.ByteBufStreamCodecs.bytes;
 
-public class PayloadInWirePacket extends MutableWirePacket implements MutablePayloadInPacket {
+public class PayloadInWirePacket extends AbstractMutable implements MutablePayloadInPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PayloadInWirePacket> STREAM_CODEC =
 		StreamCodec.of(
 			(output, packet) -> {

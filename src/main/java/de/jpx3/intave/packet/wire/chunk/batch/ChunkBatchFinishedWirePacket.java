@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.chunk.batch;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableChunkBatchFinishedPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public final class ChunkBatchFinishedWirePacket extends MutableWirePacket implements MutableChunkBatchFinishedPacket {
+public final class ChunkBatchFinishedWirePacket extends AbstractMutable implements MutableChunkBatchFinishedPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, ChunkBatchFinishedWirePacket> STREAM_CODEC = StreamCodec.compound(
 		ByteBufStreamCodecs.VARINT, ChunkBatchFinishedWirePacket::batchSize, ChunkBatchFinishedWirePacket::new
 	);

@@ -13,13 +13,15 @@ package de.jpx3.intave.packet.wire.player.positionrotation;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.packet.ConnectionState;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.mutable.MutablePlayerMovePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
 import io.netty.buffer.ByteBuf;
 
-public class PlayerPositionRotationWirePacket extends MutableWirePacket implements MutablePlayerMovePacket {
+public class PlayerPositionRotationWirePacket extends AbstractMutable implements MutablePlayerMovePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PlayerPositionRotationWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			Position.STREAM_CODEC, PlayerPositionRotationWirePacket::position,
@@ -66,6 +68,11 @@ public class PlayerPositionRotationWirePacket extends MutableWirePacket implemen
 	public void setRotation(Rotation value) {
 		markMutated();
 		this.rotation = value;
+	}
+
+	@Override
+	public boolean appliesTo(ConnectionState state, PacketType type) {
+		return state == ConnectionState.PLAY && type == PacketType.Client.POSITION_LOOK;
 	}
 
 	@Override

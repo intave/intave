@@ -44,6 +44,14 @@ final class HandlerPlacement {
 		return isImmediatelyBefore(pipeline, currentAnchorName(pipeline));
 	}
 
+	boolean isBetweenFramingAndEncoder(ChannelPipeline pipeline) {
+		List<String> names = pipeline.names();
+		int handler = names.indexOf(handlerName);
+		return handler >= 0 && handler < names.indexOf(currentAnchorName(pipeline))
+			&& handler > names.indexOf("prepender") && handler > names.indexOf("compress")
+			&& handler > names.indexOf("encrypt");
+	}
+
 	boolean isSeparatedFromAnchorBy(ChannelPipeline pipeline, String interveningHandlerName) {
 		List<String> names = pipeline.names();
 		int handlerIndex = names.indexOf(this.handlerName);

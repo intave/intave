@@ -29,7 +29,7 @@ import de.jpx3.intave.module.feedback.FeedbackObserver;
 import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.violation.placeholder.PlayerContext;
 import de.jpx3.intave.module.violation.placeholder.UserContext;
-import de.jpx3.intave.share.Relative;
+import de.jpx3.intave.packet.injection.Binding;
 import de.jpx3.intave.player.collider.Colliders;
 import de.jpx3.intave.player.collider.complex.Collider;
 import de.jpx3.intave.player.collider.simple.SimpleCollider;
@@ -37,6 +37,7 @@ import de.jpx3.intave.player.meta.IntaveMetadataValue;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.MovementCorrection;
 import de.jpx3.intave.share.PositionMoveRotation;
+import de.jpx3.intave.share.Relative;
 import de.jpx3.intave.user.meta.CheckCustomMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.permission.PermissionCache;
@@ -108,6 +109,11 @@ final class TestUser implements User {
   @Override
   public Object playerConnection() {
     return null;
+  }
+
+  @Override
+  public Binding binding() {
+    throw new UnsupportedOperationException("Test users do not have a packet binding");
   }
 
   @Override

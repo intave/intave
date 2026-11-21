@@ -18,8 +18,8 @@ import de.jpx3.intave.block.inside.BlockInsideChecks;
 import de.jpx3.intave.block.inside.EntityMovement;
 import de.jpx3.intave.block.physics.BlockPhysics;
 import de.jpx3.intave.block.physics.BlockProperties;
-import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.block.physics.BounceSuppression;
+import de.jpx3.intave.block.shape.BlockShape;
 import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.environment.MovementCharacteristics;
 import de.jpx3.intave.check.movement.physics.environment.Pose;
@@ -42,7 +42,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.EXTERNAL_VELOCITY;
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.IN_LAVA;
 import static de.jpx3.intave.share.ClientMath.clamp_double;
 import static de.jpx3.intave.share.ClientMath.floor;
@@ -63,7 +62,7 @@ class BaseSimulator extends Simulator {
   }
 
   private void moveOutOfBlocks(User user, Motion motion, SimulationEnvironment environment) {
-    if (user.meta().protocol().protocolVersion() >= ProtocolMetadata.VER_26_3 && environment.isInVehicle()) {
+    if (user.protocolVersion() >= ProtocolMetadata.VER_26_3 && environment.isInVehicle()) {
       return;
     }
     BoundingBox boundingBox = environment.boundingBox();
@@ -469,7 +468,7 @@ class BaseSimulator extends Simulator {
       environment.verifiedLastPositionY(),
       environment.verifiedLastPositionZ()
     );
-    if (flying && user.meta().protocol().protocolVersion() >= ProtocolMetadata.VER_1_21_5) {
+    if (flying && user.protocolVersion() >= ProtocolMetadata.VER_1_21_5) {
       onClimbable = false;
     }
 
@@ -783,7 +782,7 @@ class BaseSimulator extends Simulator {
     if (result.collidedVertically()) {
       if (result.onGround()) {
         Material effectBlock = environment.collideMaterial();
-        boolean belowBounceThreshold = user.meta().protocol().protocolVersion() >= ProtocolMetadata.VER_26_3
+        boolean belowBounceThreshold = user.protocolVersion() >= ProtocolMetadata.VER_26_3
           ? -currentMotionY <= gravity : -currentMotionY < gravity;
         restitution = !belowBounceThreshold
           && !suppressingBounce

@@ -98,6 +98,7 @@ public final class ProtocolMetadata {
     return ProtocolVersionConverter.versionByProtocolVersion(protocolVersion);
   }
 
+  @Deprecated
   public int protocolVersion() {
     return protocolVersion;
   }

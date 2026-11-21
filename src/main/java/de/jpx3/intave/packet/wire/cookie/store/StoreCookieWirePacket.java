@@ -14,14 +14,14 @@ package de.jpx3.intave.packet.wire.cookie.store;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableStoreCookiePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.MinecraftKey;
 import io.netty.buffer.ByteBuf;
 
 import static de.jpx3.intave.codec.ByteBufStreamCodecs.bytes;
 import static de.jpx3.intave.codec.ByteBufStreamCodecs.count;
 
-public class StoreCookieWirePacket extends MutableWirePacket implements MutableStoreCookiePacket {
+public class StoreCookieWirePacket extends AbstractMutable implements MutableStoreCookiePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, StoreCookieWirePacket> STREAM_CODEC =
 		StreamCodec.of(
 			(output, packet) -> {

@@ -29,14 +29,14 @@ import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.event.Cancellable;
 
-import static de.jpx3.intave.packet.ListenerStage.AFTER_IMMUTABLE;
+import static de.jpx3.intave.packet.ListenerStage.AFTER;
 import static de.jpx3.intave.packet.contract.PacketType.Client.ABILITIES_IN;
 import static de.jpx3.intave.packet.contract.PacketType.Server.*;
 import static de.jpx3.intave.share.GameStateChangeType.CHANGE_GAME_MODE;
 
 public final class AbilityTracker extends Module {
   @OnReceive(
-    stage = AFTER_IMMUTABLE
+    stage = AFTER
   )
   public void onAbilities(User user, AbilityInPacket packet) {
     boolean flying = packet.requestedFlying();

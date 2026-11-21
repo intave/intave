@@ -13,11 +13,11 @@ package de.jpx3.intave.packet.wire.cookie.request;
 
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableCookieRequestPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.MinecraftKey;
 import io.netty.buffer.ByteBuf;
 
-public class CookieRequestWirePacket extends MutableWirePacket implements MutableCookieRequestPacket {
+public class CookieRequestWirePacket extends AbstractMutable implements MutableCookieRequestPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, CookieRequestWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			MinecraftKey.STREAM_CODEC, CookieRequestWirePacket::key,

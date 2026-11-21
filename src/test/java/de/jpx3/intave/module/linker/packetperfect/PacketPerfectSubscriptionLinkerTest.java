@@ -358,7 +358,7 @@ public final class PacketPerfectSubscriptionLinkerTest {
 	public static final class OrderedSendSubscriber implements PacketEventSubscriber {
 		private final List<String> calls = new ArrayList<>();
 
-		@OnSend(stage = ListenerStage.BEFORE_IMMUTABLE, priority = ListenerPriority.LAST)
+		@OnSend(stage = ListenerStage.BEFORE, priority = ListenerPriority.LAST)
 		public void before(KeepAlivePacket packet) {
 			calls.add("before:" + packet.id());
 		}
@@ -425,13 +425,13 @@ public final class PacketPerfectSubscriptionLinkerTest {
 	}
 
 	public static final class MutableObserverSubscriber implements PacketEventSubscriber {
-		@OnSend(stage = ListenerStage.AFTER_IMMUTABLE)
+		@OnSend(stage = ListenerStage.AFTER)
 		public void onPacket(MutableKeepAlivePacket packet) {
 		}
 	}
 
 	public static final class ImmutableProcessorSubscriber implements PacketEventSubscriber {
-		@OnSend(stage = ListenerStage.PROCESSING_MUTABLE)
+		@OnSend(stage = ListenerStage.MUTABLE)
 		public void onPacket(KeepAlivePacket packet) {
 		}
 	}

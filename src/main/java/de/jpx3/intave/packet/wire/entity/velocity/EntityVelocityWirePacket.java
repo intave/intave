@@ -14,11 +14,11 @@ package de.jpx3.intave.packet.wire.entity.velocity;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityVelocityPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.Motion;
 import io.netty.buffer.ByteBuf;
 
-public class EntityVelocityWirePacket extends MutableWirePacket implements MutableEntityVelocityPacket {
+public class EntityVelocityWirePacket extends AbstractMutable implements MutableEntityVelocityPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityVelocityWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, EntityVelocityWirePacket::entityId,

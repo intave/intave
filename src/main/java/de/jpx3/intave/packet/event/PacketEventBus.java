@@ -107,21 +107,26 @@ public final class PacketEventBus {
 	}
 
 	public static List<TypedPacketContract> dispatch(PacketSendEvent event) {
-		List<TypedPacketContract> packets = new ArrayList<>();
-		dispatch(event, packets, 0, 0);
-		return packets;
+		return dispatchSendPlan(event).packets();
 	}
 
-	private static int dispatch(PacketSendEvent event, List<TypedPacketContract> result, int depth, int dispatched) {
+	public static PacketSendPlan dispatchSendPlan(PacketSendEvent event) {
+		PacketSendPlan plan = new PacketSendPlan();
+		dispatch(event, plan, 0, 0);
+		return plan;
+	}
+
+	private static int dispatch(PacketSendEvent event, PacketSendPlan plan, int depth, int dispatched) {
 		if (depth >= MAX_SEND_DEPTH || ++dispatched > MAX_SEND_PACKETS) {
 			throw new IllegalStateException("Packet send expansion limit exceeded for " + event.packetType());
 		}
+		int groupStart = plan.packets().size();
 		PacketSubscription[] subscriptions = SERVER_SUBSCRIPTIONS.get().get(event.packetType());
 		int beforeIndex = 0;
 		int subscriptionIndex = 0;
 		while (true) {
 			while (beforeIndex < event.sendBefore().size()) {
-				dispatched = subDispatch(event, event.sendBefore().get(beforeIndex++), result, depth + 1, dispatched);
+				dispatched = subDispatch(event, event.sendBefore().get(beforeIndex++), plan, depth + 1, dispatched);
 			}
 			if (subscriptions == null || subscriptionIndex == subscriptions.length) {
 				break;
@@ -129,16 +134,19 @@ public final class PacketEventBus {
 			subscriptions[subscriptionIndex++].onPacket(event);
 		}
 		if (!event.isCancelled()) {
-			result.add(event.typedPacket());
+			plan.packets().add(event.typedPacket());
 		}
 		for (int afterIndex = 0; afterIndex < event.sendAfter().size(); afterIndex++) {
-			dispatched = subDispatch(event, event.sendAfter().get(afterIndex), result, depth + 1, dispatched);
+			dispatched = subDispatch(event, event.sendAfter().get(afterIndex), plan, depth + 1, dispatched);
+		}
+		if (event.bundleRequired()) {
+			plan.bundleFrom(groupStart);
 		}
 		return dispatched;
 	}
 
 	private static int subDispatch(
-		PacketSendEvent parent, TypedPacketContract packet, List<TypedPacketContract> packets, int depth, int dispatched
+		PacketSendEvent parent, TypedPacketContract packet, PacketSendPlan plan, int depth, int dispatched
 	) {
 		if (packet == null) {
 			throw new IllegalArgumentException("Packet is null");
@@ -149,6 +157,6 @@ public final class PacketEventBus {
 		PacketSendEvent event = new PacketSendEvent(
 			parent.user(), (PacketType.Server) packet.type(), packet.contract()
 		);
-		return dispatch(event, packets, depth, dispatched);
+		return dispatch(event, plan, depth, dispatched);
 	}
 }

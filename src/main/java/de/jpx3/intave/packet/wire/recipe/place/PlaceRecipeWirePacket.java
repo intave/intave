@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.recipe.place;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutablePlaceRecipePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class PlaceRecipeWirePacket extends MutableWirePacket implements MutablePlaceRecipePacket {
+public class PlaceRecipeWirePacket extends AbstractMutable implements MutablePlaceRecipePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PlaceRecipeWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, PlaceRecipeWirePacket::containerId,

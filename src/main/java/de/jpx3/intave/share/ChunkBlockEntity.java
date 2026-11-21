@@ -11,38 +11,50 @@
 
 package de.jpx3.intave.share;
 
+import com.viaversion.nbt.tag.CompoundTag;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import io.netty.buffer.ByteBuf;
 
 public final class ChunkBlockEntity {
-	public static final StreamCodec<ByteBuf, ByteBuf, ChunkBlockEntity> STREAM_CODEC = codec(NbtCompound.STREAM_CODEC);
-	public static final StreamCodec<ByteBuf, ByteBuf, ChunkBlockEntity> NAMED_NBT_STREAM_CODEC = codec(NbtCompound.NAMED_STREAM_CODEC);
+	public static final StreamCodec<ByteBuf, ByteBuf, ChunkBlockEntity> STREAM_CODEC = codec(ByteBufStreamCodecs.COMPOUND_TAG);
+	public static final StreamCodec<ByteBuf, ByteBuf, ChunkBlockEntity> NAMED_NBT_STREAM_CODEC = codec(ByteBufStreamCodecs.NAMED_COMPOUND_TAG);
 
 	private final int packedXZ, y, typeId;
-	private final NbtCompound tag;
+	private final CompoundTag tag;
 
-	public ChunkBlockEntity(int packedXZ, int y, int typeId, NbtCompound tag) {
+	public ChunkBlockEntity(int packedXZ, int y, int typeId, CompoundTag tag) {
 		if (packedXZ < 0 || packedXZ > 255 || y < Short.MIN_VALUE || y > Short.MAX_VALUE || typeId < 0) {
 			throw new IllegalArgumentException("Invalid chunk block entity coordinates or type ID");
 		}
 		this.packedXZ = packedXZ;
 		this.y = y;
 		this.typeId = typeId;
-		this.tag = tag;
+		this.tag = tag == null ? null : tag.copy();
 	}
 
-	public int packedXZ() { return packedXZ; }
-	public int y() { return y; }
-	public int typeId() { return typeId; }
-	public NbtCompound tag() { return tag; }
+	public int packedXZ() {
+		return packedXZ;
+	}
 
-	private static StreamCodec<ByteBuf, ByteBuf, ChunkBlockEntity> codec(StreamCodec<ByteBuf, ByteBuf, NbtCompound> tags) {
+	public int y() {
+		return y;
+	}
+
+	public int typeId() {
+		return typeId;
+	}
+
+	public CompoundTag tag() {
+		return tag == null ? null : tag.copy();
+	}
+
+	private static StreamCodec<ByteBuf, ByteBuf, ChunkBlockEntity> codec(StreamCodec<ByteBuf, ByteBuf, CompoundTag> tags) {
 		return StreamCodec.compound(
 			ByteBufStreamCodecs.UNSIGNED_BYTE, ChunkBlockEntity::packedXZ,
 			ByteBufStreamCodecs.SIGNED_SHORT, ChunkBlockEntity::y,
 			ByteBufStreamCodecs.VARINT, ChunkBlockEntity::typeId,
-			tags, ChunkBlockEntity::tag,
+			tags, entity -> entity.tag,
 			ChunkBlockEntity::new
 		);
 	}

@@ -13,8 +13,10 @@ package de.jpx3.intave.packet.wire.entity.relativemovelook;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.packet.ConnectionState;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityRelativeMovePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.EntityRelativeMoveStep;
 import de.jpx3.intave.share.RawVector3d;
 import io.netty.buffer.ByteBuf;
@@ -23,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class EntityRelativeMoveLookWirePacket extends MutableWirePacket implements MutableEntityRelativeMovePacket {
+public class EntityRelativeMoveLookWirePacket extends AbstractMutable implements MutableEntityRelativeMovePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, EntityRelativeMoveLookWirePacket> STREAM_CODEC =
 		StreamCodec.of(
 			(output, packet) -> {
@@ -107,6 +109,11 @@ public class EntityRelativeMoveLookWirePacket extends MutableWirePacket implemen
 	public void setEntityId(int value) {
 		markMutated();
 		this.entityId = value;
+	}
+
+	@Override
+	public boolean appliesTo(ConnectionState state, PacketType type) {
+		return state == ConnectionState.PLAY && type == PacketType.Server.REL_ENTITY_MOVE_LOOK;
 	}
 
 	@Override

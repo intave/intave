@@ -12,17 +12,18 @@
 package de.jpx3.intave.library;
 
 import com.github.luben.zstd.Zstd;
-import de.jpx3.intave.share.Certificate;
+import com.viaversion.nbt.tag.CompoundTag;
 import de.jpx3.intave.module.patcher.DSILongSetWrapper;
 import de.jpx3.intave.module.patcher.SynchronizedDSILongHashSet;
 import de.jpx3.intave.module.patcher.SynchronizedLongArraySet;
+import de.jpx3.intave.share.Certificate;
 import de.jpx3.intave.test.FakePlayerFactory;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.bytebuddy.ByteBuddy;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +44,7 @@ final class BundledDependenciesTest {
     File expected = new File(jar).getCanonicalFile();
     for (Class<?> type : new Class<?>[] {
       Certificate.class, ByteBuddy.class, Long2ObjectOpenHashMap.class,
-      X500Name.class, X509CertificateHolder.class, OIWObjectIdentifiers.class, Zstd.class
+      X500Name.class, X509CertificateHolder.class, OIWObjectIdentifiers.class, Zstd.class, CompoundTag.class
     }) {
       assertEquals(expected,
         new File(type.getProtectionDomain().getCodeSource().getLocation().toURI()).getCanonicalFile(),

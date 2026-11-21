@@ -22,7 +22,7 @@ final class P773BlockInsideBrancher extends MovementSearchBrancher {
 		MovementSearchBranch inputBranch,
 		Collection<MovementSearchBranch> outputBranches
 	) {
-		int protocolVersion = input.user().meta().protocol().protocolVersion();
+		int protocolVersion = input.user().protocolVersion();
 		if (protocolVersion != ProtocolMetadata.VER_1_21_9 || !input.blockInsideCheckBranchNecessary()) {
 			outputBranches.add(inputBranch);
 			return;

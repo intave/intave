@@ -14,5 +14,6 @@ package de.jpx3.intave.share;
 public enum ClientCommand {
   PERFORM_RESPAWN,
   REQUEST_STATS,
-  OPEN_INVENTORY
+  OPEN_INVENTORY,
+  REQUEST_GAMERULE_VALUES
 }

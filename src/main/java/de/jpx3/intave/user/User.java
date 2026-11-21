@@ -36,6 +36,7 @@ import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.violation.placeholder.Placeholders;
 import de.jpx3.intave.module.violation.placeholder.PlayerContext;
 import de.jpx3.intave.module.violation.placeholder.UserContext;
+import de.jpx3.intave.packet.injection.Binding;
 import de.jpx3.intave.player.collider.complex.Collider;
 import de.jpx3.intave.player.collider.simple.SimpleCollider;
 import de.jpx3.intave.report.Report;
@@ -84,6 +85,16 @@ public interface User {
    * @throws UnsupportedFallbackOperationException when no player is present
    */
   Object playerConnection();
+
+  /**
+   * Retrieve the packet binding installed on the player's connection.
+   *
+   * @return the player's packet binding
+   * @throws UnsupportedFallbackOperationException when no player is present
+   * @throws UnsupportedOperationException when the user has no network connection
+   * @throws IllegalStateException when the packet handlers are not installed
+   */
+  Binding binding();
 
   /**
    * Retrieve the {@link User}-associated player

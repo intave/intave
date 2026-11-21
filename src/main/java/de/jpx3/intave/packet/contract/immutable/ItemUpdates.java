@@ -11,7 +11,7 @@
 
 package de.jpx3.intave.packet.contract.immutable;
 
-import de.jpx3.intave.share.ItemStack;
+import de.jpx3.intave.item.ItemStack;
 
 import java.util.Map;
 

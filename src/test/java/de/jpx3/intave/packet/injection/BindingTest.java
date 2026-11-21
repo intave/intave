@@ -15,6 +15,8 @@ import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.PacketDirection;
 import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.contract.TypedPacketContract;
+import de.jpx3.intave.packet.contract.immutable.PingPacket;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityVelocityPacket;
 import de.jpx3.intave.packet.contract.mutable.MutableHandshakePacket;
 import de.jpx3.intave.packet.contract.mutable.MutableHeldItemSlotPacket;
@@ -22,6 +24,7 @@ import de.jpx3.intave.packet.event.PacketEventBus;
 import de.jpx3.intave.packet.event.PacketSendEvent;
 import de.jpx3.intave.packet.event.PacketSubscription;
 import de.jpx3.intave.packet.wire.WirePackets;
+import de.jpx3.intave.packet.wire.connection.bundle.BundleDelimiterWirePacket;
 import de.jpx3.intave.packet.wire.connection.ping.PingWirePacket;
 import de.jpx3.intave.packet.wire.entity.velocity.EntityVelocityWirePacket;
 import de.jpx3.intave.packet.wire.item.heldslot.HeldItemSlotWirePacket;
@@ -60,11 +63,153 @@ import static org.junit.jupiter.api.Assertions.*;
 final class BindingTest {
   private static final String RECEIVER = "intave-decoder";
   private static final String SENDER = "intave-encoder";
+  private static final TypedPacketContract DELIMITER = new BundleDelimiterWirePacket().typedTo(PacketType.Server.BUNDLE_DELIMITER);
   private final ByteArrayOutputStream errors = new ByteArrayOutputStream();
   private PrintStream originalError;
   private PrintStream capturedError;
   private AtomicReference<Map<PacketType.Client, PacketSubscription[]>> clientSubscriptions;
   private Map<PacketType.Client, PacketSubscription[]> savedClientSubscriptions;
+
+  @Test
+  void bundlesQueuedPacketsAndOmitsEmptyGroupsAfterCancellation() {
+    PacketSubscription listener = event -> {
+      PacketSendEvent send = (PacketSendEvent) event;
+      int id = ((PingPacket) send.packet()).id();
+      send.requireInBundle();
+      send.requireInBundle();
+      if (id == 1 || id == 2) {
+        send.addSendBefore(ping(11));
+        send.addSendAfter(ping(12));
+      }
+      send.setCancelled(id == 2 || id == 3);
+    };
+    PacketSubscription unexpectedDelimiter = event -> fail("Generated delimiters must bypass subscriptions");
+    PacketEventBus.addListener(listener, PacketType.Server.PING);
+    PacketEventBus.addListener(unexpectedDelimiter, PacketType.Server.BUNDLE_DELIMITER);
+    EmbeddedChannel channel = channelWithViaCodecs();
+    try (Binding binding = bindAndPlay(channel, 762)) {
+      assertTrue(binding.send(ping(1)).isSuccess());
+      assertBundleOutput(channel, binding, DELIMITER, ping(11), ping(1), ping(12), DELIMITER);
+      assertTrue(binding.send(ping(2)).isSuccess());
+      assertBundleOutput(channel, binding, DELIMITER, ping(11), ping(12), DELIMITER);
+      assertTrue(binding.send(ping(3)).isSuccess());
+      assertNull(channel.readOutbound());
+    } finally {
+      PacketEventBus.removeListener(listener);
+      PacketEventBus.removeListener(unexpectedDelimiter);
+      channel.finishAndReleaseAll();
+    }
+  }
+
+  @Test
+  void reusesAnOpenBundleAcrossWritesOnTheSameConnectionOnly() {
+    PacketSubscription listener = event -> ((PacketSendEvent) event).requireInBundle();
+    PacketEventBus.addListener(listener, PacketType.Server.PING);
+    EmbeddedChannel first = channelWithViaCodecs();
+    EmbeddedChannel second = channelWithViaCodecs();
+    try (Binding binding = bindAndPlay(first, 773); Binding other = bindAndPlay(second, 773)) {
+      ByteBuf serverDelimiter = packet(PacketTypeRegistries.clientbound(), ConnectionState.PLAY,
+        PacketType.Server.BUNDLE_DELIMITER, 773);
+      assertTrue(first.writeOutbound(serverDelimiter));
+      assertTrue(binding.send(ping(1)).isSuccess());
+      assertTrue(other.send(ping(2)).isSuccess());
+      assertBundleOutput(second, other, DELIMITER, ping(2), DELIMITER);
+      assertTrue(binding.sendSilently(DELIMITER).isSuccess());
+      assertTrue(binding.send(ping(3)).isSuccess());
+      assertBundleOutput(first, binding, DELIMITER, ping(1), DELIMITER, DELIMITER, ping(3), DELIMITER);
+    } finally {
+      PacketEventBus.removeListener(listener);
+      first.finishAndReleaseAll();
+      second.finishAndReleaseAll();
+    }
+  }
+
+  @Test
+  void observesServerDelimiterForwardedWhileRepairingSenderPlacement() {
+    PacketSubscription listener = event -> ((PacketSendEvent) event).requireInBundle();
+    PacketEventBus.addListener(listener, PacketType.Server.PING);
+    EmbeddedChannel channel = channelWithViaCodecs();
+    try (Binding binding = bindAndPlay(channel, 773)) {
+      channel.pipeline().addBefore("via-encoder", "passthrough", new ChannelOutboundHandlerAdapter());
+      assertTrue(channel.writeOutbound(packet(PacketTypeRegistries.clientbound(), ConnectionState.PLAY,
+        PacketType.Server.BUNDLE_DELIMITER, 773)));
+      channel.runPendingTasks();
+      assertTrue(binding.send(ping(1)).isSuccess());
+      assertTrue(binding.sendSilently(DELIMITER).isSuccess());
+      assertBundleOutput(channel, binding, DELIMITER, ping(1), DELIMITER);
+    } finally {
+      PacketEventBus.removeListener(listener);
+      channel.finishAndReleaseAll();
+    }
+  }
+
+  @Test
+  void ignoresBundleRequestsOnLegacyClientsAndOutsidePlay() {
+    PacketSubscription listener = event -> ((PacketSendEvent) event).requireInBundle();
+    PacketEventBus.addListener(listener, PacketType.Server.PING);
+    EmbeddedChannel legacy = channelWithViaCodecs();
+    EmbeddedChannel modern = channelWithViaCodecs();
+    try (Binding binding = bindAndPlay(legacy, 761); Binding configuring = bindAndHandshake(modern, 773)) {
+      assertTrue(binding.send(ping(1)).isSuccess());
+      assertBundleOutput(legacy, binding, ping(1));
+
+      receive(modern, packet(PacketTypeRegistries.serverbound(), ConnectionState.LOGIN, PacketType.Client.LOGIN_ACK, 773));
+      assertEquals(ConnectionState.CONFIGURATION, configuring.connectionState());
+      assertTrue(modern.writeOutbound(packet(PacketTypeRegistries.clientbound(), ConnectionState.CONFIGURATION,
+        PacketType.Server.PING, 773).writeInt(2)));
+      assertBundleOutput(modern, configuring, ping(2));
+    } finally {
+      PacketEventBus.removeListener(listener);
+      legacy.finishAndReleaseAll();
+      modern.finishAndReleaseAll();
+    }
+  }
+
+  @Test
+  void encodingFailureWritesNoPartOfTheBundleAndTheNextSendCanBundle() {
+    PacketSubscription listener = event -> {
+      PacketSendEvent send = (PacketSendEvent) event;
+      send.requireInBundle();
+      if (((PingPacket) send.packet()).id() == 1) {
+        send.addSendAfter(new PingWirePacket().typedTo(PacketType.Server.ENTITY_VELOCITY));
+      }
+    };
+    PacketEventBus.addListener(listener, PacketType.Server.PING);
+    EmbeddedChannel channel = channelWithViaCodecs();
+    try (Binding binding = bindAndPlay(channel, 773)) {
+      ByteBuf original = packet(PacketTypeRegistries.clientbound(), ConnectionState.PLAY, PacketType.Server.PING, 773).writeInt(1);
+      assertInstanceOf(IllegalArgumentException.class, channel.writeAndFlush(original).cause());
+      assertEquals(0, original.refCnt());
+      assertNull(channel.readOutbound());
+      assertTrue(binding.send(ping(2)).isSuccess());
+      assertBundleOutput(channel, binding, DELIMITER, ping(2), DELIMITER);
+    } finally {
+      PacketEventBus.removeListener(listener);
+      channel.finishAndReleaseAll();
+    }
+  }
+
+  private static TypedPacketContract ping(int id) {
+    return new PingWirePacket(id).typedTo(PacketType.Server.PING);
+  }
+
+  private static void assertBundleOutput(EmbeddedChannel channel, Binding binding, TypedPacketContract... expected) {
+    for (TypedPacketContract packet : expected) {
+      ByteBuf bytes = channel.readOutbound();
+      assertNotNull(bytes, () -> "Missing " + packet);
+      try {
+        assertEquals(PacketTypeRegistries.clientbound().idOf(binding.connectionState(), packet.type(), binding.protocolVersion()),
+          ByteBufStreamCodecs.VARINT.decode(bytes));
+        if (packet.type() == PacketType.Server.PING) {
+          assertEquals(((PingPacket) packet.contract()).id(), bytes.readInt());
+        }
+        assertFalse(bytes.isReadable());
+      } finally {
+        bytes.release();
+      }
+    }
+    assertNull(channel.readOutbound());
+  }
 
   @Test
   void explicitSubscriptionBypassStillCompressesAndWritesThePacket() {

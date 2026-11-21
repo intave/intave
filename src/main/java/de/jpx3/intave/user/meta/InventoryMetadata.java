@@ -11,13 +11,13 @@
 
 package de.jpx3.intave.user.meta;
 
-import de.jpx3.intave.share.PlayerHand;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.player.Enchantments;
 import de.jpx3.intave.player.ItemProperties;
+import de.jpx3.intave.share.PlayerHand;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -162,7 +162,7 @@ public final class InventoryMetadata {
       // 1.8-1.13 retain the exact ItemStack object captured at use start, so
       // any clientbound replacement ends use. 1.14+ compare only the item type.
       if (serverCompletedItemUseSequence == expectedSequence
-        || user.meta().protocol().protocolVersion() < ProtocolMetadata.VER_1_14
+        || user.protocolVersion() < ProtocolMetadata.VER_1_14
         || activeItemType != type) {
         deactivateHand();
       }
@@ -552,7 +552,7 @@ public final class InventoryMetadata {
     // LivingEntity checks stack identity through 1.13, but item type from 1.14.
     // A same-type switch therefore keeps local use active until the client's
     // synchronized metadata ends it, which can take several movement ticks.
-    boolean keepsUsingSameItem = user.meta().protocol().protocolVersion() >= ProtocolMetadata.VER_1_14
+    boolean keepsUsingSameItem = user.protocolVersion() >= ProtocolMetadata.VER_1_14
       && item != null && item.getAmount() > 0 && item.getType() == activeItemType;
     if (changed && handActive() && activeHand() == PlayerHand.MAIN_HAND
       && !keepsUsingSameItem) {

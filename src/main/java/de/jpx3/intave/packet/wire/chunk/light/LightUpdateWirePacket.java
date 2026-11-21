@@ -14,13 +14,13 @@ package de.jpx3.intave.packet.wire.chunk.light;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableLightUpdatePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.ChunkLightData;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Objects;
 
-public class LightUpdateWirePacket extends MutableWirePacket implements MutableLightUpdatePacket {
+public class LightUpdateWirePacket extends AbstractMutable implements MutableLightUpdatePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, LightUpdateWirePacket> STREAM_CODEC = StreamCodec.compound(
 		ByteBufStreamCodecs.VARINT, LightUpdateWirePacket::x,
 		ByteBufStreamCodecs.VARINT, LightUpdateWirePacket::z,

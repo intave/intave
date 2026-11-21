@@ -51,7 +51,7 @@ final class Sender extends ChannelDuplexHandler {
 		if (filter) {
 			write(context, packet, promise);
 		} else {
-			context.write(packet, promise);
+			forward(context, packet, promise);
 		}
 		context.flush();
 	}
@@ -94,7 +94,7 @@ final class Sender extends ChannelDuplexHandler {
 			}
 			if (packets.size() == 1 || promise == context.voidPromise()) {
 				for (ByteBuf packet : packets) {
-					context.write(packet, promise);
+					forward(context, packet, promise);
 				}
 			} else {
 				// PromiseCombiner is unavailable on the Netty versions shipped with older servers.
@@ -117,7 +117,7 @@ final class Sender extends ChannelDuplexHandler {
 					}
 				};
 				for (ByteBuf packet : packets) {
-					context.write(packet).addListener(completion);
+					forward(context, packet, context.newPromise()).addListener(completion);
 				}
 			}
 			return;
@@ -126,6 +126,11 @@ final class Sender extends ChannelDuplexHandler {
 			return;
 		} else {
 			repairAfterCurrentMessage(context);
+			if (placement.isBetweenFramingAndEncoder(context.pipeline())) {
+				// This write bypasses subscriptions during repair, but still has a client packet header.
+				forward(context, original, promise);
+				return;
+			}
 		}
 		context.write(message, promise);
 	}
@@ -134,6 +139,19 @@ final class Sender extends ChannelDuplexHandler {
 	public void userEventTriggered(ChannelHandlerContext context, Object event) {
 		context.fireUserEventTriggered(event);
 		this.placement.repair(context, this);
+	}
+
+	private ChannelFuture forward(ChannelHandlerContext context, ByteBuf packet, ChannelPromise promise) {
+		if (binding.isBundleDelimiter(packet)) {
+			// The next write (including a reentrant one) must see the new state before flush.
+			binding.onBundleDelimiterWrite();
+			if (promise == context.voidPromise()) {
+				promise = context.newPromise();
+			}
+			// After a lost delimiter the peer's framing state is no longer reliable.
+			promise.addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+		}
+		return context.write(packet, promise);
 	}
 
 	private void repairAfterCurrentMessage(ChannelHandlerContext context) {

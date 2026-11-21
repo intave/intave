@@ -13,14 +13,16 @@ package de.jpx3.intave.packet.wire.entity.use;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.packet.ConnectionState;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityUsePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.EntityUseAction;
 import de.jpx3.intave.share.PlayerHand;
 import de.jpx3.intave.share.RawVector3d;
 import io.netty.buffer.ByteBuf;
 
-public class InteractEntityWirePacket extends MutableWirePacket implements MutableEntityUsePacket {
+public class InteractEntityWirePacket extends AbstractMutable implements MutableEntityUsePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, InteractEntityWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, InteractEntityWirePacket::entityId,
@@ -88,6 +90,11 @@ public class InteractEntityWirePacket extends MutableWirePacket implements Mutab
 	public void setSecondary(boolean value) {
 		markMutated();
 		secondary = value;
+	}
+
+	@Override
+	public boolean appliesTo(ConnectionState state, PacketType type) {
+		return state == ConnectionState.PLAY && type == PacketType.Client.USE_ENTITY;
 	}
 
 	@Override

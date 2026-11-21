@@ -17,6 +17,8 @@ import de.jpx3.intave.packet.ListenerStage;
 import de.jpx3.intave.packet.PacketDirection;
 import de.jpx3.intave.packet.contract.PacketContract;
 import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.contract.TypedPacketContract;
+import de.jpx3.intave.packet.contract.immutable.BundleDelimiterPacket;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,12 +27,14 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 final class PacketEventBusTest {
 	private static final PacketType.Server ROOT = PacketType.Server.KEEP_ALIVE_OUT;
 	private static final PacketType.Server CHILD = PacketType.Server.TRANSACTION_OUT;
+	private static final BundleDelimiterPacket TEST_DELIMITER = new BundleDelimiterPacket() {};
 	private AtomicReference<Map<PacketType.Server, PacketSubscription[]>> subscriptions;
 	private Map<PacketType.Server, PacketSubscription[]> savedSubscriptions;
 
@@ -74,7 +78,7 @@ final class PacketEventBusTest {
 		PacketContract afterFirst = packet("after first");
 		PacketContract afterLast = packet("after last");
 		List<PacketContract> observed = new ArrayList<>();
-		on(CHILD, ListenerPriority.NORMAL, ListenerStage.AFTER_IMMUTABLE, child -> {
+		on(CHILD, ListenerPriority.NORMAL, ListenerStage.AFTER, child -> {
 			assertEquals(CHILD, child.packetType());
 			assertEquals(PacketDirection.CLIENTBOUND, child.direction());
 			observed.add(child.packet());
@@ -89,7 +93,7 @@ final class PacketEventBusTest {
 			parent.addSendBefore(beforeLast.typedTo(CHILD));
 			parent.addSendAfter(afterLast.typedTo(CHILD));
 		});
-		on(ROOT, ListenerPriority.NORMAL, ListenerStage.AFTER_IMMUTABLE,
+		on(ROOT, ListenerPriority.NORMAL, ListenerStage.AFTER,
 			parent -> observed.add(parent.packet()));
 
 		List<PacketContract> expected = Arrays.asList(beforeFirst, beforeLast, root, afterFirst, afterLast);
@@ -194,6 +198,65 @@ final class PacketEventBusTest {
 	}
 
 	@Test
+	void lateParentRequestIncludesPreviouslyDispatchedChildrenAndLaterInsertions() {
+		PacketContract before = packet("before");
+		PacketContract after = packet("after");
+		List<PacketContract> observed = new ArrayList<>();
+		on(ROOT, ListenerPriority.FIRST, parent -> parent.addSendBefore(before.typedTo(CHILD)));
+		on(CHILD, ListenerPriority.NORMAL, child -> {
+			observed.add(child.packet());
+			child.requireInBundle();
+		});
+		on(ROOT, ListenerPriority.LATER, parent -> {
+			assertEquals(Collections.singletonList(before), observed);
+			parent.requireInBundle();
+		});
+		on(ROOT, ListenerPriority.LAST, parent -> parent.addSendAfter(after.typedTo(CHILD)));
+
+		PacketSendEvent root = event(packet("root"));
+		TypedPacketContract delimiter = TEST_DELIMITER.typedTo(PacketType.Server.BUNDLE_DELIMITER);
+		assertEquals(Arrays.asList(delimiter, before.typedTo(CHILD), root.typedPacket(), after.typedTo(CHILD), delimiter),
+			PacketEventBus.dispatchSendPlan(root).outgoingPackets(TEST_DELIMITER, false));
+		assertEquals(Arrays.asList(before, after), observed);
+	}
+
+	@Test
+	void childRequestCoversItsDescendantsAndLeavesSiblingsOutside() {
+		PacketContract child = packet("bundled child");
+		PacketSendEvent root = event(packet("root"));
+		root.addSendAfter(child.typedTo(CHILD));
+		root.addSendAfter(packet("sibling").typedTo(CHILD));
+		on(CHILD, ListenerPriority.NORMAL, current -> {
+			if (current.packet() == child) {
+				current.addSendBefore(packet("grandchild").typedTo(CHILD));
+				current.requireInBundle();
+			}
+		});
+
+		assertEquals(Arrays.asList(ROOT, PacketType.Server.BUNDLE_DELIMITER, CHILD, CHILD,
+			PacketType.Server.BUNDLE_DELIMITER, CHILD), framedTypes(root));
+	}
+
+	@Test
+	void respectsExplicitDelimitersAndProtocolTransitionsInsideAnExpansion() {
+		PacketType.Server delimiter = PacketType.Server.BUNDLE_DELIMITER;
+		PacketType.Server transition = PacketType.Server.START_CONFIGURATION;
+		PacketSendEvent root = event(packet("root"));
+		root.requireInBundle();
+		root.addSendBefore(packet("open").typedTo(delimiter));
+		root.addSendAfter(packet("close").typedTo(delimiter));
+		root.addSendAfter(packet("outside").typedTo(CHILD));
+		root.addSendAfter(packet("terminal").typedTo(transition));
+
+		assertEquals(Arrays.asList(delimiter, ROOT, delimiter, delimiter, CHILD, delimiter, transition), framedTypes(root));
+	}
+
+	private static List<PacketType> framedTypes(PacketSendEvent event) {
+		return PacketEventBus.dispatchSendPlan(event).outgoingPackets(TEST_DELIMITER, false).stream()
+			.map(TypedPacketContract::type).collect(Collectors.toList());
+	}
+
+	@Test
 	void boundsTheTotalNumberOfGeneratedPackets() {
 		PacketSendEvent event = event(packet("root"));
 		for (int i = 0; i < 5000; i++) {
@@ -223,7 +286,7 @@ final class PacketEventBusTest {
 	}
 
 	private static void on(PacketType.Server type, ListenerPriority priority, Consumer<PacketSendEvent> handler) {
-		on(type, priority, ListenerStage.PROCESSING_MUTABLE, handler);
+		on(type, priority, ListenerStage.MUTABLE, handler);
 	}
 
 	private static void on(

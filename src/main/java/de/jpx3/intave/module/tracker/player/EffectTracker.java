@@ -102,7 +102,7 @@ public final class EffectTracker extends Module {
     int effectAmplifier = effectOutput.potionEffectAmplifier;
     int effectDuration = effectOutput.potionEffectDuration;
 
-    boolean infiniteEffectsAllowed = user.meta().protocol().protocolVersion() >= 763;
+    boolean infiniteEffectsAllowed = user.protocolVersion() >= 763;
     if (effectDuration == -1 && infiniteEffectsAllowed) {
       effectDuration = Integer.MAX_VALUE;
     }

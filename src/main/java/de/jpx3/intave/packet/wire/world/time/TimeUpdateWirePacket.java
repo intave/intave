@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.world.time;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableTimeUpdatePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class TimeUpdateWirePacket extends MutableWirePacket implements MutableTimeUpdatePacket {
+public class TimeUpdateWirePacket extends AbstractMutable implements MutableTimeUpdatePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, TimeUpdateWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.LONG, TimeUpdateWirePacket::gameTime,

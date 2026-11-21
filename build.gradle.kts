@@ -84,6 +84,10 @@ repositories {
     content { includeModule("ac.intave", "samples") }
   }
   mavenCentral()
+  exclusiveContent {
+    forRepository { maven("https://repo.viaversion.com") }
+    filter { includeModule("com.viaversion", "nbt") }
+  }
   maven { url = uri("https://repo.papermc.io/repository/maven-public/") }
   maven { url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") }
   maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
@@ -107,7 +111,8 @@ dependencies {
   // Bundled libraries.
   implementation("ac.intave:samples:0.0.14") { isTransitive = false }
   implementation("ac.intave:cloud-protocol:0.0.11") { isTransitive = false }
-  implementation("it.unimi.dsi:fastutil:8.5.12")
+  implementation("it.unimi.dsi:fastutil:8.5.18")
+  implementation("com.viaversion:nbt:5.4.1")
   implementation("net.bytebuddy:byte-buddy:1.18.2")
   implementation("org.bouncycastle:bcpkix-jdk18on:1.85")
   implementation("com.github.luben:zstd-jni:1.5.7-12")

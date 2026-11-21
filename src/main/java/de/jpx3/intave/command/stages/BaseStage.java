@@ -207,6 +207,7 @@ public final class BaseStage extends CommandStage {
   public enum DebugType {
     TELEPORT(MessageChannel.DEBUG_TELEPORT),
     MOUNTS(MessageChannel.DEBUG_MOUNTS),
+    INVENTORY(MessageChannel.DEBUG_INVENTORY),
     ITEM_USE(MessageChannel.DEBUG_ITEM_USE),
     BLOCK_CACHE(MessageChannel.DEBUG_BLOCK_CACHE),
     POSITION(MessageChannel.DEBUG_POSITION),
@@ -421,7 +422,7 @@ public final class BaseStage extends CommandStage {
   public void infoCommand(CommandSender sender, Player target) {
     User targetUser = UserRepository.userOf(target);
     String versionString = targetUser.meta().protocol().versionString();
-    int protocolVersion = targetUser.meta().protocol().protocolVersion();
+    int protocolVersion = targetUser.protocolVersion();
     int latency = targetUser.latency();
     int latencyJitter = targetUser.latencyJitter();
     TrustFactor trustFactor = targetUser.trustFactor();

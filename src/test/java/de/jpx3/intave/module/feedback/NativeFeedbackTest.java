@@ -11,34 +11,52 @@
 
 package de.jpx3.intave.module.feedback;
 
+import com.viaversion.nbt.tag.StringTag;
 import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
+import de.jpx3.intave.block.cache.BlockCache;
+import de.jpx3.intave.block.shape.BlockShapes;
+import de.jpx3.intave.block.type.BlockTypeAccess;
+import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.command.stages.BaseStage;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.dispatch.MovementDispatcher;
 import de.jpx3.intave.module.linker.packetperfect.PacketPerfectSubscriptionLinker;
 import de.jpx3.intave.module.test.PhysicsTestRecorder;
+import de.jpx3.intave.module.tracker.player.InventoryTracker;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.PacketDirection;
 import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.TypedPacketContract;
-import de.jpx3.intave.packet.contract.immutable.MotionUpdate;
-import de.jpx3.intave.packet.contract.immutable.PingPacket;
-import de.jpx3.intave.packet.contract.immutable.TransactionPacket;
+import de.jpx3.intave.packet.contract.immutable.*;
+import de.jpx3.intave.packet.contract.mutable.MutableClientCommandPacket;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityVelocityPacket;
+import de.jpx3.intave.packet.contract.mutable.MutableWindowClosePacket;
 import de.jpx3.intave.packet.event.PacketEventBus;
 import de.jpx3.intave.packet.event.PacketReceiveEvent;
 import de.jpx3.intave.packet.event.PacketSendEvent;
+import de.jpx3.intave.packet.event.PacketSubscription;
 import de.jpx3.intave.packet.injection.Binding;
 import de.jpx3.intave.packet.wire.WirePackets;
+import de.jpx3.intave.packet.wire.connection.handshake.HandshakeWirePacket;
+import de.jpx3.intave.packet.wire.connection.keepalive.KeepAliveWirePacket;
 import de.jpx3.intave.packet.wire.connection.pong.PongWirePacket;
 import de.jpx3.intave.packet.wire.entity.velocity.EntityVelocityWirePacket;
+import de.jpx3.intave.packet.wire.window.open.JsonOpenScreenWirePacket;
+import de.jpx3.intave.packet.wire.window.open.LegacyOpenScreenWirePacket;
+import de.jpx3.intave.packet.wire.window.open.NbtOpenScreenWirePacket;
 import de.jpx3.intave.packet.wire.window.transaction.TransactionWirePacket;
 import de.jpx3.intave.packet.wire.world.explosion.ExplosionWirePacket;
+import de.jpx3.intave.registry.PacketTypeRegistries;
+import de.jpx3.intave.share.BlockCacheEntry;
+import de.jpx3.intave.share.ClientCommand;
 import de.jpx3.intave.share.Motion;
+import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserFactory;
 import de.jpx3.intave.user.UserRepository;
+import de.jpx3.intave.user.meta.InventoryMetadata;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -51,13 +69,14 @@ import sun.reflect.ReflectionFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class NativeFeedbackTest {
 	@Test
 	@SuppressWarnings("unchecked")
-	void nativeFeedbackBracketsMotionAndConsumesOnlyItsOwnAcknowledgements() throws Exception {
+	void nativeFeedbackSynchronizesPacketsAndConsumesOnlyItsOwnAcknowledgements() throws Exception {
 		Field version = MinecraftVersion.class.getDeclaredField("currentVersion");
 		version.setAccessible(true);
 		MinecraftVersion previousVersion = (MinecraftVersion) version.get(null);
@@ -78,7 +97,7 @@ class NativeFeedbackTest {
 		try {
 			FeedbackSender sender = new FeedbackSender();
 			modules.put(FeedbackSender.class, sender);
-			for (int protocol : new int[]{47, 755, 761, 764, 765, 766, 767, 768, 773, 776, 777}) {
+			for (int protocol : new int[]{47, 755, 761, 762, 764, 765, 766, 767, 768, 773, 776, 777}) {
 				UUID uuid = UUID.randomUUID();
 				Player player = (Player) Proxy.newProxyInstance(Player.class.getClassLoader(), new Class<?>[]{Player.class}, (proxy, method, args) -> {
 					if (method.getName().equals("getUniqueId")) return uuid;
@@ -87,20 +106,55 @@ class NativeFeedbackTest {
 					return null;
 				});
 				User fallback = UserFactory.createFallback();
+				Set<MessageChannel> channels = EnumSet.noneOf(MessageChannel.class);
+				List<String> messages = new ArrayList<>();
+				AtomicReference<BlockCacheEntry> occupiedBlock = new AtomicReference<>(BlockCacheEntry.empty());
+				BlockCache cache = (BlockCache) Proxy.newProxyInstance(BlockCache.class.getClassLoader(), new Class<?>[]{BlockCache.class},
+					(proxy, method, args) -> method.getName().equals("peekStateAt") ? occupiedBlock.get() : method.invoke(fallback.blockCache(), args));
 				User user = (User) Proxy.newProxyInstance(User.class.getClassLoader(), new Class<?>[]{User.class}, (proxy, method, args) -> {
 					switch (method.getName()) {
 						case "player": return player;
 						case "hasPlayer": return true;
 						case "protocolVersion": return protocol;
+						case "blockCache": return cache;
+						case "receives": return channels.contains(args[0]);
+						case "toggleReceive":
+							MessageChannel channel = (MessageChannel) args[0];
+							if (!channels.remove(channel)) channels.add(channel);
+							return null;
+						case "sendMessage": messages.add((String) args[0]); return null;
 						default: return method.invoke(fallback, args);
 					}
 				});
 				UserRepository.manuallyRegisterUser(player, user);
 				try {
+					if (protocol == 762) {
+						verifyFeedbackInServerBundle(sender, user, false);
+						verifyFeedbackInServerBundle(sender, user, true);
+					}
+					verifyInventoryPackets(user, linker, occupiedBlock);
+					assertTrue(messages.isEmpty());
+					if (protocol == 777) {
+						BaseStage.singletonInstance().debug(user, BaseStage.DebugType.INVENTORY);
+						assertTrue(user.receives(MessageChannel.DEBUG_INVENTORY));
+						messages.clear();
+						verifyInventoryPackets(user, linker, occupiedBlock);
+						assertTrue(messages.stream().anyMatch(s -> s.contains("Server open for window 0, awaiting feedback | tracked=closed")));
+						assertTrue(messages.stream().anyMatch(s -> s.contains("Open feedback received for window 0 | tracked=open")));
+						assertTrue(messages.stream().anyMatch(s -> s.contains("skipped inside a nether portal | tracked=closed")));
+						assertTrue(messages.stream().anyMatch(s -> s.contains("Skipping open tracking for beacon window 1 | tracked=open, forceInventoryOnClickOpen=false")));
+						assertTrue(messages.stream().anyMatch(s -> s.contains("Close feedback received for window 1 | tracked=closed")));
+						assertEquals(1, messages.stream().filter(s -> s.contains("[Inventory] Respawn feedback received | tracked=closed")).count());
+						BaseStage.singletonInstance().debug(user, BaseStage.DebugType.INVENTORY);
+						assertFalse(user.receives(MessageChannel.DEBUG_INVENTORY));
+						messages.clear();
+						verifyInventoryPackets(user, linker, occupiedBlock);
+						assertTrue(messages.isEmpty());
+					}
 					List<String> callbacks = new ArrayList<>();
 					PacketSendEvent event = new PacketSendEvent(user, PacketType.Server.ENTITY_VELOCITY, new EntityVelocityWirePacket(1, new Motion()));
 					sender.doubleSynchronize(user, event, () -> callbacks.add("before"), () -> callbacks.add("after"));
-					List<TypedPacketContract> batch = PacketEventBus.dispatch(event);
+					List<TypedPacketContract> batch = dispatchFeedbackGroup(event);
 					assertEquals(3, batch.size());
 					assertEquals(PacketType.Server.ENTITY_VELOCITY, batch.get(1).type());
 					assertEquals(2, user.meta().connection().feedbackQueue().size());
@@ -153,6 +207,246 @@ class NativeFeedbackTest {
 			modules.putAll(savedModules);
 			version.set(null, previousVersion);
 		}
+	}
+
+	private static void verifyInventoryPackets(User user, PacketPerfectSubscriptionLinker linker, AtomicReference<BlockCacheEntry> occupiedBlock) {
+		InventoryTracker tracker = new InventoryTracker();
+		linker.linkSubscriptionsIn(tracker);
+		try {
+			verifyClientCommands(user, occupiedBlock);
+			verifyInventoryOpenPackets(user, occupiedBlock);
+			RespawnPacket respawn = WirePackets.createPlayPacket(PacketType.Server.RESPAWN, user.protocolVersion());
+			user.meta().inventory().updateInventoryOpenState(true);
+			PacketSendEvent cancelledRespawn = new PacketSendEvent(user, PacketType.Server.RESPAWN, respawn);
+			cancelledRespawn.setCancelled(true);
+			assertTrue(PacketEventBus.dispatch(cancelledRespawn).isEmpty());
+			assertTrue(user.meta().inventory().inventoryOpen());
+			assertEquals(0, user.meta().connection().feedbackQueue().size());
+
+			OpenScreenPacket open = WirePackets.createPlayPacket(PacketType.Server.OPEN_WINDOW, user.protocolVersion());
+			List<TypedPacketContract> sentOpen = PacketEventBus.dispatch(new PacketSendEvent(user, PacketType.Server.OPEN_WINDOW, open));
+			List<TypedPacketContract> sentRespawn = PacketEventBus.dispatch(new PacketSendEvent(user, PacketType.Server.RESPAWN, respawn));
+			assertEquals(2, sentRespawn.size());
+			assertSame(respawn, sentRespawn.get(0).contract());
+			assertEquals(user.protocolVersion() >= 755 ? PacketType.Server.PING : PacketType.Server.TRANSACTION_OUT, sentRespawn.get(1).type());
+			assertTrue(user.meta().inventory().inventoryOpen(), "Sending respawn must leave the inventory open");
+			PacketEventBus.dispatch(acknowledgement(user, sentOpen.get(1)));
+			assertTrue(user.meta().inventory().inventoryOpen(), "Acknowledging the earlier open must leave the inventory open");
+			PacketEventBus.dispatch(acknowledgement(user, sentRespawn.get(1)));
+			assertFalse(user.meta().inventory().inventoryOpen(), "Respawn feedback must close the inventory");
+			assertEquals(0, user.meta().connection().feedbackQueue().size());
+
+			MutableWindowClosePacket receivedClose = WirePackets.createPlayPacket(PacketType.Client.CLOSE_WINDOW, user.protocolVersion());
+			receivedClose.setContainerId(1);
+			for (boolean cancelled : new boolean[]{false, true}) {
+				user.meta().inventory().updateInventoryOpenState(true);
+				PacketReceiveEvent received = new PacketReceiveEvent(user, PacketType.Client.CLOSE_WINDOW, receivedClose);
+				received.setCancelled(cancelled);
+				PacketEventBus.dispatch(received);
+				assertFalse(user.meta().inventory().inventoryOpen(), "Client close must update inventory immediately, even when cancelled");
+				assertEquals(cancelled, received.isCancelled());
+				assertEquals(0, user.meta().connection().feedbackQueue().size(), "Client close must not request feedback");
+			}
+
+			MutableWindowClosePacket close = WirePackets.createPlayPacket(PacketType.Server.CLOSE_WINDOW, user.protocolVersion());
+			close.setContainerId(1);
+			user.meta().inventory().updateInventoryOpenState(true);
+			PacketSendEvent cancelled = new PacketSendEvent(user, PacketType.Server.CLOSE_WINDOW, close);
+			cancelled.setCancelled(true);
+			assertTrue(PacketEventBus.dispatch(cancelled).isEmpty());
+			assertEquals(0, user.meta().connection().feedbackQueue().size());
+			assertTrue(user.meta().inventory().inventoryOpen());
+
+			List<TypedPacketContract> sent = PacketEventBus.dispatch(new PacketSendEvent(user, PacketType.Server.CLOSE_WINDOW, close));
+			assertEquals(2, sent.size());
+			assertEquals(PacketType.Server.CLOSE_WINDOW, sent.get(0).type());
+			assertSame(close, sent.get(0).contract());
+			assertEquals(user.protocolVersion() >= 755 ? PacketType.Server.PING : PacketType.Server.TRANSACTION_OUT, sent.get(1).type());
+			assertEquals(1, user.meta().connection().feedbackQueue().size());
+			assertTrue(user.meta().inventory().inventoryOpen(), "Inventory must stay open until feedback is acknowledged");
+			PacketReceiveEvent acknowledgement = acknowledgement(user, sent.get(1));
+			PacketEventBus.dispatch(acknowledgement);
+			assertTrue(acknowledgement.isCancelled());
+			assertFalse(user.meta().inventory().inventoryOpen());
+			assertEquals(0, user.meta().connection().feedbackQueue().size());
+		} finally {
+			linker.removeSubscriptionsOf(tracker);
+		}
+	}
+
+	private static void verifyClientCommands(User user, AtomicReference<BlockCacheEntry> occupiedBlock) {
+		int protocol = user.protocolVersion();
+		MutableClientCommandPacket packet = WirePackets.createPlayPacket(PacketType.Client.CLIENT_COMMAND, protocol);
+		InventoryMetadata inventory = user.meta().inventory();
+		inventory.updateInventoryOpenState(false);
+		for (ClientCommand command : ClientCommand.values()) {
+			if (command == ClientCommand.OPEN_INVENTORY || (command == ClientCommand.REQUEST_GAMERULE_VALUES && protocol < 775)) continue;
+			packet.setCommand(command);
+			PacketEventBus.dispatch(new PacketReceiveEvent(user, PacketType.Client.CLIENT_COMMAND, packet));
+			assertFalse(inventory.inventoryOpen(), command + " in " + protocol);
+		}
+		if (protocol < 335) {
+			packet.setCommand(ClientCommand.OPEN_INVENTORY);
+			occupiedBlock.set(new BlockCacheEntry(BlockShapes.emptyShape(), BlockShapes.emptyShape(), BlockTypeAccess.NETHER_PORTAL, 0));
+			PacketEventBus.dispatch(new PacketReceiveEvent(user, PacketType.Client.CLIENT_COMMAND, packet));
+			assertFalse(inventory.inventoryOpen(), "Opening inside a nether portal is ignored");
+			occupiedBlock.set(BlockCacheEntry.empty());
+			for (boolean cancelled : new boolean[]{false, true}) {
+				inventory.updateInventoryOpenState(false);
+				PacketReceiveEvent event = new PacketReceiveEvent(user, PacketType.Client.CLIENT_COMMAND, packet);
+				event.setCancelled(cancelled);
+				PacketEventBus.dispatch(event);
+				assertTrue(inventory.inventoryOpen(), "Client open must take effect immediately, even when cancelled");
+				assertEquals(cancelled, event.isCancelled());
+			}
+		}
+		assertEquals(0, user.meta().connection().feedbackQueue().size());
+	}
+
+	private static void verifyInventoryOpenPackets(User user, AtomicReference<BlockCacheEntry> occupiedBlock) {
+		int protocol = user.protocolVersion();
+		OpenScreenPacket ordinary = WirePackets.createPlayPacket(PacketType.Server.OPEN_WINDOW, protocol);
+		OpenScreenPacket beacon;
+		if (protocol < 477) {
+			beacon = new LegacyOpenScreenWirePacket(1, "minecraft:beacon", "\"Custom\"", 1, OptionalInt.empty());
+		} else if (protocol < 765) {
+			beacon = new JsonOpenScreenWirePacket(1, 8, "\"Custom\"");
+		} else {
+			beacon = new NbtOpenScreenWirePacket(1, 9, new StringTag("Custom"));
+		}
+		InventoryMetadata inventory = user.meta().inventory();
+		for (OpenScreenPacket packet : new OpenScreenPacket[]{ordinary, beacon}) {
+			inventory.updateInventoryOpenState(false);
+			inventory.forceInventoryOnClickOpen = packet.isBeaconMenu();
+			PacketSendEvent cancelled = new PacketSendEvent(user, PacketType.Server.OPEN_WINDOW, packet);
+			cancelled.setCancelled(true);
+			assertTrue(PacketEventBus.dispatch(cancelled).isEmpty());
+			assertEquals(packet.isBeaconMenu(), inventory.forceInventoryOnClickOpen);
+			assertFalse(inventory.inventoryOpen());
+			assertEquals(0, user.meta().connection().feedbackQueue().size());
+		}
+		inventory.updateInventoryOpenState(true);
+		inventory.forceInventoryOnClickOpen = true;
+		List<TypedPacketContract> sentBeacon = PacketEventBus.dispatch(new PacketSendEvent(user, PacketType.Server.OPEN_WINDOW, beacon));
+		assertEquals(1, sentBeacon.size());
+		assertSame(beacon, sentBeacon.get(0).contract());
+		assertEquals(0, user.meta().connection().feedbackQueue().size());
+		assertFalse(inventory.forceInventoryOnClickOpen);
+		assertTrue(inventory.inventoryOpen());
+
+		BlockCacheEntry portal = new BlockCacheEntry(BlockShapes.emptyShape(), BlockShapes.emptyShape(), BlockTypeAccess.NETHER_PORTAL, 0);
+		for (boolean inPortalAtAck : new boolean[]{true, false}) {
+			inventory.updateInventoryOpenState(false);
+			inventory.forceInventoryOnClickOpen = false;
+			occupiedBlock.set(inPortalAtAck ? BlockCacheEntry.empty() : portal);
+			List<TypedPacketContract> sent = dispatchFeedbackGroup(new PacketSendEvent(user, PacketType.Server.OPEN_WINDOW, ordinary));
+			assertEquals(2, sent.size());
+			assertSame(ordinary, sent.get(0).contract());
+			assertEquals(protocol >= 755 ? PacketType.Server.PING : PacketType.Server.TRANSACTION_OUT, sent.get(1).type());
+			assertEquals(1, user.meta().connection().feedbackQueue().size());
+			assertTrue(inventory.forceInventoryOnClickOpen);
+			assertFalse(inventory.inventoryOpen());
+			occupiedBlock.set(inPortalAtAck ? portal : BlockCacheEntry.empty());
+			PacketReceiveEvent ack = acknowledgement(user, sent.get(1));
+			PacketEventBus.dispatch(ack);
+			assertTrue(ack.isCancelled());
+			assertEquals(0, user.meta().connection().feedbackQueue().size());
+			assertEquals(!inPortalAtAck, inventory.inventoryOpen());
+		}
+	}
+
+	private static void verifyFeedbackInServerBundle(FeedbackSender sender, User user, boolean doubleSync) throws Exception {
+		int protocol = user.protocolVersion();
+		PacketType.Server delimiter = PacketType.Server.BUNDLE_DELIMITER;
+		PacketType.Server target = PacketType.Server.KEEP_ALIVE_OUT;
+		PacketType.Server ping = PacketType.Server.PING;
+		List<String> callbacks = new ArrayList<>();
+		PacketSubscription listener = event -> {
+			PacketSendEvent send = (PacketSendEvent) event;
+			if (doubleSync) {
+				sender.doubleSynchronize(send.user(), send, () -> callbacks.add("before"), () -> callbacks.add("after"));
+			} else {
+				sender.synchronize(send.user(), send, () -> callbacks.add("after"));
+			}
+		};
+		EmbeddedChannel channel = new EmbeddedChannel();
+		channel.pipeline().addLast("via-decoder", new ChannelInboundHandlerAdapter());
+		channel.pipeline().addLast("via-encoder", new ChannelOutboundHandlerAdapter());
+		PacketEventBus.addListener(listener, target);
+		try (Binding binding = Binding.bind(channel)) {
+			Field boundUser = Binding.class.getDeclaredField("user");
+			boundUser.setAccessible(true);
+			boundUser.set(binding, user);
+			HandshakeWirePacket handshake = new HandshakeWirePacket(protocol, "localhost", 25565, ConnectionState.LOGIN);
+			assertTrue(channel.writeInbound(encode(ConnectionState.HANDSHAKING, handshake.typedTo(PacketType.Client.SET_PROTOCOL), protocol)));
+			channel.<ByteBuf>readInbound().release();
+			ByteBuf loginSuccess = Unpooled.buffer();
+			ByteBufStreamCodecs.VARINT.encode(loginSuccess, PacketTypeRegistries.clientbound().idOf(ConnectionState.LOGIN, PacketType.Server.SUCCESS, protocol));
+			assertTrue(channel.writeOutbound(loginSuccess));
+			channel.<ByteBuf>readOutbound().release();
+			assertEquals(ConnectionState.PLAY, binding.connectionState());
+
+			TypedPacketContract boundary = WirePackets.createPlayPacket(delimiter, protocol).typedTo(delimiter);
+			TypedPacketContract payload = new KeepAliveWirePacket(123).typedTo(target);
+			List<PacketType.Server> expectedPackets = doubleSync
+				? List.of(delimiter, ping, target, ping, delimiter)
+				: List.of(delimiter, target, ping, delimiter);
+			List<String> expectedCallbacks = doubleSync ? List.of("before", "after") : List.of("after");
+			for (boolean serverBundle : new boolean[]{true, false}) {
+				if (serverBundle) {
+					assertTrue(channel.writeOutbound(encode(ConnectionState.PLAY, boundary, protocol)));
+				}
+				assertTrue(channel.writeOutbound(encode(ConnectionState.PLAY, payload, protocol)));
+				if (serverBundle) {
+					assertTrue(channel.writeOutbound(encode(ConnectionState.PLAY, boundary, protocol)));
+				}
+				assertTrue(callbacks.isEmpty());
+				assertEquals(expectedPackets, readAndAcknowledgeFeedback(channel, protocol),
+					serverBundle ? "Within the server's bundle" : "After the server closed its bundle");
+				assertEquals(expectedCallbacks, callbacks);
+				callbacks.clear();
+			}
+		} finally {
+			PacketEventBus.removeListener(listener);
+			channel.finishAndReleaseAll();
+		}
+	}
+
+	private static ByteBuf encode(ConnectionState state, TypedPacketContract packet, int protocol) {
+		ByteBuf bytes = Unpooled.buffer();
+		WirePackets.encodePacket(state, packet, protocol, bytes);
+		return bytes;
+	}
+
+	private static List<PacketType.Server> readAndAcknowledgeFeedback(EmbeddedChannel channel, int protocol) {
+		List<PacketType.Server> types = new ArrayList<>();
+		ByteBuf bytes;
+		while ((bytes = channel.readOutbound()) != null) {
+			try {
+				int id = ByteBufStreamCodecs.VARINT.decode(bytes);
+				PacketType.Server type = PacketTypeRegistries.clientbound().typeOf(ConnectionState.PLAY, id, protocol);
+				types.add(type);
+				if (type == PacketType.Server.PING) {
+					TypedPacketContract pong = new PongWirePacket(bytes.readInt()).typedTo(PacketType.Client.PONG);
+					assertFalse(channel.writeInbound(encode(ConnectionState.PLAY, pong, protocol)));
+				}
+			} finally {
+				bytes.release();
+			}
+		}
+		return types;
+	}
+
+	private static List<TypedPacketContract> dispatchFeedbackGroup(PacketSendEvent event) {
+		int protocol = event.user().protocolVersion();
+		BundleDelimiterPacket delimiter = protocol >= 762 ? WirePackets.createPlayPacket(PacketType.Server.BUNDLE_DELIMITER, protocol) : null;
+		List<TypedPacketContract> sent = PacketEventBus.dispatchSendPlan(event).outgoingPackets(delimiter, false);
+		if (delimiter == null) {
+			return sent;
+		}
+		assertEquals(PacketType.Server.BUNDLE_DELIMITER, sent.get(0).type());
+		assertEquals(PacketType.Server.BUNDLE_DELIMITER, sent.get(sent.size() - 1).type());
+		return sent.subList(1, sent.size() - 1);
 	}
 
 	private static void verifyMotionFeedback(User user, TypedPacketContract packet) {

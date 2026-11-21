@@ -14,10 +14,10 @@ package de.jpx3.intave.packet.wire.connection.pong;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutablePongPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class PongWirePacket extends MutableWirePacket implements MutablePongPacket {
+public class PongWirePacket extends AbstractMutable implements MutablePongPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, PongWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.INTEGER, PongWirePacket::id,

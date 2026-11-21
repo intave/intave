@@ -1002,7 +1002,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       InventoryMetadata inventory = user.meta().inventory();
       double[] currentReach = resolveReach(user, inventory.heldItem());
       ItemStack previousSpear = inventory.previousSpearThisTick();
-      boolean supportsItemReach = user.meta().protocol().protocolVersion() >= ProtocolMetadata.VER_1_21_11
+      boolean supportsItemReach = user.protocolVersion() >= ProtocolMetadata.VER_1_21_11
         && !COMPONENT_VERSION.below();
       double[] previousReach = previousSpear != null && supportsItemReach
         ? resolveReach(user, previousSpear) : null;
@@ -1064,7 +1064,7 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
 
     private static double[] resolveReach(User user, ItemStack heldItem) {
       double normalReach = Raytracing.reachDistanceOf(user);
-      if (user.meta().protocol().protocolVersion() < ProtocolMetadata.VER_1_21_11
+      if (user.protocolVersion() < ProtocolMetadata.VER_1_21_11
         || COMPONENT_VERSION.below()) {
         return new double[]{normalReach, 0.0D};
       }

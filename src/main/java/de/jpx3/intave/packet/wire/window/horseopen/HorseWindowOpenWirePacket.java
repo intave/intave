@@ -14,12 +14,12 @@ package de.jpx3.intave.packet.wire.window.horseopen;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableWindowOpenPacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
 import java.util.OptionalInt;
 
-public class HorseWindowOpenWirePacket extends MutableWirePacket implements MutableWindowOpenPacket {
+public class HorseWindowOpenWirePacket extends AbstractMutable implements MutableWindowOpenPacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, HorseWindowOpenWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			ByteBufStreamCodecs.VARINT, HorseWindowOpenWirePacket::containerId,

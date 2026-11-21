@@ -11,30 +11,39 @@
 
 package de.jpx3.intave.module.tracker.player;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packet.ListenerPriority;
 import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.linker.packet.PrioritySlot;
+import de.jpx3.intave.module.linker.packetperfect.OnReceive;
+import de.jpx3.intave.module.linker.packetperfect.OnSend;
 import de.jpx3.intave.packet.contract.PacketType;
-import de.jpx3.intave.packet.plib.reader.ClientCommandReader;
+import de.jpx3.intave.packet.contract.immutable.ClientCommandPacket;
+import de.jpx3.intave.packet.contract.immutable.OpenScreenPacket;
+import de.jpx3.intave.packet.contract.immutable.RespawnPacket;
+import de.jpx3.intave.packet.contract.immutable.WindowClosePacket;
+import de.jpx3.intave.packet.event.PacketSendEvent;
+import de.jpx3.intave.packet.plib.reader.WindowClickReader;
 import de.jpx3.intave.packet.plib.reader.WindowItemReader;
 import de.jpx3.intave.share.ClientCommand;
+import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.InventoryMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
-import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static de.jpx3.intave.packet.contract.PacketType.Client.CLIENT_COMMAND;
-import static de.jpx3.intave.packet.contract.PacketType.Server.*;
+import static de.jpx3.intave.packet.ListenerPriority.EARLY;
+import static de.jpx3.intave.packet.ListenerPriority.LATER;
+import static de.jpx3.intave.packet.contract.PacketType.Client.WINDOW_CLICK;
+import static de.jpx3.intave.packet.contract.PacketType.Server.WINDOW_ITEMS;
 
 public final class InventoryTracker extends Module {
 
@@ -47,65 +56,40 @@ public final class InventoryTracker extends Module {
    * the {@link PacketType.Server#OPEN_WINDOW}
    * packet.
    */
-  @PacketSubscription(
-    priority = ListenerPriority.HIGH,
-    packetsOut = {
-      OPEN_WINDOW
-    },
-    ignoreCancelled = false
-  )
-  public void sentOpenInventory(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
+  @OnSend(priority = LATER)
+  public void sentOpenInventory(User user, OpenScreenPacket packet, PacketSendEvent event) {
+    int windowId = packet.containerId();
+    if (event.isCancelled()) {
+      debug(user, () -> "Server open cancelled for window " + windowId);
+      return;
+    }
     InventoryMetadata inventoryData = user.meta().inventory();
-    PacketContainer packet = event.getPacket();
-
-    // For some reason the client doesn't send a close window packet after closing
-    // the beacon window. Therefore, we pretend the player does not have an open
-    // inventory if he opens the beacon window to avoid further issues.
-    WrappedChatComponent chatComponent = packet.getChatComponents().read(0);
-    String json = chatComponent.getJson();
-    boolean clientDoesNotSendCloseWindow = json.contains("container.beacon");
-
-    if (!clientDoesNotSendCloseWindow) {
-      Modules.feedback()
-        .synchronize(player, null, (p, x) -> openInventory(p));
-      inventoryData.forceInventoryOnClickOpen = true;
-    } else {
+    // Closing a beacon can omit the client close-window packet.
+    if (packet.isBeaconMenu()) {
       inventoryData.forceInventoryOnClickOpen = false;
+      debug(user, () -> "Skipping open tracking for beacon window " + windowId);
+      return;
+    }
+    Modules.feedback().synchronize(user, event, () -> openInventory(user, "Open feedback received", windowId));
+    inventoryData.forceInventoryOnClickOpen = true;
+    debug(user, () -> "Server open for window " + windowId + ", awaiting feedback");
+  }
+
+  /** Clients through 1.11.2 report opening their own inventory with this command. */
+  @OnReceive(priority = EARLY)
+  public void receiveClientCommand(User user, ClientCommandPacket packet) {
+    if (packet.command() == ClientCommand.OPEN_INVENTORY) {
+      openInventory(user, "Client open command", 0);
     }
   }
 
-  /**
-   * Tracks if the client opens the inventory by listening to the
-   * {@link PacketType.Client#CLIENT_COMMAND}
-   * packet.
-   * However, this functionality was removed in Minecraft 1.9.
-   */
-  @PacketSubscription(
-    priority = ListenerPriority.LOW,
-    packetsIn = {
-      CLIENT_COMMAND
+  private void openInventory(User user, String source, int windowId) {
+    if (inNetherPortal(user)) {
+      debug(user, () -> source + " for window " + windowId + ", skipped inside a nether portal");
+      return;
     }
-  )
-  public void receiveClientCommand(Player player, ClientCommandReader reader) {
-    if (reader.command() == ClientCommand.OPEN_INVENTORY) {
-      openInventory(player);
-    }
-  }
-
-  /**
-   * Updates the inventory's state of the specified player internally.
-   *
-   * @param player The player
-   */
-  private void openInventory(Player player) {
-    User user = UserRepository.userOf(player);
-    InventoryMetadata inventoryData = user.meta().inventory();
-
-    if (!inNetherPortal(user)) {
-      inventoryData.updateInventoryOpenState(true);
-    }
+    user.meta().inventory().updateInventoryOpenState(true);
+    debug(user, () -> source + " for window " + windowId);
   }
 
   /**
@@ -128,17 +112,18 @@ public final class InventoryTracker extends Module {
    * the {@link PacketType.Server#CLOSE_WINDOW}
    * packet.
    */
-  @PacketSubscription(
-    priority = ListenerPriority.HIGH,
-    packetsOut = {
-      PacketType.Server.CLOSE_WINDOW
-    },
-    ignoreCancelled = false
-  )
-  public void sentCloseInventory(PacketEvent event) {
-    Player player = event.getPlayer();
-    Modules.feedback()
-      .synchronize(player, null, (p, x) -> closeInventory(p));
+  @OnSend(priority = LATER)
+  public void sentCloseInventory(User user, WindowClosePacket packet, PacketSendEvent event) {
+    int windowId = packet.containerId();
+    if (event.isCancelled()) {
+      debug(user, () -> "Server close cancelled for window " + windowId);
+      return;
+    }
+    Modules.feedback().synchronize(user, event, () -> {
+      user.meta().inventory().updateInventoryOpenState(false);
+      debug(user, () -> "Close feedback received for window " + windowId);
+    });
+    debug(user, () -> "Server close for window " + windowId + ", awaiting feedback");
   }
 
   /**
@@ -146,43 +131,27 @@ public final class InventoryTracker extends Module {
    * {@link PacketType.Client#CLOSE_WINDOW}
    * packet.
    */
-  @PacketSubscription(
-    priority = ListenerPriority.LOW,
-    packetsIn = {
-      PacketType.Client.CLOSE_WINDOW
+  @OnReceive(priority = EARLY)
+  public void receiveCloseWindow(User user, WindowClosePacket packet) {
+    user.meta().inventory().updateInventoryOpenState(false);
+    debug(user, () -> "Client closed window " + packet.containerId());
+  }
+
+  @PacketSubscription(priority = ListenerPriority.MONITOR, prioritySlot = PrioritySlot.EXTERNAL, packetsIn = WINDOW_CLICK)
+  public void receiveWindowClick(User user, Cancellable cancellable, WindowClickReader reader) {
+    debug(user, () -> "Client click in window " + reader.containerId() + ", slot=" + reader.slot()
+      + ", button=" + reader.button() + ", type=" + reader.clickType() + ", cancelled=" + cancellable.isCancelled());
+  }
+
+  @OnSend(priority = LATER)
+  public void sentRespawn(User user, RespawnPacket packet, PacketSendEvent event) {
+    if (event.isCancelled()) {
+      return;
     }
-  )
-  public void receiveCloseWindow(PacketEvent event) {
-    closeInventory(event.getPlayer());
-  }
-
-  /**
-   * Updates the inventory's state of the specified internally.
-   *
-   * @param player The player
-   */
-  private void closeInventory(Player player) {
-    User user = UserRepository.userOf(player);
-    InventoryMetadata inventoryData = user.meta().inventory();
-    inventoryData.updateInventoryOpenState(false);
-  }
-
-  /**
-   * Closes a player's inventory if the player dies internally by listening to
-   * Bukkit's {@link org.bukkit.event.player.PlayerRespawnEvent}.
-   */
-  @PacketSubscription(
-    priority = ListenerPriority.HIGH,
-    packetsOut = {
-      RESPAWN
-    },
-    ignoreCancelled = false
-  )
-  public void sentRespawn(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
-    InventoryMetadata inventoryData = user.meta().inventory();
-    inventoryData.updateInventoryOpenState(false);
+    Modules.feedback().synchronize(user, event, () -> {
+      user.meta().inventory().updateInventoryOpenState(false);
+      debug(user, () -> "Respawn feedback received");
+    });
   }
 
   @PacketSubscription(
@@ -194,7 +163,15 @@ public final class InventoryTracker extends Module {
     if (reader.windowId() == 0) {
       List<String> collect = reader.itemMap().values().stream().map(itemStack -> itemStack.getType().name()).collect(Collectors.toList());
       user.tickFeedback(() -> user.meta().inventory().setItems(collect));
-//      System.out.println(collect);
+    }
+  }
+
+  private static void debug(User user, Supplier<String> event) {
+    if (user.receives(MessageChannel.DEBUG_INVENTORY)) {
+      InventoryMetadata inventory = user.meta().inventory();
+      user.sendMessage(IntavePlugin.prefix() + "[Inventory] " + event.get()
+        + " | tracked=" + (inventory.inventoryOpen() ? "open" : "closed")
+        + ", forceInventoryOnClickOpen=" + inventory.forceInventoryOnClickOpen);
     }
   }
 }

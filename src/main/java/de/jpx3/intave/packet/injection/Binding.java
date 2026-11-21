@@ -18,11 +18,13 @@ import de.jpx3.intave.packet.PacketDirection;
 import de.jpx3.intave.packet.contract.PacketContract;
 import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.TypedPacketContract;
+import de.jpx3.intave.packet.contract.immutable.BundleDelimiterPacket;
 import de.jpx3.intave.packet.contract.immutable.HandshakePacket;
 import de.jpx3.intave.packet.contract.mutable.Mutable;
 import de.jpx3.intave.packet.event.PacketEventBus;
 import de.jpx3.intave.packet.event.PacketReceiveEvent;
 import de.jpx3.intave.packet.event.PacketSendEvent;
+import de.jpx3.intave.packet.event.PacketSendPlan;
 import de.jpx3.intave.packet.wire.WirePackets;
 import de.jpx3.intave.reflect.PlayerChannel;
 import de.jpx3.intave.registry.PacketTypeRegistries;
@@ -54,6 +56,9 @@ public final class Binding implements AutoCloseable {
 	private final AtomicBoolean closed = new AtomicBoolean();
 	private volatile ConnectionState connectionState = ConnectionState.HANDSHAKING;
 	private volatile int protocolVersion = -1;
+	private int bundleDelimiterId = -1;
+	private BundleDelimiterPacket bundleDelimiter;
+	private boolean bundleOpen;
 
 	private Binding(Channel channel, HandlerPlacement receivePlacement, HandlerPlacement sendPlacement) {
 		this.channel = channel;
@@ -147,7 +152,7 @@ public final class Binding implements AutoCloseable {
 				try {
 					handshake = WirePackets.createPacket(SERVERBOUND, ConnectionState.HANDSHAKING, message);
 				} catch (RuntimeException failure) {
-					logPacketFailure(PacketDirection.SERVERBOUND, "decoding handshake", failure);
+					logPacketFailure(SERVERBOUND, "decoding handshake", failure);
 					channel.close();
 					return Collections.emptyList();
 				}
@@ -159,17 +164,24 @@ public final class Binding implements AutoCloseable {
 					return Collections.emptyList();
 				}
 				this.protocolVersion = handshake.protocolVersion();
+				this.bundleDelimiterId = PacketTypeRegistries.clientbound().idOf(ConnectionState.PLAY, PacketType.Server.BUNDLE_DELIMITER, protocolVersion);
+				this.bundleDelimiter = bundleDelimiterId >= 0
+					? WirePackets.createPlayPacket(PacketType.Server.BUNDLE_DELIMITER, protocolVersion)
+					: null;
 				this.connectionState = handshake.nextConnectionState();
 				return Collections.singletonList(message);
 			}
 
 			int packetId = packetIdFromHeader(message);
-			ConnectionState nextState = nextStateAfterReceivedPacket(packetId);
+			ConnectionState nextState = nextStateAfterReceiving(packetId);
 			try {
+				// id -> type
 				PacketType.Client packetType = PacketTypeRegistries.serverbound().typeOf(this.connectionState, packetId, this.protocolVersion);
-
-				if (packetType != null && WirePackets.packetIdKnown(PacketDirection.SERVERBOUND, this.connectionState, packetId, this.protocolVersion)) {
+				if (packetType != null) {
 					PacketContract packet = WirePackets.decodePacket(SERVERBOUND, this.connectionState, this.protocolVersion, message);
+					if (packet == null) {
+						return Collections.singletonList(message);
+					}
 					User nullableUser = tryGetUser();
 					PacketReceiveEvent event = new PacketReceiveEvent(nullableUser, packetType, packet);
 					PacketEventBus.dispatch(event);
@@ -189,10 +201,13 @@ public final class Binding implements AutoCloseable {
 				}
 				return Collections.singletonList(message);
 			} finally {
+				if (nextState != ConnectionState.PLAY) {
+					bundleOpen = false;
+				}
 				this.connectionState = nextState;
 			}
 		} catch (RuntimeException | Error failure) {
-			logPacketFailure(PacketDirection.SERVERBOUND, "processing", failure);
+			logPacketFailure(SERVERBOUND, "processing", failure);
 			throw failure;
 		}
 	}
@@ -213,24 +228,33 @@ public final class Binding implements AutoCloseable {
 			User nullableUser = tryGetUser();
 			PacketType.Server packetType = PacketTypeRegistries.clientbound().typeOf(this.connectionState, packetId, this.protocolVersion);
 
-			if (packetType != null && WirePackets.packetIdKnown(CLIENTBOUND, this.connectionState, packetId, this.protocolVersion)) {
+			if (packetType != null) {
 				PacketContract packet = WirePackets.decodePacket(CLIENTBOUND, this.connectionState, this.protocolVersion, message);
+				if (packet == null) {
+					return Collections.singletonList(message);
+				}
 				PacketSendEvent sendEvent = new PacketSendEvent(nullableUser, packetType, packet);
-				List<TypedPacketContract> outgoingPackets = PacketEventBus.dispatch(sendEvent);
+				PacketSendPlan plan = PacketEventBus.dispatchSendPlan(sendEvent);
+				BundleDelimiterPacket delimiterPacket = connectionState == ConnectionState.PLAY ? bundleDelimiter : null;
+				List<TypedPacketContract> outgoingPackets = plan.outgoingPackets(delimiterPacket, bundleOpen);
 				// Dispatch already omits cancelled packets while preserving queued packets.
 				if (outgoingPackets.isEmpty()) {
 					return Collections.emptyList();
 				}
-				if (outgoingPackets.size() == 1) {
-					TypedPacketContract otherPacket = outgoingPackets.get(0);
-					if (otherPacket.contract() == packet && packet instanceof Mutable && !((Mutable) packet).couldHaveBeenMutated()) {
+				boolean originalUnchanged = packet instanceof Mutable && !((Mutable) packet).couldHaveBeenMutated();
+				if (originalUnchanged && outgoingPackets.size() == 1) {
+					TypedPacketContract only = outgoingPackets.get(0);
+					if (only.type() == packetType && only.contract() == packet) {
 						return Collections.singletonList(message);
 					}
 				}
 				List<ByteBuf> newMessages = new ArrayList<>(outgoingPackets.size());
 				try {
 					for (TypedPacketContract outgoingPacket : outgoingPackets) {
-						System.out.println("Wiring " + outgoingPacket.type().lookupName() + " as one to multiple");
+						if (originalUnchanged && outgoingPacket.type() == packetType && outgoingPacket.contract() == packet) {
+							newMessages.add(message.duplicate().retain());
+							continue;
+						}
 						ByteBuf newMessage = channel.alloc().buffer();
 						newMessages.add(newMessage);
 						WirePackets.encodePacket(this.connectionState, outgoingPacket, this.protocolVersion, newMessage);
@@ -247,6 +271,26 @@ public final class Binding implements AutoCloseable {
 		} finally {
 			this.connectionState = nextState;
 		}
+	}
+
+	boolean isBundleDelimiter(ByteBuf packet) {
+		// A delimiter consists solely of its VarInt ID.
+		if (connectionState != ConnectionState.PLAY || bundleDelimiterId < 0) {
+			return false;
+		}
+		int size = packet.readableBytes();
+		if (size == 1) {
+			return packet.getUnsignedByte(packet.readerIndex()) == bundleDelimiterId;
+		}
+		if (size > 5 || packet.getByte(packet.readerIndex()) >= 0 || packet.getByte(packet.writerIndex() - 1) < 0) {
+			return false;
+		}
+		ByteBuf header = packet.duplicate();
+		return ByteBufStreamCodecs.VARINT.decode(header) == bundleDelimiterId && !header.isReadable();
+	}
+
+	void onBundleDelimiterWrite() {
+		bundleOpen = !bundleOpen;
 	}
 
 	void logPacketFailure(PacketDirection direction, String operation, Throwable failure) {
@@ -301,7 +345,7 @@ public final class Binding implements AutoCloseable {
 		}
 	}
 
-	private ConnectionState nextStateAfterReceivedPacket(int packetId) {
+	private ConnectionState nextStateAfterReceiving(int packetId) {
 		PacketTypeRegistry<PacketType.Client> serverbound = PacketTypeRegistries.serverbound();
 		switch (this.connectionState) {
 			case LOGIN:

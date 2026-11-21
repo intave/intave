@@ -18,6 +18,7 @@ import de.jpx3.intave.packet.contract.PacketContract;
 import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.immutable.*;
 import de.jpx3.intave.packet.contract.mutable.Mutable;
+import de.jpx3.intave.packet.contract.mutable.MutableClientCommandPacket;
 import de.jpx3.intave.packet.wire.entity.position.EntityPositionSyncPositionMoveRotationWirePacket;
 import de.jpx3.intave.packet.wire.entity.position.EntityPositionWirePacket;
 import de.jpx3.intave.packet.wire.player.ground.PlayerGroundWirePacket;
@@ -29,6 +30,7 @@ import de.jpx3.intave.packet.wire.world.border.WorldBorderInitializeWirePacket;
 import de.jpx3.intave.packet.wire.world.border.WorldBorderSetCenterWirePacket;
 import de.jpx3.intave.packet.wire.world.border.WorldBorderSetSizeWirePacket;
 import de.jpx3.intave.registry.PacketTypeRegistry;
+import de.jpx3.intave.share.ClientCommand;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
@@ -40,11 +42,12 @@ import static de.jpx3.intave.packet.ConnectionState.PLAY;
 import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
 import static de.jpx3.intave.packet.PacketDirection.SERVERBOUND;
 import static de.jpx3.intave.packet.wire.WirePacketTestSupport.*;
+import static de.jpx3.intave.share.ClientCommand.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class WirePacketCodecsTest {
 	@Test
-	void everyRegistrationMatchesItsDirectionStateTypeAndProtocol() throws ReflectiveOperationException {
+	void everyRegistrationMatchesItsDirectionStateTypeAndProtocol() {
 		for (PacketDirection direction : PacketDirection.values()) {
 			PacketTypeRegistry<?> registry = registry(direction);
 			for (int protocol : registry.supportedProtocolVersions()) {
@@ -63,7 +66,6 @@ final class WirePacketCodecsTest {
 						assertTrue(
 								packet.appliesTo(state, entry.getKey(), protocol),
 								entry.toString());
-						assertTrue(packet.getClass().getMethod("appliesTo", ConnectionState.class, PacketType.class).isDefault());
 						assertFalse(((Mutable) packet).couldHaveBeenMutated(), "Matching must not expose mutable packet fields");
 					}
 				}
@@ -112,7 +114,6 @@ final class WirePacketCodecsTest {
 						PacketType.Server.WINDOW_ITEMS,
 						PacketType.Server.SET_SLOT,
 						PacketType.Server.ENTITY_EQUIPMENT,
-						PacketType.Server.OPEN_WINDOW,
 						PacketType.Server.ENTITY_METADATA,
 						PacketType.Server.ENTITY_EFFECT,
 						PacketType.Server.REMOVE_ENTITY_EFFECT,
@@ -138,6 +139,9 @@ final class WirePacketCodecsTest {
 				roundTrip(CLIENTBOUND, PacketType.Server.HELD_ITEM_SLOT_OUT, 768, b -> b.writeByte(7));
 		assertEquals(7, received.slot());
 		assertEquals(7, sent.slot());
+		assertFalse(received.appliesTo(PLAY, PacketType.Server.HELD_ITEM_SLOT_OUT));
+		assertFalse(sent.appliesTo(PLAY, PacketType.Client.HELD_ITEM_SLOT_IN));
+		assertFalse(sent.appliesTo(ConnectionState.LOGIN, PacketType.Server.HELD_ITEM_SLOT_OUT));
 	}
 
 	@Test
@@ -166,6 +170,30 @@ final class WirePacketCodecsTest {
 							b.writeByte(1);
 						});
 		assertEquals("{\"text\":\"Score\"}", objective.displayNameJson());
+	}
+
+	@Test
+	void clientCommandIdsFollowTheClientProtocol() {
+		for (int protocol : registry(SERVERBOUND).supportedProtocolVersions()) {
+			ClientCommand[] commands = protocol < 335 ? new ClientCommand[]{PERFORM_RESPAWN, REQUEST_STATS, OPEN_INVENTORY}
+				: protocol < 775 ? new ClientCommand[]{PERFORM_RESPAWN, REQUEST_STATS}
+				: new ClientCommand[]{PERFORM_RESPAWN, REQUEST_STATS, REQUEST_GAMERULE_VALUES};
+			for (int id = 0; id < commands.length; id++) {
+				int wireId = id;
+				MutableClientCommandPacket packet = roundTrip(SERVERBOUND, PacketType.Client.CLIENT_COMMAND, protocol, b -> b.writeByte(wireId));
+				assertEquals(commands[id], packet.command(), "command " + id + " in " + protocol);
+				assertFalse(packet.couldHaveBeenMutated());
+				packet.setCommand(commands[0]);
+				assertTrue(packet.couldHaveBeenMutated());
+				ClientCommandPacket edited = roundTrip(SERVERBOUND, PacketType.Client.CLIENT_COMMAND, protocol, b -> encodePayload(packet, b));
+				assertEquals(PERFORM_RESPAWN, edited.command());
+			}
+			assertThrows(IllegalArgumentException.class, () -> roundTrip(SERVERBOUND, PacketType.Client.CLIENT_COMMAND, protocol,
+				b -> b.writeByte(commands.length)));
+			MutableClientCommandPacket packet = WirePackets.createPlayPacket(PacketType.Client.CLIENT_COMMAND, protocol);
+			if (protocol >= 335) assertThrows(IllegalArgumentException.class, () -> packet.setCommand(OPEN_INVENTORY));
+			if (protocol < 775) assertThrows(IllegalArgumentException.class, () -> packet.setCommand(REQUEST_GAMERULE_VALUES));
+		}
 	}
 
 	@Test

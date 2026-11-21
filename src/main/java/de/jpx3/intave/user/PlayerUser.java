@@ -45,6 +45,7 @@ import de.jpx3.intave.module.mitigate.AttackNerfStrategy;
 import de.jpx3.intave.module.mitigate.HurttimeModifier;
 import de.jpx3.intave.module.violation.placeholder.PlayerContext;
 import de.jpx3.intave.module.violation.placeholder.UserContext;
+import de.jpx3.intave.packet.injection.Binding;
 import de.jpx3.intave.packet.plib.PacketSender;
 import de.jpx3.intave.packet.plib.reader.EntityVelocityReader;
 import de.jpx3.intave.packet.plib.reader.PacketReaders;
@@ -53,6 +54,7 @@ import de.jpx3.intave.player.collider.Colliders;
 import de.jpx3.intave.player.collider.complex.Collider;
 import de.jpx3.intave.player.collider.simple.SimpleCollider;
 import de.jpx3.intave.player.fake.FakePlayer;
+import de.jpx3.intave.reflect.PlayerChannel;
 import de.jpx3.intave.reflect.access.ReflectiveHandleAccess;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.MovementCorrection;
@@ -107,6 +109,7 @@ final class PlayerUser implements User {
   private final Lock storageSubscriptionLock = new ReentrantLock();
   private final Queue<Reference<Runnable>> storageSubscriptionQueue = new ArrayDeque<>();
 
+  private volatile Binding binding;
   private Collider collider;
   private FluidFlow fluidFlow;
   private SimpleCollider simpleCollider;
@@ -200,6 +203,16 @@ final class PlayerUser implements User {
   @Override
   public Object playerConnection() {
     return playerConnection.get();
+  }
+
+  @Override
+  public Binding binding() {
+    Binding binding = this.binding;
+    if (binding == null) {
+      binding = Binding.of(PlayerChannel.channelOf(player()));
+      this.binding = binding;
+    }
+    return binding;
   }
 
   @Override
@@ -453,7 +466,8 @@ final class PlayerUser implements User {
 
   @Override
   public int protocolVersion() {
-    return meta().protocol().protocolVersion();
+//    return meta().protocol().protocolVersion();
+    return binding().protocolVersion();
   }
 
   @Override

@@ -14,11 +14,11 @@ package de.jpx3.intave.packet.wire.cookie.response;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutableCookieResponsePacket;
-import de.jpx3.intave.packet.wire.MutableWirePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.MinecraftKey;
 import io.netty.buffer.ByteBuf;
 
-public final class CookieResponseWirePacket extends MutableWirePacket implements MutableCookieResponsePacket {
+public final class CookieResponseWirePacket extends AbstractMutable implements MutableCookieResponsePacket {
 	public static final StreamCodec<ByteBuf, ByteBuf, CookieResponseWirePacket> STREAM_CODEC =
 		StreamCodec.compound(
 			MinecraftKey.STREAM_CODEC, CookieResponseWirePacket::key,

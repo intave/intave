@@ -1,3 +1,14 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
 val sourceSets = extensions.getByType<SourceSetContainer>()
 val mainSourceSet = sourceSets.getByName("main")
 val testSourceSet = sourceSets.getByName("test")
@@ -55,6 +66,7 @@ val testShadedJar = tasks.register<Test>("testShadedJar") {
 
   filter {
     includeTestsMatching("de.jpx3.intave.library.BundledDependenciesTest")
+    includeTestsMatching("de.jpx3.intave.codec.CompoundTagCodecTest")
     includeTestsMatching("de.jpx3.classloader.NativeLibraryTest")
     includeTestsMatching("de.jpx3.intave.share.CertificateTest")
     includeTestsMatching("de.jpx3.intave.cloud.*")
