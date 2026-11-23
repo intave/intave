@@ -19,13 +19,13 @@ import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.immutable.*;
 import de.jpx3.intave.packet.contract.mutable.Mutable;
 import de.jpx3.intave.packet.contract.mutable.MutableClientCommandPacket;
-import de.jpx3.intave.packet.wire.entity.position.EntityPositionSyncPositionMoveRotationWirePacket;
+import de.jpx3.intave.packet.wire.entity.position.EntityPositionSyncWirePacket;
 import de.jpx3.intave.packet.wire.entity.position.EntityPositionWirePacket;
 import de.jpx3.intave.packet.wire.player.ground.PlayerGroundWirePacket;
 import de.jpx3.intave.packet.wire.player.position.PlayerPositionWirePacket;
 import de.jpx3.intave.packet.wire.player.positionrotation.PlayerPositionRotationWirePacket;
 import de.jpx3.intave.packet.wire.player.rotation.PlayerRotationWirePacket;
-import de.jpx3.intave.packet.wire.vehicle.move.VehicleMoveWithoutGroundWirePacket;
+import de.jpx3.intave.packet.wire.vehicle.move.VehicleMoveWirePacket;
 import de.jpx3.intave.packet.wire.world.border.WorldBorderInitializeWirePacket;
 import de.jpx3.intave.packet.wire.world.border.WorldBorderSetCenterWirePacket;
 import de.jpx3.intave.packet.wire.world.border.WorldBorderSetSizeWirePacket;
@@ -36,7 +36,8 @@ import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Modifier;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static de.jpx3.intave.packet.ConnectionState.PLAY;
 import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
@@ -59,7 +60,6 @@ final class WirePacketCodecsTest {
 						PacketContract packet =
 								WirePackets.createPacket(
 										direction, state, entry.getValue(), protocol);
-						assertTrue(Modifier.isPublic(packet.getClass().getModifiers()));
 						assertTrue(
 								packet.getClass().getPackage().getName()
 										.startsWith("de.jpx3.intave.packet.wire."));
@@ -69,6 +69,46 @@ final class WirePacketCodecsTest {
 						assertFalse(((Mutable) packet).couldHaveBeenMutated(), "Matching must not expose mutable packet fields");
 					}
 				}
+			}
+		}
+	}
+
+	@Test
+	void protocolVariantsAreHiddenAndTheirHoldersAreNotPackets() throws ReflectiveOperationException {
+		List<Class<? extends PacketContract>> catalog = WirePacketCatalog.packetClasses();
+		assertEquals(catalog.size(), new HashSet<>(catalog).size(), "Each implementation is registered once");
+		Set<Class<?>> families = new HashSet<>();
+		Set<Integer> protocols = new HashSet<>();
+		for (PacketDirection direction : PacketDirection.values()) {
+			protocols.addAll(registry(direction).supportedProtocolVersions());
+		}
+		for (Class<?> type : catalog) {
+			families.add(type.isMemberClass() ? type.getDeclaringClass() : type);
+		}
+		for (Class<?> family : families) {
+			assertTrue(Modifier.isPublic(family.getModifiers()), family.getName());
+			Set<Class<?>> declared = Arrays.stream(family.getDeclaredClasses())
+				.filter(PacketContract.class::isAssignableFrom)
+				.filter(type -> !Modifier.isAbstract(type.getModifiers())).collect(Collectors.toSet());
+			if (declared.isEmpty()) continue;
+			assertFalse(PacketContract.class.isAssignableFrom(family), family.getName());
+			assertTrue(Modifier.isFinal(family.getModifiers()), family.getName());
+			assertTrue(Modifier.isPrivate(family.getDeclaredConstructor().getModifiers()), family.getName());
+			assertEquals(0, Arrays.stream(family.getDeclaredFields()).filter(field -> !field.isSynthetic()).count(),
+				"Holders have no state or codec: " + family.getName());
+			assertFalse(catalog.contains(family), family.getName());
+			List<?> registered = (List<?>) family.getDeclaredMethod("registeredClasses").invoke(null);
+			assertEquals(declared, new HashSet<>(registered), family.getName());
+			assertEquals(declared.size(), registered.size(), family.getName());
+			assertTrue(catalog.containsAll(registered), family.getName());
+			for (Class<?> variant : declared) {
+				int modifiers = variant.getModifiers();
+				assertTrue(Modifier.isStatic(modifiers), variant.getName());
+				assertFalse(Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers), variant.getName());
+				PacketContract packet = WirePacketDefinition.from(variant.asSubclass(PacketContract.class)).createEmpty();
+				int firstProtocol = protocols.stream().mapToInt(Integer::intValue)
+					.filter(packet::appliesTo).min().orElseThrow(AssertionError::new);
+				assertEquals("Protocol" + firstProtocol, variant.getSimpleName());
 			}
 		}
 	}
@@ -92,13 +132,13 @@ final class WirePacketCodecsTest {
 
 	@Test
 	void sharedContractsKeepDistinctWireCodecs() {
-		assertEquals(PlayerGroundWirePacket.class, WirePackets.createPlayPacket(PacketType.Client.FLYING, 768).getClass());
-		assertEquals(PlayerPositionWirePacket.class, WirePackets.createPlayPacket(PacketType.Client.POSITION, 768).getClass());
-		assertEquals(PlayerRotationWirePacket.class, WirePackets.createPlayPacket(PacketType.Client.LOOK, 768).getClass());
-		assertEquals(PlayerPositionRotationWirePacket.class, WirePackets.createPlayPacket(PacketType.Client.POSITION_LOOK, 768).getClass());
-		assertEquals(VehicleMoveWithoutGroundWirePacket.class, WirePackets.createPlayPacket(PacketType.Client.VEHICLE_MOVE, 768).getClass());
-		assertEquals(EntityPositionWirePacket.class, WirePackets.createPlayPacket(PacketType.Server.ENTITY_TELEPORT, 768).getClass());
-		assertEquals(EntityPositionSyncPositionMoveRotationWirePacket.class, WirePackets.createPlayPacket(PacketType.Server.ENTITY_POSITION_SYNC, 768).getClass());
+		assertEquals(PlayerGroundWirePacket.class.getName() + "$Protocol768", WirePackets.createPlayPacket(PacketType.Client.FLYING, 768).getClass().getName());
+		assertEquals(PlayerPositionWirePacket.class.getName() + "$Protocol768", WirePackets.createPlayPacket(PacketType.Client.POSITION, 768).getClass().getName());
+		assertEquals(PlayerRotationWirePacket.class.getName() + "$Protocol768", WirePackets.createPlayPacket(PacketType.Client.LOOK, 768).getClass().getName());
+		assertEquals(PlayerPositionRotationWirePacket.class.getName() + "$Protocol768", WirePackets.createPlayPacket(PacketType.Client.POSITION_LOOK, 768).getClass().getName());
+		assertEquals(VehicleMoveWirePacket.class.getName() + "$Protocol107", WirePackets.createPlayPacket(PacketType.Client.VEHICLE_MOVE, 768).getClass().getName());
+		assertEquals(EntityPositionWirePacket.class.getName() + "$Protocol768", WirePackets.createPlayPacket(PacketType.Server.ENTITY_TELEPORT, 768).getClass().getName());
+		assertEquals(EntityPositionSyncWirePacket.class.getName() + "$Protocol768", WirePackets.createPlayPacket(PacketType.Server.ENTITY_POSITION_SYNC, 768).getClass().getName());
 		assertEquals(WorldBorderInitializeWirePacket.class, WirePackets.createPlayPacket(PacketType.Server.INITIALIZE_BORDER, 768).getClass());
 		assertEquals(WorldBorderSetCenterWirePacket.class, WirePackets.createPlayPacket(PacketType.Server.SET_BORDER_CENTER, 768).getClass());
 		assertEquals(WorldBorderSetSizeWirePacket.class, WirePackets.createPlayPacket(PacketType.Server.SET_BORDER_SIZE, 768).getClass());
@@ -107,25 +147,16 @@ final class WirePacketCodecsTest {
 	@Test
 	void nbtAndRegistryDependentPacketsAreNotRegistered() {
 		for (int protocol : registry(SERVERBOUND).supportedProtocolVersions()) {
-			for (PacketType packetType : new PacketType[] {PacketType.Client.WINDOW_CLICK, PacketType.Client.SET_CREATIVE_SLOT}) {
-				assertUnsupported(SERVERBOUND, packetType, protocol);
-			}
+			assertUnsupported(SERVERBOUND, PacketType.Client.SET_CREATIVE_SLOT, protocol);
 			for (PacketType packetType : new PacketType[] {
-						PacketType.Server.WINDOW_ITEMS,
-						PacketType.Server.SET_SLOT,
 						PacketType.Server.ENTITY_EQUIPMENT,
-						PacketType.Server.ENTITY_METADATA,
-						PacketType.Server.ENTITY_EFFECT,
-						PacketType.Server.REMOVE_ENTITY_EFFECT,
 						PacketType.Server.BLOCK_ACTION,
 						PacketType.Server.SPAWN_ENTITY
 					}) {
 				assertUnsupported(CLIENTBOUND, packetType, protocol);
 			}
-			if (protocol < 107) assertUnsupported(SERVERBOUND, PacketType.Client.USE_ITEM_ON, protocol);
 			if (protocol >= 765) {
 				assertUnsupported(CLIENTBOUND, PacketType.Server.TAB_COMPLETE_OUT, protocol);
-				assertUnsupported(CLIENTBOUND, PacketType.Server.SCOREBOARD_OBJECTIVE, protocol);
 			}
 			if (protocol >= 775) assertUnsupported(CLIENTBOUND, PacketType.Server.UPDATE_TIME, protocol);
 		}

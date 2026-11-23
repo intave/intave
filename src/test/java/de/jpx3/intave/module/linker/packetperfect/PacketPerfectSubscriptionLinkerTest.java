@@ -13,6 +13,7 @@ package de.jpx3.intave.module.linker.packetperfect;
 
 import de.jpx3.intave.check.EventProcessor;
 import de.jpx3.intave.module.linker.packet.PacketEventSubscriber;
+import de.jpx3.intave.module.tracker.player.InventoryTracker;
 import de.jpx3.intave.packet.ListenerPriority;
 import de.jpx3.intave.packet.ListenerStage;
 import de.jpx3.intave.packet.contract.PacketContract;
@@ -20,14 +21,15 @@ import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.TypedPacketContract;
 import de.jpx3.intave.packet.contract.immutable.KeepAlivePacket;
 import de.jpx3.intave.packet.contract.immutable.PlayerInputPacket;
+import de.jpx3.intave.packet.contract.immutable.WindowClickPacket;
 import de.jpx3.intave.packet.contract.mutable.MutableKeepAlivePacket;
 import de.jpx3.intave.packet.event.PacketEventBus;
 import de.jpx3.intave.packet.event.PacketReceiveEvent;
 import de.jpx3.intave.packet.event.PacketSendEvent;
 import de.jpx3.intave.packet.event.PacketSubscription;
 import de.jpx3.intave.packet.wire.WirePackets;
-import de.jpx3.intave.packet.wire.connection.keepalive.KeepAliveWirePacket;
 import de.jpx3.intave.packet.wire.connection.ping.PingWirePacket;
+import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -40,6 +42,7 @@ import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static de.jpx3.intave.packet.wire.WirePacketTestSupport.keepAlive;
 import static org.junit.jupiter.api.Assertions.*;
 
 public final class PacketPerfectSubscriptionLinkerTest {
@@ -78,6 +81,60 @@ public final class PacketPerfectSubscriptionLinkerTest {
 			expected.add(packet);
 			PacketEventBus.dispatch(new PacketReceiveEvent(user(true), PacketType.Client.PLAYER_INPUT, packet));
 			assertEquals(expected, subscriber.received, "Input delivery for protocol " + protocolVersion);
+		}
+	}
+
+	@Test
+	void inventoryClickObserverReceivesCancelledAndUncancelledPacketsOnce() {
+		new PacketPerfectSubscriptionLinker().linkSubscriptionsIn(new InventoryTracker());
+		PacketSubscription[] clickSubscriptions = subscriptions.get().get(PacketType.Client.WINDOW_CLICK);
+		assertNotNull(clickSubscriptions);
+		assertEquals(1, clickSubscriptions.length);
+		assertEquals(ListenerStage.AFTER, clickSubscriptions[0].stage());
+		assertEquals(ListenerPriority.LAST, clickSubscriptions[0].priority());
+		List<MessageChannel> debugChecks = new ArrayList<>();
+		User user = (User) Proxy.newProxyInstance(User.class.getClassLoader(), new Class<?>[]{User.class},
+			(proxy, method, arguments) -> {
+				if (method.getName().equals("hasPlayer")) return true;
+				if (method.getName().equals("receives")) {
+					debugChecks.add((MessageChannel) arguments[0]);
+					return false;
+				}
+				throw new AssertionError("Debug-disabled clicks must not access " + method.getName());
+			});
+		int expectedCalls = 0;
+		for (int protocol : new int[]{47, 107, 755, 756, 768, 770, 777}) {
+			for (boolean cancelled : new boolean[]{false, true}) {
+				PacketContract packet = WirePackets.createPlayPacket(PacketType.Client.WINDOW_CLICK, protocol);
+				PacketReceiveEvent event = new PacketReceiveEvent(user, PacketType.Client.WINDOW_CLICK, packet);
+				event.setCancelled(cancelled);
+				PacketEventBus.dispatch(event);
+				assertEquals(++expectedCalls, debugChecks.size());
+				assertEquals(MessageChannel.DEBUG_INVENTORY, debugChecks.get(expectedCalls - 1));
+				assertEquals(cancelled, event.isCancelled());
+				assertFalse(event.dirty());
+			}
+		}
+	}
+
+	@Test
+	void fullStackClickSubscriptionsIncludeModernStacksAndExcludeHashedStacks() {
+		FullStackClickSubscriber subscriber = new FullStackClickSubscriber();
+		new PacketPerfectSubscriptionLinker().linkSubscriptionsIn(subscriber);
+		for (int protocol : new int[]{47, 107, 393, 401, 404, 754, 755, 756, 766, 769, 770, 777}) {
+			PacketContract packet = WirePackets.createPlayPacket(PacketType.Client.WINDOW_CLICK, protocol);
+			PacketEventBus.dispatch(new PacketReceiveEvent(user(true), PacketType.Client.WINDOW_CLICK, packet));
+		}
+		assertEquals(10, subscriber.calls);
+	}
+
+	public static final class FullStackClickSubscriber implements PacketEventSubscriber {
+		private int calls;
+
+		@OnReceive
+		public void onClick(WindowClickPacket packet) {
+			assertTrue(packet.hasClickedItem() || packet.hasSlotPredictions());
+			calls++;
 		}
 	}
 
@@ -131,7 +188,7 @@ public final class PacketPerfectSubscriptionLinkerTest {
 	void ordersOutgoingObserversAndMutatorsByStageAndPriority() {
 		OrderedSendSubscriber subscriber = new OrderedSendSubscriber();
 		new PacketPerfectSubscriptionLinker().linkSubscriptionsIn(subscriber);
-		KeepAliveWirePacket packet = new KeepAliveWirePacket(0);
+		MutableKeepAlivePacket packet = keepAlive(0);
 
 		List<TypedPacketContract> result = PacketEventBus.dispatch(new PacketSendEvent(user(true), PacketType.Server.KEEP_ALIVE_OUT, packet));
 
@@ -151,7 +208,7 @@ public final class PacketPerfectSubscriptionLinkerTest {
 				if (method.getName().equals("hasPlayer")) return true;
 				return method.getName().equals("player") ? player : null;
 			});
-		KeepAliveWirePacket packet = new KeepAliveWirePacket(42);
+		MutableKeepAlivePacket packet = keepAlive(42);
 		PacketSendEvent event = new PacketSendEvent(user, PacketType.Server.KEEP_ALIVE_OUT, packet);
 
 		List<TypedPacketContract> result = PacketEventBus.dispatch(event);
@@ -169,7 +226,7 @@ public final class PacketPerfectSubscriptionLinkerTest {
 	void allowsOutgoingPacketReplacementInMutableStage() {
 		ReplacementSubscriber subscriber = new ReplacementSubscriber();
 		new PacketPerfectSubscriptionLinker().linkSubscriptionsIn(subscriber);
-		PacketSendEvent event = new PacketSendEvent(user(true), PacketType.Server.KEEP_ALIVE_OUT, new KeepAliveWirePacket());
+		PacketSendEvent event = new PacketSendEvent(user(true), PacketType.Server.KEEP_ALIVE_OUT, keepAlive(0));
 
 		List<TypedPacketContract> result = PacketEventBus.dispatch(event);
 
@@ -197,7 +254,7 @@ public final class PacketPerfectSubscriptionLinkerTest {
 	@Test
 	void rejectsMutationByAnOutgoingImmutableObserver() {
 		new PacketPerfectSubscriptionLinker().linkSubscriptionsIn(new MutatingObserverSubscriber());
-		PacketSendEvent event = new PacketSendEvent(user(true), PacketType.Server.KEEP_ALIVE_OUT, new KeepAliveWirePacket());
+		PacketSendEvent event = new PacketSendEvent(user(true), PacketType.Server.KEEP_ALIVE_OUT, keepAlive(0));
 		assertThrows(UnsupportedOperationException.class, () -> PacketEventBus.dispatch(event));
 	}
 
@@ -286,8 +343,8 @@ public final class PacketPerfectSubscriptionLinkerTest {
 		LifecycleSubscriber subscriber = new LifecycleSubscriber();
 		new PacketPerfectSubscriptionLinker().linkSubscriptionsIn(subscriber);
 		for (User user : new User[]{null, user(false)}) {
-			PacketEventBus.dispatch(new PacketReceiveEvent(user, PacketType.Client.KEEP_ALIVE_IN, new KeepAliveWirePacket()));
-			PacketEventBus.dispatch(new PacketSendEvent(user, PacketType.Server.KEEP_ALIVE_OUT, new KeepAliveWirePacket()));
+			PacketEventBus.dispatch(new PacketReceiveEvent(user, PacketType.Client.KEEP_ALIVE_IN, keepAlive(0)));
+			PacketEventBus.dispatch(new PacketSendEvent(user, PacketType.Server.KEEP_ALIVE_OUT, keepAlive(0)));
 		}
 		assertEquals(0, subscriber.calls);
 		dispatchBothDirections();
@@ -300,8 +357,8 @@ public final class PacketPerfectSubscriptionLinkerTest {
 	}
 
 	private static void dispatchBothDirections() {
-		PacketEventBus.dispatch(new PacketReceiveEvent(user(true), PacketType.Client.KEEP_ALIVE_IN, new KeepAliveWirePacket()));
-		PacketEventBus.dispatch(new PacketSendEvent(user(true), PacketType.Server.KEEP_ALIVE_OUT, new KeepAliveWirePacket()));
+		PacketEventBus.dispatch(new PacketReceiveEvent(user(true), PacketType.Client.KEEP_ALIVE_IN, keepAlive(0)));
+		PacketEventBus.dispatch(new PacketSendEvent(user(true), PacketType.Server.KEEP_ALIVE_OUT, keepAlive(0)));
 	}
 
 	public static final class LifecycleSubscriber implements EventProcessor {
@@ -404,7 +461,7 @@ public final class PacketPerfectSubscriptionLinkerTest {
 	}
 
 	public static final class ReplacementSubscriber implements PacketEventSubscriber {
-		private final KeepAliveWirePacket replacement = new KeepAliveWirePacket(42);
+		private final MutableKeepAlivePacket replacement = keepAlive(42);
 
 		@OnSend
 		public void onKeepAlive(MutableKeepAlivePacket packet, PacketSendEvent event) {

@@ -18,48 +18,101 @@ import de.jpx3.intave.share.ClientCommand;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
 import static de.jpx3.intave.codec.ByteBufStreamCodecs.VARINT;
 import static de.jpx3.intave.share.ClientCommand.*;
 
-public class ClientCommandWirePacket extends AbstractMutable implements MutableClientCommandPacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, ClientCommandWirePacket> STREAM_CODEC =
-		Format.LEGACY.codec(ClientCommandWirePacket::new);
-
-	private final Format format;
-	protected ClientCommand command;
-
-	public ClientCommandWirePacket() {
-		this(PERFORM_RESPAWN);
+public final class ClientCommandWirePacket {
+	private ClientCommandWirePacket() {
 	}
 
-	public ClientCommandWirePacket(ClientCommand command) {
-		this(Format.LEGACY, command);
+	public static List<Class<?>> registeredClasses() {
+		return Collections.unmodifiableList(Arrays.<Class<?>>asList(
+			Protocol47.class,
+			Protocol335.class,
+			Protocol775.class
+		));
 	}
 
-	private ClientCommandWirePacket(Format format, ClientCommand command) {
-		format.idOf(command);
-		this.format = format;
-		this.command = command;
+	static abstract class Base extends AbstractMutable implements MutableClientCommandPacket {
+		protected final Format format;
+		protected ClientCommand command;
+
+		protected Base() {
+			this(PERFORM_RESPAWN);
+		}
+
+		protected Base(ClientCommand command) {
+			this(Format.LEGACY, command);
+		}
+
+		private Base(Format format, ClientCommand command) {
+			format.idOf(command);
+			this.format = format;
+			this.command = command;
+		}
+
+		@Override
+		public ClientCommand command() {
+			return this.command;
+		}
+
+		@Override
+		public void setCommand(ClientCommand value) {
+			markMutated();
+			format.idOf(value);
+			this.command = value;
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= format.firstProtocol && protocolVersion < format.endProtocol;
+		}
 	}
 
-	@Override
-	public ClientCommand command() {
-		return this.command;
+	static final class Protocol47 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol47> STREAM_CODEC =
+			Format.LEGACY.codec(Protocol47::new);
+
+		public Protocol47() {
+			super();
+		}
+
+		public Protocol47(ClientCommand command) {
+			super(command);
+		}
+
+		private Protocol47(Format format, ClientCommand command) {
+			super(format, command);
+		}
 	}
 
-	@Override
-	public void setCommand(ClientCommand value) {
-		markMutated();
-		format.idOf(value);
-		this.command = value;
+	static final class Protocol335 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol335> STREAM_CODEC = Format.BASIC.codec(Protocol335::new);
+
+		public Protocol335() {
+			this(PERFORM_RESPAWN);
+		}
+
+		private Protocol335(ClientCommand command) {
+			super(Format.BASIC, command);
+		}
 	}
 
-	@Override
-	public boolean appliesTo(int protocolVersion) {
-		return protocolVersion >= format.firstProtocol && protocolVersion < format.endProtocol;
+	static final class Protocol775 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol775> STREAM_CODEC =
+			Format.GAME_RULES.codec(Protocol775::new);
+
+		public Protocol775() {
+			this(PERFORM_RESPAWN);
+		}
+
+		private Protocol775(ClientCommand command) {
+			super(Format.GAME_RULES, command);
+		}
 	}
 
 	private enum Format {
@@ -87,33 +140,8 @@ public class ClientCommandWirePacket extends AbstractMutable implements MutableC
 			return commands.get(id);
 		}
 
-		private <P extends ClientCommandWirePacket> StreamCodec<ByteBuf, ByteBuf, P> codec(Function<ClientCommand, P> factory) {
-			return VARINT.beforeAndAfter(this::byId, this::idOf).beforeAndAfter(factory, ClientCommandWirePacket::command);
-		}
-	}
-
-	public static final class Basic extends ClientCommandWirePacket {
-		public static final StreamCodec<ByteBuf, ByteBuf, Basic> STREAM_CODEC = Format.BASIC.codec(Basic::new);
-
-		public Basic() {
-			this(PERFORM_RESPAWN);
-		}
-
-		private Basic(ClientCommand command) {
-			super(Format.BASIC, command);
-		}
-	}
-
-	public static final class WithGameRuleRequest extends ClientCommandWirePacket {
-		public static final StreamCodec<ByteBuf, ByteBuf, WithGameRuleRequest> STREAM_CODEC =
-			Format.GAME_RULES.codec(WithGameRuleRequest::new);
-
-		public WithGameRuleRequest() {
-			this(PERFORM_RESPAWN);
-		}
-
-		private WithGameRuleRequest(ClientCommand command) {
-			super(Format.GAME_RULES, command);
+		private <P extends Base> StreamCodec<ByteBuf, ByteBuf, P> codec(Function<ClientCommand, P> factory) {
+			return VARINT.beforeAndAfter(this::byId, this::idOf).beforeAndAfter(factory, Base::command);
 		}
 	}
 }

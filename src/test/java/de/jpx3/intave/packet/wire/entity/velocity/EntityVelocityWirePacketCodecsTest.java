@@ -12,16 +12,17 @@
 package de.jpx3.intave.packet.wire.entity.velocity;
 
 import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.share.Motion;
 import org.junit.jupiter.api.Test;
 
 import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
 import static de.jpx3.intave.packet.wire.WirePacketTestSupport.roundTrip;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 final class EntityVelocityWirePacketCodecsTest {
 	@Test
 	void velocityPreservesQuantizedValuesWithoutRoundingThemAgain() {
-		EntityVelocityWirePacket packet =
+		EntityVelocityWirePacket.Base packet =
 				roundTrip(
 						CLIENTBOUND,
 						PacketType.Server.ENTITY_VELOCITY,
@@ -33,8 +34,19 @@ final class EntityVelocityWirePacketCodecsTest {
 										.writeShort(Short.MIN_VALUE));
 		assertEquals(2949 / 8000.0, packet.motion().motionX);
 		assertEquals(-2949 / 8000.0, packet.motion().motionY);
-		EntityVelocityWirePacket zero =
+		EntityVelocityWirePacket.Base zero =
 				roundTrip(CLIENTBOUND, PacketType.Server.ENTITY_VELOCITY, 773, b -> b.writeByte(42).writeByte(0));
 		assertEquals(0, zero.motion().motionX);
+	}
+
+	@Test
+	void exposedMotionMarksPossibleChanges() {
+		Motion motion = new Motion(1, 2, 3);
+		EntityVelocityWirePacket.Protocol773 velocity = new EntityVelocityWirePacket.Protocol773(12, motion);
+		assertFalse(velocity.couldHaveBeenMutated());
+		Motion exposed = velocity.motion();
+		assertTrue(velocity.couldHaveBeenMutated());
+		exposed.motionX = 5;
+		assertEquals(5, velocity.motion().motionX);
 	}
 }

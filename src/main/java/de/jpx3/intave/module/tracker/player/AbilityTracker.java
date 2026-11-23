@@ -11,80 +11,63 @@
 
 package de.jpx3.intave.module.tracker.player;
 
-import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.module.Module;
-import de.jpx3.intave.module.linker.packet.ListenerPriority;
-import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.module.linker.packet.PrioritySlot;
+import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.packetperfect.OnReceive;
-import de.jpx3.intave.packet.contract.PacketType;
-import de.jpx3.intave.packet.contract.immutable.AbilityInPacket;
-import de.jpx3.intave.packet.plib.reader.AbilityInReader;
-import de.jpx3.intave.packet.plib.reader.AbilityOutReader;
-import de.jpx3.intave.packet.plib.reader.EntityReader;
-import de.jpx3.intave.packet.plib.reader.GameStateChangeReader;
+import de.jpx3.intave.module.linker.packetperfect.OnSend;
+import de.jpx3.intave.packet.contract.immutable.*;
+import de.jpx3.intave.packet.event.PacketSendEvent;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;
 import de.jpx3.intave.user.meta.MetadataBundle;
 import de.jpx3.intave.user.meta.MovementMetadata;
 import org.bukkit.event.Cancellable;
 
-import static de.jpx3.intave.packet.ListenerStage.AFTER;
-import static de.jpx3.intave.packet.contract.PacketType.Client.ABILITIES_IN;
-import static de.jpx3.intave.packet.contract.PacketType.Server.*;
+import static de.jpx3.intave.packet.ListenerPriority.LAST;
+import static de.jpx3.intave.packet.ListenerPriority.LATER;
 import static de.jpx3.intave.share.GameStateChangeType.CHANGE_GAME_MODE;
 
 public final class AbilityTracker extends Module {
-  @OnReceive(
-    stage = AFTER
-  )
-  public void onAbilities(User user, AbilityInPacket packet) {
+  @OnReceive(priority = LATER)
+  public void onAbilities(User user, AbilityInPacket packet, Cancellable event) {
+    AbilityMetadata abilityData = user.meta().abilities();
     boolean flying = packet.requestedFlying();
-    user.meta().abilities().acknowledgeClientFlying(flying);
+    // The client has already toggled flight when it sends this request.
+    abilityData.acknowledgeClientFlying(flying);
     user.sendMessage("§aClient flying: " + flying);
-  }
-
-  @PacketSubscription(packetsOut = CAMERA)
-  public void receiveCamera(User user, EntityReader reader) {
-    int entityId = reader.entityId();
-    user.tickFeedback(() -> synchronizedCameraUpdate(user, entityId));
-  }
-
-  private void synchronizedCameraUpdate(User user, int entityId) {
-    AbilityMetadata abilityData = user.meta().abilities();
-    abilityData.hasViewEntity = entityId != user.player().getEntityId();
-  }
-
-  @PacketSubscription(
-    priority = ListenerPriority.HIGH,
-    packetsIn = {ABILITIES_IN}
-  )
-  public void receiveAbilities(User user, AbilityInReader reader) {
-    AbilityMetadata abilityData = user.meta().abilities();
-	  boolean flying = reader.requestedFlying();
-    if (abilityData.allowFlying()) {
-      if (flying) {
-        abilityData.setFlying(true);
-      } else {
-        abilityData.disabledFlying = true;
-      }
+    if (event.isCancelled() || !abilityData.allowFlying()) {
+      return;
+    }
+    if (flying) {
+      abilityData.setFlying(true);
+    } else {
+      abilityData.disabledFlying = true;
     }
   }
 
-  @PacketSubscription(
-    priority = ListenerPriority.HIGH,
-    packetsOut = {
-      ABILITIES_OUT
+  @OnSend
+  public void sentCamera(User user, CameraPacket packet, PacketSendEvent event) {
+    if (event.isCancelled()) {
+      return;
     }
-  )
-  public void sentAbilities(User user, AbilityOutReader reader, PacketEvent event) {
+    int entityId = packet.entityId();
+    Modules.feedback().synchronize(user, event, () -> {
+      user.meta().abilities().hasViewEntity = entityId != user.player().getEntityId();
+    });
+  }
+
+  @OnSend(priority = LATER)
+  public void sentAbilities(User user, AbilityOutPacket packet, PacketSendEvent event) {
+    if (event.isCancelled()) {
+      return;
+    }
     MetadataBundle meta = user.meta();
     MovementMetadata movement = meta.movement();
     AbilityMetadata abilityData = meta.abilities();
-    float flyingSpeed = reader.flyingSpeed();
-    float walkingSpeed = reader.walkingSpeed();
-    boolean flying = reader.flying();
-    boolean allowedFlight = reader.flyingAllowed();
+    float flyingSpeed = packet.flyingSpeed();
+    float walkingSpeed = packet.walkingSpeed();
+    boolean flying = packet.flying();
+    boolean allowedFlight = packet.flyingAllowed();
     boolean critical = abilityData.allowFlying() && !allowedFlight && movement.criticalTeleportRateLimiter.tryAcquire();
     if (critical) {
       if (movement.criticalFlyingDisallowStacks++ == 0) {
@@ -93,7 +76,7 @@ public final class AbilityTracker extends Module {
         movement.criticalEnterPosZ = movement.verifiedLastPositionZ;
       }
     }
-    user.packetTickFeedback(event, () -> {
+    Modules.feedback().synchronize(user, event, () -> {
       abilityData.setWalkSpeed(walkingSpeed);
       abilityData.setFlySpeed(flyingSpeed);
       abilityData.setAllowFlying(allowedFlight);
@@ -107,39 +90,33 @@ public final class AbilityTracker extends Module {
     });
   }
 
-  @PacketSubscription(priority = ListenerPriority.MONITOR, prioritySlot = PrioritySlot.EXTERNAL, packetsOut = RESPAWN)
-  public void sentRespawn(User user, Cancellable packet) {
-    if (packet.isCancelled()) {
+  @OnSend(priority = LAST)
+  public void sentRespawn(User user, RespawnPacket packet, PacketSendEvent event) {
+    if (event.isCancelled()) {
       return;
     }
     // Respawn creates fresh abilities, including when the packet keeps entity data or changes dimension.
-    user.tickFeedback(() -> user.meta().abilities().setFlySpeed(0.05F));
+    Modules.feedback().synchronize(user, event, () -> user.meta().abilities().setFlySpeed(0.05F));
   }
 
-  @PacketSubscription(
-    packetsOut = PacketType.Server.POSITION
-  )
-  public void outgoingPositionUpdate(User user) {
+  @OnSend
+  public void outgoingPositionUpdate(User user, PlayerTeleportPacket packet, Cancellable event) {
+    if (event.isCancelled()) {
+      return;
+    }
     MovementMetadata movementData = user.meta().movement();
     movementData.criticalFlyingDisallowWasTeleported = movementData.criticalFlyingDisallowStacks == 1;
   }
 
-  @PacketSubscription(
-    priority = ListenerPriority.NORMAL,
-    packetsOut = {
-      GAME_STATE_CHANGE
-    }
-  )
-  public void outgoingGameModeUpdate(
-    User user, GameStateChangeReader reader
-  ) {
-    if (reader.type() != CHANGE_GAME_MODE) {
+  @OnSend
+  public void outgoingGameModeUpdate(User user, GameStateChangePacket packet, PacketSendEvent event) {
+    if (event.isCancelled() || packet.type() != CHANGE_GAME_MODE) {
       return;
     }
-    GameMode gameMode = gameModeOf(reader.valueAsInt());
+    GameMode gameMode = gameModeOf((int) (packet.value() + 0.5F));
     AbilityMetadata abilityData = user.meta().abilities();
     abilityData.setPendingGameMode(gameMode);
-    user.tickFeedback(() -> abilityData.setGameMode(gameMode));
+    Modules.feedback().synchronize(user, event, () -> abilityData.setGameMode(gameMode));
   }
 
   private GameMode gameModeOf(int id) {

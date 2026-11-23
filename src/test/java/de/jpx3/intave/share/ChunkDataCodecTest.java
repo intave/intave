@@ -13,7 +13,7 @@ package de.jpx3.intave.share;
 
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.PacketType;
-import de.jpx3.intave.packet.wire.chunk.data.MapChunkWirePacket;
+import de.jpx3.intave.packet.contract.mutable.MutableMapChunkPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 
 import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
-import static de.jpx3.intave.packet.wire.WirePacketTestSupport.roundTrip;
+import static de.jpx3.intave.packet.wire.WirePacketTestSupport.*;
 import static de.jpx3.intave.packet.wire.chunk.ChunkPacketFixtures.*;
 import static de.jpx3.intave.share.ChunkPalette.Kind.BIOMES;
 import static de.jpx3.intave.share.ChunkPalette.Kind.BLOCK_STATES;
@@ -32,7 +32,7 @@ final class ChunkDataCodecTest {
 	void legacySkyLightAndColumnBiomeLayoutsRoundTripWithAndWithoutSkyLight() {
 		for (int protocol : new int[] {47, 107, 110, 340, 393, 404, 477}) {
 			for (boolean full : new boolean[] {false, true}) for (boolean sky : new boolean[] {false, true}) {
-				MapChunkWirePacket packet = roundTrip(CLIENTBOUND, PacketType.Server.MAP_CHUNK, protocol, output -> chunk(output, protocol, full, sky));
+				MutableMapChunkPacket packet = roundTrip(CLIENTBOUND, PacketType.Server.MAP_CHUNK, protocol, output -> chunk(output, protocol, full, sky));
 				ChunkData data = packet.chunkData();
 				assertEquals(full ? 256 : 0, data.biomeIds().length);
 				if (full) assertEquals(protocol < 393 ? 255 : 511, data.biomeIds()[255]);
@@ -54,15 +54,15 @@ final class ChunkDataCodecTest {
 
 	@Test
 	void paletteEditsAreEncodedThroughTheChunkPacket() {
-		MapChunkWirePacket packet = roundTrip(CLIENTBOUND, PacketType.Server.MAP_CHUNK, 770, output -> chunk(output, 770, true));
+		MutableMapChunkPacket packet = roundTrip(CLIENTBOUND, PacketType.Server.MAP_CHUNK, 770, output -> chunk(output, 770, true));
 		ChunkSection previous = packet.chunkData().sections().get(0);
 		ChunkPalette blocks = previous.blockStates().withValue(4095, 30000, 15);
 		ChunkPalette biomes = previous.biomes().withValue(63, 300, 9);
 		packet.setChunkData(new ChunkData(Collections.singletonList(new ChunkSection(previous.nonAirCount(), blocks, biomes))));
 		ByteBuf output = Unpooled.buffer();
 		try {
-			MapChunkWirePacket.STREAM_CODEC.encode(output, packet);
-			MapChunkWirePacket decoded = MapChunkWirePacket.STREAM_CODEC.decode(output);
+			encodePayload(packet, output);
+			MutableMapChunkPacket decoded = decodePayload(packet.getClass(), output);
 			assertFalse(output.isReadable());
 			assertEquals(30000, decoded.chunkData().sections().get(0).blockStates().value(4095));
 			assertEquals(300, decoded.chunkData().sections().get(0).biomes().value(63));

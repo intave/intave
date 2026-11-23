@@ -100,7 +100,7 @@ final class EntityUseWirePacketCodecsTest {
 				else assertNull(packet.hitPosition());
 				if (protocol < 107 || id == 1) assertNull(packet.hand());
 				else assertEquals(1, packet.hand().ordinal());
-				if (protocol >= 735) assertTrue(((EntityUseWirePacket) packet).secondary());
+				if (protocol >= 735) assertTrue(((EntityUseWirePacket.Protocol735) packet).secondary());
 			}
 		}
 	}

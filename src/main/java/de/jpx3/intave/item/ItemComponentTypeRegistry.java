@@ -50,12 +50,10 @@ public final class ItemComponentTypeRegistry {
 		return TABLES.supportedProtocolVersions();
 	}
 
-	/** Returns null for an unregistered wire ID. */
 	public @Nullable MinecraftKey keyById(int id) {
 		return id >= 0 && id < keysById.length ? keysById[id] : null;
 	}
 
-	/** Returns -1 for an unregistered component type. */
 	public int idOf(MinecraftKey key) {
 		return idsByKey.getOrDefault(key, -1);
 	}

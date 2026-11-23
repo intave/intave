@@ -19,13 +19,9 @@ import de.jpx3.intave.share.Motion;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.HashMap;
-import java.util.Map;
 
 final class SimulationResultJsonCodec implements StreamCodec<JsonReader, JsonWriter, SimulationResult> {
 	public static final SimulationResultJsonCodec INSTANCE = new SimulationResultJsonCodec();
-	private static final StreamCodec<JsonReader, JsonWriter, Map<String, Double>> DEBUG_DATA_JSON_CODEC =
-		JsonStreamCodecs.stringMapCodec(JsonStreamCodecs.DOUBLE);
 
 	private SimulationResultJsonCodec() {
 	}
@@ -52,8 +48,6 @@ final class SimulationResultJsonCodec implements StreamCodec<JsonReader, JsonWri
 				writer.name("edgeSneak").value(result.edgeSneak());
 				writer.name("stepHeight");
 				JsonStreamCodecs.writeDouble(writer, result.stepHeightThisMove());
-				writer.name("debugData");
-				DEBUG_DATA_JSON_CODEC.encode(writer, new HashMap<>(result.debugData()));
 			}
 			writer.endObject();
 		} catch (IOException exception) {
@@ -76,7 +70,6 @@ final class SimulationResultJsonCodec implements StreamCodec<JsonReader, JsonWri
 			boolean step = false;
 			boolean edgeSneak = false;
 			double stepHeight = 0;
-			Map<String, Double> debugData = new HashMap<>();
 			reader.beginObject();
 			while (reader.hasNext()) {
 				switch (reader.nextName()) {
@@ -116,9 +109,6 @@ final class SimulationResultJsonCodec implements StreamCodec<JsonReader, JsonWri
 					case "stepHeight":
 						stepHeight = JsonStreamCodecs.readDouble(reader);
 						break;
-					case "debugData":
-						debugData.putAll(DEBUG_DATA_JSON_CODEC.decode(reader));
-						break;
 					default:
 						reader.skipValue();
 				}
@@ -130,15 +120,11 @@ final class SimulationResultJsonCodec implements StreamCodec<JsonReader, JsonWri
 			if (offsetMotion == null) {
 				throw new IllegalStateException("Valid simulation result is missing offsetMotion");
 			}
-			SimulationResult result = new SimulationResult(
+			return new SimulationResult(
 				actualMotion, offsetMotion, intermittentResult,
 				onGround, collidedHorizontally, collidedVertically,
 				resetMotionX, resetMotionZ, step, edgeSneak, stepHeight
 			);
-			for (Map.Entry<String, Double> entry : debugData.entrySet()) {
-				result.debugAttach(entry.getKey(), entry.getValue());
-			}
-			return result;
 		} catch (IOException exception) {
 			throw new UncheckedIOException(exception);
 		}

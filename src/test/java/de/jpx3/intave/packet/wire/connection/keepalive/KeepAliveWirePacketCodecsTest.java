@@ -26,18 +26,18 @@ final class KeepAliveWirePacketCodecsTest {
 	@Test
 	void keepAliveChangesFromVarIntToLongInBothDirections() {
 		for (PacketType packetType : new PacketType[] {PacketType.Client.KEEP_ALIVE_IN, PacketType.Server.KEEP_ALIVE_OUT}) {
-			KeepAliveWirePacket legacy =
+			KeepAliveWirePacket.Base legacy =
 					roundTrip(
 							packetType.direction(),
 							packetType,
 							335,
 							b -> b.writeBytes(new byte[] {(byte) 0xac, 2}));
 			assertEquals(300, legacy.id());
-			assertInstanceOf(KeepAliveVarIntIdWirePacket.class, legacy);
-			KeepAliveWirePacket modern =
+			assertInstanceOf(KeepAliveWirePacket.Protocol47.class, legacy);
+			KeepAliveWirePacket.Base modern =
 					roundTrip(packetType.direction(), packetType, 340, b -> b.writeLong(0x123456789abcdefL));
 			assertEquals(0x123456789abcdefL, modern.id());
-			assertEquals(KeepAliveWirePacket.class, modern.getClass());
+			assertEquals(KeepAliveWirePacket.Protocol340.class, modern.getClass());
 		}
 	}
 
@@ -53,7 +53,7 @@ final class KeepAliveWirePacketCodecsTest {
 									PLAY,
 									PacketType.Client.KEEP_ALIVE_IN,
 									340,
-									new KeepAliveVarIntIdWirePacket(),
+									new KeepAliveWirePacket.Protocol47(),
 									output));
 			assertEquals(1, output.writerIndex());
 			assertEquals(0x55, output.getUnsignedByte(0));

@@ -17,59 +17,107 @@ import de.jpx3.intave.packet.contract.mutable.MutableUnloadChunkPacket;
 import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class UnloadChunkWirePacket extends AbstractMutable implements MutableUnloadChunkPacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, UnloadChunkWirePacket> STREAM_CODEC =
-		StreamCodec.compound(
-			ByteBufStreamCodecs.INTEGER, UnloadChunkWirePacket::z,
-			ByteBufStreamCodecs.INTEGER, UnloadChunkWirePacket::x,
-			UnloadChunkWirePacket::new
-		);
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-	protected int x, z;
-
-	public UnloadChunkWirePacket() {
-		this(0, 0);
+public final class UnloadChunkWirePacket {
+	private UnloadChunkWirePacket() {
 	}
 
-	public UnloadChunkWirePacket(int z, int x) {
-		this.z = z;
-		this.x = x;
+	public static List<Class<?>> registeredClasses() {
+		return Collections.unmodifiableList(Arrays.<Class<?>>asList(
+			Protocol107.class,
+			Protocol764.class
+		));
 	}
 
-	@Override
-	public boolean appliesTo(int protocolVersion) {
-		return protocolVersion >= 764;
+	static abstract class Base extends AbstractMutable implements MutableUnloadChunkPacket {
+		protected int x, z;
+
+		protected Base() {
+			this(0, 0);
+		}
+
+		protected Base(int z, int x) {
+			this.z = z;
+			this.x = x;
+		}
+
+		@Override
+		public int chunkX(int index) {
+			checkIndex(index);
+			return x;
+		}
+
+		@Override
+		public int chunkZ(int index) {
+			checkIndex(index);
+			return z;
+		}
+
+		@Override
+		public void setChunkCoordinates(int index, int x, int z) {
+			markMutated();
+			checkIndex(index);
+			this.x = x;
+			this.z = z;
+		}
+
+		protected static void checkIndex(int index) {
+			if (index != 0) throw new IndexOutOfBoundsException("Chunk index: " + index);
+		}
+
+		public int x() {
+			return x;
+		}
+
+		public int z() {
+			return z;
+		}
 	}
 
-	@Override
-	public int chunkX(int index) {
-		checkIndex(index);
-		return x;
+	static final class Protocol107 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol107> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.INTEGER, Base::x,
+				ByteBufStreamCodecs.INTEGER, Base::z,
+				Protocol107::new
+			);
+
+		public Protocol107() {
+			super();
+		}
+
+		public Protocol107(int x, int z) {
+			super(z, x);
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 107 && protocolVersion < 764;
+		}
 	}
 
-	@Override
-	public int chunkZ(int index) {
-		checkIndex(index);
-		return z;
-	}
+	static final class Protocol764 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol764> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.INTEGER, Protocol764::z,
+				ByteBufStreamCodecs.INTEGER, Protocol764::x,
+				Protocol764::new
+			);
 
-	@Override
-	public void setChunkCoordinates(int index, int x, int z) {
-		markMutated();
-		checkIndex(index);
-		this.x = x;
-		this.z = z;
-	}
+		public Protocol764() {
+			super();
+		}
 
-	protected static void checkIndex(int index) {
-		if (index != 0) throw new IndexOutOfBoundsException("Chunk index: " + index);
-	}
+		public Protocol764(int z, int x) {
+			super(z, x);
+		}
 
-	public int x() {
-		return x;
-	}
-
-	public int z() {
-		return z;
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 764;
+		}
 	}
 }

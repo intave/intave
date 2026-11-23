@@ -19,6 +19,14 @@ import static de.jpx3.intave.packet.ConnectionState.PLAY;
 import static de.jpx3.intave.packet.contract.PacketType.Server.EXPLOSION;
 
 public interface ExplosionPacket extends PacketContract, MotionUpdate {
+	double x();
+
+	double y();
+
+	double z();
+
+	float power();
+
 	@Override
 	default MotionUpdate.Mode motionMode() {
 		return MotionUpdate.Mode.ADDITIVE;

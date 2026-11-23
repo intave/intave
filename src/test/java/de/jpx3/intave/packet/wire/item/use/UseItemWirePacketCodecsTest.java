@@ -43,6 +43,6 @@ final class UseItemWirePacketCodecsTest {
 	void olderVariantsRejectFieldsTheirFormatCannotEncode() {
 		assertThrows(
 				IllegalStateException.class,
-				() -> new UseItemProtocol107WirePacket().setSequenceNumber(1));
+				() -> new UseItemWirePacket.Protocol107().setSequenceNumber(1));
 	}
 }

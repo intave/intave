@@ -21,83 +21,147 @@ import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
 import io.netty.buffer.ByteBuf;
 
-public class PlayerGroundWirePacket extends AbstractMutable implements MutablePlayerMovePacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, PlayerGroundWirePacket> STREAM_CODEC =
-		StreamCodec.compound(
-			ByteBufStreamCodecs.UNSIGNED_BYTE, PlayerGroundWirePacket::flags,
-			PlayerGroundWirePacket::new
-		);
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-	protected int flags;
-
-	public PlayerGroundWirePacket() {
-		this(0);
+public final class PlayerGroundWirePacket {
+	private PlayerGroundWirePacket() {
 	}
 
-	public PlayerGroundWirePacket(int flags) {
-		this.flags = flags;
+	public static List<Class<?>> registeredClasses() {
+		return Collections.unmodifiableList(Arrays.<Class<?>>asList(
+			Protocol47.class,
+			Protocol768.class
+		));
 	}
 
-	@Override
-	public Position position() {
-		return null;
+	static abstract class Base extends AbstractMutable implements MutablePlayerMovePacket {
+		protected int flags;
+
+		protected Base() {
+			this(0);
+		}
+
+		protected Base(int flags) {
+			this.flags = flags;
+		}
+
+		@Override
+		public Position position() {
+			return null;
+		}
+
+		@Override
+		public void setPosition(Position value) {
+			markMutated();
+			throw new UnsupportedOperationException("This packet does not support position");
+		}
+
+		@Override
+		public Rotation rotation() {
+			return null;
+		}
+
+		@Override
+		public void setRotation(Rotation value) {
+			markMutated();
+			throw new UnsupportedOperationException("This packet does not support rotation");
+		}
+
+		@Override
+		public boolean appliesTo(ConnectionState state, PacketType type) {
+			return state == ConnectionState.PLAY && type == PacketType.Client.FLYING;
+		}
+
+		@Override
+		public boolean isVehicleMove() {
+			return false;
+		}
+
+		@Override
+		public Boolean onGround() {
+			return (flags & 1) != 0;
+		}
+
+		@Override
+		public abstract Boolean horizontalCollision();
+
+		@Override
+		public void setOnGround(boolean value) {
+			markMutated();
+			flags = value ? flags | 1 : flags & ~1;
+		}
+
+		@Override
+		public abstract void setHorizontalCollision(boolean value);
+
+		public int flags() {
+			return flags;
+		}
 	}
 
-	@Override
-	public void setPosition(Position value) {
-		markMutated();
-		throw new UnsupportedOperationException("This packet does not support position");
+	static final class Protocol47 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol47> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.UNSIGNED_BYTE, Base::flags,
+				Protocol47::new
+			);
+
+		public Protocol47() {
+			super();
+		}
+
+		public Protocol47(int flags) {
+			super(flags);
+		}
+
+		@Override
+		public Boolean horizontalCollision() {
+			return null;
+		}
+
+		@Override
+		public void setHorizontalCollision(boolean value) {
+			markMutated();
+			throw new IllegalStateException("No horizontal collision flag before 1.21.2");
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 47 && protocolVersion < 768;
+		}
 	}
 
-	@Override
-	public Rotation rotation() {
-		return null;
-	}
+	static final class Protocol768 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol768> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.UNSIGNED_BYTE, Protocol768::flags,
+				Protocol768::new
+			);
 
-	@Override
-	public void setRotation(Rotation value) {
-		markMutated();
-		throw new UnsupportedOperationException("This packet does not support rotation");
-	}
+		public Protocol768() {
+			super();
+		}
 
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketType type) {
-		return state == ConnectionState.PLAY && type == PacketType.Client.FLYING;
-	}
+		public Protocol768(int flags) {
+			super(flags);
+		}
 
-	@Override
-	public boolean appliesTo(int protocolVersion) {
-		return protocolVersion >= 768;
-	}
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 768;
+		}
 
-	@Override
-	public boolean isVehicleMove() {
-		return false;
-	}
+		@Override
+		public Boolean horizontalCollision() {
+			return (flags & 2) != 0;
+		}
 
-	@Override
-	public Boolean onGround() {
-		return (flags & 1) != 0;
-	}
-
-	@Override
-	public Boolean horizontalCollision() {
-		return (flags & 2) != 0;
-	}
-
-	@Override
-	public void setOnGround(boolean value) {
-		markMutated();
-		flags = value ? flags | 1 : flags & ~1;
-	}
-
-	@Override
-	public void setHorizontalCollision(boolean value) {
-		markMutated();
-		flags = value ? flags | 2 : flags & ~2;
-	}
-
-	public int flags() {
-		return flags;
+		@Override
+		public void setHorizontalCollision(boolean value) {
+			markMutated();
+			flags = value ? flags | 2 : flags & ~2;
+		}
 	}
 }

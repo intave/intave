@@ -25,8 +25,8 @@ import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.immutable.BlockDigPacket;
 import de.jpx3.intave.packet.contract.immutable.EntityVelocityPacket;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityVelocityPacket;
+import de.jpx3.intave.packet.contract.mutable.MutableExplosionPacket;
 import de.jpx3.intave.packet.wire.WirePackets;
-import de.jpx3.intave.packet.wire.world.explosion.ExplosionOptionalMotionWirePacket;
 import de.jpx3.intave.share.Motion;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.MessageChannel;
@@ -121,7 +121,7 @@ public final class QPressDebugTracker extends Module {
 		int protocol = PacketSender.bindingOf(user).protocolVersion();
 		if (protocol < 769) return;
 		Motion motion = knockback == null ? null : new Motion(knockback.getX(), knockback.getY(), knockback.getZ());
-		ExplosionOptionalMotionWirePacket packet = WirePackets.createPlayPacket(PacketType.Server.EXPLOSION, protocol);
+		MutableExplosionPacket packet = WirePackets.createPlayPacket(PacketType.Server.EXPLOSION, protocol);
 		packet.setPosition(location.getX(), location.getY(), location.getZ());
 		packet.setPower(radius);
 		packet.setMotion(motion);

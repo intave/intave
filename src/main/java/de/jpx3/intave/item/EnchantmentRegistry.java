@@ -23,7 +23,6 @@ import java.util.Set;
 import static de.jpx3.intave.codec.JsonStreamCodecs.INTEGER;
 import static de.jpx3.intave.codec.JsonStreamCodecs.stringMapCodec;
 
-/** An immutable snapshot of minecraft:enchantment keys and their network IDs. */
 public final class EnchantmentRegistry {
 	private static final ProtocolRegistryFiles<EnchantmentRegistry> VANILLA = new ProtocolRegistryFiles<>(
 		"enchantments", stringMapCodec(INTEGER), EnchantmentRegistry::fromVanillaIds
@@ -35,12 +34,16 @@ public final class EnchantmentRegistry {
 		this.idsByKey = idsByKey;
 	}
 
-	/** Returns the vanilla table. From 1.21 onward a connection can advertise a different order. */
+	/**
+	 * Returns the vanilla table. From 1.21 onward a connection can advertise a different order.
+	 */
 	public static EnchantmentRegistry forProtocol(int protocolVersion) {
 		return VANILLA.forProtocol(protocolVersion);
 	}
 
-	/** Builds the connection's registry from every entry in its registry-data packet, in wire order. */
+	/**
+	 * Builds the connection's registry from every entry in its registry-data packet, in wire order.
+	 */
 	public static EnchantmentRegistry fromNetworkOrder(List<MinecraftKey> entries) {
 		ImmutableBiMap.Builder<MinecraftKey, Integer> ids = ImmutableBiMap.builder();
 		int id = 0;
@@ -54,12 +57,16 @@ public final class EnchantmentRegistry {
 		return VANILLA.supportedProtocolVersions();
 	}
 
-	/** Returns null for an unregistered ID, including gaps in legacy tables. */
+	/**
+	 * Returns null for an unregistered ID, including gaps in legacy tables.
+	 */
 	public @Nullable MinecraftKey keyById(int id) {
 		return idsByKey.inverse().get(id);
 	}
 
-	/** Returns -1 for an unregistered enchantment. */
+	/**
+	 * Returns -1 for an unregistered enchantment.
+	 */
 	public int idOf(MinecraftKey key) {
 		return idsByKey.getOrDefault(key, -1);
 	}

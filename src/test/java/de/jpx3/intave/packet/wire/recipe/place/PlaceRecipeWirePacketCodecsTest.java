@@ -24,7 +24,7 @@ final class PlaceRecipeWirePacketCodecsTest {
 	@Test
 	void recipeReferencesKeepNumericAndKeyFormats() {
 		for (int protocol : new int[] {340, 393, 768}) {
-			PlaceRecipeWirePacket packet =
+			PlaceRecipeWirePacket.Base packet =
 					roundTrip(
 							SERVERBOUND,
 							PacketType.Client.AUTO_RECIPE,

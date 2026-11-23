@@ -70,11 +70,7 @@ import de.jpx3.intave.player.collider.Colliders;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
 import de.jpx3.intave.player.collider.simple.SimpleColliderResult;
 import de.jpx3.intave.report.PhysicsReport;
-import de.jpx3.intave.share.BoundingBox;
-import de.jpx3.intave.share.Motion;
-import de.jpx3.intave.share.MovementCorrection;
-import de.jpx3.intave.share.Position;
-import de.jpx3.intave.share.PositionMoveRotation;
+import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserRepository;
@@ -1145,23 +1141,6 @@ public final class Physics extends Check {
 //        if (violationLevelIncrease > 0) {
 //          debug += " yexp:" + formatDouble(predictedOffsetY, 4) + "@" + decimalPlacesOf(movementData.verifiedPositionY(), 4);
 //        }
-
-      Map<String, Double> serverDebugData = simulation.result().debugData();
-      Map<String, Double> clientDebugData = movementData.clientMovementDebugValues;
-      if (!serverDebugData.isEmpty()) {
-        debug += ChatColor.ITALIC + " " + serverDebugData.entrySet().stream().map(entry -> {
-          String key1 = entry.getKey();
-          double value = entry.getValue();
-          return "S"+key1 + ":" + formatDouble(value, 4);
-        }).collect(Collectors.joining(" ")) + chatColor;
-      }
-      if (!clientDebugData.isEmpty()) {
-        debug += ChatColor.ITALIC + " " + clientDebugData.entrySet().stream().map(entry -> {
-          String key1 = entry.getKey();
-          double value = entry.getValue();
-          return "C"+key1 + ":" + formatDouble(value, 4);
-        }).collect(Collectors.joining(" ")) + chatColor;
-      }
 
 //      if (violationLevelIncrease > 0) {
 //        player.sendMessage("Expected " + formatPosition(predictedOffsetX, predictedOffsetY, predictedOffsetZ) + " received " + formatPosition(receivedOffsetMotionX, receivedOffsetMotionY, receivedOffsetMotionZ));

@@ -18,81 +18,143 @@ import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import static de.jpx3.intave.codec.ByteBufStreamCodecs.count;
 
-public class TabCompleteResponseWirePacket extends AbstractMutable implements MutableTabCompleteResponsePacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, TabCompleteResponseWirePacket> STREAM_CODEC =
-		StreamCodec.of(
-			(output, packet) -> {
-				ByteBufStreamCodecs.VARINT.encode(output, packet.id);
-				ByteBufStreamCodecs.VARINT.encode(output, packet.start);
-				ByteBufStreamCodecs.VARINT.encode(output, packet.length);
+public final class TabCompleteResponseWirePacket {
+	private TabCompleteResponseWirePacket() {
+	}
 
-				ByteBufStreamCodecs.VARINT.encode(output, packet.suggestions.size());
-				for (int i = 0; i < packet.suggestions.size(); i++) {
-					ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.suggestions.get(i));
+	public static List<Class<?>> registeredClasses() {
+		return Collections.unmodifiableList(Arrays.<Class<?>>asList(
+			Protocol47.class,
+			Protocol393.class
+		));
+	}
 
-					String tooltip =
-						i < packet.tooltips.size() ? packet.tooltips.get(i) : null;
-					output.writeBoolean(tooltip != null);
-					if (tooltip != null) ByteBufStreamCodecs.stringCodec(262144).encode(output, tooltip);
-				}
-			},
-			input -> {
-				int id = ByteBufStreamCodecs.VARINT.decode(input);
-				int start = ByteBufStreamCodecs.VARINT.decode(input);
-				int length = ByteBufStreamCodecs.VARINT.decode(input);
+	static abstract class Base extends AbstractMutable implements MutableTabCompleteResponsePacket {
+		protected int id, start, length;
+		protected List<String> suggestions;
+		protected List<String> tooltips;
 
-				int count = count(input, input.readableBytes());
-				List<String> suggestions = new ArrayList<>(count);
-				List<String> tooltips = new ArrayList<>(count);
-				for (int i = 0; i < count; i++) {
-					suggestions.add(ByteBufStreamCodecs.VARINT_STRING.decode(input));
-					String tooltip = null;
-					if ((input.readBoolean())) {
-						tooltip = ByteBufStreamCodecs.stringCodec(262144).decode(input);
+		protected Base() {
+			this(0, 0, 0, new ArrayList<>(), new ArrayList<>());
+		}
+
+		protected Base(
+			int id, int start, int length, List<String> suggestions, List<String> tooltips) {
+			this.id = id;
+			this.start = start;
+			this.length = length;
+			this.suggestions = suggestions;
+			this.tooltips = tooltips;
+		}
+
+		@Override
+		public List<String> suggestions() {
+			markMutated();
+			return Collections.unmodifiableList(suggestions);
+		}
+
+		@Override
+		public void setSuggestions(List<String> value) {
+			markMutated();
+			suggestions = new ArrayList<>(value);
+			tooltips.clear();
+		}
+	}
+
+	static final class Protocol47 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol47> STREAM_CODEC =
+			StreamCodec.of(
+				(output, packet) -> {
+					ByteBufStreamCodecs.VARINT.encode(output, packet.suggestions.size());
+					for (int i = 0; i < packet.suggestions.size(); i++) {
+						ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.suggestions.get(i));
 					}
-					tooltips.add(tooltip);
-				}
-				return new TabCompleteResponseWirePacket(
-					id, start, length, suggestions, tooltips);
-			});
+				},
+				input -> {
+					int count = count(input, input.readableBytes());
+					List<String> suggestions = new ArrayList<>(count);
+					List<String> tooltips = new ArrayList<>(count);
+					for (int i = 0; i < count; i++) {
+						suggestions.add(ByteBufStreamCodecs.VARINT_STRING.decode(input));
+						String tooltip = null;
 
-	protected int id, start, length;
-	protected List<String> suggestions;
-	protected List<String> tooltips;
+						tooltips.add(tooltip);
+					}
+					return new Protocol47(
+						suggestions, tooltips);
+				});
 
-	public TabCompleteResponseWirePacket() {
-		this(0, 0, 0, new ArrayList<>(), new ArrayList<>());
+		public Protocol47() {
+			super();
+		}
+
+		public Protocol47(
+			List<String> suggestions, List<String> tooltips) {
+			super(0, 0, 0, suggestions, tooltips);
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 47 && protocolVersion < 393;
+		}
 	}
 
-	public TabCompleteResponseWirePacket(
-		int id, int start, int length, List<String> suggestions, List<String> tooltips) {
-		this.id = id;
-		this.start = start;
-		this.length = length;
-		this.suggestions = suggestions;
-		this.tooltips = tooltips;
-	}
+	static final class Protocol393 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol393> STREAM_CODEC =
+			StreamCodec.of(
+				(output, packet) -> {
+					ByteBufStreamCodecs.VARINT.encode(output, packet.id);
+					ByteBufStreamCodecs.VARINT.encode(output, packet.start);
+					ByteBufStreamCodecs.VARINT.encode(output, packet.length);
 
-	@Override
-	public boolean appliesTo(int protocolVersion) {
-		return protocolVersion >= 393 && protocolVersion < 765;
-	}
+					ByteBufStreamCodecs.VARINT.encode(output, packet.suggestions.size());
+					for (int i = 0; i < packet.suggestions.size(); i++) {
+						ByteBufStreamCodecs.VARINT_STRING.encode(output, packet.suggestions.get(i));
 
-	@Override
-	public List<String> suggestions() {
-		markMutated();
-		return Collections.unmodifiableList(suggestions);
-	}
+						String tooltip =
+							i < packet.tooltips.size() ? packet.tooltips.get(i) : null;
+						output.writeBoolean(tooltip != null);
+						if (tooltip != null) ByteBufStreamCodecs.stringCodec(262144).encode(output, tooltip);
+					}
+				},
+				input -> {
+					int id = ByteBufStreamCodecs.VARINT.decode(input);
+					int start = ByteBufStreamCodecs.VARINT.decode(input);
+					int length = ByteBufStreamCodecs.VARINT.decode(input);
 
-	@Override
-	public void setSuggestions(List<String> value) {
-		markMutated();
-		suggestions = new ArrayList<>(value);
-		tooltips.clear();
+					int count = count(input, input.readableBytes());
+					List<String> suggestions = new ArrayList<>(count);
+					List<String> tooltips = new ArrayList<>(count);
+					for (int i = 0; i < count; i++) {
+						suggestions.add(ByteBufStreamCodecs.VARINT_STRING.decode(input));
+						String tooltip = null;
+						if ((input.readBoolean())) {
+							tooltip = ByteBufStreamCodecs.stringCodec(262144).decode(input);
+						}
+						tooltips.add(tooltip);
+					}
+					return new Protocol393(
+						id, start, length, suggestions, tooltips);
+				});
+
+		public Protocol393() {
+			super();
+		}
+
+		public Protocol393(
+			int id, int start, int length, List<String> suggestions, List<String> tooltips) {
+			super(id, start, length, suggestions, tooltips);
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 393 && protocolVersion < 765;
+		}
 	}
 }

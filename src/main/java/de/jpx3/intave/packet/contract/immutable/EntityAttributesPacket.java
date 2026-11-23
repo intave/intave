@@ -11,11 +11,18 @@
 
 package de.jpx3.intave.packet.contract.immutable;
 
+import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.PacketContract;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.player.attribute.Attribute;
 
 import java.util.List;
 
 public interface EntityAttributesPacket extends PacketContract, SingleEntityAddressed {
 	List<Attribute> attributes();
+
+	@Override
+	default boolean appliesTo(ConnectionState state, PacketType packetType) {
+		return state == ConnectionState.PLAY && packetType == PacketType.Server.UPDATE_ATTRIBUTES;
+	}
 }

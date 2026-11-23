@@ -67,7 +67,7 @@ final class OpenScreenWirePacketCodecsTest {
 	@Test
 	void legacyHorseWindowsCarryAnExtraEntityIdAfterTheSlotCount() {
 		for (int protocol : new int[]{47, 404}) {
-			LegacyOpenScreenWirePacket packet = roundTrip(CLIENTBOUND, OPEN_WINDOW, protocol, buf -> {
+			OpenScreenWirePacket.Protocol47 packet = roundTrip(CLIENTBOUND, OPEN_WINDOW, protocol, buf -> {
 				buf.writeByte(255);
 				ByteBufStreamCodecs.VARINT_STRING.encode(buf, "EntityHorse");
 				ByteBufStreamCodecs.VARINT_STRING.encode(buf, JSON_TITLE);
@@ -83,7 +83,7 @@ final class OpenScreenWirePacketCodecsTest {
 
 	@Test
 	void nbtTitlesRetainListsAndNestedFormatting() {
-		NbtOpenScreenWirePacket packet = roundTrip(CLIENTBOUND, OPEN_WINDOW, 765, buf -> {
+		OpenScreenWirePacket.Protocol765 packet = roundTrip(CLIENTBOUND, OPEN_WINDOW, 765, buf -> {
 			buf.writeByte(1).writeByte(9);
 			buf.writeByte(9).writeByte(10).writeInt(1); // List of one compound component
 			buf.writeByte(8);
@@ -102,7 +102,7 @@ final class OpenScreenWirePacketCodecsTest {
 		assertEquals("container.beacon", component.getString("translate"));
 		assertEquals("!", ((CompoundTag) component.getListTag("extra").get(0)).getString("text"));
 
-		NbtOpenScreenWirePacket compound = roundTrip(CLIENTBOUND, OPEN_WINDOW, 777, buf -> {
+		OpenScreenWirePacket.Protocol765 compound = roundTrip(CLIENTBOUND, OPEN_WINDOW, 777, buf -> {
 			buf.writeByte(1).writeByte(2).writeByte(10).writeByte(8);
 			writeNbtString(buf, "text");
 			writeNbtString(buf, "Custom");
@@ -138,10 +138,10 @@ final class OpenScreenWirePacketCodecsTest {
 			buf.writeByte(27);
 		};
 		assertThrows(IllegalArgumentException.class, () -> roundTrip(CLIENTBOUND, OPEN_WINDOW, 340, legacy));
-		LegacyOpenScreenWirePacket json = roundTrip(CLIENTBOUND, OPEN_WINDOW, 393, legacy);
+		OpenScreenWirePacket.Protocol47 json = roundTrip(CLIENTBOUND, OPEN_WINDOW, 393, legacy);
 		assertEquals(longTitle.length() + 2, json.titleJson().length());
 
-		NbtOpenScreenWirePacket nbt = roundTrip(CLIENTBOUND, OPEN_WINDOW, 765, buf -> {
+		OpenScreenWirePacket.Protocol765 nbt = roundTrip(CLIENTBOUND, OPEN_WINDOW, 765, buf -> {
 			buf.writeByte(1).writeByte(0).writeByte(9).writeByte(8).writeInt(65);
 			for (int i = 0; i < 65; i++) writeNbtString(buf, longTitle);
 		});

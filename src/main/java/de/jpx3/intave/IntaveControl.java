@@ -76,8 +76,6 @@ public final class IntaveControl {
   public static final boolean REPLACE_JOAP_SETBACK_WITH_CM = true;
   public static final boolean DISALLOW_ALL_BLOCK_PLACEMENTS = false;
   public static final boolean DISALLOW_ALL_BLOCK_PLACEMENTS_WITH_EVENT = false;
-  public static final boolean ENABLE_MOVEMENT_DEBUGGER_COLLECTOR = false;
-  public static final boolean MOVEMENT_DEBUGGER_COLLECTOR_POSTTICK_OUTPUT = false;
   public static final boolean AUTHENTICATION_DEBUG_MODE = AUTHTEST;
   public static final boolean NOTIFY_MISSING_PACKET_FLUSHES = false;
   public static final boolean FIRST_TICK_MUST_BE_FULLY_SIMULATED = false;

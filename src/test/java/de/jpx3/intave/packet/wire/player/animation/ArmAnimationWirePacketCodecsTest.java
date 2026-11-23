@@ -11,7 +11,6 @@
 
 package de.jpx3.intave.packet.wire.player.animation;
 
-
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -20,11 +19,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 final class ArmAnimationWirePacketCodecsTest {
 	@Test
 	void unsupportedFieldsCannotBeAddedToPacketsThatDoNotCarryThem() {
-		assertNull(new ArmAnimationWithoutHandWirePacket().hand());
+		assertNull(new ArmAnimationWirePacket.Protocol47().hand());
 		assertThrows(
 				UnsupportedOperationException.class,
 				() ->
-						new ArmAnimationWithoutHandWirePacket()
+						new ArmAnimationWirePacket.Protocol47()
 								.setHand(de.jpx3.intave.share.PlayerHand.MAIN_HAND));
 	}
 }

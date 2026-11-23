@@ -23,7 +23,6 @@ import de.jpx3.intave.packet.plib.reader.EntityMovementReader;
 import de.jpx3.intave.packet.plib.reader.PacketReaders;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.meta.ProtocolMetadata;
 import de.jpx3.intave.version.ServerProtocolVersion;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -31,7 +30,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static de.jpx3.intave.IntaveControl.ENABLE_MOVEMENT_DEBUGGER_COLLECTOR;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
 
 public class Entity {
@@ -317,12 +315,6 @@ public class Entity {
       newPosZ = serverPosZ / 32.0;
     }
 
-    ProtocolMetadata protocol = user.meta().protocol();
-    protocol.lastEntityId = entityId;
-    protocol.lastEntityPosition = new Position(
-      newPosX, newPosY, newPosZ
-    );
-
     if (immediateTeleport) {
       setPosition(newPosX, newPosY, newPosZ);
       pushDebug("TP(Set position)", -1, newPosX, newPosY, newPosZ);
@@ -349,19 +341,12 @@ public class Entity {
     }
   }
 
-  public void handleEntityPositionSync(User user, PacketContainer packet) {
+  public void handleEntityPositionSync(PacketContainer packet) {
     PositionMoveRotation posMoveRot;
     try (EntityMovementReader reader = PacketReaders.readerOf(packet)) {
       posMoveRot = reader.readPositionSync(ServerProtocolVersion.current());
     }
-    Position position = posMoveRot.position();
-    handleEntityPositionSync(position);
-    if (ENABLE_MOVEMENT_DEBUGGER_COLLECTOR && entityName().toLowerCase().contains("chicken")) {
-      ProtocolMetadata protocol = user.meta().protocol();
-      protocol.lastEntityId = entityId;
-      protocol.lastEntityPosition = position;
-//      System.out.println("A-sync " + (System.currentTimeMillis() % 1000) + " " + entityName() + "/" + entityId + " " + position);
-    }
+    handleEntityPositionSync(posMoveRot.position());
   }
 
   /**

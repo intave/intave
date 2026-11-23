@@ -18,64 +18,98 @@ import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.ChunkBiomeData;
 import io.netty.buffer.ByteBuf;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 
-public class ChunksBiomesWirePacket extends AbstractMutable implements MutableChunksBiomesPacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, ChunksBiomesWirePacket> STREAM_CODEC = streamCodec(ChunkBiomeData.STREAM_CODEC, ChunksBiomesWirePacket::new);
-
-	protected static <T extends ChunksBiomesWirePacket> StreamCodec<ByteBuf, ByteBuf, T> streamCodec(
-		StreamCodec<ByteBuf, ByteBuf, ChunkBiomeData> chunkCodec, Function<List<ChunkBiomeData>, T> factory
-	) {
-		return StreamCodec.of(
-			(output, packet) -> {
-				ByteBufStreamCodecs.VARINT.encode(output, packet.chunks().size());
-				for (ChunkBiomeData chunk : packet.chunks()) chunkCodec.encode(output, chunk);
-			}, input -> {
-				int count = ByteBufStreamCodecs.count(input, input.readableBytes() / 9);
-				List<ChunkBiomeData> chunks = new ArrayList<>(count);
-				for (int i = 0; i < count; i++) chunks.add(chunkCodec.decode(input));
-				return factory.apply(chunks);
-			}
-		);
+public final class ChunksBiomesWirePacket {
+	private ChunksBiomesWirePacket() {
 	}
 
-	private List<ChunkBiomeData> chunks;
-
-	public ChunksBiomesWirePacket() { this(Collections.emptyList()); }
-	public ChunksBiomesWirePacket(List<ChunkBiomeData> chunks) { this.chunks = copy(chunks); }
-
-	@Override
-	public boolean appliesTo(int protocolVersion) { return protocolVersion >= 770; }
-	@Override
-	public int chunkCount() { return chunks.size(); }
-	@Override
-	public int chunkX(int index) { return chunks.get(index).x(); }
-	@Override
-	public int chunkZ(int index) { return chunks.get(index).z(); }
-	@Override
-	public List<ChunkBiomeData> chunks() { return chunks; }
-
-	@Override
-	public void setChunks(List<ChunkBiomeData> chunks) {
-		markMutated();
-		this.chunks = copy(chunks);
+	public static List<Class<?>> registeredClasses() {
+		return Collections.unmodifiableList(Arrays.<Class<?>>asList(
+			Protocol762.class,
+			Protocol770.class
+		));
 	}
 
-	@Override
-	public void setChunkCoordinates(int index, int x, int z) {
-		markMutated();
-		List<ChunkBiomeData> copy = new ArrayList<>(chunks);
-		copy.set(index, new ChunkBiomeData(x, z, chunks.get(index).sections()));
-		chunks = Collections.unmodifiableList(copy);
+	static abstract class Base extends AbstractMutable implements MutableChunksBiomesPacket {
+		protected static <T extends Base> StreamCodec<ByteBuf, ByteBuf, T> streamCodec(
+			StreamCodec<ByteBuf, ByteBuf, ChunkBiomeData> chunkCodec, Function<List<ChunkBiomeData>, T> factory
+		) {
+			return StreamCodec.of(
+				(output, packet) -> {
+					ByteBufStreamCodecs.VARINT.encode(output, packet.chunks().size());
+					for (ChunkBiomeData chunk : packet.chunks()) chunkCodec.encode(output, chunk);
+				}, input -> {
+					int count = ByteBufStreamCodecs.count(input, input.readableBytes() / 9);
+					List<ChunkBiomeData> chunks = new ArrayList<>(count);
+					for (int i = 0; i < count; i++) chunks.add(chunkCodec.decode(input));
+					return factory.apply(chunks);
+				}
+			);
+		}
+
+		protected List<ChunkBiomeData> chunks;
+		protected Base() { this(Collections.emptyList()); }
+
+		protected Base(List<ChunkBiomeData> chunks) { this.chunks = copy(chunks); }
+
+		@Override
+		public int chunkCount() { return chunks.size(); }
+
+		@Override
+		public int chunkX(int index) { return chunks.get(index).x(); }
+
+		@Override
+		public int chunkZ(int index) { return chunks.get(index).z(); }
+
+		@Override
+		public List<ChunkBiomeData> chunks() { return chunks; }
+
+		@Override
+		public void setChunks(List<ChunkBiomeData> chunks) {
+			markMutated();
+			this.chunks = copy(chunks);
+		}
+
+		@Override
+		public void setChunkCoordinates(int index, int x, int z) {
+			markMutated();
+			List<ChunkBiomeData> copy = new ArrayList<>(chunks);
+			copy.set(index, new ChunkBiomeData(x, z, chunks.get(index).sections()));
+			chunks = Collections.unmodifiableList(copy);
+		}
+
+		protected static List<ChunkBiomeData> copy(List<ChunkBiomeData> chunks) {
+			List<ChunkBiomeData> copy = new ArrayList<>(chunks);
+			copy.forEach(chunk -> Objects.requireNonNull(chunk, "chunk"));
+			return Collections.unmodifiableList(copy);
+		}
 	}
 
-	private static List<ChunkBiomeData> copy(List<ChunkBiomeData> chunks) {
-		List<ChunkBiomeData> copy = new ArrayList<>(chunks);
-		copy.forEach(chunk -> Objects.requireNonNull(chunk, "chunk"));
-		return Collections.unmodifiableList(copy);
+	static final class Protocol762 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol762> STREAM_CODEC =
+			streamCodec(ChunkBiomeData.LENGTH_PREFIXED_STORAGE_STREAM_CODEC, Protocol762::new);
+
+		public Protocol762() {}
+		public Protocol762(List<ChunkBiomeData> chunks) { super(chunks); }
+
+		@Override
+		public boolean appliesTo(int protocolVersion) { return protocolVersion >= 762 && protocolVersion < 770; }
+	}
+
+	static final class Protocol770 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol770> STREAM_CODEC = streamCodec(ChunkBiomeData.STREAM_CODEC, Protocol770::new);
+
+		public Protocol770() {
+			super();
+		}
+
+		public Protocol770(List<ChunkBiomeData> chunks) {
+			super(chunks);
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) { return protocolVersion >= 770; }
 	}
 }

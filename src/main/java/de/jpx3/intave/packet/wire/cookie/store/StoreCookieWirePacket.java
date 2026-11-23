@@ -27,8 +27,9 @@ public class StoreCookieWirePacket extends AbstractMutable implements MutableSto
 			(output, packet) -> {
 				MinecraftKey.STREAM_CODEC.encode(output, packet.key);
 				{
-					if (packet.payload.length > 5120)
+					if (packet.payload.length > 5120) {
 						throw new IllegalArgumentException("Cookie exceeds 5120 bytes");
+					}
 					ByteBufStreamCodecs.VARINT.encode(output, packet.payload.length);
 					output.writeBytes(packet.payload);
 				}

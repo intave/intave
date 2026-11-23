@@ -38,8 +38,8 @@ final class ChatWirePacketTest {
 	void unsignedChatKeepsItsVersionedTextLimits() {
 		for (int protocol : new int[] {47, 210, 315, 758}) {
 			int limit = protocol < 315 ? 100 : 256;
-			ChatUnsignedWirePacket packet = roundTrip(protocol, buffer -> text(buffer, "a".repeat(limit)));
-			assertEquals(protocol < 315 ? ChatShortMessageWirePacket.class : ChatUnsignedWirePacket.class, packet.getClass());
+			ChatWirePacket.Base packet = roundTrip(protocol, buffer -> text(buffer, "a".repeat(limit)));
+			assertEquals(protocol < 315 ? ChatWirePacket.Protocol47.class : ChatWirePacket.Protocol315.class, packet.getClass());
 			assertEquals(limit, packet.text().length());
 			packet.setText("a".repeat(limit + 1));
 			ByteBuf output = Unpooled.buffer();
@@ -58,12 +58,12 @@ final class ChatWirePacketTest {
 		// https://github.com/PrismarineJS/minecraft-data/blob/master/data/pc/1.19/protocol.json
 		for (int signatureLength : new int[] {0, 256}) {
 			byte[] signature = signature(signatureLength);
-			ChatWithPreviewWirePacket packet = (ChatWithPreviewWirePacket) roundTrip(759, buffer -> {
+			ChatWirePacket.Protocol759 packet = (ChatWirePacket.Protocol759) roundTrip(759, buffer -> {
 				header(buffer, "hello");
 				bytes(buffer, signature);
 				buffer.writeBoolean(true);
 			});
-			assertEquals(ChatWithPreviewWirePacket.class, packet.getClass());
+			assertEquals(ChatWirePacket.Protocol759.class, packet.getClass());
 			assertEquals(Instant.ofEpochMilli(TIMESTAMP), packet.timestamp());
 			assertEquals(SALT, packet.salt());
 			assertArrayEquals(signature, packet.signature());
@@ -93,7 +93,7 @@ final class ChatWirePacketTest {
 					bytes(buffer, signature(256));
 				}
 			};
-			ChatWithLastSeenWirePacket packet = (ChatWithLastSeenWirePacket) roundTrip(760, buffer -> {
+			ChatWirePacket.Protocol760 packet = (ChatWirePacket.Protocol760) roundTrip(760, buffer -> {
 				header(buffer, "hello");
 				bytes(buffer, signature(256));
 				buffer.writeBoolean(false);
@@ -128,17 +128,17 @@ final class ChatWirePacketTest {
 					buffer.writeByte(5).writeByte(0x80).writeByte(8); // bits 0, 2, 15 and 19
 					if (protocol >= 770) buffer.writeByte(0xfe);
 				};
-				ChatWithoutChecksumWirePacket packet = (ChatWithoutChecksumWirePacket) roundTrip(protocol, buffer -> {
+				ChatWirePacket.Protocol761 packet = (ChatWirePacket.Protocol761) roundTrip(protocol, buffer -> {
 					header(buffer, "hello");
 					signedFields.accept(buffer);
 				});
-				assertEquals(protocol >= 770 ? ChatWirePacket.class : ChatWithoutChecksumWirePacket.class, packet.getClass());
+				assertEquals(protocol >= 770 ? ChatWirePacket.Protocol770.class : ChatWirePacket.Protocol761.class, packet.getClass());
 				assertEquals(Instant.ofEpochMilli(TIMESTAMP), packet.timestamp());
 				assertEquals(SALT, packet.salt());
 				assertArrayEquals(signed ? signature(256) : null, packet.signature());
 				assertEquals(300, packet.offset());
 				assertEquals(BitSet.valueOf(new byte[] {5, (byte) 0x80, 8}), packet.acknowledged());
-				if (protocol >= 770) assertEquals((byte) 0xfe, ((ChatWirePacket) packet).checksum());
+				if (protocol >= 770) assertEquals((byte) 0xfe, ((ChatWirePacket.Protocol770) packet).checksum());
 				packet.setText("edited");
 				assertEncoding(packet, buffer -> {
 					header(buffer, "edited");
@@ -154,16 +154,16 @@ final class ChatWirePacketTest {
 		try {
 			header(input, "hello");
 			input.writeBoolean(true).writeZero(255);
-			assertThrows(IllegalArgumentException.class, () -> ChatWirePacket.STREAM_CODEC.decode(input));
+			assertThrows(IllegalArgumentException.class, () -> ChatWirePacket.Protocol770.STREAM_CODEC.decode(input));
 			header(input.clear(), "hello");
 			input.writeBoolean(false).writeByte(0).writeZero(2);
-			assertThrows(IllegalArgumentException.class, () -> ChatWithoutChecksumWirePacket.STREAM_CODEC.decode(input));
+			assertThrows(IllegalArgumentException.class, () -> ChatWirePacket.Protocol761.STREAM_CODEC.decode(input));
 			header(input.clear(), "hello");
 			input.writeBoolean(false).writeByte(0).writeZero(3);
-			assertThrows(IndexOutOfBoundsException.class, () -> ChatWirePacket.STREAM_CODEC.decode(input));
+			assertThrows(IndexOutOfBoundsException.class, () -> ChatWirePacket.Protocol770.STREAM_CODEC.decode(input));
 			header(input.clear(), "hello");
 			input.writeByte(0x80).writeByte(2).writeZero(255);
-			assertThrows(IllegalArgumentException.class, () -> ChatWithPreviewWirePacket.STREAM_CODEC.decode(input));
+			assertThrows(IllegalArgumentException.class, () -> ChatWirePacket.Protocol759.STREAM_CODEC.decode(input));
 		} finally {
 			input.release();
 		}
@@ -171,29 +171,29 @@ final class ChatWirePacketTest {
 
 	@Test
 	void invalidFixedSignaturesAndAcknowledgementBitsCannotBeEncoded() {
-		ChatWirePacket packet = new ChatWirePacket();
+		ChatWirePacket.Protocol770 packet = new ChatWirePacket.Protocol770();
 		ByteBuf output = Unpooled.buffer();
 		try {
 			for (int length : new int[] {0, 255, 257}) {
 				packet.setSignature(new byte[length]);
-				assertThrows(IllegalArgumentException.class, () -> ChatWirePacket.STREAM_CODEC.encode(output.clear(), packet));
+				assertThrows(IllegalArgumentException.class, () -> ChatWirePacket.Protocol770.STREAM_CODEC.encode(output.clear(), packet));
 			}
 			packet.setSignature(null);
 			packet.acknowledged().set(20);
-			assertThrows(IllegalArgumentException.class, () -> ChatWirePacket.STREAM_CODEC.encode(output.clear(), packet));
+			assertThrows(IllegalArgumentException.class, () -> ChatWirePacket.Protocol770.STREAM_CODEC.encode(output.clear(), packet));
 		} finally {
 			output.release();
 		}
 	}
 
-	private static ChatUnsignedWirePacket roundTrip(int protocol, Consumer<ByteBuf> writer) {
+	private static ChatWirePacket.Base roundTrip(int protocol, Consumer<ByteBuf> writer) {
 		PacketContract prototype = WirePackets.createPacket(PLAY, PacketType.Client.CHAT_IN, protocol);
 		ByteBuf input = Unpooled.buffer();
 		try {
 			writer.accept(input);
 			int payloadLength = input.writerIndex();
 			input.writeByte(0x55);
-			ChatUnsignedWirePacket packet = (ChatUnsignedWirePacket) decodePayload(prototype.getClass(), input);
+			ChatWirePacket.Base packet = (ChatWirePacket.Base) decodePayload(prototype.getClass(), input);
 			assertEquals(payloadLength, input.readerIndex(), "CHAT in " + protocol + " consumed the wrong number of bytes");
 			assertEquals(0x55, input.readUnsignedByte());
 			assertEncoding(packet, writer);

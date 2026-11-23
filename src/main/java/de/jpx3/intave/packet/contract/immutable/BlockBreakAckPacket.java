@@ -1,0 +1,46 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
+package de.jpx3.intave.packet.contract.immutable;
+
+import de.jpx3.intave.packet.ConnectionState;
+import de.jpx3.intave.packet.contract.PacketContract;
+import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.share.BlockPosition;
+import de.jpx3.intave.share.BlockUpdate;
+import de.jpx3.intave.share.PlayerDigAction;
+
+import java.util.Collections;
+import java.util.List;
+
+/** The 1.14.4–1.18.2 digging acknowledgement, including the server's block state. */
+public interface BlockBreakAckPacket extends PacketContract, BlockUpdates, BlockAddressed {
+  BlockUpdate blockUpdate();
+
+  PlayerDigAction action();
+
+  boolean successful();
+
+  @Override
+  default BlockPosition blockPosition() {
+    return blockUpdate().position();
+  }
+
+  @Override
+  default List<BlockUpdate> blockUpdates() {
+    return Collections.singletonList(blockUpdate());
+  }
+
+  @Override
+  default boolean appliesTo(ConnectionState state, PacketType packetType) {
+    return state == ConnectionState.PLAY && packetType == PacketType.Server.BLOCK_BREAK_ACK;
+  }
+}

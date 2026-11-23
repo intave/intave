@@ -14,19 +14,21 @@ package de.jpx3.intave.packet.wire.entity.relativemove;
 import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityRelativeMovePacket;
 import de.jpx3.intave.packet.wire.WirePackets;
+import de.jpx3.intave.share.EntityRelativeMoveStep;
 import de.jpx3.intave.share.RawVector3d;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static de.jpx3.intave.packet.ConnectionState.PLAY;
 import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
 import static de.jpx3.intave.packet.wire.WirePacketTestSupport.registry;
 import static de.jpx3.intave.packet.wire.WirePacketTestSupport.roundTrip;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 final class EntityRelativeMoveWirePacketCodecsTest {
 	@Test
@@ -51,7 +53,7 @@ final class EntityRelativeMoveWirePacketCodecsTest {
 				assertEquals(-2, packet.steps().get(0).delta().y());
 			}
 		}
-		EntityRelativeMoveWirePacket stepped =
+		EntityRelativeMoveWirePacket.Base stepped =
 				roundTrip(
 						CLIENTBOUND,
 						PacketType.Server.REL_ENTITY_MOVE,
@@ -121,5 +123,28 @@ final class EntityRelativeMoveWirePacketCodecsTest {
 				}
 			}
 		}
+	}
+
+	@Test
+	void exposedNestedStepsMarkPossibleChanges() {
+		RawVector3d[] delta = {new RawVector3d(1, 2, 3)};
+		EntityRelativeMoveStep step = new EntityRelativeMoveStep() {
+			@Override
+			public RawVector3d delta() {
+				return delta[0];
+			}
+
+			@Override
+			public int delayTicks() {
+				return 0;
+			}
+		};
+		EntityRelativeMoveWirePacket.Protocol777 movement = new EntityRelativeMoveWirePacket.Protocol777(
+			12, false, false, new ArrayList<>(Collections.singletonList(step)));
+		assertFalse(movement.couldHaveBeenMutated());
+		assertSame(step, movement.steps().get(0));
+		assertTrue(movement.couldHaveBeenMutated());
+		delta[0] = new RawVector3d(4, 2, 3);
+		assertEquals(4, movement.steps().get(0).delta().x());
 	}
 }

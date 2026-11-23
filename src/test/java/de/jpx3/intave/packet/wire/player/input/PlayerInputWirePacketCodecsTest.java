@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 final class PlayerInputWirePacketCodecsTest {
 	@Test
 	void legacyInputRetainsAnalogAxesAndUnexposedFlagBits() {
-		LegacyPlayerInputWirePacket packet =
+		PlayerInputWirePacket.Protocol47 packet =
 				roundTrip(
 						SERVERBOUND,
 						PacketType.Client.PLAYER_INPUT,

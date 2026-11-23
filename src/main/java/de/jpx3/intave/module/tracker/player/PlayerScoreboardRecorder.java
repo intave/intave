@@ -18,14 +18,11 @@ import de.jpx3.intave.executor.task.Task;
 import de.jpx3.intave.executor.task.Tasks;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
-import de.jpx3.intave.module.linker.packet.ListenerPriority;
-import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.module.linker.packet.PrioritySlot;
-import de.jpx3.intave.packet.plib.reader.ScoreboardReader;
-import de.jpx3.intave.packet.plib.reader.ScoreboardReader.Display;
-import de.jpx3.intave.packet.plib.reader.ScoreboardReader.Objective;
-import de.jpx3.intave.packet.plib.reader.ScoreboardReader.Score;
-import de.jpx3.intave.packet.plib.reader.ScoreboardReader.Team;
+import de.jpx3.intave.module.linker.packetperfect.OnSend;
+import de.jpx3.intave.packet.contract.immutable.ScoreboardDisplayPacket;
+import de.jpx3.intave.packet.contract.immutable.ScoreboardObjectivePacket;
+import de.jpx3.intave.packet.contract.immutable.ScoreboardScorePacket;
+import de.jpx3.intave.packet.contract.immutable.ScoreboardTeamPacket;
 import de.jpx3.intave.share.ScoreboardObjectiveAction;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserLocal;
@@ -38,7 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static de.jpx3.intave.packet.contract.PacketType.Server.*;
+import static de.jpx3.intave.packet.ListenerPriority.LAST;
 
 /** Mirrors outgoing scoreboard packets and samples the visible sidebar. */
 public final class PlayerScoreboardRecorder extends Module {
@@ -65,43 +62,38 @@ public final class PlayerScoreboardRecorder extends Module {
     }
   }
 
-  @PacketSubscription(
-    priority = ListenerPriority.MONITOR,
-    prioritySlot = PrioritySlot.EXTERNAL,
-    packetsOut = {
-      SCOREBOARD_OBJECTIVE, SCOREBOARD_DISPLAY_OBJECTIVE,
-      SCOREBOARD_SCORE, RESET_SCORE, SCOREBOARD_TEAM
-    }
-  )
-  public void receive(User user, Cancellable packet, ScoreboardReader reader) {
-    if (packet.isCancelled()) {
+  @OnSend(priority = LAST)
+  public void sentObjective(User user, Cancellable event, ScoreboardObjectivePacket packet) {
+    if (event.isCancelled()) {
       return;
     }
     ClientScoreboard scoreboard = user.meta().connection().clientScoreboard();
-    switch (reader.kind()) {
-      case SCOREBOARD_OBJECTIVE:
-        Objective objective = reader.objective();
-        if (objective.action == ScoreboardObjectiveAction.REMOVE) {
-          scoreboard.removeObjective(objective.name);
-        } else {
-          scoreboard.setObjective(objective.name, objective.title);
-        }
-        break;
-      case SCOREBOARD_DISPLAY_OBJECTIVE:
-        Display display = reader.display();
-        scoreboard.setDisplayObjective(display.slot, display.objective);
-        break;
-      case SCOREBOARD_SCORE:
-        applyScore(scoreboard, reader.score());
-        break;
-      case RESET_SCORE:
-        applyScore(scoreboard, reader.resetScore());
-        break;
-      case SCOREBOARD_TEAM:
-        applyTeam(scoreboard, reader.team());
-        break;
-      default:
-        throw new IllegalStateException("Unexpected scoreboard packet " + reader.kind());
+    if (packet.action() == ScoreboardObjectiveAction.REMOVE) {
+      scoreboard.removeObjective(packet.objectiveName());
+    } else {
+      scoreboard.setObjective(packet.objectiveName(), packet.displayNameText());
+    }
+  }
+
+  @OnSend(priority = LAST)
+  public void sentDisplay(User user, Cancellable event, ScoreboardDisplayPacket packet) {
+    if (event.isCancelled()) {
+      return;
+    }
+    user.meta().connection().clientScoreboard().setDisplayObjective(packet.displaySlot(), packet.objectiveName());
+  }
+
+  @OnSend(priority = LAST)
+  public void sentScore(User user, Cancellable event, ScoreboardScorePacket packet) {
+    if (event.isCancelled()) {
+      return;
+    }
+    ClientScoreboard scoreboard = user.meta().connection().clientScoreboard();
+    if (packet.removed()) {
+      scoreboard.resetScore(packet.owner(), packet.objectiveName());
+    } else {
+      Integer value = packet.value();
+      scoreboard.setScore(packet.owner(), packet.objectiveName(), value == null ? 0 : value, packet.displayNameText());
     }
   }
 
@@ -127,30 +119,27 @@ public final class PlayerScoreboardRecorder extends Module {
     return user.meta().connection().clientScoreboard().snapshot(user.player().getName());
   }
 
-  private static void applyScore(ClientScoreboard scoreboard, Score score) {
-    if (score.remove) {
-      scoreboard.resetScore(score.owner, score.objective);
-    } else {
-      scoreboard.setScore(score.owner, score.objective, score.value, score.displayName);
+  @OnSend(priority = LAST)
+  public void sentTeam(User user, Cancellable event, ScoreboardTeamPacket packet) {
+    if (event.isCancelled()) {
+      return;
     }
-  }
-
-  private static void applyTeam(ClientScoreboard scoreboard, Team team) {
-    switch (team.action) {
+    ClientScoreboard scoreboard = user.meta().connection().clientScoreboard();
+    switch (packet.action()) {
       case CREATE:
-        scoreboard.createTeam(team.name, team.prefix, team.suffix, team.color, team.entries);
+        scoreboard.createTeam(packet.name(), packet.prefixText(), packet.suffixText(), packet.color(), packet.entries());
         break;
       case REMOVE:
-        scoreboard.removeTeam(team.name);
+        scoreboard.removeTeam(packet.name());
         break;
       case UPDATE:
-        scoreboard.updateTeam(team.name, team.prefix, team.suffix, team.color);
+        scoreboard.updateTeam(packet.name(), packet.prefixText(), packet.suffixText(), packet.color());
         break;
       case ADD_ENTRIES:
-        scoreboard.addTeamEntries(team.name, team.entries);
+        scoreboard.addTeamEntries(packet.name(), packet.entries());
         break;
       case REMOVE_ENTRIES:
-        scoreboard.removeTeamEntries(team.name, team.entries);
+        scoreboard.removeTeamEntries(packet.name(), packet.entries());
         break;
       default:
         break;

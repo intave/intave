@@ -17,62 +17,145 @@ import de.jpx3.intave.packet.contract.mutable.MutableAbilityInPacket;
 import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class AbilityInWirePacket extends AbstractMutable implements MutableAbilityInPacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, AbilityInWirePacket> STREAM_CODEC =
-		StreamCodec.compound(
-			ByteBufStreamCodecs.UNSIGNED_BYTE, AbilityInWirePacket::flags,
-			AbilityInWirePacket::new
-		);
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-	protected int flags;
-
-	public AbilityInWirePacket() {
-		this(0);
+public final class AbilityInWirePacket {
+	private AbilityInWirePacket() {
 	}
 
-	public AbilityInWirePacket(int flags) {
-		this.flags = flags;
+	public static List<Class<?>> registeredClasses() {
+		return Collections.unmodifiableList(Arrays.<Class<?>>asList(
+			Protocol47.class,
+			Protocol735.class
+		));
 	}
 
-	@Override
-	public boolean appliesTo(int protocolVersion) {
-		return protocolVersion >= 735;
+	static abstract class Base extends AbstractMutable implements MutableAbilityInPacket {
+		protected int flags;
+
+		protected Base() {
+			this(0);
+		}
+
+		protected Base(int flags) {
+			this.flags = flags;
+		}
+
+		@Override
+		public boolean requestedFlying() {
+			return (flags & 2) != 0;
+		}
+
+		@Override
+		public abstract float flyingSpeed();
+
+		@Override
+		public abstract float walkingSpeed();
+
+		public int flags() {
+			return flags;
+		}
+
+		@Override
+		public void setRequestedFlying(boolean value) {
+			markMutated();
+			flags = value ? flags | 2 : flags & ~2;
+		}
+
+		@Override
+		public abstract void setFlyingSpeed(float flyingSpeed);
+
+		@Override
+		public abstract void setWalkingSpeed(float walkingSpeed);
 	}
 
-	@Override
-	public boolean requestedFlying() {
-		return (flags & 2) != 0;
+	static final class Protocol47 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol47> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.UNSIGNED_BYTE, Base::flags,
+				ByteBufStreamCodecs.FLOAT, Protocol47::flyingSpeed,
+				ByteBufStreamCodecs.FLOAT, Protocol47::walkingSpeed,
+				Protocol47::new
+			);
+
+		private float flyingSpeed = 0.05f, walkingSpeed = 0.1f;
+
+		public Protocol47() {
+			super();
+		}
+
+		public Protocol47(int flags, float flyingSpeed, float walkingSpeed) {
+			super(flags);
+			this.flyingSpeed = flyingSpeed;
+			this.walkingSpeed = walkingSpeed;
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 47 && protocolVersion < 735;
+		}
+
+		public float flyingSpeed() {
+			return flyingSpeed;
+		}
+
+		public void setFlyingSpeed(float flyingSpeed) {
+			markMutated();
+			this.flyingSpeed = flyingSpeed;
+		}
+
+		public float walkingSpeed() {
+			return walkingSpeed;
+		}
+
+		public void setWalkingSpeed(float walkingSpeed) {
+			markMutated();
+			this.walkingSpeed = walkingSpeed;
+		}
 	}
 
-	@Override
-	public float flyingSpeed() {
-		throw new UnsupportedOperationException("This packet does not support flying speed");
-	}
+	static final class Protocol735 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol735> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.UNSIGNED_BYTE, Protocol735::flags,
+				Protocol735::new
+			);
 
-	@Override
-	public float walkingSpeed() {
-		throw new UnsupportedOperationException("This packet does not support walking speed");
-	}
+		public Protocol735() {
+			super();
+		}
 
-	public int flags() {
-		return flags;
-	}
+		public Protocol735(int flags) {
+			super(flags);
+		}
 
-	@Override
-	public void setRequestedFlying(boolean value) {
-		markMutated();
-		flags = value ? flags | 2 : flags & ~2;
-	}
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 735;
+		}
 
-	@Override
-	public void setFlyingSpeed(float flyingSpeed) {
-		markMutated();
-		throw new UnsupportedOperationException("This packet does not support flying speed");
-	}
+		@Override
+		public float flyingSpeed() {
+			throw new UnsupportedOperationException("This packet does not support flying speed");
+		}
 
-	@Override
-	public void setWalkingSpeed(float walkingSpeed) {
-		markMutated();
-		throw new UnsupportedOperationException("This packet does not support walking speed");
+		@Override
+		public float walkingSpeed() {
+			throw new UnsupportedOperationException("This packet does not support walking speed");
+		}
+
+		@Override
+		public void setFlyingSpeed(float flyingSpeed) {
+			markMutated();
+			throw new UnsupportedOperationException("This packet does not support flying speed");
+		}
+
+		@Override
+		public void setWalkingSpeed(float walkingSpeed) {
+			markMutated();
+			throw new UnsupportedOperationException("This packet does not support walking speed");
+		}
 	}
 }

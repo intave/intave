@@ -54,7 +54,6 @@ final class PhysicsReportTest {
     assertTrue(movement.has("packetHistory"));
     assertFalse(movement.has("positionX"));
     assertFalse(movement.has("baseMotionX"));
-    assertFalse(movement.has("serverMovementDebugValues"));
 
     JsonObject surroundingBlocks = movement.getAsJsonObject("surroundingBlocks");
     assertTrue(surroundingBlocks.has("minInclusive"));

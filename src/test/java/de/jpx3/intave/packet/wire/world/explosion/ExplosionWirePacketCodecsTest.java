@@ -32,7 +32,7 @@ final class ExplosionWirePacketCodecsTest {
 	@Test
 	void explosionsWithIntBlockCountsDecodeEveryField() {
 		for (int protocol : new int[] {47, 754}) {
-			ExplosionWirePacket packet =
+			ExplosionWirePacket.Base packet =
 					roundTrip(
 							CLIENTBOUND,
 							PacketType.Server.EXPLOSION,
@@ -47,7 +47,7 @@ final class ExplosionWirePacketCodecsTest {
 								b.writeByte(3).writeByte(-1).writeByte(-4);
 								b.writeFloat(0.125f).writeFloat(-0.25f).writeFloat(0.5f);
 							});
-			assertInstanceOf(ExplosionIntBlockCountWirePacket.class, packet);
+			assertInstanceOf(ExplosionWirePacket.Protocol47.class, packet);
 			assertEquals(-10.25, packet.x());
 			assertEquals(64.5, packet.y());
 			assertEquals(2.75, packet.z());
@@ -64,7 +64,7 @@ final class ExplosionWirePacketCodecsTest {
 	@Test
 	void explosionsWithVarIntBlockCountsDecodeMultibyteCounts() {
 		for (int protocol : new int[] {755, 760}) {
-			ExplosionWirePacket packet =
+			ExplosionWirePacket.Base packet =
 					roundTrip(
 							CLIENTBOUND,
 							PacketType.Server.EXPLOSION,
@@ -79,7 +79,7 @@ final class ExplosionWirePacketCodecsTest {
 									b.writeByte(i - 128).writeByte(0).writeByte(127);
 								b.writeFloat(0.125f).writeFloat(-0.25f).writeFloat(0.5f);
 							});
-			assertInstanceOf(ExplosionVarIntBlockCountWirePacket.class, packet);
+			assertInstanceOf(ExplosionWirePacket.Protocol755.class, packet);
 			assertEquals(-10.25, packet.x());
 			assertEquals(64.5, packet.y());
 			assertEquals(2.75, packet.z());
@@ -96,7 +96,7 @@ final class ExplosionWirePacketCodecsTest {
 	@Test
 	void explosionsWithDoublePositionsRetainTheirPrecision() {
 		for (int protocol : new int[] {761, 764}) {
-			ExplosionWirePacket packet =
+			ExplosionWirePacket.Base packet =
 					roundTrip(
 							CLIENTBOUND,
 							PacketType.Server.EXPLOSION,
@@ -109,7 +109,7 @@ final class ExplosionWirePacketCodecsTest {
 								b.writeByte(1).writeByte(-128).writeByte(0).writeByte(127);
 								b.writeFloat(0.125f).writeFloat(-0.25f).writeFloat(0.5f);
 							});
-			assertInstanceOf(ExplosionDoublePositionWirePacket.class, packet);
+			assertInstanceOf(ExplosionWirePacket.Protocol761.class, packet);
 			assertEquals(-10.2500000001, packet.x());
 			assertEquals(64.5000000001, packet.y());
 			assertEquals(2.7500000001, packet.z());
@@ -125,8 +125,8 @@ final class ExplosionWirePacketCodecsTest {
 	void explosionsCanBeEncodedFromExplicitFields() {
 		for (int protocol : new int[] {47, 755, 761}) {
 			int id = registry(CLIENTBOUND).idOf(PLAY, PacketType.Server.EXPLOSION, protocol);
-			ExplosionWirePacket packet =
-					(ExplosionWirePacket) WirePackets.createPacket(CLIENTBOUND, PLAY, id, protocol);
+			ExplosionWirePacket.Base packet =
+					(ExplosionWirePacket.Base) WirePackets.createPacket(CLIENTBOUND, PLAY, id, protocol);
 			packet.setPosition(-10.25, 64.5, 2.75);
 			packet.setPower(4);
 			packet.setAffectedBlockOffsets(List.of(new BlockPosition(-128, 0, 127)));
@@ -190,8 +190,8 @@ final class ExplosionWirePacketCodecsTest {
 	void explosionBlockOffsetsMustFitSignedBytes() {
 		for (int protocol : new int[] {47, 755, 761}) {
 			int id = registry(CLIENTBOUND).idOf(PLAY, PacketType.Server.EXPLOSION, protocol);
-			ExplosionWirePacket packet =
-					(ExplosionWirePacket) WirePackets.createPacket(CLIENTBOUND, PLAY, id, protocol);
+			ExplosionWirePacket.Base packet =
+					(ExplosionWirePacket.Base) WirePackets.createPacket(CLIENTBOUND, PLAY, id, protocol);
 			for (BlockPosition offset :
 					List.of(
 							new BlockPosition(128, 0, 0),

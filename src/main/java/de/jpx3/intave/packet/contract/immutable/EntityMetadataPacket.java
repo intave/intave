@@ -14,13 +14,20 @@ package de.jpx3.intave.packet.contract.immutable;
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.check.movement.physics.environment.Pose;
 import de.jpx3.intave.entity.type.EntityTypeData;
+import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.PacketContract;
+import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.share.BlockPosition;
 
 import java.util.Optional;
 import java.util.OptionalInt;
 
 public interface EntityMetadataPacket extends PacketContract, PrimaryEntityAddressed {
+	@Override
+	default boolean appliesTo(ConnectionState state, PacketType packetType) {
+		return state == ConnectionState.PLAY && packetType == PacketType.Server.ENTITY_METADATA;
+	}
+
 	@Nullable
 	Byte entityFlags();
 

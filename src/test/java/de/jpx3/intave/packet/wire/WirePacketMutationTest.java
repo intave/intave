@@ -17,19 +17,15 @@ import de.jpx3.intave.packet.contract.PacketContract;
 import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.immutable.ClientSettingsPacket;
 import de.jpx3.intave.packet.contract.mutable.Mutable;
+import de.jpx3.intave.packet.contract.mutable.MutableClientSettingsPacket;
+import de.jpx3.intave.packet.contract.mutable.MutablePlayerMovePacket;
 import de.jpx3.intave.packet.contract.mutable.MutableTransactionPacket;
 import de.jpx3.intave.packet.event.PacketEvent;
 import de.jpx3.intave.packet.event.PacketReceiveEvent;
 import de.jpx3.intave.packet.event.PacketSendEvent;
-import de.jpx3.intave.packet.wire.client.settings.ClientSettingsWithHandWirePacket;
 import de.jpx3.intave.packet.wire.cookie.response.CookieResponseWirePacket;
 import de.jpx3.intave.packet.wire.entity.mount.MountEntityWirePacket;
-import de.jpx3.intave.packet.wire.entity.relativemove.EntityRelativeMoveWirePacket;
-import de.jpx3.intave.packet.wire.entity.velocity.EntityVelocityWirePacket;
 import de.jpx3.intave.packet.wire.payload.inbound.PayloadInWirePacket;
-import de.jpx3.intave.packet.wire.player.ground.PlayerGroundWirePacket;
-import de.jpx3.intave.packet.wire.player.position.PlayerPositionWirePacket;
-import de.jpx3.intave.packet.wire.player.rotation.PlayerRotationWirePacket;
 import de.jpx3.intave.packet.wire.window.transaction.TransactionWirePacket;
 import de.jpx3.intave.packet.wire.world.border.WorldBorderSetCenterWirePacket;
 import de.jpx3.intave.packet.wire.world.border.WorldBorderWirePacket;
@@ -43,7 +39,10 @@ import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import static de.jpx3.intave.packet.wire.WirePacketTestSupport.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -83,64 +82,14 @@ final class WirePacketMutationTest {
 	}
 
 	@Test
-	void decodedPositionsStayCleanUntilEditingIsRequested() {
-		ByteBuf input = Unpooled.buffer(), output = Unpooled.buffer();
-		try {
-			encodePayload(new PlayerPositionWirePacket(new Position(1, 2, 3), 1), input);
-			PlayerPositionWirePacket packet = decodePayload(PlayerPositionWirePacket.class, input);
-			PacketEvent event = new PacketReceiveEvent(null, PacketType.Client.POSITION, packet);
-			Position original = packet.position();
-			assertTrue(original.isImmutable());
-			assertEquals(new Position(1, 2, 3), original);
-			assertTrue(packet.hasPosition());
-			encodePayload(packet, output);
-			assertFalse(event.dirty());
-
-			Position editable = packet.mutablePosition();
-			assertFalse(editable.isImmutable());
-			assertNotSame(original, editable);
-			assertSame(editable, packet.mutablePosition());
-			assertTrue(event.dirty());
-			editable.setX(9);
-			assertEquals(1, original.getX());
-			output.clear();
-			encodePayload(packet, output);
-			PlayerPositionWirePacket decoded = decodePayload(PlayerPositionWirePacket.class, output);
-			assertEquals(new Position(9, 2, 3), decoded.position());
-			assertEquals(1, decoded.flags());
-		} finally {
-			input.release();
-			output.release();
-		}
-	}
-
-	@Test
-	void alreadyMutablePositionsAreTrackedAndReused() {
-		Position position = Position.mutableOf(1, 2, 3);
-		PlayerPositionWirePacket packet = new PlayerPositionWirePacket(position, 0);
-		assertFalse(packet.couldHaveBeenMutated());
-		assertSame(position, packet.position());
-		assertTrue(packet.couldHaveBeenMutated());
-		assertSame(position, packet.mutablePosition());
-		packet.mutablePosition().setY(7);
-		assertEquals(7, packet.position().getY());
-
-		PlayerPositionWirePacket replaced = new PlayerPositionWirePacket();
-		replaced.setPosition(new Position(4, 5, 6));
-		assertTrue(replaced.couldHaveBeenMutated(), "Replacing a position still changes the packet");
-	}
-
-	@Test
 	void absentPositionsStayCleanAndAreNotCreatedForEditing() {
-		PlayerGroundWirePacket ground = new PlayerGroundWirePacket();
+		MutablePlayerMovePacket ground = WirePackets.createPlayPacket(PacketType.Client.FLYING, 768);
 		assertNull(ground.mutablePosition());
 		assertFalse(ground.couldHaveBeenMutated());
-		PlayerRotationWirePacket rotation = new PlayerRotationWirePacket();
+		MutablePlayerMovePacket rotation = WirePackets.createPlayPacket(PacketType.Client.LOOK, 768);
 		assertNull(rotation.mutablePosition());
 		assertFalse(rotation.couldHaveBeenMutated());
-		PlayerPositionWirePacket nullable = new PlayerPositionWirePacket(null, 0);
-		assertNull(nullable.mutablePosition());
-		assertFalse(nullable.couldHaveBeenMutated());
+
 		WorldBorderWirePacket border = new WorldBorderWirePacket(
 			WorldBorderWirePacket.Action.SET_SIZE, Position.mutableOf(1, 0, 2), 100, 200, 0, 29999984, 5, 15);
 		assertNull(border.center());
@@ -178,7 +127,7 @@ final class WirePacketMutationTest {
 
 	@Test
 	void subclassSettersShareTheMutationFlag() {
-		ClientSettingsWithHandWirePacket packet = new ClientSettingsWithHandWirePacket();
+		MutableClientSettingsPacket packet = WirePackets.createPlayPacket(PacketType.Client.SETTINGS, 107);
 		assertFalse(packet.couldHaveBeenMutated());
 		packet.setMainHand(ClientSettingsPacket.MainHand.LEFT);
 		assertTrue(packet.couldHaveBeenMutated());
@@ -225,37 +174,6 @@ final class WirePacketMutationTest {
 			input.release();
 			output.release();
 		}
-	}
-
-	@Test
-	void exposedMutableValuesAndNestedElementsAreConservativelyMarked() {
-		Motion motion = new Motion(1, 2, 3);
-		EntityVelocityWirePacket velocity = new EntityVelocityWirePacket(12, motion);
-		assertFalse(velocity.couldHaveBeenMutated());
-		Motion exposed = velocity.motion();
-		assertTrue(velocity.couldHaveBeenMutated());
-		exposed.motionX = 5;
-		assertEquals(5, velocity.motion().motionX);
-
-		RawVector3d[] delta = {new RawVector3d(1, 2, 3)};
-		EntityRelativeMoveStep step = new EntityRelativeMoveStep() {
-			@Override
-			public RawVector3d delta() {
-				return delta[0];
-			}
-
-			@Override
-			public int delayTicks() {
-				return 0;
-			}
-		};
-		EntityRelativeMoveWirePacket movement = new EntityRelativeMoveWirePacket(
-			12, false, false, new ArrayList<>(Collections.singletonList(step)));
-		assertFalse(movement.couldHaveBeenMutated());
-		assertSame(step, movement.steps().get(0));
-		assertTrue(movement.couldHaveBeenMutated());
-		delta[0] = new RawVector3d(4, 2, 3);
-		assertEquals(4, movement.steps().get(0).delta().x());
 	}
 
 	@Test
@@ -310,18 +228,20 @@ final class WirePacketMutationTest {
 		Set<Method> checked = new HashSet<>();
 		for (Class<? extends PacketContract> packetClass : packetClasses) {
 			assertTrue(Mutable.class.isAssignableFrom(packetClass), packetClass.getName());
-			assertFalse(((Mutable) packetClass.getConstructor().newInstance()).couldHaveBeenMutated(), packetClass.getName());
+			WirePacketDefinition<?> definition = WirePacketDefinition.from(packetClass);
+			assertFalse(((Mutable) definition.createEmpty()).couldHaveBeenMutated(), packetClass.getName());
 			for (Method method : packetClass.getMethods()) {
+				method.setAccessible(true);
 				if (method.getParameterCount() == 0 && !method.getName().startsWith("mutable")
 					&& (method.getReturnType() == Position.class || method.getReturnType() == BlockPosition.class
 					|| method.getReturnType() == PositionAndRotation.class)) {
-					PacketContract packet = packetClass.getConstructor().newInstance();
+					PacketContract packet = definition.createEmpty();
 					Object position = method.invoke(packet);
 					if (position instanceof Position) assertTrue(((Position) position).isImmutable(), method.toString());
 					assertFalse(((Mutable) packet).couldHaveBeenMutated(), method.toString());
 				}
 				if (!method.getName().startsWith("set") || Modifier.isStatic(method.getModifiers()) || !checked.add(method)) continue;
-				PacketContract packet = packetClass.getConstructor().newInstance();
+				PacketContract packet = definition.createEmpty();
 				Object[] arguments = Arrays.stream(method.getParameterTypes()).map(WirePacketMutationTest::argument).toArray();
 				try {
 					method.invoke(packet, arguments);

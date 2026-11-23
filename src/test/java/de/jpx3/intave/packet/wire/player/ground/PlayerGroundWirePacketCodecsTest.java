@@ -21,10 +21,10 @@ import static org.junit.jupiter.api.Assertions.*;
 final class PlayerGroundWirePacketCodecsTest {
 	@Test
 	void modernMovementRetainsHorizontalCollision() {
-		PlayerGroundWirePacket packet = roundTrip(SERVERBOUND, PacketType.Client.FLYING, 768, b -> b.writeByte(3));
+		PlayerGroundWirePacket.Base packet = roundTrip(SERVERBOUND, PacketType.Client.FLYING, 768, b -> b.writeByte(3));
 		assertTrue(packet.onGround());
 		assertTrue(packet.horizontalCollision());
-		PlayerGroundWirePacket legacy = roundTrip(SERVERBOUND, PacketType.Client.FLYING, 767, b -> b.writeByte(1));
+		PlayerGroundWirePacket.Base legacy = roundTrip(SERVERBOUND, PacketType.Client.FLYING, 767, b -> b.writeByte(1));
 		assertNull(legacy.horizontalCollision());
 	}
 
@@ -32,6 +32,6 @@ final class PlayerGroundWirePacketCodecsTest {
 	void olderVariantsRejectFieldsTheirFormatCannotEncode() {
 		assertThrows(
 				IllegalStateException.class,
-				() -> new PlayerGroundOnGroundOnlyWirePacket().setHorizontalCollision(true));
+				() -> new PlayerGroundWirePacket.Protocol47().setHorizontalCollision(true));
 	}
 }

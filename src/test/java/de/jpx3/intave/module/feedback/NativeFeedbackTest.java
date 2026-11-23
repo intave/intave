@@ -12,26 +12,25 @@
 package de.jpx3.intave.module.feedback;
 
 import com.viaversion.nbt.tag.StringTag;
-import de.jpx3.intave.adapter.MinecraftVersion;
-import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.block.cache.BlockCache;
 import de.jpx3.intave.block.shape.BlockShapes;
 import de.jpx3.intave.block.type.BlockTypeAccess;
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.command.stages.BaseStage;
-import de.jpx3.intave.module.Module;
-import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.dispatch.MovementDispatcher;
 import de.jpx3.intave.module.linker.packetperfect.PacketPerfectSubscriptionLinker;
-import de.jpx3.intave.module.test.PhysicsTestRecorder;
 import de.jpx3.intave.module.tracker.player.InventoryTracker;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.PacketDirection;
 import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.TypedPacketContract;
-import de.jpx3.intave.packet.contract.immutable.*;
+import de.jpx3.intave.packet.contract.immutable.BundleDelimiterPacket;
+import de.jpx3.intave.packet.contract.immutable.MotionUpdate;
+import de.jpx3.intave.packet.contract.immutable.OpenScreenPacket;
+import de.jpx3.intave.packet.contract.immutable.RespawnPacket;
 import de.jpx3.intave.packet.contract.mutable.MutableClientCommandPacket;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityVelocityPacket;
+import de.jpx3.intave.packet.contract.mutable.MutableExplosionPacket;
 import de.jpx3.intave.packet.contract.mutable.MutableWindowClosePacket;
 import de.jpx3.intave.packet.event.PacketEventBus;
 import de.jpx3.intave.packet.event.PacketReceiveEvent;
@@ -40,14 +39,7 @@ import de.jpx3.intave.packet.event.PacketSubscription;
 import de.jpx3.intave.packet.injection.Binding;
 import de.jpx3.intave.packet.wire.WirePackets;
 import de.jpx3.intave.packet.wire.connection.handshake.HandshakeWirePacket;
-import de.jpx3.intave.packet.wire.connection.keepalive.KeepAliveWirePacket;
 import de.jpx3.intave.packet.wire.connection.pong.PongWirePacket;
-import de.jpx3.intave.packet.wire.entity.velocity.EntityVelocityWirePacket;
-import de.jpx3.intave.packet.wire.window.open.JsonOpenScreenWirePacket;
-import de.jpx3.intave.packet.wire.window.open.LegacyOpenScreenWirePacket;
-import de.jpx3.intave.packet.wire.window.open.NbtOpenScreenWirePacket;
-import de.jpx3.intave.packet.wire.window.transaction.TransactionWirePacket;
-import de.jpx3.intave.packet.wire.world.explosion.ExplosionWirePacket;
 import de.jpx3.intave.registry.PacketTypeRegistries;
 import de.jpx3.intave.share.BlockCacheEntry;
 import de.jpx3.intave.share.ClientCommand;
@@ -64,39 +56,22 @@ import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.Test;
-import sun.reflect.ReflectionFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static de.jpx3.intave.module.feedback.NativeFeedbackTestSupport.acknowledgement;
+import static de.jpx3.intave.packet.wire.WirePacketTestSupport.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NativeFeedbackTest {
 	@Test
-	@SuppressWarnings("unchecked")
 	void nativeFeedbackSynchronizesPacketsAndConsumesOnlyItsOwnAcknowledgements() throws Exception {
-		Field version = MinecraftVersion.class.getDeclaredField("currentVersion");
-		version.setAccessible(true);
-		MinecraftVersion previousVersion = (MinecraftVersion) version.get(null);
-		MinecraftVersion.setCurrent(MinecraftVersions.VER26_3);
-		Field poolField = Modules.class.getDeclaredField("pool");
-		poolField.setAccessible(true);
-		Object pool = poolField.get(null);
-		Field mappings = pool.getClass().getDeclaredField("moduleClassMappings");
-		mappings.setAccessible(true);
-		Map<Class<? extends Module>, Module> modules = (Map<Class<? extends Module>, Module>) mappings.get(pool);
-		Map<Class<? extends Module>, Module> savedModules = new HashMap<>(modules);
-		modules.put(FeedbackAnalysis.class, new FeedbackAnalysis());
-		modules.put(PhysicsTestRecorder.class, new PhysicsTestRecorder());
-		PacketPerfectSubscriptionLinker linker = new PacketPerfectSubscriptionLinker();
-		FeedbackReceiver receiver = (FeedbackReceiver) ReflectionFactory.getReflectionFactory()
-			.newConstructorForSerialization(FeedbackReceiver.class, Object.class.getConstructor()).newInstance();
-		linker.linkSubscriptionsIn(receiver);
-		try {
-			FeedbackSender sender = new FeedbackSender();
-			modules.put(FeedbackSender.class, sender);
+		try (NativeFeedbackTestSupport feedback = new NativeFeedbackTestSupport()) {
+			PacketPerfectSubscriptionLinker linker = feedback.linker;
+			FeedbackSender sender = feedback.sender;
 			for (int protocol : new int[]{47, 755, 761, 762, 764, 765, 766, 767, 768, 773, 776, 777}) {
 				UUID uuid = UUID.randomUUID();
 				Player player = (Player) Proxy.newProxyInstance(Player.class.getClassLoader(), new Class<?>[]{Player.class}, (proxy, method, args) -> {
@@ -152,7 +127,7 @@ class NativeFeedbackTest {
 						assertTrue(messages.isEmpty());
 					}
 					List<String> callbacks = new ArrayList<>();
-					PacketSendEvent event = new PacketSendEvent(user, PacketType.Server.ENTITY_VELOCITY, new EntityVelocityWirePacket(1, new Motion()));
+					PacketSendEvent event = new PacketSendEvent(user, PacketType.Server.ENTITY_VELOCITY, entityVelocity(1, new Motion()));
 					sender.doubleSynchronize(user, event, () -> callbacks.add("before"), () -> callbacks.add("after"));
 					List<TypedPacketContract> batch = dispatchFeedbackGroup(event);
 					assertEquals(3, batch.size());
@@ -173,7 +148,7 @@ class NativeFeedbackTest {
 						velocity.setEntityId(1);
 						velocity.setMotion(new Motion(0.125, 0.25, -0.5));
 						verifyMotionFeedback(user, velocity.typedTo(PacketType.Server.ENTITY_VELOCITY));
-						ExplosionWirePacket explosion = WirePackets.createPlayPacket(PacketType.Server.EXPLOSION, protocol);
+						MutableExplosionPacket explosion = WirePackets.createPlayPacket(PacketType.Server.EXPLOSION, protocol);
 						explosion.setDefaultEffects(protocol);
 						explosion.setMotion(new Motion(0, -1, 0));
 						verifyMotionFeedback(user, explosion.typedTo(PacketType.Server.EXPLOSION));
@@ -201,11 +176,6 @@ class NativeFeedbackTest {
 					UserRepository.unregisterUser(player);
 				}
 			}
-		} finally {
-			linker.disable();
-			modules.clear();
-			modules.putAll(savedModules);
-			version.set(null, previousVersion);
 		}
 	}
 
@@ -306,14 +276,19 @@ class NativeFeedbackTest {
 	private static void verifyInventoryOpenPackets(User user, AtomicReference<BlockCacheEntry> occupiedBlock) {
 		int protocol = user.protocolVersion();
 		OpenScreenPacket ordinary = WirePackets.createPlayPacket(PacketType.Server.OPEN_WINDOW, protocol);
-		OpenScreenPacket beacon;
-		if (protocol < 477) {
-			beacon = new LegacyOpenScreenWirePacket(1, "minecraft:beacon", "\"Custom\"", 1, OptionalInt.empty());
-		} else if (protocol < 765) {
-			beacon = new JsonOpenScreenWirePacket(1, 8, "\"Custom\"");
-		} else {
-			beacon = new NbtOpenScreenWirePacket(1, 9, new StringTag("Custom"));
-		}
+		OpenScreenPacket beacon = roundTrip(PacketDirection.CLIENTBOUND, PacketType.Server.OPEN_WINDOW, protocol, output -> {
+			if (protocol < 477) {
+				output.writeByte(1);
+				ByteBufStreamCodecs.VARINT_STRING.encode(output, "minecraft:beacon");
+				ByteBufStreamCodecs.VARINT_STRING.encode(output, "\"Custom\"");
+				output.writeByte(1);
+			} else {
+				ByteBufStreamCodecs.VARINT.encode(output, 1);
+				ByteBufStreamCodecs.VARINT.encode(output, protocol < 765 ? 8 : 9);
+				if (protocol < 765) ByteBufStreamCodecs.VARINT_STRING.encode(output, "\"Custom\"");
+				else ByteBufStreamCodecs.TRUSTED_TAG.encode(output, new StringTag("Custom"));
+			}
+		});
 		InventoryMetadata inventory = user.meta().inventory();
 		for (OpenScreenPacket packet : new OpenScreenPacket[]{ordinary, beacon}) {
 			inventory.updateInventoryOpenState(false);
@@ -387,7 +362,7 @@ class NativeFeedbackTest {
 			assertEquals(ConnectionState.PLAY, binding.connectionState());
 
 			TypedPacketContract boundary = WirePackets.createPlayPacket(delimiter, protocol).typedTo(delimiter);
-			TypedPacketContract payload = new KeepAliveWirePacket(123).typedTo(target);
+			TypedPacketContract payload = keepAlive(123).typedTo(target);
 			List<PacketType.Server> expectedPackets = doubleSync
 				? List.of(delimiter, ping, target, ping, delimiter)
 				: List.of(delimiter, target, ping, delimiter);
@@ -465,14 +440,6 @@ class NativeFeedbackTest {
 		assertEquals(0, user.meta().connection().feedbackQueue().size());
 	}
 
-	private static PacketReceiveEvent acknowledgement(User user, TypedPacketContract packet) {
-		if (packet.type() == PacketType.Server.PING) {
-			return new PacketReceiveEvent(user, PacketType.Client.PONG, new PongWirePacket(((PingPacket) packet.contract()).id()));
-		}
-		assertEquals(PacketType.Server.TRANSACTION_OUT, packet.type());
-		return new PacketReceiveEvent(user, PacketType.Client.TRANSACTION_IN,
-			new TransactionWirePacket(0, ((TransactionPacket) packet.contract()).actionNumber(), true));
-	}
 
 	private static void verifyWireMotion(User user, TypedPacketContract packet, boolean nativeSend) throws Exception {
 		EmbeddedChannel channel = new EmbeddedChannel();

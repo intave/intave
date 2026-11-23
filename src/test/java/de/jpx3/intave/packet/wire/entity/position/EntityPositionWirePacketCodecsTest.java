@@ -23,7 +23,7 @@ final class EntityPositionWirePacketCodecsTest {
 	@Test
 	void entityTeleportsPreserveRotationMotionAndRelativeFlags() {
 		for (int protocol : new int[] {47, 107, 768}) {
-			EntityPositionDoublePositionWirePacket packet =
+			EntityPositionWirePacket.Base packet =
 					roundTrip(
 							CLIENTBOUND,
 							PacketType.Server.ENTITY_TELEPORT,

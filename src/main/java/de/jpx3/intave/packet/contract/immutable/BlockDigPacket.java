@@ -15,6 +15,7 @@ import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.PacketContract;
 import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.Direction;
 import de.jpx3.intave.share.PlayerDigAction;
 
@@ -34,6 +35,10 @@ public interface BlockDigPacket extends PacketContract, BlockAddressed {
 
 	default boolean hasDirection() {
 		return direction() != null;
+	}
+
+	default boolean isCanonicalItemUseRelease() {
+		return BlockPosition.ORIGIN.equals(blockPosition()) && direction() == Direction.DOWN;
 	}
 
 	@Override

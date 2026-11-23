@@ -21,87 +21,152 @@ import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
 import io.netty.buffer.ByteBuf;
 
-public class VehicleMoveWirePacket extends AbstractMutable implements MutablePlayerMovePacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, VehicleMoveWirePacket> STREAM_CODEC =
-		StreamCodec.compound(
-			Position.STREAM_CODEC, VehicleMoveWirePacket::position,
-			Rotation.STREAM_CODEC, VehicleMoveWirePacket::rotation,
-			ByteBufStreamCodecs.BOOLEAN, VehicleMoveWirePacket::onGround,
-			VehicleMoveWirePacket::new
-		);
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-	protected Position position;
-	protected Rotation rotation;
-	protected boolean onGround;
-
-	public VehicleMoveWirePacket() {
-		this(new Position(), new Rotation(0, 0), false);
+public final class VehicleMoveWirePacket {
+	private VehicleMoveWirePacket() {
 	}
 
-	public VehicleMoveWirePacket(Position position, Rotation rotation, boolean onGround) {
-		this.position = position;
-		this.rotation = rotation;
-		this.onGround = onGround;
+	public static List<Class<?>> registeredClasses() {
+		return Collections.unmodifiableList(Arrays.<Class<?>>asList(
+			Protocol107.class,
+			Protocol769.class
+		));
 	}
 
-	@Override
-	public Position position() {
-		if (position != null && !position.isImmutable()) markMutated();
-		return this.position;
+	static abstract class Base extends AbstractMutable implements MutablePlayerMovePacket {
+		protected Position position;
+		protected Rotation rotation;
+		protected boolean onGround;
+
+		protected Base() {
+			this(new Position(), new Rotation(0, 0), false);
+		}
+
+		protected Base(Position position, Rotation rotation, boolean onGround) {
+			this.position = position;
+			this.rotation = rotation;
+			this.onGround = onGround;
+		}
+
+		@Override
+		public Position position() {
+			if (position != null && !position.isImmutable()) markMutated();
+			return this.position;
+		}
+
+		@Override
+		public void setPosition(Position value) {
+			markMutated();
+			this.position = value;
+		}
+
+		@Override
+		public Rotation rotation() {
+			markMutated();
+			return this.rotation;
+		}
+
+		@Override
+		public void setRotation(Rotation value) {
+			markMutated();
+			this.rotation = value;
+		}
+
+		@Override
+		public boolean appliesTo(ConnectionState state, PacketType type) {
+			return state == ConnectionState.PLAY && type == PacketType.Client.VEHICLE_MOVE;
+		}
+
+		@Override
+		public boolean isVehicleMove() {
+			return true;
+		}
+
+		@Override
+		public abstract Boolean onGround();
+
+		@Override
+		public Boolean horizontalCollision() {
+			return null;
+		}
+
+		@Override
+		public abstract void setOnGround(boolean value);
+
+		@Override
+		public void setHorizontalCollision(boolean value) {
+			markMutated();
+			throw new IllegalStateException("Vehicle packets have no horizontal collision flag");
+		}
 	}
 
-	@Override
-	public void setPosition(Position value) {
-		markMutated();
-		this.position = value;
+	static final class Protocol107 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol107> STREAM_CODEC =
+			StreamCodec.compound(
+				Position.STREAM_CODEC, Base::position,
+				Rotation.STREAM_CODEC, Base::rotation,
+				Protocol107::new
+			);
+
+		public Protocol107() {
+			super();
+		}
+
+		public Protocol107(Position position, Rotation rotation) {
+			super(position, rotation, false);
+		}
+
+		@Override
+		public Boolean onGround() {
+			return null;
+		}
+
+		@Override
+		public void setOnGround(boolean value) {
+			markMutated();
+			throw new IllegalStateException("No ground flag before 1.21.4");
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 107 && protocolVersion < 769;
+		}
 	}
 
-	@Override
-	public Rotation rotation() {
-		markMutated();
-		return this.rotation;
-	}
+	static final class Protocol769 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol769> STREAM_CODEC =
+			StreamCodec.compound(
+				Position.STREAM_CODEC, Protocol769::position,
+				Rotation.STREAM_CODEC, Protocol769::rotation,
+				ByteBufStreamCodecs.BOOLEAN, Protocol769::onGround,
+				Protocol769::new
+			);
 
-	@Override
-	public void setRotation(Rotation value) {
-		markMutated();
-		this.rotation = value;
-	}
+		public Protocol769() {
+			super();
+		}
 
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketType type) {
-		return state == ConnectionState.PLAY && type == PacketType.Client.VEHICLE_MOVE;
-	}
+		public Protocol769(Position position, Rotation rotation, boolean onGround) {
+			super(position, rotation, onGround);
+		}
 
-	@Override
-	public boolean appliesTo(int protocolVersion) {
-		return protocolVersion >= 769;
-	}
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 769;
+		}
 
-	@Override
-	public boolean isVehicleMove() {
-		return true;
-	}
+		@Override
+		public Boolean onGround() {
+			return onGround;
+		}
 
-	@Override
-	public Boolean onGround() {
-		return onGround;
-	}
-
-	@Override
-	public Boolean horizontalCollision() {
-		return null;
-	}
-
-	@Override
-	public void setOnGround(boolean value) {
-		markMutated();
-		onGround = value;
-	}
-
-	@Override
-	public void setHorizontalCollision(boolean value) {
-		markMutated();
-		throw new IllegalStateException("Vehicle packets have no horizontal collision flag");
+		@Override
+		public void setOnGround(boolean value) {
+			markMutated();
+			onGround = value;
+		}
 	}
 }

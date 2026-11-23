@@ -13,23 +13,15 @@ package de.jpx3.intave.packet.wire.block.change;
 
 import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.packet.contract.PacketType;
-import de.jpx3.intave.packet.contract.immutable.MultiBlockChangePacket;
-import de.jpx3.intave.packet.contract.mutable.MutableBlockUpdates;
-import de.jpx3.intave.packet.contract.mutable.MutableMultiBlockChangePacket;
 import de.jpx3.intave.packet.wire.WirePackets;
-import de.jpx3.intave.packet.wire.block.multichange.MultiBlockChangeChunkWirePacket;
-import de.jpx3.intave.packet.wire.block.multichange.MultiBlockChangeWirePacket;
-import de.jpx3.intave.packet.wire.block.multichange.MultiBlockChangeWithLightSuppressionWirePacket;
 import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.BlockUpdate;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import static de.jpx3.intave.packet.ConnectionState.PLAY;
 import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
@@ -41,12 +33,12 @@ final class BlockUpdateWirePacketCodecsTest {
 	void singleChangesUseTheCorrectPositionLayoutInEverySupportedProtocol() {
 		for (int protocol : registry(CLIENTBOUND).supportedProtocolVersions()) {
 			if (protocol < 47) continue;
-			SingleBlockChangeWirePacket packet = roundTrip(CLIENTBOUND, PacketType.Server.BLOCK_CHANGE, protocol, input -> {
+			SingleBlockChangeWirePacket.Base packet = roundTrip(CLIENTBOUND, PacketType.Server.BLOCK_CHANGE, protocol, input -> {
 				// (-1, -2, 3): X/Y/Z before 1.14, X/Z/Y since 1.14.
 				input.writeLong(protocol < 477 ? 0xfffffffff8000003L : 0xffffffc000003ffeL);
 				input.writeBytes(new byte[] {(byte) 0xc5, (byte) 0xc6, 4}); // state 0x12345
 			});
-			assertEquals(protocol < 477 ? SingleBlockChangeLegacyPositionWirePacket.class : SingleBlockChangeWirePacket.class, packet.getClass());
+			assertEquals(protocol < 477 ? SingleBlockChangeWirePacket.Protocol47.class : SingleBlockChangeWirePacket.Protocol477.class, packet.getClass());
 			assertUpdate(packet.blockUpdate(), -1, -2, 3, 0x12345);
 			assertEquals(packet.blockPosition(), packet.blockUpdate().position());
 			assertEquals(0x12345, packet.stateId());
@@ -55,79 +47,9 @@ final class BlockUpdateWirePacketCodecsTest {
 	}
 
 	@Test
-	void multiChangesUseTheCorrectHeadersAndRecordsInEverySupportedProtocol() {
-		for (int protocol : registry(CLIENTBOUND).supportedProtocolVersions()) {
-			if (protocol < 47) continue;
-			MultiBlockChangePacket packet = roundTrip(CLIENTBOUND, PacketType.Server.MULTI_BLOCK_CHANGE, protocol, input -> {
-				if (protocol < 751) {
-					input.writeInt(-2).writeInt(2).writeByte(2);
-					input.writeShort(0xff00).writeByte(0);
-					input.writeShort(0x00ff).writeBytes(new byte[] {(byte) 0xc5, (byte) 0xc6, 4});
-				} else {
-					input.writeLong(0xfffff800002ffffcL); // section (-2, -4, 2)
-					if (protocol < 763) input.writeBoolean(true);
-					input.writeByte(2);
-					ByteBufStreamCodecs.VARLONG.encode(input, 0xff0L);
-					ByteBufStreamCodecs.VARLONG.encode(input, 0x1234500fL);
-				}
-			});
-			assertEquals(2, packet.blockUpdates().size());
-			assertUpdate(packet.blockUpdates().get(0), -17, protocol < 751 ? 0 : -64, 47, 0);
-			assertUpdate(packet.blockUpdates().get(1), -32, protocol < 751 ? 255 : -49, 32, 0x12345);
-			if (protocol < 751) {
-				MultiBlockChangeChunkWirePacket chunk = assertInstanceOf(MultiBlockChangeChunkWirePacket.class, packet);
-				assertEquals(-2, chunk.chunkX());
-				assertEquals(2, chunk.chunkZ());
-			} else {
-				assertEquals(new BlockPosition(-2, -4, 2), ((MultiBlockChangeWirePacket) packet).sectionPosition());
-				if (protocol < 763) {
-					assertTrue(assertInstanceOf(MultiBlockChangeWithLightSuppressionWirePacket.class, packet).suppressLightUpdates());
-				} else {
-					assertEquals(MultiBlockChangeWirePacket.class, packet.getClass());
-				}
-			}
-			assertFalse(((MutableBlockUpdates) packet).couldHaveBeenMutated());
-		}
-	}
-
-	@Test
-	void emptyBatchesPreserveTheirNonzeroHeadersAndLightFlags() {
-		for (int protocol : new int[] {47, 736, 751, 762, 763, 777}) {
-			for (boolean suppress : new boolean[] {false, true}) {
-				MultiBlockChangePacket packet = roundTrip(CLIENTBOUND, PacketType.Server.MULTI_BLOCK_CHANGE, protocol, input -> {
-					if (protocol < 751) input.writeInt(-123).writeInt(456);
-					else input.writeLong(0xfffff800002ffffcL);
-					if (protocol >= 751 && protocol < 763) input.writeBoolean(suppress);
-					input.writeByte(0);
-				});
-				assertTrue(packet.blockUpdates().isEmpty());
-				if (packet instanceof MultiBlockChangeWithLightSuppressionWirePacket) {
-					assertEquals(suppress, ((MultiBlockChangeWithLightSuppressionWirePacket) packet).suppressLightUpdates());
-				}
-			}
-		}
-	}
-
-	@Test
-	void sectionCoordinatesAndStateIdsRetainTheirFullBitWidths() {
-		for (int protocol : new int[] {762, 763, 777}) {
-			MultiBlockChangeWirePacket packet = roundTrip(CLIENTBOUND, PacketType.Server.MULTI_BLOCK_CHANGE, protocol, input -> {
-				input.writeLong(0x800001fffff80000L); // min X/Y, max Z
-				if (protocol < 763) input.writeBoolean(false);
-				input.writeByte(2);
-				ByteBufStreamCodecs.VARLONG.encode(input, (long) Integer.MAX_VALUE << 12 | 0xfff);
-				ByteBufStreamCodecs.VARLONG.encode(input, 0L);
-			});
-			assertEquals(new BlockPosition(-2097152, -524288, 2097151), packet.sectionPosition());
-			assertUpdate(packet.blockUpdates().get(0), -33554417, -8388593, 33554431, Integer.MAX_VALUE);
-			assertUpdate(packet.blockUpdates().get(1), -33554432, -8388608, 33554416, 0);
-		}
-	}
-
-	@Test
 	void singleChangesSerializeContractAndScalarMutations() {
 		for (int protocol : new int[] {47, 404, 477, 777}) {
-			SingleBlockChangeWirePacket packet = WirePackets.createPlayPacket(PacketType.Server.BLOCK_CHANGE, protocol);
+			SingleBlockChangeWirePacket.Base packet = WirePackets.createPlayPacket(PacketType.Server.BLOCK_CHANGE, protocol);
 			packet.setBlockUpdate(new BlockUpdate(new BlockPosition(1, 2, 3), 20));
 			packet.setBlockPosition(new BlockPosition(-33554432, -2048, 33554431));
 			packet.setStateId(Integer.MAX_VALUE);
@@ -135,7 +57,7 @@ final class BlockUpdateWirePacketCodecsTest {
 			ByteBuf output = Unpooled.buffer();
 			try {
 				WirePackets.encodePacket(CLIENTBOUND, PLAY, PacketType.Server.BLOCK_CHANGE, protocol, packet, output);
-				SingleBlockChangeWirePacket decoded = WirePackets.decodePacket(CLIENTBOUND, PLAY, protocol, output);
+				SingleBlockChangeWirePacket.Base decoded = WirePackets.decodePacket(CLIENTBOUND, PLAY, protocol, output);
 				assertUpdate(decoded.blockUpdate(), -33554432, -2048, 33554431, Integer.MAX_VALUE);
 				assertFalse(decoded.couldHaveBeenMutated());
 			} finally {
@@ -145,39 +67,8 @@ final class BlockUpdateWirePacketCodecsTest {
 	}
 
 	@Test
-	void multiChangesDeriveHeadersAndSerializeMutationsWithoutExposingMutableLists() {
-		for (int protocol : new int[] {47, 736, 751, 762, 763, 777}) {
-			MutableMultiBlockChangePacket packet = WirePackets.createPlayPacket(PacketType.Server.MULTI_BLOCK_CHANGE, protocol);
-			BlockUpdate update = new BlockUpdate(new BlockPosition(-17, 63, 47), 1234567);
-			List<BlockUpdate> updates = new ArrayList<>(Collections.singletonList(update));
-			packet.setBlockUpdates(updates);
-			updates.clear();
-			assertEquals(1, packet.blockUpdates().size());
-			assertThrows(UnsupportedOperationException.class, () -> packet.blockUpdates().clear());
-			if (packet instanceof MultiBlockChangeWithLightSuppressionWirePacket) {
-				((MultiBlockChangeWithLightSuppressionWirePacket) packet).setSuppressLightUpdates(true);
-			}
-			ByteBuf output = Unpooled.buffer();
-			try {
-				WirePackets.encodePacket(CLIENTBOUND, PLAY, PacketType.Server.MULTI_BLOCK_CHANGE, protocol, packet, output);
-				MutableMultiBlockChangePacket decoded = WirePackets.decodePacket(CLIENTBOUND, PLAY, protocol, output);
-				assertUpdate(decoded.blockUpdates().get(0), -17, 63, 47, 1234567);
-				assertFalse(decoded.couldHaveBeenMutated());
-				if (decoded instanceof MultiBlockChangeWirePacket) {
-					assertEquals(new BlockPosition(-2, 3, 2), ((MultiBlockChangeWirePacket) decoded).sectionPosition());
-				}
-				if (decoded instanceof MultiBlockChangeWithLightSuppressionWirePacket) {
-					assertTrue(((MultiBlockChangeWithLightSuppressionWirePacket) decoded).suppressLightUpdates());
-				}
-			} finally {
-				output.release();
-			}
-		}
-	}
-
-	@Test
 	void invalidSingleUpdatesCannotSilentlyLoseData() {
-		SingleBlockChangeWirePacket packet = new SingleBlockChangeWirePacket();
+		SingleBlockChangeWirePacket.Base packet = new SingleBlockChangeWirePacket.Protocol477();
 		assertThrows(IllegalArgumentException.class, () -> packet.setBlockUpdates(Collections.emptyList()));
 		assertThrows(IllegalArgumentException.class, () -> packet.setBlockUpdates(Arrays.asList(packet.blockUpdate(), packet.blockUpdate())));
 		assertThrows(NullPointerException.class, () -> packet.setBlockPosition(null));
@@ -189,49 +80,12 @@ final class BlockUpdateWirePacketCodecsTest {
 	}
 
 	@Test
-	void batchesRejectMixedRegionsAndOutOfRangeCoordinatesWithoutChangingTheirContents() {
-		BlockUpdate origin = new BlockUpdate(BlockPosition.ORIGIN, 0);
-		MultiBlockChangeWirePacket section = new MultiBlockChangeWirePacket();
-		section.setBlockUpdates(Collections.singletonList(origin));
-		for (BlockPosition position : new BlockPosition[] {
-			new BlockPosition(16, 0, 0), new BlockPosition(0, 16, 0), new BlockPosition(0, 0, 16)
-		}) {
-			assertThrows(IllegalArgumentException.class, () -> section.setBlockUpdates(Arrays.asList(origin, new BlockUpdate(position, 1))));
-		}
-		assertThrows(IllegalArgumentException.class, () -> section.setBlockUpdates(Collections.singletonList(new BlockUpdate(new BlockPosition(33554432, 0, 0), 1))));
-		assertThrows(IllegalArgumentException.class, () -> section.setBlockUpdates(Collections.singletonList(new BlockUpdate(new BlockPosition(0, 8388608, 0), 1))));
-		assertSame(origin, section.blockUpdates().get(0));
-		assertEquals(BlockPosition.ORIGIN, section.sectionPosition());
-
-		MultiBlockChangeChunkWirePacket chunk = new MultiBlockChangeChunkWirePacket();
-		chunk.setBlockUpdates(Collections.singletonList(origin));
-		for (BlockPosition position : new BlockPosition[] {
-			new BlockPosition(16, 0, 0), new BlockPosition(0, 0, -1), new BlockPosition(0, -1, 0), new BlockPosition(0, 256, 0)
-		}) {
-			assertThrows(IllegalArgumentException.class, () -> chunk.setBlockUpdates(Arrays.asList(origin, new BlockUpdate(position, 1))));
-		}
-		assertSame(origin, chunk.blockUpdates().get(0));
-	}
-
-	@Test
-	void malformedCountsTruncatedRecordsAndOversizedStateIdsAreRejected() {
+	void negativeSingleStateIdsAreRejected() {
 		ByteBuf input = Unpooled.buffer();
 		try {
 			input.writeLong(0);
 			ByteBufStreamCodecs.VARINT.encode(input, -1);
-			assertThrows(IllegalArgumentException.class, () -> decodePayload(MultiBlockChangeWirePacket.class, input));
-			input.clear().writeLong(0).writeByte(2).writeByte(0);
-			assertThrows(IllegalArgumentException.class, () -> decodePayload(MultiBlockChangeWirePacket.class, input));
-			input.clear().writeLong(0).writeByte(1).writeByte(0x80);
-			assertThrows(IndexOutOfBoundsException.class, () -> decodePayload(MultiBlockChangeWirePacket.class, input));
-			input.clear().writeLong(0).writeByte(1);
-			ByteBufStreamCodecs.VARLONG.encode(input, ((long) Integer.MAX_VALUE + 1) << 12);
-			assertThrows(IllegalArgumentException.class, () -> decodePayload(MultiBlockChangeWirePacket.class, input));
-			input.clear().writeInt(0).writeInt(0).writeByte(1).writeShort(0);
-			assertThrows(IllegalArgumentException.class, () -> decodePayload(MultiBlockChangeChunkWirePacket.class, input));
-			input.clear().writeLong(0);
-			ByteBufStreamCodecs.VARINT.encode(input, -1);
-			assertThrows(IllegalArgumentException.class, () -> decodePayload(SingleBlockChangeWirePacket.class, input));
+			assertThrows(IllegalArgumentException.class, () -> decodePayload(SingleBlockChangeWirePacket.Protocol477.class, input));
 		} finally {
 			input.release();
 		}

@@ -13,14 +13,10 @@ package de.jpx3.intave.player.collider.complex;
 
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.check.movement.physics.environment.SimulationEnvironment;
 import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.share.Motion;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
 public final class SimulationResult {
@@ -35,8 +31,6 @@ public final class SimulationResult {
 
 	private final double yStepHeight;
 	private final Motion actualMotion;
-
-	private final Map<String, Double> debugData = IntaveControl.ENABLE_MOVEMENT_DEBUGGER_COLLECTOR ? new HashMap<>() : Collections.emptyMap();
 
 	private SimulationResult() {
 		this.offsetMotion = null;
@@ -164,18 +158,8 @@ public final class SimulationResult {
 		}
 	}
 
-	public void debugAttach(String key, double value) {
-		if (IntaveControl.ENABLE_MOVEMENT_DEBUGGER_COLLECTOR) {
-			debugData.put(key, value);
-		}
-	}
-
 	public boolean isValid() {
 		return this != INVALID_SIMULATION;
-	}
-
-	public Map<String, Double> debugData() {
-		return debugData;
 	}
 
 	@Override

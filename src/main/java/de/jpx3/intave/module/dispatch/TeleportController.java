@@ -30,13 +30,13 @@ import de.jpx3.intave.module.linker.packet.PacketSubscription;
 import de.jpx3.intave.module.nayoro.SampleTypes;
 import de.jpx3.intave.packet.contract.TypedPacketContract;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityVelocityPacket;
+import de.jpx3.intave.packet.contract.mutable.MutableExplosionPacket;
 import de.jpx3.intave.packet.plib.PacketSender;
 import de.jpx3.intave.packet.plib.reader.PacketReaders;
 import de.jpx3.intave.packet.plib.reader.PlayerMoveReader;
 import de.jpx3.intave.packet.plib.reader.PlayerTeleportReader;
 import de.jpx3.intave.packet.plib.reader.TeleportAcceptReader;
 import de.jpx3.intave.packet.wire.WirePackets;
-import de.jpx3.intave.packet.wire.world.explosion.ExplosionWirePacket;
 import de.jpx3.intave.player.ActionBar;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.MessageChannel;
@@ -470,7 +470,7 @@ public final class TeleportController implements PacketEventSubscriber {
 			return null;
 		}
 		if (additive) {
-			ExplosionWirePacket packet = WirePackets.createPlayPacket(Server.EXPLOSION, user.protocolVersion());
+			MutableExplosionPacket packet = WirePackets.createPlayPacket(Server.EXPLOSION, user.protocolVersion());
 			packet.setSilentDefaults(user.protocolVersion());
 			packet.setMotion(teleport.change().motion().copy());
 			return packet.typedTo(Server.EXPLOSION);

@@ -94,7 +94,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 import static de.jpx3.intave.IntaveControl.DEBUG_MOVEMENT_IGNORE;
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.*;
@@ -738,26 +737,6 @@ public final class MovementDispatcher extends Module {
     movement.tickComplete(hasMovement, hasRotation, true);
     abilities.tickComplete();
     inventory.tickComplete();
-
-    Map<String, Double> clientDebugData = movement.clientMovementDebugValues;
-    Map<String, Double> serverDebugData = movement.serverMovementDebugValues;
-    if (!clientDebugData.isEmpty() || !serverDebugData.isEmpty()) {
-      if (IntaveControl.MOVEMENT_DEBUGGER_COLLECTOR_POSTTICK_OUTPUT) {
-        String message = clientDebugData.entrySet().stream().map(entry -> {
-          String key1 = entry.getKey();
-          double value = entry.getValue();
-          return "C" + key1 + ":" + formatDouble(value, 4);
-        }).collect(Collectors.joining(" "));
-        message += " " + serverDebugData.entrySet().stream().map(entry -> {
-          String key1 = entry.getKey();
-          double value = entry.getValue();
-          return "S" + key1 + ":" + formatDouble(value, 4);
-        }).collect(Collectors.joining(" "));
-        user.sendMessage(message);
-      }
-      clientDebugData.clear();
-      serverDebugData.clear();
-    }
   }
 
   @OnReceive

@@ -11,9 +11,19 @@
 
 package de.jpx3.intave.packet.contract.immutable;
 
+import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.PacketContract;
+import de.jpx3.intave.packet.contract.PacketType;
+
+import static de.jpx3.intave.packet.ConnectionState.PLAY;
+import static de.jpx3.intave.packet.contract.PacketType.Server.ENTITY_EFFECT;
 
 public interface EntityEffectPacket extends PacketContract, EffectAddressed {
+	@Override
+	default boolean appliesTo(ConnectionState state, PacketType packetType) {
+		return state == PLAY && packetType == ENTITY_EFFECT;
+	}
+
 	int effectAmplifier();
 
 	int effectDuration();

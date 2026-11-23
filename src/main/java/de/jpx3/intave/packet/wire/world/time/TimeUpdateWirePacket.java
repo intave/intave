@@ -17,64 +17,135 @@ import de.jpx3.intave.packet.contract.mutable.MutableTimeUpdatePacket;
 import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class TimeUpdateWirePacket extends AbstractMutable implements MutableTimeUpdatePacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, TimeUpdateWirePacket> STREAM_CODEC =
-		StreamCodec.compound(
-			ByteBufStreamCodecs.LONG, TimeUpdateWirePacket::gameTime,
-			ByteBufStreamCodecs.LONG, TimeUpdateWirePacket::dayTime,
-			ByteBufStreamCodecs.BOOLEAN, TimeUpdateWirePacket::ticking,
-			TimeUpdateWirePacket::new
-		);
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-	protected long gameTime;
-	protected long dayTime;
-	protected boolean ticking;
-
-	public TimeUpdateWirePacket() {
-		this(0, 0, true);
+public final class TimeUpdateWirePacket {
+	private TimeUpdateWirePacket() {
 	}
 
-	public TimeUpdateWirePacket(long gameTime, long dayTime, boolean ticking) {
-		this.gameTime = gameTime;
-		this.dayTime = dayTime;
-		this.ticking = ticking;
+	public static List<Class<?>> registeredClasses() {
+		return Collections.unmodifiableList(Arrays.<Class<?>>asList(
+			Protocol47.class,
+			Protocol768.class
+		));
 	}
 
-	@Override
-	public long gameTime() {
-		return this.gameTime;
+	static abstract class Base extends AbstractMutable implements MutableTimeUpdatePacket {
+		protected long gameTime;
+		protected long dayTime;
+		protected boolean ticking;
+
+		protected Base() {
+			this(0, 0, true);
+		}
+
+		protected Base(long gameTime, long dayTime, boolean ticking) {
+			this.gameTime = gameTime;
+			this.dayTime = dayTime;
+			this.ticking = ticking;
+		}
+
+		@Override
+		public long gameTime() {
+			return this.gameTime;
+		}
+
+		@Override
+		public void setGameTime(long value) {
+			markMutated();
+			this.gameTime = value;
+		}
+
+		@Override
+		public long dayTime() {
+			return dayTime;
+		}
+
+		@Override
+		public abstract void setDayTime(long value);
+
+		@Override
+		public boolean ticking() {
+			return ticking;
+		}
+
+		@Override
+		public void setTicking(boolean value) {
+			markMutated();
+			ticking = value;
+		}
 	}
 
-	@Override
-	public void setGameTime(long value) {
-		markMutated();
-		this.gameTime = value;
+	static final class Protocol47 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol47> STREAM_CODEC =
+			StreamCodec.of((output, packet) -> {
+			output.writeLong(packet.gameTime);
+			// Legacy clients observe frozen zero as tick 1, encoded using the
+			// -1 sentinel.
+			long wireTime = !packet.ticking ? (packet.dayTime == 0 ? -1 : -packet.dayTime) : packet.dayTime;
+			output.writeLong(wireTime);
+		}, input -> {
+			long gameTime = input.readLong();
+			long wireTime = input.readLong();
+			if (wireTime == Long.MIN_VALUE) {
+				throw new IllegalArgumentException("Legacy day time magnitude exceeds Long.MAX_VALUE");
+			}
+			long dayTime = Math.abs(wireTime);
+			boolean ticking = wireTime >= 0;
+			return new Protocol47(gameTime, dayTime, ticking);
+		});
+
+		public Protocol47() {
+			super();
+		}
+
+		public Protocol47(long gameTime, long dayTime, boolean ticking) {
+			super(gameTime, dayTime, ticking);
+		}
+
+		@Override
+		public void setDayTime(long value) {
+			markMutated();
+			if (value < 0) {
+				throw new IllegalArgumentException("Legacy day time must be nonnegative; use setTicking to freeze it");
+			}
+			dayTime = value;
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 47 && protocolVersion < 768;
+		}
 	}
 
-	@Override
-	public boolean appliesTo(int protocolVersion) {
-		return protocolVersion >= 768 && protocolVersion < 775;
-	}
+	static final class Protocol768 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol768> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.LONG, Protocol768::gameTime,
+				ByteBufStreamCodecs.LONG, Protocol768::dayTime,
+				ByteBufStreamCodecs.BOOLEAN, Protocol768::ticking,
+				Protocol768::new
+			);
 
-	@Override
-	public long dayTime() {
-		return dayTime;
-	}
+		public Protocol768() {
+			super();
+		}
 
-	@Override
-	public void setDayTime(long value) {
-		markMutated();
-		dayTime = value;
-	}
+		public Protocol768(long gameTime, long dayTime, boolean ticking) {
+			super(gameTime, dayTime, ticking);
+		}
 
-	@Override
-	public boolean ticking() {
-		return ticking;
-	}
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 768 && protocolVersion < 775;
+		}
 
-	@Override
-	public void setTicking(boolean value) {
-		markMutated();
-		ticking = value;
+		@Override
+		public void setDayTime(long value) {
+			markMutated();
+			dayTime = value;
+		}
 	}
 }

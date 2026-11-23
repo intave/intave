@@ -22,7 +22,7 @@ final class EntityDestroyWirePacketCodecsTest {
 	@Test
 	void entityRemovalUsesSingleIdOnlyInOneSeventeen() {
 		for (int protocol : new int[] {754, 755, 756}) {
-			EntityDestroyWirePacket packet =
+			EntityDestroyWirePacket.Base packet =
 					roundTrip(
 							CLIENTBOUND,
 							PacketType.Server.ENTITY_DESTROY,

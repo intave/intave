@@ -29,11 +29,11 @@ import static org.junit.jupiter.api.Assertions.*;
 final class EntityPositionWirePacketTest {
 	@Test
 	void legacyTeleportsExposeRotationAndGroundState() {
-		verifyLegacy(EntityPositionFixedPointWirePacket.STREAM_CODEC, true);
-		verifyLegacy(EntityPositionDoublePositionWirePacket.STREAM_CODEC, false);
+		verifyLegacy(EntityPositionWirePacket.Protocol47.STREAM_CODEC, true);
+		verifyLegacy(EntityPositionWirePacket.Protocol107.STREAM_CODEC, false);
 	}
 
-	private static <T extends EntityPositionDoublePositionWirePacket> void verifyLegacy(
+	private static <T extends EntityPositionWirePacket.Base> void verifyLegacy(
 		StreamCodec<ByteBuf, ByteBuf, T> codec, boolean fixedPoint
 	) {
 		T packet = roundTrip(codec, buffer -> {
@@ -57,7 +57,7 @@ final class EntityPositionWirePacketTest {
 
 	@Test
 	void modernTeleportPreservesMotionRotationFlagsAndGroundWhenPositionChanges() {
-		EntityPositionWirePacket packet = roundTrip(EntityPositionWirePacket.STREAM_CODEC, buffer ->
+		EntityPositionWirePacket.Protocol768 packet = roundTrip(EntityPositionWirePacket.Protocol768.STREAM_CODEC, buffer ->
 			buffer.writeByte(42).writeDouble(1).writeDouble(2).writeDouble(3)
 				.writeDouble(0.1).writeDouble(-0.2).writeDouble(0.3)
 				.writeFloat(-90.5f).writeFloat(45.25f).writeInt(329).writeBoolean(true));
@@ -66,7 +66,7 @@ final class EntityPositionWirePacketTest {
 		assertEquals(EnumSet.of(Relative.X, Relative.Y_ROT, Relative.DELTA_Y, Relative.ROTATE_DELTA), packet.flags());
 		assertTrue(packet.onGround());
 		packet.setPosition(new Position(4, 5, 6));
-		assertEncoding(EntityPositionWirePacket.STREAM_CODEC, packet, buffer ->
+		assertEncoding(EntityPositionWirePacket.Protocol768.STREAM_CODEC, packet, buffer ->
 			buffer.writeByte(42).writeDouble(4).writeDouble(5).writeDouble(6)
 				.writeDouble(0.1).writeDouble(-0.2).writeDouble(0.3)
 				.writeFloat(-90.5f).writeFloat(45.25f).writeInt(329).writeBoolean(true));
@@ -74,8 +74,8 @@ final class EntityPositionWirePacketTest {
 
 	@Test
 	void earlierSyncPreservesMotionAndAllowsEditingTheFormerTrailingFields() {
-		EntityPositionSyncPositionMoveRotationWirePacket packet = roundTrip(
-			EntityPositionSyncPositionMoveRotationWirePacket.STREAM_CODEC, buffer ->
+		EntityPositionSyncWirePacket.Protocol768 packet = roundTrip(
+			EntityPositionSyncWirePacket.Protocol768.STREAM_CODEC, buffer ->
 				buffer.writeByte(42).writeDouble(1).writeDouble(2).writeDouble(3)
 					.writeDouble(0.1).writeDouble(0.2).writeDouble(0.3)
 					.writeFloat(90).writeFloat(45).writeBoolean(true));
@@ -85,7 +85,7 @@ final class EntityPositionWirePacketTest {
 		packet.setPosition(new Position(4, 5, 6));
 		packet.setRotation(new Rotation(-90, -45));
 		packet.setOnGround(false);
-		assertEncoding(EntityPositionSyncPositionMoveRotationWirePacket.STREAM_CODEC, packet, buffer ->
+		assertEncoding(EntityPositionSyncWirePacket.Protocol768.STREAM_CODEC, packet, buffer ->
 			buffer.writeByte(42).writeDouble(4).writeDouble(5).writeDouble(6)
 				.writeDouble(0.1).writeDouble(0.2).writeDouble(0.3)
 				.writeFloat(-90).writeFloat(-45).writeBoolean(false));
@@ -93,21 +93,21 @@ final class EntityPositionWirePacketTest {
 
 	@Test
 	void linearSyncPreservesItsPathTypeWhenPositionChanges() {
-		EntityPositionSyncWirePacket packet = roundTrip(EntityPositionSyncWirePacket.STREAM_CODEC, buffer ->
+		EntityPositionSyncWirePacket.Protocol777 packet = roundTrip(EntityPositionSyncWirePacket.Protocol777.STREAM_CODEC, buffer ->
 			buffer.writeByte(42).writeByte(0).writeDouble(1).writeDouble(2).writeDouble(3)
 				.writeFloat(90).writeFloat(45).writeBoolean(true));
 		assertFalse(packet.path().stepped());
 		assertEquals(new Rotation(90, 45), packet.rotation());
 		assertTrue(packet.onGround());
 		packet.setPosition(new Position(4, 5, 6));
-		assertEncoding(EntityPositionSyncWirePacket.STREAM_CODEC, packet, buffer ->
+		assertEncoding(EntityPositionSyncWirePacket.Protocol777.STREAM_CODEC, packet, buffer ->
 			buffer.writeByte(42).writeByte(0).writeDouble(4).writeDouble(5).writeDouble(6)
 				.writeFloat(90).writeFloat(45).writeBoolean(true));
 	}
 
 	@Test
 	void steppedSyncPreservesEarlierStepsAndTickOffsetsWhenItsEndpointChanges() {
-		EntityPositionSyncWirePacket packet = roundTrip(EntityPositionSyncWirePacket.STREAM_CODEC, buffer ->
+		EntityPositionSyncWirePacket.Protocol777 packet = roundTrip(EntityPositionSyncWirePacket.Protocol777.STREAM_CODEC, buffer ->
 			buffer.writeByte(42).writeByte(1).writeByte(2)
 				.writeDouble(1).writeDouble(2).writeDouble(3).writeByte(2)
 				.writeDouble(4).writeDouble(5).writeDouble(6).writeByte(5)
@@ -123,7 +123,7 @@ final class EntityPositionWirePacketTest {
 		editable.setY(8);
 		editable.setZ(9);
 		assertEquals(new Position(4, 5, 6), original);
-		assertEncoding(EntityPositionSyncWirePacket.STREAM_CODEC, packet, buffer ->
+		assertEncoding(EntityPositionSyncWirePacket.Protocol777.STREAM_CODEC, packet, buffer ->
 			buffer.writeByte(42).writeByte(1).writeByte(2)
 				.writeDouble(1).writeDouble(2).writeDouble(3).writeByte(2)
 				.writeDouble(7).writeDouble(8).writeDouble(9).writeByte(5)
@@ -135,7 +135,7 @@ final class EntityPositionWirePacketTest {
 		EntityPositionPath immutablePath = new EntityPositionPath(true, Arrays.asList(
 			new EntityPositionPath.Step(new Position(1, 2, 3), 2),
 			new EntityPositionPath.Step(new Position(4, 5, 6), 5)));
-		EntityPositionSyncWirePacket clean = new EntityPositionSyncWirePacket(42, immutablePath, Rotation.zero(), true);
+		EntityPositionSyncWirePacket.Protocol777 clean = new EntityPositionSyncWirePacket.Protocol777(42, immutablePath, Rotation.zero(), true);
 		assertSame(immutablePath, clean.path());
 		assertEquals(new Position(4, 5, 6), clean.position());
 		assertFalse(clean.couldHaveBeenMutated());
@@ -144,12 +144,12 @@ final class EntityPositionWirePacketTest {
 		EntityPositionPath mutablePath = new EntityPositionPath(true, Arrays.asList(
 			new EntityPositionPath.Step(first, 2),
 			new EntityPositionPath.Step(new Position(4, 5, 6), 5)));
-		EntityPositionSyncWirePacket packet = new EntityPositionSyncWirePacket(42, mutablePath, Rotation.zero(), true);
+		EntityPositionSyncWirePacket.Protocol777 packet = new EntityPositionSyncWirePacket.Protocol777(42, mutablePath, Rotation.zero(), true);
 		assertEquals(new Position(4, 5, 6), packet.position());
 		assertFalse(packet.couldHaveBeenMutated());
 		packet.path().steps().get(0).position().setX(9);
 		assertTrue(packet.couldHaveBeenMutated());
-		assertEncoding(EntityPositionSyncWirePacket.STREAM_CODEC, packet, buffer ->
+		assertEncoding(EntityPositionSyncWirePacket.Protocol777.STREAM_CODEC, packet, buffer ->
 			buffer.writeByte(42).writeByte(1).writeByte(2)
 				.writeDouble(9).writeDouble(2).writeDouble(3).writeByte(2)
 				.writeDouble(4).writeDouble(5).writeDouble(6).writeByte(5)

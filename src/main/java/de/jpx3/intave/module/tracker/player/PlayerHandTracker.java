@@ -12,22 +12,16 @@
 package de.jpx3.intave.module.tracker.player;
 
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
 import de.jpx3.intave.module.linker.bukkit.BukkitEventSubscription;
-import de.jpx3.intave.module.linker.packet.ListenerPriority;
-import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.plib.PacketSender;
-import de.jpx3.intave.packet.plib.reader.BlockDigReader;
-import de.jpx3.intave.packet.plib.reader.BlockInteractionReader;
-import de.jpx3.intave.packet.plib.reader.HeldItemSlotReader;
-import de.jpx3.intave.packet.plib.reader.WindowItemReader;
+import de.jpx3.intave.module.linker.packetperfect.OnReceive;
+import de.jpx3.intave.module.linker.packetperfect.OnSend;
+import de.jpx3.intave.packet.contract.immutable.*;
+import de.jpx3.intave.packet.event.PacketSendEvent;
 import de.jpx3.intave.player.ItemProperties;
-import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.PlayerDigAction;
 import de.jpx3.intave.share.PlayerHand;
 import de.jpx3.intave.user.MessageChannel;
@@ -46,8 +40,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.Map;
 
-import static de.jpx3.intave.packet.contract.PacketType.Client.*;
-import static de.jpx3.intave.packet.contract.PacketType.Server.*;
+import static de.jpx3.intave.packet.ListenerPriority.*;
 
 public class PlayerHandTracker extends Module {
 //  @BukkitEventSubscription
@@ -100,16 +93,14 @@ public class PlayerHandTracker extends Module {
     }
   }
 
-  @PacketSubscription(
-    priority = ListenerPriority.LOWEST,
-    packetsIn = {
-      HELD_ITEM_SLOT_IN
+  @OnReceive(priority = FIRST)
+  public void receiveSlotSwitch(User user, Cancellable cancellable, HeldItemSlotPacket packet) {
+    if (cancellable.isCancelled()) {
+      return;
     }
-  )
-  public void receiveSlotSwitch(User user, HeldItemSlotReader reader) {
     InventoryMetadata inventoryData = user.meta().inventory();
 
-    int slot = reader.slot();
+    int slot = packet.slot();
 
     if (isInvalidSlot(slot)) {
       return;
@@ -135,24 +126,25 @@ public class PlayerHandTracker extends Module {
     }
   }
 
-  @PacketSubscription(packetsIn = CLIENT_TICK_END)
-  public void receiveClientTickEnd(User user) {
-    user.meta().inventory().clearPreviousSpearThisTick();
+  @OnReceive
+  public void receiveClientTickEnd(User user, Cancellable cancellable, ClientTickEndPacket packet) {
+    if (!cancellable.isCancelled()) {
+      user.meta().inventory().clearPreviousSpearThisTick();
+    }
   }
 
-  @PacketSubscription(
-    packetsOut = {
-      HELD_ITEM_SLOT_OUT
+  @OnSend
+  public void sentSlotSwitch(User user, HeldItemSlotPacket packet, PacketSendEvent event) {
+    if (event.isCancelled()) {
+      return;
     }
-  )
-  public void sentSlotSwitch(User user, HeldItemSlotReader reader) {
-    int slot = reader.slot();
+    int slot = packet.slot();
 
     if (isInvalidSlot(slot)) {
       return;
     }
 
-    user.tickFeedback(() -> {
+    Modules.feedback().synchronize(user, event, () -> {
       if (slot != user.meta().inventory().handSlot()) {
         user.meta().attack().attackCooldown().reset();
       }
@@ -165,44 +157,38 @@ public class PlayerHandTracker extends Module {
     return slot >= 36 || slot < 0;
   }
 
-  @PacketSubscription(
-    priority = ListenerPriority.LOWEST,
-    packetsIn = {
-      BLOCK_PLACE, USE_ITEM, USE_ITEM_ON
-    }
-  )
+  @OnReceive(priority = FIRST)
   public void receiveBlockPlace(
-    User user, Cancellable cancellable, BlockInteractionReader reader
+    User user, Cancellable cancellable, BlockInteractionPacket packet
   ) {
-    if (reader.isItemUseRequest()) {
+    if (!cancellable.isCancelled() && packet.isItemUseRequest()) {
       receiveItemUseRequest(
-        cancellable, user, reader.hand(), reader.isItemUseOnBlockRequest()
+        cancellable, user, packet.hand(), !packet.isDirectItemUseRequest()
       );
     }
   }
 
-  @PacketSubscription(
-    priority = ListenerPriority.MONITOR,
-    packetsOut = {WINDOW_ITEMS, SET_SLOT}
-  )
+  @OnSend(priority = LAST)
   public void sentInventoryItems(
-    PacketEvent event, User user, WindowItemReader reader
+    PacketSendEvent event, User user, ItemUpdates packet
   ) {
+    if (event.isCancelled()) {
+      return;
+    }
     InventoryMetadata inventory = user.meta().inventory();
     if (!inventory.handActive()) {
       return;
     }
-    int activeSlot = inventory.activeClientInventorySlot(reader.windowId());
-    Map<Integer, ItemStack> items = reader.itemMap();
+    int activeSlot = inventory.activeClientInventorySlot(packet.containerId());
+    Map<Integer, de.jpx3.intave.item.ItemStack> items = packet.itemMap();
     if (activeSlot < 0 || !items.containsKey(activeSlot)) {
       return;
     }
-    ItemStack replacement = items.get(activeSlot);
-    Material replacementType = replacement == null || replacement.getAmount() == 0
-      ? Material.AIR : replacement.getType();
+    de.jpx3.intave.item.ItemStack replacement = items.get(activeSlot);
+    Material replacementType = replacement == null ? Material.AIR : replacement.bukkitMaterial().orElse(Material.AIR);
     long useSequence = inventory.activeItemUseSequence();
-    user.packetTickFeedback(
-      event,
+    Modules.feedback().synchronize(
+      user, event,
       () -> {
         if (inventory.applyClientActiveItemReplacement(useSequence, replacementType)) {
           Modules.physicsTestRecorder().recordActiveItemReplacement(
@@ -245,28 +231,22 @@ public class PlayerHandTracker extends Module {
     inventoryData.activateHandIfUsable(hand, useOnBlock);
   }
 
-  @PacketSubscription(
-    priority = ListenerPriority.HIGH,
-    packetsIn = {
-      BLOCK_DIG
+  @OnReceive(priority = LATER)
+  public void receiveBlockDigging(User user, Cancellable cancellable, BlockDigPacket packet) {
+    if (cancellable.isCancelled()) {
+      return;
     }
-  )
-  public void receiveBlockDigging(PacketEvent event, BlockDigReader reader) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
     InventoryMetadata inventoryData = user.meta().inventory();
 
-    PacketContainer packet = event.getPacket();
-    PlayerDigAction digType = reader.action();
+    PlayerDigAction digType = packet.action();
     if (digType == null) return;
 
-    BlockPosition blockPosition = reader.nativeBlockPosition();
-    if (blockPosition == null) return;
+    if (!packet.hasBlockPosition()) return;
 
     if (digType == PlayerDigAction.RELEASE_USE_ITEM) {
       // Every supported vanilla client releases item use with BlockPos.ZERO
       // and DOWN. Spoofed positions/faces must not clear slowdown state.
-      if (!reader.isCanonicalItemUseRelease()) {
+      if (!packet.isCanonicalItemUseRelease()) {
         inventoryData.markSuspiciousNoSlowdownPacketPatternThisTick();
         return;
       }
@@ -287,15 +267,6 @@ public class PlayerHandTracker extends Module {
         inventoryData.deactivateHand();
         break;
       }
-    }
-
-    boolean usedFoodItem = inventoryData.foodItem() && inventoryData.handActive();
-    // Fix eating while sprinting bug: https://www.youtube.com/watch?v=5ZHMrVmtdNY
-    if (digType == PlayerDigAction.DROP_ITEM && usedFoodItem) {
-      PacketContainer unblockPacket = packet.shallowClone();
-      reader.setAction(unblockPacket, PlayerDigAction.RELEASE_USE_ITEM);
-      user.ignoreNextInboundPacket();
-      PacketSender.receiveClientPacketFrom(player, unblockPacket);
     }
   }
 }

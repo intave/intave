@@ -15,12 +15,13 @@ import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.adapter.ViaVersionAdapter;
 import de.jpx3.intave.entity.position.RotationTarget;
-import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.version.ProtocolVersionConverter;
 import org.bukkit.entity.Player;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 import static de.jpx3.intave.entity.position.RotationTarget.*;
 
@@ -75,9 +76,6 @@ public final class ProtocolMetadata {
   private int refreshes;
 
   public Set<UUID> shownPlayers = new HashSet<>();
-  public final Map<String, String> debugStates = new HashMap<>();
-  public Position lastEntityPosition;
-  public int lastEntityId;
 
   public ProtocolMetadata(Player player, User user) {
     this.user = user;

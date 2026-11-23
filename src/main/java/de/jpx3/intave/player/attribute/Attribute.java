@@ -45,7 +45,7 @@ public final class Attribute {
 	private final String attributeKey;
 	private final double defaultBaseValue;
 	private double baseValue;
-	private final Set<AttributeModifier> attributeModifiers = new HashSet<>();
+	private final Set<AttributeModifier> attributeModifiers = new LinkedHashSet<>();
 
 	public Attribute(String attributeKey, double defaultBaseValue) {
 		this.attributeKey = attributeKey;
@@ -105,7 +105,7 @@ public final class Attribute {
 		private String attributeKey;
 		private double defaultBaseValue;
 		private double baseValue;
-		private final Set<AttributeModifier> attributeModifiers = new HashSet<>();
+		private final Set<AttributeModifier> attributeModifiers = new LinkedHashSet<>();
 
 		public Builder withAttributeKey(String attributeKey) {
 			this.attributeKey = attributeKey;

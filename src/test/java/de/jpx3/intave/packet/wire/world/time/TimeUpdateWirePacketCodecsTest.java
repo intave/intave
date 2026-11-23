@@ -26,11 +26,11 @@ import static org.junit.jupiter.api.Assertions.*;
 final class TimeUpdateWirePacketCodecsTest {
 	@Test
 	void timeUpdatesStopBeforeRegistryBackedClocks() {
-		TimeUpdateWirePacket legacy =
+		TimeUpdateWirePacket.Base legacy =
 				roundTrip(CLIENTBOUND, PacketType.Server.UPDATE_TIME, 767, b -> b.writeLong(42).writeLong(-6000));
 		assertEquals(6000L, legacy.dayTime());
 		assertFalse(legacy.ticking());
-		TimeUpdateWirePacket modern =
+		TimeUpdateWirePacket.Base modern =
 				roundTrip(
 						CLIENTBOUND,
 						PacketType.Server.UPDATE_TIME,
@@ -43,7 +43,7 @@ final class TimeUpdateWirePacketCodecsTest {
 	@Test
 	void timeFieldsCanBeMutatedWithoutRecordingTypes() {
 		for (int protocol : new int[] {767, 768}) {
-			TimeUpdateWirePacket packet =
+			TimeUpdateWirePacket.Base packet =
 					WirePackets.createPlayPacket(CLIENTBOUND, PacketType.Server.UPDATE_TIME, protocol);
 			packet.setGameTime(42);
 			packet.setDayTime(6000);
@@ -65,7 +65,7 @@ final class TimeUpdateWirePacketCodecsTest {
 
 	@Test
 	void legacyTimeRetainsTheFrozenZeroSentinel() {
-		TimeUpdateWirePacket packet = new TimeUpdateSignedDayTimeWirePacket();
+		TimeUpdateWirePacket.Base packet = new TimeUpdateWirePacket.Protocol47();
 		packet.setDayTime(0);
 		packet.setTicking(false);
 		ByteBuf output = Unpooled.buffer();
@@ -75,7 +75,7 @@ final class TimeUpdateWirePacketCodecsTest {
 			ByteBufStreamCodecs.VARINT.decode(payload);
 			payload.readLong();
 			assertEquals(-1L, payload.readLong());
-			TimeUpdateWirePacket decoded = WirePackets.decodePacket(CLIENTBOUND, PLAY, 767, output);
+			TimeUpdateWirePacket.Base decoded = WirePackets.decodePacket(CLIENTBOUND, PLAY, 767, output);
 			assertEquals(1L, decoded.dayTime());
 			assertFalse(decoded.ticking());
 			assertThrows(IllegalArgumentException.class, () -> packet.setDayTime(-1));

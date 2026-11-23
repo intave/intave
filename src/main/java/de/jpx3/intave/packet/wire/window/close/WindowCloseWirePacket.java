@@ -17,36 +17,83 @@ import de.jpx3.intave.packet.contract.mutable.MutableWindowClosePacket;
 import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class WindowCloseWirePacket extends AbstractMutable implements MutableWindowClosePacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, WindowCloseWirePacket> STREAM_CODEC =
-		StreamCodec.compound(
-			ByteBufStreamCodecs.VARINT, WindowCloseWirePacket::containerId,
-			WindowCloseWirePacket::new
-		);
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-	protected int containerId;
-
-	public WindowCloseWirePacket() {
-		this(0);
+public final class WindowCloseWirePacket {
+	private WindowCloseWirePacket() {
 	}
 
-	public WindowCloseWirePacket(int containerId) {
-		this.containerId = containerId;
+	public static List<Class<?>> registeredClasses() {
+		return Collections.unmodifiableList(Arrays.<Class<?>>asList(
+			Protocol47.class,
+			Protocol768.class
+		));
 	}
 
-	@Override
-	public int containerId() {
-		return this.containerId;
+	static abstract class Base extends AbstractMutable implements MutableWindowClosePacket {
+		protected int containerId;
+
+		protected Base() {
+			this(0);
+		}
+
+		protected Base(int containerId) {
+			this.containerId = containerId;
+		}
+
+		@Override
+		public int containerId() {
+			return this.containerId;
+		}
+
+		@Override
+		public void setContainerId(int value) {
+			markMutated();
+			this.containerId = value;
+		}
 	}
 
-	@Override
-	public void setContainerId(int value) {
-		markMutated();
-		this.containerId = value;
+	static final class Protocol47 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol47> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.UNSIGNED_BYTE, Base::containerId,
+				Protocol47::new
+			);
+
+		public Protocol47() {
+			super();
+		}
+
+		public Protocol47(int containerId) {
+			super(containerId);
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 47 && protocolVersion < 768;
+		}
 	}
 
-	@Override
-	public boolean appliesTo(int protocolVersion) {
-		return protocolVersion >= 768;
+	static final class Protocol768 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol768> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.VARINT, Protocol768::containerId,
+				Protocol768::new
+			);
+
+		public Protocol768() {
+			super();
+		}
+
+		public Protocol768(int containerId) {
+			super(containerId);
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 768;
+		}
 	}
 }

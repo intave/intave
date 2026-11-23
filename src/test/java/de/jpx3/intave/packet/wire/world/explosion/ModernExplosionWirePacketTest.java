@@ -29,7 +29,7 @@ class ModernExplosionWirePacketTest {
 	void legacyMotionWithEffectsPreservesTheEntireTailWhenEdited() {
 		for (int protocol : new int[]{765, 766, 767}) {
 			byte[] effects = {0, 4, 4, 0, 3, 97, 98, 99, 0};
-			ExplosionWithEffectsWirePacket packet = roundTrip(CLIENTBOUND, PacketType.Server.EXPLOSION, protocol, output -> {
+			ExplosionWirePacket.Protocol765 packet = roundTrip(CLIENTBOUND, PacketType.Server.EXPLOSION, protocol, output -> {
 				output.writeDouble(1.25).writeDouble(64.5).writeDouble(-3.75).writeFloat(4);
 				output.writeByte(2).writeByte(-1).writeByte(2).writeByte(3).writeByte(4).writeByte(-5).writeByte(6);
 				output.writeFloat(0.125f).writeFloat(-0.25f).writeFloat(0.5f);
@@ -58,7 +58,7 @@ class ModernExplosionWirePacketTest {
 	@Test
 	void defaultEffectsRespectTheDirectSoundToHolderBoundary() {
 		for (int protocol : new int[]{765, 766, 767}) {
-			ExplosionWirePacket packet = WirePackets.createPlayPacket(PacketType.Server.EXPLOSION, protocol);
+			ExplosionWirePacket.Base packet = WirePackets.createPlayPacket(PacketType.Server.EXPLOSION, protocol);
 			packet.setDefaultEffects(protocol);
 			ByteBuf output = Unpooled.buffer();
 			try {
@@ -77,8 +77,8 @@ class ModernExplosionWirePacketTest {
 			}
 		}
 	}
-	private static ExplosionOptionalMotionWirePacket cloud(int protocol, double x, double y, double z, float radius, Motion motion) {
-		ExplosionOptionalMotionWirePacket packet = WirePackets.createPlayPacket(PacketType.Server.EXPLOSION, protocol);
+	private static ExplosionWirePacket.Protocol768 cloud(int protocol, double x, double y, double z, float radius, Motion motion) {
+		ExplosionWirePacket.Protocol768 packet = WirePackets.createPlayPacket(PacketType.Server.EXPLOSION, protocol);
 		packet.setDefaultEffects(protocol);
 		packet.setPosition(x, y, z);
 		packet.setPower(radius);
@@ -94,7 +94,7 @@ class ModernExplosionWirePacketTest {
 				try {
 					WirePackets.encodePacket(PLAY, PacketType.Server.EXPLOSION, protocol,
 						cloud(protocol, -1.25, 64.000000001, 7.5, 4, motion), encoded);
-					ExplosionOptionalMotionWirePacket decoded = WirePackets.decodePacket(CLIENTBOUND, PLAY, protocol, encoded);
+					ExplosionWirePacket.Protocol768 decoded = WirePackets.decodePacket(CLIENTBOUND, PLAY, protocol, encoded);
 					assertEquals(motion != null, decoded.hasMotion());
 					if (motion != null) assertEquals(-1.25, decoded.motion().motionY());
 					ByteBufStreamCodecs.VARINT.decode(encoded);
@@ -128,7 +128,7 @@ class ModernExplosionWirePacketTest {
 	@Test
 	void forwardedExplosionsPreserveUninterpretedEffectData() {
 		for (int protocol : new int[]{768, 773, 777}) {
-			ExplosionOptionalMotionWirePacket packet = roundTrip(CLIENTBOUND, PacketType.Server.EXPLOSION, protocol, output -> {
+			ExplosionWirePacket.Protocol768 packet = roundTrip(CLIENTBOUND, PacketType.Server.EXPLOSION, protocol, output -> {
 				output.writeDouble(1).writeDouble(2).writeDouble(3);
 				if (protocol >= 773) output.writeFloat(7).writeInt(123);
 				output.writeBoolean(true).writeDouble(0.125).writeDouble(-1.5).writeDouble(8);
@@ -141,7 +141,7 @@ class ModernExplosionWirePacketTest {
 
 	@Test
 	void absentMotionCanBeAddedAndRemovedWithoutLosingEffects() {
-		ExplosionOptionalMotionWirePacket packet = cloud(777, 1, 2, 3, 4, null);
+		ExplosionWirePacket.Protocol768 packet = cloud(777, 1, 2, 3, 4, null);
 		packet.setMotion(new Motion(1, 2, 3));
 		assertTrue(packet.hasMotion());
 		packet.setMotion(null);

@@ -25,7 +25,6 @@ import de.jpx3.intave.packet.event.PacketEventBus;
 import de.jpx3.intave.packet.event.PacketReceiveEvent;
 import de.jpx3.intave.packet.event.PacketSendEvent;
 import de.jpx3.intave.packet.event.PacketSubscription;
-import de.jpx3.intave.packet.wire.connection.keepalive.KeepAliveWirePacket;
 import de.jpx3.intave.user.User;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.AfterEach;
@@ -38,6 +37,7 @@ import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static de.jpx3.intave.packet.wire.WirePacketTestSupport.keepAlive;
 import static org.junit.jupiter.api.Assertions.*;
 
 public final class CheckLinkerTest {
@@ -200,8 +200,8 @@ public final class CheckLinkerTest {
   }
 
   private static void dispatch(User user) {
-    PacketEventBus.dispatch(new PacketReceiveEvent(user, PacketType.Client.KEEP_ALIVE_IN, new KeepAliveWirePacket()));
-    PacketEventBus.dispatch(new PacketSendEvent(user, PacketType.Server.KEEP_ALIVE_OUT, new KeepAliveWirePacket()));
+    PacketEventBus.dispatch(new PacketReceiveEvent(user, PacketType.Client.KEEP_ALIVE_IN, keepAlive(0)));
+    PacketEventBus.dispatch(new PacketSendEvent(user, PacketType.Server.KEEP_ALIVE_OUT, keepAlive(0)));
   }
 
   private static User user() {

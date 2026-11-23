@@ -32,9 +32,9 @@ final class PlayerInputWirePacketsTest {
 		ByteBuf packet = Unpooled.buffer();
 		try {
 			ByteBufStreamCodecs.VARINT.encode(packet, packetId);
-			PlayerInputWirePacket.STREAM_CODEC.encode(packet, new PlayerInputWirePacket(expected));
+			PlayerInputWirePacket.Protocol768.STREAM_CODEC.encode(packet, new PlayerInputWirePacket.Protocol768(expected));
 
-			PlayerInputWirePacket decoded = WirePackets.decodeServerboundPacket(PLAY, protocolVersion, packet);
+			PlayerInputWirePacket.Protocol768 decoded = WirePackets.decodeServerboundPacket(PLAY, protocolVersion, packet);
 
 			assertEquals(expected, decoded.input());
 			assertEquals(0, packet.readerIndex());

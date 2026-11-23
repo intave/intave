@@ -16,6 +16,9 @@ import de.jpx3.intave.codec.StreamCodec;
 import de.jpx3.intave.packet.contract.mutable.MutablePayloadInPacket;
 import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
+import java.util.Optional;
 
 import static de.jpx3.intave.codec.ByteBufStreamCodecs.bytes;
 
@@ -59,6 +62,21 @@ public class PayloadInWirePacket extends AbstractMutable implements MutablePaylo
 	public byte[] payload() {
 		markMutated();
 		return this.payload;
+	}
+
+	@Override
+	public Optional<String> clientBrand() {
+		if (!"MC|Brand".equalsIgnoreCase(tag) && !"minecraft:brand".equalsIgnoreCase(tag)) {
+			return Optional.empty();
+		}
+		ByteBuf input = Unpooled.wrappedBuffer(payload);
+		try {
+			return Optional.of(ByteBufStreamCodecs.VARINT_STRING.decode(input));
+		} catch (RuntimeException malformedPayload) {
+			return Optional.empty();
+		} finally {
+			input.release();
+		}
 	}
 
 	@Override

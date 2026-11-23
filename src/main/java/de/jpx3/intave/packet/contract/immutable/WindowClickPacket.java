@@ -13,14 +13,8 @@ package de.jpx3.intave.packet.contract.immutable;
 
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.item.ItemStack;
-import de.jpx3.intave.packet.contract.PacketContract;
-import de.jpx3.intave.share.WindowClickType;
 
-public interface WindowClickPacket extends PacketContract, ItemUpdates, WindowRevision, CarriedItem, SlotAddressed {
-	WindowClickType clickType();
-
-	int button();
-
+public interface WindowClickPacket extends WindowClickHeaderPacket, ItemUpdates, CarriedItem {
 	boolean hasSlotPredictions();
 
 	boolean hasClickedItem();

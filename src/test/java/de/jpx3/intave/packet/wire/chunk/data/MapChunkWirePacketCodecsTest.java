@@ -34,7 +34,7 @@ final class MapChunkWirePacketCodecsTest {
 	@Test
 	void viaNbtEditsUseSettersAndCannotMutatePacketStateThroughAliases() {
 		for (int protocol : new int[] {110, 477, 755, 757, 764, 770}) {
-			MapChunkWirePacket packet = roundTrip(CLIENTBOUND, PacketType.Server.MAP_CHUNK, protocol,
+			MapChunkWirePacket.Base packet = roundTrip(CLIENTBOUND, PacketType.Server.MAP_CHUNK, protocol,
 				output -> chunk(output, protocol, true));
 			if (protocol >= 477 && protocol < 770) {
 				CompoundTag heights = packet.heightmapTag();
@@ -65,7 +65,7 @@ final class MapChunkWirePacketCodecsTest {
 			ByteBuf output = Unpooled.buffer();
 			try {
 				WirePackets.encodePacket(CLIENTBOUND, PLAY, PacketType.Server.MAP_CHUNK, protocol, packet, output);
-				MapChunkWirePacket decoded = WirePackets.decodePacket(CLIENTBOUND, PLAY, protocol, output);
+				MapChunkWirePacket.Base decoded = WirePackets.decodePacket(CLIENTBOUND, PLAY, protocol, output);
 				if (protocol >= 477 && protocol < 770) {
 					assertEquals(42, decoded.heightmapTag().getLongArrayTag("H").getValue()[0]);
 				}
@@ -89,7 +89,7 @@ final class MapChunkWirePacketCodecsTest {
 		for (int protocol : registry(CLIENTBOUND).supportedProtocolVersions()) {
 			if (protocol < 47) continue;
 			for (boolean full : new boolean[] {false, true}) {
-				MapChunkWirePacket packet = roundTrip(CLIENTBOUND, PacketType.Server.MAP_CHUNK, protocol, output -> chunk(output, protocol, full));
+				MapChunkWirePacket.Base packet = roundTrip(CLIENTBOUND, PacketType.Server.MAP_CHUNK, protocol, output -> chunk(output, protocol, full));
 				assertEquals(-12, packet.chunkX(0));
 				assertEquals(27, packet.chunkZ(0));
 				assertEquals(protocol >= 755 || full, packet.fullChunk());
@@ -137,7 +137,7 @@ final class MapChunkWirePacketCodecsTest {
 	@Test
 	void newlyCreatedPacketsEncodeTheirFieldsAndDefensivelyCopyArrays() {
 		for (int protocol : new int[] {47, 107, 110, 477, 573, 735, 751, 755, 757, 763, 764, 770, 777}) {
-			MapChunkWirePacket packet = WirePackets.createPlayPacket(PacketType.Server.MAP_CHUNK, protocol);
+			MapChunkWirePacket.Base packet = WirePackets.createPlayPacket(PacketType.Server.MAP_CHUNK, protocol);
 			packet.setChunkCoordinates(0, -30, 40);
 			ChunkPalette blocks = ChunkPalette.single(ChunkPalette.Kind.BLOCK_STATES, 16);
 			ChunkPalette biomes = protocol >= 757 ? ChunkPalette.single(ChunkPalette.Kind.BIOMES, 7) : null;
@@ -166,7 +166,7 @@ final class MapChunkWirePacketCodecsTest {
 			ByteBuf output = Unpooled.buffer();
 			try {
 				WirePackets.encodePacket(CLIENTBOUND, PLAY, PacketType.Server.MAP_CHUNK, protocol, packet, output);
-				MapChunkWirePacket decoded = WirePackets.decodePacket(CLIENTBOUND, PLAY, protocol, output);
+				MapChunkWirePacket.Base decoded = WirePackets.decodePacket(CLIENTBOUND, PLAY, protocol, output);
 				assertEquals(-30, decoded.chunkX(0));
 				assertEquals(40, decoded.chunkZ(0));
 				assertEquals(2, decoded.chunkData().sections().size());
@@ -183,11 +183,11 @@ final class MapChunkWirePacketCodecsTest {
 
 	@Test
 	void unavailableFieldsAndInvalidLengthsAreRejected() {
-		MapChunkWirePacket modern = new MapChunkWirePacket();
+		MapChunkWirePacket.Base modern = new MapChunkWirePacket.Protocol770();
 		assertThrows(UnsupportedOperationException.class, () -> modern.setFullChunk(true));
 		assertThrows(UnsupportedOperationException.class, () -> modern.setHeightmapTag(new CompoundTag()));
 		assertThrows(NullPointerException.class, () -> modern.setChunkData(null));
-		MapChunkWithBiomesWirePacket fixed = new MapChunkWithBiomesWirePacket();
+		MapChunkWirePacket.Protocol573 fixed = new MapChunkWirePacket.Protocol573();
 		assertThrows(IllegalArgumentException.class, () -> fixed.setBiomeIds(new int[3]));
 		fixed.setFullChunk(true);
 		ByteBuf output = Unpooled.buffer();
@@ -195,10 +195,10 @@ final class MapChunkWirePacketCodecsTest {
 			assertThrows(IllegalArgumentException.class, () -> encodePayload(fixed, output));
 			output.clear().writeInt(0).writeInt(0).writeBoolean(false).writeShort(0);
 			varInt(output, Integer.MAX_VALUE);
-			assertThrows(IllegalArgumentException.class, () -> decodePayload(MapChunkLegacyMaskWirePacket.class, output));
+			assertThrows(IllegalArgumentException.class, () -> decodePayload(MapChunkWirePacket.Protocol47.class, output));
 			output.clear().writeInt(0).writeInt(0).writeByte(0);
 			varInt(output, -1);
-			assertThrows(IllegalArgumentException.class, () -> decodePayload(MapChunkWirePacket.class, output));
+			assertThrows(IllegalArgumentException.class, () -> decodePayload(MapChunkWirePacket.Protocol770.class, output));
 		} finally {
 			output.release();
 		}

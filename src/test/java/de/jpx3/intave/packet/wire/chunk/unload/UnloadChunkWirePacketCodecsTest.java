@@ -21,9 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 final class UnloadChunkWirePacketCodecsTest {
 	@Test
 	void unloadingChunksUsesTheCorrectCoordinateOrder() {
-		UnloadChunkWirePacket old =
+		UnloadChunkWirePacket.Base old =
 				roundTrip(CLIENTBOUND, PacketType.Server.UNLOAD_CHUNK, 763, b -> b.writeInt(12).writeInt(34));
-		UnloadChunkWirePacket modern =
+		UnloadChunkWirePacket.Base modern =
 				roundTrip(CLIENTBOUND, PacketType.Server.UNLOAD_CHUNK, 764, b -> b.writeInt(34).writeInt(12));
 		assertEquals(12, old.chunkX(0));
 		assertEquals(12, modern.chunkX(0));

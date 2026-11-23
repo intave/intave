@@ -17,36 +17,83 @@ import de.jpx3.intave.packet.contract.mutable.MutableKeepAlivePacket;
 import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class KeepAliveWirePacket extends AbstractMutable implements MutableKeepAlivePacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, KeepAliveWirePacket> STREAM_CODEC =
-		StreamCodec.compound(
-			ByteBufStreamCodecs.LONG, KeepAliveWirePacket::id,
-			KeepAliveWirePacket::new
-		);
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-	protected long id;
-
-	public KeepAliveWirePacket() {
-		this(0);
+public final class KeepAliveWirePacket {
+	private KeepAliveWirePacket() {
 	}
 
-	public KeepAliveWirePacket(long id) {
-		this.id = id;
+	public static List<Class<?>> registeredClasses() {
+		return Collections.unmodifiableList(Arrays.<Class<?>>asList(
+			Protocol47.class,
+			Protocol340.class
+		));
 	}
 
-	@Override
-	public long id() {
-		return this.id;
+	static abstract class Base extends AbstractMutable implements MutableKeepAlivePacket {
+		protected long id;
+
+		protected Base() {
+			this(0);
+		}
+
+		protected Base(long id) {
+			this.id = id;
+		}
+
+		@Override
+		public long id() {
+			return this.id;
+		}
+
+		@Override
+		public void setId(long value) {
+			markMutated();
+			this.id = value;
+		}
 	}
 
-	@Override
-	public void setId(long value) {
-		markMutated();
-		this.id = value;
+	static final class Protocol47 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol47> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.VARINT.beforeAndAfter(Integer::longValue, Math::toIntExact), Base::id,
+				Protocol47::new
+			);
+
+		public Protocol47() {
+			super();
+		}
+
+		public Protocol47(long id) {
+			super(id);
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 47 && protocolVersion < 340;
+		}
 	}
 
-	@Override
-	public boolean appliesTo(int protocolVersion) {
-		return protocolVersion >= 340;
+	static final class Protocol340 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol340> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.LONG, Protocol340::id,
+				Protocol340::new
+			);
+
+		public Protocol340() {
+			super();
+		}
+
+		public Protocol340(long id) {
+			super(id);
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 340;
+		}
 	}
 }

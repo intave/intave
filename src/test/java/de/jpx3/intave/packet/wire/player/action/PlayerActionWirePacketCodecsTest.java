@@ -22,10 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 final class PlayerActionWirePacketCodecsTest {
 	@Test
 	void entityActionSixMeansInventoryBeforeOffhandWasAdded() {
-		PlayerActionWirePacket legacy =
+		PlayerActionWirePacket.Base legacy =
 				roundTrip(
 						SERVERBOUND, PacketType.Client.ENTITY_ACTION_IN, 47, b -> b.writeBytes(new byte[] {12, 6, 0}));
-		PlayerActionWirePacket modern =
+		PlayerActionWirePacket.Base modern =
 				roundTrip(
 						SERVERBOUND,
 						PacketType.Client.ENTITY_ACTION_IN,

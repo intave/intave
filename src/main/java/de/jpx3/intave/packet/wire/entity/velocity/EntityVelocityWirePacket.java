@@ -18,51 +18,123 @@ import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.Motion;
 import io.netty.buffer.ByteBuf;
 
-public class EntityVelocityWirePacket extends AbstractMutable implements MutableEntityVelocityPacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, EntityVelocityWirePacket> STREAM_CODEC =
-		StreamCodec.compound(
-			ByteBufStreamCodecs.VARINT, EntityVelocityWirePacket::entityId,
-			Motion.LOW_PRECISION_STREAM_CODEC, EntityVelocityWirePacket::motion,
-			EntityVelocityWirePacket::new
-		);
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-	protected int entityId;
-	protected Motion motion;
-
-	public EntityVelocityWirePacket() {
-		this(0, new Motion(0, 0, 0));
+public final class EntityVelocityWirePacket {
+	private EntityVelocityWirePacket() {
 	}
 
-	public EntityVelocityWirePacket(int entityId, Motion motion) {
-		this.entityId = entityId;
-		this.motion = motion;
+	public static List<Class<?>> registeredClasses() {
+		return Collections.unmodifiableList(Arrays.<Class<?>>asList(
+			Protocol47.class,
+			Protocol773.class
+		));
 	}
 
-	@Override
-	public int entityId() {
-		return this.entityId;
+	static abstract class Base extends AbstractMutable implements MutableEntityVelocityPacket {
+		protected int entityId;
+		protected Motion motion;
+
+		protected Base() {
+			this(0, new Motion(0, 0, 0));
+		}
+
+		protected Base(int entityId, Motion motion) {
+			this.entityId = entityId;
+			this.motion = motion;
+		}
+
+		@Override
+		public int entityId() {
+			return this.entityId;
+		}
+
+		@Override
+		public void setEntityId(int value) {
+			markMutated();
+			this.entityId = value;
+		}
+
+		@Override
+		public Motion motion() {
+			markMutated();
+			return this.motion;
+		}
+
+		@Override
+		public void setMotion(Motion value) {
+			markMutated();
+			this.motion = value;
+		}
 	}
 
-	@Override
-	public void setEntityId(int value) {
-		markMutated();
-		this.entityId = value;
+	static final class Protocol47 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol47> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.VARINT, Base::entityId,
+				ByteBufStreamCodecs.SHORT, Protocol47::velocityX,
+				ByteBufStreamCodecs.SHORT, Protocol47::velocityY,
+				ByteBufStreamCodecs.SHORT, Protocol47::velocityZ,
+				Protocol47::new
+			);
+
+		private short rawX, rawY, rawZ;
+
+		public Protocol47() {
+			super();
+		}
+
+		public Protocol47(int entityId, short rawX, short rawY, short rawZ) {
+			super(entityId, new Motion(rawX / 8000.0, rawY / 8000.0, rawZ / 8000.0));
+			this.rawX = rawX;
+			this.rawY = rawY;
+			this.rawZ = rawZ;
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 47 && protocolVersion < 773;
+		}
+
+		private static int quantize(double value, short original) {
+			if (value == original / 8000.0) return original;
+			return (int) (Math.max(-3.9, Math.min(3.9, value)) * 8000);
+		}
+
+		public short velocityX() {
+			return (short) quantize(motion.motionX, rawX);
+		}
+
+		public short velocityY() {
+			return (short) quantize(motion.motionY, rawY);
+		}
+
+		public short velocityZ() {
+			return (short) quantize(motion.motionZ, rawZ);
+		}
 	}
 
-	@Override
-	public Motion motion() {
-		markMutated();
-		return this.motion;
-	}
+	static final class Protocol773 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol773> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.VARINT, Protocol773::entityId,
+				Motion.LOW_PRECISION_STREAM_CODEC, Protocol773::motion,
+				Protocol773::new
+			);
 
-	@Override
-	public void setMotion(Motion value) {
-		markMutated();
-		this.motion = value;
-	}
+		public Protocol773() {
+			super();
+		}
 
-	@Override
-	public boolean appliesTo(int protocolVersion) {
-		return protocolVersion >= 773;
+		public Protocol773(int entityId, Motion motion) {
+			super(entityId, motion);
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 773;
+		}
 	}
 }

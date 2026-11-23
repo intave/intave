@@ -14,36 +14,29 @@ package de.jpx3.intave.module.tracker.player;
 import de.jpx3.intave.IntavePlugin;
 import de.jpx3.intave.block.collision.Collision;
 import de.jpx3.intave.block.type.BlockTypeAccess;
+import de.jpx3.intave.item.ItemStack;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
-import de.jpx3.intave.module.linker.packet.ListenerPriority;
-import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.module.linker.packet.PrioritySlot;
 import de.jpx3.intave.module.linker.packetperfect.OnReceive;
 import de.jpx3.intave.module.linker.packetperfect.OnSend;
 import de.jpx3.intave.packet.contract.PacketType;
-import de.jpx3.intave.packet.contract.immutable.ClientCommandPacket;
-import de.jpx3.intave.packet.contract.immutable.OpenScreenPacket;
-import de.jpx3.intave.packet.contract.immutable.RespawnPacket;
-import de.jpx3.intave.packet.contract.immutable.WindowClosePacket;
+import de.jpx3.intave.packet.contract.immutable.*;
 import de.jpx3.intave.packet.event.PacketSendEvent;
-import de.jpx3.intave.packet.plib.reader.WindowClickReader;
-import de.jpx3.intave.packet.plib.reader.WindowItemReader;
 import de.jpx3.intave.share.ClientCommand;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.InventoryMetadata;
 import de.jpx3.intave.user.meta.MovementMetadata;
+import org.bukkit.Material;
 import org.bukkit.event.Cancellable;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static de.jpx3.intave.packet.ListenerPriority.EARLY;
-import static de.jpx3.intave.packet.ListenerPriority.LATER;
-import static de.jpx3.intave.packet.contract.PacketType.Client.WINDOW_CLICK;
-import static de.jpx3.intave.packet.contract.PacketType.Server.WINDOW_ITEMS;
+import static de.jpx3.intave.packet.ListenerPriority.*;
+import static de.jpx3.intave.packet.ListenerStage.AFTER;
 
 public final class InventoryTracker extends Module {
 
@@ -137,10 +130,10 @@ public final class InventoryTracker extends Module {
     debug(user, () -> "Client closed window " + packet.containerId());
   }
 
-  @PacketSubscription(priority = ListenerPriority.MONITOR, prioritySlot = PrioritySlot.EXTERNAL, packetsIn = WINDOW_CLICK)
-  public void receiveWindowClick(User user, Cancellable cancellable, WindowClickReader reader) {
-    debug(user, () -> "Client click in window " + reader.containerId() + ", slot=" + reader.slot()
-      + ", button=" + reader.button() + ", type=" + reader.clickType() + ", cancelled=" + cancellable.isCancelled());
+  @OnReceive(priority = LAST, stage = AFTER)
+  public void receiveWindowClick(User user, Cancellable cancellable, WindowClickHeaderPacket packet) {
+    debug(user, () -> "Client click in window " + packet.containerId() + ", slot=" + packet.slot()
+      + ", button=" + packet.button() + ", type=" + packet.clickType() + ", cancelled=" + cancellable.isCancelled());
   }
 
   @OnSend(priority = LATER)
@@ -154,16 +147,21 @@ public final class InventoryTracker extends Module {
     });
   }
 
-  @PacketSubscription(
-    packetsOut = {WINDOW_ITEMS}
-  )
-  public void on(
-    User user, WindowItemReader reader
-  ) {
-    if (reader.windowId() == 0) {
-      List<String> collect = reader.itemMap().values().stream().map(itemStack -> itemStack.getType().name()).collect(Collectors.toList());
-      user.tickFeedback(() -> user.meta().inventory().setItems(collect));
+  @OnSend
+  public void sentWindowItems(User user, Cancellable cancellable, WindowBulkItemsPacket packet) {
+    if (packet.containerId() != 0 || cancellable.isCancelled()) {
+      return;
     }
+    List<String> items = packet.items().stream().map(InventoryTracker::materialName).collect(Collectors.toList());
+    user.tickFeedback(() -> user.meta().inventory().setItems(items));
+  }
+
+  private static String materialName(ItemStack stack) {
+    if (stack == null) {
+      return Material.AIR.name();
+    }
+    return stack.bukkitMaterial().map(Material::name)
+      .orElseGet(() -> stack.type().path().toUpperCase(Locale.ROOT));
   }
 
   private static void debug(User user, Supplier<String> event) {

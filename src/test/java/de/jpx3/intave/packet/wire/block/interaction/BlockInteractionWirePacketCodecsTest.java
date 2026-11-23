@@ -13,14 +13,41 @@ package de.jpx3.intave.packet.wire.block.interaction;
 
 import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.mutable.MutableBlockInteractionPacket;
+import de.jpx3.intave.share.PlayerHand;
 import org.junit.jupiter.api.Test;
 
 import static de.jpx3.intave.packet.PacketDirection.SERVERBOUND;
 import static de.jpx3.intave.packet.wire.WirePacketTestSupport.roundTrip;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 final class BlockInteractionWirePacketCodecsTest {
+	@Test
+	void legacyPlacementKeepsItsItemAndOnlyTheAirSentinelStartsItemUse() {
+		for (int face : new int[]{0, 1, 5, 6, 254, 255}) {
+			for (boolean empty : new boolean[]{false, true}) {
+				MutableBlockInteractionPacket packet = roundTrip(SERVERBOUND, PacketType.Client.USE_ITEM_ON, 47, out -> {
+					out.writeLong(-1).writeByte(face);
+					if (empty) out.writeShort(-1);
+					else {
+						out.writeShort(276).writeByte(1).writeShort(7);
+						// Named compound with one string tag: the following hit coordinates must stay aligned.
+						out.writeByte(10).writeShort(0).writeByte(8).writeShort(1).writeByte('x');
+						out.writeShort(1).writeByte('y').writeByte(0);
+					}
+					out.writeByte(8).writeByte(4).writeByte(255);
+				});
+				assertEquals(PlayerHand.MAIN_HAND, packet.hand());
+				assertEquals(face == 255, packet.isItemUseRequest());
+				assertEquals(face == 255, packet.isDirectItemUseRequest());
+				assertEquals(0.5, packet.hitPosition().x());
+				assertEquals(0.25, packet.hitPosition().y());
+				assertEquals(255.0 / 16, packet.hitPosition().z());
+				assertThrows(IllegalArgumentException.class, () -> packet.setHand(PlayerHand.OFF_HAND));
+				assertTrue(packet.sequenceNumber().isEmpty());
+			}
+		}
+	}
+
 	@Test
 	void blockInteractionWorksWithoutTheOldItemStackField() {
 		MutableBlockInteractionPacket old =
@@ -51,6 +78,6 @@ final class BlockInteractionWirePacketCodecsTest {
 	void olderVariantsRejectFieldsTheirFormatCannotEncode() {
 		assertThrows(
 				IllegalStateException.class,
-				() -> new BlockInteractionProtocol107WirePacket().setSequenceNumber(1));
+				() -> new BlockInteractionWirePacket.Protocol107().setSequenceNumber(1));
 	}
 }

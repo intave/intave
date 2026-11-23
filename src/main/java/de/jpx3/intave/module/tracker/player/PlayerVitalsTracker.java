@@ -12,56 +12,47 @@
 package de.jpx3.intave.module.tracker.player;
 
 import ac.intave.samples.event.PlayerVitalsEvent;
-import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.module.Module;
 import de.jpx3.intave.module.Modules;
-import de.jpx3.intave.module.linker.packet.Engine;
-import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.plib.reader.ExperienceReader;
-import de.jpx3.intave.packet.plib.reader.UpdateHealthReader;
+import de.jpx3.intave.module.linker.packetperfect.OnSend;
+import de.jpx3.intave.packet.contract.immutable.ExperiencePacket;
+import de.jpx3.intave.packet.contract.immutable.UpdateHealthPacket;
+import de.jpx3.intave.packet.event.PacketSendEvent;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.AbilityMetadata;
 
-import static de.jpx3.intave.module.feedback.FeedbackOptions.SELF_SYNCHRONIZATION;
-import static de.jpx3.intave.packet.contract.PacketType.Server.EXPERIENCE;
-import static de.jpx3.intave.packet.contract.PacketType.Server.UPDATE_HEALTH;
-
 public final class PlayerVitalsTracker extends Module {
-  @PacketSubscription(
-    engine = Engine.INTERNAL,
-    packetsOut = UPDATE_HEALTH
-  )
-  public void sentHealth(
-    User user, PacketEvent event, UpdateHealthReader reader
-  ) {
-    float health = reader.health();
-    int foodLevel = reader.foodLevel();
-    float saturation = reader.saturation();
+  @OnSend
+  public void sentHealth(User user, UpdateHealthPacket packet, PacketSendEvent event) {
+    if (event.isCancelled()) {
+      return;
+    }
+    float health = packet.health();
+    int foodLevel = packet.foodLevel();
+    float saturation = packet.saturation();
 
-    user.packetTickFeedback(event, () -> {
+    Modules.feedback().synchronize(user, event, () -> {
       if (foodLevel <= 6) {
         user.meta().movement().setSprinting(false);
       }
       user.meta().abilities().synchronizeVitals(health, foodLevel, saturation);
       emit(user);
-    }, SELF_SYNCHRONIZATION);
+    });
   }
 
-  @PacketSubscription(
-    engine = Engine.INTERNAL,
-    packetsOut = EXPERIENCE
-  )
-  public void sentExperience(
-    User user, PacketEvent event, ExperienceReader reader
-  ) {
-    float progress = reader.progress();
-    int level = reader.level();
-    int totalExperience = reader.totalExperience();
+  @OnSend
+  public void sentExperience(User user, ExperiencePacket packet, PacketSendEvent event) {
+    if (event.isCancelled()) {
+      return;
+    }
+    float progress = packet.progress();
+    int level = packet.level();
+    int totalExperience = packet.totalExperience();
 
-    user.packetTickFeedback(event, () -> {
+    Modules.feedback().synchronize(user, event, () -> {
       user.meta().abilities().synchronizeExperience(progress, level, totalExperience);
       emit(user);
-    }, SELF_SYNCHRONIZATION);
+    });
   }
 
   public void synchronizeSnapshot(User user) {

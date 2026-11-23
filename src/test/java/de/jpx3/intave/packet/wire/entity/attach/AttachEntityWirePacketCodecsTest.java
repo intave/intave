@@ -11,7 +11,6 @@
 
 package de.jpx3.intave.packet.wire.entity.attach;
 
-
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,12 +18,12 @@ import static org.junit.jupiter.api.Assertions.*;
 final class AttachEntityWirePacketCodecsTest {
 	@Test
 	void unsupportedFieldsCannotBeAddedToPacketsThatDoNotCarryThem() {
-		assertFalse(new AttachEntityWirePacket().isMount());
+		assertFalse(new AttachEntityWirePacket.Protocol107().isMount());
 		assertThrows(
 				UnsupportedOperationException.class,
-				() -> new AttachEntityWirePacket().setMount(true));
-		AttachEntityMountOrLeashWirePacket legacyAttach =
-				new AttachEntityMountOrLeashWirePacket(1, 2, true);
+				() -> new AttachEntityWirePacket.Protocol107().setMount(true));
+		AttachEntityWirePacket.Protocol47 legacyAttach =
+				new AttachEntityWirePacket.Protocol47(1, 2, true);
 		assertTrue(legacyAttach.isMount());
 	}
 }

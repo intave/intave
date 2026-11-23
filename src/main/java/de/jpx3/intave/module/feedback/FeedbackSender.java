@@ -152,10 +152,23 @@ public final class FeedbackSender extends Module {
   }
 
   public void synchronize(User user, PacketSendEvent event, EmptyFeedbackCallback callback) {
+    synchronize(user, event, callback, null, 0);
+  }
+
+  public void synchronize(
+    User user, PacketSendEvent event, EmptyFeedbackCallback callback,
+    @Nullable FeedbackObserver observer, int options
+  ) {
     ReentrantLock lock = userLock(user);
     lock.lock();
     try {
-      event.addSendAfter(createRequestWithPacket(user, callback));
+      boolean overflow = pendingTransactions(user) > OPTIONAL_PENDING_LIMIT
+        || user.meta().connection().transactionPacketCounter > OPTIONAL_SENT_LIMIT;
+      if (matches(APPEND, options) || matches(APPEND_ON_OVERFLOW, options) && overflow) {
+        appendRequest(user.player(), null, callback, options);
+        return;
+      }
+      event.addSendAfter(createRequestWithPacket(user, callback, observer, options));
       event.requireInBundle();
     } finally {
       lock.unlock();
@@ -178,8 +191,14 @@ public final class FeedbackSender extends Module {
   }
 
   private TypedPacketContract createRequestWithPacket(User user, EmptyFeedbackCallback callback) {
+    return createRequestWithPacket(user, callback, null, 0);
+  }
+
+  private TypedPacketContract createRequestWithPacket(
+    User user, EmptyFeedbackCallback callback, @Nullable FeedbackObserver observer, int options
+  ) {
     countTransactionPacket(user.player());
-    FeedbackRequest<Object> request = createRequest(user.player(), null, callback, null, 0);
+    FeedbackRequest<Object> request = createRequest(user.player(), null, callback, observer, options);
     request.useNativeTransport();
     Modules.feedbackAnalysis().sentTransaction(user, request);
     request.sent();

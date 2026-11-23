@@ -48,34 +48,34 @@ public final class WirePackets {
 		}
 	}
 
-	public static <T extends PacketContract> T createPlayPacket(PacketType packetType, int protocolVersion) {
-		return wirePacketsOf(packetType.direction()).createPlayPacket0(packetType, protocolVersion);
+	public static <T extends PacketContract> T createPlayPacket(PacketType type, int protocolVersion) {
+		return wirePacketsOf(type.direction()).createPlayPacket0(type, protocolVersion);
 	}
 
 	public static <T extends PacketContract> T createPlayPacket(PacketDirection direction, PacketType packetType, int protocolVersion) {
 		return wirePacketsOf(direction).createPlayPacket0(packetType, protocolVersion);
 	}
 
-	public static <T extends PacketContract> T createLoginPacket(PacketType packetType, int protocolVersion) {
-		return wirePacketsOf(packetType.direction()).createLoginPacket0(packetType, protocolVersion);
+	public static <T extends PacketContract> T createLoginPacket(PacketType type, int protocolVersion) {
+		return wirePacketsOf(type.direction()).createLoginPacket0(type, protocolVersion);
 	}
 
-	public static <T extends PacketContract> T createLoginPacket(PacketDirection direction, PacketType packetType, int protocolVersion) {
-		return wirePacketsOf(direction).createLoginPacket0(packetType, protocolVersion);
+	public static <T extends PacketContract> T createLoginPacket(PacketDirection direction, PacketType type, int protocolVersion) {
+		return wirePacketsOf(direction).createLoginPacket0(type, protocolVersion);
 	}
 
-	public static <T extends PacketContract> T createStatusPacket(PacketType packetType, int protocolVersion) {
-		PacketDirection direction = packetType.direction();
-		return wirePacketsOf(direction).createStatusPacket0(packetType, protocolVersion);
+	public static <T extends PacketContract> T createStatusPacket(PacketType type, int protocolVersion) {
+		PacketDirection direction = type.direction();
+		return wirePacketsOf(direction).createStatusPacket0(type, protocolVersion);
 	}
 
-	public static <T extends PacketContract> T createStatusPacket(PacketDirection direction, PacketType packetType, int protocolVersion) {
-		return wirePacketsOf(direction).createStatusPacket0(packetType, protocolVersion);
+	public static <T extends PacketContract> T createStatusPacket(PacketDirection direction, PacketType type, int protocolVersion) {
+		return wirePacketsOf(direction).createStatusPacket0(type, protocolVersion);
 	}
 
-	public static <T extends PacketContract> T createPacket(ConnectionState state, PacketType packetType, int protocolVersion) {
-		PacketDirection direction = packetType.direction();
-		return wirePacketsOf(direction).createPacket0(state, packetType, protocolVersion);
+	public static <T extends PacketContract> T createPacket(ConnectionState state, PacketType type, int protocolVersion) {
+		PacketDirection direction = type.direction();
+		return wirePacketsOf(direction).createPacket0(state, type, protocolVersion);
 	}
 
 	public static <T extends PacketContract> T createPacket(PacketDirection direction, ConnectionState state, PacketType packetType, int protocolVersion) {
@@ -102,8 +102,8 @@ public final class WirePackets {
 		return wirePacketsOf(direction).decodePacket0(state, protocolVersion, packet);
 	}
 
-	public static void encodePacket(ConnectionState state, PacketType packetType, int protocolVersion, PacketContract packet, ByteBuf output) {
-		encodePacket(packetType.direction(), state, packetType, protocolVersion, packet, output);
+	public static void encodePacket(ConnectionState state, PacketType type, int protocolVersion, PacketContract packet, ByteBuf output) {
+		encodePacket(type.direction(), state, type, protocolVersion, packet, output);
 	}
 
 	public static void encodePacket(ConnectionState connectionState, TypedPacketContract tpc, int protocolVersion, ByteBuf newMessage) {
@@ -154,7 +154,7 @@ public final class WirePackets {
 		}
 	}
 
-	private void register(int protocolVersion, ConnectionState state, PacketType packetType, int packetId, WirePacketDefinition<?> definition) {
+	private void register(int protocolVersion, ConnectionState state, PacketType type, int packetId, WirePacketDefinition<?> definition) {
 		Map<ConnectionState, WirePacketDefinition<?>[]> states = packets.get(protocolVersion);
 		WirePacketDefinition<?>[] registrations = states.get(state);
 		if (registrations == null) {
@@ -165,7 +165,7 @@ public final class WirePackets {
 			states.put(state, registrations);
 		}
 		if (registrations[packetId] != null) {
-			throw new IllegalStateException("Duplicate wire packet " + packetType + " in state " + state + " for protocol version " + protocolVersion);
+			throw new IllegalStateException("Duplicate wire packet " + type + " in state " + state + " for protocol version " + protocolVersion);
 		}
 		registrations[packetId] = definition;
 	}
@@ -174,22 +174,22 @@ public final class WirePackets {
 		return Objects.requireNonNull(direction, "direction") == PacketDirection.SERVERBOUND ? SERVERBOUND : CLIENTBOUND;
 	}
 
-	private <T extends PacketContract> T createPlayPacket0(PacketType packetType, int protocolVersion) {
-		return createPacket0(ConnectionState.PLAY, packetType, protocolVersion);
+	private <T extends PacketContract> T createPlayPacket0(PacketType type, int protocolVersion) {
+		return createPacket0(ConnectionState.PLAY, type, protocolVersion);
 	}
 
-	private <T extends PacketContract> T createLoginPacket0(PacketType packetType, int protocolVersion) {
-		return createPacket0(ConnectionState.LOGIN, packetType, protocolVersion);
+	private <T extends PacketContract> T createLoginPacket0(PacketType type, int protocolVersion) {
+		return createPacket0(ConnectionState.LOGIN, type, protocolVersion);
 	}
 
-	private <T extends PacketContract> T createStatusPacket0(PacketType packetType, int protocolVersion) {
-		return createPacket0(ConnectionState.STATUS, packetType, protocolVersion);
+	private <T extends PacketContract> T createStatusPacket0(PacketType type, int protocolVersion) {
+		return createPacket0(ConnectionState.STATUS, type, protocolVersion);
 	}
 
-	private <T extends PacketContract> T createPacket0(ConnectionState state, PacketType packetType, int protocolVersion) {
-		int packetId = registry.idOf(state, packetType, protocolVersion);
+	private <T extends PacketContract> T createPacket0(ConnectionState state, PacketType type, int protocolVersion) {
+		int packetId = registry.idOf(state, type, protocolVersion);
 		if (packetId < 0) {
-			throw new IllegalArgumentException("No packet with type " + packetType + " found in state " + state + " for protocol version " + protocolVersion);
+			throw new IllegalArgumentException("No packet with type " + type + " found in state " + state + " for protocol version " + protocolVersion);
 		}
 		return createPacket0(state, packetId, protocolVersion);
 	}

@@ -337,6 +337,25 @@ final class JsonCodecTest {
   }
 
   @Test
+  void simulationResultJsonCodecIgnoresLegacyDebugData() {
+    SimulationResult decoded = JsonStreamCodecs.decodeFromString(
+      SimulationResult.JSON_CODEC,
+      "{\"valid\":true,\"debugData\":{\"motionX\":0.25,\"motionY\":-0.125}," +
+        "\"actualMotion\":{\"x\":0.25,\"y\":-0.125,\"z\":0.5}," +
+        "\"offsetMotion\":{\"x\":0.25,\"y\":0,\"z\":0.5},\"onGround\":true}"
+    );
+
+    assertTrue(decoded.isValid());
+    assertEquals(new Motion(0.25, -0.125, 0.5), decoded.actualMotion());
+    assertEquals(new Motion(0.25, 0, 0.5), decoded.offsetMotion());
+    assertTrue(decoded.onGround());
+    JsonObject encoded = new JsonParser().parse(
+      JsonStreamCodecs.encodeToString(SimulationResult.JSON_CODEC, decoded)
+    ).getAsJsonObject();
+    assertFalse(encoded.has("debugData"));
+  }
+
+  @Test
   void jsonCodecsPreserveNonFinitePhysicsNumbers() {
     Motion expected = new Motion(Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY);
 

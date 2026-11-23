@@ -55,7 +55,6 @@ final class ModuleLoader {
     prepareModule("de.jpx3.intave.module.tracker.player.EffectTracker", defaultBoot);
     prepareModule("de.jpx3.intave.module.tracker.player.InventoryTracker", defaultBoot);
     prepareModule("de.jpx3.intave.module.tracker.player.ItemCrashTracker", defaultBoot);
-    prepareModule("de.jpx3.intave.module.tracker.player.MovementDebugTracker", defaultBoot);
     prepareModule("de.jpx3.intave.module.tracker.player.MetadataTracker", defaultBoot);
     prepareModule("de.jpx3.intave.module.tracker.player.PlayerHandTracker", defaultBoot);
     prepareModule("de.jpx3.intave.module.tracker.player.SettingsTracker", defaultBoot);

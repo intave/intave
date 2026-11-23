@@ -161,6 +161,8 @@ public final class PacketPerfectSubscriptionLinker extends Module {
 		return new PacketSubscription() {
 			@Override
 			public void onPacket(PacketEvent event) {
+				// A packet type can implement different contracts in different protocols.
+				if (!nativeTargetType.isInstance(event.packet())) return;
 				boolean dirtyBefore = event.dirty();
 				provider.apply(event.user(), subscriber -> {
 					if (subscriber instanceof EventProcessor && !((EventProcessor) subscriber).shouldProcessEvents()) {

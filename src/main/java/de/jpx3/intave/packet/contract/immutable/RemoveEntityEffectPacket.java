@@ -11,7 +11,16 @@
 
 package de.jpx3.intave.packet.contract.immutable;
 
+import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.PacketContract;
+import de.jpx3.intave.packet.contract.PacketType;
+
+import static de.jpx3.intave.packet.ConnectionState.PLAY;
+import static de.jpx3.intave.packet.contract.PacketType.Server.REMOVE_ENTITY_EFFECT;
 
 public interface RemoveEntityEffectPacket extends PacketContract, EffectAddressed {
+	@Override
+	default boolean appliesTo(ConnectionState state, PacketType packetType) {
+		return state == PLAY && packetType == REMOVE_ENTITY_EFFECT;
+	}
 }

@@ -22,7 +22,6 @@ import io.netty.buffer.ByteBufOutputStream;
 
 import java.io.IOException;
 
-/** Network NBT framing. Compound fields allow TAG_End for null, component fields require a tag. */
 final class NbtTagCodec<T extends Tag> implements StreamCodec<ByteBuf, ByteBuf, T> {
 	private static final int MAX_PACKET_BYTES = 8 * 1024 * 1024;
 	private final Class<T> rootType;
@@ -41,6 +40,10 @@ final class NbtTagCodec<T extends Tag> implements StreamCodec<ByteBuf, ByteBuf, 
 
 	static NbtTagCodec<Tag> trustedTag() {
 		return new NbtTagCodec<>(Tag.class, false, MAX_PACKET_BYTES);
+	}
+
+	static NbtTagCodec<Tag> tag() {
+		return new NbtTagCodec<>(Tag.class, false, TagLimiter.DEFAULT_MAX_BYTES);
 	}
 
 	@Override
@@ -66,6 +69,8 @@ final class NbtTagCodec<T extends Tag> implements StreamCodec<ByteBuf, ByteBuf, 
 	@Override
 	public T decode(ByteBuf input) {
 		int length = Math.min(input.readableBytes(), maxWireBytes);
+		// Unlike vanilla's direct read, this slice has an independent reader index.
+		// Advance input explicitly below: one byte for null, or the full tag after successful decoding.
 		ByteBuf bounded = input.slice(input.readerIndex(), length);
 		try {
 			int type = bounded.readUnsignedByte();
@@ -88,7 +93,7 @@ final class NbtTagCodec<T extends Tag> implements StreamCodec<ByteBuf, ByteBuf, 
 	}
 
 	private TagLimiter readLimiter(int wireBytes) {
-		if (rootType == CompoundTag.class) {
+		if (maxWireBytes == TagLimiter.DEFAULT_MAX_BYTES) {
 			return TagLimiter.create(TagLimiter.DEFAULT_MAX_BYTES, TagLimiter.DEFAULT_MAX_NESTING_LEVEL);
 		}
 		// Trusted components can fill a packet. ViaNBT also charges four bytes per list entry

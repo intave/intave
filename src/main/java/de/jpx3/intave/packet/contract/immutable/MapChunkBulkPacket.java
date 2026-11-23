@@ -12,7 +12,6 @@
 package de.jpx3.intave.packet.contract.immutable;
 
 import de.jpx3.intave.packet.ConnectionState;
-import de.jpx3.intave.packet.contract.PacketContract;
 import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.share.ChunkBulkData;
 
@@ -21,7 +20,7 @@ import java.util.List;
 import static de.jpx3.intave.packet.ConnectionState.PLAY;
 import static de.jpx3.intave.packet.contract.PacketType.Server.MAP_CHUNK_BULK;
 
-public interface MapChunkBulkPacket extends PacketContract, ChunkAddressed {
+public interface MapChunkBulkPacket extends ChunkLoadPacket {
 	boolean skyLight();
 	List<ChunkBulkData> chunks();
 

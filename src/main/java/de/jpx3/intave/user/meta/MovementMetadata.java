@@ -30,8 +30,8 @@ import de.jpx3.intave.check.movement.physics.simulator.BoatSimulator;
 import de.jpx3.intave.check.movement.physics.simulator.Simulation;
 import de.jpx3.intave.check.movement.physics.simulator.Simulator;
 import de.jpx3.intave.check.movement.physics.simulator.Simulators;
-import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.check.movement.physics.update.MotionUpdate;
+import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.check.world.interaction.BlockTrustChain;
 import de.jpx3.intave.executor.RateLimiter;
 import de.jpx3.intave.executor.Synchronizer;
@@ -79,8 +79,6 @@ public final class MovementMetadata implements SimulationEnvironment {
   private final Player player;
   private final User user;
   public final BlockTrustChain placementTrustChain = new BlockTrustChain();
-  public final Map<String, Double> serverMovementDebugValues = new HashMap<>();
-  public final Map<String, Double> clientMovementDebugValues = new HashMap<>();
   public final List<TickAmbiguousUpdate> tickAmbiguousUpdates = new LinkedList<>();
   public final List<MotionUpdate> pendingVelocityUpdates = new ArrayList<>();
   public float width = 0.6f, height = 1.8f;

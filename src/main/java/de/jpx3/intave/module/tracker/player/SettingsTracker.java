@@ -11,52 +11,27 @@
 
 package de.jpx3.intave.module.tracker.player;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.module.Module;
-import de.jpx3.intave.module.linker.packet.PacketSubscription;
-import de.jpx3.intave.packet.plib.reader.PayloadInReader;
+import de.jpx3.intave.module.linker.packetperfect.OnReceive;
+import de.jpx3.intave.packet.contract.immutable.ClientSettingsPacket;
+import de.jpx3.intave.packet.contract.immutable.PayloadInPacket;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.meta.ProtocolMetadata;
-import org.bukkit.entity.Player;
-
-import static de.jpx3.intave.packet.contract.PacketType.Client.CUSTOM_PAYLOAD_IN;
-import static de.jpx3.intave.packet.contract.PacketType.Client.SETTINGS;
-import static de.jpx3.intave.user.UserRepository.userOf;
+import org.bukkit.event.Cancellable;
 
 public final class SettingsTracker extends Module {
-  @PacketSubscription(
-    packetsIn = {
-      SETTINGS
-    }
-  )
-  public void receiveClientOptions(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = userOf(player);
-    PacketContainer packet = event.getPacket();
-    ProtocolMetadata clientData = user.meta().protocol();
-    if (MinecraftVersions.VER1_20_2.atOrAbove()) {
-      clientData.setLocale("en_US");
+  @OnReceive
+  public void receiveClientOptions(User user, ClientSettingsPacket packet, Cancellable cancellable) {
+    if (cancellable.isCancelled()) {
       return;
     }
-    String locale = packet.getStrings().read(0);
-    clientData.setLocale(locale);
+    user.meta().protocol().setLocale(packet.locale());
   }
 
-  @PacketSubscription(
-    packetsIn = {
-      CUSTOM_PAYLOAD_IN
-    }
-  )
-  public void receivePayloadPacket(Player player, PayloadInReader reader) {
-    String tag = reader.tag();
-    if (!tag.equalsIgnoreCase("MC|Brand") && !tag.equalsIgnoreCase("minecraft:brand")) {
+  @OnReceive
+  public void receivePayloadPacket(User user, PayloadInPacket packet, Cancellable cancellable) {
+    if (cancellable.isCancelled()) {
       return;
     }
-    String brand = reader.readStringWithExtraByte();
-    User user = userOf(player);
-    ProtocolMetadata clientData = user.meta().protocol();
-    clientData.setClientBrand(brand);
+    packet.clientBrand().ifPresent(user.meta().protocol()::setClientBrand);
   }
 }

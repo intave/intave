@@ -50,6 +50,6 @@ final class PlayerTeleportWirePacketCodecsTest {
 	void olderVariantsRejectFieldsTheirFormatCannotEncode() {
 		assertThrows(
 				IllegalStateException.class,
-				() -> new PlayerTeleportWithoutIdWirePacket().setTeleportId(1));
+				() -> new PlayerTeleportWirePacket.Protocol47().setTeleportId(1));
 	}
 }

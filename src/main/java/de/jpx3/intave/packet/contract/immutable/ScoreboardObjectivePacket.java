@@ -15,6 +15,7 @@ import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.PacketContract;
 import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.share.ChatComponent;
 import de.jpx3.intave.share.ScoreboardObjectiveAction;
 
 import static de.jpx3.intave.packet.ConnectionState.PLAY;
@@ -25,6 +26,11 @@ public interface ScoreboardObjectivePacket extends PacketContract, ObjectiveAddr
 
 	@Nullable
 	String displayNameJson();
+
+	default String displayNameText() {
+		String json = displayNameJson();
+		return json == null ? null : ChatComponent.json(json).legacyText();
+	}
 
 	default boolean hasDisplayNameJson() {
 		return displayNameJson() != null;

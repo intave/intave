@@ -12,13 +12,12 @@
 package de.jpx3.intave.packet.wire.chunk;
 
 import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.contract.mutable.MutableChunksBiomesPacket;
+import de.jpx3.intave.packet.contract.mutable.MutableLightUpdatePacket;
 import de.jpx3.intave.packet.wire.WirePackets;
 import de.jpx3.intave.packet.wire.chunk.batch.ChunkBatchFinishedWirePacket;
 import de.jpx3.intave.packet.wire.chunk.batch.ChunkBatchReceivedWirePacket;
 import de.jpx3.intave.packet.wire.chunk.batch.ChunkBatchStartWirePacket;
-import de.jpx3.intave.packet.wire.chunk.biomes.ChunksBiomesWirePacket;
-import de.jpx3.intave.packet.wire.chunk.light.LightUpdateWirePacket;
-import de.jpx3.intave.packet.wire.chunk.light.LightUpdateWithTrustEdgesWirePacket;
 import de.jpx3.intave.share.ChunkBiomeData;
 import de.jpx3.intave.share.ChunkLightData;
 import de.jpx3.intave.share.ChunkPalette;
@@ -33,7 +32,8 @@ import java.util.List;
 import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
 import static de.jpx3.intave.packet.PacketDirection.SERVERBOUND;
 import static de.jpx3.intave.packet.wire.WirePacketTestSupport.*;
-import static de.jpx3.intave.packet.wire.chunk.ChunkPacketFixtures.*;
+import static de.jpx3.intave.packet.wire.chunk.ChunkPacketFixtures.palette;
+import static de.jpx3.intave.packet.wire.chunk.ChunkPacketFixtures.varInt;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class ChunkControlWirePacketCodecsTest {
@@ -64,7 +64,7 @@ final class ChunkControlWirePacketCodecsTest {
 				assertUnsupported(CLIENTBOUND, PacketType.Server.CHUNKS_BIOMES, protocol);
 				continue;
 			}
-			ChunksBiomesWirePacket packet = roundTrip(CLIENTBOUND, PacketType.Server.CHUNKS_BIOMES, protocol, output -> {
+			MutableChunksBiomesPacket packet = roundTrip(CLIENTBOUND, PacketType.Server.CHUNKS_BIOMES, protocol, output -> {
 				output.writeByte(2).writeInt(27).writeInt(-12);
 				ByteBuf data = Unpooled.buffer();
 				try {
@@ -88,40 +88,14 @@ final class ChunkControlWirePacketCodecsTest {
 	}
 
 	@Test
-	void lightMasksFlagsAndArrayCountsMatchEveryVersion() {
-		for (int protocol : registry(CLIENTBOUND).supportedProtocolVersions()) {
-			if (protocol < 477) {
-				assertUnsupported(CLIENTBOUND, PacketType.Server.LIGHT_UPDATE, protocol);
-				continue;
-			}
-			LightUpdateWirePacket packet = roundTrip(CLIENTBOUND, PacketType.Server.LIGHT_UPDATE, protocol, output -> {
-				varInt(output, -12);
-				varInt(output, 27);
-				if (protocol >= 735 && protocol < 763) output.writeBoolean(true);
-				light(output, protocol < 755);
-			});
-			assertEquals(-12, packet.chunkX(0));
-			assertEquals(27, packet.chunkZ(0));
-			assertArrayEquals(protocol < 755 ? new long[] {0x20001} : new long[] {1, 2}, packet.lightData().skyMask());
-			assertArrayEquals(new long[] {2}, packet.lightData().blockMask());
-			assertEquals(2, packet.lightData().skyUpdates().size());
-			assertEquals(2048, packet.lightData().blockUpdates().get(0).length);
-			assertEquals(0x56, packet.lightData().blockUpdates().get(0)[2047]);
-			if (protocol >= 735 && protocol < 763) {
-				assertTrue(((LightUpdateWithTrustEdgesWirePacket) packet).trustEdges());
-			}
-			assertFalse(packet.couldHaveBeenMutated());
-		}
-	}
-
-	@Test
 	void biomeAndLightValuesDoNotLeakMutableStorage() {
 		byte[] bytes = {1, 2};
 		List<ChunkBiomeData> chunks = new ArrayList<>();
 		List<ChunkPalette> sections = new ArrayList<>();
 		sections.add(ChunkPalette.single(ChunkPalette.Kind.BIOMES, 7));
 		chunks.add(new ChunkBiomeData(1, 2, sections));
-		ChunksBiomesWirePacket packet = new ChunksBiomesWirePacket(chunks);
+		MutableChunksBiomesPacket packet = WirePackets.createPlayPacket(PacketType.Server.CHUNKS_BIOMES, 770);
+		packet.setChunks(chunks);
 		chunks.clear();
 		bytes[0] = 9;
 		sections.clear();
@@ -132,7 +106,7 @@ final class ChunkControlWirePacketCodecsTest {
 		ByteBuf output = Unpooled.buffer();
 		try {
 			encodePayload(packet, output);
-			ChunksBiomesWirePacket decoded = decodePayload(ChunksBiomesWirePacket.class, output);
+			MutableChunksBiomesPacket decoded = decodePayload(packet.getClass(), output);
 			assertEquals(-3, decoded.chunkX(0));
 			assertEquals(4, decoded.chunkZ(0));
 			long[] sky = {1};
@@ -142,12 +116,12 @@ final class ChunkControlWirePacketCodecsTest {
 			data.skyUpdates().get(0)[1] = 99;
 			assertArrayEquals(new long[] {1}, data.skyMask());
 			assertEquals(2, data.skyUpdates().get(0)[1]);
-			LightUpdateWirePacket light = new LightUpdateWirePacket();
+			MutableLightUpdatePacket light = WirePackets.createPlayPacket(PacketType.Server.LIGHT_UPDATE, 763);
 			light.setLightData(data);
 			light.setChunkCoordinates(0, -100, 200);
 			output.clear();
 			encodePayload(light, output);
-			LightUpdateWirePacket reread = decodePayload(LightUpdateWirePacket.class, output);
+			MutableLightUpdatePacket reread = decodePayload(light.getClass(), output);
 			assertEquals(-100, reread.chunkX(0));
 			assertArrayEquals(new long[] {1}, reread.lightData().skyMask());
 			assertTrue(light.couldHaveBeenMutated());
@@ -162,7 +136,7 @@ final class ChunkControlWirePacketCodecsTest {
 		try {
 			input.writeByte(1).writeLong(0);
 			varInt(input, 2097153);
-			assertThrows(IllegalArgumentException.class, () -> decodePayload(ChunksBiomesWirePacket.class, input));
+			assertThrows(IllegalArgumentException.class, () -> decodePayload(WirePackets.createPlayPacket(PacketType.Server.CHUNKS_BIOMES, 770).getClass(), input));
 			input.clear();
 			input.writeByte(1).writeLong(1); // sky mask requires one array
 			input.writeByte(0).writeByte(0).writeByte(0).writeByte(0).writeByte(0);

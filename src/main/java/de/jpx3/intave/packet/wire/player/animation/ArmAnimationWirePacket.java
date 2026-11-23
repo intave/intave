@@ -18,36 +18,91 @@ import de.jpx3.intave.packet.wire.AbstractMutable;
 import de.jpx3.intave.share.PlayerHand;
 import io.netty.buffer.ByteBuf;
 
-public class ArmAnimationWirePacket extends AbstractMutable implements MutableArmAnimationPacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, ArmAnimationWirePacket> STREAM_CODEC =
-		StreamCodec.compound(
-			ByteBufStreamCodecs.enumCodec(PlayerHand.values()), ArmAnimationWirePacket::hand,
-			ArmAnimationWirePacket::new
-		);
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-	protected PlayerHand hand;
-
-	public ArmAnimationWirePacket() {
-		this(PlayerHand.MAIN_HAND);
+public final class ArmAnimationWirePacket {
+	private ArmAnimationWirePacket() {
 	}
 
-	public ArmAnimationWirePacket(PlayerHand hand) {
-		this.hand = hand;
+	public static List<Class<?>> registeredClasses() {
+		return Collections.unmodifiableList(Arrays.<Class<?>>asList(
+			Protocol47.class,
+			Protocol107.class
+		));
 	}
 
-	@Override
-	public PlayerHand hand() {
-		return this.hand;
+	static abstract class Base extends AbstractMutable implements MutableArmAnimationPacket {
+		protected PlayerHand hand;
+
+		protected Base() {
+			this(PlayerHand.MAIN_HAND);
+		}
+
+		protected Base(PlayerHand hand) {
+			this.hand = hand;
+		}
+
+		@Override
+		public PlayerHand hand() {
+			return this.hand;
+		}
+
+		@Override
+		public abstract void setHand(PlayerHand value);
 	}
 
-	@Override
-	public void setHand(PlayerHand value) {
-		markMutated();
-		this.hand = value;
+	static final class Protocol47 extends Base {
+		private final static Protocol47 INSTANCE = new Protocol47();
+
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol47> STREAM_CODEC =
+			StreamCodec.of(
+				(output, packet) -> {
+				},
+				input -> INSTANCE
+			);
+
+		public Protocol47() {
+			super(null);
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 47 && protocolVersion < 107;
+		}
+
+		@Override
+		public void setHand(PlayerHand hand) {
+			markMutated();
+			throw new UnsupportedOperationException("This packet does not support a hand");
+		}
 	}
 
-	@Override
-	public boolean appliesTo(int protocolVersion) {
-		return protocolVersion >= 107;
+	static final class Protocol107 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol107> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.enumCodec(PlayerHand.values()), Protocol107::hand,
+				Protocol107::new
+			);
+
+		public Protocol107() {
+			super();
+		}
+
+		public Protocol107(PlayerHand hand) {
+			super(hand);
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 107;
+		}
+
+		@Override
+		public void setHand(PlayerHand value) {
+			markMutated();
+			this.hand = value;
+		}
 	}
 }

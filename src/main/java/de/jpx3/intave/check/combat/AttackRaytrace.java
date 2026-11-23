@@ -43,7 +43,6 @@ import de.jpx3.intave.packet.plib.reader.BlockDigReader;
 import de.jpx3.intave.packet.plib.reader.EntityUseReader;
 import de.jpx3.intave.packet.plib.reader.PlayerMoveReader;
 import de.jpx3.intave.share.EntityUseAction;
-import de.jpx3.intave.share.FriendlyByteBuf;
 import de.jpx3.intave.share.HistoryWindow;
 import de.jpx3.intave.share.Position;
 import de.jpx3.intave.user.MessageChannel;
@@ -51,20 +50,15 @@ import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.meta.*;
 import de.jpx3.intave.world.raytrace.Raytrace;
 import de.jpx3.intave.world.raytrace.Raytracing;
-import io.netty.buffer.ByteBuf;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Function;
-import java.util.zip.DataFormatException;
-import java.util.zip.Inflater;
 
 import static de.jpx3.intave.check.movement.physics.environment.MoveMetric.TELEPORT;
 import static de.jpx3.intave.math.MathHelper.formatDouble;
@@ -146,39 +140,6 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       if (!attack.reachKnown()) {
         debugReachSkipped(user, entityId, "item attack range unavailable");
         return;
-      }
-
-      if (user.meta().protocol().debugStates.containsKey("entity_pos_on_attack")) {
-        String clientEntityPos = user.meta().protocol().debugStates.remove("entity_pos_on_attack");
-        ByteBuf medium = FriendlyByteBuf.from256Unpooled();
-        byte[] decodedInformation = Base64.getDecoder().decode(clientEntityPos);
-        medium.writeBytes(decompress(decodedInformation));
-        Position clientEntityPosition = Position.STREAM_CODEC.decode(medium);
-        int strings = medium.readInt();
-        List<String> stringsList = new ArrayList<>();
-
-        for (int i = 0; i < strings; i++) {
-          stringsList.add(FriendlyByteBuf.readUtf(medium, Short.MAX_VALUE));
-        }
-        Position serverEntityPosition = entity.position.toPosition();
-        double distance = clientEntityPosition.distance(serverEntityPosition);
-//        player.sendMessage(ChatColor.GOLD + "Server " + serverEntityPosition.format(12));
-//        player.sendMessage(ChatColor.GREEN + "Client " + clientEntityPosition.format(12));
-        user.sendMessage(ChatColor.YELLOW + " Server");
-        int i = 0;
-        for (String positionChange : entity.positionChanges()) {
-          if (i++ >= 5) {
-            user.sendMessage(ChatColor.YELLOW + positionChange);
-          }
-        }
-        i = 0;
-        user.sendMessage(ChatColor.DARK_PURPLE + " Client");
-        for (String positionChange : stringsList) {
-          if (i++ >= 5) {
-            user.sendMessage(ChatColor.DARK_PURPLE + positionChange);
-          }
-        }
-        user.sendMessage(ChatColor.RED + "Distance " + formatDouble(distance, 12));
       }
 
       boolean inTeleport = movement.ticksPast(TELEPORT) == 0;
@@ -266,26 +227,6 @@ public final class AttackRaytrace extends MetaCheck<AttackRaytrace.AttackRaytrac
       user.sendMessage(ChatColor.DARK_AQUA + "[Reach] " + ChatColor.GRAY + "Target #"
         + ChatColor.AQUA + entityId + ChatColor.GOLD + " skipped: " + ChatColor.GRAY + reason);
     }
-  }
-
-
-  private static byte[] decompress(byte[] input) {
-    Inflater inflater = new Inflater();
-    inflater.setInput(input);
-    ByteArrayOutputStream bos = new ByteArrayOutputStream(input.length);
-    byte[] buf = new byte[1024];
-    while (!inflater.finished()) {
-      try {
-        int count = inflater.inflate(buf);
-        bos.write(buf, 0, count);
-      } catch (DataFormatException e) {
-        return new byte[0];
-      }
-    }
-    try {
-      bos.close();
-    } catch (IOException ignored) {}
-    return bos.toByteArray();
   }
 
   @PacketSubscription(

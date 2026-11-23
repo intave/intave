@@ -21,27 +21,27 @@ import static org.junit.jupiter.api.Assertions.*;
 final class AbilityInWirePacketCodecsTest {
 	@Test
 	void unsupportedFieldsCannotBeAddedToPacketsThatDoNotCarryThem() {
-		AbilityInWirePacket modernAbility = new AbilityInWirePacket(2);
+		AbilityInWirePacket.Base modernAbility = new AbilityInWirePacket.Protocol735(2);
 		assertTrue(modernAbility.requestedFlying());
 		assertThrows(UnsupportedOperationException.class, modernAbility::flyingSpeed);
 		assertThrows(UnsupportedOperationException.class, () -> modernAbility.setFlyingSpeed(0.1f));
-		AbilityInWithSpeedsWirePacket legacyAbility =
-				new AbilityInWithSpeedsWirePacket(2, 0.05f, 0.1f);
+		AbilityInWirePacket.Protocol47 legacyAbility =
+				new AbilityInWirePacket.Protocol47(2, 0.05f, 0.1f);
 		assertEquals(0.05f, legacyAbility.flyingSpeed());
 		assertEquals(0.1f, legacyAbility.walkingSpeed());
 	}
 
 	@Test
 	void abilitiesUseSpeedsOnlyBeforeOneSixteen() {
-		AbilityInWirePacket legacy =
+		AbilityInWirePacket.Base legacy =
 				roundTrip(
 						SERVERBOUND,
 						PacketType.Client.ABILITIES_IN,
 						578,
 						b -> b.writeByte(2).writeFloat(0.05f).writeFloat(0.1f));
-		AbilityInWirePacket modern = roundTrip(SERVERBOUND, PacketType.Client.ABILITIES_IN, 735, b -> b.writeByte(2));
-		assertInstanceOf(AbilityInWithSpeedsWirePacket.class, legacy);
-		assertEquals(AbilityInWirePacket.class, modern.getClass());
+		AbilityInWirePacket.Base modern = roundTrip(SERVERBOUND, PacketType.Client.ABILITIES_IN, 735, b -> b.writeByte(2));
+		assertInstanceOf(AbilityInWirePacket.Protocol47.class, legacy);
+		assertEquals(AbilityInWirePacket.Protocol735.class, modern.getClass());
 		assertTrue(legacy.requestedFlying());
 		assertTrue(modern.requestedFlying());
 	}

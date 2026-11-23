@@ -14,4 +14,11 @@ package de.jpx3.intave.packet.contract.mutable;
 import de.jpx3.intave.packet.contract.immutable.ExplosionPacket;
 
 public interface MutableExplosionPacket extends ExplosionPacket, MutableMotionUpdate, Mutable {
+	void setPosition(double x, double y, double z);
+
+	void setPower(float power);
+
+	void setDefaultEffects(int protocol);
+
+	void setSilentDefaults(int protocol);
 }

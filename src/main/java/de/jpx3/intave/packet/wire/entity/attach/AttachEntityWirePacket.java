@@ -17,63 +17,132 @@ import de.jpx3.intave.packet.contract.mutable.MutableAttachEntityPacket;
 import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class AttachEntityWirePacket extends AbstractMutable implements MutableAttachEntityPacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, AttachEntityWirePacket> STREAM_CODEC =
-		StreamCodec.compound(
-			ByteBufStreamCodecs.INTEGER, AttachEntityWirePacket::entityId,
-			ByteBufStreamCodecs.INTEGER, AttachEntityWirePacket::vehicleId,
-			AttachEntityWirePacket::new
-		);
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-	protected int entityId;
-	protected int vehicleId;
-
-	public AttachEntityWirePacket() {
-		this(0, -1);
+public final class AttachEntityWirePacket {
+	private AttachEntityWirePacket() {
 	}
 
-	public AttachEntityWirePacket(int entityId, int vehicleId) {
-		this.entityId = entityId;
-		this.vehicleId = vehicleId;
+	public static List<Class<?>> registeredClasses() {
+		return Collections.unmodifiableList(Arrays.<Class<?>>asList(
+			Protocol47.class,
+			Protocol107.class
+		));
 	}
 
-	@Override
-	public int entityId() {
-		return this.entityId;
+	static abstract class Base extends AbstractMutable implements MutableAttachEntityPacket {
+		protected int entityId;
+		protected int vehicleId;
+
+		protected Base() {
+			this(0, -1);
+		}
+
+		protected Base(int entityId, int vehicleId) {
+			this.entityId = entityId;
+			this.vehicleId = vehicleId;
+		}
+
+		@Override
+		public int entityId() {
+			return this.entityId;
+		}
+
+		@Override
+		public void setEntityId(int value) {
+			markMutated();
+			this.entityId = value;
+		}
+
+		@Override
+		public int vehicleId() {
+			return this.vehicleId;
+		}
+
+		@Override
+		public void setVehicleId(int value) {
+			markMutated();
+			this.vehicleId = value;
+		}
+
+		@Override
+		public abstract boolean isMount();
+
+		@Override
+		public abstract void setMount(boolean value);
 	}
 
-	@Override
-	public void setEntityId(int value) {
-		markMutated();
-		this.entityId = value;
+	static final class Protocol47 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol47> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.INTEGER, Base::entityId,
+				ByteBufStreamCodecs.INTEGER, Base::vehicleId,
+				ByteBufStreamCodecs.UNSIGNED_BYTE.beforeAndAfter(value -> value == 0, value -> value ? 0 : 1), Protocol47::isMount,
+				Protocol47::new
+			);
+
+		private boolean mount;
+
+		public Protocol47() {
+			super();
+		}
+
+		public Protocol47(int entityId, int vehicleId, boolean mount) {
+			super(entityId, vehicleId);
+			this.mount = mount;
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 47 && protocolVersion < 107;
+		}
+
+		@Override
+		public boolean isMount() {
+			return mount;
+		}
+
+		@Override
+		public void setMount(boolean value) {
+			markMutated();
+			mount = value;
+		}
 	}
 
-	@Override
-	public int vehicleId() {
-		return this.vehicleId;
-	}
+	static final class Protocol107 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol107> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.INTEGER, Protocol107::entityId,
+				ByteBufStreamCodecs.INTEGER, Protocol107::vehicleId,
+				Protocol107::new
+			);
 
-	@Override
-	public void setVehicleId(int value) {
-		markMutated();
-		this.vehicleId = value;
-	}
+		public Protocol107() {
+			super();
+		}
 
-	@Override
-	public boolean appliesTo(int protocolVersion) {
-		return protocolVersion >= 107;
-	}
+		public Protocol107(int entityId, int vehicleId) {
+			super(entityId, vehicleId);
+		}
 
-	@Override
-	public boolean isMount() {
-		return false;
-	}
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 107;
+		}
 
-	@Override
-	public void setMount(boolean value) {
-		markMutated();
-		if (value) {
-			throw new UnsupportedOperationException("Use MOUNT for passenger updates since 1.9");
+		@Override
+		public boolean isMount() {
+			return false;
+		}
+
+		@Override
+		public void setMount(boolean value) {
+			markMutated();
+			if (value) {
+				throw new UnsupportedOperationException("Use MOUNT for passenger updates since 1.9");
+			}
 		}
 	}
 }

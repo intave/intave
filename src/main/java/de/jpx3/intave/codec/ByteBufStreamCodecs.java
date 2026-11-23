@@ -44,6 +44,7 @@ public final class ByteBufStreamCodecs {
 	public static final StreamCodec<ByteBuf, ByteBuf, Double> FLOAT_AS_DOUBLE = FLOAT.beforeAndAfter(Float::doubleValue, Double::floatValue);
 	public static final StreamCodec<ByteBuf, ByteBuf, String> VARINT_STRING = stringCodec(32767);
 	public static final StreamCodec<ByteBuf, ByteBuf, Tag> TRUSTED_TAG = NbtTagCodec.trustedTag();
+	public static final StreamCodec<ByteBuf, ByteBuf, Tag> TAG = NbtTagCodec.tag();
 	public static final StreamCodec<ByteBuf, ByteBuf, CompoundTag> COMPOUND_TAG = NbtTagCodec.nullableCompound(false);
 	public static final StreamCodec<ByteBuf, ByteBuf, CompoundTag> NAMED_COMPOUND_TAG = NbtTagCodec.nullableCompound(true);
 	public static final StreamCodec<ByteBuf, ByteBuf, byte[]> VARINT_BYTES = varIntByteArray(Integer.MAX_VALUE);

@@ -15,6 +15,8 @@ import de.jpx3.intave.adapter.MinecraftVersion;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.check.movement.physics.environment.Pose;
 import de.jpx3.intave.module.tracker.player.PlayerHandTracker;
+import de.jpx3.intave.packet.event.PacketReceiveEvent;
+import de.jpx3.intave.packet.wire.client.tickend.ClientTickEndWirePacket;
 import de.jpx3.intave.test.FakePlayerFactory;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserFactory;
@@ -25,11 +27,8 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static de.jpx3.intave.packet.contract.PacketType.Client.CLIENT_TICK_END;
+import static org.junit.jupiter.api.Assertions.*;
 
 class AttackReachSnapshotTest {
   @Test
@@ -67,7 +66,9 @@ class AttackReachSnapshotTest {
     assertNull(inventory.previousSpearThisTick());
 
     inventory.recordPreviousHeldItemForReach(spear);
-    new PlayerHandTracker().receiveClientTickEnd(user);
+    var packet = new ClientTickEndWirePacket();
+    var event = new PacketReceiveEvent(user, CLIENT_TICK_END, packet);
+    new PlayerHandTracker().receiveClientTickEnd(user, event, packet);
     assertNull(inventory.previousSpearThisTick());
   }
 

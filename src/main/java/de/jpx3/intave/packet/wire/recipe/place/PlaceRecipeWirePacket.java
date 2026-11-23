@@ -17,59 +17,137 @@ import de.jpx3.intave.packet.contract.mutable.MutablePlaceRecipePacket;
 import de.jpx3.intave.packet.wire.AbstractMutable;
 import io.netty.buffer.ByteBuf;
 
-public class PlaceRecipeWirePacket extends AbstractMutable implements MutablePlaceRecipePacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, PlaceRecipeWirePacket> STREAM_CODEC =
-		StreamCodec.compound(
-			ByteBufStreamCodecs.VARINT, PlaceRecipeWirePacket::containerId,
-			ByteBufStreamCodecs.VARINT, PlaceRecipeWirePacket::recipeId,
-			ByteBufStreamCodecs.BOOLEAN, PlaceRecipeWirePacket::placeAll,
-			PlaceRecipeWirePacket::new
-		);
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-	protected int containerId = 0;
-
-	protected boolean placeAll = false;
-
-	protected int recipeId;
-
-	public PlaceRecipeWirePacket() {
-		this(0, 0, false);
+public final class PlaceRecipeWirePacket {
+	private PlaceRecipeWirePacket() {
 	}
 
-	public PlaceRecipeWirePacket(int containerId, int recipeId, boolean placeAll) {
-		this.containerId = containerId;
-		this.recipeId = recipeId;
-		this.placeAll = placeAll;
+	public static List<Class<?>> registeredClasses() {
+		return Collections.unmodifiableList(Arrays.<Class<?>>asList(
+			Protocol335.class,
+			Protocol393.class,
+			Protocol768.class
+		));
 	}
 
-	@Override
-	public int containerId() {
-		return this.containerId;
+	static abstract class Base extends AbstractMutable implements MutablePlaceRecipePacket {
+		protected int containerId = 0;
+		protected boolean placeAll = false;
+		protected int recipeId;
+
+		protected Base() {
+			this(0, 0, false);
+		}
+
+		protected Base(int containerId, int recipeId, boolean placeAll) {
+			this.containerId = containerId;
+			this.recipeId = recipeId;
+			this.placeAll = placeAll;
+		}
+
+		@Override
+		public int containerId() {
+			return this.containerId;
+		}
+
+		@Override
+		public void setContainerId(int value) {
+			markMutated();
+			this.containerId = value;
+		}
+
+		@Override
+		public boolean placeAll() {
+			return this.placeAll;
+		}
+
+		@Override
+		public void setPlaceAll(boolean value) {
+			markMutated();
+			this.placeAll = value;
+		}
+
+		public int recipeId() {
+			return recipeId;
+		}
 	}
 
-	@Override
-	public void setContainerId(int value) {
-		markMutated();
-		this.containerId = value;
+	static final class Protocol335 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol335> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.SIGNED_BYTE, Base::containerId,
+				ByteBufStreamCodecs.VARINT, Base::recipeId,
+				ByteBufStreamCodecs.BOOLEAN, Base::placeAll,
+				Protocol335::new
+			);
+
+		public Protocol335() {
+			super();
+		}
+
+		public Protocol335(int containerId, int recipeId, boolean placeAll) {
+			super(containerId, recipeId, placeAll);
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 335 && protocolVersion < 393;
+		}
 	}
 
-	@Override
-	public boolean placeAll() {
-		return this.placeAll;
+	static final class Protocol393 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol393> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.SIGNED_BYTE, Base::containerId,
+				ByteBufStreamCodecs.VARINT_STRING, Protocol393::recipeKey,
+				ByteBufStreamCodecs.BOOLEAN, Base::placeAll,
+				Protocol393::new
+			);
+
+		private String recipeKey = "minecraft:air";
+
+		public Protocol393() {
+			super();
+		}
+
+		public Protocol393(int containerId, String recipeKey, boolean placeAll) {
+			super(containerId, 0, placeAll);
+			this.recipeKey = recipeKey;
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 393 && protocolVersion < 768;
+		}
+
+		public String recipeKey() {
+			return recipeKey;
+		}
 	}
 
-	@Override
-	public void setPlaceAll(boolean value) {
-		markMutated();
-		this.placeAll = value;
-	}
+	static final class Protocol768 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol768> STREAM_CODEC =
+			StreamCodec.compound(
+				ByteBufStreamCodecs.VARINT, Protocol768::containerId,
+				ByteBufStreamCodecs.VARINT, Protocol768::recipeId,
+				ByteBufStreamCodecs.BOOLEAN, Protocol768::placeAll,
+				Protocol768::new
+			);
 
-	@Override
-	public boolean appliesTo(int protocolVersion) {
-		return protocolVersion >= 768;
-	}
+		public Protocol768() {
+			super();
+		}
 
-	public int recipeId() {
-		return recipeId;
+		public Protocol768(int containerId, int recipeId, boolean placeAll) {
+			super(containerId, recipeId, placeAll);
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 768;
+		}
 	}
 }

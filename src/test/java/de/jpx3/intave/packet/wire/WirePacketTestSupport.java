@@ -15,19 +15,34 @@ import de.jpx3.intave.codec.ByteBufStreamCodecs;
 import de.jpx3.intave.packet.PacketDirection;
 import de.jpx3.intave.packet.contract.PacketContract;
 import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.contract.mutable.MutableEntityVelocityPacket;
+import de.jpx3.intave.packet.contract.mutable.MutableKeepAlivePacket;
 import de.jpx3.intave.registry.PacketTypeRegistries;
 import de.jpx3.intave.registry.PacketTypeRegistry;
+import de.jpx3.intave.share.Motion;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import java.util.function.Consumer;
 
 import static de.jpx3.intave.packet.ConnectionState.PLAY;
+import static de.jpx3.intave.packet.PacketDirection.CLIENTBOUND;
 import static de.jpx3.intave.packet.PacketDirection.SERVERBOUND;
 import static org.junit.jupiter.api.Assertions.*;
 
 public final class WirePacketTestSupport {
 	private WirePacketTestSupport() {}
+
+	public static MutableKeepAlivePacket keepAlive(long id) {
+		return roundTrip(CLIENTBOUND, PacketType.Server.KEEP_ALIVE_OUT, 777, output -> output.writeLong(id));
+	}
+
+	public static MutableEntityVelocityPacket entityVelocity(int entityId, Motion motion) {
+		return roundTrip(CLIENTBOUND, PacketType.Server.ENTITY_VELOCITY, 777, output -> {
+			ByteBufStreamCodecs.VARINT.encode(output, entityId);
+			Motion.LOW_PRECISION_STREAM_CODEC.encode(output, motion);
+		});
+	}
 
 	public static void assertUnsupported(PacketDirection direction, PacketType packetType, int protocol) {
 		int id = registry(direction).idOf(PLAY, packetType, protocol);

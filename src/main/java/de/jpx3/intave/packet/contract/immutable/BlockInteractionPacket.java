@@ -23,6 +23,10 @@ import static de.jpx3.intave.packet.contract.PacketType.Client.USE_ITEM;
 import static de.jpx3.intave.packet.contract.PacketType.Client.USE_ITEM_ON;
 
 public interface BlockInteractionPacket extends PacketContract, BlockAddressed, Handed, Sequenced {
+	default boolean isItemUseRequest() {
+		return true;
+	}
+
 	boolean isDirectItemUseRequest();
 
 	@Nullable

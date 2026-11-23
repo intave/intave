@@ -20,9 +20,7 @@ import de.jpx3.intave.share.BlockPosition;
 import de.jpx3.intave.share.MinecraftKey;
 import io.netty.buffer.ByteBuf;
 
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -30,340 +28,491 @@ import java.util.function.Supplier;
 import static de.jpx3.intave.codec.ByteBufStreamCodecs.*;
 import static de.jpx3.intave.packet.wire.world.respawn.RespawnWirePacket.Field.*;
 
-public abstract class RespawnWirePacket extends AbstractMutable implements MutableRespawnPacket {
-	private final Layout layout;
-	private int dimensionId;
-	private String dimensionKey = "minecraft:overworld";
-	private CompoundTag dimensionData;
-	private String world = "minecraft:overworld";
-	private String levelType = "default";
-	private int difficulty;
-	private long seed;
-	private int gameMode;
-	private int previousMode = -1;
-	private boolean debug, flat, keepAttributes;
-	private byte keepMask;
-	private DeathPosition deathLocation;
-	private int portalCooldown, seaLevel;
-
-	private RespawnWirePacket(Layout layout) {
-		this.layout = layout;
-		if (isDimensionTypeDataAvailable()) dimensionData = new CompoundTag();
+public final class RespawnWirePacket {
+	private RespawnWirePacket() {
 	}
 
-	@Override
-	public final boolean appliesTo(int protocol) {
-		return protocol >= layout.firstProtocol && protocol < layout.endProtocol;
+	public static List<Class<?>> registeredClasses() {
+		return Collections.unmodifiableList(Arrays.<Class<?>>asList(
+			Protocol47.class,
+			Protocol477.class,
+			Protocol573.class,
+			Protocol735.class,
+			Protocol751.class,
+			Protocol759.class,
+			Protocol761.class,
+			Protocol763.class,
+			Protocol764.class,
+			Protocol766.class,
+			Protocol768.class,
+			Protocol777.class
+		));
 	}
 
-	private void requireAvailable(Field field) {
-		if (!layout.available.contains(field)) {
-			throw new UnsupportedOperationException(field + " is unavailable in " + getClass().getSimpleName());
+	static abstract class Base extends AbstractMutable implements MutableRespawnPacket {
+		protected final Layout layout;
+		protected int dimensionId;
+		protected String dimensionKey = "minecraft:overworld";
+		protected CompoundTag dimensionData;
+		protected String world = "minecraft:overworld";
+		protected String levelType = "default";
+		protected int difficulty;
+		protected long seed;
+		protected int gameMode;
+		protected int previousMode = -1;
+		protected boolean debug, flat, keepAttributes;
+		protected byte keepMask;
+		protected DeathPosition deathLocation;
+		protected int portalCooldown, seaLevel;
+
+		private Base(Layout layout) {
+			this.layout = layout;
+			if (isDimensionTypeDataAvailable()) dimensionData = new CompoundTag();
+		}
+
+		@Override
+		public final boolean appliesTo(int protocol) {
+			return protocol >= layout.firstProtocol && protocol < layout.endProtocol;
+		}
+
+		protected void requireAvailable(Field field) {
+			if (!layout.available.contains(field)) {
+				throw new UnsupportedOperationException(field + " is unavailable in " + getClass().getSimpleName());
+			}
+		}
+
+		protected void edit(Field field) {
+			markMutated();
+			requireAvailable(field);
+		}
+
+		protected static int checkedRange(int value, int min, int max, String name) {
+			if (value < min || value > max) throw new IllegalArgumentException(name + " out of range: " + value);
+			return value;
+		}
+
+		@Override
+		public final boolean isLegacyDimensionIdAvailable() {
+			return layout.available.contains(DIMENSION_INT);
+		}
+
+		@Override
+		public final int legacyDimensionId() {
+			requireAvailable(DIMENSION_INT);
+			return dimensionId;
+		}
+
+		@Override
+		public final void setLegacyDimensionId(int legacyDimensionId) {
+			edit(DIMENSION_INT);
+			dimensionId = legacyDimensionId;
+		}
+
+		@Override
+		public final boolean isDimensionTypeIdAvailable() {
+			return layout.available.contains(DIMENSION_VARINT);
+		}
+
+		@Override
+		public final int dimensionTypeId() {
+			requireAvailable(DIMENSION_VARINT);
+			return dimensionId;
+		}
+
+		@Override
+		public final void setDimensionTypeId(int dimensionTypeId) {
+			edit(DIMENSION_VARINT);
+			dimensionId = checkedRange(dimensionTypeId, 0, Integer.MAX_VALUE, "dimensionTypeId");
+		}
+
+		@Override
+		public final boolean isDimensionTypeKeyAvailable() {
+			return layout.available.contains(DIMENSION_KEY);
+		}
+
+		@Override
+		public final MinecraftKey dimensionTypeKey() {
+			requireAvailable(DIMENSION_KEY);
+			return MinecraftKey.parse(dimensionKey);
+		}
+
+		@Override
+		public final void setDimensionTypeKey(MinecraftKey dimensionTypeKey) {
+			edit(DIMENSION_KEY);
+			dimensionKey = dimensionTypeKey.fullKey();
+		}
+
+		@Override
+		public final boolean isDimensionTypeDataAvailable() {
+			return layout.available.contains(DIMENSION_NBT);
+		}
+
+		@Override
+		public final CompoundTag dimensionTypeData() {
+			requireAvailable(DIMENSION_NBT);
+			return dimensionData.copy();
+		}
+
+		@Override
+		public final void setDimensionTypeData(CompoundTag dimensionTypeData) {
+			edit(DIMENSION_NBT);
+			dimensionData = dimensionTypeData.copy();
+		}
+
+		@Override
+		public final boolean isWorldKeyAvailable() {
+			return layout.available.contains(WORLD);
+		}
+
+		@Override
+		public final MinecraftKey worldKey() {
+			requireAvailable(WORLD);
+			return MinecraftKey.parse(world);
+		}
+
+		@Override
+		public final void setWorldKey(MinecraftKey worldKey) {
+			edit(WORLD);
+			world = worldKey.fullKey();
+		}
+
+		@Override
+		public final boolean isLevelTypeAvailable() {
+			return layout.available.contains(LEVEL_TYPE);
+		}
+
+		@Override
+		public final String levelType() {
+			requireAvailable(LEVEL_TYPE);
+			return levelType;
+		}
+
+		@Override
+		public final void setLevelType(String levelType) {
+			edit(LEVEL_TYPE);
+			if (levelType.length() > 16) throw new IllegalArgumentException("levelType exceeds 16 characters");
+			this.levelType = levelType;
+		}
+
+		@Override
+		public final boolean isDifficultyIdAvailable() {
+			return layout.available.contains(DIFFICULTY);
+		}
+
+		@Override
+		public final int difficultyId() {
+			requireAvailable(DIFFICULTY);
+			return difficulty;
+		}
+
+		@Override
+		public final void setDifficultyId(int difficultyId) {
+			edit(DIFFICULTY);
+			difficulty = checkedRange(difficultyId, 0, 255, "difficultyId");
+		}
+
+		@Override
+		public final boolean isHashedSeedAvailable() {
+			return layout.available.contains(SEED);
+		}
+
+		@Override
+		public final long hashedSeed() {
+			requireAvailable(SEED);
+			return seed;
+		}
+
+		@Override
+		public final void setHashedSeed(long hashedSeed) {
+			edit(SEED);
+			seed = hashedSeed;
+		}
+
+		@Override
+		public final int gameModeId() {
+			return gameMode;
+		}
+
+		@Override
+		public final void setGameModeId(int gameModeId) {
+			markMutated();
+			gameMode = checkedRange(gameModeId, 0, layout.available.contains(GAME_MODE) ? 255 : Integer.MAX_VALUE, "gameModeId");
+		}
+
+		@Override
+		public final boolean isPreviousGameModeAvailable() {
+			return layout.available.contains(PREVIOUS_MODE) || layout.available.contains(PREVIOUS_MODE_VARINT);
+		}
+
+		@Override
+		public final int previousGameModeId() {
+			return previousMode;
+		}
+
+		@Override
+		public final void setPreviousGameModeId(int previousGameModeId) {
+			boolean varInt = layout.available.contains(PREVIOUS_MODE_VARINT);
+			edit(varInt ? PREVIOUS_MODE_VARINT : PREVIOUS_MODE);
+			previousMode = checkedRange(previousGameModeId, -1, varInt ? Integer.MAX_VALUE - 1 : Byte.MAX_VALUE, "previousGameModeId");
+		}
+
+		@Override
+		public final boolean isDebugWorldAvailable() {
+			return layout.available.contains(DEBUG);
+		}
+
+		@Override
+		public final boolean debugWorld() {
+			requireAvailable(DEBUG);
+			return debug;
+		}
+
+		@Override
+		public final void setDebugWorld(boolean debugWorld) {
+			edit(DEBUG);
+			debug = debugWorld;
+		}
+
+		@Override
+		public final boolean isFlatWorldAvailable() {
+			return layout.available.contains(FLAT);
+		}
+
+		@Override
+		public final boolean flatWorld() {
+			requireAvailable(FLAT);
+			return flat;
+		}
+
+		@Override
+		public final void setFlatWorld(boolean flatWorld) {
+			edit(FLAT);
+			flat = flatWorld;
+		}
+
+		@Override
+		public final boolean isKeepAttributesAvailable() {
+			return layout.available.contains(KEEP_ATTRIBUTES);
+		}
+
+		@Override
+		public final boolean keepAttributes() {
+			requireAvailable(KEEP_ATTRIBUTES);
+			return keepAttributes;
+		}
+
+		@Override
+		public final void setKeepAttributes(boolean keepAttributes) {
+			edit(KEEP_ATTRIBUTES);
+			this.keepAttributes = keepAttributes;
+		}
+
+		@Override
+		public final boolean isKeepMaskAvailable() {
+			return layout.available.contains(KEEP_MASK);
+		}
+
+		@Override
+		public final byte keepMask() {
+			requireAvailable(KEEP_MASK);
+			return keepMask;
+		}
+
+		@Override
+		public final void setKeepMask(byte keepMask) {
+			edit(KEEP_MASK);
+			this.keepMask = keepMask;
+		}
+
+		@Override
+		public final boolean isLastDeathLocationAvailable() {
+			return layout.available.contains(DEATH_LOCATION);
+		}
+
+		@Override
+		public final @Nullable MinecraftKey lastDeathDimension() {
+			return deathLocation == null ? null : MinecraftKey.parse(deathLocation.dimension);
+		}
+
+		@Override
+		public final @Nullable BlockPosition lastDeathPosition() {
+			return deathLocation == null ? null : deathLocation.position;
+		}
+
+		@Override
+		public final void setLastDeathLocation(MinecraftKey dimension, BlockPosition position) {
+			edit(DEATH_LOCATION);
+			deathLocation = new DeathPosition(dimension.fullKey(), Objects.requireNonNull(position, "position"));
+		}
+
+		@Override
+		public final void clearLastDeathLocation() {
+			edit(DEATH_LOCATION);
+			deathLocation = null;
+		}
+
+		@Override
+		public final boolean isPortalCooldownAvailable() {
+			return layout.available.contains(COOLDOWN);
+		}
+
+		@Override
+		public final int portalCooldown() {
+			requireAvailable(COOLDOWN);
+			return portalCooldown;
+		}
+
+		@Override
+		public final void setPortalCooldown(int portalCooldown) {
+			edit(COOLDOWN);
+			this.portalCooldown = portalCooldown;
+		}
+
+		@Override
+		public final boolean isSeaLevelAvailable() {
+			return layout.available.contains(SEA_LEVEL);
+		}
+
+		@Override
+		public final int seaLevel() {
+			requireAvailable(SEA_LEVEL);
+			return seaLevel;
+		}
+
+		@Override
+		public final void setSeaLevel(int seaLevel) {
+			edit(SEA_LEVEL);
+			this.seaLevel = seaLevel;
 		}
 	}
 
-	private void edit(Field field) {
-		markMutated();
-		requireAvailable(field);
+	static final class Protocol47 extends Base {
+		private static final Layout LAYOUT = new Layout(47, 477,
+			DIMENSION_INT, DIFFICULTY, GAME_MODE, LEVEL_TYPE);
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol47> STREAM_CODEC = LAYOUT.codec(Protocol47::new);
+
+		public Protocol47() {
+			super(LAYOUT);
+		}
 	}
 
-	private static int checkedRange(int value, int min, int max, String name) {
-		if (value < min || value > max) throw new IllegalArgumentException(name + " out of range: " + value);
-		return value;
+	static final class Protocol477 extends Base {
+		private static final Layout LAYOUT = new Layout(477, 573,
+			DIMENSION_INT, GAME_MODE, LEVEL_TYPE);
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol477> STREAM_CODEC = LAYOUT.codec(Protocol477::new);
+
+		public Protocol477() {
+			super(LAYOUT);
+		}
 	}
 
-	@Override
-	public final boolean isLegacyDimensionIdAvailable() {
-		return layout.available.contains(DIMENSION_INT);
+	static final class Protocol573 extends Base {
+		private static final Layout LAYOUT = new Layout(573, 735,
+			DIMENSION_INT, SEED, GAME_MODE, LEVEL_TYPE);
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol573> STREAM_CODEC = LAYOUT.codec(Protocol573::new);
+
+		public Protocol573() {
+			super(LAYOUT);
+		}
 	}
 
-	@Override
-	public final int legacyDimensionId() {
-		requireAvailable(DIMENSION_INT);
-		return dimensionId;
+	static final class Protocol735 extends Base {
+		private static final Layout LAYOUT = new Layout(735, 751,
+			DIMENSION_KEY, WORLD, SEED, GAME_MODE, PREVIOUS_MODE, DEBUG, FLAT,
+			KEEP_ATTRIBUTES);
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol735> STREAM_CODEC = LAYOUT.codec(Protocol735::new);
+
+		public Protocol735() {
+			super(LAYOUT);
+		}
 	}
 
-	@Override
-	public final void setLegacyDimensionId(int legacyDimensionId) {
-		edit(DIMENSION_INT);
-		dimensionId = legacyDimensionId;
+	static final class Protocol751 extends Base {
+		private static final Layout LAYOUT = new Layout(751, 759,
+			DIMENSION_NBT, WORLD, SEED, GAME_MODE, PREVIOUS_MODE, DEBUG, FLAT,
+			KEEP_ATTRIBUTES);
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol751> STREAM_CODEC = LAYOUT.codec(Protocol751::new);
+
+		public Protocol751() {
+			super(LAYOUT);
+		}
 	}
 
-	@Override
-	public final boolean isDimensionTypeIdAvailable() {
-		return layout.available.contains(DIMENSION_VARINT);
+	static final class Protocol759 extends Base {
+		private static final Layout LAYOUT = new Layout(759, 761,
+			DIMENSION_KEY, WORLD, SEED, GAME_MODE, PREVIOUS_MODE, DEBUG, FLAT,
+			KEEP_ATTRIBUTES, DEATH_LOCATION);
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol759> STREAM_CODEC = LAYOUT.codec(Protocol759::new);
+
+		public Protocol759() {
+			super(LAYOUT);
+		}
 	}
 
-	@Override
-	public final int dimensionTypeId() {
-		requireAvailable(DIMENSION_VARINT);
-		return dimensionId;
+	static final class Protocol761 extends Base {
+		private static final Layout LAYOUT = new Layout(761, 763,
+			DIMENSION_KEY, WORLD, SEED, GAME_MODE, PREVIOUS_MODE, DEBUG, FLAT,
+			KEEP_MASK, DEATH_LOCATION);
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol761> STREAM_CODEC = LAYOUT.codec(Protocol761::new);
+
+		public Protocol761() {
+			super(LAYOUT);
+		}
 	}
 
-	@Override
-	public final void setDimensionTypeId(int dimensionTypeId) {
-		edit(DIMENSION_VARINT);
-		dimensionId = checkedRange(dimensionTypeId, 0, Integer.MAX_VALUE, "dimensionTypeId");
+	static final class Protocol763 extends Base {
+		private static final Layout LAYOUT = new Layout(763, 764,
+			DIMENSION_KEY, WORLD, SEED, GAME_MODE, PREVIOUS_MODE, DEBUG, FLAT,
+			KEEP_MASK, DEATH_LOCATION, COOLDOWN);
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol763> STREAM_CODEC = LAYOUT.codec(Protocol763::new);
+
+		public Protocol763() {
+			super(LAYOUT);
+		}
 	}
 
-	@Override
-	public final boolean isDimensionTypeKeyAvailable() {
-		return layout.available.contains(DIMENSION_KEY);
+	static final class Protocol764 extends Base {
+		private static final Layout LAYOUT = new Layout(764, 766,
+			DIMENSION_KEY, WORLD, SEED, GAME_MODE, PREVIOUS_MODE, DEBUG, FLAT,
+			DEATH_LOCATION, COOLDOWN, KEEP_MASK);
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol764> STREAM_CODEC = LAYOUT.codec(Protocol764::new);
+
+		public Protocol764() {
+			super(LAYOUT);
+		}
 	}
 
-	@Override
-	public final MinecraftKey dimensionTypeKey() {
-		requireAvailable(DIMENSION_KEY);
-		return MinecraftKey.parse(dimensionKey);
+	static final class Protocol766 extends Base {
+		private static final Layout LAYOUT = new Layout(766, 768,
+			DIMENSION_VARINT, WORLD, SEED, GAME_MODE, PREVIOUS_MODE, DEBUG, FLAT,
+			DEATH_LOCATION, COOLDOWN, KEEP_MASK);
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol766> STREAM_CODEC = LAYOUT.codec(Protocol766::new);
+
+		public Protocol766() {
+			super(LAYOUT);
+		}
 	}
 
-	@Override
-	public final void setDimensionTypeKey(MinecraftKey dimensionTypeKey) {
-		edit(DIMENSION_KEY);
-		dimensionKey = dimensionTypeKey.fullKey();
+	static final class Protocol768 extends Base {
+		private static final Layout LAYOUT = new Layout(768, 777,
+			DIMENSION_VARINT, WORLD, SEED, GAME_MODE, PREVIOUS_MODE, DEBUG, FLAT,
+			DEATH_LOCATION, COOLDOWN, SEA_LEVEL, KEEP_MASK);
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol768> STREAM_CODEC = LAYOUT.codec(Protocol768::new);
+
+		public Protocol768() {
+			super(LAYOUT);
+		}
 	}
 
-	@Override
-	public final boolean isDimensionTypeDataAvailable() {
-		return layout.available.contains(DIMENSION_NBT);
-	}
+	static final class Protocol777 extends Base {
+		private static final Layout LAYOUT = new Layout(777, Integer.MAX_VALUE,
+			DIMENSION_VARINT, WORLD, SEED, GAME_MODE_VARINT, PREVIOUS_MODE_VARINT, DEBUG, FLAT,
+			DEATH_LOCATION, COOLDOWN, SEA_LEVEL, KEEP_MASK);
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol777> STREAM_CODEC = LAYOUT.codec(Protocol777::new);
 
-	@Override
-	public final CompoundTag dimensionTypeData() {
-		requireAvailable(DIMENSION_NBT);
-		return dimensionData.copy();
-	}
-
-	@Override
-	public final void setDimensionTypeData(CompoundTag dimensionTypeData) {
-		edit(DIMENSION_NBT);
-		dimensionData = dimensionTypeData.copy();
-	}
-
-	@Override
-	public final boolean isWorldKeyAvailable() {
-		return layout.available.contains(WORLD);
-	}
-
-	@Override
-	public final MinecraftKey worldKey() {
-		requireAvailable(WORLD);
-		return MinecraftKey.parse(world);
-	}
-
-	@Override
-	public final void setWorldKey(MinecraftKey worldKey) {
-		edit(WORLD);
-		world = worldKey.fullKey();
-	}
-
-	@Override
-	public final boolean isLevelTypeAvailable() {
-		return layout.available.contains(LEVEL_TYPE);
-	}
-
-	@Override
-	public final String levelType() {
-		requireAvailable(LEVEL_TYPE);
-		return levelType;
-	}
-
-	@Override
-	public final void setLevelType(String levelType) {
-		edit(LEVEL_TYPE);
-		if (levelType.length() > 16) throw new IllegalArgumentException("levelType exceeds 16 characters");
-		this.levelType = levelType;
-	}
-
-	@Override
-	public final boolean isDifficultyIdAvailable() {
-		return layout.available.contains(DIFFICULTY);
-	}
-
-	@Override
-	public final int difficultyId() {
-		requireAvailable(DIFFICULTY);
-		return difficulty;
-	}
-
-	@Override
-	public final void setDifficultyId(int difficultyId) {
-		edit(DIFFICULTY);
-		difficulty = checkedRange(difficultyId, 0, 255, "difficultyId");
-	}
-
-	@Override
-	public final boolean isHashedSeedAvailable() {
-		return layout.available.contains(SEED);
-	}
-
-	@Override
-	public final long hashedSeed() {
-		requireAvailable(SEED);
-		return seed;
-	}
-
-	@Override
-	public final void setHashedSeed(long hashedSeed) {
-		edit(SEED);
-		seed = hashedSeed;
-	}
-
-	@Override
-	public final int gameModeId() {
-		return gameMode;
-	}
-
-	@Override
-	public final void setGameModeId(int gameModeId) {
-		markMutated();
-		gameMode = checkedRange(gameModeId, 0, layout.available.contains(GAME_MODE) ? 255 : Integer.MAX_VALUE, "gameModeId");
-	}
-
-	@Override
-	public final boolean isPreviousGameModeAvailable() {
-		return layout.available.contains(PREVIOUS_MODE) || layout.available.contains(PREVIOUS_MODE_VARINT);
-	}
-
-	@Override
-	public final int previousGameModeId() {
-		return previousMode;
-	}
-
-	@Override
-	public final void setPreviousGameModeId(int previousGameModeId) {
-		boolean varInt = layout.available.contains(PREVIOUS_MODE_VARINT);
-		edit(varInt ? PREVIOUS_MODE_VARINT : PREVIOUS_MODE);
-		previousMode = checkedRange(previousGameModeId, -1, varInt ? Integer.MAX_VALUE - 1 : Byte.MAX_VALUE, "previousGameModeId");
-	}
-
-	@Override
-	public final boolean isDebugWorldAvailable() {
-		return layout.available.contains(DEBUG);
-	}
-
-	@Override
-	public final boolean debugWorld() {
-		requireAvailable(DEBUG);
-		return debug;
-	}
-
-	@Override
-	public final void setDebugWorld(boolean debugWorld) {
-		edit(DEBUG);
-		debug = debugWorld;
-	}
-
-	@Override
-	public final boolean isFlatWorldAvailable() {
-		return layout.available.contains(FLAT);
-	}
-
-	@Override
-	public final boolean flatWorld() {
-		requireAvailable(FLAT);
-		return flat;
-	}
-
-	@Override
-	public final void setFlatWorld(boolean flatWorld) {
-		edit(FLAT);
-		flat = flatWorld;
-	}
-
-	@Override
-	public final boolean isKeepAttributesAvailable() {
-		return layout.available.contains(KEEP_ATTRIBUTES);
-	}
-
-	@Override
-	public final boolean keepAttributes() {
-		requireAvailable(KEEP_ATTRIBUTES);
-		return keepAttributes;
-	}
-
-	@Override
-	public final void setKeepAttributes(boolean keepAttributes) {
-		edit(KEEP_ATTRIBUTES);
-		this.keepAttributes = keepAttributes;
-	}
-
-	@Override
-	public final boolean isKeepMaskAvailable() {
-		return layout.available.contains(KEEP_MASK);
-	}
-
-	@Override
-	public final byte keepMask() {
-		requireAvailable(KEEP_MASK);
-		return keepMask;
-	}
-
-	@Override
-	public final void setKeepMask(byte keepMask) {
-		edit(KEEP_MASK);
-		this.keepMask = keepMask;
-	}
-
-	@Override
-	public final boolean isLastDeathLocationAvailable() {
-		return layout.available.contains(DEATH_LOCATION);
-	}
-
-	@Override
-	public final @Nullable MinecraftKey lastDeathDimension() {
-		return deathLocation == null ? null : MinecraftKey.parse(deathLocation.dimension);
-	}
-
-	@Override
-	public final @Nullable BlockPosition lastDeathPosition() {
-		return deathLocation == null ? null : deathLocation.position;
-	}
-
-	@Override
-	public final void setLastDeathLocation(MinecraftKey dimension, BlockPosition position) {
-		edit(DEATH_LOCATION);
-		deathLocation = new DeathPosition(dimension.fullKey(), Objects.requireNonNull(position, "position"));
-	}
-
-	@Override
-	public final void clearLastDeathLocation() {
-		edit(DEATH_LOCATION);
-		deathLocation = null;
-	}
-
-	@Override
-	public final boolean isPortalCooldownAvailable() {
-		return layout.available.contains(COOLDOWN);
-	}
-
-	@Override
-	public final int portalCooldown() {
-		requireAvailable(COOLDOWN);
-		return portalCooldown;
-	}
-
-	@Override
-	public final void setPortalCooldown(int portalCooldown) {
-		edit(COOLDOWN);
-		this.portalCooldown = portalCooldown;
-	}
-
-	@Override
-	public final boolean isSeaLevelAvailable() {
-		return layout.available.contains(SEA_LEVEL);
-	}
-
-	@Override
-	public final int seaLevel() {
-		requireAvailable(SEA_LEVEL);
-		return seaLevel;
-	}
-
-	@Override
-	public final void setSeaLevel(int seaLevel) {
-		edit(SEA_LEVEL);
-		this.seaLevel = seaLevel;
+		public Protocol777() {
+			super(LAYOUT);
+		}
 	}
 
 	private static final class DeathPosition {
@@ -407,10 +556,10 @@ public abstract class RespawnWirePacket extends AbstractMutable implements Mutab
 		COOLDOWN(VARINT, p -> p.portalCooldown, (p, v) -> p.portalCooldown = v),
 		SEA_LEVEL(VARINT, p -> p.seaLevel, (p, v) -> p.seaLevel = v);
 
-		private final BiConsumer<ByteBuf, RespawnWirePacket> read;
-		private final BiConsumer<ByteBuf, RespawnWirePacket> write;
+		private final BiConsumer<ByteBuf, Base> read;
+		private final BiConsumer<ByteBuf, Base> write;
 
-		<T> Field(StreamCodec<ByteBuf, ByteBuf, T> codec, Function<RespawnWirePacket, T> get, BiConsumer<RespawnWirePacket, T> set) {
+		<T> Field(StreamCodec<ByteBuf, ByteBuf, T> codec, Function<Base, T> get, BiConsumer<Base, T> set) {
 			read = (input, packet) -> set.accept(packet, codec.decode(input));
 			write = (output, packet) -> codec.encode(output, get.apply(packet));
 		}
@@ -428,7 +577,7 @@ public abstract class RespawnWirePacket extends AbstractMutable implements Mutab
 			this.available = EnumSet.copyOf(Arrays.asList(fields));
 		}
 
-		private <P extends RespawnWirePacket> StreamCodec<ByteBuf, ByteBuf, P> codec(Supplier<P> factory) {
+		private <P extends Base> StreamCodec<ByteBuf, ByteBuf, P> codec(Supplier<P> factory) {
 			return StreamCodec.of((output, packet) -> {
 				for (Field field : fields) field.write.accept(output, packet);
 			}, input -> {
@@ -436,135 +585,6 @@ public abstract class RespawnWirePacket extends AbstractMutable implements Mutab
 				for (Field field : fields) field.read.accept(input, packet);
 				return packet;
 			});
-		}
-	}
-
-	public static final class Legacy extends RespawnWirePacket {
-		private static final Layout LAYOUT = new Layout(47, 477,
-			DIMENSION_INT, DIFFICULTY, GAME_MODE, LEVEL_TYPE);
-		public static final StreamCodec<ByteBuf, ByteBuf, Legacy> STREAM_CODEC = LAYOUT.codec(Legacy::new);
-
-		public Legacy() {
-			super(LAYOUT);
-		}
-	}
-
-	public static final class LevelType extends RespawnWirePacket {
-		private static final Layout LAYOUT = new Layout(477, 573,
-			DIMENSION_INT, GAME_MODE, LEVEL_TYPE);
-		public static final StreamCodec<ByteBuf, ByteBuf, LevelType> STREAM_CODEC = LAYOUT.codec(LevelType::new);
-
-		public LevelType() {
-			super(LAYOUT);
-		}
-	}
-
-	public static final class HashedSeed extends RespawnWirePacket {
-		private static final Layout LAYOUT = new Layout(573, 735,
-			DIMENSION_INT, SEED, GAME_MODE, LEVEL_TYPE);
-		public static final StreamCodec<ByteBuf, ByteBuf, HashedSeed> STREAM_CODEC = LAYOUT.codec(HashedSeed::new);
-
-		public HashedSeed() {
-			super(LAYOUT);
-		}
-	}
-
-	public static final class NamedDimension extends RespawnWirePacket {
-		private static final Layout LAYOUT = new Layout(735, 751,
-			DIMENSION_KEY, WORLD, SEED, GAME_MODE, PREVIOUS_MODE, DEBUG, FLAT,
-			KEEP_ATTRIBUTES);
-		public static final StreamCodec<ByteBuf, ByteBuf, NamedDimension> STREAM_CODEC = LAYOUT.codec(NamedDimension::new);
-
-		public NamedDimension() {
-			super(LAYOUT);
-		}
-	}
-
-	public static final class DimensionData extends RespawnWirePacket {
-		private static final Layout LAYOUT = new Layout(751, 759,
-			DIMENSION_NBT, WORLD, SEED, GAME_MODE, PREVIOUS_MODE, DEBUG, FLAT,
-			KEEP_ATTRIBUTES);
-		public static final StreamCodec<ByteBuf, ByteBuf, DimensionData> STREAM_CODEC = LAYOUT.codec(DimensionData::new);
-
-		public DimensionData() {
-			super(LAYOUT);
-		}
-	}
-
-	public static final class DeathLocation extends RespawnWirePacket {
-		private static final Layout LAYOUT = new Layout(759, 761,
-			DIMENSION_KEY, WORLD, SEED, GAME_MODE, PREVIOUS_MODE, DEBUG, FLAT,
-			KEEP_ATTRIBUTES, DEATH_LOCATION);
-		public static final StreamCodec<ByteBuf, ByteBuf, DeathLocation> STREAM_CODEC = LAYOUT.codec(DeathLocation::new);
-
-		public DeathLocation() {
-			super(LAYOUT);
-		}
-	}
-
-	public static final class KeepMask extends RespawnWirePacket {
-		private static final Layout LAYOUT = new Layout(761, 763,
-			DIMENSION_KEY, WORLD, SEED, GAME_MODE, PREVIOUS_MODE, DEBUG, FLAT,
-			KEEP_MASK, DEATH_LOCATION);
-		public static final StreamCodec<ByteBuf, ByteBuf, KeepMask> STREAM_CODEC = LAYOUT.codec(KeepMask::new);
-
-		public KeepMask() {
-			super(LAYOUT);
-		}
-	}
-
-	public static final class PortalCooldown extends RespawnWirePacket {
-		private static final Layout LAYOUT = new Layout(763, 764,
-			DIMENSION_KEY, WORLD, SEED, GAME_MODE, PREVIOUS_MODE, DEBUG, FLAT,
-			KEEP_MASK, DEATH_LOCATION, COOLDOWN);
-		public static final StreamCodec<ByteBuf, ByteBuf, PortalCooldown> STREAM_CODEC = LAYOUT.codec(PortalCooldown::new);
-
-		public PortalCooldown() {
-			super(LAYOUT);
-		}
-	}
-
-	public static final class CommonSpawnInfo extends RespawnWirePacket {
-		private static final Layout LAYOUT = new Layout(764, 766,
-			DIMENSION_KEY, WORLD, SEED, GAME_MODE, PREVIOUS_MODE, DEBUG, FLAT,
-			DEATH_LOCATION, COOLDOWN, KEEP_MASK);
-		public static final StreamCodec<ByteBuf, ByteBuf, CommonSpawnInfo> STREAM_CODEC = LAYOUT.codec(CommonSpawnInfo::new);
-
-		public CommonSpawnInfo() {
-			super(LAYOUT);
-		}
-	}
-
-	public static final class RegistryDimension extends RespawnWirePacket {
-		private static final Layout LAYOUT = new Layout(766, 768,
-			DIMENSION_VARINT, WORLD, SEED, GAME_MODE, PREVIOUS_MODE, DEBUG, FLAT,
-			DEATH_LOCATION, COOLDOWN, KEEP_MASK);
-		public static final StreamCodec<ByteBuf, ByteBuf, RegistryDimension> STREAM_CODEC = LAYOUT.codec(RegistryDimension::new);
-
-		public RegistryDimension() {
-			super(LAYOUT);
-		}
-	}
-
-	public static final class SeaLevel extends RespawnWirePacket {
-		private static final Layout LAYOUT = new Layout(768, 777,
-			DIMENSION_VARINT, WORLD, SEED, GAME_MODE, PREVIOUS_MODE, DEBUG, FLAT,
-			DEATH_LOCATION, COOLDOWN, SEA_LEVEL, KEEP_MASK);
-		public static final StreamCodec<ByteBuf, ByteBuf, SeaLevel> STREAM_CODEC = LAYOUT.codec(SeaLevel::new);
-
-		public SeaLevel() {
-			super(LAYOUT);
-		}
-	}
-
-	public static final class VarIntGameModes extends RespawnWirePacket {
-		private static final Layout LAYOUT = new Layout(777, Integer.MAX_VALUE,
-			DIMENSION_VARINT, WORLD, SEED, GAME_MODE_VARINT, PREVIOUS_MODE_VARINT, DEBUG, FLAT,
-			DEATH_LOCATION, COOLDOWN, SEA_LEVEL, KEEP_MASK);
-		public static final StreamCodec<ByteBuf, ByteBuf, VarIntGameModes> STREAM_CODEC = LAYOUT.codec(VarIntGameModes::new);
-
-		public VarIntGameModes() {
-			super(LAYOUT);
 		}
 	}
 }

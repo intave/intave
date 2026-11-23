@@ -11,9 +11,31 @@
 
 package de.jpx3.intave.packet.contract.immutable;
 
+import de.jpx3.intave.item.ItemStack;
+import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.PacketContract;
+import de.jpx3.intave.packet.contract.PacketType;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public interface WindowBulkItemsPacket extends PacketContract, WindowItemsPacket {
+	default List<ItemStack> items() {
+		Map<Integer, ItemStack> slots = itemMap();
+		List<ItemStack> result = new ArrayList<>(slots.size());
+		for (int i = 0; i < slots.size(); i++) {
+			result.add(slots.get(i));
+		}
+		return Collections.unmodifiableList(result);
+	}
+
+	@Override
+	default boolean appliesTo(ConnectionState state, PacketType type) {
+		return state == ConnectionState.PLAY && type == PacketType.Server.WINDOW_ITEMS;
+	}
+
 	@Override
 	default boolean full() {
 		return true;

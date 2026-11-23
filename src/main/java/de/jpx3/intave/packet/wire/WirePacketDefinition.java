@@ -16,6 +16,7 @@ import de.jpx3.intave.packet.contract.PacketContract;
 import io.netty.buffer.ByteBuf;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.util.Objects;
 
 final class WirePacketDefinition<T extends PacketContract> {
@@ -60,14 +61,16 @@ final class WirePacketDefinition<T extends PacketContract> {
 
 	public static <T extends PacketContract> WirePacketDefinition<T> from(Class<T> packetClass) {
 		try {
-			Constructor<T> constructor = packetClass.getConstructor();
+			Constructor<T> constructor = packetClass.getDeclaredConstructor();
+			constructor.setAccessible(true);
+			Field codecField = packetClass.getDeclaredField("STREAM_CODEC");
+			codecField.setAccessible(true);
 			@SuppressWarnings("unchecked")
-			StreamCodec<ByteBuf, ByteBuf, T> codec = (StreamCodec<ByteBuf, ByteBuf, T>)
-				packetClass.getDeclaredField("STREAM_CODEC").get(null);
+			StreamCodec<ByteBuf, ByteBuf, T> codec = (StreamCodec<ByteBuf, ByteBuf, T>) codecField.get(null);
 			return new WirePacketDefinition<>(packetClass, constructor, codec);
 		} catch (ReflectiveOperationException failure) {
 			throw new IllegalArgumentException(
-				String.format("%s must declare a public no-argument constructor and public STREAM_CODEC field", packetClass.getName()),
+				String.format("%s must declare a no-argument constructor and STREAM_CODEC field", packetClass.getName()),
 				failure
 			);
 		}

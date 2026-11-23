@@ -21,93 +21,158 @@ import de.jpx3.intave.share.Position;
 import de.jpx3.intave.share.Rotation;
 import io.netty.buffer.ByteBuf;
 
-public class PlayerPositionRotationWirePacket extends AbstractMutable implements MutablePlayerMovePacket {
-	public static final StreamCodec<ByteBuf, ByteBuf, PlayerPositionRotationWirePacket> STREAM_CODEC =
-		StreamCodec.compound(
-			Position.STREAM_CODEC, PlayerPositionRotationWirePacket::position,
-			Rotation.STREAM_CODEC, PlayerPositionRotationWirePacket::rotation,
-			ByteBufStreamCodecs.UNSIGNED_BYTE, PlayerPositionRotationWirePacket::flags,
-			PlayerPositionRotationWirePacket::new
-		);
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-	protected Position position = new Position();
-
-	protected Rotation rotation = new Rotation(0, 0);
-
-	protected int flags;
-
-	public PlayerPositionRotationWirePacket() {
-		this(new Position(), new Rotation(0, 0), 0);
+public final class PlayerPositionRotationWirePacket {
+	private PlayerPositionRotationWirePacket() {
 	}
 
-	public PlayerPositionRotationWirePacket(Position position, Rotation rotation, int flags) {
-		this.position = position;
-		this.rotation = rotation;
-		this.flags = flags;
+	public static List<Class<?>> registeredClasses() {
+		return Collections.unmodifiableList(Arrays.<Class<?>>asList(
+			Protocol47.class,
+			Protocol768.class
+		));
 	}
 
-	@Override
-	public Position position() {
-		if (position != null && !position.isImmutable()) markMutated();
-		return this.position;
+	static abstract class Base extends AbstractMutable implements MutablePlayerMovePacket {
+		protected Position position = new Position();
+		protected Rotation rotation = new Rotation(0, 0);
+		protected int flags;
+
+		protected Base() {
+			this(new Position(), new Rotation(0, 0), 0);
+		}
+
+		protected Base(Position position, Rotation rotation, int flags) {
+			this.position = position;
+			this.rotation = rotation;
+			this.flags = flags;
+		}
+
+		@Override
+		public Position position() {
+			if (position != null && !position.isImmutable()) markMutated();
+			return this.position;
+		}
+
+		@Override
+		public void setPosition(Position value) {
+			markMutated();
+			this.position = value;
+		}
+
+		@Override
+		public Rotation rotation() {
+			markMutated();
+			return this.rotation;
+		}
+
+		@Override
+		public void setRotation(Rotation value) {
+			markMutated();
+			this.rotation = value;
+		}
+
+		@Override
+		public boolean appliesTo(ConnectionState state, PacketType type) {
+			return state == ConnectionState.PLAY && type == PacketType.Client.POSITION_LOOK;
+		}
+
+		@Override
+		public boolean isVehicleMove() {
+			return false;
+		}
+
+		@Override
+		public Boolean onGround() {
+			return (flags & 1) != 0;
+		}
+
+		@Override
+		public abstract Boolean horizontalCollision();
+
+		@Override
+		public void setOnGround(boolean value) {
+			markMutated();
+			flags = value ? flags | 1 : flags & ~1;
+		}
+
+		@Override
+		public abstract void setHorizontalCollision(boolean value);
+
+		public int flags() {
+			return flags;
+		}
 	}
 
-	@Override
-	public void setPosition(Position value) {
-		markMutated();
-		this.position = value;
+	static final class Protocol47 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol47> STREAM_CODEC =
+			StreamCodec.compound(
+				Position.STREAM_CODEC, Base::position,
+				Rotation.STREAM_CODEC, Base::rotation,
+				ByteBufStreamCodecs.UNSIGNED_BYTE, Base::flags,
+				Protocol47::new
+			);
+
+		public Protocol47() {
+			super();
+		}
+
+		public Protocol47(
+			Position position, Rotation rotation, int flags) {
+			super(position, rotation, flags);
+		}
+
+		@Override
+		public Boolean horizontalCollision() {
+			return null;
+		}
+
+		@Override
+		public void setHorizontalCollision(boolean value) {
+			markMutated();
+			throw new IllegalStateException("No horizontal collision flag before 1.21.2");
+		}
+
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 47 && protocolVersion < 768;
+		}
 	}
 
-	@Override
-	public Rotation rotation() {
-		markMutated();
-		return this.rotation;
-	}
+	static final class Protocol768 extends Base {
+		public static final StreamCodec<ByteBuf, ByteBuf, Protocol768> STREAM_CODEC =
+			StreamCodec.compound(
+				Position.STREAM_CODEC, Protocol768::position,
+				Rotation.STREAM_CODEC, Protocol768::rotation,
+				ByteBufStreamCodecs.UNSIGNED_BYTE, Protocol768::flags,
+				Protocol768::new
+			);
 
-	@Override
-	public void setRotation(Rotation value) {
-		markMutated();
-		this.rotation = value;
-	}
+		public Protocol768() {
+			super();
+		}
 
-	@Override
-	public boolean appliesTo(ConnectionState state, PacketType type) {
-		return state == ConnectionState.PLAY && type == PacketType.Client.POSITION_LOOK;
-	}
+		public Protocol768(Position position, Rotation rotation, int flags) {
+			super(position, rotation, flags);
+		}
 
-	@Override
-	public boolean appliesTo(int protocolVersion) {
-		return protocolVersion >= 768;
-	}
+		@Override
+		public boolean appliesTo(int protocolVersion) {
+			return protocolVersion >= 768;
+		}
 
-	@Override
-	public boolean isVehicleMove() {
-		return false;
-	}
+		@Override
+		public Boolean horizontalCollision() {
+			return (flags & 2) != 0;
+		}
 
-	@Override
-	public Boolean onGround() {
-		return (flags & 1) != 0;
-	}
-
-	@Override
-	public Boolean horizontalCollision() {
-		return (flags & 2) != 0;
-	}
-
-	@Override
-	public void setOnGround(boolean value) {
-		markMutated();
-		flags = value ? flags | 1 : flags & ~1;
-	}
-
-	@Override
-	public void setHorizontalCollision(boolean value) {
-		markMutated();
-		flags = value ? flags | 2 : flags & ~2;
-	}
-
-	public int flags() {
-		return flags;
+		@Override
+		public void setHorizontalCollision(boolean value) {
+			markMutated();
+			flags = value ? flags | 2 : flags & ~2;
+		}
 	}
 }

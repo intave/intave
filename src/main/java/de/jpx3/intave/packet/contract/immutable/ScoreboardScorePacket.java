@@ -13,6 +13,7 @@ package de.jpx3.intave.packet.contract.immutable;
 
 import de.jpx3.intave.annotate.Nullable;
 import de.jpx3.intave.packet.contract.PacketContract;
+import de.jpx3.intave.share.ChatComponent;
 
 public interface ScoreboardScorePacket extends PacketContract, ObjectiveAddressed {
 	String owner();
@@ -24,6 +25,11 @@ public interface ScoreboardScorePacket extends PacketContract, ObjectiveAddresse
 
 	@Nullable
 	String displayNameJson();
+
+	default String displayNameText() {
+		String json = displayNameJson();
+		return json == null ? null : ChatComponent.json(json).legacyText();
+	}
 
 	default boolean hasValue() {
 		return value() != null;

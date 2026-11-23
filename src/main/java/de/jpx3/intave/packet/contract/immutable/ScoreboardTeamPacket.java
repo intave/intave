@@ -12,7 +12,10 @@
 package de.jpx3.intave.packet.contract.immutable;
 
 import de.jpx3.intave.annotate.Nullable;
+import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.PacketContract;
+import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.share.ChatComponent;
 import de.jpx3.intave.share.ScoreboardTeamAction;
 
 import java.util.List;
@@ -32,6 +35,21 @@ public interface ScoreboardTeamPacket extends PacketContract {
 	String color();
 
 	List<String> entries();
+
+	default String prefixText() {
+		String json = prefixJson();
+		return json == null ? null : ChatComponent.json(json).legacyText();
+	}
+
+	default String suffixText() {
+		String json = suffixJson();
+		return json == null ? null : ChatComponent.json(json).legacyText();
+	}
+
+	@Override
+	default boolean appliesTo(ConnectionState state, PacketType packetType) {
+		return state == ConnectionState.PLAY && packetType == PacketType.Server.SCOREBOARD_TEAM;
+	}
 
 	default boolean hasPrefixJson() {
 		return prefixJson() != null;

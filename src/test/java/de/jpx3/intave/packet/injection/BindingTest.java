@@ -18,6 +18,7 @@ import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.TypedPacketContract;
 import de.jpx3.intave.packet.contract.immutable.PingPacket;
 import de.jpx3.intave.packet.contract.mutable.MutableEntityVelocityPacket;
+import de.jpx3.intave.packet.contract.mutable.MutableExplosionPacket;
 import de.jpx3.intave.packet.contract.mutable.MutableHandshakePacket;
 import de.jpx3.intave.packet.contract.mutable.MutableHeldItemSlotPacket;
 import de.jpx3.intave.packet.event.PacketEventBus;
@@ -26,10 +27,8 @@ import de.jpx3.intave.packet.event.PacketSubscription;
 import de.jpx3.intave.packet.wire.WirePackets;
 import de.jpx3.intave.packet.wire.connection.bundle.BundleDelimiterWirePacket;
 import de.jpx3.intave.packet.wire.connection.ping.PingWirePacket;
-import de.jpx3.intave.packet.wire.entity.velocity.EntityVelocityWirePacket;
 import de.jpx3.intave.packet.wire.item.heldslot.HeldItemSlotWirePacket;
 import de.jpx3.intave.packet.wire.window.transaction.TransactionWirePacket;
-import de.jpx3.intave.packet.wire.world.explosion.ExplosionOptionalMotionWirePacket;
 import de.jpx3.intave.registry.PacketTypeRegistries;
 import de.jpx3.intave.registry.PacketTypeRegistry;
 import de.jpx3.intave.share.Motion;
@@ -58,6 +57,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.Deflater;
 
+import static de.jpx3.intave.packet.wire.WirePacketTestSupport.entityVelocity;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class BindingTest {
@@ -218,7 +218,7 @@ final class BindingTest {
     EmbeddedChannel channel = channelWithViaCodecs();
     try (Binding binding = bindAndPlay(channel, 773)) {
       channel.pipeline().addBefore("via-encoder", "compress", compressor(true));
-      ChannelFuture sent = binding.sendSilently(new EntityVelocityWirePacket(1, new Motion(0.125, 0.25, 0.5))
+      ChannelFuture sent = binding.sendSilently(entityVelocity(1, new Motion(0.125, 0.25, 0.5))
         .typedTo(PacketType.Server.ENTITY_VELOCITY));
       assertTrue(sent.isSuccess(), () -> String.valueOf(sent.cause()));
       ByteBuf envelope = channel.readOutbound();
@@ -284,7 +284,7 @@ final class BindingTest {
           }
         });
         channel.pipeline().addBefore("via-encoder", "compress", compressor(compressed));
-        ChannelFuture sent = binding.send(new EntityVelocityWirePacket(123, new Motion(8, 0.4, -8))
+        ChannelFuture sent = binding.send(entityVelocity(123, new Motion(8, 0.4, -8))
           .typedTo(PacketType.Server.ENTITY_VELOCITY));
         assertTrue(sent.isSuccess(), () -> String.valueOf(sent.cause()));
         assertEquals(1, calls.get());
@@ -322,7 +322,7 @@ final class BindingTest {
       PacketEventBus.addListener(feedback, PacketType.Server.PING);
       EmbeddedChannel channel = channelWithViaCodecs();
       try (Binding binding = bindAndPlay(channel, 777)) {
-        ExplosionOptionalMotionWirePacket explosion = WirePackets.createPlayPacket(PacketType.Server.EXPLOSION, 777);
+			MutableExplosionPacket explosion = WirePackets.createPlayPacket(PacketType.Server.EXPLOSION, 777);
         explosion.setDefaultEffects(777);
         ChannelFuture sent = binding.send(explosion.typedTo(PacketType.Server.EXPLOSION));
         assertTrue(sent.isSuccess(), () -> String.valueOf(sent.cause()));
@@ -355,7 +355,7 @@ final class BindingTest {
       assertInstanceOf(IllegalArgumentException.class, binding.send(new PingWirePacket(1).typedTo(PacketType.Server.PING)).cause());
       send(channel, packet(PacketTypeRegistries.clientbound(), ConnectionState.LOGIN, PacketType.Server.SUCCESS, 47));
       assertInstanceOf(IllegalArgumentException.class, binding.send(new HeldItemSlotWirePacket(1).typedTo(PacketType.Client.HELD_ITEM_SLOT_IN)).cause());
-      assertFalse(binding.send(new EntityVelocityWirePacket(1, new Motion()).typedTo(PacketType.Server.ENTITY_VELOCITY)).isSuccess());
+      assertFalse(binding.send(entityVelocity(1, new Motion()).typedTo(PacketType.Server.ENTITY_VELOCITY)).isSuccess());
       binding.close();
       assertThrows(IllegalStateException.class, () -> Binding.of(channel));
       assertInstanceOf(IllegalStateException.class, binding.send(new PingWirePacket(1).typedTo(PacketType.Server.PING)).cause());

@@ -12,6 +12,7 @@
 package de.jpx3.intave.user.meta;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSetMultimap;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.module.tracker.player.AbilityTracker;
@@ -416,8 +417,23 @@ public final class AbilityMetadata {
     return findAttribute(key) != null;
   }
 
+  public Attribute findWireAttribute(String key) {
+    if (key.startsWith("minecraft:")) {
+      key = key.substring("minecraft:".length());
+    }
+    Attribute tracked = findAttribute(key);
+    if (tracked != null) return tracked;
+    // The client can use a different naming scheme than the server storing these attributes.
+    for (String alias : WIRE_ATTRIBUTE_ALIASES.get(key)) {
+      tracked = findAttribute(alias);
+      if (tracked != null) return tracked;
+    }
+    return null;
+  }
+
   private static final Map<String, String> LEGACY_WRAPPED_KEY_REMAP;
   private static final Map<String, String> MODERN_WRAPPED_KEY_REMAP;
+  private static final ImmutableSetMultimap<String, String> WIRE_ATTRIBUTE_ALIASES;
 
   static {
     Map<String, String> legacyRemap = new HashMap<>();
@@ -459,6 +475,10 @@ public final class AbilityMetadata {
     modernRemap.put("player.block_interaction_range", "block_interaction_range");
     modernRemap.put("player.entity_interaction_range", "entity_interaction_range");
     MODERN_WRAPPED_KEY_REMAP = ImmutableMap.copyOf(modernRemap);
+    ImmutableSetMultimap.Builder<String, String> aliases = ImmutableSetMultimap.builder();
+    legacyRemap.forEach((legacy, key) -> aliases.put(key, legacy));
+    modernRemap.forEach((legacy, key) -> aliases.put(key, legacy));
+    WIRE_ATTRIBUTE_ALIASES = aliases.build();
   }
 
   private String keyTranslation(String key) {
@@ -472,23 +492,25 @@ public final class AbilityMetadata {
   }
 
   public void modifyBaseValue(String key, double baseValue) {
-    key = keyTranslation(key);
     Attribute attribute = findAttribute(key);
     if (attribute != null) {
-      String finalKey = key;
-      attributes.updateAndGet(oldMap -> {
-        Map<String, Attribute> newMap = new HashMap<>(oldMap);
-        newMap.put(finalKey, Attribute.newBuilder(attribute).withBaseValue(baseValue).build());
-        return newMap;
-      });
-      List<AttributeModifier> modifiers = modifiersOf(attribute);
-      attributeModifiers.updateAndGet(oldMap -> {
-        Map<String, List<AttributeModifier>> newMap = new HashMap<>(oldMap);
-        newMap.put(finalKey, new ArrayList<>(modifiers));
-        return newMap;
-      });
-      clearAttributeCaches();
+      updateAttribute(attribute, baseValue, modifiersOf(attribute));
     }
+  }
+
+  public void updateAttribute(Attribute tracked, double baseValue, Collection<AttributeModifier> modifiers) {
+    String key = tracked.attributeKey();
+    attributes.updateAndGet(oldMap -> {
+      Map<String, Attribute> newMap = new HashMap<>(oldMap);
+      newMap.put(key, Attribute.newBuilder(tracked).withBaseValue(baseValue).build());
+      return newMap;
+    });
+    attributeModifiers.updateAndGet(oldMap -> {
+      Map<String, List<AttributeModifier>> newMap = new HashMap<>(oldMap);
+      newMap.put(key, new ArrayList<>(modifiers));
+      return newMap;
+    });
+    clearAttributeCaches();
   }
 
   public boolean inGameModeIncludePending(AbilityTracker.GameMode gameMode) {

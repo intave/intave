@@ -11,62 +11,38 @@
 
 package de.jpx3.intave.module.tracker.player;
 
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.wrappers.WrappedAttribute;
 import de.jpx3.intave.module.Module;
-import de.jpx3.intave.module.linker.packet.ListenerPriority;
-import de.jpx3.intave.module.linker.packet.PacketSubscription;
+import de.jpx3.intave.module.Modules;
+import de.jpx3.intave.module.linker.packetperfect.OnSend;
+import de.jpx3.intave.packet.contract.immutable.EntityAttributesPacket;
+import de.jpx3.intave.packet.event.PacketSendEvent;
 import de.jpx3.intave.player.attribute.Attribute;
-import de.jpx3.intave.player.attribute.AttributeModifier;
 import de.jpx3.intave.user.User;
-import de.jpx3.intave.user.UserRepository;
 import de.jpx3.intave.user.meta.AbilityMetadata;
-import de.jpx3.intave.user.meta.MovementMetadata;
-import org.bukkit.entity.Player;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-import static de.jpx3.intave.packet.contract.PacketType.Server.UPDATE_ATTRIBUTES;
+import static de.jpx3.intave.packet.ListenerPriority.LATER;
 
 public final class AttributeTracker extends Module {
-  @PacketSubscription(
-    priority = ListenerPriority.HIGH,
-    packetsOut = {
-      UPDATE_ATTRIBUTES
+  @OnSend(priority = LATER)
+  public void sentAttributes(User user, EntityAttributesPacket packet, PacketSendEvent event) {
+    if (event.isCancelled() || packet.entityId() != user.player().getEntityId()) {
+      return;
     }
-  )
-  public void sentAttributes(PacketEvent event) {
-    Player player = event.getPlayer();
-    User user = UserRepository.userOf(player);
-    PacketContainer packet = event.getPacket();
-    if (packet.getIntegers().read(0) == player.getEntityId()) {
-      StructureModifier<List<WrappedAttribute>> mod = packet.getAttributeCollectionModifier();
-      List<WrappedAttribute> attributes = mod.read(0);
-      mod.write(0, attributes);
-      user.tickFeedback(() -> {
-        attributes.forEach(attribute -> receivedAttribute(user, attribute));
-      });
-    }
-  }
-
-  private void receivedAttribute(User user, WrappedAttribute attribute) {
-    AbilityMetadata abilities = user.meta().abilities();
-    MovementMetadata movement = user.meta().movement();
-    String attributeKey = attribute.getAttributeKey();
-    if (abilities.hasAttribute(attributeKey)) {
-      Attribute intaveAttribute = Attribute.fromProtocolLib(attribute);
-      List<AttributeModifier> intaveAttributes = abilities.modifiersOf(intaveAttribute);
-      intaveAttributes.clear();
-      Set<AttributeModifier> serverAttributes = intaveAttribute.modifiers();
-      if (abilities.findAttribute(attributeKey) == abilities.findAttribute("generic.movementSpeed")) {
-        movement.hasSprintSpeed = AbilityMetadata.hasSprintModifier(serverAttributes);
+    List<Attribute> updates = packet.attributes();
+    Modules.feedback().synchronize(user, event, () -> {
+      AbilityMetadata abilities = user.meta().abilities();
+      for (Attribute update : updates) {
+        Attribute tracked = abilities.findWireAttribute(update.attributeKey());
+        if (tracked == null) {
+          continue;
+        }
+        if (tracked == abilities.findAttribute("generic.movementSpeed")) {
+          user.meta().movement().hasSprintSpeed = AbilityMetadata.hasSprintModifier(update.modifiers());
+        }
+        abilities.updateAttribute(tracked, update.baseValue(), update.modifiers());
       }
-      intaveAttributes.addAll(new HashSet<>(serverAttributes));
-      abilities.modifyBaseValue(attributeKey, attribute.getBaseValue());
-    }
+    });
   }
 }

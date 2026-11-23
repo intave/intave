@@ -468,7 +468,7 @@ public final class EntityTracker extends Module {
     if (entity.typeData().isLivingEntity() && entity.tracingEnabled()) {
       EmptyFeedbackCallback task = () -> {
         entity.verifiedPosition = false;
-        entity.handleEntityPositionSync(user, packet);
+        entity.handleEntityPositionSync(packet);
         entity.clientSynchronized = true;
         nayoroEntityPositionUpdate(player, entity);
       };
@@ -479,7 +479,7 @@ public final class EntityTracker extends Module {
       }
       user.tracedPacketTickFeedback(event, task, observer, options);
     } else {
-      entity.handleEntityPositionSync(user, packet);
+      entity.handleEntityPositionSync(packet);
       entity.clientSynchronized = false;
     }
   }

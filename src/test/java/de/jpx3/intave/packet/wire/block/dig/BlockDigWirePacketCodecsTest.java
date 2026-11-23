@@ -23,7 +23,7 @@ final class BlockDigWirePacketCodecsTest {
 	@Test
 	void blockPositionPackingAndDigActionIndicesFollowTheClientVersion() {
 		for (int protocol : new int[] {47, 477, 759, 777}) {
-			BlockDigWirePacket packet =
+			BlockDigWirePacket.Base packet =
 					roundTrip(
 							SERVERBOUND,
 							PacketType.Client.BLOCK_DIG,

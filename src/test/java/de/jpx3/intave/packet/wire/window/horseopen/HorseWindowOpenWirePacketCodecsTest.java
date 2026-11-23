@@ -22,7 +22,7 @@ final class HorseWindowOpenWirePacketCodecsTest {
 	@Test
 	void horseInventorySizesFollowTheSlotToColumnChanges() {
 		for (int protocol : new int[] {766, 767, 768, 770}) {
-			HorseWindowOpenWirePacket packet =
+			HorseWindowOpenWirePacket.Base packet =
 					roundTrip(
 							CLIENTBOUND,
 							PacketType.Server.OPEN_WINDOW_HORSE,

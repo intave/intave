@@ -18,8 +18,8 @@ import de.jpx3.intave.packet.PacketDirection;
 import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.TypedPacketContract;
 import de.jpx3.intave.packet.contract.immutable.MotionUpdate;
+import de.jpx3.intave.packet.contract.mutable.MutableExplosionPacket;
 import de.jpx3.intave.packet.wire.WirePackets;
-import de.jpx3.intave.packet.wire.world.explosion.ExplosionWirePacket;
 import de.jpx3.intave.share.*;
 import de.jpx3.intave.user.User;
 import io.netty.buffer.ByteBuf;
@@ -63,8 +63,8 @@ class TeleportMotionCompanionTest {
 						MotionUpdate decoded = (MotionUpdate) WirePackets.decodePacket(PacketDirection.CLIENTBOUND, ConnectionState.PLAY, protocol, encoded);
 						assertEquals(-0.25, decoded.motion().motionY(), 0.001);
 						if (additive) {
-							assertEquals(-1.0E9, ((ExplosionWirePacket) decoded).y());
-							assertEquals(0, ((ExplosionWirePacket) decoded).power());
+							assertEquals(-1.0E9, ((MutableExplosionPacket) decoded).y());
+							assertEquals(0, ((MutableExplosionPacket) decoded).power());
 							if (protocol == 777) assertEquals(0, encoded.getByte(encoded.writerIndex() - 1));
 						}
 						((MotionUpdate) companion.contract()).motion().setMotionY(99);

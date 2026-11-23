@@ -15,6 +15,8 @@ import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.contract.PacketContract;
 import de.jpx3.intave.packet.contract.PacketType;
 
+import java.util.Optional;
+
 import static de.jpx3.intave.packet.ConnectionState.CONFIGURATION;
 import static de.jpx3.intave.packet.ConnectionState.PLAY;
 import static de.jpx3.intave.packet.contract.PacketType.Client.CUSTOM_PAYLOAD_IN;
@@ -23,6 +25,8 @@ public interface PayloadInPacket extends PacketContract {
 	String tag();
 
 	byte[] payload();
+
+	Optional<String> clientBrand();
 
 	@Override
 	default boolean appliesTo(ConnectionState state, PacketType packetType) {

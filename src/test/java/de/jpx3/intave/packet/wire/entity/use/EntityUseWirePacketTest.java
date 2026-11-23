@@ -24,8 +24,8 @@ import static org.junit.jupiter.api.Assertions.*;
 final class EntityUseWirePacketTest {
 	@Test
 	void actionChangesOmitFieldsThatAreNotPartOfTheNewAction() {
-		EntityUseWirePacket packet =
-				new EntityUseWirePacket(
+		EntityUseWirePacket.Protocol735 packet =
+				new EntityUseWirePacket.Protocol735(
 						42,
 						EntityUseAction.INTERACT_AT,
 						new RawVector3d(1, 2, 3),
@@ -36,7 +36,7 @@ final class EntityUseWirePacketTest {
 			packet.setAction(EntityUseAction.ATTACK);
 			assertNull(packet.hand());
 			assertNull(packet.hitPosition());
-			EntityUseWirePacket.STREAM_CODEC.encode(buffer, packet);
+			EntityUseWirePacket.Protocol735.STREAM_CODEC.encode(buffer, packet);
 			assertEquals(42, buffer.readUnsignedByte());
 			assertEquals(1, buffer.readUnsignedByte());
 			assertTrue(buffer.readBoolean());
@@ -45,7 +45,7 @@ final class EntityUseWirePacketTest {
 			packet.setAction(EntityUseAction.INTERACT);
 			assertEquals(PlayerHand.OFF_HAND, packet.hand());
 			assertNull(packet.hitPosition());
-			EntityUseWirePacket.STREAM_CODEC.encode(buffer, packet);
+			EntityUseWirePacket.Protocol735.STREAM_CODEC.encode(buffer, packet);
 			assertEquals(42, buffer.readUnsignedByte());
 			assertEquals(0, buffer.readUnsignedByte());
 			assertEquals(1, buffer.readUnsignedByte());
@@ -76,18 +76,18 @@ final class EntityUseWirePacketTest {
 					IndexOutOfBoundsException.class,
 					() -> EntityUseInteraction.STREAM_CODEC.decode(buffer));
 
-			EntityUseWirePacket packet = new EntityUseWirePacket();
+			EntityUseWirePacket.Protocol735 packet = new EntityUseWirePacket.Protocol735();
 			packet.setAction(EntityUseAction.INTERACT_AT);
 			buffer.clear();
 			assertThrows(
 					IllegalArgumentException.class,
-					() -> EntityUseWirePacket.STREAM_CODEC.encode(buffer, packet));
+					() -> EntityUseWirePacket.Protocol735.STREAM_CODEC.encode(buffer, packet));
 			packet.setHitPosition(new RawVector3d(1, 2, 3));
 			packet.clearHand();
 			buffer.clear();
 			assertThrows(
 					IllegalArgumentException.class,
-					() -> EntityUseWirePacket.STREAM_CODEC.encode(buffer, packet));
+					() -> EntityUseWirePacket.Protocol735.STREAM_CODEC.encode(buffer, packet));
 			assertThrows(NullPointerException.class, () -> packet.setAction(null));
 		} finally {
 			buffer.release();
@@ -96,14 +96,14 @@ final class EntityUseWirePacketTest {
 
 	@Test
 	void preHandVersionKeepsItsEmptyPayloadAndRejectsAddingAHand() {
-		EntityUseWithoutHandWirePacket packet = new EntityUseWithoutHandWirePacket();
+		EntityUseWirePacket.Protocol47 packet = new EntityUseWirePacket.Protocol47();
 		assertNull(packet.hand());
 		packet.clearHand();
 		assertThrows(
 				UnsupportedOperationException.class, () -> packet.setHand(PlayerHand.MAIN_HAND));
 		ByteBuf buffer = Unpooled.buffer();
 		try {
-			EntityUseWithoutHandWirePacket.STREAM_CODEC.encode(buffer, packet);
+			EntityUseWirePacket.Protocol47.STREAM_CODEC.encode(buffer, packet);
 			assertEquals(0, buffer.readUnsignedByte());
 			assertEquals(0, buffer.readUnsignedByte());
 			assertFalse(buffer.isReadable());
