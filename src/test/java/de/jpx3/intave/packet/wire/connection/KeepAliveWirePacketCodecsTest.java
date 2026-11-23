@@ -1,0 +1,64 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
+package de.jpx3.intave.packet.wire.connection;
+
+import de.jpx3.intave.packet.contract.PacketType;
+import de.jpx3.intave.packet.wire.WirePackets;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import org.junit.jupiter.api.Test;
+
+import static de.jpx3.intave.packet.ConnectionState.PLAY;
+import static de.jpx3.intave.packet.PacketDirection.SERVERBOUND;
+import static de.jpx3.intave.packet.wire.WirePacketTestSupport.roundTrip;
+import static org.junit.jupiter.api.Assertions.*;
+
+final class KeepAliveWirePacketCodecsTest {
+	@Test
+	void keepAliveChangesFromVarIntToLongInBothDirections() {
+		for (PacketType packetType : new PacketType[] {PacketType.Client.KEEP_ALIVE_IN, PacketType.Server.KEEP_ALIVE_OUT}) {
+			KeepAliveWirePacket.Base legacy =
+					roundTrip(
+							packetType.direction(),
+							packetType,
+							335,
+							b -> b.writeBytes(new byte[] {(byte) 0xac, 2}));
+			assertEquals(300, legacy.id());
+			assertInstanceOf(KeepAliveWirePacket.Protocol47.class, legacy);
+			KeepAliveWirePacket.Base modern =
+					roundTrip(packetType.direction(), packetType, 340, b -> b.writeLong(0x123456789abcdefL));
+			assertEquals(0x123456789abcdefL, modern.id());
+			assertEquals(KeepAliveWirePacket.Protocol340.class, modern.getClass());
+		}
+	}
+
+	@Test
+	void failedEncodingRestoresTheOutputIndex() {
+		ByteBuf output = Unpooled.buffer().writeByte(0x55);
+		try {
+			assertThrows(
+					IllegalArgumentException.class,
+					() ->
+							WirePackets.encodePacket(
+									SERVERBOUND,
+									PLAY,
+									PacketType.Client.KEEP_ALIVE_IN,
+									340,
+									new KeepAliveWirePacket.Protocol47(),
+									output));
+			assertEquals(1, output.writerIndex());
+			assertEquals(0x55, output.getUnsignedByte(0));
+		} finally {
+			output.release();
+		}
+	}
+}

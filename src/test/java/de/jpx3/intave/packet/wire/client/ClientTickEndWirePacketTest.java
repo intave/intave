@@ -1,0 +1,36 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
+package de.jpx3.intave.packet.wire.client;
+
+import de.jpx3.intave.packet.contract.immutable.ClientTickEndPacket;
+import org.junit.jupiter.api.Test;
+
+import static de.jpx3.intave.packet.PacketDirection.SERVERBOUND;
+import static de.jpx3.intave.packet.contract.PacketType.Client.CLIENT_TICK_END;
+import static de.jpx3.intave.packet.wire.WirePacketTestSupport.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+final class ClientTickEndWirePacketTest {
+	@Test
+	void emptyTickEndIsAvailableSince1212() {
+		for (int protocol : registry(SERVERBOUND).supportedProtocolVersions()) {
+			if (protocol < 768) {
+				assertFalse(new ClientTickEndWirePacket().appliesTo(protocol));
+				assertUnsupported(SERVERBOUND, CLIENT_TICK_END, protocol);
+			} else {
+				ClientTickEndPacket packet = roundTrip(SERVERBOUND, CLIENT_TICK_END, protocol, out -> {});
+				assertInstanceOf(ClientTickEndWirePacket.class, packet);
+				assertTrue(packet.appliesTo(protocol));
+			}
+		}
+	}
+}

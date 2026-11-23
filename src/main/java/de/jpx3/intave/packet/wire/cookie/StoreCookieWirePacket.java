@@ -1,0 +1,82 @@
+/*
+ * Copyright 2026 Intave
+ *
+ * This software is licensed under the PolyForm Perimeter License 1.0.0.
+ * You may use this software for any purpose, except for providing to
+ * others any product that competes with the software.
+ *
+ * A copy of the license is available at:
+ *   https://polyformproject.org/licenses/perimeter/1.0.0/
+ */
+
+package de.jpx3.intave.packet.wire.cookie;
+
+import de.jpx3.intave.codec.ByteBufStreamCodecs;
+import de.jpx3.intave.codec.StreamCodec;
+import de.jpx3.intave.packet.contract.mutable.MutableStoreCookiePacket;
+import de.jpx3.intave.packet.wire.AbstractMutable;
+import de.jpx3.intave.share.MinecraftKey;
+import io.netty.buffer.ByteBuf;
+
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.bytes;
+import static de.jpx3.intave.codec.ByteBufStreamCodecs.count;
+
+public class StoreCookieWirePacket extends AbstractMutable implements MutableStoreCookiePacket {
+	public static final StreamCodec<ByteBuf, ByteBuf, StoreCookieWirePacket> STREAM_CODEC =
+		StreamCodec.of(
+			(output, packet) -> {
+				MinecraftKey.STREAM_CODEC.encode(output, packet.key);
+				{
+					if (packet.payload.length > 5120) {
+						throw new IllegalArgumentException("Cookie exceeds 5120 bytes");
+					}
+					ByteBufStreamCodecs.VARINT.encode(output, packet.payload.length);
+					output.writeBytes(packet.payload);
+				}
+			},
+			input -> {
+				MinecraftKey key = MinecraftKey.STREAM_CODEC.decode(input);
+				byte[] payload = bytes(input, count(input, 5120));
+				return new StoreCookieWirePacket(key, payload);
+			});
+
+	protected MinecraftKey key;
+	protected byte[] payload;
+
+	public StoreCookieWirePacket() {
+		this(MinecraftKey.withDefaultNamespace("cookie"), new byte[0]);
+	}
+
+	public StoreCookieWirePacket(MinecraftKey key, byte[] payload) {
+		this.key = key;
+		this.payload = payload;
+	}
+
+	@Override
+	public MinecraftKey key() {
+		return this.key;
+	}
+
+	@Override
+	public void setKey(MinecraftKey value) {
+		markMutated();
+		this.key = value;
+	}
+
+	@Override
+	public byte[] payload() {
+		markMutated();
+		return this.payload;
+	}
+
+	@Override
+	public void setPayload(byte[] value) {
+		markMutated();
+		this.payload = value;
+	}
+
+	@Override
+	public boolean appliesTo(int protocolVersion) {
+		return protocolVersion >= 766;
+	}
+}

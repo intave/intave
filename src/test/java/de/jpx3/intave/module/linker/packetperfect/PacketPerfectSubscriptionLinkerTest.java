@@ -28,7 +28,7 @@ import de.jpx3.intave.packet.event.PacketReceiveEvent;
 import de.jpx3.intave.packet.event.PacketSendEvent;
 import de.jpx3.intave.packet.event.PacketSubscription;
 import de.jpx3.intave.packet.wire.WirePackets;
-import de.jpx3.intave.packet.wire.connection.ping.PingWirePacket;
+import de.jpx3.intave.packet.wire.connection.PingWirePacket;
 import de.jpx3.intave.user.MessageChannel;
 import de.jpx3.intave.user.User;
 import org.bukkit.entity.Player;

@@ -19,16 +19,16 @@ import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.immutable.*;
 import de.jpx3.intave.packet.contract.mutable.Mutable;
 import de.jpx3.intave.packet.contract.mutable.MutableClientCommandPacket;
-import de.jpx3.intave.packet.wire.entity.position.EntityPositionSyncWirePacket;
-import de.jpx3.intave.packet.wire.entity.position.EntityPositionWirePacket;
-import de.jpx3.intave.packet.wire.player.ground.PlayerGroundWirePacket;
-import de.jpx3.intave.packet.wire.player.position.PlayerPositionWirePacket;
-import de.jpx3.intave.packet.wire.player.positionrotation.PlayerPositionRotationWirePacket;
-import de.jpx3.intave.packet.wire.player.rotation.PlayerRotationWirePacket;
-import de.jpx3.intave.packet.wire.vehicle.move.VehicleMoveWirePacket;
-import de.jpx3.intave.packet.wire.world.border.WorldBorderInitializeWirePacket;
-import de.jpx3.intave.packet.wire.world.border.WorldBorderSetCenterWirePacket;
-import de.jpx3.intave.packet.wire.world.border.WorldBorderSetSizeWirePacket;
+import de.jpx3.intave.packet.wire.entity.EntityPositionSyncWirePacket;
+import de.jpx3.intave.packet.wire.entity.EntityPositionWirePacket;
+import de.jpx3.intave.packet.wire.player.PlayerGroundWirePacket;
+import de.jpx3.intave.packet.wire.player.PlayerPositionRotationWirePacket;
+import de.jpx3.intave.packet.wire.player.PlayerPositionWirePacket;
+import de.jpx3.intave.packet.wire.player.PlayerRotationWirePacket;
+import de.jpx3.intave.packet.wire.vehicle.VehicleMoveWirePacket;
+import de.jpx3.intave.packet.wire.world.WorldBorderInitializeWirePacket;
+import de.jpx3.intave.packet.wire.world.WorldBorderSetCenterWirePacket;
+import de.jpx3.intave.packet.wire.world.WorldBorderSetSizeWirePacket;
 import de.jpx3.intave.registry.PacketTypeRegistry;
 import de.jpx3.intave.share.ClientCommand;
 import io.netty.buffer.ByteBuf;
@@ -66,7 +66,9 @@ final class WirePacketCodecsTest {
 						assertTrue(
 								packet.appliesTo(state, entry.getKey(), protocol),
 								entry.toString());
-						assertFalse(((Mutable) packet).couldHaveBeenMutated(), "Matching must not expose mutable packet fields");
+						if (packet instanceof Mutable) {
+							assertFalse(((Mutable) packet).couldHaveBeenMutated(), "Matching must not expose mutable packet fields");
+						}
 					}
 				}
 			}

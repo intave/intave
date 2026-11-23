@@ -16,7 +16,7 @@ import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.check.movement.physics.environment.Pose;
 import de.jpx3.intave.module.tracker.player.PlayerHandTracker;
 import de.jpx3.intave.packet.event.PacketReceiveEvent;
-import de.jpx3.intave.packet.wire.client.tickend.ClientTickEndWirePacket;
+import de.jpx3.intave.packet.wire.client.ClientTickEndWirePacket;
 import de.jpx3.intave.test.FakePlayerFactory;
 import de.jpx3.intave.user.User;
 import de.jpx3.intave.user.UserFactory;

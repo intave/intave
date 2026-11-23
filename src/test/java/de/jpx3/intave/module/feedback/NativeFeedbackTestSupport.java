@@ -22,8 +22,8 @@ import de.jpx3.intave.packet.contract.TypedPacketContract;
 import de.jpx3.intave.packet.contract.immutable.PingPacket;
 import de.jpx3.intave.packet.contract.immutable.TransactionPacket;
 import de.jpx3.intave.packet.event.PacketReceiveEvent;
-import de.jpx3.intave.packet.wire.connection.pong.PongWirePacket;
-import de.jpx3.intave.packet.wire.window.transaction.TransactionWirePacket;
+import de.jpx3.intave.packet.wire.connection.PongWirePacket;
+import de.jpx3.intave.packet.wire.window.TransactionWirePacket;
 import de.jpx3.intave.user.User;
 import sun.reflect.ReflectionFactory;
 

@@ -11,24 +11,23 @@
 
 package de.jpx3.intave.packet.wire;
 
+import de.jpx3.intave.entity.type.EntityTypeData;
 import de.jpx3.intave.packet.ConnectionState;
 import de.jpx3.intave.packet.PacketDirection;
 import de.jpx3.intave.packet.contract.PacketContract;
 import de.jpx3.intave.packet.contract.PacketType;
 import de.jpx3.intave.packet.contract.immutable.ClientSettingsPacket;
-import de.jpx3.intave.packet.contract.mutable.Mutable;
-import de.jpx3.intave.packet.contract.mutable.MutableClientSettingsPacket;
-import de.jpx3.intave.packet.contract.mutable.MutablePlayerMovePacket;
-import de.jpx3.intave.packet.contract.mutable.MutableTransactionPacket;
+import de.jpx3.intave.packet.contract.mutable.*;
 import de.jpx3.intave.packet.event.PacketEvent;
 import de.jpx3.intave.packet.event.PacketReceiveEvent;
 import de.jpx3.intave.packet.event.PacketSendEvent;
-import de.jpx3.intave.packet.wire.cookie.response.CookieResponseWirePacket;
-import de.jpx3.intave.packet.wire.entity.mount.MountEntityWirePacket;
-import de.jpx3.intave.packet.wire.payload.inbound.PayloadInWirePacket;
-import de.jpx3.intave.packet.wire.window.transaction.TransactionWirePacket;
-import de.jpx3.intave.packet.wire.world.border.WorldBorderSetCenterWirePacket;
-import de.jpx3.intave.packet.wire.world.border.WorldBorderWirePacket;
+import de.jpx3.intave.packet.wire.block.BlockBreakAckWirePacket;
+import de.jpx3.intave.packet.wire.cookie.CookieResponseWirePacket;
+import de.jpx3.intave.packet.wire.entity.MountEntityWirePacket;
+import de.jpx3.intave.packet.wire.payload.PayloadInWirePacket;
+import de.jpx3.intave.packet.wire.window.TransactionWirePacket;
+import de.jpx3.intave.packet.wire.world.WorldBorderSetCenterWirePacket;
+import de.jpx3.intave.packet.wire.world.WorldBorderWirePacket;
 import de.jpx3.intave.registry.PacketTypeRegistry;
 import de.jpx3.intave.share.*;
 import io.netty.buffer.ByteBuf;
@@ -39,10 +38,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static de.jpx3.intave.packet.wire.WirePacketTestSupport.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -123,6 +119,37 @@ final class WirePacketMutationTest {
 		TransactionWirePacket packet = new TransactionWirePacket();
 		packet.setContainerId(packet.containerId());
 		assertTrue(packet.couldHaveBeenMutated());
+	}
+
+	@Test
+	void sameValueScoreSettersAreConservativelyMarked() {
+		for (int protocol : new int[]{47, 765}) {
+			MutableScoreboardScorePacket score = WirePackets.createPlayPacket(PacketType.Server.SCOREBOARD_SCORE, protocol);
+			score.setRemoved(false);
+			assertTrue(score.couldHaveBeenMutated());
+			score = WirePackets.createPlayPacket(PacketType.Server.SCOREBOARD_SCORE, protocol);
+			score.setDisplayNameJson(null);
+			assertTrue(score.couldHaveBeenMutated());
+		}
+		MutableScoreboardScorePacket reset = WirePackets.createPlayPacket(PacketType.Server.RESET_SCORE, 765);
+		reset.setRemoved(true);
+		assertTrue(reset.couldHaveBeenMutated());
+		reset = WirePackets.createPlayPacket(PacketType.Server.RESET_SCORE, 765);
+		reset.setDisplayNameJson(null);
+		assertTrue(reset.couldHaveBeenMutated());
+	}
+
+	@Test
+	void immutablePacketsStayCleanUntilReplaced() {
+		BlockBreakAckWirePacket packet = new BlockBreakAckWirePacket();
+		PacketEvent event = new PacketSendEvent(null, PacketType.Server.BLOCK_BREAK_ACK, packet);
+		assertFalse(event.dirty());
+		packet.blockUpdate();
+		packet.blockUpdates();
+		packet.blockPosition();
+		assertFalse(event.dirty());
+		event.setPacket(new BlockBreakAckWirePacket());
+		assertTrue(event.dirty());
 	}
 
 	@Test
@@ -210,7 +237,7 @@ final class WirePacketMutationTest {
 	}
 
 	@Test
-	void everyRegisteredWirePacketSupportsTrackingAndEverySetterMarksIt() throws ReflectiveOperationException {
+	void everyRegisteredMutableWirePacketTracksSuccessfulSetters() throws ReflectiveOperationException {
 		Set<Class<? extends PacketContract>> packetClasses = new HashSet<>();
 		for (PacketDirection direction : PacketDirection.values()) {
 			PacketTypeRegistry<?> registry = registry(direction);
@@ -227,7 +254,12 @@ final class WirePacketMutationTest {
 		assertTrue(packetClasses.size() > 100, "Exercise version-specific implementations as well as base packets");
 		Set<Method> checked = new HashSet<>();
 		for (Class<? extends PacketContract> packetClass : packetClasses) {
-			assertTrue(Mutable.class.isAssignableFrom(packetClass), packetClass.getName());
+			if (!Mutable.class.isAssignableFrom(packetClass)) {
+				assertFalse(Arrays.stream(packetClass.getMethods()).anyMatch(method ->
+					method.getName().startsWith("set") && !Modifier.isStatic(method.getModifiers())),
+					"Packets with setters must implement Mutable: " + packetClass.getName());
+				continue;
+			}
 			WirePacketDefinition<?> definition = WirePacketDefinition.from(packetClass);
 			assertFalse(((Mutable) definition.createEmpty()).couldHaveBeenMutated(), packetClass.getName());
 			for (Method method : packetClass.getMethods()) {
@@ -240,16 +272,18 @@ final class WirePacketMutationTest {
 					if (position instanceof Position) assertTrue(((Position) position).isImmutable(), method.toString());
 					assertFalse(((Mutable) packet).couldHaveBeenMutated(), method.toString());
 				}
-				if (!method.getName().startsWith("set") || Modifier.isStatic(method.getModifiers()) || !checked.add(method)) continue;
+				if (!method.getName().startsWith("set") || Modifier.isStatic(method.getModifiers())) continue;
 				PacketContract packet = definition.createEmpty();
 				Object[] arguments = Arrays.stream(method.getParameterTypes()).map(WirePacketMutationTest::argument).toArray();
 				try {
 					method.invoke(packet, arguments);
 				} catch (InvocationTargetException failure) {
-					// Invalid values and unsupported setters may also conservatively mark the packet.
+					// Rejected values and unavailable protocol fields need not mark a mutation.
 					assertInstanceOf(RuntimeException.class, failure.getCause());
+					continue;
 				}
 				assertTrue(((Mutable) packet).couldHaveBeenMutated(), method.toString());
+				checked.add(method);
 			}
 		}
 		assertTrue(checked.size() >= 200, "Cover both contract setters and concrete wire setters");
@@ -264,6 +298,10 @@ final class WirePacketMutationTest {
 		if (type == float.class) return 0F;
 		if (type == double.class) return 0D;
 		if (type == String.class) return "";
+		if (type == EntityTypeData.class) return new EntityTypeData("Cow", null, 0, true, 0);
+		if (type == BlockPosition.class) return BlockPosition.ORIGIN;
+		if (type == Optional.class) return Optional.empty();
+		if (type == OptionalInt.class) return OptionalInt.empty();
 		if (type == PositionMoveRotation.class) return new PositionMoveRotation(new Position(), Motion.newEmpty(), Rotation.zero());
 		if (type.isEnum()) return type.getEnumConstants()[0];
 		if (type.isArray()) return Array.newInstance(type.getComponentType(), 0);
