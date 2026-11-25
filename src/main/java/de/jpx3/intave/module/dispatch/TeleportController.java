@@ -19,6 +19,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import de.jpx3.intave.IntaveControl;
 import de.jpx3.intave.IntaveLogger;
 import de.jpx3.intave.IntavePlugin;
+import de.jpx3.intave.access.player.trust.TrustFactor;
 import de.jpx3.intave.adapter.MinecraftVersions;
 import de.jpx3.intave.annotate.DispatchTarget;
 import de.jpx3.intave.executor.Synchronizer;
@@ -148,7 +149,7 @@ public final class TeleportController implements PacketEventSubscriber {
 				teleport.copyRelPosFlagsToRelDeltaFlags();
 			}
 
-			if (teleportFeedbackSyncEnforcement) {
+			if (teleportFeedbackSyncEnforcement && !isBypass(user)) {
 				user.doubleTickFeedback(
 					event,
 					() -> beforeTeleportTransactionReceive(user, teleport),
@@ -249,6 +250,9 @@ public final class TeleportController implements PacketEventSubscriber {
 	}
 
 	public boolean processMovementPackets(User user) {
+		if (isBypass(user)) {
+			return true;
+		}
 		MovementMetadata movementData = user.meta().movement();
 		ReentrantLock lock = user.meta().connection().feedbackAndTeleportLock;
 		try {
@@ -260,6 +264,9 @@ public final class TeleportController implements PacketEventSubscriber {
 	}
 
 	public boolean forwardMovementPackets(User user) {
+		if (isBypass(user)) {
+			return true;
+		}
 		if (!processMovementPackets(user)) {
 			return false;
 		}
@@ -322,11 +329,11 @@ public final class TeleportController implements PacketEventSubscriber {
 			double positionOffset = expected.position().distanceTo(sentPosition);
 			float rotationOffset = expected.rotation().distanceTo(sentRotation);
 
-			if (first.matchesId(teleportId) && first.matches(
-				lastPosition, currentRotation,
-				sentPosition, sentRotation,
-				0.001, Float.NaN
-			)) {
+			if (first.matchesId(teleportId) && (isBypass(user) || first.matches(
+					lastPosition, currentRotation,
+					sentPosition, sentRotation,
+					0.001, Float.NaN
+			))) {
 				teleports.pollFirst();
 				first.accept();
 				expected.applyTo(movementData);
@@ -372,6 +379,9 @@ public final class TeleportController implements PacketEventSubscriber {
 	}
 
 	public void onResendTimeout(User user) {
+		if (isBypass(user)) {
+			return;
+		}
 		if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
 			user.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Teleport resend timeout reached, clearing pending teleports.");
 		}
@@ -512,5 +522,9 @@ public final class TeleportController implements PacketEventSubscriber {
 		} finally {
 			user.meta().connection().feedbackAndTeleportLock.unlock();
 		}
+	}
+
+	private static boolean isBypass(User user) {
+		return user != null && user.trustFactor() != null && user.trustFactor().atLeast(TrustFactor.BYPASS);
 	}
 }
