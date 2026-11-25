@@ -222,30 +222,64 @@ public final class TeleportController implements PacketEventSubscriber {
 		user.meta().connection().feedbackAndTeleportLock.lock();
 		try {
 			movement.invalidMovement = true;
-			if (!movement.pendingTeleports.get().isEmpty()) {
-				movement.recoverPendingTeleport();
-				return;
-			}
-			long recovery = movement.beginRecovery();
-			if (recovery == -1) {
-				return;
-			}
-			PositionMoveRotation snapshot = PositionMoveRotation.withoutRotation(
-				Position.mutableCopy(change.position()), change.motion().copy()
-			);
-			scheduler.accept(user, () -> {
-				user.meta().connection().feedbackAndTeleportLock.lock();
-				try {
-					if (!movement.isRecovering(recovery)) return;
-					movement.finishRecoveryOnNextTeleport(recovery);
-					teleport(user, snapshot, Relative.RELATIVE_ROTATION, onGround, true);
-				} finally {
-					user.meta().connection().feedbackAndTeleportLock.unlock();
-				}
-			});
+			movement.recoverPendingTeleport();
+			if (!user.hasPlayer() && !movement.pendingTeleports.get().isEmpty()) return;
+			scheduleCorrection(user, change, onGround);
 		} finally {
 			user.meta().connection().feedbackAndTeleportLock.unlock();
 		}
+	}
+
+	private void scheduleCorrection(User user, PositionMoveRotation change, Boolean onGround) {
+		MovementMetadata movement = user.meta().movement();
+		long recovery = movement.beginRecoveryTask();
+		if (recovery == -1) return;
+		boolean riding = movement.isInVehicle();
+		movement.teleportResendCountdown = TELEPORT_RESEND_TIMEOUT_TICKS;
+		PositionMoveRotation snapshot = change == null ? null : PositionMoveRotation.withoutRotation(
+			Position.mutableCopy(change.position()), change.motion().copy()
+		);
+		scheduler.accept(user, () -> {
+			user.meta().connection().feedbackAndTeleportLock.lock();
+			try {
+				if (!movement.isRecovering(recovery)) return;
+				Player player = user.hasPlayer() ? user.player() : null;
+				if (player != null && (riding || movement.isInVehicle() || player.isInsideVehicle())) {
+					long sequence = movement.teleportSequence;
+					if (player.isInsideVehicle()) {
+						player.leaveVehicle();
+					}
+					if (player.isInsideVehicle()) {
+						movement.cancelRecovery(recovery);
+						return;
+					}
+					if (movement.teleportSequence == sequence) {
+						player.teleport(player.getLocation());
+					}
+					if (movement.teleportSequence == sequence) {
+						movement.cancelRecovery(recovery);
+						return;
+					}
+					if (movement.pendingTeleports.get().size() > 1) {
+						resendPendingTeleport(user);
+					}
+					return;
+				}
+				if (!movement.pendingTeleports.get().isEmpty()) {
+					if (snapshot == null) resendPendingTeleport(user);
+					return;
+				}
+				if (snapshot == null) {
+					movement.cancelRecovery(recovery);
+					return;
+				}
+				movement.finishRecoveryOnNextTeleport(recovery);
+				teleport(user, snapshot, Relative.RELATIVE_ROTATION, onGround, true);
+			} finally {
+				movement.endRecoveryTask(recovery);
+				user.meta().connection().feedbackAndTeleportLock.unlock();
+			}
+		});
 	}
 
 	public boolean processMovementPackets(User user) {
@@ -372,6 +406,21 @@ public final class TeleportController implements PacketEventSubscriber {
 	}
 
 	public void onResendTimeout(User user) {
+		MovementMetadata movement = user.meta().movement();
+		ReentrantLock lock = user.meta().connection().feedbackAndTeleportLock;
+		try {
+			lock.lock();
+			if (movement.inRecovery && user.hasPlayer()) {
+				if (!movement.pendingTeleports.get().isEmpty()) scheduleCorrection(user, null, null);
+				return;
+			}
+			resendPendingTeleport(user);
+		} finally {
+			lock.unlock();
+		}
+	}
+
+	private void resendPendingTeleport(User user) {
 		if (user.receives(MessageChannel.DEBUG_TELEPORT)) {
 			user.sendMessage(IntavePlugin.prefix() + ChatColor.RED + "Teleport resend timeout reached, clearing pending teleports.");
 		}

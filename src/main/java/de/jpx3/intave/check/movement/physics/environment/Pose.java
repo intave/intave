@@ -90,6 +90,9 @@ public enum Pose {
     if (simulator == Simulators.BOAT) {
       return 1.375F;
     }
+    if (simulator == Simulators.HORSE && environment.vehicle() != null) {
+      return environment.vehicle().typeData().size().width();
+    }
     return size(user).width();
   }
 
@@ -97,6 +100,9 @@ public enum Pose {
     Simulator simulator = environment.simulator();
     if (simulator == Simulators.BOAT) {
       return 0.5625F;
+    }
+    if (simulator == Simulators.HORSE && environment.vehicle() != null) {
+      return environment.vehicle().typeData().size().height();
     }
     return size(user).height();
   }

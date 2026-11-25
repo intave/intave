@@ -81,6 +81,7 @@ class CorrectionOrderingTest {
     Player player = FakePlayerFactory.createPlayer((name, args) -> switch (name) {
       case "getWorld" -> world;
       case "getLocation" -> START.toLocation(world);
+      case "isInsideVehicle" -> false;
       case "getUniqueId" -> UUID.fromString("00000000-0000-0000-0000-000000000002");
       default -> null;
     });
@@ -106,7 +107,10 @@ class CorrectionOrderingTest {
       expectedVelocity = (expectedVelocity - 0.08) * (double) 0.98F;
       h.controller.movementCorrection(user, correction);
       h.send();
-      if (tick % 3 == 0) h.controller.onResendTimeout(user);
+      if (tick % 3 == 0) {
+        h.controller.onResendTimeout(user);
+        h.send();
+      }
       h.finish();
       assertFalse(h.movement.lastOnGround(), "tick " + tick);
       assertEquals(expectedY, h.movement.verifiedLastPositionY(), 1.0E-9, "tick " + tick);

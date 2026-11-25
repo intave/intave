@@ -18,6 +18,7 @@ import de.jpx3.intave.check.movement.physics.config.MovementConfiguration;
 import de.jpx3.intave.check.movement.physics.simulator.BoatSimulator.Status;
 import de.jpx3.intave.check.movement.physics.simulator.Simulation;
 import de.jpx3.intave.check.movement.physics.simulator.Simulator;
+import de.jpx3.intave.check.movement.physics.simulator.Simulators;
 import de.jpx3.intave.check.movement.physics.update.TickAmbiguousUpdate;
 import de.jpx3.intave.module.tracker.entity.Entity;
 import de.jpx3.intave.player.collider.complex.SimulationResult;
@@ -907,8 +908,13 @@ final class MutableSimulationEnvironmentView implements SimulationEnvironment {
 
   @Override
   public void setSimulator(Simulator simulator) {
+    Simulator previous = simulator();
     simulatorOverridden = true;
     this.simulator = simulator;
+    if (previous != simulator &&
+      (width() != pose().width(user(), this) || height() != pose().height(user(), this))) {
+      setPose(pose());
+    }
   }
 
   @Override
@@ -916,6 +922,7 @@ final class MutableSimulationEnvironmentView implements SimulationEnvironment {
     inVehicleOverridden = true;
     inVehicle = false;
     defer(environment -> environment.dismountRidingEntity(boatSetback));
+    setSimulator(Simulators.selectFor(this));
   }
 
   @Override
@@ -1495,6 +1502,9 @@ final class MutableSimulationEnvironmentView implements SimulationEnvironment {
     if (lastOnGroundOverridden) {
       other.setLastOnGround(lastOnGround);
     }
+    if (simulatorOverridden) {
+      other.setSimulator(simulator);
+    }
     if (boundingBoxOverridden) {
       other.setBoundingBox(boundingBox);
     }
@@ -1546,9 +1556,6 @@ final class MutableSimulationEnvironmentView implements SimulationEnvironment {
     }
     if (worldBorderOverridden) {
       other.setWorldBorder(worldBorder);
-    }
-    if (simulatorOverridden) {
-      other.setSimulator(simulator);
     }
     if (stepHeightOverridden) {
       other.setStepHeight(stepHeight);
